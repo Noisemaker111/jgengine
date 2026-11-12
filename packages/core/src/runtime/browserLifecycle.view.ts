@@ -33,7 +33,7 @@ export interface BrowserSuspensionSources {
 /**
  * Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
  * Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
- * @capability browser-suspension-observer observe browser interruptions outside React with caller-owned pause policy and event sources
+ * @capability browser-suspension-observer observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources
  */
 export function observeBrowserSuspension(
   onSuspend: (reason: BrowserSuspensionReason) => void,

@@ -364,7 +364,7 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
       window.removeEventListener("pointerup", onPointerUp);
       const m = menu;
       menu = null;
-      // Unmount after React finishes the current render.
+      // Unmount after the UI runtime finishes the current render.
       queueMicrotask(() => m?.unmount());
       view.dispose();
       root.remove();

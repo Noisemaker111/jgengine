@@ -27,7 +27,7 @@ import { observeBrowserSuspension } from "../runtime/browserLifecycle.view";
 import { useMountPresence } from "./presence.view";
 
 /**
- * React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable,
+ * UI chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable,
  * draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close).
  * `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders
  * the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and

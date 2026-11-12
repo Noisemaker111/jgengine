@@ -148,7 +148,7 @@ export function crowdKindReady(kind: string): boolean {
 
 /**
  * The characters the crowd layer is currently drawing, written by their entity markers each frame.
- * It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the
+ * It holds poses rather than UI state: 71 pedestrians writing matrices must not re-render the
  * world, and the crowd batch reads the same entries back to fill its instance buffers.
  *
  * A marker asks {@link claim} for a slot; the batch declares how many it can draw, so a full batch

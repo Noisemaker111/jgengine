@@ -80,7 +80,7 @@ function sameValue(previous: unknown, next: unknown, budget: Budget, trusted: bo
   return sameData(previous, next, budget, trusted);
 }
 
-/** Two React nodes that draw the same: the same text, or elements of the same type, key and props. */
+/** Two UI nodes that draw the same: the same text, or elements of the same type, key and props. */
 export function sameNode(previous: ReactNode, next: ReactNode, budget: Budget = { left: NODE_BUDGET }): boolean {
   if (Object.is(previous, next)) return true;
   budget.left -= 1;

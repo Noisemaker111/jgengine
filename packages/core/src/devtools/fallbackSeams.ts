@@ -63,9 +63,9 @@ export function armFallbackSeams(on: boolean): void {
  * allocation-free no-op when disarmed — the disarmed guard returns before touching any table.
  *
  * Frame-boundary model: rather than a per-frame reset (which would flicker to empty on the many
- * frames with no React re-render), each producing seam calls {@link beginFallbackSeam} at the top of
+ * frames with no UI re-render), each producing seam calls {@link beginFallbackSeam} at the top of
  * its own render/compute, then reports during that same synchronous pass. This is idempotent under
- * React StrictMode / concurrent double-render and keeps seams that re-render independently (entities
+ * StrictMode-style double render and keeps seams that re-render independently (entities
  * vs. scatter vs. ground) from clobbering one another. {@link endFallbackPass} only emits the log.
  * @capability render-fallback-diagnostics Report a seam resolving to a placeholder fallback.
  */

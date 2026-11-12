@@ -5,7 +5,7 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 
-/** A scan tracked outside React: `useSurfaceScan`'s draw-side twin for EngineDraw factories. */
+/** A scan tracked outside the UI runtime: `useSurfaceScan`'s draw-side twin for EngineDraw factories. */
 export interface SurfaceScanTrack {
   /** The decoded maps; `null` while loading, after a failure, or when nothing was asked for. */
   textures(): SurfaceScanTextures | null;

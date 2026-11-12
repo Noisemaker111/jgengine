@@ -94,7 +94,7 @@ function explainLongFrame(
   return {
     topPhase: null,
     culprit: "outside-sim",
-    reason: `frame ${frameMs.toFixed(1)}ms · sim ${simMs.toFixed(1)}ms · outside ${outsideMs.toFixed(1)}ms (render/React/GC/tab throttle)`,
+    reason: `frame ${frameMs.toFixed(1)}ms · sim ${simMs.toFixed(1)}ms · outside ${outsideMs.toFixed(1)}ms (render/UI/GC/tab throttle)`,
   };
 }
 

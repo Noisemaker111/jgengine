@@ -367,7 +367,7 @@ export interface ModelAnimationDriverOptions {
 }
 
 /**
- * The engine's model animation driver without React: the same mixer
+ * The engine's model animation driver without the UI runtime: the same mixer
  * `useModelAnimation` runs — `"auto"` derivation, speed-driven crossfades,
  * one-shots from game events, held poses, death clamp, graph playback with
  * root motion, and character-LOD pose pacing. `frame(state, delta)` poses the

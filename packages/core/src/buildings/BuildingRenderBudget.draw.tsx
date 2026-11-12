@@ -20,7 +20,7 @@ export interface BuildingRenderPolicy {
 const UNLIMITED: BuildingRenderPolicy = { enabled: false, minDistance: 0, maxDistance: Infinity, hysteresis: 0 };
 const BuildingRenderContext = createContext<BuildingRenderPolicy>(UNLIMITED);
 
-/** The policy the most recently mounted {@link BuildingRenderBudget} resolved; draws read it without React context. @internal */
+/** The policy the most recently mounted {@link BuildingRenderBudget} resolved; draws read it without UI context. @internal */
 let currentPolicy: BuildingRenderPolicy = UNLIMITED;
 
 /** The distance policy facade parts under the nearest budget follow, for draw-side chunks. @internal */

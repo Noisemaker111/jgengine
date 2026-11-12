@@ -33,7 +33,7 @@ export interface KeyedStoreHandle<T> {
  *
  * Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most
  * once **per id** and its result is reused, so an unwritten id's slot keeps a stable identity across
- * reads (no per-read churn for a React selector, no allocation on a hot path).
+ * reads (no per-read churn for a UI selector, no allocation on a hot path).
  *
  * @capability typed-keyed-store a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
  */

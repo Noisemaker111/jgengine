@@ -18,7 +18,7 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
 import { useMountPresence } from "@jgengine/core/ui/presence.view";
 
 /**
- * React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay
+ * UI chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay
  * layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup.
  * {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost}
  * renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} /
@@ -38,7 +38,7 @@ export interface ModalStackView {
 /**
  * Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
  *
- * @capability use-modal-stack React hook binding a modal stack to a component — re-renders on push/pop/resolve
+ * @capability use-modal-stack UI hook binding a modal stack to a component — re-renders on push/pop/resolve
  */
 export function useModalStack(stack: ModalStack): ModalStackView {
   const [, bump] = useReducer((n: number) => n + 1, 0);

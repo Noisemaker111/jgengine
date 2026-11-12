@@ -42,7 +42,7 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
       Math.abs(camera.quaternion.w - cam.qw);
     if (dPos > CAMERA_MOVE_EPSILON || dRot > CAMERA_MOVE_EPSILON) activeRef.current = true;
 
-    // Publish the camera basis for the DOM orientation widget (mutable channel, no React state).
+    // Publish the camera basis for the DOM orientation widget (mutable channel, no UI state).
     const telemetry = getCameraTelemetry();
     const m = camera.matrixWorld.elements;
     telemetry.rightX = m[0]!;

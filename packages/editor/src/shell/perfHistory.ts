@@ -3,7 +3,7 @@ import type { EditorPerfSample } from "../session";
 /**
  * Rolling history of real {@link EditorPerfSample}s for the Profiler dock tab's frame-time graph.
  * Fed by the same 500ms host poll the toolbar pill uses; never fabricates values. Kept outside
- * React state so recording continues while the profiler tab is closed without rerendering anything.
+ * UI state so recording continues while the profiler tab is closed without rerendering anything.
  */
 export interface PerfHistoryStore {
   push(sample: EditorPerfSample): void;

@@ -28,7 +28,7 @@ const SPAWN_DURATION = 0.4;
 /**
  * Draw-side form of the marker's meshes: the ground ring and bobbing gem are added under the
  * caller's pose group, which the frame writes the entity pose onto. The beam line and HTML
- * label stay React siblings so they inherit the same pose.
+ * label stay UI siblings so they inherit the same pose.
  */
 export function worldItemMarkerDraw(getProps: () => {
   ctx: GameContext;

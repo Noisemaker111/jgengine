@@ -343,7 +343,7 @@ export function particleFieldDraw(system: ParticleSystem, options: ParticleField
   };
 }
 
-/** React mount for {@link particleFieldDraw}; props changes that affect the program remount it. */
+/** UI mount for {@link particleFieldDraw}; props changes that affect the program remount it. */
 export function ParticleField(props: ParticleFieldDrawOptions & { system: ParticleSystem }): ReactElement {
   const { system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics } = props;
   const shape = render?.shape ?? "point";

@@ -55,7 +55,7 @@ export interface GameFirstPersonCameraProps {
   weapon?: ((entityId: string, ctx: GameContext) => CameraWeaponView | null) | undefined;
 }
 
-/** Everything the first-person draw reads, resolved by the React wrapper. */
+/** Everything the first-person draw reads, resolved by the UI wrapper. */
 export interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps {
   ctx: GameContext;
   userId: string;
@@ -69,7 +69,7 @@ export interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraPro
 /**
  * Draw-side form of the first-person rig: pointer-lock look, eye placement, camera boom collision
  * and weapon presentation all run in `frame` at orbit priority; DOM listeners live in
- * mount/dispose. The viewmodel anchor stays a React component because games supply their own.
+ * mount/dispose. The viewmodel anchor stays a UI component because games supply their own.
  * @internal
  */
 export function firstPersonCameraDraw(getProps: () => GameFirstPersonCameraDrawProps): EngineDraw {

@@ -102,7 +102,7 @@ export interface StandaloneEditorProps {
 /**
  * The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp`
  * every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`,
- * desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset
+ * desktop app, or any UI host). Ships a slim strip to open a world file and pull in an asset
  * folder; both are also settable up front through props.
  */
 export function StandaloneEditor({

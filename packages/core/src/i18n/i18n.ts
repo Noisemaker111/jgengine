@@ -95,7 +95,7 @@ export interface I18n {
 /**
  * Create a translator over a message catalog: active-locale lookup with a base-locale fallback,
  * `{param}` interpolation with locale number formatting, and typed plural messages chosen with
- * `Intl.PluralRules`. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is
+ * `Intl.PluralRules`. Observable (`subscribe`) so UI re-renders on `setLocale`; the catalog is
  * caller-owned static data, the locale is the only state.
  *
  * @capability i18n translate a message catalog with base-locale fallback, `{param}` interpolation, and cardinal and ordinal plural messages; observable active-locale switching

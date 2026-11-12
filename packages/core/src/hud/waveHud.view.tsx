@@ -12,7 +12,7 @@ import { hudType } from "./hudTokens";
  * budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The
  * runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
  *
- * @capability use-wave-runner React hook that subscribes to a wave runner and returns its pooled current-wave view
+ * @capability use-wave-runner UI hook that subscribes to a wave runner and returns its pooled current-wave view
  */
 export function useWaveRunner(runner: WaveRunner): WaveView {
   const [, bump] = useReducer((n: number) => n + 1, 0);

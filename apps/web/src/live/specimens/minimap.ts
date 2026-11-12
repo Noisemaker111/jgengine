@@ -185,7 +185,7 @@ export function createMinimapSpecimen(container: HTMLElement, trace: Trace): Min
       clearInterval(holdTimer);
       view.canvas.removeEventListener("pointerdown", onPointer);
       view.dispose();
-      // Unmount after React finishes the current render.
+      // Unmount after the UI runtime finishes the current render.
       queueMicrotask(() => {
         root.unmount();
         panel.remove();

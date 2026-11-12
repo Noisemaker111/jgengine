@@ -48,7 +48,7 @@ interface AlienLive {
 
 /**
  * One alien's GLB clone, animation driver and mood glow as an {@link EngineDraw}. Store reads
- * (movement, mood tier, glow) happen per frame through the context, so no React subscription is
+ * (movement, mood tier, glow) happen per frame through the context, so no UI subscription is
  * needed; a failed or absent plan/GLB simply draws nothing, matching the old error boundary.
  */
 export function alienMeshDraw(ctx: GameContext | null, entity: SceneEntity): EngineDraw {

@@ -21,7 +21,7 @@ export interface TerrainDetailMaterialHandle {
 
 /**
  * Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller
- * (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches
+ * (a UI component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches
  * `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
  */
 export interface TerrainDetailMaterialTextures {

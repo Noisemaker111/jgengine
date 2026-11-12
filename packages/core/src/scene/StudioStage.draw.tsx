@@ -64,7 +64,7 @@ interface StageDrawProps {
 
 /**
  * The stage's lights, floor and backdrop as an {@link EngineDraw}; `getSpin` resolves the group the
- * React children render under so turntable/faceCamera still spin them. `state.scene` is the JSX
+ * UI children render under so turntable/faceCamera still spin them. `state.scene` is the JSX
  * parent, so the background is only set when that parent is the real Scene — the same reach the old
  * `attach="background"` had.
  */

@@ -63,7 +63,7 @@ const BLANK: TimerRead = {
  * math. Reuses one read object (allocation-aware). Returns `null` for an unknown
  * id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
  *
- * @capability use-timer React hook binding one timer to a component with a per-frame re-read
+ * @capability use-timer UI hook binding one timer to a component with a per-frame re-read
  */
 export function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null {
   const [, bump] = useReducer((n: number) => n + 1, 0);

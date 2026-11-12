@@ -2,7 +2,7 @@
  * Shared mobile-composition geometry. Every UI subsystem (HUD, touch controls,
  * system chrome, screens) registers the physical rectangle it occupies; the
  * engine allocates the viewport once and detects when two subsystems collide,
- * instead of each independently claiming an edge. Pure math — no DOM, no React.
+ * instead of each independently claiming an edge. Pure math — no DOM, no UI runtime.
  */
 
 import type { LayoutOrientation } from "../ui/orientation";

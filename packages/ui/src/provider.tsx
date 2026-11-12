@@ -9,8 +9,8 @@ export function GameProvider({ context, children }: { context: GameContext; chil
 }
 
 /**
- * Re-provide a captured {@link GameContext} across a nested React reconciler boundary. A nested
- * renderer that mounts its own React root does NOT inherit a `GameProvider` from the outer
+ * Re-provide a captured {@link GameContext} across a nested UI reconciler boundary. A nested
+ * renderer that mounts its own UI root does NOT inherit a `GameProvider` from the outer
  * tree â€” hooks like `useGameContext` / `useEntityRenderCues` throw. The
  * fix the shell already uses internally: capture the context outside the boundary (with
  * {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context

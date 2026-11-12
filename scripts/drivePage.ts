@@ -113,7 +113,7 @@ export async function fillField(session: CdpSession, label: string, value: strin
 
 /**
  * Focus the game's key-input surface so CDP keys reach the play-mode handler
- * (a React `onKeyDown` on the `tabIndex` wrapper) instead of `document.body`.
+ * (an `onKeyDown` on the `tabIndex` wrapper) instead of `document.body`.
  * Serialises {@link focusGameSurface} into the page. Returns whether a surface
  * became the active element.
  */

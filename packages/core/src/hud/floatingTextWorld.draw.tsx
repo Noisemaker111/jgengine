@@ -54,7 +54,7 @@ export function WorldFloatingText({
   useFrameTask((_, delta) => {
     if (advance) field.update(Math.min(delta, 0.1));
     // Re-render every frame while text floats, so projected positions follow the camera and the
-    // sim; with nothing up, an idle frame (and the shader warmup behind the cover) costs no React work.
+    // sim; with nothing up, an idle frame (and the shader warmup behind the cover) costs no UI work.
     const active = field.active().length > 0;
     if (!active && !showing.current) return;
     showing.current = active;

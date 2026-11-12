@@ -30,7 +30,7 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
     return me === null ? undefined : Math.hypot(position[0] - me.position[0], position[1] - me.position[2]);
   };
   // Re-render only when the pin moves a pixel or its distance changes, so a still camera (and the
-  // shader warmup behind the loading cover) costs no React work.
+  // shader warmup behind the loading cover) costs no UI work.
   const joinFrame = useFrameJoin();
   useEffect(() => joinFrame(0, () => {
     if (runtime === null) return;

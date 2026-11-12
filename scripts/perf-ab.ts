@@ -108,10 +108,10 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
                        [--out dir] [--markdown] [--plant-ms n] [--production]
 
   Both sides are Vite dev servers unless --production is given; with it both are the build players get
-  (minified, bundled, production React; built once per side, under a minute, and reused until the served
+  (minified and bundled; built once per side, under a minute, and reused until the served
   files change), which is where a claim about what players experience comes from. The report leads with each side's
   scorecard: frame p50/p95/p99 and the worst frame, frames over 16.7 and 33 ms, main-thread ms per frame
-  and the share inside React and react-three-fiber, MB allocated per second and GC time, the same frames
+  and the share inside the engine UI runtime, MB allocated per second and GC time, the same frames
   with the CPU slowed ${SLOW_CPU_RATE}x, load time and download size. The verdict table follows.
 
   Is this branch faster or slower than its base, per game: the base and the branch load once each, in
@@ -875,7 +875,7 @@ async function main(): Promise<number> {
   }
   if (results.length > 0) {
     const plant = parsed.plantMs > 0 ? ` A ${parsed.plantMs} ms busy-wait was planted in every branch frame.` : "";
-    const what = parsed.build === "production" ? "the production build players get" : "the dev servers' build (development React, unbundled modules), not what players get";
+    const what = parsed.build === "production" ? "the production build players get" : "the dev servers' build (unbundled source modules), not what players get";
     console.log(`Branch ${branchHead} against base ${base.label}, ${what}. Frames are every measured window pooled; the main thread, garbage and slow-CPU rows are one ${SCORE_SECONDS} s window a side.\n`);
     for (const side of ["base", "branch"] as const) {
       if (parsed.params[side].length > 0) console.log(`${side} params: ${parsed.params[side].map(([key, value]) => `${key}=${value}`).join(" ")}\n`);

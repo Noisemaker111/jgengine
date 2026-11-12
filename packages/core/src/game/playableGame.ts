@@ -1008,7 +1008,7 @@ export interface GameChromeConfig {
   settings?: GameSettingsConfig | false | undefined;
 }
 
-/** The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`. */
+/** The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with UI components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`. */
 export interface PlayableGameContract<
   TUi = unknown,
   TWorldOverlay = unknown,

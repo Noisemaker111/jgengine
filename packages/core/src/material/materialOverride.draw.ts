@@ -7,7 +7,7 @@ import { applyModelScan } from "@jgengine/core/model/modelScan.draw";
 /** Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials. */
 export interface MaterialOverrideOptions {
   clone?: boolean;
-  /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each standard or physical material alongside the tint override. The caller (a React component, via `useTexture`) owns loading; this function never fetches a URL. */
+  /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each standard or physical material alongside the tint override. The caller (a UI component, via `useTexture`) owns loading; this function never fetches a URL. */
   textures?: MaterialOverrideTextures;
   /** Records material replacements for the caller's resource owner. */
   ownMaterial?: (material: THREE.Material) => void;

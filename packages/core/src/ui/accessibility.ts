@@ -44,7 +44,7 @@ export function reducedMotionDuration(state: AccessibilityState, ms: number, red
 /**
  * `feColorMatrix` `values` strings for each colorblind mode — simulate how a
  * viewer with that condition perceives color (and a grayscale mode). `"none"`
- * maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
+ * maps to `null` (no filter). Consumed by the UI `ColorblindFilters` defs.
  */
 export const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> = {
   none: null,

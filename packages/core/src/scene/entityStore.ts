@@ -110,7 +110,7 @@ export interface SpawnOptions<TMeta = unknown> {
 }
 
 // A tuple is stored as given, so a pose write passing one allocates nothing. A point becomes a new tuple
-// rather than being written into the old one: renderers and React props see a move only as a new
+// rather than being written into the old one: renderers and UI props see a move only as a new
 // position identity, and a caller may still hold the previous tuple as "where it was".
 function toEntityPosition(position: SpawnPositionInput | undefined): EntityPosition {
   if (position === undefined) return [0, 0, 0];
@@ -225,7 +225,7 @@ export interface EntityStore<TMeta = unknown> {
   setPoseConstraint(id: string, constraint: PoseConstraint | null): void;
   get(id: string): SceneEntity<TMeta> | null;
   list(): readonly SceneEntity<TMeta>[];
-  /** Stable-identity list of live entity ids; identity changes only on spawn/despawn/hydrate, not on pose writes. Pair with {@link subscribeMembership} for membership-only React subscriptions that skip per-frame pose churn (#625). */
+  /** Stable-identity list of live entity ids; identity changes only on spawn/despawn/hydrate, not on pose writes. Pair with {@link subscribeMembership} for membership-only UI subscriptions that skip per-frame pose churn (#625). */
   ids(): readonly string[];
   clear(): void;
   subscribe(listener: () => void): () => void;

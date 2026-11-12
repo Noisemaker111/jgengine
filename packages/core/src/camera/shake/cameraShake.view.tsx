@@ -19,7 +19,7 @@ export interface CameraShakeReadout {
  * reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind
  * for a HUD readout.
  *
- * @capability use-camera-shake React hook reading a camera-shake controller's live trauma and kind
+ * @capability use-camera-shake UI hook reading a camera-shake controller's live trauma and kind
  */
 export function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout {
   const [, bump] = useReducer((n: number) => n + 1, 0);

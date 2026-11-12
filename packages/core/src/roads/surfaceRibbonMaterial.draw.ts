@@ -405,9 +405,9 @@ ${RIBBON_SCAN_AO_GLSL}`,
 }
 
 /**
- * {@link createSurfaceRibbonMaterial} for a React mesh: rebuilt only when an option changes and
+ * {@link createSurfaceRibbonMaterial} for a UI-owned mesh: rebuilt only when an option changes and
  * disposed on unmount. Pass `null` to get `null` (the caller falls back to a flat material).
- * @capability surface-ribbon-material React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
+ * @capability surface-ribbon-material UI-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
  */
 export function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions | null): THREE.MeshStandardMaterial | null {
   const o = options;

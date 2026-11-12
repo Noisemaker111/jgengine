@@ -337,7 +337,7 @@ const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true 
 
 /**
  * Runs foot IK after the model's animation mixer for `ModelConfig.ik` — a thin
- * React shell over {@link FootIkDriver}; draw code uses the driver directly.
+ * UI shell over {@link FootIkDriver}; draw code uses the driver directly.
  */
 export function useFootIk(
   scene: THREE.Object3D,
@@ -376,7 +376,7 @@ export interface FootIkDriverOptions {
 }
 
 /**
- * Foot IK without React: resolves the rig once, then {@link pose} applies one
+ * Foot IK without the UI runtime: resolves the rig once, then {@link pose} applies one
  * frame of correction after the animation mixer. `dispose` restores the
  * animated pose. The hook and the model draw share this driver.
  */

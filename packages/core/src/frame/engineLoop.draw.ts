@@ -7,7 +7,7 @@
  * cap and canvas cover) are first-class loop state.
  *
  * A system is anything with a per-frame `frame(state)`; `mount`/`dispose`
- * bracket its three.js objects' lifetime. Systems never see React, never see
+ * bracket its three.js objects' lifetime. Systems never see the UI, never see
  * the DOM, and read their own stores through closures. Per-instance frame
  * work that many mounted copies share (the old `useSharedFrame` /
  * `useFrameWhile` case) joins `loop.tasks` at a priority instead of becoming

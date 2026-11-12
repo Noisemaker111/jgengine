@@ -346,7 +346,7 @@ export function FerralonWorldOverlay() {
 
 /**
  * The first-person rig as one draw: the gun group (rebuilt on weapon swap), the muzzle flash and
- * its light all live under a camera-posed group updated every frame — no React state, no refs.
+ * its light all live under a camera-posed group updated every frame — no UI state, no refs.
  */
 function viewmodelDraw(get: () => { ctx: GameContext; gun: GunDef | undefined }): EngineDraw {
   const rig = new Group();

@@ -71,7 +71,7 @@ export type DriveArgs = {
   log?: string | undefined;
   /** `--hitches`: record every frame over 33 ms of the run with its cause, and print them at the end. */
   hitches: boolean;
-  /** `--renders`: count every React component render of the run and print the busiest components. */
+  /** `--renders`: count every UI component render of the run and print the busiest components. */
   renders: boolean;
   /** `--renders-settle <ms>`: play this long before the render count starts, so loading and first mounts stay out of a steady-play reading. */
   rendersSettleMs: number;
@@ -144,8 +144,8 @@ Notes:
   with its cause and the scripts the browser ran in it, mapped to source lines; it prints them at
   the end and writes .scratch/perf/hitches/<game>-<flow>.json. Use it with a --flow to find the
   stalls a player feels in a long session; with --url it measures a built page the same way.
-  --renders counts every React component render over the run (a stand-in for React DevTools'
-  hook, installed before React loads) and prints the components that rendered most, so a HUD
+  --renders counts every UI component render over the run (a counter the engine UI runtime
+  reports to, installed before the page's scripts load) and prints the components that rendered most, so a HUD
   that re-renders whole on every tick shows by name. Names are readable on a dev page.
   --renders-settle <ms> lets the game play that long before counting, so models still loading
   and panels mounting stay out of a steady-play reading.

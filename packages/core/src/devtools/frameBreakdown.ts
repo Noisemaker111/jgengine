@@ -100,7 +100,7 @@ export interface Hitch {
 /** One script the browser ran inside a slow frame, as its long-animation-frame timing names it. */
 export interface HitchScript {
   ms: number;
-  /** What called it: `FrameRequestCallback`, `MessagePort.onmessage` (React's scheduler), `DOMWindow.onkeydown`, a promise. */
+  /** What called it: `FrameRequestCallback`, `MessagePort.onmessage` (the UI scheduler), `DOMWindow.onkeydown`, a promise. */
   invoker: string;
   /** `function url:char` in the generated bundle; a harness rewrites it to a source line. */
   source: string;

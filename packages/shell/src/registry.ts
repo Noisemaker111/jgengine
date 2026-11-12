@@ -21,7 +21,7 @@ export interface GameHealth extends GameHealthConfig {
 }
 
 /**
- * The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games
+ * The concrete UI-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games
  * handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
  */
 export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract<

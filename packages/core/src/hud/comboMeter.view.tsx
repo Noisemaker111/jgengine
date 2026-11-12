@@ -12,7 +12,7 @@ import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
  * that times out visibly drops even with no further hits. The returned object is
  * the model's pooled view — read its fields immediately, do not retain it.
  *
- * @capability use-combo-meter React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
+ * @capability use-combo-meter UI hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
  */
 export function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView {
   const [, bump] = useReducer((n: number) => n + 1, 0);

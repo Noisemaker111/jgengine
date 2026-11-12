@@ -90,7 +90,7 @@ function isAppStackLocation(location: string): boolean {
   return normalized.includes("packages/") || normalized.includes("llmville/src/");
 }
 
-/** Keeps app-owned stack frames; drops node_modules and React internals. */
+/** Keeps app-owned stack frames; drops node_modules and UI runtime internals. */
 function condenseStackTrace(stack: string, maxFrames = 8): string[] {
   const frames: string[] = [];
 
@@ -167,7 +167,7 @@ export function formatGameErrorAgentPrompt(input: GameErrorReportInput): string 
   if (input.componentStack) {
     const frames = condenseComponentStack(input.componentStack);
     if (frames.length > 0) {
-      lines.push("", "React:", ...frames);
+      lines.push("", "UI:", ...frames);
     }
   }
 

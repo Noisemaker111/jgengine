@@ -15,7 +15,7 @@ import { KeyHint, Keycap } from "../input/keyHint.view";
  * moves. Feed it the player's `{ x, z }` position each frame; identical positions
  * do no work.
  *
- * @capability use-interaction-prompt React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+ * @capability use-interaction-prompt UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
  */
 export function useInteractionPrompt(
   registry: PromptRegistry,

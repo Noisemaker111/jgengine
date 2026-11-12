@@ -46,7 +46,7 @@ interface BurstInstance {
 const MAX_CONCURRENT_BURSTS = 32;
 const ZERO: Vec3 = [0, 0, 0];
 
-/** @internal Config retunes stay imperative; output changes require React rendering. */
+/** @internal Config retunes stay imperative; output changes require UI rendering. */
 export function specNeedsRender(prev: ParticleEmitterSpec, next: ParticleEmitterSpec): boolean {
   if (prev.blending !== next.blending || prev.follow !== next.follow || prev.space !== next.space) return true;
   if (prev.render?.shape !== next.render?.shape || prev.render?.stretch !== next.render?.stretch) return true;

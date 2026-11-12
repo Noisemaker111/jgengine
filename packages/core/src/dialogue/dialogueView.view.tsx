@@ -11,7 +11,7 @@ import type {
  * Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset,
  * returning the current node view (or `null` if the run's node id is unknown).
  *
- * @capability use-dialogue-run React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+ * @capability use-dialogue-run UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
  */
 export function useDialogueRun(run: DialogueRun): DialogueGraphView | null {
   const [, bump] = useReducer((n: number) => n + 1, 0);

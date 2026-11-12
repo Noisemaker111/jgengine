@@ -377,7 +377,7 @@ export interface EditorPerfSample {
    */
   simMs?: number;
   /**
-   * Average outside-sim time (ms) = frame − sim (render / React / GPU / GC / vsync miss).
+   * Average outside-sim time (ms) = frame − sim (render / UI / GPU / GC / vsync miss).
    * Same availability rule as `simMs`. Matches `FrameStats.avgOutsideMs`.
    */
   outsideMs?: number;

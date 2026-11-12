@@ -21,7 +21,7 @@ const HELP = [
   '          jgengine find "toggleable window" --json --limit 5',
   "          jgengine find --text useCameraShake --kind ts,tsx",
   "",
-  "Words: the feature folder (core: model files, *.view = React UI, *.draw = three.js), then any older home",
+  "Words: the feature folder (core: model files, *.view = engine UI, *.draw = three.js), then any older home",
   "in shell (draw), react (view) or editor (author),",
   "with its files and exports, pieces found outside the home, the shipped capabilities and imports,",
   "and matching assets. Read from the code itself: folder names, exports and doc comments.",

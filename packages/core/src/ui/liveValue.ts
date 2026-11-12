@@ -10,7 +10,7 @@ export interface LiveValue<T> {
 export type Live<T> = T | LiveValue<T>;
 
 /**
- * A value an engine UI part reads every frame and draws into its own node, never through a React
+ * A value an engine UI part reads every frame and draws into its own node, never through a UI
  * render: `<KitMeter value={live(() => fuel(ctx))} max={100} />`. The getter may close over props; the
  * part always calls the newest one.
  *

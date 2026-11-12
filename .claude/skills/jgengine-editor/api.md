@@ -501,7 +501,7 @@
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (const): const SelectionGizmo: FunctionComponent<{ session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
 - `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
-- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
+- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any UI host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
@@ -593,7 +593,7 @@
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
 - `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
-- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
+- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any UI host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
@@ -924,7 +924,7 @@
 
 ## @jgengine/editor/shell/ViewportOverlays
 
-- `OrientationWidget` (const): const OrientationWidget: FunctionComponent<unknown> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
+- `OrientationWidget` (const): const OrientationWidget: FunctionComponent<unknown> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders the UI.
 - `PerformanceOverlay` (const): const PerformanceOverlay: FunctionComponent<{ api: EditorHostApi; }> — Top-left viewport performance readout backed by the real in-canvas {@link PerfProbe} samples. Rows without data (no sample yet) simply don't render — nothing is fabricated.
 - `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): JSX.Element — Top-right collapsible viewport utility panel: real minimap from `document.minimap` when baked (via `bake_minimap` RPC — never a fake image), plus per-kind object counts and framing actions.
 
@@ -947,9 +947,9 @@
 
 ## @jgengine/editor/shell/cameraTelemetry
 
-- `CameraTelemetry` (interface): interface CameraTelemetry — Per-frame camera orientation channel between the in-canvas probe and the DOM orientation widget. Deliberately a mutable record, not React state: the probe writes every frame and the widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
+- `CameraTelemetry` (interface): interface CameraTelemetry — Per-frame camera orientation channel between the in-canvas probe and the DOM orientation widget. Deliberately a mutable record, not UI state: the probe writes every frame and the widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
 - `createCameraTelemetry` (function): function createCameraTelemetry(): CameraTelemetry — Creates a telemetry record seeded at rest (identity basis).
-- `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry singleton — probe and widget may mount in different React trees.
+- `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry singleton — probe and widget may mount in different UI trees.
 
 ## @jgengine/editor/shell/clipPreview
 
@@ -1028,7 +1028,7 @@
 - `FrameBudgetFields` (interface): interface FrameBudgetFields — Optional sim / outside / phase fields derived from real frame-tracker stats (never invented).
 - `FrameBudgetStatsInput` (interface): interface FrameBudgetStatsInput — Minimal frame-stats shape consumed when folding core `devtools.frame.stats()` into a sample.
 - `PERF_HISTORY_CAPACITY` (const): const PERF_HISTORY_CAPACITY: 240 — Samples retained (~2 minutes at the 500ms poll).
-- `PerfHistoryStore` (interface): interface PerfHistoryStore — Rolling history of real {@link EditorPerfSample}s for the Profiler dock tab's frame-time graph. Fed by the same 500ms host poll the toolbar pill uses; never fabricates values. Kept outside React state so recording continues while the profiler tab is closed without rerendering anything.
+- `PerfHistoryStore` (interface): interface PerfHistoryStore — Rolling history of real {@link EditorPerfSample}s for the Profiler dock tab's frame-time graph. Fed by the same 500ms host poll the toolbar pill uses; never fabricates values. Kept outside UI state so recording continues while the profiler tab is closed without rerendering anything.
 - `createPerfHistoryStore` (function): function createPerfHistoryStore(): PerfHistoryStore — Creates the rolling perf-sample history store.
 - `seriesAverage` (function): function seriesAverage(values: readonly number[]): number — Mean of a numeric series, 0 for empty input.
 - `sparklinePoints` (function): function sparklinePoints(values: readonly number[], width: number, height: number, maxValue: number): string — Builds an SVG polyline `points` string for a series scaled into a width×height box.

@@ -7,7 +7,7 @@ import { perContext } from "../runtime/perContext";
  * claimed the ground) shows it again when it grows back. Plain ids, so a save carries it as a list.
  */
 export interface ScatterClearing {
-  /** The hidden placement ids; a new set object after every change, so it works as a React snapshot. */
+  /** The hidden placement ids; a new set object after every change, so it works as a UI snapshot. */
   hidden(): ReadonlySet<string>;
   /** Hide (`true`) or show (`false`) one placement. */
   set(id: string, hidden: boolean): void;

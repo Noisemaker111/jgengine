@@ -211,7 +211,7 @@ export function classFor(item: string, effect: string, classes?: Readonly<Record
 
 const scratch = { matrix: new THREE.Matrix4(), scale: new THREE.Vector3(), spin: new THREE.Quaternion(), normal: new THREE.Vector3() };
 
-/** Props the impact draw reads; resolved by the React wrapper each commit. */
+/** Props the impact draw reads; resolved by the UI wrapper each commit. */
 export interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions {
   ctx: GameContext;
   quality: GraphicsQuality;

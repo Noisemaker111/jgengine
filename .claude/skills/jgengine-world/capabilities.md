@@ -2194,7 +2194,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/terrain/terrainGuides"`
 
-## surface-ribbon-material — React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
+## surface-ribbon-material — UI-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
 
 - `useSurfaceRibbonMaterial` (function) · `import { useSurfaceRibbonMaterial } from "@jgengine/core/roads/surfaceRibbonMaterial.draw"`
 
@@ -2339,7 +2339,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/terrain/terrainGrade"`
 
-## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
+## use-camera-shake — UI hook reading a camera-shake controller's live trauma and kind
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/core/camera/shake/cameraShake.view"`
 
@@ -2347,23 +2347,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/core/map/fastTravel.view"`
 
-## use-fog — React binding that returns a fog-of-war field's live cells
+## use-fog — UI binding that returns a fog-of-war field's live cells
 
 - `useFog` (function) · `import { useFog } from "@jgengine/core/map/map.view"`
 
-## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+## use-interaction-prompt — UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
 - `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view"`
 
-## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+## use-sequence-director — UI hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
 - `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/core/cutscene/cutscene.view"`
 
-## use-timer — React hook binding one timer to a component with a per-frame re-read
+## use-timer — UI hook binding one timer to a component with a per-frame re-read
 
 - `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/core/time/timerReadout.view"`
 
-## use-waypoints — React binding that returns a waypoint store's live list (or a passthrough array)
+## use-waypoints — UI binding that returns a waypoint store's live list (or a passthrough array)
 
 - `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/core/map/waypointMarkers.view"`
 

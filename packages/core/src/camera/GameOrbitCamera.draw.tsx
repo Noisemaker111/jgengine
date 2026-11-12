@@ -68,7 +68,7 @@ export interface GameOrbitCameraProps {
   pointerControls?: boolean | undefined;
 }
 
-/** Everything the orbit draw reads each frame, resolved by the React wrapper. */
+/** Everything the orbit draw reads each frame, resolved by the UI wrapper. */
 export interface GameOrbitCameraDrawProps extends GameOrbitCameraProps {
   ctx: GameContext;
   userId: string;

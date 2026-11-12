@@ -11,7 +11,7 @@ import { treeFingerprint } from "./servedTree";
 
 /**
  * The build players get, for the perf harness: the game runner built the way the web deploy builds it
- * (`apps/dev`'s `vite build`: minified, bundled, production React, no dev-server plugins; the site
+ * (`apps/dev`'s `vite build`: minified, bundled, no dev-server plugins; the site
  * runs the same build with `--base /play/`), served from this process. The desktop app wraps a
  * `vite build` of the same sources.
  *

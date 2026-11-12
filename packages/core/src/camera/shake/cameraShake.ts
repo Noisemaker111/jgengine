@@ -261,7 +261,7 @@ export function rigShakeConfig(config?: CameraRigShakeConfig): CameraShakeConfig
 }
 
 /**
- * The one camera-shake controller the rigs apply. Game systems with no React context (a
+ * The one camera-shake controller the rigs apply. Game systems with no UI context (a
  * `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through
  * {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the
  * same controller directly.

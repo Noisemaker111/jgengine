@@ -93,7 +93,7 @@ function shellRootSnapshot(ctx: GameContext, userId: string): string {
  * Re-render the shell root only for the ctx slices it reads: the entity the local player possesses,
  * and the active touch-control mode. Subscribing to the raw ctx version instead reconciled the
  * canvas, the whole actor tree and the HUD on every per-frame pose and store write — the churn
- * `subscribeMembership` and imperative `useFrame` pose reads exist to keep out of React (#625).
+ * `subscribeMembership` and imperative `useFrame` pose reads exist to keep out of the UI runtime (#625).
  * @internal
  */
 export function useShellRootResubscribe(ctx: GameContext | null, userId: string): void {

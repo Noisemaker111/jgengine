@@ -2,7 +2,7 @@ import { preloadSceneAssets } from "../scene/sceneAssetPreloadLazy";
 import { preloadScreen } from "../screens/screens";
 
 // The game-session chunk pulls in three.js / the engine draw runtime, so it is large and slow to
-// download on a cold cache. React keeps the *previous* screen visible while a
+// download on a cold cache. The UI runtime keeps the *previous* screen visible while a
 // navigation transition suspends, so if we navigate before this chunk is ready
 // the player sees the old screen frozen with no feedback until it loads. Sharing
 // one memoized import lets entry points await it (showing a loading state) and

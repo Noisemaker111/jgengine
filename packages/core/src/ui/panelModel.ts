@@ -2,7 +2,7 @@
  * Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a
  * WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It
  * carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and
- * exclusive-group membership, with zero rendering opinion. The React chrome in
+ * exclusive-group membership, with zero rendering opinion. The UI chrome in
  * `@jgengine/core/ui/panels.view` consumes this; a game keeps layout, skin, keybinds, and window content
  * caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
  */

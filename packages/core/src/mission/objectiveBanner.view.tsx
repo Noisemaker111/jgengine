@@ -15,7 +15,7 @@ import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
  * the game already ticks it), and return the banner to draw right now — or `null`
  * when idle. Re-renders when a banner or its phase changes; its motion is drawn per frame by the host.
  *
- * @capability use-objective-banner React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+ * @capability use-objective-banner UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
  */
 export function useObjectiveBanner(
   controller: ObjectiveBannerController,

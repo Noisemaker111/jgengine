@@ -119,7 +119,7 @@ type-check all read the engine source in the same commit. An engine change that 
 fixes that game in the same PR. npm releases are for users outside this repo; no game waits on one.
 
 Third-party versions shared with the engine (three, Vite, Convex) come
-from the root `catalog`. The engine packages take three and React as peer dependencies, and
+from the root `catalog`. The engine packages take three as a peer dependency (no React), and
 `engineSource` dedupes the ones a game declares, so each game loads one copy of each.
 
 CI's `games` job runs the games' gates on every game and the type-check, tests and boot probes of

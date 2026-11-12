@@ -409,7 +409,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`
 
-## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+## use-damage-direction — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
 - `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/core/combat/damage/damageDirection.view"`
 

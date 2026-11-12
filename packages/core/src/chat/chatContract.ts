@@ -16,7 +16,7 @@ export interface ChatActions {
 
 /**
  * Backend seam for remote text chat, mirroring PresenceTransport: the use*
- * members are called as React hooks by consumers, so a mounted transport must
+ * members are called as UI hooks by consumers, so a mounted transport must
  * never change identity — remount the subtree to switch backends. useMessages
  * returns undefined while the subscription is loading and the channel's recent
  * history once live.
@@ -27,7 +27,7 @@ export interface ChatTransport {
 }
 
 /**
- * Callback seam for backends that cannot host React hooks (e.g. the ws
+ * Callback seam for backends that cannot host UI hooks (e.g. the ws
  * client): subscribe delivers the channel's recent history on every change;
  * send resolves with the host's verdict. @jgengine/react's chatTransportFromSync
  * lifts a ChatSync into a ChatTransport.

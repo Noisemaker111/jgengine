@@ -14,7 +14,7 @@ function leanWithLongFrames(count: number): Lean {
   return {
     game: "Beacon Bastion",
     at: 1,
-    why: "outside-sim (5/5 recent long frames): Cost is outside the sim driver — three.js render, React commit, GPU. Check the render sample.",
+    why: "outside-sim (5/5 recent long frames): Cost is outside the sim driver — three.js render, UI commit, GPU. Check the render sample.",
     frame: {
       fps: 0.2, avgFrameMs: 4013.3, p95FrameMs: 9262.2, maxFrameMs: 9262.2, avgSimMs: 0.8, maxSimMs: 2.7,
       avgOutsideMs: 4012.5, maxOutsideMs: 9261.9, longFrames: count, samples: 9,

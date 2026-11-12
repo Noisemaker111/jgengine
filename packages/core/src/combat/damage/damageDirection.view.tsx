@@ -10,7 +10,7 @@ import type { DamageDirectionTracker, DamageIndicator } from "@jgengine/core/com
  * screen is clear, then wakes again on the next hit. Returns the tracker's
  * current `active()` array (reused between frames — copy if you retain it).
  *
- * @capability use-damage-direction React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+ * @capability use-damage-direction UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
  */
 export function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);

@@ -28,7 +28,7 @@ function holdSceneSwap(): () => void {
 }
 
 /**
- * The place to draw, trailing `wanted` while React builds the new place in the background; the
+ * The place to draw, trailing `wanted` while the UI builds the new place in the background; the
  * swap stays marked (see {@link useSceneSwapping}) from the change until the build is in and
  * `prepare()` has settled. Use `useSceneSwap` (`@jgengine/core/render/sceneSwap.draw`), which
  * prepares by compiling the new place's shaders. @internal
@@ -73,7 +73,7 @@ export function useSceneSwapping(): boolean {
   return useSyncExternalStore(subscribe, sceneSwapping, () => false);
 }
 
-/** True while a scene swap's card is up, outside React (the frame breakdown marks stalls drawn behind it). */
+/** True while a scene swap's card is up, outside the UI runtime (the frame breakdown marks stalls drawn behind it). */
 export function sceneSwapping(): boolean {
   return swaps > 0;
 }

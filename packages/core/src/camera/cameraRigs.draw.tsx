@@ -111,7 +111,7 @@ function readFollow(ctx: GameContext, followId: string | null): FollowSample | n
     yaw: followPose[3],
   };
 }
-/** Everything a rig draw reads live: latest props plus the React-side singletons its wrapper resolved. */
+/** Everything a rig draw reads live: latest props plus the UI-side singletons its wrapper resolved. */
 export interface CameraRigEnv {
   props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined; onComplete?: (() => void) | undefined };
   ctx: GameContext;

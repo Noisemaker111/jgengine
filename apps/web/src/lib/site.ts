@@ -11,12 +11,12 @@ export const ENTRY_PROMPT = "Make a game that ... with jgengine";
 export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }[] = [
   {
     label: "Render shell",
-    note: "React + three.js — the only package that renders",
+    note: "three.js — the only package that renders",
     packages: ["@jgengine/shell"],
   },
   {
     label: "Bindings & hosts",
-    note: "React UI · Convex adapters · Node host",
+    note: "Game UI hooks · Convex adapters · Node host",
     packages: ["@jgengine/react", "@jgengine/convex", "@jgengine/node"],
   },
   {

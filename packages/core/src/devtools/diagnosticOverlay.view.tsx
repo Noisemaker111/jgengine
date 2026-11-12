@@ -107,7 +107,7 @@ function diagnosticReport(diagnostic: RuntimeDiagnostic, gameName: string): stri
     "",
     `Message: ${diagnostic.message}`,
     diagnostic.stack === undefined ? null : `JavaScript stack:\n${diagnostic.stack}`,
-    diagnostic.componentStack === undefined ? null : `React component stack:\n${diagnostic.componentStack}`,
+    diagnostic.componentStack === undefined ? null : `UI component stack:\n${diagnostic.componentStack}`,
   ]
     .filter((line): line is string => line !== null)
     .join("\n");

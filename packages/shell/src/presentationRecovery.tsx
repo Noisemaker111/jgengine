@@ -29,7 +29,7 @@ function forgetPresentationError(error: unknown): void {
   if ((typeof error === "object" && error !== null) || typeof error === "function") handledPresentationErrors.delete(error);
 }
 
-/** @internal Classifies a reported React error after its owning boundary commits. */
+/** @internal Classifies a reported UI error after its owning boundary commits. */
 export function deferUnhandledPresentationError(error: unknown, report: () => void): void {
   queueMicrotask(() => {
     if (((typeof error === "object" && error !== null) || typeof error === "function") && handledPresentationErrors.has(error)) return;

@@ -99,7 +99,7 @@ export interface HeadlessCommandInterface {
 /**
  * A renderer-free driver for a game loop: builds a {@link GameContext} from a game, runs the init hooks, then
  * advances the simulation one step at a time from injected input. No UI runtime or three.js — the whole play path
- * (time, input, `onTick`, behaviour nav, player movement) runs from `core` primitives alone, so a non-React host (a
+ * (time, input, `onTick`, behaviour nav, player movement) runs from `core` primitives alone, so a non-UI host (a
  * server tick, a test, a CLI replay) can play a real game and read its world snapshot. The shell's FrameDriver is
  * one such driver bolted to `useFrame`; this is the same step distilled out of the render tree.
  *

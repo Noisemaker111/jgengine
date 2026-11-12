@@ -27,7 +27,7 @@ function accessibilitySignature(store: SettingsStore): string {
 }
 
 /**
- * A counter that changes on every settings write, so the hooks below re-render. React runs this
+ * A counter that changes on every settings write, so the hooks below re-render. The UI runtime runs this
  * subscription in a passive effect, after the render that showed the old value; a write landing in
  * that window (a saved profile or the demo path seeding settings) would otherwise stay invisible
  * until the player changed something else. Reading the value again on subscribe closes the window.

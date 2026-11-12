@@ -19,7 +19,7 @@ export function registerSimStepper(step: SimStep): () => void {
 /**
  * Step the registered simulation `seconds` of real time in `step`-second frames (each frame runs
  * the full driver step: input, movement, `onTick`, behaviors, bound actions). Frames run in
- * batches of {@link FRAMES_PER_YIELD} with a macrotask between batches, so React commits what the
+ * batches of {@link FRAMES_PER_YIELD} with a macrotask between batches, so the UI runtime commits what the
  * sim spawned along the way — models for entities created mid-advance mount as they would in play,
  * instead of one burst the renderer never catches up with. Capped at 2400 frames per call.
  * Resolves to the frames run, or `null` when no driver is mounted.

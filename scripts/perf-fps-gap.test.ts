@@ -146,6 +146,7 @@ test("profile samples group into layers by script", () => {
   expect(profileLayerOf(node("commitRoot", "http://127.0.0.1:4601/node_modules/.vite/deps/react-dom_client.js?v=1"))).toBe("React");
   expect(profileLayerOf(node("loop", "http://127.0.0.1:4601/node_modules/.vite/deps/@react-three_fiber.js?v=1"))).toBe("react-three-fiber");
   expect(profileLayerOf(node("tick", "http://127.0.0.1:4601/@fs/C:/repo/packages/core/src/runtime/simLoop.ts"))).toBe("engine code");
+  expect(profileLayerOf(node("commit", "http://127.0.0.1:4601/@fs/C:/repo/packages/core/src/ui/jsx/reconciler.ts"))).toBe("UI runtime");
   expect(profileLayerOf(node("draw", "http://127.0.0.1:4601/@fs/C:/repo/packages/core/src/webgpu/webgpuGl.draw.ts"))).toBe("WebGPU context");
   expect(profileLayerOf(node("boat", "http://127.0.0.1:4601/@fs/C:/repo/games/harbor-heat/src/game/boat.ts"))).toBe("game code");
   const layers = profileLayers({

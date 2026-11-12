@@ -501,7 +501,7 @@ export function resolveWalkerStep(
  * {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare
  * {@link SolidObstacleSource} and a caller-owned {@link ObstacleReachCache}.
  *
- * This is the entry point for rules that live in a pure package — no React, no three.js, no engine
+ * This is the entry point for rules that live in a pure package — no UI runtime, no three.js, no engine
  * context to import. Hold one cache per source for the life of that source (`createObstacleReachCache()`)
  * rather than making a fresh one per step; it is what keeps the reach scan off the per-step path.
  * The same axis-separation note as {@link resolveWalkerStep} applies.

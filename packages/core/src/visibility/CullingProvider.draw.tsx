@@ -45,7 +45,7 @@ export function useVisibilityChanges(ids: readonly string[], mark: () => void): 
 }
 
 /**
- * The provider's visibility-changes feed for draw code that cannot read the React context —
+ * The provider's visibility-changes feed for draw code that cannot read the UI context —
  * the same instance {@link useVisibilityChanges} watches through.
  * @internal
  */

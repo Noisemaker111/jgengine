@@ -14,7 +14,7 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
  * (no subscription), so a game can drive the host from a store or from its own
  * derived state.
  *
- * @capability use-waypoints React binding that returns a waypoint store's live list (or a passthrough array)
+ * @capability use-waypoints UI binding that returns a waypoint store's live list (or a passthrough array)
  */
 export function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);
