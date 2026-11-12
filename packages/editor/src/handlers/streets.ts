@@ -1,14 +1,17 @@
-import { generateStreets, type StreetNetworkRules, type Street } from "@jgengine/core/roads/streetGenerator";
+import { runGenerator } from "@jgengine/core/generator/generator";
+import { findSchemaPreset, validateParams } from "@jgengine/core/generator/paramSchema";
+import { STREET_NETWORK_GENERATOR, STREET_NETWORK_SCHEMA, type Street } from "@jgengine/core/roads/streetGenerator";
 import type { EditorDocument, EditorPath, EditorVec3, EditorVolume } from "@jgengine/core/editor/index";
 
 import type { HandlerTable } from "./context";
 
 /**
- * Bake the pure `generateStreets` generator (`@jgengine/core/roads/streetGenerator`) into the scene
- * document as authorable `road`/`route` paths (#1185). The generator answers to sliders and returns
- * volume-local through-streets; this verb transforms those into world-frame {@link EditorPath}s and
- * inserts them as one undoable edit with stable, seed-derived ids so a re-run replaces its own prior
- * output instead of duplicating.
+ * Bake the street generator (`STREET_NETWORK_GENERATOR`, `@jgengine/core/roads/streetGenerator`) into
+ * the scene document as authorable `road`/`route` paths (#1185). `mode` picks the schema's `net` or
+ * `circuit` preset and `params` overlays any of its dials; the generator returns volume-local
+ * through-streets, which this verb transforms into world-frame {@link EditorPath}s and inserts as one
+ * undoable edit with stable, seed-derived ids so a re-run replaces its own prior output instead of
+ * duplicating.
  *
  * Product invariant (AGENTS.md): generator output is BAKED into `editor.scene.json`, never consumed at
  * runtime — so the baked paths become ordinary authored content the designer can move, restyle, delete,
@@ -17,64 +20,6 @@ import type { HandlerTable } from "./context";
 
 /** Requested topology family — selects the default slider preset the generator grows from. */
 type RequestedMode = "net" | "circuit";
-
-/** Fully-defaulted slider preset for an open street net (resolves to `net` in `streetNetworkMode`). */
-const NET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
-  gridness: 0.9,
-  loopiness: 0.2,
-  connectivity: 0.35,
-  branching: 0.3,
-  deadEnds: 0.5,
-  segmentLength: 48,
-  aspect: 1,
-  winding: 0.2,
-  minCurveRadius: 30,
-  minTurnAngle: 0,
-  maxTurnAngle: 120,
-  width: 7,
-  boulevards: 0.3,
-};
-
-/** Fully-defaulted slider preset for a closed race circuit (resolves to `circuit` in `streetNetworkMode`). */
-const CIRCUIT_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
-  gridness: 0.1,
-  loopiness: 1,
-  connectivity: 0,
-  branching: 0,
-  deadEnds: 0,
-  segmentLength: 60,
-  aspect: 1,
-  winding: 0.5,
-  minCurveRadius: 24,
-  minTurnAngle: 0,
-  maxTurnAngle: 70,
-  width: 12,
-  boulevards: 0,
-};
-
-/** Every numeric slider a caller may overlay onto the mode preset via `params` — the whole rule set
- *  bar the seed, so the verb can reach anything the generator answers to. */
-const RULE_KEYS: readonly (keyof Omit<StreetNetworkRules, "seed">)[] = [
-  "outline",
-  "gridness",
-  "loopiness",
-  "connectivity",
-  "branching",
-  "residentialBranches",
-  "deadEnds",
-  "segmentLength",
-  "aspect",
-  "winding",
-  "minCurveRadius",
-  "minTurnAngle",
-  "maxTurnAngle",
-  "width",
-  "boulevards",
-  "sidewalkWidth",
-  "elevation",
-  "maxGrade",
-  "compactness",
-];
 
 /** The tag every baked path carries in `meta.generator`, so a re-run can find and replace its own output. */
 const GENERATOR_TAG = "streetGenerator";
@@ -126,20 +71,13 @@ export const streetsHandlers: Pick<HandlerTable, "generate_streets"> = {
       origin = center;
     }
 
-    // Build rules: mode preset, overlaid with any numeric slider overrides from `params`.
-    const preset = requestedMode === "circuit" ? CIRCUIT_DEFAULTS : NET_DEFAULTS;
-    const rules: StreetNetworkRules = { seed, ...preset };
-    const params = request.params;
-    if (params !== undefined) {
-      for (const key of RULE_KEYS) {
-        const value = params[key];
-        if (typeof value === "number" && Number.isFinite(value)) {
-          rules[key] = value;
-        }
-      }
+    // The mode's preset, overlaid with any street-schema dial from `params`; the footprint and seed are the verb's.
+    const meta = { ...findSchemaPreset(STREET_NETWORK_SCHEMA, requestedMode)?.values, ...request.params, halfX: hx, halfZ: hz, seed };
+    const issues = validateParams(STREET_NETWORK_SCHEMA, meta);
+    if (issues.length > 0) {
+      return { ok: false, error: `generate_streets: invalid params: ${issues.map((issue) => `${issue.key} (${issue.message})`).join(", ")}` };
     }
-
-    const network = generateStreets(rules, hx, hz);
+    const network = runGenerator(STREET_NETWORK_GENERATOR, meta);
     // The generator resolves the ACTUAL topology from the rules; use it for the default path kind so a
     // circuit bakes `route`s and a net bakes `road`s even when the caller's sliders cross the boundary.
     const kind = request.kind ?? (network.mode === "circuit" ? "route" : "road");

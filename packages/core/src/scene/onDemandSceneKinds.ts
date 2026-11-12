@@ -18,7 +18,7 @@ export const ON_DEMAND_SCENE_KINDS: readonly OnDemandSceneKind[] = [
   {
     id: "city",
     kinds: ["city"],
-    generators: [],
+    generators: ["city", "streets", "race-circuit"],
     load: async () => {
       const { registerCityKind } = await import("../city/cityKind");
       registerCityKind();

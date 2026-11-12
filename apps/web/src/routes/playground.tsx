@@ -3,14 +3,16 @@ import { definePage } from "../site/routes";
 import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { resolveCityObject, type CityLot } from "@jgengine/core/city/cityKind";
-import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
+import { runGenerator } from "@jgengine/core/generator/generator";
+import { parseParams } from "@jgengine/core/generator/paramSchema";
+import { CIRCUIT_ROUTE_SCHEMA, extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import {
-  generateStreets,
+  STREET_NETWORK_GENERATOR,
   streetElevationField,
   streetNetworkMode,
   type StreetNetwork,
   type StreetNetworkMode,
-  type StreetNetworkRules,
+  type StreetNetworkParams,
 } from "@jgengine/core/roads/streetGenerator";
 import { EditorEmbed } from "../components/EditorEmbed";
 import { Page, PageHero, SectionHeading } from "../components/Layout";
@@ -164,8 +166,11 @@ const MAX_GRADE = 0.12;
 const MIN_TURN_ANGLE = 12;
 const MAX_TURN_ANGLE = 110;
 
+/** The street generator's topology dials: everything but its seed, footprint and terrain switches. */
+type PlaygroundStreetDials = Omit<StreetNetworkParams, "seed" | "halfX" | "halfZ" | "bridges" | "tunnels" | "minElevation" | "tunnelClearance">;
+
 /** Every street dial the playground drives, in one place — the same set for all three modes. */
-export function playgroundStreetRules(dials: Dials): Omit<StreetNetworkRules, "seed"> {
+export function playgroundStreetRules(dials: Dials): PlaygroundStreetDials {
   return {
     gridness: dials.gridness,
     loopiness: dials.loopiness,
@@ -208,9 +213,11 @@ export interface PlaygroundResult {
  */
 export function growPlayground(mode: Mode, dials: Dials): PlaygroundResult {
   const streets = playgroundStreetRules(dials);
-  const topology = streetNetworkMode({ seed: dials.seed, ...streets });
+  const topology = streetNetworkMode(streets);
+  const growStreets = (): StreetNetwork =>
+    runGenerator(STREET_NETWORK_GENERATOR, { ...streets, halfX: dials.size, halfZ: dials.size, seed: dials.seed });
   if (mode === "circuit") {
-    return { network: generateStreets({ seed: dials.seed, ...streets }, dials.size, dials.size), city: null, route: null, topology };
+    return { network: growStreets(), city: null, route: null, topology };
   }
   // The same `city` scene kind the editor and games place: the playground's dials are its rules.
   const resolved = resolveCityObject({
@@ -244,23 +251,20 @@ export function growPlayground(mode: Mode, dials: Dials): PlaygroundResult {
       landmarks: dials.landmarks,
     },
   });
-  const elevationAt = streetElevationField({ seed: dials.seed, elevation: streets.elevation }, dials.size, dials.size);
+  const elevationAt = streetElevationField({ elevation: streets.elevation, halfX: dials.size, halfZ: dials.size }, dials.seed);
   const network =
-    resolved?.network === undefined
-      ? generateStreets({ seed: dials.seed, ...streets }, dials.size, dials.size)
-      : { ...resolved.network, ...(elevationAt === undefined ? {} : { elevationAt }) };
+    resolved?.network === undefined ? growStreets() : { ...resolved.network, ...(elevationAt === undefined ? {} : { elevationAt }) };
   const city: PlaygroundCity = { network, lots: resolved?.lots ?? [] };
   const route =
     mode === "race"
       ? // `minCornerRadius` stays on the core default: it is the racing line's drivability floor, and a
         // junction can only be rounded inside the street's own width — feeding it the street fillet
         // radius rejects every lap an ordinary city can offer.
-        extractCircuitRoute(network, {
-          seed: dials.seed,
-          lapLength: dials.lapLength,
-          arterialBias: dials.arterialBias,
-          checkpoints: dials.checkpoints,
-        })
+        extractCircuitRoute(
+          network,
+          parseParams(CIRCUIT_ROUTE_SCHEMA, { lapLength: dials.lapLength, arterialBias: dials.arterialBias, checkpoints: dials.checkpoints }),
+          { seed: dials.seed },
+        )
       : null;
   return { network, city, route, topology };
 }

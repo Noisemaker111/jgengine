@@ -1,12 +1,34 @@
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 
+import { generatorVariants, runGenerator } from "../generator/generator";
 import {
-  generateStreets,
+  STREET_NETWORK_GENERATOR,
+  STREET_NETWORK_SCHEMA,
   clampTurns,
+  streetElevationField,
   streetNetworkMode,
-  type StreetNetworkRules,
+  type StreetNetwork,
+  type StreetNetworkInput,
+  type StreetNetworkParams,
   type StreetVec2,
 } from "./streetGenerator";
+
+/** The dials a test sets; the schema defaults the rest (sidewalks, elevation, footprint, terrain switches). */
+type StreetNetworkRules = Pick<
+  StreetNetworkParams,
+  "seed" | "gridness" | "loopiness" | "connectivity" | "branching" | "deadEnds" | "segmentLength" | "aspect" | "winding" | "minCurveRadius" | "minTurnAngle" | "maxTurnAngle" | "width" | "boulevards"
+> &
+  Partial<StreetNetworkParams>;
+
+/** The ground a test grows over, and the switches that turn it into bridges and tunnels. */
+type Terrain = StreetNetworkInput & Partial<Pick<StreetNetworkParams, "minElevation" | "bridges" | "tunnels" | "tunnelClearance">>;
+
+/** Grow a network through the generator contract: dials and footprint as meta, the ground as input. */
+function grow(rules: StreetNetworkRules, halfX: number, halfZ: number, terrain: Terrain = {}): StreetNetwork {
+  const { heightAt, ...switches } = terrain;
+  return runGenerator(STREET_NETWORK_GENERATOR, { ...rules, ...switches, halfX, halfZ }, { input: { heightAt } });
+}
 
 const BASE: StreetNetworkRules = {
   seed: "seed",
@@ -41,18 +63,18 @@ function turnDeg(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
   return (Math.acos(Math.max(-1, Math.min(1, dot))) * 180) / Math.PI;
 }
 
-describe("generateStreets determinism", () => {
+describe("street generator determinism", () => {
   test("same rules + volume resolve identically", () => {
-    const a = generateStreets(rules({ seed: "x" }), 240, 240);
-    const b = generateStreets(rules({ seed: "x" }), 240, 240);
+    const a = grow(rules({ seed: "x" }), 240, 240);
+    const b = grow(rules({ seed: "x" }), 240, 240);
     expect(a).toEqual(b);
     expect(a.streets.length).toBeGreaterThan(0);
     expect(a.edges.length).toBeGreaterThan(0);
   });
 
   test("different seeds diverge", () => {
-    const a = generateStreets(rules({ seed: "alpha" }), 240, 240);
-    const b = generateStreets(rules({ seed: "beta" }), 240, 240);
+    const a = grow(rules({ seed: "alpha" }), 240, 240);
+    const b = grow(rules({ seed: "beta" }), 240, 240);
     expect(JSON.stringify(a.edges)).not.toBe(JSON.stringify(b.edges));
   });
 });
@@ -61,7 +83,7 @@ describe("topology mode", () => {
   test("circuit corner of the slider space picks circuit mode with a closed loop", () => {
     const r = rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.4 });
     expect(streetNetworkMode(r)).toBe("circuit");
-    const net = generateStreets(r, 240, 200);
+    const net = grow(r, 240, 200);
     expect(net.mode).toBe("circuit");
     expect(net.loops).toBeGreaterThanOrEqual(1);
     const loop = net.streets.find((s) => s.loop);
@@ -74,18 +96,18 @@ describe("topology mode", () => {
   test("city corner picks net mode", () => {
     const r = rules({ loopiness: 0.2, branching: 0.4, connectivity: 0.6 });
     expect(streetNetworkMode(r)).toBe("net");
-    expect(generateStreets(r, 240, 240).mode).toBe("net");
+    expect(grow(r, 240, 240).mode).toBe("net");
   });
 
   test("net is fully connected — no orphan nodes", () => {
-    const net = generateStreets(rules({ connectivity: 0.1, loopiness: 0.1 }), 240, 240);
+    const net = grow(rules({ connectivity: 0.1, loopiness: 0.1 }), 240, 240);
     for (const node of net.nodes) expect(node.degree).toBeGreaterThanOrEqual(1);
   });
 });
 
 describe("geometry sliders", () => {
   test("every split degree-2 bend is owned by a welded two-arm junction", () => {
-    const net = generateStreets(rules({ seed: "vice-isle", gridness: 0.85, connectivity: 0.6, branching: 0.25, winding: 0.15 }), 260, 260);
+    const net = grow(rules({ seed: "vice-isle", gridness: 0.85, connectivity: 0.6, branching: 0.25, winding: 0.15 }), 260, 260);
     const junctionAt = (x: number, z: number) => net.junctions.some((j) => Math.hypot(j.x - x, j.z - z) < 1e-6);
     for (const node of net.nodes) {
       if (node.degree !== 2) continue;
@@ -99,7 +121,7 @@ describe("geometry sliders", () => {
   });
 
   test("gridness 1 + zero winding gives axis-aligned atomic edges", () => {
-    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 240, 240);
+    const net = grow(rules({ gridness: 1, winding: 0, branching: 0 }), 240, 240);
     for (const edge of net.edges) {
       const xs = edge.points.map((p) => p[0]);
       const zs = edge.points.map((p) => p[1]);
@@ -110,7 +132,7 @@ describe("geometry sliders", () => {
   });
 
   test("winding makes streets wander off-axis", () => {
-    const net = generateStreets(rules({ gridness: 1, winding: 1, minCurveRadius: 8, maxTurnAngle: 170 }), 240, 240);
+    const net = grow(rules({ gridness: 1, winding: 1, minCurveRadius: 8, maxTurnAngle: 170 }), 240, 240);
     const spreads = net.streets.map((s) => {
       const xs = s.points.map((p) => p[0]);
       const zs = s.points.map((p) => p[1]);
@@ -120,7 +142,7 @@ describe("geometry sliders", () => {
   });
 
   test("maxTurnAngle is a hard ceiling on every street corner", () => {
-    const net = generateStreets(rules({ winding: 1, minCurveRadius: 6, maxTurnAngle: 45, loopiness: 0.3 }), 260, 260);
+    const net = grow(rules({ winding: 1, minCurveRadius: 6, maxTurnAngle: 45, loopiness: 0.3 }), 260, 260);
     for (const street of net.streets) {
       for (let i = 1; i < street.points.length - 1; i += 1) {
         expect(turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!)).toBeLessThanOrEqual(46);
@@ -161,7 +183,7 @@ describe("arc-fillet corners (#1364)", () => {
 
   test("per-vertex discrete turn is bounded by maxTurnAngle across generated streets", () => {
     for (const seed of ["c1", "c2", "c3"]) {
-      const net = generateStreets(rules({ seed, winding: 1, minCurveRadius: 10, maxTurnAngle: 40, loopiness: 0.4 }), 300, 260);
+      const net = grow(rules({ seed, winding: 1, minCurveRadius: 10, maxTurnAngle: 40, loopiness: 0.4 }), 300, 260);
       for (const street of net.streets) {
         for (let i = 1; i < street.points.length - 1; i += 1) {
           expect(turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!)).toBeLessThanOrEqual(41);
@@ -186,7 +208,7 @@ describe("arc-fillet corners (#1364)", () => {
     for (const c of cases) {
       const hx = c.seed === "vice-isle" ? 260 : 260;
       const hz = c.seed === "vice-isle" ? 260 : 220;
-      const net = generateStreets(rules(c), hx, hz);
+      const net = grow(rules(c), hx, hz);
       for (const street of net.streets) {
         for (let i = 1; i < street.points.length - 1; i += 1) {
           // 10° + epsilon: the arc step cap is 9°, plus a hair for float/rare no-room fallbacks.
@@ -221,14 +243,14 @@ describe("arc-fillet corners (#1364)", () => {
 
 describe("branching + dead ends", () => {
   test("branching adds lane-level streets; zero branching has none", () => {
-    const none = generateStreets(rules({ seed: "b", branching: 0 }), 240, 240);
-    const many = generateStreets(rules({ seed: "b", branching: 1 }), 240, 240);
+    const none = grow(rules({ seed: "b", branching: 0 }), 240, 240);
+    const many = grow(rules({ seed: "b", branching: 1 }), 240, 240);
     expect(none.streets.filter((s) => s.level === "lane").length).toBe(0);
     expect(many.streets.filter((s) => s.level === "lane").length).toBeGreaterThan(0);
   });
 
   test("keeping dead ends yields cul-de-sac bulbs", () => {
-    const kept = generateStreets(rules({ seed: "d", branching: 0.8, deadEnds: 1, loopiness: 0 }), 240, 240);
+    const kept = grow(rules({ seed: "d", branching: 0.8, deadEnds: 1, loopiness: 0 }), 240, 240);
     expect(kept.deadEnds.length).toBeGreaterThan(0);
     expect(kept.streets.some((s) => s.bulb !== undefined)).toBe(true);
   });
@@ -236,7 +258,7 @@ describe("branching + dead ends", () => {
 
 describe("footprint bounds", () => {
   test("all geometry stays inside the volume", () => {
-    const net = generateStreets(rules({ winding: 1, gridness: 0, branching: 1, loopiness: 0.5, minCurveRadius: 6, maxTurnAngle: 170 }), 200, 160);
+    const net = grow(rules({ winding: 1, gridness: 0, branching: 1, loopiness: 0.5, minCurveRadius: 6, maxTurnAngle: 170 }), 200, 160);
     for (const street of net.streets) {
       for (const [x, z] of street.points) {
         expect(Math.abs(x)).toBeLessThanOrEqual(200.5);
@@ -255,7 +277,7 @@ describe("bridges and tunnels", () => {
   const ridge = (x: number): number => (x > -85 && x < -65 ? 20 : 2);
 
   test("a span diving under water becomes a bridge", () => {
-    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
+    const net = grow(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
       heightAt: (x) => river(x),
       minElevation: -2,
       bridges: true,
@@ -270,7 +292,7 @@ describe("bridges and tunnels", () => {
   });
 
   test("a span buried under a ridge becomes a tunnel", () => {
-    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
+    const net = grow(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
       heightAt: (x) => ridge(x),
       minElevation: -2,
       tunnels: true,
@@ -280,7 +302,7 @@ describe("bridges and tunnels", () => {
   });
 
   test("no features without a ground sampler", () => {
-    const net = generateStreets(rules(), 200, 200);
+    const net = grow(rules(), 200, 200);
     expect(net.bridges.length).toBe(0);
     expect(net.tunnels.length).toBe(0);
   });
@@ -291,7 +313,7 @@ describe("circuit synthesis (#1365)", () => {
     rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
 
   // Reconstruct the closed centerline polygon from the single loop street.
-  function loopPolygon(net: ReturnType<typeof generateStreets>): StreetVec2[] {
+  function loopPolygon(net: StreetNetwork): StreetVec2[] {
     const loop = net.streets.find((s) => s.loop);
     expect(loop).toBeDefined();
     const pts = loop!.points.slice(0, -1); // drop duplicated closing vertex
@@ -300,7 +322,7 @@ describe("circuit synthesis (#1365)", () => {
 
   test("produces a self-clearing, non-star-shaped closed loop for several seeds", () => {
     for (const seed of ["r1", "r2", "r3", "r4", "r5"]) {
-      const net = generateStreets(circuitRules({ seed }), 260, 220);
+      const net = grow(circuitRules({ seed }), 260, 220);
       expect(net.mode).toBe("circuit");
       const poly = loopPolygon(net);
       expect(poly.length).toBeGreaterThan(6);
@@ -364,7 +386,7 @@ describe("circuit synthesis (#1365)", () => {
   });
 
   test("guarantees at least one meaningful start/finish straight", () => {
-    const net = generateStreets(circuitRules({ seed: "straight" }), 300, 260);
+    const net = grow(circuitRules({ seed: "straight" }), 300, 260);
     const poly = loopPolygon(net);
     // Longest gap between direction changes ≥ 18% of the axis extent.
     let longest = 0;
@@ -384,7 +406,7 @@ describe("circuit synthesis (#1365)", () => {
   });
 
   test("pit lane leaves and rejoins the loop at two degree-3 junctions", () => {
-    const net = generateStreets(circuitRules({ seed: "pit", branching: 0.6 }), 300, 260);
+    const net = grow(circuitRules({ seed: "pit", branching: 0.6 }), 300, 260);
     // Two loop nodes with degree 3 (the pit entry/exit), plus a lane-level pit street.
     const deg3 = net.nodes.filter((n) => n.degree === 3);
     expect(deg3.length).toBe(2);
@@ -394,8 +416,8 @@ describe("circuit synthesis (#1365)", () => {
   });
 
   test("determinism holds through the retry/synthesis path", () => {
-    const a = generateStreets(circuitRules({ seed: "det" }), 260, 220);
-    const b = generateStreets(circuitRules({ seed: "det" }), 260, 220);
+    const a = grow(circuitRules({ seed: "det" }), 260, 220);
+    const b = grow(circuitRules({ seed: "det" }), 260, 220);
     expect(a).toEqual(b);
   });
 });
@@ -421,7 +443,7 @@ describe("curve-first circuit centerline (#1395)", () => {
   // Per-sample loop metrics over the closed centerline: max turn, minimum fitted radius (the curvature
   // floor), curved-share (arc-length fraction perceptibly curved), max curvature JUMP outside straight
   // ends (the "flows, not corner-capped" property), presence of a near-hairpin and a sustained sweeper.
-  function measure(net: ReturnType<typeof generateStreets>, minR: number) {
+  function measure(net: StreetNetwork, minR: number) {
     const loop = net.streets.find((s) => s.loop)!;
     const p = loop.points.slice(0, -1);
     const n = p.length;
@@ -475,39 +497,39 @@ describe("curve-first circuit centerline (#1395)", () => {
 
   test("no discrete turn between consecutive samples exceeds 7° (6 seeds)", () => {
     for (const seed of SEEDS) {
-      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      const m = measure(grow(circuitRules({ seed }), 260, 220), 14);
       expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
     }
   });
 
   test("the curvature floor holds: no sample triple fits a radius below minCurveRadius×0.92 (6 seeds)", () => {
     for (const seed of SEEDS) {
-      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      const m = measure(grow(circuitRules({ seed }), 260, 220), 14);
       expect(m.minRad).toBeGreaterThanOrEqual(14 * 0.92);
     }
   });
 
   test("curved-share: ≥50% of lap length is perceptibly curved (fitted R < 8×minR) for ≥4 of 6 seeds", () => {
-    const shares = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220), 14).curvedShare);
+    const shares = SEEDS.map((seed) => measure(grow(circuitRules({ seed }), 260, 220), 14).curvedShare);
     expect(shares.filter((s) => s >= 0.5).length).toBeGreaterThanOrEqual(4);
   });
 
   test("curvature is CONTINUOUS: no sample-to-sample curvature jump > (1/minR)×0.5 outside straight ends", () => {
     for (const seed of SEEDS) {
-      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      const m = measure(grow(circuitRules({ seed }), 260, 220), 14);
       expect(m.maxJump).toBeLessThanOrEqual((0.5 / 14) + 1e-9);
     }
   });
 
   test("a near-hairpin (≤1.6×minR) AND a sustained sweeper (≥4×minR over ≥25 m) coexist for ≥4 of 6 seeds", () => {
-    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220), 14));
+    const results = SEEDS.map((seed) => measure(grow(circuitRules({ seed }), 260, 220), 14));
     expect(results.filter((r) => r.hairpin && r.sustainedSweeper).length).toBeGreaterThanOrEqual(4);
   });
 
   test("the playground circuit rules read as a flowing, curve-first lap", () => {
     // seed vice-isle, the exact rules the orchestrator measures.
     const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 });
-    const m = measure(generateStreets(play, 260, 260), 24);
+    const m = measure(grow(play, 260, 260), 24);
     expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
     expect(m.minRad).toBeGreaterThanOrEqual(24 * 0.92);
     expect(m.curvedShare).toBeGreaterThanOrEqual(0.5);
@@ -519,7 +541,7 @@ describe("curve-first circuit centerline (#1395)", () => {
 
 describe("structural hierarchy (#1368)", () => {
   test("arterial (avenue/boulevard) chains form a connected skeleton — no interior arterial dead-ends", () => {
-    const net = generateStreets(rules({ seed: "art", connectivity: 0.5, loopiness: 0.3, branching: 0.2 }), 300, 300);
+    const net = grow(rules({ seed: "art", connectivity: 0.5, loopiness: 0.3, branching: 0.2 }), 300, 300);
     const isArterial = (l: string) => l === "avenue" || l === "boulevard";
     expect(net.streets.some((s) => isArterial(s.level))).toBe(true);
     const deg = new Map(net.nodes.map((n) => [n.id, n.degree] as const));
@@ -547,7 +569,7 @@ describe("structural hierarchy (#1368)", () => {
 
   test("no arterial ever dead-ends at an interior node — wide roads never stub out (#1454)", () => {
     for (const seed of ["art", "vice-isle", "stub-a", "stub-b", "stub-c"]) {
-      const net = generateStreets(rules({ seed, deadEnds: 0.6, branching: 0.35 }), 300, 300);
+      const net = grow(rules({ seed, deadEnds: 0.6, branching: 0.35 }), 300, 300);
       const deg = new Map(net.nodes.map((n) => [n.id, n.degree] as const));
       const byId = new Map(net.nodes.map((n) => [n.id, n] as const));
       const rim = (id: number) => {
@@ -580,7 +602,7 @@ describe("planarity (#1454)", () => {
     };
     // High branching + loopiness + low gridness exercises the chord-reconnect and spur paths hard.
     for (const seed of ["p1", "p2", "p3", "vice-isle"]) {
-      const net = generateStreets(
+      const net = grow(
         rules({ seed, branching: 0.8, loopiness: 0.6, deadEnds: 0.1, gridness: 0.3, connectivity: 0.7 }),
         300,
         300,
@@ -620,7 +642,7 @@ describe("sidewalks (#1368)", () => {
   }
 
   test("straight paved streets carry parallel left/right bands offset by width/2 + sidewalkWidth", () => {
-    const net = generateStreets(rules({ seed: "sw", winding: 0, gridness: 1, branching: 0.3, sidewalkWidth: 3 }), 240, 240);
+    const net = grow(rules({ seed: "sw", winding: 0, gridness: 1, branching: 0.3, sidewalkWidth: 3 }), 240, 240);
     // Residential branch spurs curve even at winding 0 (their heading drifts), so the exact-offset
     // check applies to the STRAIGHT paved streets; curved ones are covered by the band-clearance test.
     const isStraight = (pts: readonly StreetVec2[]): boolean => {
@@ -664,7 +686,7 @@ describe("sidewalks (#1368)", () => {
     let checkedStreets = 0;
     for (const cfg of configs) {
       const sw = cfg.sidewalkWidth ?? 2;
-      const net = generateStreets(rules(cfg), 260, 240);
+      const net = grow(rules(cfg), 260, 240);
       for (const s of net.streets) {
         if (!s.sidewalks) continue;
         checkedStreets += 1;
@@ -723,7 +745,7 @@ describe("circuit radius continuum (#1395)", () => {
     const minR = 14;
     let ok = 0;
     for (const seed of SEEDS) {
-      const loop = generateStreets(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
+      const loop = grow(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
       const radii = curvingRadii(loop.points.slice(0, -1));
       if (radii.length < 8) continue;
       const tight = radii.some((r) => r <= 1.6 * minR); // hairpin band, at the floor
@@ -735,7 +757,7 @@ describe("circuit radius continuum (#1395)", () => {
 
   test("the radius spread is a real continuum — max ≫ min across the curving lap", () => {
     for (const seed of SEEDS) {
-      const loop = generateStreets(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
+      const loop = grow(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
       const radii = curvingRadii(loop.points.slice(0, -1));
       if (radii.length < 8) continue;
       radii.sort((a, b) => a - b);
@@ -747,31 +769,30 @@ describe("circuit radius continuum (#1395)", () => {
   });
 
   test("the circuit centerline stays deterministic through the retry/synthesis path", () => {
-    const a = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
-    const b = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
+    const a = grow(circuitRules({ seed: "det-r" }), 260, 220);
+    const b = grow(circuitRules({ seed: "det-r" }), 260, 220);
     expect(a).toEqual(b);
   });
 });
 
 describe("elevation profile (#1395 round-3)", () => {
   test("elevation dial 0 is byte-identical to a pre-elevation network (regression guard)", () => {
-    const flat = generateStreets(rules({ seed: "flat" }), 260, 260);
-    const dialled = generateStreets(rules({ seed: "flat", elevation: 0 }), 260, 260);
+    const flat = grow(rules({ seed: "flat" }), 260, 260);
+    const dialled = grow(rules({ seed: "flat", elevation: 0 }), 260, 260);
     expect(JSON.stringify(flat)).toBe(JSON.stringify(dialled));
-    expect(dialled.elevationAt).toBeUndefined();
+    expect(streetElevationField({ elevation: 0, halfX: 260, halfZ: 260 }, "flat")).toBeUndefined();
     expect(dialled.streets.every((s) => s.heights === undefined)).toBe(true);
     expect(dialled.edges.every((e) => e.heights === undefined)).toBe(true);
   });
 
   test("elevation 0.6 attaches per-point heights, a shared field, and stays deterministic", () => {
     const r = rules({ seed: "hills", elevation: 0.6 });
-    const a = generateStreets(r, 260, 260);
-    const b = generateStreets(r, 260, 260);
-    // toEqual would compare the elevationAt closures by reference; JSON drops functions, so compare the
-    // serializable state and the field's samples separately.
+    const a = grow(r, 260, 260);
+    const b = grow(r, 260, 260);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-    expect(a.elevationAt!(12, -47)).toBe(b.elevationAt!(12, -47));
-    expect(a.elevationAt).toBeDefined();
+    // The output is plain data; the shared field rebuilds from the same dial, footprint and seed.
+    const elevationAt = streetElevationField({ elevation: 0.6, halfX: 260, halfZ: 260 }, "hills")!;
+    expect(elevationAt).toBeDefined();
     for (const s of a.streets) {
       expect(s.heights).toBeDefined();
       expect(s.heights!.length).toBe(s.points.length);
@@ -786,14 +807,14 @@ describe("elevation profile (#1395 round-3)", () => {
     // Edges sample the SAME shared field (continuity for junction welds).
     for (const e of a.edges) {
       for (let i = 0; i < e.points.length; i += 1) {
-        expect(e.heights![i]!).toBeCloseTo(a.elevationAt!(e.points[i]![0], e.points[i]![1]), 6);
+        expect(e.heights![i]!).toBeCloseTo(elevationAt(e.points[i]![0], e.points[i]![1]), 6);
       }
     }
   });
 
   test("street grade cap holds everywhere and respects a custom maxGrade", () => {
     for (const [elevation, maxGrade] of [[0.6, 0.07], [1, 0.04], [0.8, 0.1]] as const) {
-      const net = generateStreets(rules({ seed: `grade-${maxGrade}`, elevation, maxGrade, winding: 0.6, loopiness: 0.4 }), 260, 240);
+      const net = grow(rules({ seed: `grade-${maxGrade}`, elevation, maxGrade, winding: 0.6, loopiness: 0.4 }), 260, 240);
       for (const s of net.streets) {
         if (!s.heights) continue;
         for (let i = 1; i < s.points.length; i += 1) {
@@ -807,7 +828,7 @@ describe("elevation profile (#1395 round-3)", () => {
 
   test("a circuit lap's elevation is continuous across the start/finish seam and grade-capped", () => {
     const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, elevation: 0.6 });
-    const net = generateStreets(play, 260, 260);
+    const net = grow(play, 260, 260);
     const loop = net.streets.find((s) => s.loop)!;
     const h = loop.heights!;
     // First === last around the closed lap.
@@ -856,7 +877,7 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
     };
     return Math.min(ps(p1, p3, p4), ps(p2, p3, p4), ps(p3, p1, p2), ps(p4, p1, p2));
   }
-  function loopOf(net: ReturnType<typeof generateStreets>): StreetVec2[] {
+  function loopOf(net: StreetNetwork): StreetVec2[] {
     const loop = net.streets.find((s) => s.loop)!;
     return loop.points.slice(0, -1);
   }
@@ -895,7 +916,7 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
   }
   // Full loop metrics: corner count (maximal runs with fitted radius < 6·minR), floor, max turn, longest
   // near-straight run (radius ≥ 20·minR, a genuine straight), anti-parallel corridor pairs, min clearance.
-  function measureLoop(net: ReturnType<typeof generateStreets>, r: StreetNetworkRules) {
+  function measureLoop(net: StreetNetwork, r: StreetNetworkRules) {
     const p = loopOf(net);
     const n = p.length;
     const minR = r.minCurveRadius;
@@ -966,7 +987,7 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
     return { corners, minRad, maxTurn, straightCp: straight / cp, antipairs, perim };
   }
   // The existing self-clearance check (far-apart segments never fold within one track width).
-  function selfClearingHolds(net: ReturnType<typeof generateStreets>): boolean {
+  function selfClearingHolds(net: StreetNetwork): boolean {
     const loop = net.streets.find((s) => s.loop)!;
     const p = loop.points.slice(0, -1);
     const clear = loop.width * 0.9;
@@ -992,12 +1013,12 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
 
   // Compact generation runs the full dense centerline per retry (~1 s), so memoize deterministic nets and
   // reuse them across assertions; the determinism test below deliberately bypasses this cache.
-  const cache = new Map<string, ReturnType<typeof generateStreets>>();
-  const gen = (r: StreetNetworkRules, hx = 260, hz = 220): ReturnType<typeof generateStreets> => {
+  const cache = new Map<string, StreetNetwork>();
+  const gen = (r: StreetNetworkRules, hx = 260, hz = 220): StreetNetwork => {
     const key = JSON.stringify([r, hx, hz]);
     let net = cache.get(key);
     if (net === undefined) {
-      net = generateStreets(r, hx, hz);
+      net = grow(r, hx, hz);
       cache.set(key, net);
     }
     return net;
@@ -1078,8 +1099,8 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
   }, T);
 
   test("compact layout is deterministic through the blob/tree/retry path", () => {
-    const a = generateStreets(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
-    const b = generateStreets(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
+    const a = grow(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
+    const b = grow(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   }, T);
 
@@ -1117,4 +1138,46 @@ describe("clampTurns", () => {
       expect(turnDeg(a, b, c)).toBeLessThanOrEqual(61);
     }
   });
+});
+
+describe("street generator contract", () => {
+  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+  const NET = STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === "net")?.values ?? {};
+  const CIRCUIT = STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === "circuit")?.values ?? {};
+
+  test("same params and seed give a byte-identical network; seeds differ", () => {
+    const meta = { ...NET, seed: "contract", halfX: 220, halfZ: 180 };
+    expect(JSON.stringify(runGenerator(STREET_NETWORK_GENERATOR, meta))).toBe(JSON.stringify(runGenerator(STREET_NETWORK_GENERATOR, meta)));
+    const other = runGenerator(STREET_NETWORK_GENERATOR, { ...meta, seed: "contract-2" });
+    expect(JSON.stringify(other.edges)).not.toBe(JSON.stringify(runGenerator(STREET_NETWORK_GENERATOR, meta).edges));
+  });
+
+  test("a network is plain data: it survives a cache round trip unchanged", () => {
+    const network = runGenerator(STREET_NETWORK_GENERATOR, { ...CIRCUIT, seed: "cache", elevation: 0.5, halfX: 220, halfZ: 220 });
+    const stored = JSON.stringify(network);
+    expect(JSON.parse(stored)).toEqual(network);
+  });
+
+  test("the variant grid grows distinct seeded networks inside a fixed footprint", () => {
+    const variants = generatorVariants(STREET_NETWORK_GENERATOR, { ...NET, seed: "grid", halfX: 150, halfZ: 120 }, { count: 4 });
+    expect(variants.every((variant) => variant.params.halfX === 150 && variant.params.halfZ === 120)).toBe(true);
+    const networks = variants.map((variant) => JSON.stringify(runGenerator(STREET_NETWORK_GENERATOR, variant.meta).edges));
+    expect(new Set(networks).size).toBe(4);
+  });
+
+  // Recorded from `generateStreets(rules, hx, hz, context)` before the street generator moved onto the
+  // generator contract: the same dials, footprint, seed and ground grow the same network.
+  test("networks match their fingerprints from before the generator contract", () => {
+    const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
+    expect(sha(grow({ ...BASE, seed: "path" }, 200, 150))).toBe("136726e677bd82e8");
+    expect(sha(grow(circuitDials({ seed: "path" }), 200, 150))).toBe("598417f0fb15b705");
+    expect(sha(grow(circuitDials({ seed: "c2", compactness: 0.7, elevation: 0.5 }), 260, 200))).toBe("d22aac400e37cd64");
+    expect(
+      sha(grow({ ...BASE, seed: "t", elevation: 0.4, maxGrade: 0.05, sidewalkWidth: 3 }, 240, 240, { heightAt: terrain, minElevation: -3, bridges: true, tunnels: true })),
+    ).toBe("3a6391472ec5a754");
+  });
+
+  function circuitDials(overrides: Partial<StreetNetworkParams> & { seed: string }): StreetNetworkRules {
+    return { ...BASE, gridness: 0.1, loopiness: 1, connectivity: 0, branching: 0, deadEnds: 0, segmentLength: 60, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 70, width: 12, boulevards: 0, ...overrides };
+  }
 });

@@ -1,10 +1,21 @@
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 
-import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA, type CityRules, type ResolvedCity } from "./cityKind";
+import {
+  registerCityKind,
+  resolveCityObject,
+  CITY_GENERATOR,
+  CITY_KIND,
+  CITY_OUTPUT,
+  CITY_SCHEMA,
+  type CityRules,
+  type ResolvedCity,
+} from "./cityKind";
+import { generatorVariants, getGenerator, runGenerator } from "../generator/generator";
+import { parseParams } from "../generator/paramSchema";
 import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "../world/polygon";
 import { seededRng } from "../random/rng";
-import type { StreetNetworkRules } from "../roads/streetGenerator";
-import type { SceneKindObject } from "../scene/sceneKinds";
+import { getSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 
 function cityVolume(meta: Record<string, unknown> = {}, overrides: Partial<SceneKindObject> = {}): SceneKindObject {
   return {
@@ -17,68 +28,143 @@ function cityVolume(meta: Record<string, unknown> = {}, overrides: Partial<Scene
   };
 }
 
-describe("readCityRules", () => {
-  test("empty meta yields defaults", () => {
-    expect(readCityRules(undefined)).toEqual(CITY_DEFAULTS);
+/** The parsed rules a meta resolves to, read off a footprint too small to grow anything. */
+function rulesOf(meta: Record<string, unknown> | undefined): CityRules {
+  return resolveCityObject(cityVolume(meta, { halfExtents: { x: 4, y: 1, z: 4 } }))!.rules;
+}
+
+/** A city plan's fingerprint: sha256 of its JSON, without the parsed `rules` echo. */
+function fingerprint(value: unknown): string {
+  const plain = typeof value === "object" && value !== null && "rules" in value ? { ...value, rules: undefined } : value;
+  return createHash("sha256").update(JSON.stringify(plain)).digest("hex").slice(0, 16);
+}
+
+describe("city params", () => {
+  test("empty meta yields the schema defaults", () => {
+    expect(rulesOf(undefined)).toEqual({ ...parseParams(CITY_SCHEMA, undefined), style: "generic" });
   });
 
   test("building kit name round-trips, defaulting to no kit", () => {
-    expect(readCityRules({}).buildingKit).toBe("");
-    expect(readCityRules({ buildingKit: "downtown" }).buildingKit).toBe("downtown");
+    expect(rulesOf({}).buildingKit).toBe("");
+    expect(rulesOf({ buildingKit: "downtown" }).buildingKit).toBe("downtown");
   });
 
   test("swapped floor bounds are normalized", () => {
-    const rules = readCityRules({ floorsMin: 12, floorsMax: 3 });
+    const rules = rulesOf({ floorsMin: 12, floorsMax: 3 });
     expect(rules.floorsMin).toBe(3);
     expect(rules.floorsMax).toBe(12);
   });
 
-  test("schema covers every rule knob", () => {
-    const keys = CITY_SCHEMA.fields.filter((field) => field.type !== "action").map((field) => field.key);
-    for (const key of Object.keys(CITY_DEFAULTS)) expect(keys).toContain(key);
+  test("an unknown style falls back to the default palette", () => {
+    expect(rulesOf({ style: "nope" }).style).toBe("generic");
+    expect(rulesOf({ style: "ruin" }).style).toBe("ruin");
   });
 
-  // A city street net and a closed race circuit are the same generator at opposite slider extremes,
-  // so every dial the generator answers to must have a city rule behind it. `Record` over the whole
-  // key set makes this exhaustive at type-check time; `check street-rule-parity` is the CI gate.
-  const DIAL_TO_RULE: Record<keyof Required<StreetNetworkRules>, keyof CityRules> = {
-    seed: "seed",
-    outline: "outline",
-    gridness: "gridness",
-    loopiness: "loopiness",
-    connectivity: "connectivity",
-    branching: "branching",
-    residentialBranches: "residentialBranches",
-    deadEnds: "deadEnds",
-    segmentLength: "blockSize",
-    aspect: "blockAspect",
-    winding: "curviness",
-    minCurveRadius: "minCurveRadius",
-    minTurnAngle: "minTurnAngle",
-    maxTurnAngle: "maxTurnAngle",
-    width: "streetWidth",
-    boulevards: "boulevards",
-    sidewalkWidth: "sidewalkWidth",
-    elevation: "elevation",
-    maxGrade: "maxGrade",
-    compactness: "compactness",
-  };
+  test("the street dials default to their no-op values", () => {
+    const rules = rulesOf(undefined);
+    expect(rules.elevation).toBe(0);
+    expect(rules.compactness).toBe(0);
+    expect(rules.maxGrade).toBe(0.07);
+    expect(rules.race).toBe(false);
+  });
+});
 
-  test("every street-generator dial reaches the volume as a schema-driven rule", () => {
-    const schemaKeys = new Set(CITY_SCHEMA.fields.map((field) => field.key));
-    for (const rule of Object.values(DIAL_TO_RULE)) {
-      expect(CITY_DEFAULTS).toHaveProperty(rule);
-      expect(schemaKeys.has(rule)).toBe(true);
+describe("city generator contract", () => {
+  test("the city kind names its registered generator, so its volumes get the variant grid", () => {
+    registerCityKind();
+    expect(getSceneKind(CITY_KIND)?.generator).toBe(CITY_GENERATOR.id);
+    expect(getGenerator(CITY_GENERATOR.id)?.output).toBe(CITY_OUTPUT);
+    expect(getGenerator("streets")).toBeDefined();
+    expect(getGenerator("race-circuit")).toBeDefined();
+  });
+
+  test("same params and seed give a byte-identical plan", () => {
+    const meta = { seed: "contract", race: true };
+    const a = runGenerator(CITY_GENERATOR, meta, { input: { halfX: 180, halfZ: 160 } });
+    const b = runGenerator(CITY_GENERATOR, meta, { input: { halfX: 180, halfZ: 160 } });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(a.lots.length).toBeGreaterThan(0);
+  });
+
+  test("different seeds give different plans", () => {
+    const a = runGenerator(CITY_GENERATOR, { seed: "one" }, { input: { halfX: 180, halfZ: 160 } });
+    const b = runGenerator(CITY_GENERATOR, { seed: "two" }, { input: { halfX: 180, halfZ: 160 } });
+    expect(JSON.stringify(a.streets)).not.toBe(JSON.stringify(b.streets));
+  });
+
+  test("a plan is plain data: it survives a cache round trip unchanged", () => {
+    const plan = runGenerator(CITY_GENERATOR, { seed: "cache", race: true }, { input: { halfX: 180, halfZ: 160 } });
+    const stored = JSON.stringify(plan);
+    expect(JSON.parse(stored)).toEqual(plan);
+    expect(JSON.stringify(JSON.parse(stored))).toBe(stored);
+  });
+
+  test("lot seeds come from the district seed, so one lot id differs between districts", () => {
+    const a = runGenerator(CITY_GENERATOR, { seed: "east" }, { input: { halfX: 180, halfZ: 160 } });
+    const b = runGenerator(CITY_GENERATOR, { seed: "west" }, { input: { halfX: 180, halfZ: 160 } });
+    expect(a.lots[0]!.seed).toBe(`east/${a.lots[0]!.id}`);
+    expect(b.lots[0]!.seed).toBe(`west/${b.lots[0]!.id}`);
+  });
+
+  test("generator_variants on a city volume returns distinct seeded layouts", () => {
+    const variants = generatorVariants(CITY_GENERATOR, { seed: "base", gridness: 0.6 }, { count: 3 });
+    expect(new Set(variants.map((variant) => variant.seed)).size).toBe(3);
+    const plans = variants.map((variant) => JSON.stringify(runGenerator(CITY_GENERATOR, variant.meta, { input: { halfX: 120, halfZ: 120 } }).streets));
+    expect(new Set(plans).size).toBe(3);
+  });
+
+  // Recorded from `resolveCityObject` before the city moved onto the generator contract (rules echo
+  // and the new lot seeds left out): the move changed no layout.
+  test("plans match their fingerprints from before the generator contract", () => {
+    const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
+    const volume = (meta: Record<string, unknown>, rotationY = 0): SceneKindObject => ({
+      id: "fp-city",
+      kind: "city",
+      center: { x: 10, y: 0, z: -5 },
+      halfExtents: { x: 220, y: 10, z: 180 },
+      rotationY,
+      meta,
+    });
+    const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
+    expect(print(resolveCityObject(volume({})))).toBe("d6f499e366789936");
+    expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("0865d5dd515146ba");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("b264223a6c80da90");
+    expect(
+      print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
+    ).toBe("e45e34ae7ff67d21");
+    const zone: SceneKindObject = { id: "z", kind: "cityzone", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 60, y: 5, z: 60 }, meta: { band: "edge", mix: [{ item: "barn", weight: 1 }] } };
+    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("ce1c37e7d2488880");
+    const presets: Record<string, string> = {
+      manhattan: "f7ffb704378d6370",
+      losangeles: "e420711aebedbdd7",
+      beverlyhills: "74f2e9e98ca681c9",
+      ruralohio: "34d43aad61e963ec",
+      circuit: "487979bb93774b2b",
+      rally: "92c1f92168f101e9",
+      metropolis: "46a097896422baec",
+    };
+    for (const preset of CITY_SCHEMA.presets ?? []) {
+      expect(print(resolveCityObject(volume({ ...preset.values, seed: `p-${preset.id}` })))).toBe(presets[preset.id]!);
     }
-  });
-
-  test("the optional dials default to their pre-existing no-op values", () => {
-    expect(CITY_DEFAULTS.outline).toBe(0);
-    expect(CITY_DEFAULTS.residentialBranches).toBe(0);
-    expect(CITY_DEFAULTS.elevation).toBe(0);
-    expect(CITY_DEFAULTS.compactness).toBe(0);
-    expect(CITY_DEFAULTS.maxGrade).toBe(0.07);
-    expect(CITY_DEFAULTS.race).toBe(false);
+    // Ember Command's ruined hamlet, as its editor.scene.json places it.
+    const hamlet: SceneKindObject = {
+      id: "hamlet_1",
+      kind: "city",
+      center: { x: 28, y: 0, z: 0 },
+      halfExtents: { x: 21, y: 8, z: 27 },
+      meta: {
+        gridness: 0.45, curviness: 0.5, branching: 0.6, blockSize: 24, blockAspect: 1, openSpace: 0.15, roadsideOccupancy: 0.9, blockDensity: 0.5,
+        streetWidth: 3.5, boulevards: 0, gravelLanes: true, profile: "uniform", coreExtent: 0.4, midExtent: 0.7,
+        coreMix: [{ item: "shop", weight: 2 }, { item: "rowhouse", weight: 2 }],
+        midMix: [{ item: "house", weight: 3 }, { item: "rowhouse", weight: 1 }],
+        edgeMix: [{ item: "house", weight: 2 }, { item: "barn", weight: 1 }],
+        lotScale: 0.7, floorsMin: 1, floorsMax: 2, floorHeight: 2.6, treeDensity: 0.45,
+        treeMix: [{ item: "conifer", weight: 3 }, { item: "broadleaf", weight: 1 }],
+        lightDensity: 0, hedges: false, driveways: false, parking: false, fields: false, sidewalks: false, style: "ruin", seed: "ashfall-3",
+        surface: "gravel", buildingRoadSetback: 1.2, buildingSpacing: 1, clusterStrength: 0.6,
+      },
+    };
+    expect(print(resolveCityObject(hamlet))).toBe("8bef96040c391b03");
   });
 });
 
@@ -224,7 +310,7 @@ describe("resolveCityObject v2 quality", () => {
 
   test("no two building lots overlap, even at max density and curviness", () => {
     for (const seed of ["q1", "q2", "q3"]) {
-      const city = resolveCityObject(cityVolume({ seed, buildingDensity: 1, curviness: 0.8, gridness: 0.2, branching: 1 }))!;
+      const city = resolveCityObject(cityVolume({ seed, roadsideOccupancy: 1, blockDensity: 0.8, curviness: 0.8, gridness: 0.2, branching: 1 }))!;
       const cs = city.lots.map((lot) => ({ corners: corners(lot), angle: lot.rotationY, center: lot.center }));
       for (let i = 0; i < cs.length; i += 1) {
         for (let j = i + 1; j < cs.length; j += 1) {
@@ -239,7 +325,7 @@ describe("resolveCityObject v2 quality", () => {
   });
 
   test("no building lot center sits on a street", () => {
-    const city = resolveCityObject(cityVolume({ seed: "roads", buildingDensity: 1, curviness: 0.7, gridness: 0.3, branching: 1 }))!;
+    const city = resolveCityObject(cityVolume({ seed: "roads", roadsideOccupancy: 1, blockDensity: 0.8, curviness: 0.7, gridness: 0.3, branching: 1 }))!;
     for (const lot of city.lots) {
       for (const street of city.streets) {
         for (let i = 0; i + 1 < street.points.length; i += 1) {
@@ -315,8 +401,8 @@ describe("bridges", () => {
   });
 
   test("sidewalks rule parses", () => {
-    expect(readCityRules({ sidewalks: false }).sidewalks).toBe(false);
-    expect(readCityRules({}).sidewalks).toBe(true);
+    expect(rulesOf({ sidewalks: false }).sidewalks).toBe(false);
+    expect(rulesOf({}).sidewalks).toBe(true);
   });
 });
 
@@ -971,9 +1057,9 @@ describe("street hierarchy, intersections, furniture", () => {
     }
   });
 
-  test("legacy buildingDensity meta still drives occupancy on old documents", () => {
-    const sparse = resolveCityObject(cityVolume({ seed: "legacy", buildingDensity: 0.15 }))!;
-    const dense = resolveCityObject(cityVolume({ seed: "legacy", buildingDensity: 0.95 }))!;
+  test("roadside occupancy drives how many buildings line the streets", () => {
+    const sparse = resolveCityObject(cityVolume({ seed: "legacy", roadsideOccupancy: 0.15, blockDensity: 0.12 }))!;
+    const dense = resolveCityObject(cityVolume({ seed: "legacy", roadsideOccupancy: 0.95, blockDensity: 0.76 }))!;
     expect(dense.lots.length).toBeGreaterThan(sparse.lots.length * 1.5);
   });
 

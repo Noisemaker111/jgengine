@@ -23,7 +23,9 @@
  */
 import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
-import type { StreetEdge, StreetLevel, StreetNetwork, StreetVec2 } from "./streetGenerator";
+import { defineGenerator, type GeneratorContext } from "../generator/generator";
+import { defineParamSchema, type ParamField, type ParamsOf } from "../generator/paramSchema";
+import { STREET_NETWORK_GENERATOR, STREET_NETWORK_SCHEMA, type StreetEdge, type StreetLevel, type StreetNetwork, type StreetNetworkInput, type StreetVec2 } from "./streetGenerator";
 
 /** Road hierarchy rank — higher is wider/more arterial. Shared with the fabric's ordering. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
@@ -60,58 +62,46 @@ function selfClearance(points: readonly StreetVec2[], widths: readonly number[])
 /** How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing. */
 export type CircuitSealKind = "barrier" | "cones" | "fence";
 
-/** Fully-defaulted sliders the route search answers to. */
-export interface CircuitRouteRules {
-  seed: string;
-  /** Target lap length in meters — the search keeps the cycle closest to this. */
-  lapLength: number;
-  /** 0 races any street; 1 keeps the lap on avenues and boulevards only. */
-  arterialBias: number;
-  /**
-   * Radius (m) the corner-rounding pass works the racing line toward. Bounded by `cornerCut` and the
-   * road width — the line never leaves the street — so the achieved figure is reported back as
-   * {@link CircuitRoute.tightestRadius} rather than enforced here.
-   */
-  minCornerRadius: number;
-  /** Ordered checkpoint gates placed around the lap. */
-  checkpoints: number;
-  /** Laps the produced race runs. */
-  laps: number;
-  /** Half-height of a checkpoint gate volume (m) — how tall the trigger box reaches. */
-  gateHeight: number;
-  /** Starting grid slots behind the line (0 = no grid). */
-  gridSlots: number;
-  /** How the side streets leaving the lap are closed off. */
-  sealKind: CircuitSealKind;
-  /** Timing sectors the lap splits into. */
-  sectors: number;
-  /**
-   * Arc-length spacing (m) the lap is resampled to. City streets are sampled coarsely enough for a
-   * road ribbon but far too coarsely for a racing surface, corner analysis, or kerbs.
-   */
-  sampleStep: number;
-  /**
-   * How far the racing line may be pulled off the street centerline while rounding a junction, as a
-   * fraction of the local half-width. 0 keeps the hard kink; ~0.5 uses the full lane either side.
-   */
-  cornerCut: number;
-}
+/**
+ * The lap dials the route search answers to (defaults: a ~2.4 km arterial street lap with 12 gates,
+ * 3 laps and barriered side streets).
+ * - `lapLength` — target lap length (m); the search keeps the cycle closest to it.
+ * - `arterialBias` — 0 races any street; 1 keeps the lap on avenues and boulevards only.
+ * - `minCornerRadius` — radius (m) the corner-rounding pass works the racing line toward. Bounded by
+ *   `cornerCut` and the road width (the line never leaves the street), so the achieved figure is
+ *   reported back as {@link CircuitRoute.tightestRadius} rather than enforced.
+ * - `checkpoints` / `laps` — ordered gates around the lap, and laps the race runs.
+ * - `gateHeight` — height (m) of a checkpoint gate volume.
+ * - `gridSlots` — starting grid slots behind the line (0 = no grid).
+ * - `sealKind` — how the side streets leaving the lap are closed off.
+ * - `sectors` — timing sectors the lap splits into.
+ * - `sampleStep` — arc-length spacing (m) the lap is resampled to: city streets are sampled for a road
+ *   ribbon, far too coarsely for a racing surface, corner analysis or kerbs.
+ * - `cornerCut` — how far the racing line may leave the street centerline while rounding a junction,
+ *   as a fraction of the local half-width; 0 keeps the hard kink, ~0.5 uses the full lane either side.
+ */
+const CIRCUIT_ROUTE_FIELDS = [
+  { type: "range", key: "lapLength", label: "lap length", group: "race", min: 80, max: 12000, step: 10, default: 2400, unit: "m", explore: [400, 6000] },
+  { type: "range", key: "arterialBias", label: "arterial bias", group: "race", min: 0, max: 1, step: 0.01, default: 0.7 },
+  { type: "range", key: "minCornerRadius", label: "corner radius", group: "race", min: 3, max: 60, step: 0.5, default: 9, unit: "m" },
+  { type: "range", key: "checkpoints", label: "checkpoints", group: "race", min: 2, max: 64, step: 1, default: 12 },
+  { type: "range", key: "laps", label: "laps", group: "race", min: 1, max: 20, step: 1, default: 3 },
+  { type: "range", key: "gateHeight", label: "gate height", group: "race", min: 1, max: 20, step: 0.5, default: 6, unit: "m" },
+  { type: "range", key: "gridSlots", label: "grid slots", group: "race", min: 0, max: 40, step: 1, default: 12 },
+  { type: "select", key: "sealKind", label: "side-street seals", group: "race", default: "barrier", options: [{ value: "barrier" }, { value: "cones" }, { value: "fence" }] },
+  { type: "range", key: "sectors", label: "timing sectors", group: "race", min: 1, max: 8, step: 1, default: 3 },
+  { type: "range", key: "sampleStep", label: "sample step", group: "race", min: 0.5, max: 10, step: 0.5, default: 2.5, unit: "m", vary: false },
+  { type: "range", key: "cornerCut", label: "corner cut", group: "race", min: 0, max: 0.9, step: 0.01, default: 0.42 },
+] as const satisfies readonly ParamField[];
 
-/** Defaults: a ~2.4 km arterial street lap with 12 gates, 3 laps, and barriered side streets. */
-export const CIRCUIT_ROUTE_DEFAULTS: CircuitRouteRules = {
-  seed: "circuit",
-  lapLength: 2400,
-  arterialBias: 0.7,
-  minCornerRadius: 9,
-  checkpoints: 12,
-  laps: 3,
-  gateHeight: 6,
-  gridSlots: 12,
-  sealKind: "barrier",
-  sectors: 3,
-  sampleStep: 2.5,
-  cornerCut: 0.42,
-};
+/**
+ * The lap stage's own params, for a generator that lifts a lap out of streets it already grew (the
+ * `city` kind parses its race dials through this).
+ */
+export const CIRCUIT_ROUTE_SCHEMA = defineParamSchema({ fields: CIRCUIT_ROUTE_FIELDS });
+
+/** Parsed lap params. */
+export type CircuitRouteParams = ParamsOf<typeof CIRCUIT_ROUTE_SCHEMA>;
 
 /**
  * One street closed off where it leaves the lap — the thing that turns public roads into an
@@ -603,8 +593,8 @@ interface Candidate {
  * long enough to reach the target and an edge back to the start exists. Bounded attempts and bounded
  * walk length keep the work fixed however large the network.
  */
-function searchCycle(adjacency: Adjacency, rules: CircuitRouteRules): Candidate | null {
-  const rng = seededRng(`raceCircuit:${rules.seed}`);
+function searchCycle(adjacency: Adjacency, rules: CircuitRouteParams, seed: string): Candidate | null {
+  const rng = seededRng(`raceCircuit:${seed}`);
   // Only nodes with two or more ways out can sit on a cycle; peel the trees off first.
   const degree = new Map<number, number>();
   for (const [node, links] of adjacency.links) degree.set(node, links.length);
@@ -850,30 +840,16 @@ export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = 
  * rather than render a broken race.
  *
  * On a `circuit`-mode network the generated loop is used directly. On a `net` (a city) the graph is
- * searched for the cycle closest to `lapLength` that respects `arterialBias` and `minCornerRadius`.
+ * searched for the cycle closest to `lapLength` that respects `arterialBias` and `minCornerRadius`,
+ * seeded by the calling generator's seed. This is the lap stage of {@link RACE_CIRCUIT_GENERATOR}; a
+ * generator that already grew its streets (the `city` kind) runs it on them with its own context.
  */
-export function extractCircuitRoute(
-  network: StreetNetwork,
-  rules: Partial<CircuitRouteRules> = {},
-): CircuitRoute | null {
-  const resolved: CircuitRouteRules = {
-    ...CIRCUIT_ROUTE_DEFAULTS,
-    ...rules,
-    lapLength: Math.max(80, rules.lapLength ?? CIRCUIT_ROUTE_DEFAULTS.lapLength),
-    arterialBias: Math.max(0, Math.min(1, rules.arterialBias ?? CIRCUIT_ROUTE_DEFAULTS.arterialBias)),
-    minCornerRadius: Math.max(3, rules.minCornerRadius ?? CIRCUIT_ROUTE_DEFAULTS.minCornerRadius),
-    checkpoints: Math.max(2, Math.floor(rules.checkpoints ?? CIRCUIT_ROUTE_DEFAULTS.checkpoints)),
-    laps: Math.max(1, Math.floor(rules.laps ?? CIRCUIT_ROUTE_DEFAULTS.laps)),
-    gridSlots: Math.max(0, Math.floor(rules.gridSlots ?? CIRCUIT_ROUTE_DEFAULTS.gridSlots)),
-    sectors: Math.max(1, Math.floor(rules.sectors ?? CIRCUIT_ROUTE_DEFAULTS.sectors)),
-    sampleStep: Math.max(0.5, rules.sampleStep ?? CIRCUIT_ROUTE_DEFAULTS.sampleStep),
-    cornerCut: Math.max(0, Math.min(0.9, rules.cornerCut ?? CIRCUIT_ROUTE_DEFAULTS.cornerCut)),
-  };
+export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): CircuitRoute | null {
   const adjacency = buildAdjacency(network);
   const candidate =
     network.mode === "circuit"
-      ? loopCandidate(network) ?? searchCycle(adjacency, resolved)
-      : searchCycle(adjacency, resolved) ?? loopCandidate(network);
+      ? loopCandidate(network) ?? searchCycle(adjacency, resolved, context.seed)
+      : searchCycle(adjacency, resolved, context.seed) ?? loopCandidate(network);
   if (candidate === null) return null;
 
   const assembled = assembleCenterline(candidate.nodes, candidate.edges, adjacency);
@@ -965,3 +941,43 @@ export function extractCircuitRoute(
     tightestRadius,
   };
 }
+
+/** The race circuit generator's output family: a {@link RaceCircuit}. */
+export const RACE_CIRCUIT_OUTPUT = "race-circuit";
+
+/** One generated race: the streets it was lifted from, and the lap (null when they hold no drivable cycle). */
+export interface RaceCircuit {
+  network: StreetNetwork;
+  route: CircuitRoute | null;
+}
+
+const streetPreset = (id: string): Readonly<Record<string, unknown>> => STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === id)?.values ?? {};
+
+/** The race circuit's params: the street generator's dials and footprint, then the lap dials. */
+export const RACE_CIRCUIT_SCHEMA = defineParamSchema({
+  groups: [...(STREET_NETWORK_SCHEMA.groups ?? []), { id: "race", label: "Race" }],
+  fields: [...STREET_NETWORK_SCHEMA.fields, ...CIRCUIT_ROUTE_FIELDS],
+  presets: [
+    { id: "street-race", label: "Street race", values: { ...streetPreset("net"), connectivity: 0.85, loopiness: 0.3, segmentLength: 90, width: 9, lapLength: 1200 } },
+    { id: "circuit", label: "Closed circuit", values: { ...streetPreset("circuit"), gridSlots: 16 } },
+  ],
+});
+
+/**
+ * The race circuit generator: grows a street network ({@link STREET_NETWORK_GENERATOR}) and lifts a
+ * closed, sealed-off lap out of it with {@link extractCircuitRoute}, both from the one injected seed.
+ * Street dials at the `circuit` end give a purpose-built closed track; at the `net` end, a street race
+ * through a city's own blocks. The ground `input` turns gaps into bridges and ridges into tunnels.
+ *
+ * @capability race-circuit lift a closed, sealed-off race lap out of an existing city street network
+ */
+export const RACE_CIRCUIT_GENERATOR = defineGenerator({
+  id: "race-circuit",
+  label: "Race circuit",
+  output: RACE_CIRCUIT_OUTPUT,
+  schema: RACE_CIRCUIT_SCHEMA,
+  generate(params, context: GeneratorContext<StreetNetworkInput>): RaceCircuit {
+    const network = STREET_NETWORK_GENERATOR.generate(params, context);
+    return { network, route: extractCircuitRoute(network, params, context) };
+  },
+});

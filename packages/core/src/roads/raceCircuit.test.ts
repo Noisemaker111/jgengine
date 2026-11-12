@@ -1,8 +1,28 @@
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 
 import { raceTrack } from "../game/race";
-import { circuitKerbs, extractCircuitRoute, type CircuitRoute } from "./raceCircuit";
-import { generateStreets, type StreetNetworkRules } from "./streetGenerator";
+import { generatorVariants, runGenerator } from "../generator/generator";
+import { parseParams } from "../generator/paramSchema";
+import { CIRCUIT_ROUTE_SCHEMA, RACE_CIRCUIT_GENERATOR, RACE_CIRCUIT_SCHEMA, circuitKerbs, extractCircuitRoute, type CircuitRoute } from "./raceCircuit";
+import { STREET_NETWORK_GENERATOR, type StreetNetwork, type StreetNetworkParams } from "./streetGenerator";
+
+/** The editor `generate_streets` net and circuit presets the fingerprints below were recorded with. */
+const CITY_NET = { gridness: 0.9, loopiness: 0.2, connectivity: 0.35, branching: 0.3, deadEnds: 0.5, segmentLength: 48, aspect: 1, winding: 0.2, minCurveRadius: 30, minTurnAngle: 0, maxTurnAngle: 120, width: 7, boulevards: 0.3 };
+const CIRCUIT_NET = { gridness: 0.1, loopiness: 1, connectivity: 0, branching: 0, deadEnds: 0, segmentLength: 60, aspect: 1, winding: 0.5, minCurveRadius: 24, minTurnAngle: 0, maxTurnAngle: 70, width: 12, boulevards: 0 };
+
+type StreetNetworkRules = Omit<StreetNetworkParams, "halfX" | "halfZ" | "bridges" | "tunnels" | "minElevation" | "tunnelClearance" | "sidewalkWidth" | "elevation" | "maxGrade" | "compactness"> &
+  Partial<StreetNetworkParams>;
+
+/** Grow a network through the street generator, dials and footprint as meta. */
+function grow(rules: StreetNetworkRules, halfX: number, halfZ: number): StreetNetwork {
+  return runGenerator(STREET_NETWORK_GENERATOR, { ...rules, halfX, halfZ });
+}
+
+/** Lift a lap with the given dials (the schema defaults the rest), seeded like the generator that grew the streets. */
+function lap(network: StreetNetwork, { seed, ...dials }: { seed: string } & Record<string, unknown>): CircuitRoute | null {
+  return extractCircuitRoute(network, parseParams(CIRCUIT_ROUTE_SCHEMA, dials), { seed });
+}
 
 const CITY: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0.9,
@@ -37,8 +57,8 @@ const CIRCUIT: Omit<StreetNetworkRules, "seed"> = {
 };
 
 function cityRoute(seed = "race-a", rules: Partial<StreetNetworkRules> = {}): CircuitRoute {
-  const network = generateStreets({ seed, ...CITY, ...rules }, 320, 320);
-  const route = extractCircuitRoute(network, { seed });
+  const network = grow({ seed, ...CITY, ...rules }, 320, 320);
+  const route = lap(network, { seed });
   expect(route).not.toBeNull();
   return route as CircuitRoute;
 }
@@ -57,8 +77,8 @@ describe("extractCircuitRoute", () => {
   });
 
   test("the lap runs on streets the city already has — every edge is a network edge", () => {
-    const network = generateStreets({ seed: "race-shared", ...CITY }, 320, 320);
-    const route = extractCircuitRoute(network, { seed: "race-shared" });
+    const network = grow({ seed: "race-shared", ...CITY }, 320, 320);
+    const route = lap(network, { seed: "race-shared" });
     expect(route).not.toBeNull();
     const byId = new Map(network.edges.map((edge) => [edge.id, edge]));
     for (const id of route!.edges) expect(byId.has(id)).toBe(true);
@@ -73,8 +93,8 @@ describe("extractCircuitRoute", () => {
   });
 
   test("seals every street that leaves the lap and is not part of it", () => {
-    const network = generateStreets({ seed: "race-seal", ...CITY }, 320, 320);
-    const route = extractCircuitRoute(network, { seed: "race-seal" });
+    const network = grow({ seed: "race-seal", ...CITY }, 320, 320);
+    const route = lap(network, { seed: "race-seal" });
     expect(route).not.toBeNull();
     const onRoute = new Set(route!.edges);
     const routeNodes = new Set(route!.nodes);
@@ -176,27 +196,27 @@ describe("extractCircuitRoute", () => {
   });
 
   test("a longer requested lap picks a longer cycle", () => {
-    const network = generateStreets({ seed: "race-length", ...CITY }, 420, 420);
-    const short = extractCircuitRoute(network, { seed: "race-length", lapLength: 700 });
-    const long = extractCircuitRoute(network, { seed: "race-length", lapLength: 3200 });
+    const network = grow({ seed: "race-length", ...CITY }, 420, 420);
+    const short = lap(network, { seed: "race-length", lapLength: 700 });
+    const long = lap(network, { seed: "race-length", lapLength: 3200 });
     expect(short).not.toBeNull();
     expect(long).not.toBeNull();
     expect(long!.length).toBeGreaterThan(short!.length);
   });
 
   test("arterial bias keeps the lap on the wide roads", () => {
-    const network = generateStreets({ seed: "race-arterial", ...CITY, boulevards: 0.5 }, 380, 380);
-    const any = extractCircuitRoute(network, { seed: "race-arterial", arterialBias: 0 });
-    const wide = extractCircuitRoute(network, { seed: "race-arterial", arterialBias: 1 });
+    const network = grow({ seed: "race-arterial", ...CITY, boulevards: 0.5 }, 380, 380);
+    const any = lap(network, { seed: "race-arterial", arterialBias: 0 });
+    const wide = lap(network, { seed: "race-arterial", arterialBias: 1 });
     expect(any).not.toBeNull();
     expect(wide).not.toBeNull();
     expect(wide!.arterialShare).toBeGreaterThanOrEqual(any!.arterialShare);
   });
 
   test("the generator's own circuit mode returns its whole loop as the lap", () => {
-    const network = generateStreets({ seed: "loop-mode", ...CIRCUIT }, 300, 300);
+    const network = grow({ seed: "loop-mode", ...CIRCUIT }, 300, 300);
     expect(network.mode).toBe("circuit");
-    const route = extractCircuitRoute(network, { seed: "loop-mode" });
+    const route = lap(network, { seed: "loop-mode" });
     expect(route).not.toBeNull();
     const loopEdges = network.edges.filter((edge) => edge.loop).length;
     expect(route!.edges.length).toBe(loopEdges);
@@ -205,17 +225,17 @@ describe("extractCircuitRoute", () => {
   });
 
   test("returns null for a network with no drivable cycle", () => {
-    const network = generateStreets(
+    const network = grow(
       { seed: "tree", ...CITY, loopiness: 0, connectivity: 0, deadEnds: 1, branching: 0.8 },
       160,
       160,
     );
-    if (network.loops === 0) expect(extractCircuitRoute(network, { seed: "tree" })).toBeNull();
+    if (network.loops === 0) expect(lap(network, { seed: "tree" })).toBeNull();
   });
 
   test("carries road elevation through when the network has it", () => {
-    const network = generateStreets({ seed: "race-hills", ...CITY, elevation: 0.8 }, 320, 320);
-    const route = extractCircuitRoute(network, { seed: "race-hills" });
+    const network = grow({ seed: "race-hills", ...CITY, elevation: 0.8 }, 320, 320);
+    const route = lap(network, { seed: "race-hills" });
     expect(route).not.toBeNull();
     expect(route!.heights).toBeDefined();
     expect(route!.heights!.length).toBe(route!.centerline.length);
@@ -274,5 +294,48 @@ describe("extractCircuitRoute", () => {
         expect(nearest).toBeLessThan(widest * 1.05);
       }
     }
+  });
+});
+
+describe("race circuit generator contract", () => {
+  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+
+  test("every preset lifts a lap; same params and seed give a byte-identical race; seeds differ", () => {
+    for (const preset of RACE_CIRCUIT_SCHEMA.presets ?? []) {
+      const meta = { ...preset.values, seed: `contract-${preset.id}` };
+      const a = runGenerator(RACE_CIRCUIT_GENERATOR, meta);
+      expect(a.route).not.toBeNull();
+      expect(JSON.stringify(runGenerator(RACE_CIRCUIT_GENERATOR, meta))).toBe(JSON.stringify(a));
+      const b = runGenerator(RACE_CIRCUIT_GENERATOR, { ...meta, seed: `other-${preset.id}` });
+      expect(JSON.stringify(b.route)).not.toBe(JSON.stringify(a.route));
+    }
+  });
+
+  test("the lap is lifted from the streets the same generator grew, with the same seed", () => {
+    const meta = { seed: "shared", halfX: 300, halfZ: 300, connectivity: 0.85, loopiness: 0.3, lapLength: 1200 };
+    const race = runGenerator(RACE_CIRCUIT_GENERATOR, meta);
+    expect(race.network).toEqual(runGenerator(STREET_NETWORK_GENERATOR, meta));
+    expect(race.route).toEqual(lap(race.network, { seed: "shared", lapLength: 1200 }));
+  });
+
+  test("a race is plain data: it survives a cache round trip unchanged", () => {
+    const race = runGenerator(RACE_CIRCUIT_GENERATOR, { seed: "cache", lapLength: 900 });
+    const stored = JSON.stringify(race);
+    expect(JSON.parse(stored)).toEqual(race);
+  });
+
+  test("the variant grid gives distinct seeded laps", () => {
+    const variants = generatorVariants(RACE_CIRCUIT_GENERATOR, { seed: "grid" }, { count: 3 });
+    const laps = variants.map((variant) => JSON.stringify(runGenerator(RACE_CIRCUIT_GENERATOR, variant.meta).route));
+    expect(new Set(laps).size).toBe(3);
+  });
+
+  // Recorded from `extractCircuitRoute(network, { seed, ...rules })` before the lap moved onto the
+  // generator contract: the same streets, dials and seed lift the same lap.
+  test("laps match their fingerprints from before the generator contract", () => {
+    const net = grow({ ...CITY_NET, seed: "lap", connectivity: 0.85, loopiness: 0.3 }, 300, 300);
+    expect(sha(lap(net, { seed: "lap", lapLength: 1200, checkpoints: 8 }))).toBe("3d34f256ed61c714");
+    const loop = grow({ ...CIRCUIT_NET, seed: "lap2" }, 250, 250);
+    expect(sha(lap(loop, { seed: "lap2", gridSlots: 6, sealKind: "cones", sectors: 4 }))).toBe("0aed549c85eb6ebb");
   });
 });
