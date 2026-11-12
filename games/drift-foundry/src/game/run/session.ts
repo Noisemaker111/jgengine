@@ -192,6 +192,8 @@ export interface RunSession {
   buyPart(slot: PartSlotId): { ok: boolean; reason?: string };
   /** Park the stopped, grounded run where it stands; false when it is moving or airborne. */
   park(): boolean;
+  /** Set the kart down at rest at `position` facing `heading` (a teleport); the run, its parts and its clock carry on. */
+  placeKart(position: readonly [number, number, number], heading: number): void;
   togglePause(): void;
   suspend(value: boolean): void;
   tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean; effects?: KartTireEffects }): void;
@@ -803,6 +805,10 @@ export function createRunSession(
     },
     returnToTitle() { parkRun(); reset(parkedRun !== null); },
     park() { parkRun(); return parkedRun !== null; },
+    placeKart(position, heading) {
+      vehicle.resetTo(position, heading);
+      pose = restPose(position, heading);
+    },
     togglePause() { if (phaseNow() === "running") { if (!paused) parkRun(); paused = !paused; } },
     suspend(value) { suspended = value; },
     tick(dt, axis, input) {

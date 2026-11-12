@@ -143,6 +143,7 @@ export interface SceneLifecycle {
 /** @internal Body binds and the placed-object surface. */
 export interface SceneBindings {
   bind: (key: string) => BodyBind;
+  bindOf: (instanceId: string) => BodyBind | null;
   sceneObjects: SceneObjectContext;
   /** Hand the player subsystem's inventories to `sceneObjects.slots`, which is built before they exist. */
   setInventoryAccess: (access: ObjectSlotInventoryAccess) => void;
@@ -509,6 +510,10 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     bodyBinds.set(key, created);
     return created;
   }
+  function bindOf(instanceId: string): BodyBind | null {
+    for (const candidate of bodyBinds.values()) if (candidate.boundIds().has(instanceId)) return candidate;
+    return null;
+  }
 
   const objectSelection = notifyAfter(
     createSelectionSet(),
@@ -570,6 +575,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     },
     bindings: {
       bind,
+      bindOf,
       sceneObjects,
       setInventoryAccess(access) {
         inventoryAccess = access;

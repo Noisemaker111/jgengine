@@ -133,7 +133,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const { spatial, combatSpatial, sceneRaycast, targeting } = scene.queries;
   const { entityColliders, entityCollidersOf, objectCollidersOf, reportEntityBounds, reportEntityCollisionMesh } = scene.colliders;
   const { spawnEntity, despawnEntity, moveEntityTowardCommit, resetAllToSpawn } = scene.lifecycle;
-  const { bind, sceneObjects } = scene.bindings;
+  const { bind, bindOf, sceneObjects } = scene.bindings;
 
   // --- Shared game services (weapon, feed, features bag, commands, item use) ---
   const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
@@ -577,6 +577,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         form: forms,
         paint: paintLayer,
         bind,
+        bindOf,
       },
       worldItem: {
         spawn: spawnWorldItem,

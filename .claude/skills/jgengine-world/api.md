@@ -3323,8 +3323,9 @@
 
 ## @jgengine/core/movement/teleport
 
+- `TeleportResult` (type): type TeleportResult = { ok: true; entity: string } | { ok: false; error: string } — What {@link teleportPlayer} did: the entity that moved, or why nothing moved.
 - `TeleportTarget` (interface): interface TeleportTarget — Where {@link teleportPlayer} puts a player: a ground point, an optional height (default the ground there) and an optional facing.
-- `teleportPlayer` (function): function teleportPlayer(ctx: GameContext, userId: string, to: TeleportTarget): string | null — Move a player to a point in one frame: the body they control (their mount while riding, so the rider comes along on the seat), facing `yaw`, with the camera swung round behind. The walk controller's carried velocity and capsule are dropped so the next step starts from rest at the new spot instead of pulling the body back, and the renderer snaps rather than gliding across the map. Returns the id of the entity that moved, or `null` when the player has no body yet.
+- `teleportPlayer` (function): function teleportPlayer(ctx: GameContext, userId: string, to: TeleportTarget): TeleportResult — Move a player to a point in one frame: the body they control (their mount while riding, so the rider comes along on the seat), facing `yaw`, with the camera swung round behind. The walk controller's carried velocity and capsule are dropped so the next step starts from rest at the new spot instead of pulling the body back, and the renderer snaps rather than gliding across the map. A body a game sim poses every tick (`ctx.scene.entity.bind(key).sync`, such as a car the game drives itself) moves only through that bind's `onTeleport` handler, since the next sync would put it back. The result names the entity that moved, or says why nothing did: no body yet, or a sim that owns the pose and took no teleport.
 
 ## @jgengine/core/movement/voxelController
 
@@ -5145,7 +5146,9 @@
 - `BodyBindDeps` (interface): interface BodyBindDeps — Structural entity-store seam a {@link BodyBind} mirrors onto — satisfied by `ctx.scene.entity` itself.
 - `BodyBindPose` (interface): interface BodyBindPose — The pose a {@link BodyBindDeps.setPose} call receives for an id already bound.
 - `BodyBindSpawnInput` (interface): interface BodyBindSpawnInput — The options a {@link BodyBindDeps.spawn} call receives for an id seen for the first time.
+- `BodyPlacement` (interface): interface BodyPlacement — Where something outside the sim (a teleport) asks a bound body to be.
 - `BodySnapshot` (interface): interface BodySnapshot — One sim body's per-tick pose, as the game's simulation computed it — the shape a game already builds to hand to `setPose`, just declared instead of imperatively pushed. `kind` is the entity catalog name used only the first time `id` is seen (a respawn/despawn never re-reads it).
+- `BodyTeleportHandler` (type): type BodyTeleportHandler = (id: string, placement: BodyPlacement) => boolean — Moves the sim that owns a bound body to `placement`, so its next `sync` poses the body there; returns whether the sim took it.
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 
 ## @jgengine/core/scene/builtinSceneKinds

@@ -111,7 +111,8 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
       }),
     teleport: (to) =>
       stepper.run(`teleport ${to.x},${to.z}`, async () => {
-        if (teleportPlayer(ctx, session.userId, to) === null) throw new Error("the player has no body to teleport yet");
+        const moved = teleportPlayer(ctx, session.userId, to);
+        if (!moved.ok) throw new Error(moved.error);
         tick();
       }),
     command: (name, input) =>

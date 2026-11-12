@@ -29,11 +29,34 @@ describe("orbitYawFromCamera", () => {
 describe("orbitTurnTo", () => {
   test("swings the camera round its target onto the heading, keeping distance and height", () => {
     const state = { target: { x: 5, y: 2, z: 5 }, camera: { x: 5, y: 6, z: -5 }, lockedDistance: null };
-    const turned = orbitTurnTo(state, 2.45);
+    const turned = orbitTurnTo(state, 2.45, state.target);
     expect(orbitYawFromCamera(turned.camera.x, turned.camera.z, 5, 5)).toBeCloseTo(2.45, 9);
     expect(Math.hypot(turned.camera.x - 5, turned.camera.z - 5)).toBeCloseTo(10, 9);
     expect(turned.camera.y).toBe(6);
     expect(turned.target).toEqual(state.target);
+  });
+
+  test("a teleport from two different spots to one pose and yaw leaves the same camera forward (#3089)", () => {
+    const config = DEFAULT_ORBIT_CAMERA;
+    const home = resolveFollowTargetFromPosition([10, 0, 10], config);
+    // Close enough that the follow step glides rather than snaps: the case that faced from the old spot.
+    const forwardAfterTeleport = (from: readonly [number, number, number]) => {
+      let state = seedOrbitFollowState({ entityPosition: from, config });
+      for (let frame = 0; frame < 30; frame += 1) {
+        state = orbitFollowStep({ state, desiredTarget: resolveFollowTargetFromPosition(from, config), deltaSeconds: 1 / 60, config, dragging: false });
+      }
+      state = orbitTurnTo(state, 0.7, home);
+      const stepped = orbitFollowStep({ state, desiredTarget: home, deltaSeconds: 1 / 60, config, dragging: false });
+      const dx = stepped.target.x - stepped.camera.x;
+      const dz = stepped.target.z - stepped.camera.z;
+      return { yaw: Math.atan2(dx, dz), target: stepped.target };
+    };
+    const fromSouth = forwardAfterTeleport([10, 0, -8]);
+    const fromEast = forwardAfterTeleport([25, 0, 14]);
+    expect(fromSouth.yaw).toBeCloseTo(0.7, 6);
+    expect(fromEast.yaw).toBeCloseTo(0.7, 6);
+    expect(fromSouth.target).toEqual(home);
+    expect(fromEast.target).toEqual(home);
   });
 });
 

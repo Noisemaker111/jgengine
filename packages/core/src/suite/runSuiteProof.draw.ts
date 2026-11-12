@@ -140,7 +140,8 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
     },
     teleport(to) {
       open();
-      if (teleportPlayer(ctx, session.userId, to) === null) throw new Error("the player has no body to teleport yet");
+      const moved = teleportPlayer(ctx, session.userId, to);
+      if (!moved.ok) throw new Error(moved.error);
       tick();
     },
     timeScale(scale) {

@@ -545,6 +545,20 @@ export function createChaseRigState(): ChaseRigState {
   return { offset: null, anchorYaw: null, lastYaw: null, lastFollow: null, roll: 0, pitch: 0, fov: null, kick: 0, lookingBack: false };
 }
 
+/**
+ * Drop the chase rig's smoothing history so its next {@link stepChase} places the boom straight behind the
+ * new heading at the body's current spot: what `ctx.camera.turnTo` does after a teleport, where the old
+ * spot would otherwise read as a huge velocity (lead, FOV, drift-lag) and the boom would spring from there.
+ * @internal
+ */
+export function cutChase(state: ChaseRigState): void {
+  state.offset = null;
+  state.anchorYaw = null;
+  state.lastYaw = null;
+  state.lastFollow = null;
+  state.roll = 0;
+}
+
 /** What the chase rig reads from its target each frame. */
 export interface ChaseSample {
   follow: Xyz;

@@ -139,15 +139,19 @@ export interface OrbitFollowRuntimeState {
 }
 
 /**
- * Swing an orbit camera round its target onto a heading (the {@link orbitYawFromCamera} convention), keeping
- * its distance and height: what `ctx.camera.turnTo` does to the third-person camera after a teleport.
+ * Cut an orbit camera to `target` and swing it round onto a heading (the {@link orbitYawFromCamera}
+ * convention), keeping its distance and height above the target: what `ctx.camera.turnTo` does to the
+ * third-person camera after a teleport. The target is where the followed body is now, so the turn never
+ * swings round the spot it left.
  * @internal
  */
-export function orbitTurnTo(state: OrbitFollowRuntimeState, yaw: number): OrbitFollowRuntimeState {
+export function orbitTurnTo(state: OrbitFollowRuntimeState, yaw: number, target: Xyz): OrbitFollowRuntimeState {
   const horizontal = Math.hypot(state.camera.x - state.target.x, state.camera.z - state.target.z);
+  const height = state.camera.y - state.target.y;
   return {
     ...state,
-    camera: { x: state.target.x - horizontal * Math.sin(yaw), y: state.camera.y, z: state.target.z - horizontal * Math.cos(yaw) },
+    target: { x: target.x, y: target.y, z: target.z },
+    camera: { x: target.x - horizontal * Math.sin(yaw), y: target.y + height, z: target.z - horizontal * Math.cos(yaw) },
   };
 }
 

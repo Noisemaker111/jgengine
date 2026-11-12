@@ -409,6 +409,8 @@ export interface SceneEntityContext {
    * `bodies` is despawned — no per-game spawn/despawn dance.
    */
   bind(key: string): BodyBind;
+  /** The bind whose `sync` poses `instanceId` every tick (its sim owns the pose), or null for a body nothing binds. */
+  bindOf(instanceId: string): BodyBind | null;
 }
 
 export type WorldItemPickupResult =

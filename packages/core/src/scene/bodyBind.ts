@@ -46,6 +46,18 @@ export interface BodyBindDeps {
   update(id: string, patch: EntityUpdatePatch): boolean;
 }
 
+/** Where something outside the sim (a teleport) asks a bound body to be. */
+export interface BodyPlacement {
+  position: readonly [number, number, number];
+  rotationY?: number;
+}
+
+/**
+ * Moves the sim that owns a bound body to `placement`, so its next `sync` poses the body there; returns
+ * whether the sim took it.
+ */
+export type BodyTeleportHandler = (id: string, placement: BodyPlacement) => boolean;
+
 /** The lazily-keyed handle `ctx.scene.entity.bind(key)` returns. */
 export interface BodyBind {
   /**
@@ -56,6 +68,14 @@ export interface BodyBind {
   sync(bodies: Iterable<BodySnapshot>, dt?: number): void;
   /** Ids this bind currently considers itself responsible for (spawned by, and not yet despawned by, `sync`). */
   boundIds(): ReadonlySet<string>;
+  /**
+   * The sim's answer to a placement from outside it (`teleportPlayer`, the agent bridge's `teleport`): the
+   * next `sync` would put a moved body back where the sim has it, so a bound body only moves when its sim
+   * moves. Without a handler such a placement is refused. `null` clears it.
+   */
+  onTeleport(handler: BodyTeleportHandler | null): void;
+  /** Ask the owning sim to move bound body `id`; false when `id` is not bound here, no handler is set, or the sim refused. */
+  teleport(id: string, placement: BodyPlacement): boolean;
 }
 
 /**
@@ -66,6 +86,7 @@ export interface BodyBind {
  */
 export function createBodyBind(deps: BodyBindDeps): BodyBind {
   const bound = new Set<string>();
+  let teleportHandler: BodyTeleportHandler | null = null;
 
   return {
     sync(bodies, dt) {
@@ -105,6 +126,12 @@ export function createBodyBind(deps: BodyBindDeps): BodyBind {
     },
     boundIds() {
       return bound;
+    },
+    onTeleport(handler) {
+      teleportHandler = handler;
+    },
+    teleport(id, placement) {
+      return bound.has(id) && teleportHandler !== null && teleportHandler(id, placement);
     },
   };
 }

@@ -114,11 +114,17 @@ export function firstPersonCameraDraw(getProps: () => GameFirstPersonCameraDrawP
       const followId = props.followEntityId ?? props.userId;
       const entity = props.ctx.scene.entity.get(followId);
       if (entity === null) return;
-      const turn = props.ctx.camera.takeTurnTo();
-      if (turn !== null) props.yawRef.current = turn;
       if (!seeded) {
         seeded = true;
         props.yawRef.current = entity.rotationY;
+      }
+      const turn = props.ctx.camera.takeTurnTo();
+      if (turn !== null) {
+        // A turn is a cut: the eye already rides the body where it is now, so only the look and the boom's
+        // eased arm restart there, and the jump in heading is not read as a flick of the weapon.
+        props.yawRef.current = turn;
+        lastLook.yaw = turn;
+        arm = null;
       }
       const view = props.weapon?.(followId, props.ctx) ?? null;
       if (!lastLook.primed) {
