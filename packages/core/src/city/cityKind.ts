@@ -934,6 +934,11 @@ const MAX_RACE_KERBS = 320;
 /** Ridge height (m) above a street's banks that bores it through as a tunnel. */
 const CITY_TUNNEL_CLEARANCE = 6;
 const TAU = Math.PI * 2;
+/**
+ * Distances (m) closer than this are one distance. libm differs between platforms in the last bit, so
+ * a seeded plan may never let a near-tie pick a winner: compare with this and break the tie by index.
+ */
+const TIE_EPSILON = 1e-7;
 
 /** Body footprint per silhouette as `[half width across, half length along the heading]`. */
 const VEHICLE_HALF_EXTENTS: Record<CityVehicleKind, readonly [number, number]> = {
@@ -1035,7 +1040,11 @@ class StreetIndex {
           for (const sample of bucket) {
             if (sample.street >= maxStreet) continue;
             const d = Math.hypot(sample.x - x, sample.z - z);
-            if (best === null || d < best.dist) best = { x: sample.x, z: sample.z, street: sample.street, dist: d };
+            // Streets meeting at a junction sample the same node to within an ulp, so a probe there
+            // is a tie that libm's last bit would break: within TIE_EPSILON the lower street wins.
+            if (best === null || d < best.dist - TIE_EPSILON || (d <= best.dist + TIE_EPSILON && sample.street < best.street)) {
+              best = { x: sample.x, z: sample.z, street: sample.street, dist: d };
+            }
           }
         }
       }
