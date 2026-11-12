@@ -9,6 +9,7 @@ const MIME: Record<string, string> = {
   ".mjs": "text/javascript; charset=utf-8",
   ".wasm": "application/wasm",
   ".d.ts": "text/plain; charset=utf-8",
+  ".ttf": "font/ttf",
 };
 
 const wasmDir = fileURLToPath(new URL("../../native/wasm/jg-ui", import.meta.url));

@@ -38,7 +38,19 @@ opaque canvas. The patch reads `app.window_options.transparent`, sets
 `rt.transparent` (so `clear_color` returns `[0,0,0,0]`) and forces
 `config.alpha_mode = PreMultiplied`, which wgpu maps to
 `GpuCanvasAlphaMode::Premultiplied`. Needed for the HUD/menu canvas that
-composites over the game's three.js canvas.
+composites over the game's three.js canvas. On the WebGL2 fallback (jg-ui turns on Rune's
+`webgl` feature for browsers without WebGPU) the patch keeps `Opaque`: wgpu's GL
+surface accepts no other mode and would stay unconfigured, and the WebGL2 context
+keeps its alpha channel by itself. It also takes the non-sRGB surface format the WebGPU path
+views through: WebGL2 has no view formats, and its default sRGB surface encodes
+premultiplied colour on present, which washes every translucent pixel light.
+
+`crates/rune/src/marks.rs`, `motion_gate/gate.rs`, `render/first_use.rs`,
+`a11y/mod.rs` — clock. Upstream reads `std::time::Instant` here, which panics on
+wasm32-unknown-unknown ("time not implemented on this platform") the first time a
+launch mark is recorded, so every page's UI crashed with `RuntimeError: unreachable`.
+They use `crate::time::Instant`, the page clock in a browser and std's natively.
+`packages/core/src/ui/runeBundle.view.test.ts` mounts the built bundle in Chrome.
 
 `crates/rune/src/platform/web.rs` and `crates/rune/Cargo.toml` — WOFF fonts. `App::font_url`
 hands fetched bytes straight to the text stack, which reads TrueType/OpenType only, while the

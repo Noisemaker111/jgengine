@@ -12,9 +12,15 @@ crate-type = ["cdylib", "rlib"]
 # Rune is pre-release and takes no pull requests: vendored at native/vendor/rune
 # (upstream dev c92e462e) with the jgengine patches listed in
 # native/vendor/rune/VENDORED.md.
-rune = { path = "../../vendor/rune/crates/rune", default-features = false, features = ["embedded-fonts", "svg"] }
+rune = { path = "../../vendor/rune/crates/rune", default-features = false, features = ["embedded-fonts", "svg", "webgl"] }
 rune-taffy = { path = "../../vendor/rune/crates/rune-taffy" }
 serde.workspace = true
 serde_json.workspace = true
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = ["console", "HtmlElement"] }
+
+# Rune's `webgl` feature draws through WebGL2 when the browser has no WebGPU adapter. wgpu's GL
+# backend types are only Send/Sync on single-threaded wasm with this flag, which Rune's shared GPU
+# state needs; jg-ui's wasm has no threads, so it is sound here.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "~30.0.1", default-features = false, features = ["fragile-send-sync-non-atomic-wasm"] }

@@ -2,7 +2,7 @@
 // engine's Rune UI layer (native/crates/jg-ui) serves to games. Run it after changing jg-ui or
 // the vendored Rune under native/vendor/rune. Commit its output with the source change;
 // the Vite plugin serves this bundle on fresh checkouts without a Rust toolchain.
-import { existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { printHelpIfAsked } from "./script-help";
@@ -33,6 +33,11 @@ if (import.meta.main) {
   if (bindgen.exitCode !== 0) {
     console.error("build-jg-ui-wasm: wasm-bindgen failed (needs `cargo install wasm-bindgen-cli --version 0.2.130` or the matching release)");
     process.exit(bindgen.exitCode ?? 1);
+  }
+  // Rune's web build fetches the full Inter faces beside its JS after the first frame (text outside
+  // Latin, Greek and Cyrillic); without them every page logs three 404s.
+  for (const face of ["Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf"]) {
+    copyFileSync(join(native, "vendor", "rune", "crates", "rune", "assets", "web", face), join(out, face));
   }
   console.log(`build-jg-ui-wasm: wrote ${out}`);
 }
