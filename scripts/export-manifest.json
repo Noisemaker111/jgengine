@@ -819,6 +819,8 @@
     "./nature/naturePreview.draw",
     "./nav/corridors",
     "./nav/laneGraph",
+    "./nav/navAuthoring",
+    "./nav/navAuthoringKinds",
     "./nav/navConstrain",
     "./nav/navCrowd",
     "./nav/navFromEnvironment",

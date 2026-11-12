@@ -294,6 +294,10 @@ The installed renderer is Three r187. Its [physical material](https://threejs.or
 
 For resource review, `materialResourceMetrics` (`@jgengine/core/material/materialAsset.draw`) estimates loaded texture-view bytes and identifies masked, blended and transmission materials; shared uploads can make that byte estimate an upper bound. Opt in to `measureProjectedOverdraw(renderer,scene,camera,{width,height})` (`@jgengine/core/render/projectedOverdraw.draw`) to sample actual projected mesh fragments with native alpha discard. It requires float rendering/blending/readback, stalls the GPU, restores scene/renderer ownership and disposes its temporary resources. Depth rejection is disabled, so overlap is an upper bound rather than production early-Z cost; shadow, refraction and postprocessing passes and GPU timing are excluded. Queue and coverage flags overlap. Compare normal renderer draw counters separately, and use hardware measurements for performance claims.
 
+## Navigation areas and links
+
+`+ Add → Navigation` places a **Nav area** (`nav_area` box volume; red when `mode: "blocked"`, green when `"walkable"`, `area` stamps an area id for `areaCosts`) or a **Nav link** (`nav_link` path drawn from where the agent leaves to where it lands; arrowheads show direction, both ends when `bidirectional`; `linkKind` door/ladder/jump/link, `cost` -1 prices by kind). Link ends keep their own heights in the viewport, so a ladder's top sits on its deck. Headless: `add_path {"id","kind":"nav_link","points":[from,to],"meta":{"linkKind":"jump","bidirectional":true,"cost":8}}`; a game with several floors adds its own `meta` (Deepward's `place`). `bakeNavMesh {id, agentRadius, agentHeight, maxSlope, maxClimb}` with no `positions`/`indices` bakes the authored areas; with geometry it bakes both and still applies the areas. Its result lists `issues` for nav objects that do not validate (`validateNavAuthoring`). Links are not baked: runtime resolves them (`navLinksFromDocument`), so moving one needs no re-bake.
+
 ## Grid / tile layers
 
 Grid-addressed content (rooms, tactics maps, farms, nav/rule layers) lives on the scene document as

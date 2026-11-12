@@ -157,7 +157,8 @@ function CreatureModel({ id, read }: { id: string; read: CreatureRead }) {
   useFrameTask(() => {
     const creature = read(id);
     if (creature === undefined) return;
-    group.position.set(creature.at[0], 0, creature.at[2]);
+    // Height is the leap arc over an authored gap; on the floor it is 0.
+    group.position.set(creature.at[0], creature.at[1], creature.at[2]);
     group.rotation.y = creature.facing;
   });
   useSceneObjectAttach(group);

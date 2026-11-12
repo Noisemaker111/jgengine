@@ -7689,6 +7689,16 @@
       "intent": "seeded rocks, pebbles and driftwood with editor variants and instanced scatter"
     },
     {
+      "id": "nav-authoring",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/nav/navAuthoring",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "author nav-mesh areas and off-mesh links (doors, ladders, jumps) in the editor scene"
+    },
+    {
       "id": "nav-crowd",
       "packages": [
         "@jgengine/core"
@@ -7731,6 +7741,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "voxelize scene triangles into an agent-sized polygon nav mesh"
+    },
+    {
+      "id": "navmesh-bake-authored",
+      "packages": [
+        "@jgengine/navbake"
+      ],
+      "module": "@jgengine/navbake/index",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "bake a nav mesh from the editor scene's authored walkable and blocked areas"
     },
     {
       "id": "navmesh-from-scene",

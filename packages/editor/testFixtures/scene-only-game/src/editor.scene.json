@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "markers": [{ "id": "scene-only-spawn", "kind": "player_spawn", "position": { "x": 1, "y": 0, "z": 2 } }],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": []
+}

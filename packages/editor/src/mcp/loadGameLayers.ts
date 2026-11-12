@@ -4,6 +4,8 @@ import {
   type EditorDocument,
   type EditorDocumentDiagnostic,
 } from "@jgengine/core/editor/index";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { importOptionalGameModule } from "./importOptionalGameModule";
 
 /** Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it. */
@@ -29,7 +31,13 @@ export async function loadGameLayers(gameId: string): Promise<LoadGameLayersResu
   try {
     const path = new URL(`../../../../games/${gameId}/src/editorLayers.ts`, import.meta.url);
     const mod = await importOptionalGameModule(path);
-    if (mod?.editorLayers === undefined) return { ok: true, document: createEmptyEditorDocument() };
+    if (mod?.editorLayers === undefined) {
+      // A game that reads its scene straight from editor.scene.json (no editorLayers module) still
+      // has an authored scene: loading it empty would let `--save` overwrite that scene with nothing.
+      const scene = new URL(`../../../../games/${gameId}/src/editor.scene.json`, import.meta.url);
+      if (!existsSync(scene)) return { ok: true, document: createEmptyEditorDocument() };
+      return decodeGameLayers(JSON.parse(await readFile(scene, "utf8")) as unknown);
+    }
     resolved = typeof mod.editorLayers === "function" ? (mod.editorLayers as () => unknown)() : mod.editorLayers;
   } catch (error) {
     return { ok: false, errors: [{ path: "$", message: error instanceof Error ? error.message : String(error) }] };

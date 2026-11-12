@@ -15,7 +15,7 @@ import { canCache, loadOf } from "./haul";
 import { itemValue, kindOf, rollItem } from "./items";
 import { createDeepwardDamage, createDeepwardWeapon, MAGAZINE, weaponDefinition, weaponReadout } from "./combat";
 import { openRecord, recordProfile, type RecordSession, type RunSnapshot } from "./save";
-import { advanceRoute, createNavigator } from "./navigation";
+import { advanceRoute, createNavigator, warmRoutes } from "./navigation";
 import { decayMeters, refillMeter } from "@jgengine/core/survival/decayMeter";
 import { BODY, GALLEY_FEEDS_BELOW, HOME_DRAIN, hungriest, MEAL, STARVE_DAMAGE } from "./survival";
 import { airBonus, deepestCharted, has, liftLock, newDeep, sealMark, type Deep } from "./deep";
@@ -356,6 +356,7 @@ function begin(ctx: GameContext): Promise<void> | void {
   const stratum: Stratum = has(before, "crawler") && before.charted.includes(v.departTo) ? v.departTo : "vault";
   const lures = Math.min(3, before.lures);
   const dive = newDive(home.activeDive!, home, rifle, { airBonus: airBonus(before, marrowOf(ctx)), lures, stratum });
+  warmRoutes(stratum);
   const deep: Deep = { ...before, lures: before.lures - lures };
   const spawn = stratum === "vault" ? VAULT_SPAWN : STRATUM_SPAWNS[stratum] ?? VAULT_SPAWN;
   const opening = stratum === "vault" ? null : `Crawler / ${STRATA[stratum].arrival}`;
@@ -534,6 +535,7 @@ function ride(ctx: GameContext, dive: Dive, to: Stratum): void {
   const crush = crushDamage(to, sealMark(deep));
   const hint = crush > 0 ? `${STRATA[to].name} / the hull is crushing in: ${crush} damage a second. Print a better seal.` : STRATA[to].arrival;
   runtime(ctx).creatures = null;
+  warmRoutes(to);
   viewStore.write(ctx, { ...v, dive: next, deep, hint });
   teleport(ctx, arrival);
   syncPrint(ctx, next);

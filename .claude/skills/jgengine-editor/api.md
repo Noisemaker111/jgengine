@@ -543,6 +543,7 @@
 
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */ hov… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
+- `navLinkArrows` (function): function navLinkArrows(path: EditorPath): { at: EditorVec3; toward: EditorVec3 }[] — Where a nav link gizmo draws its arrowheads: at the landing end, and at the start too when it runs both ways.
 
 ## @jgengine/editor/EditorApp
 
@@ -713,7 +714,7 @@
 
 ## @jgengine/editor/handlers/navmesh
 
-- `navMeshHandlers` (const): const navMeshHandlers: Pick<HandlerTable, "bakeNavMesh"> — Bake caller-provided indexed geometry into a named document navigation mesh.
+- `navMeshHandlers` (const): const navMeshHandlers: Pick<HandlerTable, "bakeNavMesh"> — Bake the document's authored nav areas, plus any caller-provided indexed geometry, into a named document navigation mesh. Authored `nav_link` paths are not baked in: the runtime resolves them onto whichever bake it routes on, so moving a link needs no re-bake.
 - `warmNavBake` (function): function warmNavBake(): void — Start loading the recast module so the first bake request does not have to wait.
 
 ## @jgengine/editor/handlers/runtime

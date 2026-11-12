@@ -22490,7 +22490,31 @@
       }
     }
   ],
-  "paths": [],
+  "paths": [
+    {
+      "id": "wells-sump-leap",
+      "kind": "nav_link",
+      "points": [
+        {
+          "x": -1.6,
+          "y": 0,
+          "z": 12.5
+        },
+        {
+          "x": 3.6,
+          "y": 0,
+          "z": 12.5
+        }
+      ],
+      "label": "Sump to reservoir deck leap",
+      "meta": {
+        "place": "wells",
+        "linkKind": "jump",
+        "bidirectional": true,
+        "cost": 8
+      }
+    }
+  ],
   "annotations": [],
   "prefabs": [],
   "collections": [],

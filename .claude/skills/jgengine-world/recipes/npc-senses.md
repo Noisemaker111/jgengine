@@ -37,7 +37,9 @@ Working example: the `guard-probe` dev demo (`apps/dev/src/demo/guardProbe.ts`),
   mesh for `findPath` and replan only when the goal moves. Bake the mesh from
   scene geometry with `@jgengine/navbake` (`await initNavBake()`, then
   `bakeNavMesh`) and store it as an editor `nav` bake; price hazards or lock doors
-  with `areaCosts` through `retune`.
+  with `areaCosts` through `retune`. Doors, ladders and jumps are `nav_link` paths
+  in the scene (`navLinksFromDocument` into `createNavRuntime`'s `links`); a route's
+  `links` says where it crosses one, so the NPC can play the door or the leap.
 
 ## Gotchas
 

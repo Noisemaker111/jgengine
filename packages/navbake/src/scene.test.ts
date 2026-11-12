@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { createNavCrowd, createNavRuntime, navMeshFromBake } from "@jgengine/core/world";
-import { bakeNavMesh, initNavBake } from "./index";
+import { createNavCrowd, createNavRuntime, navAuthoringFromDocument, navLinksFromDocument, navMeshFromBake } from "@jgengine/core/world";
+import { createEmptyEditorDocument } from "@jgengine/core/editor/document";
+import type { EditorDocument, EditorPath, EditorVolume } from "@jgengine/core/editor/types";
+import { bakeAuthoredNavMesh, bakeNavMesh, initNavBake } from "./index";
 
 /**
  * An authored scene document in the shape the editor writes: walkable slabs and props are boxes.
@@ -135,5 +137,75 @@ describe("authored scene to moving agents", () => {
     expect(crowd.agent("north")!.arrived).toBe(true);
     crowd.dispose();
     runtime.dispose();
+  });
+});
+
+function navArea(id: string, center: [number, number, number], half: [number, number, number], meta: Record<string, unknown>): EditorVolume {
+  return { id, kind: "nav_area", shape: "box", center: { x: center[0], y: center[1], z: center[2] }, halfExtents: { x: half[0], y: half[1], z: half[2] }, meta };
+}
+
+function navLink(id: string, from: [number, number, number], to: [number, number, number], meta: Record<string, unknown>): EditorPath {
+  return { id, kind: "nav_link", points: [{ x: from[0], y: from[1], z: from[2] }, { x: to[0], y: to[1], z: to[2] }], meta };
+}
+
+describe("a nav mesh baked from authored areas and links", () => {
+  beforeAll(async () => {
+    await initNavBake();
+  });
+
+  /** Two decks either side of a 3 m gap, a crate stack on the near one, and a jump across the gap. */
+  function deckScene(jumpCost: number): EditorDocument {
+    return {
+      ...createEmptyEditorDocument(),
+      volumes: [
+        navArea("near-deck", [5, 0, 5], [5, 1, 5], { mode: "walkable", area: 2 }),
+        navArea("far-deck", [18, 0, 5], [5, 1, 5], { mode: "walkable" }),
+        navArea("crates", [5, 0.5, 5], [1, 1.5, 3], { mode: "blocked" }),
+        // A bridge round the long way, so the far deck is reachable on foot as well.
+        navArea("bridge", [11.5, 0, 12], [7.5, 1, 1], { mode: "walkable" }),
+        navArea("near-ramp", [5, 0, 11], [1, 1, 2], { mode: "walkable" }),
+        navArea("far-ramp", [18, 0, 11], [1, 1, 2], { mode: "walkable" }),
+      ],
+      paths: [navLink("gap-jump", [9.2, 0, 5], [13.8, 0, 5], { linkKind: "jump", cost: jumpCost })],
+    };
+  }
+
+  function bakeScene(document: EditorDocument) {
+    const { areas } = navAuthoringFromDocument(document);
+    const data = bakeAuthoredNavMesh({ areas, ...agent });
+    const withBake = { ...document, bakes: [{ kind: "nav" as const, id: "main", data }] };
+    // The bake is stored on the document and read back the way a game loads it.
+    return JSON.parse(JSON.stringify(withBake)) as EditorDocument;
+  }
+
+  test("the bake honours walkable and blocked areas", () => {
+    const document = bakeScene(deckScene(1));
+    const mesh = navMeshFromBake(document.bakes)!;
+    expect(mesh.polys.length).toBeGreaterThan(0);
+    const runtime = createNavRuntime({ mesh });
+    // Floor exists only where a walkable area authors it, and the crate stack cut out of it.
+    expect(runtime.findPolygon([18, 0, 5])).not.toBeNull();
+    expect(Math.hypot(...(runtime.closestPoint([5, 0, 5])!.map((value, i) => value - [5, 0, 5][i]!) as [number, number, number]))).toBeGreaterThan(0.9);
+    expect(runtime.raycast([2, 0, 5], [8, 0, 5])).toBe(false);
+    const around = runtime.plan([2, 0, 5], [8, 0, 5])!;
+    expect(around.partial).toBeUndefined();
+    expect(pathLength(around.points)).toBeGreaterThan(6.5);
+    // Walkable areas stamp their area id on the polygons they cover.
+    expect(mesh.areas?.some((id) => id === 2)).toBe(true);
+    runtime.dispose();
+  });
+
+  test("routes take the authored jump when it is cheaper than the bridge and the bridge when it is not", () => {
+    for (const [cost, jumps] of [[1, true], [500, false]] as const) {
+      const document = bakeScene(deckScene(cost));
+      const runtime = createNavRuntime({ mesh: navMeshFromBake(document.bakes)!, links: navLinksFromDocument(document) });
+      expect(runtime.unresolvedLinks()).toEqual([]);
+      const path = runtime.plan([7, 0, 3], [16, 0, 3])!;
+      expect(path.partial).toBeUndefined();
+      expect(path.links !== undefined).toBe(jumps);
+      if (jumps) expect(path.links![0]!.link).toMatchObject({ id: "gap-jump", kind: "jump" });
+      else expect(Math.max(...path.points.map((point) => point[2]))).toBeGreaterThan(10);
+      runtime.dispose();
+    }
   });
 });
