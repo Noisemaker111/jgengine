@@ -62,6 +62,13 @@ const gameDemoParts = (srcDir: string): string[] => {
   return DEMO_PARTS.filter((part) => found.has(part.key)).map((part) => part.key);
 };
 
+/** Every game the site lists, plays and puts in the sitemap: each `games/<id>` with a `src/index.tsx`. */
+export const listGameIds = (): string[] =>
+  readdirSync(gamesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
+    .map((entry) => entry.name)
+    .sort();
+
 /** Exposes the games/* ids, per-game credit and the demoed engine parts each game uses to routes as `virtual:jgengine-games`, resolved at build time. */
 export const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
@@ -71,10 +78,7 @@ export const gamesIndexPlugin = (): Plugin => ({
   },
   load(id) {
     if (id !== `\0${GAMES_INDEX_ID}`) return;
-    const ids = readdirSync(gamesDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
-      .map((entry) => entry.name)
-      .sort();
+    const ids = listGameIds();
     const credits: Record<string, { text: string; url?: string; handle?: string }> = {};
     for (const gameId of ids) {
       const configPath = join(gamesDir, gameId, "src/game.config.ts");

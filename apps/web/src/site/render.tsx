@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { NotFound } from "../components/NotFound";
 import { GAME_IDS } from "../lib/games";
+import { buildSitemap } from "../lib/sitemap";
 import { Document, ROOT_HEAD, SiteRoot, type PageAssets } from "./root";
 import { matchRoute, mergeHead, prerenderPaths } from "./routes";
 
@@ -40,4 +41,9 @@ export async function renderPage(pathname: string, assets: (source: string | nul
 /** Every page path the build prerenders. */
 export function pagePaths(): string[] {
   return prerenderPaths(GAME_IDS);
+}
+
+/** `/sitemap.xml`: exactly the pages the build prerenders, so every game page is listed as soon as it exists. */
+export function renderSitemap(): string {
+  return buildSitemap(pagePaths());
 }

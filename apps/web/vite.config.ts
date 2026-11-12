@@ -169,7 +169,8 @@ export const isPageRequest = (method: string | undefined, url: string | undefine
 
 /**
  * Dev: draw each page on request with the engine's JSX renderer (the same `renderPage` the build
- * prerenders with), so a page in dev is the HTML production serves plus Vite's client.
+ * prerenders with), so a page in dev is the HTML production serves plus Vite's client. The sitemap
+ * comes from the same page list the build writes `sitemap.xml` from.
  */
 const sitePagesDevPlugin = (): Plugin => ({
   name: "jgengine-site-pages",
@@ -178,10 +179,16 @@ const sitePagesDevPlugin = (): Plugin => ({
     server.middlewares.stack.unshift({
       route: "",
       handle: (async (req, res, next) => {
-        if (!isPageRequest(req.method, req.url)) return next();
+        const sitemap = (req.method === "GET" || req.method === "HEAD") && req.url?.split(/[?#]/, 1)[0] === "/sitemap.xml";
+        if (!sitemap && !isPageRequest(req.method, req.url)) return next();
         try {
           const url = req.url ?? "/";
-          const { renderPage } = (await server.ssrLoadModule("/src/site/render.tsx")) as typeof import("./src/site/render");
+          const { renderPage, renderSitemap } = (await server.ssrLoadModule("/src/site/render.tsx")) as typeof import("./src/site/render");
+          if (sitemap) {
+            res.setHeader("content-type", "application/xml; charset=utf-8");
+            res.end(renderSitemap());
+            return;
+          }
           const page = await renderPage(url.split(/[?#]/, 1)[0] ?? "/", () => ({
             stylesheets: ["/src/styles.css"],
             fonts: [],

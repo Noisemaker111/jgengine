@@ -1,6 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 
+import { ANALYTICS_LOADER_SCRIPT } from "../lib/analytics";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../lib/site";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 import { LocationContext, type SiteLocation } from "./link";
@@ -58,6 +59,8 @@ export interface PageAssets {
   modulePreloads: readonly string[];
   /** Module scripts run at the end of `<body>`. */
   scripts: readonly string[];
+  /** Production pages only: load the visitor analytics tag on the live host (`src/lib/analytics.ts`). */
+  analytics?: boolean;
 }
 
 function HeadTag({ tag }: { tag: Tag }) {
@@ -83,6 +86,7 @@ export function Document({ head, assets, children }: { head: HeadTags; assets: P
         {head.links.map((tag, i) => <link key={`l${i}`} {...tag} />)}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: inlineJson(JSON_LD) }} />
+        {assets.analytics === true ? <script dangerouslySetInnerHTML={{ __html: ANALYTICS_LOADER_SCRIPT }} /> : null}
       </head>
       <body className="min-h-dvh bg-bg font-sans text-fg antialiased">
         {children}

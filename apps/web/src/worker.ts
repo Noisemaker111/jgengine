@@ -1,11 +1,11 @@
 /**
  * The site's Cloudflare Worker. Pages and files are static assets, served before the Worker runs;
  * the Worker answers the GitHub API proxy, the agent text files (`/llms.txt`, `/llms-full.txt`,
- * `/agents.md`, `/sitemap.xml`), and anything else with the prerendered not-found page and a 404.
+ * `/agents.md`), and anything else with the prerendered not-found page and a 404. `/sitemap.xml`
+ * is a static file the prerender writes from the page list.
  */
 import { githubContributions, githubProxy } from "./api/github";
 import { buildLlmsFullTxt, buildLlmsTxt } from "./lib/agentDocs";
-import { buildSitemap } from "./lib/sitemap";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -24,7 +24,6 @@ const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   "/llms-full.txt": { GET: text(buildLlmsFullTxt, "text/plain") },
   // The agent brief as markdown (the AGENTS.md convention), from the same source as llms-full.txt.
   "/agents.md": { GET: text(buildLlmsFullTxt, "text/markdown") },
-  "/sitemap.xml": { GET: text(buildSitemap, "application/xml") },
 };
 
 export default {

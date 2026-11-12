@@ -9,9 +9,11 @@ The landing page for JGengine and the front door for agents. It is drawn with th
 ## How a page is made
 
 - [`src/site/routes.ts`](src/site/routes.ts) is the page table: each path, the module in `src/routes/` that draws it, and that module's `Route = definePage({ head, component })`. Links are `Link` from [`src/site/link.tsx`](src/site/link.tsx), plain `<a>` tags; every visit is a full page load.
-- [`src/site/render.tsx`](src/site/render.tsx) renders a page to a whole HTML document with the engine's static renderer. The dev server calls it per request; `bun run build` calls it for every page after `vite build` ([`scripts/prerender.ts`](scripts/prerender.ts)) and writes `dist/client/<page>.html` plus `404.html`.
+- [`src/site/render.tsx`](src/site/render.tsx) renders a page to a whole HTML document with the engine's static renderer. The dev server calls it per request; `bun run build` calls it for every page after `vite build` ([`scripts/prerender.ts`](scripts/prerender.ts)) and writes `dist/client/<page>.html`, `404.html` and `sitemap.xml`. The sitemap lists exactly the pages written (the page table plus one page per game), so a new page or game is in it without an edit; add only public pages to the page table.
 - [`src/client.tsx`](src/client.tsx) runs in the browser and draws the same page into `<body>`, which starts its buttons, menus and live demos.
-- [`src/worker.ts`](src/worker.ts) is the Worker. Static files are served before it runs; it answers `/api/*`, `/llms.txt`, `/llms-full.txt`, `/agents.md`, `/sitemap.xml`, and any other path with `404.html` and status 404.
+- [`src/worker.ts`](src/worker.ts) is the Worker. Static files are served before it runs; it answers `/api/*`, `/llms.txt`, `/llms-full.txt`, `/agents.md`, and any other path with `404.html` and status 404.
+
+- Prerendered pages carry the Databuddy analytics loader ([`src/lib/analytics.ts`](src/lib/analytics.ts)); it adds the async tag only on `jgengine.com`, so dev, the `workers.dev` preview and tests count nothing. `trackEvent` counts `game_play` (a game page opens) and `playground_start` (the first playground change).
 
 ## Games on the site
 
