@@ -1,4 +1,5 @@
 // @skill jgengine-gameplay
+import { warnOnce } from "../devtools/warnOnce";
 import { evaluatePredicate } from "../rules/predicate";
 import type { StatModifierSet } from "../stats/statModifiers";
 
@@ -27,6 +28,30 @@ export interface TalentSnapshot {
   ranks: Record<string, number>;
 }
 
+/**
+ * Why {@link TalentTree.hydrate} could not take a saved rank as written: `unknown-node` (this build
+ * authors no such node; dropped), `invalid-rank` (not a non-negative integer; dropped), or
+ * `max-rank` (above the node's `maxRank`; loaded clamped to it).
+ */
+export type TalentHydrateReason = "unknown-node" | "invalid-rank" | "max-rank";
+
+/** One saved rank {@link TalentTree.hydrate} dropped or narrowed, with the value the save held. */
+export interface TalentHydrateIssue {
+  nodeId: string;
+  rank: unknown;
+  reason: TalentHydrateReason;
+}
+
+/**
+ * {@link TalentTree.hydrate}'s report. Valid ranks always load; `ok` is false when any saved rank was
+ * dropped or clamped, and `issues` names each one so the caller decides whether the narrowed kit is
+ * acceptable (a stale save from another build) or a load failure.
+ */
+export interface TalentHydrateResult {
+  ok: boolean;
+  issues: readonly TalentHydrateIssue[];
+}
+
 export interface TalentTreeConfig<TStat extends string = string> {
   nodes: readonly TalentNodeDef<TStat>[];
   points?: number;
@@ -43,7 +68,12 @@ export interface TalentTree<TStat extends string = string> {
   resolved(): ResolvedTalents<TStat>;
   reset(): void;
   snapshot(): TalentSnapshot;
-  hydrate(snapshot: TalentSnapshot): void;
+  /**
+   * Replace points and ranks from a snapshot. Valid ranks load; a saved id this tree does not author,
+   * a malformed rank, or a rank above `maxRank` is reported in the result (and once as a dev warning)
+   * instead of silently shrinking the kit.
+   */
+  hydrate(snapshot: TalentSnapshot): TalentHydrateResult;
 }
 
 const DEFAULT_BRANCH = "";
@@ -174,13 +204,29 @@ export function createTalentTree<TStat extends string = string>(
     hydrate(snapshot) {
       ranks.clear();
       points = snapshot.points;
+      const issues: TalentHydrateIssue[] = [];
       for (const [nodeId, value] of Object.entries(snapshot.ranks)) {
         const node = nodesById.get(nodeId);
-        if (!node) continue;
-        const clamped = Math.max(0, Math.min(value, node.maxRank));
+        if (!node) {
+          issues.push({ nodeId, rank: value, reason: "unknown-node" });
+          continue;
+        }
+        if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+          issues.push({ nodeId, rank: value, reason: "invalid-rank" });
+          continue;
+        }
+        if (value > node.maxRank) issues.push({ nodeId, rank: value, reason: "max-rank" });
+        const clamped = Math.min(value, node.maxRank);
         if (clamped > 0) ranks.set(nodeId, clamped);
       }
       cache = null;
+      for (const issue of issues) {
+        warnOnce(
+          `talents.hydrate:${issue.reason}:${issue.nodeId}`,
+          `[jgengine:talents] hydrate ${issue.reason === "max-rank" ? "clamped" : "dropped"} saved rank ${String(issue.rank)} for "${issue.nodeId}" (${issue.reason})`,
+        );
+      }
+      return { ok: issues.length === 0, issues };
     },
   };
 }

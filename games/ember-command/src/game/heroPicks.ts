@@ -1,4 +1,4 @@
-import type { TalentNodeDef, TalentSnapshot, TalentTree } from "@jgengine/core/talents/talents";
+import type { TalentHydrateIssue, TalentNodeDef, TalentSnapshot, TalentTree } from "@jgengine/core/talents/talents";
 import { talentTreeViewFrom, type TalentNodeView } from "@jgengine/core/talents/talentTreeView";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { StatModifierSet } from "@jgengine/core/stats/statModifiers";
@@ -162,21 +162,18 @@ export function assertPickCatalog(nodes: readonly HeroPickDef[] = HERO_PICKS, of
 }
 
 /**
- * Validate saved ranks against the authored catalog and return the ranks to hydrate. A saved id this
- * build does not author fails load here, by name, instead of becoming an unpickable ghost mid-battle.
+ * The load failure for a saved kit the engine's talent hydrate could not take as written: a saved id
+ * this build does not author, or a rank outside the pick's cap, named so the stale save is reported
+ * instead of loading as a smaller kit.
  */
-export function parseSavedPicks(saved: Readonly<Record<string, number>>, nodes: readonly HeroPickDef[] = HERO_PICKS): Record<string, number> {
+export function savedPicksError(issues: readonly TalentHydrateIssue[], nodes: readonly HeroPickDef[] = HERO_PICKS): HeroPickLoadError {
   const byId = nodeById(nodes);
-  const ranks: Record<string, number> = {};
-  for (const [id, rank] of Object.entries(saved)) {
-    const node = byId.get(id);
-    if (node === undefined) throw new HeroPickLoadError(`hero picks: saved pick "${id}" does not exist`);
-    if (!Number.isInteger(rank) || rank < 1 || rank > node.maxRank) {
-      throw new HeroPickLoadError(`hero picks: saved rank ${rank} for "${id}" is outside 1..${node.maxRank}`);
-    }
-    ranks[id] = rank;
-  }
-  return ranks;
+  const lines = issues.map((issue) =>
+    issue.reason === "unknown-node"
+      ? `hero picks: saved pick "${issue.nodeId}" does not exist`
+      : `hero picks: saved rank ${String(issue.rank)} for "${issue.nodeId}" is outside 1..${byId.get(issue.nodeId)?.maxRank ?? 0}`,
+  );
+  return new HeroPickLoadError(lines.join("; "));
 }
 
 /** The ranks a live tree holds, in the shape the save keeps. */
