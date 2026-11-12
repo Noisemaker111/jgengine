@@ -160,14 +160,16 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
         ctl.target.set(runtime.target.x, runtime.target.y, runtime.target.z);
       }
 
-      const turn = props.ctx.camera.takeTurnTo();
-      if (turn !== null) {
-        runtime = orbitTurnTo(runtime, turn);
-        camera.position.set(runtime.camera.x, runtime.camera.y, runtime.camera.z);
-      }
-      const previousTarget = runtime.target;
       const drawn = props.ctx.sim.renderPose(props.followEntityId ?? props.userId, drawnPose) ? fillDrawn(drawnPose) : entity.position;
       const desiredTarget = props.resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(drawn, config);
+      const turn = props.ctx.camera.takeTurnTo();
+      if (turn !== null) {
+        // A turn is a cut (a teleport, a respawn): snap to the body's new spot first, then swing round it.
+        runtime = orbitTurnTo(runtime, turn, config.followEnabled ? desiredTarget : runtime.target);
+        camera.position.set(runtime.camera.x, runtime.camera.y, runtime.camera.z);
+        ctl.target.set(runtime.target.x, runtime.target.y, runtime.target.z);
+      }
+      const previousTarget = runtime.target;
       const stepped = orbitFollowStep({
         state: runtime,
         desiredTarget,

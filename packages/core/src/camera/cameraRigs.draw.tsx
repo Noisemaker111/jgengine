@@ -25,6 +25,7 @@ import {
   cinematicSample,
   clampBoomToHit,
   createChaseRigState,
+  cutChase,
   lockOnPose,
   observerPose,
   resolveChase,
@@ -639,7 +640,11 @@ export function chaseRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
         inputSeeded = true;
       }
       const turn = env.ctx.camera.takeTurnTo();
-      if (turn !== null) env.props.yawRef.current = turn;
+      if (turn !== null) {
+        env.props.yawRef.current = turn;
+        // A turn is a cut: forget the old spot so the boom starts behind the body where it is now.
+        if (state !== null) cutChase(state);
+      }
       const yaw = resolveChaseHeading(merged, entity?.rotationY ?? 0, env.props.yawRef.current);
       const v = entity?.velocity;
       const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);

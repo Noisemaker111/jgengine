@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   clampBoomToHit,
   createChaseRigState,
+  cutChase,
   resolveChase,
   stepChase,
   type ChaseSample,
@@ -147,5 +148,26 @@ describe("clampBoomToHit", () => {
 
   test("a hit beyond the boom leaves it at full length", () => {
     expect(clampBoomToHit(pivot, desired, 9, 0.3, 0.8).z).toBeCloseTo(-6, 6);
+  });
+});
+
+describe("cutChase", () => {
+  test("a teleport from two different spots to one pose and heading frames the body the same way (#3089)", () => {
+    const resolved = resolveChase({ distance: 5, height: 2, springDamping: 7, yawResponse: 5, velocityYaw: { blend: 0.4 } });
+    const home: Xyz = { x: 40, y: 0, z: 40 };
+    const afterTeleport = (from: Xyz, heading: number) => {
+      const state = createChaseRigState();
+      for (let i = 0; i < 120; i += 1) stepChase(state, sample({ x: from.x, y: 0, z: from.z + i * 0.2 }, { yaw: heading }), resolved, DT);
+      cutChase(state);
+      return stepChase(state, sample(home, { yaw: 1.1 }), resolved, DT);
+    };
+    const fromSouth = afterTeleport({ x: 40, y: 0, z: -30 }, 0);
+    const fromWest = afterTeleport({ x: -10, y: 0, z: 35 }, 2.4);
+    expect(fromSouth.anchorYaw).toBeCloseTo(1.1, 9);
+    expect(fromSouth.speed).toBe(0);
+    expect(fromWest.pose.position).toEqual(fromSouth.pose.position);
+    expect(fromWest.pose.lookAt).toEqual(fromSouth.pose.lookAt);
+    // Behind the new heading at the new spot, not sprung from the old one.
+    expect(Math.atan2(home.x - fromSouth.pose.position.x, home.z - fromSouth.pose.position.z)).toBeCloseTo(1.1, 6);
   });
 });
