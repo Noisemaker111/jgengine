@@ -346,12 +346,7 @@ export function createOpponentField(options: {
           {
             throttle: step.throttle,
             brake: step.brake,
-            // `driveStep` returns steer as the signed heading error (ai/driver.ts:169), but the shared
-            // steering convention is the opposite: `steerYaw` decreases yaw for +steer (movement/
-            // steering.ts:35) and `steerToward` returns the negated error (:47). Adopting the driver as
-            // shipped therefore drives a kart away from its target; delete this negation once
-            // ai/driver agrees with steerToward.
-            steer: -step.steer,
+            steer: step.steer,
             handbrake: step.handbrake,
           },
           rival.tuning,

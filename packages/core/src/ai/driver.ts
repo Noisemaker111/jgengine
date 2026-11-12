@@ -172,7 +172,11 @@ export function createDriverState(targetX = 0, targetZ = 0): DriverState {
   };
 }
 
-/** {@link driveStep}'s result: the axis sample to feed the vehicle sim, plus arrival. */
+/**
+ * {@link driveStep}'s result: the axis sample to feed the vehicle sim, plus arrival. `steer` uses
+ * the shared steer-right convention of `steerYaw`/`steerToward` (+1 = turn right, which decreases
+ * yaw), so it passes straight into the sim without a sign flip.
+ */
 export interface DriverStep extends AxisInput {
   /** The vehicle is inside `arriveRadius` of the *actual* goal this step. */
   arrived: boolean;
@@ -239,15 +243,19 @@ export function driveStep(
     state.jitterCooldown = tuning.jitterIntervalSeconds ?? 0.35;
   }
 
-  // Reverse-out recovery: back up with counter-steer, nose swinging toward the target.
+  // Reverse-out recovery: back up with counter-steer, nose swinging toward the target. Steer
+  // follows the shared `steerYaw` convention (+1 = right, decreasing yaw); a positive heading
+  // error is a target to the left, so reversing steers right to swing the nose that way.
   if (state.reverseRemaining > 0) {
     state.reverseRemaining -= dt;
-    const steer = headingError >= 0 ? -1 : 1;
+    const steer = headingError >= 0 ? 1 : -1;
     return { throttle: 0, brake: 1, steer, handbrake: 0, arrived };
   }
 
+  // Same sign as `steerToward`: integrated through `steerYaw`, the steer closes the heading error.
   const steerGain = tuning.steerGain ?? 2;
-  const steer = Math.max(-1, Math.min(1, (headingError + state.jitter) * steerGain));
+  // `+ 0` folds the negated zero of a dead-ahead target back to 0.
+  const steer = Math.max(-1, Math.min(1, -(headingError + state.jitter) * steerGain)) + 0;
 
   // Corner-aware desired speed: shed speed into large heading errors instead of orbiting.
   const cornerSlowdown = tuning.cornerSlowdown ?? 0.75;
