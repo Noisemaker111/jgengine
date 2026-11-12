@@ -12,19 +12,26 @@ import { ANSWER_SECONDS } from "../sim/events";
 import { simulateHousehold } from "../sim/simulate";
 import { pairKey } from "./types";
 import { householdStore } from "./store";
-import { captureOrbitSave, ORBIT_SAVE_KEY, orbitProfile, orbitSlotKey, readOrbitSave, restoreOrbitSave, validOrbitSave, writeOrbitSave, type OrbitSave } from "./save";
+import { captureOrbitSave, createOrbitRecords, ORBIT_LEGACY_KEY, orbitLegacyKey, orbitProfile, orbitSlotKey, restoreOrbitSave, validOrbitSave, type OrbitSave } from "./save";
 
 function boot() {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "orbit-save-test", isNew: true } });
   setupWorld(ctx);
   return ctx;
 }
+/** A storage holding `raw` at the key an older build wrote slot one to. */
 function memory(raw?: string): { storage: KeyValueStorage; values: Map<string, string> } {
-  const values = new Map<string, string>(raw === undefined ? [] : [[ORBIT_SAVE_KEY, raw]]);
+  const values = new Map<string, string>(raw === undefined ? [] : [[ORBIT_LEGACY_KEY, raw]]);
   return { values, storage: { getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); }, removeItem: key => { values.delete(key); } } };
 }
+function write(ctx: ReturnType<typeof boot>, storage: KeyValueStorage | null, slot = "household"): Promise<boolean> {
+  return createOrbitRecords(ctx, storage).write(slot);
+}
+function read(storage: KeyValueStorage | null, slot = "household") {
+  return createOrbitRecords(createGameContext({ definition: game.game, content, player: { userId: "orbit-save-reader", isNew: true } }), storage).read(slot);
+}
 
-test("household, furniture, order, positions and clock roundtrip together", () => {
+test("household, furniture, order, positions and clock roundtrip together", async () => {
   const first = boot();
   first.time.setSpeed(4);
   simulateHousehold(first, first.time.advance(8));
@@ -42,13 +49,17 @@ test("household, furniture, order, positions and clock roundtrip together", () =
   householdStore.write(first, { ...state });
   const before = captureOrbitSave(first);
   expect(validOrbitSave(before)).toBe(true);
-  const { storage } = memory();
-  expect(writeOrbitSave(first, storage)).toBe(true);
-  const loaded = readOrbitSave(storage);
+  const { storage, values } = memory();
+  expect(await write(first, storage)).toBe(true);
+  expect(values.has(orbitSlotKey("household"))).toBe(true);
+  const loaded = await read(storage);
   expect(loaded).toEqual({ save: before, damaged: false, unavailable: false });
   const second = boot();
-  restoreOrbitSave(second, loaded.save!);
+  const records = createOrbitRecords(second, storage);
+  expect(await records.open("household")).toBe(true);
   expect(captureOrbitSave(second)).toEqual(before);
+  // The document's digest covers the whole household: the reloaded world writes the same state.
+  expect(records.digest("household")).toBe(createOrbitRecords(first, storage).digest("household"));
   expect(second.scene.object.get("placed:sleep_pod:1")!.rotationY).toBe(Math.PI / 2);
   expect(second.scene.object.get("hab:hab_wall:-9:-9")!.rotationY).toBe(Math.PI);
   const dt = first.time.advance(1);
@@ -70,16 +81,42 @@ test("nightly ledger cursor restores without charging twice", () => {
   expect(householdStore.read(second).economy).toEqual(settled.household.economy);
 });
 
-test("corrupt and newer saves are preserved, denied storage stays truthful", () => {
+test("a household an older build wrote at its own key opens, then is written as a document", async () => {
+  const first = boot();
+  householdStore.write(first, { ...householdStore.read(first), credits: 404 });
+  const old = captureOrbitSave(first);
+  const { storage, values } = memory(JSON.stringify(old));
+  values.set(orbitLegacyKey("household-3"), JSON.stringify(old));
+  expect(await read(storage)).toEqual({ save: old, damaged: false, unavailable: false });
+  expect((await read(storage, "household-3")).save).toEqual(old);
+  const second = boot();
+  const records = createOrbitRecords(second, storage);
+  expect(await records.open("household")).toBe(true);
+  expect(householdStore.read(second).credits).toBe(404);
+  expect(await records.write("household")).toBe(true);
+  expect(JSON.parse(values.get(orbitSlotKey("household"))!).value.systems.household).toEqual(captureOrbitSave(second));
+  // The old bytes stay until the slot is cleared; clearing takes them with the document.
+  expect(values.get(ORBIT_LEGACY_KEY)).toBe(JSON.stringify(old));
+  expect(await records.clear("household")).toBe(true);
+  expect(values.has(ORBIT_LEGACY_KEY)).toBe(false);
+  expect(values.has(orbitSlotKey("household"))).toBe(false);
+  expect((await read(storage)).save).toBeNull();
+});
+
+test("corrupt and newer saves are preserved, denied storage stays truthful", async () => {
   for (const raw of ["broken", JSON.stringify({ ...captureOrbitSave(boot()), version: 2 }), " ".repeat(256 * 1024 + 1)]) {
     const { storage, values } = memory(raw);
-    expect(readOrbitSave(storage)).toEqual({ save: null, damaged: true, unavailable: false });
-    expect(values.get(ORBIT_SAVE_KEY)).toBe(raw);
+    expect(await read(storage)).toEqual({ save: null, damaged: true, unavailable: false });
+    expect(values.get(ORBIT_LEGACY_KEY)).toBe(raw);
   }
+  const { storage, values } = memory();
+  values.set(orbitSlotKey("household"), "broken");
+  expect(await read(storage)).toEqual({ save: null, damaged: true, unavailable: false });
+  expect(values.get(orbitSlotKey("household"))).toBe("broken");
   const denied: KeyValueStorage = { getItem() { throw new Error("denied"); }, setItem() { throw new Error("quota"); }, removeItem() { throw new Error("denied"); } };
-  expect(readOrbitSave(denied)).toEqual({ save: null, damaged: false, unavailable: true });
-  expect(writeOrbitSave(boot(), denied)).toBe(false);
-  expect(writeOrbitSave(boot(), null)).toBe(false);
+  expect(await read(denied)).toEqual({ save: null, damaged: false, unavailable: true });
+  expect(await write(boot(), denied)).toBe(false);
+  expect(await write(boot(), null)).toBe(false);
 });
 
 test("bounded needs, relationships, economy, schedules and world reject atomically", () => {
@@ -116,7 +153,7 @@ test("bounded needs, relationships, economy, schedules and world reject atomical
 });
 
 
-test("a transmission waiting across a reload resolves once, the same way in both households", () => {
+test("a transmission waiting across a reload resolves once, the same way in both households", async () => {
   const first = boot();
   const notices: string[] = [];
   first.game.notices.onPush(notice => notices.push(notice.text));
@@ -124,8 +161,8 @@ test("a transmission waiting across a reload resolves once, the same way in both
   const pending = householdStore.read(first).incident!;
   expect(pending).not.toBeNull();
   const { storage } = memory();
-  expect(writeOrbitSave(first, storage)).toBe(true);
-  const second = boot(); restoreOrbitSave(second, readOrbitSave(storage).save!);
+  expect(await write(first, storage)).toBe(true);
+  const second = boot(); restoreOrbitSave(second, (await read(storage)).save!);
   expect(householdStore.read(second).incident).toEqual(pending);
   const step = pending.deadline - first.time.now() + 0.5;
   simulateHousehold(first, first.time.advance(step));
@@ -148,14 +185,14 @@ test("a long unattended gap does not burst transmissions on return", () => {
 });
 
 
-test("building after reload allocates a distinct placement and charges once", () => {
+test("building after reload allocates a distinct placement and charges once", async () => {
   const first = boot(); registerCommands(first); setGamePhase(first, "playing");
   first.game.commands.run("build.tool", { toolId: "sleep_pod" });
   first.game.commands.run("world.pointer", { point: { x: 18, y: 0, z: 18 }, entity: null, object: null });
   const firstId = first.scene.object.list().find(object => object.instanceId.startsWith("placed:"))!.instanceId;
   const { storage } = memory();
-  expect(writeOrbitSave(first, storage)).toBe(true);
-  const second = boot(); restoreOrbitSave(second, readOrbitSave(storage).save!);
+  expect(await write(first, storage)).toBe(true);
+  const second = boot(); restoreOrbitSave(second, (await read(storage)).save!);
   registerCommands(second); setGamePhase(second, "playing");
   second.game.commands.run("build.tool", { toolId: "sleep_pod" });
   second.game.commands.run("world.pointer", { point: { x: 18, y: 0, z: 10 }, entity: null, object: null });
@@ -220,7 +257,7 @@ test("a stroll kept in a friend's company survives a reload and reads in the pan
   expect(validOrbitSave(saved)).toBe(false);
 });
 
-test("a bond survives save and reload and still refuses to split the pair's shift", () => {
+test("a bond survives save and reload and still refuses to split the pair's shift", async () => {
   const first = boot(); registerCommands(first); setGamePhase(first, "playing");
   const state = householdStore.read(first);
   const a = state.members["alien:0"]!;
@@ -232,9 +269,9 @@ test("a bond survives save and reload and still refuses to split the pair's shif
   const saved = captureOrbitSave(first);
   expect(validOrbitSave(saved)).toBe(true);
   const { storage } = memory();
-  expect(writeOrbitSave(first, storage)).toBe(true);
+  expect(await write(first, storage)).toBe(true);
 
-  const second = boot(); restoreOrbitSave(second, readOrbitSave(storage).save!);
+  const second = boot(); restoreOrbitSave(second, (await read(storage)).save!);
   registerCommands(second); setGamePhase(second, "playing");
   const loaded = householdStore.read(second);
   expect(bondLine(loaded, a.id)).toMatchObject({ id: b.id, name: b.name, word: "Bonded" });
@@ -245,18 +282,18 @@ test("a bond survives save and reload and still refuses to split the pair's shif
   expect(loaded.members[a.id]!.concern).toContain("bonded and will not split");
 });
 
-test("a named household writes to its own slot and continues with its name and frame", () => {
+test("a named household writes to its own slot and continues with its name and frame", async () => {
   orbitProfile.name = "Vega Household";
   orbitProfile.thumbnail = "data:image/jpeg;base64,AAAA";
   orbitProfile.savedAt = 1_700_000_000_000;
   const first = boot();
   householdStore.write(first, { ...householdStore.read(first), credits: 512 });
   const { storage, values } = memory();
-  expect(writeOrbitSave(first, storage, "household-2")).toBe(true);
-  expect(values.has(ORBIT_SAVE_KEY)).toBe(false);
+  expect(await write(first, storage, "household-2")).toBe(true);
+  expect(values.has(orbitSlotKey("household"))).toBe(false);
   expect(values.has(orbitSlotKey("household-2"))).toBe(true);
 
-  const written = readOrbitSave(storage, "household-2").save!;
+  const written = (await read(storage, "household-2")).save!;
   expect(written.profile).toMatchObject({ name: "Vega Household", thumbnail: "data:image/jpeg;base64,AAAA", savedAt: 1_700_000_000_000 });
   const second = boot();
   restoreOrbitSave(second, written);
