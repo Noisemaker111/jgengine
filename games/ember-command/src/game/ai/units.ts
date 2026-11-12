@@ -9,7 +9,7 @@ import { matchRunning, playerDepot, session, type UnitRuntime } from "../session
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
-import { tacticalDamage } from "../tactics";
+import { matchupDamage, matchups } from "../matchups";
 import { raiseCombatNoise } from "./director";
 
 /** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
@@ -178,7 +178,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
       if (action === "attack") {
         const base = def.damage + heroAttackBonus(ctx, u.catalogId);
-        const resolved = factionDamage(tacticalDamage(base, u.catalogId, target.catalogId, distXZ(self.position, ent.position)), u.faction, target.faction);
+        const matched = matchupDamage(matchups(ctx), base, u, target, distXZ(self.position, ent.position));
+        const resolved = factionDamage(matched, u.faction, target.faction);
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
         const amount = resolved * lineMultiplier(u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });

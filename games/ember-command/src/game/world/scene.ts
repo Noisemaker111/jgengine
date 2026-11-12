@@ -12,6 +12,7 @@ import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
 import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
 import { earn, openTreasury } from "../treasury";
+import { forgetCombatant } from "../matchups";
 import { initResourceField, resetSession, session, type UnitRuntime } from "../session";
 import { recordOutcome } from "../preferences";
 
@@ -40,6 +41,7 @@ export function playerKeepPoint(): { x: number; z: number } {
 function onDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (session.over) return;
   session.units.delete(event.instanceId);
+  forgetCombatant(ctx, event.instanceId);
   const def = combatantDef(event.catalogId);
   if (def === null) return;
   noteCampaignDeath(ctx, event.catalogId);

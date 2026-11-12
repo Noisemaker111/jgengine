@@ -39,8 +39,12 @@ export interface CombatantDef {
   depot?: boolean;
   /** What this unit goes for first when several hostiles are in reach: harvesters or structures. */
   prefers?: "worker" | "building";
-  /** Damage multiplier against buildings (1 when absent). */
-  siege?: number;
+  /** What its blows are, as a row of the matchup table (`matchups.ts`): `"strike"` unless it has a matchup. */
+  damageType: string;
+  /** The class it presents to the matchup table: `"unit"` or `"building"` unless the roster says otherwise. */
+  resistance: string;
+  /** Blows struck from inside this distance land in the matchup table's `crowded` band (a rifle with no screen). */
+  crowdedWithin?: number;
 }
 
 /** What a price is paid in. */
@@ -73,6 +77,8 @@ function def(d: Partial<CombatantDef> & Pick<CombatantDef, "id" | "label" | "fac
     aggroRadius: 8,
     bounty: 0,
     food: d.kind === "building" ? 0 : 2,
+    damageType: "strike",
+    resistance: d.kind === "building" ? "building" : "unit",
     ...d,
   };
 }
@@ -86,10 +92,12 @@ export const COMBATANTS = {
   footman: def({
     id: "footman", label: "Footman", faction: "player", kind: "unit",
     maxHealth: 130, walkSpeed: 4.7, damage: 9, attackRange: 1.9, attackCooldown: 0.85, aggroRadius: 8, food: 2,
+    damageType: "blade",
   }),
   rifleman: def({
     id: "rifleman", label: "Rifleman", faction: "player", kind: "unit",
     maxHealth: 90, walkSpeed: 4.5, damage: 14, attackRange: 7, attackCooldown: 1.3, aggroRadius: 9, food: 3,
+    damageType: "rifle", crowdedWithin: 3,
   }),
   barracks: def({
     id: "barracks", label: "Barracks", faction: "player", kind: "building", maxHealth: 700, depot: true,
@@ -107,7 +115,7 @@ export const COMBATANTS = {
   }),
   keep_player: def({
     id: "keep_player", label: "Ember Command Keep", faction: "player", kind: "building",
-    maxHealth: 1600, scale: 1, depot: true,
+    maxHealth: 1600, scale: 1, depot: true, resistance: "keep",
   }),
 
   // — Marauders (enemy) —
@@ -118,11 +126,11 @@ export const COMBATANTS = {
   reaver: def({
     id: "reaver", label: "Reaver", faction: "enemy", kind: "unit",
     maxHealth: 240, walkSpeed: 3.9, scale: 1.22, damage: 17, attackRange: 2.1, attackCooldown: 1.1, aggroRadius: 9, bounty: 28,
-    prefers: "building", siege: 2,
+    prefers: "building", damageType: "siege", resistance: "heavy",
   }),
   keep_enemy: def({
     id: "keep_enemy", label: "Marauder Warcamp", faction: "enemy", kind: "building",
-    maxHealth: 1300, scale: 1,
+    maxHealth: 1300, scale: 1, resistance: "keep",
   }),
   warcamp: def({
     id: "warcamp", label: "Forward Camp", faction: "enemy", kind: "building",
