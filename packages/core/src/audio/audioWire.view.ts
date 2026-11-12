@@ -16,6 +16,7 @@ type AudioLoopSetPayload = {
   highpass?: number;
 };
 type AudioLoopStopPayload = { id: string };
+type AudioZoneLevelPayload = { id: string; level: number };
 
 /** Minimal event bus the shell wires to the audio engine, including retained id-keyed loops (#1051). @internal */
 export type AudioEventBus = {
@@ -28,6 +29,7 @@ export type AudioEventBus = {
   on(event: "audio.loopStart", handler: (payload: AudioLoopStartPayload) => void): () => void;
   on(event: "audio.loopSet", handler: (payload: AudioLoopSetPayload) => void): () => void;
   on(event: "audio.loopStop", handler: (payload: AudioLoopStopPayload) => void): () => void;
+  on(event: "audio.zoneLevel", handler: (payload: AudioZoneLevelPayload) => void): () => void;
 };
 
 function toVec(at: readonly [number, number, number] | undefined): Xyz | undefined {
@@ -42,7 +44,7 @@ function toVec(at: readonly [number, number, number] | undefined): Xyz | undefin
  */
 export function attachAudioEventWire(
   events: AudioEventBus,
-  audioEngine: Pick<AudioEngine, "playOneShot" | "playLoop" | "playMusic" | "resume"> & Partial<Pick<AudioEngine, "speak" | "stopSpeech" | "duck">>,
+  audioEngine: Pick<AudioEngine, "playOneShot" | "playLoop" | "playMusic" | "resume"> & Partial<Pick<AudioEngine, "speak" | "stopSpeech" | "duck" | "setZoneLevel">>,
 ): () => void {
   const loops = new Map<string, { sound: string; handle: AudioEmitterHandle }>();
 
@@ -98,6 +100,7 @@ export function attachAudioEventWire(
     entry.handle.stop();
     loops.delete(id);
   });
+  const offZoneLevel = events.on("audio.zoneLevel", ({ id, level }) => audioEngine.setZoneLevel?.(id, level));
 
   return () => {
     offPlay();
@@ -112,6 +115,7 @@ export function attachAudioEventWire(
     offLoopStart();
     offLoopSet();
     offLoopStop();
+    offZoneLevel();
     for (const { handle } of loops.values()) handle.stop();
     loops.clear();
   };

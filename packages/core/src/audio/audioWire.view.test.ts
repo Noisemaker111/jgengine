@@ -49,6 +49,22 @@ function fakeHandle() {
 }
 
 describe("attachAudioEventWire", () => {
+  test("routes audio.zoneLevel to the engine's zone bed level until detached", () => {
+    const levels: [string, number][] = [];
+    const bus = busStub();
+    const detach = attachAudioEventWire(bus.events, {
+      playOneShot: () => undefined,
+      playLoop: () => null,
+      playMusic: () => undefined,
+      resume: () => undefined,
+      setZoneLevel: (id, level) => levels.push([id, level]),
+    });
+    bus.emit("audio.zoneLevel", { id: "wind_flats", level: 0.6 });
+    expect(levels).toEqual([["wind_flats", 0.6]]);
+    detach();
+    expect(bus.has("audio.zoneLevel")).toBe(false);
+  });
+
   test("routes audio.play / audio.music / audio.resume to the engine", () => {
     const played: { sound: string; pos?: { x: number; y: number; z: number } }[] = [];
     const music: { theme: string | null; transpose?: number }[] = [];

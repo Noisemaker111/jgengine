@@ -6,7 +6,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { InventoryGrid } from "./inventoryGrid.view";
+import { InventoryGrid, useInventoryTransfer } from "./inventoryGrid.view";
 import { GameProvider } from "@jgengine/ui/provider";
 
 function makeContext(): GameContext {
@@ -83,6 +83,92 @@ describe("a stash beside the bag renders from the same model", () => {
   });
 });
 
+describe("inventory.move across two inventories (bag to stash)", () => {
+  function stashContext(): GameContext {
+    return createGameContext({
+      definition: defineGameDefinition({
+        name: "StashMoveTest",
+        assets: createAssetCatalog(),
+        multiplayer: "off",
+        inventories: {
+          bag: { slots: 3, traits: { stackLimit: (id) => (id === "ore" ? 10 : 1), kind: (id) => (id === "ore" ? "material" : "gear") } },
+          stash: { slots: 3, tier: "banked" },
+          satchel: { slots: 2, accepts: "material" },
+        },
+      }),
+      content: {},
+      player: { userId: "user_a", isNew: true },
+    });
+  }
+  const state = (ctx: GameContext, id: string) => ctx.player.inventory.state(id).slots;
+  const move = (ctx: GameContext, input: Record<string, unknown>) => ctx.game.commands.run("inventory.move", input);
+
+  test("a stack moves onto an empty stash slot and leaves the bag slot empty", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "rifle", 1, { slot: 0 });
+    expect(move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "stash", to: 2 }).status).toBe("applied");
+    expect(state(ctx, "bag")[0]).toBeNull();
+    expect(state(ctx, "stash")[2]).toEqual({ itemId: "rifle", count: 1 });
+  });
+
+  test("dropping onto a different item swaps the two stacks across inventories", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "rifle", 1, { slot: 0 });
+    ctx.player.inventory.put("stash", "helmet", 1, { slot: 1 });
+    move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "stash", to: 1 });
+    expect(state(ctx, "bag")[0]).toEqual({ itemId: "helmet", count: 1 });
+    expect(state(ctx, "stash")[1]).toEqual({ itemId: "rifle", count: 1 });
+  });
+
+  test("a merge fills the stash stack to its limit and leaves the remainder in the bag", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "ore", 7, { slot: 0 });
+    ctx.player.inventory.put("stash", "ore", 6, { slot: 0 });
+    move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "stash", to: 0 });
+    expect(state(ctx, "stash")[0]).toEqual({ itemId: "ore", count: 10 });
+    expect(state(ctx, "bag")[0]).toEqual({ itemId: "ore", count: 3 });
+  });
+
+  test("a slot filter refuses with wrong-kind both ways and leaves both inventories unchanged", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "rifle", 1, { slot: 0 });
+    ctx.player.inventory.put("satchel", "ore", 4, { slot: 0 });
+    const before = { bag: [...state(ctx, "bag")], satchel: [...state(ctx, "satchel")] };
+    // The satchel takes no gear, and a swap would push gear into it from the other side.
+    expect(move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "satchel", to: 1 })).toEqual({ status: "rejected", reason: "wrong-kind" });
+    expect(move(ctx, { inventoryId: "satchel", from: 0, toInventoryId: "bag", to: 0 })).toEqual({ status: "rejected", reason: "wrong-kind" });
+    expect(state(ctx, "bag")).toEqual(before.bag);
+    expect(state(ctx, "satchel")).toEqual(before.satchel);
+  });
+
+  test("an unknown target inventory or an out-of-range target slot is refused", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "rifle", 1, { slot: 0 });
+    expect(move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "vault", to: 0 }).status).toBe("rejected");
+    expect(move(ctx, { inventoryId: "bag", from: 0, toInventoryId: "satchel", to: 2 })).toEqual({ status: "rejected", reason: "invalid-slot" });
+  });
+
+  test("two grids sharing one transfer render both inventories with globally unique drop targets", () => {
+    const ctx = stashContext();
+    ctx.player.inventory.put("bag", "rifle", 1, { slot: 0 });
+    ctx.player.inventory.put("stash", "helmet", 1, { slot: 0 });
+    function Both() {
+      const transfer = useInventoryTransfer();
+      return createElement(
+        "div",
+        null,
+        createElement(InventoryGrid, { inventoryId: "bag", transfer }),
+        createElement(InventoryGrid, { inventoryId: "stash", transfer }),
+      );
+    }
+    const html = renderToStaticMarkup(createElement(GameProvider, { context: ctx }, createElement(Both)));
+    expect(html).toContain('data-dropzone="bag#0"');
+    expect(html).toContain('data-dropzone="stash#2"');
+    expect(html).toContain('data-card="stash#0"');
+    expect(html).toContain('role="status"');
+  });
+});
+
 describe("inventory.move / inventory.split commands (the grid's write path)", () => {
   test("moving onto an empty slot relocates the stack", () => {
     const ctx = makeContext();
@@ -131,6 +217,12 @@ describe("inventory.move / inventory.split commands (the grid's write path)", ()
     expect(ctx.game.commands.run("inventory.move", { inventoryId: "nope", from: 0, to: 1 }).status).toBe("rejected");
     expect(ctx.game.commands.run("inventory.move", { inventoryId: "bag", from: 0, to: 9 }).status).toBe("rejected");
     expect(ctx.game.commands.run("inventory.split", { inventoryId: "bag", slot: 9, amount: 1 }).status).toBe("rejected");
+  });
+
+  test("a refused move reports the model's reason and changes nothing", () => {
+    const ctx = makeContext();
+    const result = ctx.game.commands.run("inventory.move", { inventoryId: "bag", from: 0, to: 1 });
+    expect(result).toEqual({ status: "rejected", reason: "empty-slot" });
   });
 
   test("an invalid split (amount >= stack) is a harmless no-op that leaves state unchanged", () => {

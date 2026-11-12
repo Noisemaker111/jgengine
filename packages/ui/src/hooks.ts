@@ -259,7 +259,11 @@ export function useInventory(inventoryId: string): readonly InventorySlot[] {
 /** Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so UI re-renders. */
 export interface InventoryGridBinding {
   slots: readonly InventorySlot[];
-  move(from: number, to: number): void;
+  /**
+   * Move the stack at `from` onto slot `to` of this inventory, or of `toInventoryId` (bag to stash).
+   * A refusal carries the model's reason (`wrong-kind`, `no-space`, `empty-slot`) and changes nothing.
+   */
+  move(from: number, to: number, toInventoryId?: string): DispatchedCommandResult;
   split(slot: number, amount: number, toSlot?: number): void;
 }
 
@@ -271,9 +275,11 @@ export function useInventoryGrid(inventoryId: string): InventoryGridBinding {
   const slots = useInventory(inventoryId);
   const { commands } = useGame();
   const move = useCallback(
-    (from: number, to: number) => {
-      commands.run("inventory.move", { inventoryId, from, to });
-    },
+    (from: number, to: number, toInventoryId?: string) =>
+      commands.run(
+        "inventory.move",
+        toInventoryId === undefined || toInventoryId === inventoryId ? { inventoryId, from, to } : { inventoryId, from, to, toInventoryId },
+      ),
     [commands, inventoryId],
   );
   const split = useCallback(

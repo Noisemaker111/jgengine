@@ -7,7 +7,7 @@ import { RuneAction, RuneFor, RuneView } from "@jgengine/core/ui/rune/primitives
 import { bind, type RuneSource } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
+import { inventorySlotKey, parseInventorySlotKey, type InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import { useGameStore } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
 
@@ -46,7 +46,7 @@ export function storeSource<T>(ctx: GameContext, select: (ctx: GameContext) => r
 
 interface Cell { index: number; slot: InventorySlot | null }
 
-/** One inventory as a grid of slots: click sends an item across (`give` names where), drag reorders within it. */
+/** One inventory as a grid of slots: click sends an item across (`give` names where), drag reorders it or drops onto the other grid. */
 function SlotGrid({ inventoryId, columns, size, give }: { inventoryId: string; columns: number; size: number; give: Give }): ReactNode {
   const ctx = useGameContext();
   const source = useMemo(() => storeSource<Cell>(ctx, (c) => c.player.inventory.state(inventoryId).slots.map((slot, index) => ({ index, slot }))), [ctx, inventoryId]);
@@ -57,11 +57,15 @@ function SlotGrid({ inventoryId, columns, size, give }: { inventoryId: string; c
         {(cell) => (
           <RuneAction variant="cell" width={size} height={size}
             label={cell.slot === null ? `Empty slot ${cell.index + 1}` : `${itemLabel(cell.slot.itemId)}${cell.slot.count > 1 ? ` ×${cell.slot.count}` : ""}`}
-            {...(cell.slot === null ? {} : { tooltip: itemLabel(cell.slot.itemId), dragValue: `${inventoryId}:${cell.index}` })}
+            {...(cell.slot === null ? {} : { tooltip: itemLabel(cell.slot.itemId), dragValue: inventorySlotKey({ inventoryId, slot: cell.index }) })}
             run={() => { if (cell.slot !== null) run(give ?? "shuttle", { inventoryId, slot: cell.index }); }}
             acceptDrop={(value) => {
-              const [from, slot] = value.split(":");
-              if (from === inventoryId && Number(slot) !== cell.index) run("inventory.move", { inventoryId, from: Number(slot), to: cell.index });
+              // A drop from the other grid moves across: bag to hotbar and back, swapping or merging stacks.
+              const from = parseInventorySlotKey(value);
+              if (from === null || (from.inventoryId === inventoryId && from.slot === cell.index)) return;
+              run("inventory.move", from.inventoryId === inventoryId
+                ? { inventoryId, from: from.slot, to: cell.index }
+                : { inventoryId: from.inventoryId, from: from.slot, to: cell.index, toInventoryId: inventoryId });
             }}>
             {cell.slot === null ? null : <ItemIcon itemId={cell.slot.itemId} size={size - 8} />}
             {cell.slot === null || cell.slot.count <= 1 ? null : <RuneView pin={[null, null, 3, 1]}><Small size={10} weight={700} color={INK} text={String(cell.slot.count)} /></RuneView>}
@@ -78,7 +82,7 @@ function Carried({ give = null }: { give?: Give }): ReactNode {
   const { width } = useRuneViewport();
   const phone = width < 600;
   const worn = useGameStore((c) => liveSurvivor(c).worn, same);
-  const hint = give === "giveCreature" ? "Click an item to give it to the creature." : give === "storePut" ? "Click an item to put it in the box." : "Click moves an item between inventory and hotbar; drag to rearrange. Number keys use or equip hotbar items.";
+  const hint = give === "giveCreature" ? "Click an item to give it to the creature." : give === "storePut" ? "Click an item to put it in the box." : "Click moves an item between inventory and hotbar; drag to rearrange or drop onto either grid. Number keys use or equip hotbar items.";
   return (
     <Panel width={phone ? 370 : 400}>
       <Row justify="between">

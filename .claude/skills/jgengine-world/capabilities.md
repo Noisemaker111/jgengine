@@ -124,6 +124,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `alertSearchArea` (function) · `import { alertSearchArea } from "@jgengine/core/ai/alertLevel"`
 
+## ambience-live-level — a game drives a zone bed's loudness from world state (gusts, a storm, a reactor spooling) while the bed keeps its positional crossfade.
+
+- `ambienceBedLevel` (function) · `import { ambienceBedLevel } from "@jgengine/core/audio/ambience"`
+
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`

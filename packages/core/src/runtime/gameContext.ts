@@ -10,7 +10,7 @@ import { createGameFeed } from "../feed/feed";
 import { setGamePhase } from "../game/gamePhase";
 import { createLootRegistry, grantDrops } from "../loot/lootTable";
 import { createSocial, type Social } from "../social/social";
-import { splitStack } from "../inventory/inventoryModel";
+import { moveItem, splitStack } from "../inventory/inventoryModel";
 import { createItemUse } from "../item/use";
 import { createWeaponStats } from "../item/weapon";
 import type { ModelAssetRef } from "../scene/assetCatalog";
@@ -239,18 +239,31 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const knownInventory = (inventoryId: string): boolean => layouts[inventoryId] !== undefined;
   const slotInRange = (inventoryId: string, slot: unknown): slot is number =>
     typeof slot === "number" && Number.isInteger(slot) && slot >= 0 && slot < layouts[inventoryId]!.slots;
-  commandRegistry.define<{ inventoryId: string; from: number; to: number }>("inventory.move", {
+  // `toInventoryId` moves across two inventories (bag to stash); omitted, the move stays inside one.
+  commandRegistry.define<{ inventoryId: string; from: number; to: number; toInventoryId?: string }>("inventory.move", {
     validate(_state, input) {
+      const target = input.toInventoryId ?? input.inventoryId;
       if (!knownInventory(input.inventoryId)) return { reason: `unknown inventory "${input.inventoryId}"` };
-      if (!slotInRange(input.inventoryId, input.from) || !slotInRange(input.inventoryId, input.to)) {
+      if (!knownInventory(target)) return { reason: `unknown inventory "${target}"` };
+      if (!slotInRange(input.inventoryId, input.from) || !slotInRange(target, input.to)) {
         return { reason: "invalid-slot" };
       }
-      return null;
+      // Dry-run the model so a refused drop reports why (`wrong-kind`, `no-space`, `empty-slot`) and
+      // leaves both inventories as they were.
+      const inventory = inventoryFor(activeUserId());
+      const result = moveItem(
+        inventory.state(input.inventoryId),
+        input.from,
+        inventory.state(target),
+        layouts[target]!,
+        playerSys.itemTraits,
+        input.to,
+        layouts[input.inventoryId],
+      );
+      return result.status === "rejected" ? { reason: result.reason } : null;
     },
     apply(_state, input) {
-      const inventory = inventoryFor(activeUserId());
-      // A rejected move (empty source, wrong-kind, no-space) is a harmless no-op: the item bounces back.
-      inventory.move(input.inventoryId, input.from, input.inventoryId, input.to);
+      inventoryFor(activeUserId()).move(input.inventoryId, input.from, input.toInventoryId ?? input.inventoryId, input.to);
     },
   });
   commandRegistry.define<{ inventoryId: string; slot: number; amount: number; toSlot?: number }>("inventory.split", {
@@ -646,6 +659,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           events.emit("audio.loopStart", options?.at === undefined ? { id, sound } : { id, sound, at: options.at }),
         setLoop: (id, params) => events.emit("audio.loopSet", { id, ...params }),
         stopLoop: (id) => events.emit("audio.loopStop", { id }),
+        zoneLevel: (id, level) => events.emit("audio.zoneLevel", { id, level }),
         intensity: (amount) => events.emit("audio.intensity", { amount }),
       },
       feedback: {

@@ -469,6 +469,16 @@
       "intent": "last-sighting search circle that widens while the trail is cold"
     },
     {
+      "id": "ambience-live-level",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/audio/ambience",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a game drives a zone bed's loudness from world state (gusts, a storm, a reactor spooling) while the bed keeps its positional crossfade."
+    },
+    {
       "id": "ambience-zones",
       "packages": [
         "@jgengine/core"
@@ -5634,6 +5644,16 @@
       "intent": "drop-in NxN inventory grid with drag/swap/stack/split bound to a live inventory"
     },
     {
+      "id": "inventory-slot-key",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/inventory/inventoryModel",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "encode a slot of a named inventory as one drag/drop string and read it back, for moves between two grids"
+    },
+    {
       "id": "inventory-split",
       "packages": [
         "@jgengine/core"
@@ -5642,6 +5662,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "split a stack into a target or first-empty slot, honoring a stack limit"
+    },
+    {
+      "id": "inventory-transfer",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/inventory/inventoryGrid.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons"
     },
     {
       "id": "item-comparison",

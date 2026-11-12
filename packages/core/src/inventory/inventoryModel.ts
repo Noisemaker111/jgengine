@@ -20,9 +20,37 @@ export type PutResult =
 
 export type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" };
 
+/** Why {@link moveItem} refused a move; both inventories are unchanged. */
+export type MoveRejection = "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space";
+
 export type MoveResult =
   | { status: "ok"; from: InventoryState; to: InventoryState }
-  | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" };
+  | { status: "rejected"; reason: MoveRejection };
+
+/** One slot of one named inventory: the source or target of a move between two grids (bag to stash). */
+export interface InventorySlotRef {
+  inventoryId: string;
+  slot: number;
+}
+
+/** A slot ref as one string, `"<inventoryId>#<slot>"`, for a drag value or a drop-target id. */
+export function inventorySlotKey(ref: InventorySlotRef): string {
+  return `${ref.inventoryId}#${ref.slot}`;
+}
+
+/**
+ * Read back an {@link inventorySlotKey}; null for anything else. The slot follows the last `#`, so
+ * an inventory id may itself contain one.
+ *
+ * @capability inventory-slot-key encode a slot of a named inventory as one drag/drop string and read it back, for moves between two grids
+ */
+export function parseInventorySlotKey(key: string): InventorySlotRef | null {
+  const at = key.lastIndexOf("#");
+  if (at <= 0) return null;
+  const digits = key.slice(at + 1);
+  if (!/^\d+$/.test(digits)) return null;
+  return { inventoryId: key.slice(0, at), slot: Number(digits) };
+}
 
 /** Outcome of {@link splitStack}: the new state, or a rejection reason. */
 export type SplitResult =
@@ -168,7 +196,12 @@ export function hasItem(state: InventoryState, itemId: string, count: number): b
   return countItem(state, itemId) >= count;
 }
 
-/** Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventories. Rejects on empty source, wrong kind, or no space. */
+/**
+ * Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with
+ * remainder up to the stack limit, or relocating across two inventories. Rejects on empty source,
+ * wrong kind, or no space, leaving both inventories unchanged. Pass `fromLayout` when the source is
+ * a different inventory: a swap then also rejects `wrong-kind` when the source refuses the displaced item.
+ */
 export function moveItem(
   from: InventoryState,
   fromSlot: number,
@@ -176,6 +209,7 @@ export function moveItem(
   toLayout: InventoryLayout,
   traits: ItemTraits,
   toSlot?: number,
+  fromLayout?: InventoryLayout,
 ): MoveResult {
   const source = slotAt(from, fromSlot);
   if (source === undefined) return { status: "rejected", reason: "invalid-slot" };
@@ -210,6 +244,9 @@ export function moveItem(
       toSlots[toSlot] = { itemId: source.itemId, count: placed };
       fromSlots[fromSlot] = remainder > 0 ? { itemId: source.itemId, count: remainder } : null;
     } else {
+      if (fromLayout !== undefined && violatesKind(fromLayout, traits, dest.itemId)) {
+        return { status: "rejected", reason: "wrong-kind" };
+      }
       toSlots[toSlot] = source;
       fromSlots[fromSlot] = dest;
     }
@@ -335,7 +372,7 @@ export function createInventorySet<TId extends string>(
       return result;
     },
     move(fromId, fromSlot, toId, toSlot) {
-      const result = moveItem(requireState(fromId), fromSlot, requireState(toId), layouts[toId], traits, toSlot);
+      const result = moveItem(requireState(fromId), fromSlot, requireState(toId), layouts[toId], traits, toSlot, layouts[fromId]);
       if (result.status === "ok") {
         states.set(fromId, result.from);
         states.set(toId, result.to);

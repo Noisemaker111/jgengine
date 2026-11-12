@@ -4,7 +4,9 @@ import {
   createEmptyInventory,
   createInventorySet,
   hasItem,
+  inventorySlotKey,
   moveItem,
+  parseInventorySlotKey,
   putItem,
   splitStack,
   takeItem,
@@ -178,6 +180,44 @@ describe("moveItem", () => {
     const to: InventoryState = { slots: [null, null] };
     const result = moveItem(from, 0, to, toolbeltLayout, traits, 0);
     expect(result).toEqual({ status: "rejected", reason: "wrong-kind" });
+  });
+
+  test("a cross-inventory swap rejects when the source refuses the displaced item", () => {
+    // Dragging a sword from the tool belt onto a stone in the backpack would put the stone on the belt.
+    const belt: InventoryState = { slots: [{ itemId: "sword", count: 1 }, null] };
+    const pack: InventoryState = { slots: [{ itemId: "stone", count: 8 }, null, null] };
+    expect(moveItem(belt, 0, pack, backpackLayout, traits, 0, toolbeltLayout)).toEqual({ status: "rejected", reason: "wrong-kind" });
+    expect(belt.slots[0]).toEqual({ itemId: "sword", count: 1 });
+    expect(pack.slots[0]).toEqual({ itemId: "stone", count: 8 });
+    // A tool the belt accepts swaps back fine.
+    const rack: InventoryState = { slots: [{ itemId: "shield", count: 1 }, null, null] };
+    expect(moveItem(belt, 0, rack, backpackLayout, traits, 0, toolbeltLayout)).toMatchObject({
+      status: "ok",
+      from: { slots: [{ itemId: "shield", count: 1 }, null] },
+      to: { slots: [{ itemId: "sword", count: 1 }, null, null] },
+    });
+  });
+
+  test("a cross-inventory merge fills the target stack to its limit and leaves the remainder behind", () => {
+    const bag: InventoryState = { slots: [{ itemId: "stone", count: 40 }, null] };
+    const stash: InventoryState = { slots: [{ itemId: "stone", count: 50 }, null, null] };
+    expect(moveItem(bag, 0, stash, backpackLayout, traits, 0, backpackLayout)).toEqual({
+      status: "ok",
+      from: { slots: [{ itemId: "stone", count: 26 }, null] },
+      to: { slots: [{ itemId: "stone", count: 64 }, null, null] },
+    });
+  });
+});
+
+describe("inventory slot keys", () => {
+  test("a slot ref round-trips through its key, even when the inventory id holds a #", () => {
+    expect(inventorySlotKey({ inventoryId: "bag", slot: 3 })).toBe("bag#3");
+    expect(parseInventorySlotKey("bag#3")).toEqual({ inventoryId: "bag", slot: 3 });
+    expect(parseInventorySlotKey(inventorySlotKey({ inventoryId: "crate#2", slot: 11 }))).toEqual({ inventoryId: "crate#2", slot: 11 });
+  });
+
+  test("anything that is not a slot key reads as null", () => {
+    for (const key of ["", "bag", "#3", "bag#", "bag#-1", "bag#1.5", "bag#x"]) expect(parseInventorySlotKey(key)).toBeNull();
   });
 });
 

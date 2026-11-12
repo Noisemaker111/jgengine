@@ -396,6 +396,16 @@ export interface AudioLoopStopEvent {
   id: string;
 }
 
+/**
+ * Live level multiplier `level` (0..1) for the ambience zone bed `id` from `audio.zones`; it composes
+ * with the zone's crossfade weight and authored gain. Emitted every tick to track world state; the
+ * shell clamps, ramps it zipper-free and ignores an unknown `id` (#2276).
+ */
+export interface AudioZoneLevelEvent {
+  id: string;
+  level: number;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "combat.damage": DamageAppliedEvent;
@@ -435,6 +445,7 @@ export interface GameEventMap {
   "audio.loopStart": AudioLoopStartEvent;
   "audio.loopSet": AudioLoopSetEvent;
   "audio.loopStop": AudioLoopStopEvent;
+  "audio.zoneLevel": AudioZoneLevelEvent;
   "entity.animation": EntityAnimationEvent;
   "animation.event": AnimationClipEvent;
   "feedback.cue": FeedbackCueEvent;

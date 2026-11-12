@@ -75,7 +75,10 @@ replaced item, and `state()` / `restore()` round-trip the worn set. Weigh a char
 shared encumbrance bands (`moveMultiplier`, sprint/jump gates, `remaining`), so `canCarry` gates a
 pickup. Declare a stash as its own inventory (`tier: "banked"`) and move items with
 `InventorySet.move`; `snapshot()` / `restore()` save both as detached data. The bag and stash render
-through `<InventoryGrid>` with `<EquipmentSlots>` above it. See
+through `<InventoryGrid>` with `<EquipmentSlots>` above it; pass both grids one `useInventoryTransfer()`
+so a stack drags (or Enter/Tab/Enter moves) between them through `inventory.move` with `toInventoryId`,
+which swaps, merges up to the stack limit and reports a refusal reason (`wrong-kind`, `no-space`). A Rune
+grid encodes a slot as `inventorySlotKey` for `dragValue` and reads it back with `parseInventorySlotKey`. See
 [inventory, equipment and weight](reference-systems.md#inventory-equipment-and-weight).
 
 Validate generated quest catalogs with `validateQuestCatalog` (`mission/questCatalog`).

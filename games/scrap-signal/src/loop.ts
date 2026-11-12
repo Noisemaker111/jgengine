@@ -13,7 +13,7 @@ import { registerCommands, resumeBuild } from "./game/commands";
 import { settleBootPhase } from "./game/bootPhase";
 import { resetCombat, syncCombatTargets, tickCombat } from "./game/combat/hitModel";
 import { registerPerks } from "./game/combat/gunPerks";
-import { startAmbience, tickAudio } from "./game/audio/drive";
+import { tickAudio } from "./game/audio/drive";
 import { equippedGun, noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
 import { applyWalkSpeed, tickHandling } from "./game/handling";
 import { tickEnemies } from "./game/entities/enemies/ai";
@@ -306,7 +306,6 @@ function onInit(ctx: GameContext): void {
     void saveScrapState(ctx);
   });
 
-  startAmbience(ctx);
   setupWorld(ctx);
   syncCombatTargets(ctx);
   // Mount the three boot-probed systems: the damage model (its devtools probe reports every hit), the

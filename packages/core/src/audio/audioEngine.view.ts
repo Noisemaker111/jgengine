@@ -1,4 +1,4 @@
-import { activeAmbienceZone, ambienceWeights, type AmbienceWeight, type AmbienceZoneDef } from "@jgengine/core/audio/ambience";
+import { activeAmbienceZone, ambienceBedLevel, ambienceWeights, type AmbienceWeight, type AmbienceZoneDef } from "@jgengine/core/audio/ambience";
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { dopplerRate } from "@jgengine/core/audio/doppler";
 import { resolveOcclusionConfig, type AudioOcclusionConfig, type ResolvedAudioOcclusionConfig } from "@jgengine/core/audio/occlusion";
@@ -131,9 +131,12 @@ export interface AudioOcclusionStats {
 
 /** Current ambience mix, by zone id. */
 export interface AudioAmbienceState {
-  /** Loudest zone, or null when the listener is outside every zone. */
+  /** Loudest zone (an `elsewhere` zone counts), or null when the listener is outside every zone. */
   zone: string | null;
-  /** Non-silent zone beds with their smoothed target level (`0..1`). */
+  /**
+   * Non-silent zone beds with the level their gain ramps toward (`0..1`): zone weight × authored
+   * `gain` × the live {@link AudioEngine.setZoneLevel} multiplier.
+   */
   levels: readonly { id: string; level: number }[];
 }
 
@@ -182,6 +185,12 @@ export interface AudioEngine {
   spatialStats(): AudioSpatialStats;
   /** Current zone mix, for a capture probe or a HUD readout. */
   ambience(): AudioAmbienceState;
+  /**
+   * Live level multiplier (`0..1`, clamped; non-finite is silence) for ambience zone bed `zoneId`,
+   * composing with its zone weight and authored gain. Cheap to call every tick: the bed ramps over
+   * ~80 ms so a driven level never zippers. An unknown id is ignored. Default 1.
+   */
+  setZoneLevel(zoneId: string, level: number): void;
   /**
    * Lower one bus for its duration and restore exactly the player's own level, even if they move
    * the slider while it is ducked. Returns an idempotent release.
@@ -237,6 +246,7 @@ function createNoopEngine(): AudioEngine {
     setReverbEnvironment: () => undefined,
     spatialStats: () => ({ panned: 0, reverbSends: 0, occludedOneShots: 0, reverb: "none", reverbZone: null }),
     ambience: () => ({ zone: null, levels: [] }),
+    setZoneLevel: () => undefined,
     duck: () => () => undefined,
     setBusGain: () => undefined,
     setBusMute: () => undefined,
@@ -692,9 +702,15 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     level: number;
   }
   const zoneBeds = new Map<string, ZoneBed>();
+  /** The game's live multiplier per zone id; a zone without one plays at 1. */
+  const zoneLive = new Map<string, number>();
   const ambienceScratch: AmbienceWeight[] = [];
   let ambienceActive: string | null = null;
   let ambienceInitialized = false;
+
+  function zoneBedLevel(zone: AmbienceZoneDef): number {
+    return ambienceBedLevel(zone, zoneWeight(zone.id), zoneLive.get(zone.id) ?? 1);
+  }
 
   function zoneWeight(id: string): number {
     for (const entry of ambienceScratch) {
@@ -735,7 +751,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         source.connect(gain);
         source.start();
         bed.source = source;
-        applyAmbience();
+        applyBedLevels();
       } catch {
         gain.disconnect();
       }
@@ -747,6 +763,11 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     if (zones.length === 0) return;
     ambienceWeights(zones, listenerPosition.x, listenerPosition.y, listenerPosition.z, ambienceScratch);
     ambienceActive = activeAmbienceZone(ambienceScratch);
+    applyBedLevels();
+  }
+
+  /** Ramp every bed toward weight × gain × live level; a bed starts once its zone is first heard. */
+  function applyBedLevels(): void {
     for (const zone of zones) {
       const weight = zoneWeight(zone.id);
       const existing = zoneBeds.get(zone.id);
@@ -755,7 +776,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (sound === undefined) continue;
       const bed = existing ?? ensureBed(zone, sound);
       if (bed === null) continue;
-      const level = weight * (zone.gain ?? 1) * (sound.gain ?? 1);
+      const level = zoneBedLevel(zone) * (sound.gain ?? 1);
       if (level === bed.level) continue;
       bed.level = level;
       bed.gain.gain.setTargetAtTime(level, context.currentTime, BED_SMOOTH_TC);
@@ -1309,10 +1330,18 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     ambience() {
       const levels: { id: string; level: number }[] = [];
       for (const zone of zones) {
-        const weight = zoneWeight(zone.id);
-        if (weight > 0) levels.push({ id: zone.id, level: weight * (zone.gain ?? 1) });
+        const level = zoneBedLevel(zone);
+        if (level > 0) levels.push({ id: zone.id, level });
       }
       return { zone: ambienceActive, levels };
+    },
+    setZoneLevel(zoneId, level) {
+      if (disposed || !zones.some((zone) => zone.id === zoneId)) return;
+      const live = clampLoopGain(level);
+      if (zoneLive.get(zoneId) === live) return;
+      zoneLive.set(zoneId, live);
+      // Before the first listener pose the weights are unknown; the first pose applies this level.
+      if (ambienceInitialized) applyBedLevels();
     },
     duck: duckBus,
     setBusGain(busId, gain) {

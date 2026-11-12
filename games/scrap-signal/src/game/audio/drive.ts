@@ -5,10 +5,9 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 import { enemyById } from "../entities/enemies/catalog";
-import { airAt, gust } from "../world/air";
-import { zoneAt } from "../world/zones";
+import { gust } from "../world/air";
+import { windZones } from "./catalog";
 
-const WIND_LOOP = "wind";
 const THREAT_RADIUS = 42;
 
 
@@ -24,7 +23,6 @@ const MUSIC: MusicStateConfig = {
 const STEPS: StepCadenceConfig = { strideDistance: 1.9 };
 
 const stateOf = perContext(() => ({
-  started: false,
   cadence: createStepCadenceState(),
   music: createMusicState(),
   lastPosition: null as EntityPosition | null,
@@ -32,7 +30,6 @@ const stateOf = perContext(() => ({
   lastHealth: null as number | null,
   lastShield: null as number | null,
   cues: 0,
-  loops: 0,
   steps: 0,
   travelled: 0,
   barks: 0,
@@ -52,7 +49,6 @@ export function audioProbe(ctx: GameContext) {
     z: Math.round(position[2] * 100) / 100,
     travelled: Math.round(state.travelled * 100) / 100,
     audioCues: state.cues,
-    audioLoops: state.loops,
     footsteps: state.steps,
     barks: state.barks,
     musicChanges: state.musicChanges,
@@ -65,18 +61,13 @@ function cue(ctx: GameContext, sound: string, at?: EntityPosition): void {
 }
 
 /**
- * Wind is the one bed Scrap still owns: its gust curve and per-zone playback rate are this world's
- * own weather, and the engine's zone beds take a static gain with no live level hook. The industry
- * bed moved to `audio.zones`, which the shell starts and crossfades by listener position.
+ * The wind and industry beds are `audio.zones`, which the shell starts and crossfades by listener
+ * position. The gust curve is this world's own weather, so it rides on every wind bed as a live level.
  */
-export function startAmbience(ctx: GameContext): void {
-  const state = stateOf(ctx);
-  if (state.started) return;
-  state.started = true;
-  ctx.game.audio.loop(WIND_LOOP, "amb_wind");
-  state.loops = 1;
+function tickWind(nowMs: number, ctx: GameContext): void {
+  const level = gust(nowMs);
+  for (const zone of windZones) ctx.game.audio.zoneLevel(zone.id, level);
 }
-
 
 function threatIntensity(ctx: GameContext, playerPosition: EntityPosition): number {
   let intensity = 0;
@@ -120,9 +111,7 @@ export function tickAudio(ctx: GameContext, nowMs: number): void {
   if (playerEntity === null) return;
   const position = playerEntity.position;
 
-  const zone = zoneAt(position[0], position[2]);
-  const air = airAt(zone?.id ?? null);
-  ctx.game.audio.setLoop(WIND_LOOP, { gain: air.wind * gust(nowMs), rate: air.rate });
+  tickWind(nowMs, ctx);
 
   if (state.lastPosition !== null) {
     const travelled = Math.hypot(position[0] - state.lastPosition[0], position[2] - state.lastPosition[2]);

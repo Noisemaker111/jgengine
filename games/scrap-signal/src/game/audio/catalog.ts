@@ -2,8 +2,9 @@ import type { AmbienceZoneDef } from "@jgengine/core/audio/ambience";
 import type { AudioBusDef, SoundDef } from "@jgengine/core/audio/audioFalloff";
 import type { AudioOcclusionConfig } from "@jgengine/core/audio/occlusion";
 import type { MusicTheme } from "@jgengine/core/audio/music";
+import type { SynthPatch } from "@jgengine/core/audio/synth";
 
-import { airAt } from "../world/air";
+import { airAt, DEFAULT_AIR } from "../world/air";
 import { ZONES } from "../world/zones";
 import { MUSIC_THEMES } from "./music";
 import { LOOP_SOUND_IDS, POSITIONAL_SOUND_IDS, SFX_PATCHES } from "./sfx";
@@ -61,6 +62,43 @@ export const ambienceZones: AmbienceZoneDef[] = ZONES.map((zone) => ({
   gain: airAt(zone.id).industry,
 }));
 
+/** The wind bed of zone `zoneId`, or of the open ground between zones when null. */
+export const windZoneId = (zoneId: string | null): string => (zoneId === null ? "wind_open" : `wind_${zoneId}`);
+
+/**
+ * A zone's wind is the shared wind patch heard at that zone's `rate`: playing filtered noise faster
+ * raises its filter bands by the same factor, so each zone's bed is the patch with its bands scaled.
+ */
+function windPatch(rate: number): SynthPatch {
+  const base = SFX_PATCHES["amb_wind"]!;
+  return {
+    ...base,
+    voices: base.voices.map((voice) => (voice.kind === "noise" ? { ...voice, filterFreq: voice.filterFreq * rate } : voice)),
+  };
+}
+
+/**
+ * Wind beds in their own layer under the industry bed: each zone blows at its own strength and pitch,
+ * the open ground between zones takes the default air, and walking across a zone edge crossfades the
+ * two winds. The gust curve rides on top as each bed's live level (`ctx.game.audio.zoneLevel`).
+ */
+export const windZones: AmbienceZoneDef[] = [
+  ...ZONES.map((zone): AmbienceZoneDef => ({
+    id: windZoneId(zone.id),
+    sound: windZoneId(zone.id),
+    shape: { kind: "sphere", center: [zone.center.x, 0, zone.center.z], radius: zone.radius },
+    crossfade: 24,
+    gain: airAt(zone.id).wind,
+    layer: "wind",
+  })),
+  { id: windZoneId(null), sound: windZoneId(null), shape: { kind: "elsewhere" }, gain: DEFAULT_AIR.wind, layer: "wind" },
+];
+
+for (const zoneId of [...ZONES.map((zone) => zone.id), null]) {
+  const id = windZoneId(zoneId);
+  sounds[id] = { id, synth: windPatch(airAt(zoneId).rate), bus: "ambient", positional: false, loop: true };
+}
+
 /** Retained machine emitters (hum, drone, buzz) go dull and quiet behind a wall; the budget keeps a busy block cheap. */
 export const occlusion: AudioOcclusionConfig = {
   maxTestsPerTick: 6,
@@ -84,7 +122,7 @@ export const audio: {
     music: { id: "music", gain: 0.3 },
   },
   music: MUSIC_THEMES,
-  zones: ambienceZones,
+  zones: [...ambienceZones, ...windZones],
   occlusion,
 };
 
