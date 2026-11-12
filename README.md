@@ -4,188 +4,209 @@
 
 # jgengine
 
-JGengine is a TypeScript game framework running plain three.js as JavaScript on the engine's own frame loop, without React Three Fiber. Three.js is not compiled to wasm.
-UI uses the engine's JSX runtime and draws through the DOM or Rune, whose Rust code is compiled to wasm.
-The native Rust 3D renderer is an experiment and does not ship.
+**An open-source TypeScript game engine made to be built on by coding agents.** You tell an agent
+*"Make a game that … with jgengine"*. The engine gives it game parts on three.js, skills that
+explain them, and tools to screenshot and play what it built. Ten games are built on it in
+[`games/`](games), and you can play them at [jgengine.com](https://jgengine.com).
 
-**TypeScript game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com). The whole product surface for people is one sentence said to a coding agent: *Make a game that … with jgengine*. Agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+npm: `jgengine` (the CLI) and `@jgengine/*` (the packages) · Apache-2.0 · not related to automotive "JG Engines".
 
-> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, three.js shell), not an ECS and not a general-purpose 3D engine.
+## Five minutes
 
-`@jgengine/core` has no React, no renderer, and no backend dependency. UI is written against the engine's own JSX runtime (`@jgengine/core/ui/jsx`) and drawn through the DOM or through Rune on the engine canvas; a page built with React, Next or TanStack embeds a game with `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`). Adapters connect the engine to Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
+**Play the games in this repo** (needs [Bun](https://bun.sh)):
 
-`@jgengine/react` (the `packages/ui` folder) is the engine's game UI package; despite its npm
-name it runs on the engine's JSX runtime, not React. Code still written against React moves with
-`bun scripts/port-react-ui.ts` (`--check` reports remaining changes without writing them).
-A host app built with React keeps its own React and embeds the engine through `mountGamePlayer`;
-`examples/next-host` and `examples/tanstack-host` show how.
+```sh
+git clone https://github.com/Noisemaker111/jgengine && cd jgengine
+bun run agent:bootstrap        # install, link workspaces, prepare generated files
+bun run dev:site               # jgengine.com locally; every game plays at /games/<id>
+```
 
-The DOM host is the default; `?ui=rune` opts into Rune rendering. The CSS styling
-path, including its CSS-to-Rune mirror, is temporary. Typed Rune-native style props
-will replace it as UI moves to Rune-native composition.
+One game on its own: `bun run games:provision <id>` (links its asset packs), then
+`bun --cwd=games/<id> run dev`. Deepward needs no assets; LLMville also needs a local Convex backend.
 
-## Build the framework through games
+**Make your own game.** Say this to Claude Code, Codex, Cursor or any agent that runs commands:
 
-Every game interaction should compose shared JGengine capabilities. Adopt an existing
-API first; when reusable behavior is missing or broken, improve its upstream package
-with a real game adopter and remove the superseded local implementation. Games own
-their rules, stories, items, assets, authored worlds and presentation. The engine owns
-the common machinery that makes those choices work. Shared behavior must preserve
-different art directions and gameplay, not impose a common game or asset kit.
+```text
+Make a game that is a tower defense on two mountain roads, with jgengine
+```
 
-A JGengine game can be anything, so the engine is small general parts that a game
-combines in a few lines into its own features. A "supply drop", "breeding" or "boss fight" is
-the game's combination, never one closed engine feature, and every part can be switched off,
-swapped or retuned.
+Or scaffold it yourself. The game is its own project on the npm packages. Don't clone this repo
+to make a game.
+
+```sh
+npx jgengine create "Tide Runner"   # --template 3d (default) | 2d | builder
+cd Tide-Runner && bun install && bun dev
+```
+
+You get a walkable 3D world with a HUD, the scene editor (F2+E in the browser) and the agent
+skills, installed in the project.
+
+**Use one part in a game you already have.** Model files have no dependencies, so you import the
+one you need by its path:
+
+```ts
+import { changeMeter, createMeter, tickMeter } from "@jgengine/core/stats/statPool";
+
+let stamina = createMeter({ max: 100 });
+stamina = changeMeter(stamina, -30).meter; // sprinting
+stamina = tickMeter(stamina, { regen: 10, regenDelay: 1 }, 2).meter; // 90 after two seconds
+```
+
+A whole game runs on `createGameContext` (`@jgengine/core/runtime/gameContext`). [jgengine.com/adopt](https://jgengine.com/adopt)
+shows health, XP, saves and the minimap added to an existing game.
+
+## What's different
+
+- **Built for agents.** Skills ship inside the npm packages, so an agent finds them in
+  `node_modules`. The CLI answers its questions: `jgengine find <words>` (where does this live),
+  `has <feature>` (does the engine do it), `recipe <name>` (a wired snippet), and `shoot` and `drive`
+  (screenshot the game and play it with keys).
+- **The games live with the engine.** The ten games in `games/` run engine source from the same
+  commit, so a change that breaks a game gets fixed in the same pull request.
+- **Parts, not features.** A boss fight or a supply drop isn't an engine feature. The game combines
+  it from eleven small parts ([below](#the-parts)), and any part can be turned off, swapped or
+  retuned.
+- **Layers a server can trust.** Model, UI and three.js code sit side by side in one folder, and
+  the file suffix says which is which. Servers import only model code.
+- **Measured, not claimed.** A frame gate, a load-time guard, A/B runs with a 99% interval, and
+  experiments that didn't ship because they lost the measurement.
+
+## Decisions, and why
+
+Each decision with its date, reason and numbers. The site tells them as a timeline at
+[jgengine.com/#decisions](https://jgengine.com/#decisions).
+
+| Date | Decision | Why | Source |
+| --- | --- | --- | --- |
+| 2026-07-11 | One sentence to an agent is the human interface; skills ship in the npm tarballs | Outside agents were cloning this repo and copying game content | #435, #697 |
+| 2026-07-16 | AGPL-3.0 → Apache-2.0 + NOTICE | Paid, closed-source games can ship; the NOTICE keeps the credit | #855 |
+| 2026-09-25 | `docs/`, plans and logs deleted; CI fails if they return | They go stale, and every agent session re-reads them | #1851 |
+| 2026-10-25 | Games moved back into `games/`, on engine source from the same commit | Breakage is fixed in the same PR; no version pins or cross-repo bumps | 649fb4013 |
+| 2026-10-29 | Every feature built from eleven parts | The engine had ~16 meters, 15 tier lists and 25 stage lists inside one-game features | #2817 |
+| 2026-10-31 | Frame gate: p95 ≤ 16.7 ms on an RTX 3070 at 1600×900; 360 fps (2.78 ms) as the target | Replaced per-game draw, triangle and node ceilings with the frame time itself | 0868847c4, #3028 |
+| 2026-11-07 | Native Rust renderer measured; **not shipped** | Harbor Heat went from 73 fps to 182–272 native and 283 as wasm + WebGPU in Chrome. Deepward gained nothing because it waits on the GPU. The slow part was the WebGL path, not the browser | [`native/README.md`](native/README.md), #3041 |
+| 2026-11-08 | WebGPU backend as a **preview**; WebGL stays the default | It draws the same image but wins on no game yet (0.8–1.2× WebGL's frame time) | #3067, #3072 |
+| 2026-11-10 | React Three Fiber, drei and React removed; the engine's own JSX runtime and frame loop | React + R3F were 33.6% of Deepward's main thread and did untimed work in 8 of 9 games. The switch itself has not been timed yet | #3099, #3108, #3019 |
+| 2026-11-11 | Every game's UI drawn by Rune | The CSS-to-Rune mirror was deleted. Recorded cost: the UI wasm is 10.3 MB (4.9 MB gzipped) | #3117–#3134, #3137 |
+
+## How it runs
+
+- **3D** is plain three.js (JavaScript, not compiled to wasm) on a frame loop the engine owns.
+  WebGL is the default. The WebGPU preview (Graphics > Renderer, or `?renderer=webgpu`) gives
+  three's unchanged WebGL renderer a WebGL-shaped context that submits through WebGPU. Shaders
+  are translated from GLSL to WGSL by naga compiled to wasm (`packages/core/src/webgpu`).
+- **UI** is JSX on the engine's own runtime (`@jgengine/core/ui/jsx`), never React. Games that set
+  `uiRenderer: "rune"` (every game in `games/`) draw it with Rune: a vendored Rust UI library
+  (`native/vendor/rune`, wrapped by `native/crates/jg-ui`) compiled to wasm and drawn on the
+  game canvas. Games without it get the DOM host. A React, Next or TanStack page embeds a game
+  with `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`); see `examples/next-host` and
+  `examples/tanstack-host`.
+- **Multiplayer** is one protocol over swappable transports: WebSocket, socket.io, WebRTC P2P,
+  LAN and Convex, with Node hosting and Postgres persistence.
+- **Ships to** the browser, a Windows `.exe` (`npx jgengine desktop`, Tauri), and npm.
+
+### Layering
+
+Each engine feature is one folder in `packages/core/src/<feature>/` holding all its layers, named
+by file: a plain `name.ts` is **model** (no UI runtime, no three.js), `name.view.tsx` is **view**
+(UI on the engine runtime, no three.js) and `name.draw.tsx` is **draw** (three.js).
+`packages/ui` is all view and `packages/shell` all draw. `bun run check layers` enforces this
+from the imports in under a second, so a server or worker importing model files never loads the
+UI runtime or three.js. `ws` and `sql` import only `core` model files; `shell` is the only package
+that renders.
 
 ### The parts
 
-Most game features are made of these eleven parts (`@jgengine/core/parts` re-exports their model layer) plus the engine's entities, containers and
-world. Each has one home; a feature that needs one uses that home and never writes its own.
+Most game features are made of these eleven parts (`@jgengine/core/parts` re-exports their
+model layer) plus the engine's entities, containers and world. Each has one home. A feature that
+needs one uses that home and doesn't write its own.
 
-| Part | What it is | Examples it covers | Home |
+| Part | What it is | Examples | Home |
 | --- | --- | --- | --- |
-| Meter | a number with a range that drains, fills or regenerates; a body's meters take doses (now or over seconds, up to a cap), and a dose table says what each source gives each kind of receiver | health, hunger, ammo, torpor, shield; a meal, potion, narcotic or dart | `stats/statPool.ts`, `stats/vitals.ts`, `stats/doseTable.ts` |
-| Ladder | ordered steps over a number, named by the game | rarity, tiers, ranks, levels, mood bands, wanted stars | `threshold/thresholds.ts` |
-| Phases | named states one after another, by time or by event | growth stages, boss phases, day parts, a match's rounds | `time/stateSchedule.ts` |
-| Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | `time/pacedSchedule.ts` |
-| Slots | named spots that each hold one thing, ready again a while after it is gone | supply drop crates, resource nodes, herd dens, boss spawns | `time/refillSlots.ts` |
-| Placement | where something appears | spawn points, scatter, drop zones, safe spots | `world/spatialSample.ts`, `game/spawnPoints.ts` |
-| Table | a weighted choice the game fills | supply drop loot per rarity, which enemy, which mutation | `random/pick.ts` |
-| Requirement | a condition over facts the game names | level gates, keys, quest prerequisites, unlocks | `rules/predicate.ts` |
-| Modifiers | stacked add, multiply, override and clamp on a value | buffs, gear stats, difficulty, upgrades, imprinting | `progression/statGraph.ts` |
-| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `inheritance/inheritance.ts` |
-| Motion track | a thing follows a path over time and arrives | a supply drop falling, a thrown item, a door, a cutscene move | `movement/motionTrack.ts` |
+| Meter | a number with a range that drains, fills or regenerates, and takes doses | health, hunger, ammo, shield; a meal or potion | `stats/statPool.ts`, `stats/vitals.ts`, `stats/doseTable.ts` |
+| Ladder | ordered steps over a number | rarity, tiers, ranks, levels, wanted stars | `threshold/thresholds.ts` |
+| Phases | named states one after another, by time or event | growth stages, boss phases, day parts | `time/stateSchedule.ts` |
+| Schedule | something happens at a pace from a start time | waves, supply drops, weather, respawns | `time/pacedSchedule.ts` |
+| Slots | named spots that each hold one thing and refill | crates, resource nodes, boss spawns | `time/refillSlots.ts` |
+| Placement | where something appears | spawn points, scatter, drop zones | `world/spatialSample.ts`, `game/spawnPoints.ts` |
+| Table | a weighted choice the game fills | loot per rarity, which enemy | `random/pick.ts` |
+| Requirement | a condition over facts the game names | level gates, keys, unlocks | `rules/predicate.ts` |
+| Modifiers | stacked add, multiply, override and clamp | buffs, gear stats, difficulty | `progression/statGraph.ts` |
+| Inheritance | a child's values from its parents with variation | breeding, crossing plants | `inheritance/inheritance.ts` |
+| Motion track | a thing follows a path over time and arrives | a falling crate, a thrown item, a door | `movement/motionTrack.ts` |
 
-A supply drop is a Schedule (when), Placement (where), Ladder (rarity), Requirement (who may
-open which rarity), Table (loot per rarity) and Motion track (the fall and landing), with each
-site's crate held in Slots (one per site, refilled a while after it goes), so a game
-writes `spawnSupplyDrop(x, y, "purple")` itself in a few lines. Simple dog breeding is
-Inheritance plus a Phases list for puppy to adult; it needs none of the rest. Much of today's
-engine still has its own copies of these parts inside one-game features; they are being
-replaced by the parts, and new code never adds another copy.
-
-The games in [`games/`](games) are workspaces of this repo and run engine source from the
-same commit, so an engine change and the games it breaks are fixed in one PR. Outside users get
-engine changes as npm versions; a breaking change carries a semver bump and a migration note.
-Publishing is a milestone for outside users, not a step after each change. `bun run release` cuts the changelog and bumps the lockstep versions, that
-commit fast-forwards `main`, and `publish.yml` publishes the versions npm does not
-already have — `next` for a prerelease, `latest` for a release — after
-`bun run check release-set` proves the publish order matches the manifests. The development and
-adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework).
+A supply drop is Schedule (when), Placement (where), Ladder (rarity), Requirement (who may open
+it), Table (loot), Motion track (the fall) and Slots (one crate per site), so a game writes
+`spawnSupplyDrop(x, y, "purple")` itself in a few lines. Some older features still hold private
+copies of these parts; `bun run part-stats --worklist` lists them, and new code never adds one.
 
 ## Packages
 
-**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,assets,editor,navbake}` - bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+The lockstep set `@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,assets,editor,navbake}` is
+versioned together; package manifests own the versions. The CLI `jgengine` and `@jgengine/github`
+have their own version lines.
 
 | Package | What it is |
 | --- | --- |
-| [`@jgengine/core`](packages/core) | The engine's feature folders: `GameContext`, entity/object stores, commands, combat, HUD, save, inventory, multiplayer contracts, world features. Model files have zero dependencies; a feature's `*.view` (UI, on the engine's own runtime in `ui/jsx`) and `*.draw` (three.js) files sit beside them; draw files need the optional three.js peers. Import by deep path. |
-| [`@jgengine/rapier`](packages/rapier) | Rapier physics adapter for `PhysicsBackend`, providing native capsules, shapecasts, rotation, CCD, and joints. |
-| [`@jgengine/react`](packages/ui) | Game UI glue on the engine's JSX runtime: `GameProvider`, hooks and primitives, drawn through the DOM or Rune. |
-| [`@jgengine/ws`](packages/ws) | Browser-safe game backend over a pluggable transport pipe (WebSocket/socket.io/WebRTC/loopback): protocol codec, `createWsBackend`, `createHttpReads`, a browser-safe authoritative host + router, and WebRTC P2P sessions. |
-| [`@jgengine/node`](packages/node) | Node bindings over `@jgengine/ws`'s host: WebSocket server, socket.io server attach, memory/file persistence, save-cadence flush. |
-| [`@jgengine/sql`](packages/sql) | `HostPersistence` on Postgres through a structural pool interface (no hard `pg` dependency). |
-| [`@jgengine/navbake`](packages/navbake) | Deterministic indexed-geometry navigation-mesh baking. |
-| [`@jgengine/convex`](packages/convex) | Convex adapters: game transport, presence transport. |
-| [`@jgengine/shell`](packages/shell) | Game player shell: three.js canvas on the engine's own frame loop, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
-| [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
-| [`@jgengine/editor`](packages/editor) | Scene/world/asset editor, loaded lazily by the runner; runs standalone on any folder via `npx jgengine editor` or the desktop app (`StandaloneEditor`); agent bridge via `jgengine editor-mcp`. |
-| [`@jgengine/github`](packages/github) | GitHub data source: contribution calendar fetch for games that render real profile data. Zero dependencies. Own version line. |
-| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop. Own version line. **People** tell an agent *Make a game that … with jgengine*. |
+| [`@jgengine/core`](packages/core) | The engine: feature folders with model, view and draw files, `GameContext`, entities, commands, combat, HUD, saves, inventory, world. No dependencies; three.js is an optional peer for draw files. Import by deep path. |
+| [`@jgengine/react`](packages/ui) | Game UI on the engine's JSX runtime: `GameProvider`, hooks, primitives. It contains no React; the npm name stayed because renaming it broke trusted publishing (#3142). |
+| [`@jgengine/shell`](packages/shell) | The game player: three.js canvas on the engine frame loop, cameras, input, HUD mounting. You supply a `GameRegistry`. |
+| [`@jgengine/rapier`](packages/rapier) | Rapier physics backend: capsules, shapecasts, CCD, joints. The built-in solver needs none of it. |
+| [`@jgengine/ws`](packages/ws) | Browser-safe multiplayer over a pluggable pipe (WebSocket, socket.io, WebRTC, loopback), with an authoritative host and router. |
+| [`@jgengine/node`](packages/node) | Node hosting: WebSocket server, socket.io attach, memory and file persistence. |
+| [`@jgengine/sql`](packages/sql) | `HostPersistence` on Postgres through a structural pool (no hard `pg` dependency). |
+| [`@jgengine/convex`](packages/convex) | Convex game and presence transports. |
+| [`@jgengine/navbake`](packages/navbake) | Deterministic navigation-mesh baking. |
+| [`@jgengine/editor`](packages/editor) | Scene, world and asset editor. Loaded lazily by the runner; standalone with `npx jgengine editor`; agent bridge with `jgengine editor-mcp`. |
+| [`@jgengine/assets`](packages/assets) | License-checked index of CC0 3D models with a pull CLI (the index, not the model files). |
+| [`@jgengine/github`](packages/github) | GitHub contribution data for games that show a real profile. |
+| [`jgengine`](packages/jgengine) | The agent CLI: `create`, `sync`, `find`, `has`, `recipe`, `desktop`, `doctor`, `skills`, `assets`, `editor`, `editor-mcp`, `shoot`, `drive` and more (`npx jgengine help`). |
 
-## Install
+## Develop the engine
 
-```sh
-bun add @jgengine/core
-# plus the adapters you need:
-bun add @jgengine/react @jgengine/shell @jgengine/ws
-bun add @jgengine/node @jgengine/sql   # server host
-bun add @jgengine/convex               # Convex backend
-```
-
-Modules are imported by path, e.g.:
-
-```ts
-import { createGameContext } from "@jgengine/core/runtime/gameContext";
-import { createWsBackend } from "@jgengine/ws/createWsBackend";
-```
-
-## How people build games (outside this monorepo)
-
-**One interface.** Open any coding agent and say:
-
-```text
-Make a game that ... with jgengine
-```
-
-Examples: *Make a game that is Mario Party with goo characters, with jgengine* · *Make a game that is a first-person voxel miner, with jgengine*.
-
-That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
-
-Under the hood the agent uses `npx jgengine` (create, skills, doctor) and the skills in [`.claude/skills/`](.claude/skills) — an intake router, game/level design playbooks, and focused API domains, staged into published tarballs at `skills/` so they travel with `node_modules`. Power users may call the CLI themselves; that is optional, not the entry.
-
-The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from the probe games** in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) — those are private probe games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
-
-## Website — [jgengine.com](https://jgengine.com)
-
-[`apps/web`](apps/web) is drawn with the engine's own JSX runtime and prerendered to static pages: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
-
-It deploys to Cloudflare Workers through the official Cloudflare Vite plugin. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
-
-The games in [`games/`](games) are also playable on jgengine.com at `/games/<id>` — the page embeds the `apps/dev` runner, which the site bundles as a static build. Root `bun dev` serves that same runner build locally (content-hash cached, rebuilt when game or engine sources change), so the games are playable at `/games/<id>`. To play one standalone, run `bun --cwd=games/<id> run dev`.
-
-## Layering
-
-Each engine feature is one folder in `core` holding all its layers, named by file: a plain `name.ts` is **model** (no UI runtime, no three.js, no view or draw file), `name.view.tsx` is **view** (UI on the engine runtime; no three.js, no draw file), `name.draw.tsx` is **draw** (three.js). `ui` is all view and `shell` all draw. `bun run check layers` enforces this from the imports in under a second, so a server or worker importing model files never loads the UI runtime or three.js. `core`, `ui` and `shell` import each other through these files, so `scripts/build-engine.ts` compiles them as one program and writes each package's `dist/`. `ws` and `sql` import only `core` model files. `ui` adds the game UI hooks, `convex` adds Convex (whose `convex/react` hooks run on the engine runtime through a Vite alias), `node` adds Node builtins + `ws`, `shell` adds three.js (the only package that renders). `editor` sits on top of `shell`/`ui`/`core`; `assets` and `github` are standalone data packages games opt into.
-
-## Development
+Agents working here start with [AGENTS.md](AGENTS.md). Run from the repo root:
 
 ```sh
-bun install
-bun run check types  # @jgengine/* resolves to package source; no build needed
-bun run test
-bun scripts/test-shard.ts a  # one CI test shard locally (a-i); --check counts files, --print lists them
-bun scripts/type-shard.ts    # what the CI `types` job runs: check-types two stages at a time, then the tsc fan-out alone
-bun run verify:fast --full         # the whole local verdict in one run: build, then check-types and every test
-bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
-bun run gen           # regenerate every committed derived artifact, in dependency order
-bun run part-stats    # files importing each part home (core and games), core create* count and folder count; --worklist names the private copies left
-bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
-bun run lane:close    # verify:fast, land, one ci:status read, print the lane report
-bun run idea-clock <game>  # minutes from a game's first commit to its from-zero flow, and the flow result
-bun --filter="@games/*" run check-types  # type-check every game in games/ against this checkout's engine source
-bun test games         # every game's tests and the games' own scripts
-bun run games:provision    # link the asset packs the games reference from the shared store (games:provision <id> for one game)
-bun dev              # jgengine.com locally, games playable at /games/<id>
-bun run perf <game>  # the dev server, or with --production the build players get; 1080p walk, led by the scorecard: frame p50/p95/p99 and worst, frames over 16.7 and 33 ms, main thread per frame with the UI runtime's share, MB/s allocated and GC, the same frames with the CPU slowed 4x, load time and download; then on the dev server also: frame p50/p95/p99, CPU per system, GPU per pass, top objects and hitches with their cause, as a text summary and .scratch/perf/<game>.json (--compare before.json diffs, --json prints the record) (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
-bun run perf live <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a GL allocation after warmup (its frame time is printed: an in-page clock is vsynced)
-bun run perf gate    # frame check, run by hand: plays every game under games/ with a web entry (--production for the build players get), one at a time, and fails a p95 frame over 16.7 ms on the RTX 3070 at 1600x900 (printed, not judged, on any other GPU), or any program/framebuffer created after warmup; draws are printed, not gated (--help)
-bun run perf server    # multiplayer host load, run by hand: 16/32/64/128 players posing in one room on the real host and router, one JSON line per size (wall and CPU ms, MB and messages out per game second); stderr names a size that falls behind real time (--players, --repeats, --json, --max-seconds)
-bun run perf ab        # is this branch faster or slower than its base, per game (--production for the builds players get), led by each side's scorecard, with a 99% interval: base and branch load once, each in its own Chrome, and take turns in short windows (the other side suspended) until the answer is clear; games default to the ones the diff can change (--games, --base <ref|dir>, --markdown)
-bun run perf fps-gap   # how far each game is from 360 fps (2.78 ms) at the gate's conditions, and its costs grouped into ranked engine work items; a report, not a gate (--markdown for a PR)
-bun run perf desktop --launch "<Game>.exe" --uncapped  # the fps a --diagnostics desktop build reaches without vsync at the gate's conditions
-bun run perf desktop --all --uncapped  # build and measure every game's production desktop app in turn and print the 360 fps table (about 5 minutes a game; run it in the background)
-bun run perf timing    # CPU timing check, run by hand: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
-# one game standalone:
-bun --cwd=games/harbor-heat run dev
+bun run agent:bootstrap        # setup; @jgengine/* resolves to package source, no build needed
+bun run test <path>            # tests; no path runs all of them
+bun test games                 # every game's tests and scripts
+bun run check types            # type-check
+bun run verify:fast            # the checks the branch diff reaches, in seconds
+bun run gen                    # regenerate committed derived files after public API changes
+bun run find <words>           # which package and folder owns a concept
+bun run lane:close -m "<what>" # gate, commit, push and merge into beta
+bun run perf <game>            # frame scorecard (p50/p95/p99, main thread, GC); --help for gate, ab, fps-gap, server
+bun run shoot <game>           # a real screenshot of a game; drive plays it
+bun run games:provision        # link the asset packs the games use
+bun run build                  # only for packing or the Node CLI
 ```
 
-Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.
+Windows: if `bun` isn't recognised after installing, add `%USERPROFILE%\.bun\bin` to PATH and
+reopen the terminal.
 
-`bun run host:fixture` builds and serves the anonymous Relay Courtyard authority fixture from a clean owned checkout: compiled frontend on `4624`, realm on `4625`, driven by normal shell commands and keyboard input. Build artifacts, logs and saves live under the repository home's `.scratch/authority-fixture/`; `--allow-dirty` labels development builds explicitly. Each `/__version` reports the revision embedded in its compiled artifact. `services.json` registers both components for `fresh-services.mjs`; reload executes the landed launcher and requires the recorded source checkout at that exact revision. This fixture does not publish packages or serve game accounts.
+**Public exports.** Every package exports `"./*"`, so each built file is an importable subpath.
+`scripts/export-manifest.json` records that surface; `bun run gen` regenerates it and
+`scripts/exportManifest.test.ts` fails when it drifts. `scripts/tarballInstall.test.ts` packs each
+package and imports it from a clean folder (after `bun run build`).
 
-**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, computed from the source files each package's `tsconfig.build.json` emits and regenerated by `bun run gen`, so rerun and commit after adding, removing or renaming public source. `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review; `bun run preflight` (which `lane:close` runs first) regenerates every generated artifact before the type-checks and gates. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable; it requires `bun run build` first (it reads `dist`).
+**Releases.** Publishing is a milestone, not a step after each change. `bun run release` cuts the
+changelog and bumps the lockstep versions; `publish.yml` publishes what npm doesn't have yet
+(`next` for a prerelease, `latest` for a release). Games here never wait on a release.
+
+**The website** ([`apps/web`](apps/web)) is drawn with the engine's own JSX runtime, prerendered to
+static pages and deployed to Cloudflare Workers. Its agent pages are rendered from
+`.claude/skills/`, and `/play` bundles the game runner from `apps/dev`. See
+[`apps/web/README.md`](apps/web/README.md).
 
 ## Credits
 
-JGengine's procedural buildings, water, rain, and snow renderers were shaped
-from **[achrefelouafi](https://github.com/achrefelouafi)**'s MIT-licensed
-Three.js reference projects. See [CREDITS.md](CREDITS.md) for the full mapping —
-and go star his work.
+JGengine's procedural buildings, water, rain and snow renderers were shaped from
+**[achrefelouafi](https://github.com/achrefelouafi)**'s MIT-licensed Three.js reference projects.
+Rune is by [Anomaly](https://github.com/anomalyco/rune) (MIT). See [CREDITS.md](CREDITS.md) for
+the full list.
 
 ## License
 
-[Apache-2.0](LICENSE), with a [`NOTICE`](NOTICE) attribution file. Full FAQ: [LICENSING.md](LICENSING.md).
-
-**In short.** Apache-2.0 permits commercial and closed-source use — ship a paid game on the engine, no dual-license conversation needed. The one condition: keep the [`NOTICE`](NOTICE). Apache §4(d) requires derivative works to retain it, and it credits jgengine.com. This replaces the project's prior AGPL-3.0 copyleft. Third-party and ported code and assets keep their own licenses — see [CREDITS.md](CREDITS.md).
+[Apache-2.0](LICENSE) with a [`NOTICE`](NOTICE) file. Commercial and closed-source games are fine;
+keep the NOTICE in what you ship (Apache §4(d)). Third-party code and assets keep their own
+licenses. FAQ: [LICENSING.md](LICENSING.md).

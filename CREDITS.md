@@ -107,6 +107,13 @@ renderer-agnostic (the wave math and building generator live in dependency-free
 audio, post-processing, and app-specific scene setup. But the good ideas are
 his. Each source project is MIT-licensed; go star them.
 
+## Anomaly (Rune)
+
+Game UI is drawn by **[Rune](https://github.com/anomalyco/rune)**, Anomaly's Rust UI toolkit
+(MIT). A patched copy lives in [`native/vendor/rune`](native/vendor/rune) with its `LICENSE`;
+[`VENDORED.md`](native/vendor/rune/VENDORED.md) records the upstream commit and each patch.
+[`native/crates/jg-ui`](native/crates/jg-ui) wraps it for the browser build.
+
 ## Every Inc (compound-engineering-plugin)
 
 The **`ce-handoff`** agent skill (session continuity: create/resume handoffs so a fresh agent can orient without the original transcript) is adapted from Every Inc's MIT-licensed [compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) skill [`ce-handoff`](https://github.com/EveryInc/compound-engineering-plugin/blob/main/skills/ce-handoff/SKILL.md). JGengine's copy lives at [`.claude/skills/ce-handoff/SKILL.md`](.claude/skills/ce-handoff/SKILL.md) with monorepo path conventions (Windows + Unix scratch roots, Grok/Claude invocation, pointers into `workflow` / `jgengine-verify`). Go star the upstream project.
