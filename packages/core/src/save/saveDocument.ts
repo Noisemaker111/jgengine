@@ -115,7 +115,11 @@ export interface GameSaveConfig {
  * bytes lived under, and how those bytes become the document's sections.
  */
 export interface GameSaveLegacy {
-  /** Backend keys that held this slot's data. A key may be shared by every slot (a profile-wide record). */
+  /**
+   * Backend keys that held this slot's data. A key may be shared by every slot (a profile-wide record
+   * or an index of slots); `deleteSlot` removes it all the same, so a game that deletes one slot of
+   * several names a shared key only once every other slot has been written as a document.
+   */
   keys(slot: string): readonly string[];
   /**
    * Turn the bytes found (key to raw string; keys holding nothing are left out) into the slot's
