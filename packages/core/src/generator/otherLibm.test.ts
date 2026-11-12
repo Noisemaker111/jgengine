@@ -99,4 +99,18 @@ describe("seeded generators do not depend on the platform's libm", () => {
     );
     expectLibmIndependent(() => resolveCityObject(volume({ seed: "zoned" }), { zoneOverrides: [zone] }));
   }, 120_000);
+
+  test("city: a village-sized volume beside a clearance-tagged spot", () => {
+    const mine: SceneKindObject = { id: "mine", kind: "prop", position: { x: 22, y: 0, z: 4 }, meta: { clearance: 4 } };
+    for (const seed of ["ashfall-3", "hamlet-b"]) {
+      const hamlet: SceneKindObject = {
+        id: "hamlet",
+        kind: "city",
+        center: { x: 28, y: 0, z: 0 },
+        halfExtents: { x: 21, y: 8, z: 27 },
+        meta: { seed, blockSize: 24, curviness: 0.5, branching: 0.6, streetWidth: 3.5, lotScale: 0.7, profile: "uniform", floorsMax: 2 },
+      };
+      expectLibmIndependent(() => resolveCityObject(hamlet, { objects: [mine] }));
+    }
+  }, 60_000);
 });

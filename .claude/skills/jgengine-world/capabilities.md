@@ -539,8 +539,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-district — editor-authorable procedural city district (streets, zoning, buildings, furniture)
 
 - `CITY_GENERATOR` (const) · `import { CITY_GENERATOR } from "@jgengine/core/world"`
+- `cityClearings` (function) · `import { cityClearings } from "@jgengine/core/city/cityKind"`
+- `cityMassingStats` (function) · `import { cityMassingStats } from "@jgengine/core/city/cityStats"`
 - `citySolids` (function) · `import { citySolids } from "@jgengine/core/city/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/city/cityBlocks"`
+- `parkPaths` (function) · `import { parkPaths } from "@jgengine/core/city/cityBlocks"`
 - `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/polygon"`
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/polygon"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`

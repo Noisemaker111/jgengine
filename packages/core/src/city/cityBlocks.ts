@@ -10,7 +10,7 @@
  *
  * @capability city-district road-derived block polygons, parcel subdivision, buildable footprints
  */
-import { clipHalfPlane, distanceToRing, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "../world/polygon";
+import { clipHalfPlane, distanceToRing, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonSignedArea } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 
 /** How a block (a face of the road graph) is used. */
@@ -521,5 +521,78 @@ export function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () =>
     out.push([x, z]);
   }
   return out;
+}
+
+/**
+ * Footpaths across a park: straight walks from up to four well-spread convex corners of its ring to
+ * an inner hub, plus a loop around the hub on parks big enough to stroll. Polylines in the ring's own
+ * frame, every one kept inside the ring; [] for a park too small or too thin to cross.
+ *
+ * @capability city-district footpaths through park and green polygons
+ */
+export function parkPaths(ring: readonly Vec2[], inset = 1.6): Vec2[][] {
+  if (ring.length < 3 || polygonArea(ring) < 420) return [];
+  const [cx, cz] = polygonCentroid(ring);
+  if (!pointInPolygon(ring, cx, cz) || distanceToRing(ring, cx, cz) < 5) return [];
+  const inside = (a: Vec2, b: Vec2): boolean => {
+    for (let t = 0.1; t < 1; t += 0.2) {
+      if (!pointInPolygon(ring, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)) return false;
+    }
+    return true;
+  };
+  const n = ring.length;
+  const corners: number[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const prev = ring[(i - 1 + n) % n]!;
+    const cur = ring[i]!;
+    const next = ring[(i + 1) % n]!;
+    const ax = cur[0] - prev[0];
+    const az = cur[1] - prev[1];
+    const bx = next[0] - cur[0];
+    const bz = next[1] - cur[1];
+    const cross = ax * bz - az * bx;
+    // A convex corner turns left (CCW ring) by a real angle — not a polyline sample on a curve.
+    if (cross > 0 && Math.atan2(cross, ax * bx + az * bz) > 0.5) corners.push(i);
+  }
+  // Greedy farthest-point pick: the first corner is the one farthest from the hub (index breaks ties).
+  const far = (i: number): number => Math.hypot(ring[i]![0] - cx, ring[i]![1] - cz);
+  const picked: number[] = [];
+  if (corners.length > 0) picked.push(corners.reduce((best, i) => (far(i) > far(best) + 1e-9 ? i : best), corners[0]!));
+  while (picked.length < Math.min(4, corners.length)) {
+    let best = -1;
+    let bestD = -1;
+    for (const i of corners) {
+      if (picked.includes(i)) continue;
+      const d = Math.min(...picked.map((j) => Math.hypot(ring[i]![0] - ring[j]![0], ring[i]![1] - ring[j]![1])));
+      if (d > bestD + 1e-9) {
+        bestD = d;
+        best = i;
+      }
+    }
+    if (best < 0 || bestD < 8) break;
+    picked.push(best);
+  }
+  const hub: Vec2 = [cx, cz];
+  const paths: Vec2[][] = [];
+  for (const i of picked) {
+    const [px, pz] = ring[i]!;
+    const len = Math.hypot(cx - px, cz - pz);
+    if (len < inset * 3) continue;
+    const start: Vec2 = [px + ((cx - px) / len) * inset, pz + ((cz - pz) / len) * inset];
+    if (inside(start, hub)) paths.push([start, hub]);
+  }
+  const area = polygonArea(ring);
+  if (area > 3200) {
+    const radius = Math.min(Math.sqrt(area / Math.PI) * 0.3, distanceToRing(ring, cx, cz) - 2);
+    if (radius > 5) {
+      const loop: Vec2[] = [];
+      for (let k = 0; k <= 20; k += 1) {
+        const a = (k / 20) * Math.PI * 2;
+        loop.push([cx + Math.cos(a) * radius, cz + Math.sin(a) * radius]);
+      }
+      paths.push(loop);
+    }
+  }
+  return paths;
 }
 

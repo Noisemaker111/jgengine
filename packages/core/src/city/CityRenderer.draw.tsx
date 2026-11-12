@@ -40,7 +40,7 @@ import {
   type CityTree,
   type CityVehicleKind,
 } from "@jgengine/core/city/cityKind";
-import { zoneBand, zoneMetric, type CityTreeSpecies, type CityPieceRole, type CityZoneBand } from "@jgengine/core/city/cityContent";
+import type { CityTreeSpecies, CityPieceRole, CityZoneBand } from "@jgengine/core/city/cityContent";
 import {
   generateBuilding,
   buildingSurfaceColor,
@@ -49,6 +49,7 @@ import {
   type BuildingPalette,
 } from "@jgengine/core/buildings/buildings";
 import { hashString } from "@jgengine/core/random/rng";
+import { clearanceZonesFrom } from "@jgengine/core/scatter/scatterRegion";
 import { valueNoise } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
@@ -125,6 +126,9 @@ const DRIVEWAY_LAYER = 0.34;
 const PARKING_LAYER = 0.35;
 const PLAZA_LAYER = 0.36;
 const CROP_LAYER = 0.42;
+/** Gravel footpaths across greens and courtyards (laid on the crop layer, above the park fill). */
+const PARK_PATH_COLOR = "#b9a984";
+const PARK_PATH_WIDTH = 2.4;
 const RACE_SURFACE_LAYER = 0.28;
 const RACE_PAINT_LAYER = 0.3;
 const BRIDGE_DECK_LIFT = 0.12;
@@ -396,7 +400,28 @@ function clipPolylineAtIntersections(
   return runs;
 }
 
-let unitGeometryCache: { box: THREE.BoxGeometry; gable: THREE.BufferGeometry; cylinder: THREE.CylinderGeometry; dome: THREE.SphereGeometry } | null = null;
+let unitGeometryCache: {
+  box: THREE.BoxGeometry;
+  gable: THREE.BufferGeometry;
+  hip: THREE.BufferGeometry;
+  cylinder: THREE.CylinderGeometry;
+  dome: THREE.SphereGeometry;
+} | null = null;
+
+/** Unit hipped roof: a 1×1 base at y=0, its ridge along x at y=1 running half the length. */
+function unitHip(): THREE.BufferGeometry {
+  const A = [-0.5, 0, 0.5];
+  const B = [0.5, 0, 0.5];
+  const C = [0.25, 1, 0];
+  const D = [-0.25, 1, 0];
+  const E = [0.5, 0, -0.5];
+  const F = [-0.5, 0, -0.5];
+  const tris = [A, B, C, A, C, D, E, F, D, E, D, C, B, E, C, F, A, D];
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(tris.flat(), 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
 
 /** Unit massing primitives shared by every district: box, gable prism (ridge along X), cylinder, dome. */
 function unitGeometries() {
@@ -415,7 +440,7 @@ function unitGeometries() {
   cylinder.translate(0, 0.5, 0);
   const dome = new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
   dome.scale(1, 2, 1);
-  unitGeometryCache = { box, gable, cylinder, dome };
+  unitGeometryCache = { box, gable, hip: unitHip(), cylinder, dome };
   return unitGeometryCache;
 }
 
@@ -579,9 +604,13 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         })),
     [context.document.volumes],
   );
+  const clearings = useMemo(
+    () => clearanceZonesFrom({ markers: context.document.markers, volumes: context.document.volumes, paths: [] }).map((zone) => ({ x: zone.x, z: zone.z, radius: zone.radius })),
+    [context.document.markers, context.document.volumes],
+  );
   const resolved = useMemo(
-    () => resolveCityObject(object, { sampleHeight: sample, zoneOverrides }),
-    [object, sample, zoneOverrides],
+    () => resolveCityObject(object, { sampleHeight: sample, zoneOverrides, clearings }),
+    [object, sample, zoneOverrides, clearings],
   );
   const palette = useMemo(() => resolveBuildingPalette(resolved?.rules.style ?? "generic"), [resolved]);
 
@@ -602,7 +631,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     if (resolved === null || detailKey === "") return { ids: new Set<string>(), buildings: [] as DetailBuilding[] };
     const [cx, cz] = cameraRef.current;
     const candidates = resolved.lots
-      .filter((lot) => DETAIL_CLASSES.has(lot.class) && lot.floors <= 9)
+      .filter((lot) => lot.landmark === undefined && DETAIL_CLASSES.has(lot.class) && lot.floors <= 9)
       .map((lot) => ({ lot, dist: Math.hypot(lot.center[0] - cx, lot.center[1] - cz) }))
       .filter((entry) => entry.dist < DETAIL_RADIUS)
       .sort((a, b) => a.dist - b.dist);
@@ -662,10 +691,11 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       groundOffsets?: number[];
       facades?: number[];
     }
-    const buckets: Record<"box" | "banded" | "gable" | "cylinder" | "dome", Bucket> = {
+    const buckets: Record<"box" | "banded" | "gable" | "hip" | "cylinder" | "dome", Bucket> = {
       box: { matrices: [], colors: [] },
       banded: { matrices: [], colors: [], groundOffsets: [], facades: [] },
       gable: { matrices: [], colors: [] },
+      hip: { matrices: [], colors: [] },
       cylinder: { matrices: [], colors: [] },
       dome: { matrices: [], colors: [] },
     };
@@ -719,7 +749,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const height = grounded ? piece.size[1] + (grade - foundationBase) : piece.size[1];
         const groundOffset = grounded ? grade - foundationBase : -piece.offset[1];
         const matrix = new THREE.Matrix4().compose(
-          new THREE.Vector3(px, piece.shape === "gable" || piece.shape === "cylinder" || piece.shape === "dome" ? baseY : baseY + height / 2, pz),
+          new THREE.Vector3(px, piece.shape === "box" ? baseY + height / 2 : baseY, pz),
           new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lot.rotationY + piece.rotationY),
           new THREE.Vector3(Math.max(0.05, piece.size[0]), Math.max(0.05, height), Math.max(0.05, piece.size[2])),
         );
@@ -740,7 +770,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         bucket.facades?.push(facadeSeed, facadeKind);
       }
     }
-    // Cylinders/gables/domes scale from their base (geometry roots at y=0), boxes from center —
+    // Cylinders/gables/hips/domes scale from their base (geometry roots at y=0), boxes from center —
     // the matrices above already position each accordingly.
     const makeMesh = (
       key: keyof typeof buckets,
@@ -773,6 +803,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       makeMesh("box", units.box, plain),
       makeMesh("banded", units.box, banded),
       makeMesh("gable", units.gable, plain),
+      makeMesh("hip", units.hip, plain),
       makeMesh("cylinder", units.cylinder, plain),
       makeMesh("dome", units.dome, plain),
     ].filter((mesh): mesh is THREE.InstancedMesh => mesh !== null);
@@ -997,20 +1028,35 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     // Sidewalk band per block: the region between the curb ring (outer) and the land ring (inner).
     // Blocks whose two rings coincide (no sidewalk) drop out — every band triangle is degenerate,
     // so `addRingBand` emits nothing.
-    const hx = Math.max(1e-6, resolved.size[0] / 2);
-    const hz = Math.max(1e-6, resolved.size[1] / 2);
-    const cosR = Math.cos(resolved.rotationY);
-    const sinR = Math.sin(resolved.rotationY);
-    const bandAt = (x: number, z: number, roll: number): CityZoneBand => {
-      const dx = x - resolved.center[0];
-      const dz = z - resolved.center[2];
-      return zoneBand(
-        zoneMetric(dx * cosR - dz * sinR, dx * sinR + dz * cosR, hx, hz),
-        resolved.rules.profile,
-        resolved.rules.coreExtent,
-        resolved.rules.midExtent,
-        roll,
-      );
+    // Ground tint follows the plan's own zoning: each spot takes the band of the nearest block
+    // centroid, looked up on a coarse grid so the fabric field stays cheap.
+    const centroids = resolved.blocks.map((block) => {
+      let cx = 0;
+      let cz = 0;
+      for (const [x, z] of block.polygon) {
+        cx += x;
+        cz += z;
+      }
+      const n = Math.max(1, block.polygon.length);
+      return { x: cx / n, z: cz / n, band: block.band };
+    });
+    const bandCell = 12;
+    const bandCache = new Map<string, CityZoneBand>();
+    const bandAt = (x: number, z: number): CityZoneBand => {
+      const key = `${Math.floor(x / bandCell)}:${Math.floor(z / bandCell)}`;
+      const known = bandCache.get(key);
+      if (known !== undefined) return known;
+      let best: CityZoneBand = "edge";
+      let bestD = Infinity;
+      for (const c of centroids) {
+        const d = (c.x - x) * (c.x - x) + (c.z - z) * (c.z - z);
+        if (d < bestD) {
+          bestD = d;
+          best = c.band;
+        }
+      }
+      bandCache.set(key, best);
+      return best;
     };
     const lawnEdge = !resolved.rules.sidewalks || resolved.rules.blockSize > 64;
 
@@ -1088,7 +1134,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           if (d < pavedTo) {
             fabricColor.set(SIDEWALK_COLOR);
           } else {
-            const band = bandAt(x, z, tone);
+            const band = bandAt(x, z);
             fabricColor.set(band === "edge" && lawnEdge ? BLOCK_EDGE_GREEN : BLOCK_SURFACE_COLORS[band]);
             // A block-sized tone over the fine grain: yards, courts and lots, not one poured apron.
             fabricColor.multiplyScalar(0.8 + (valueNoise(x / 22, z / 22, seed + 1) * 0.5 + 0.5) * 0.42);
@@ -1129,16 +1175,8 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     if (useBlockSidewalks) {
       const landColor = new THREE.Color();
       for (const block of resolved.blocks) {
-        let cx = 0;
-        let cz = 0;
-        for (const [x, z] of block.polygon) {
-          cx += x;
-          cz += z;
-        }
-        cx /= Math.max(1, block.polygon.length);
-        cz /= Math.max(1, block.polygon.length);
         const tone = (hashString(block.id) % 512) / 512;
-        const band = bandAt(cx, cz, tone);
+        const band = block.band;
         landColor.set(
           block.kind !== "buildable"
             ? BLOCK_OPEN_COLORS[block.kind]
@@ -1172,6 +1210,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         addMarkQuad([cx, cz], [sin, cos], pad.size[1] * 0.42, 0.1, STALL_TINT);
       }
     }
+    const pathColor = new THREE.Color();
     for (const park of resolved.parks) {
       parkColor.set(PARK_COLORS[park.type]);
       parkColor.multiplyScalar(0.92 + park.jitter * 0.16);
@@ -1179,6 +1218,10 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       // Block-pipeline parks carry a real road-derived polygon; the rect is only a coarse proxy.
       if (park.polygon !== undefined) parks.addPolygon(park.polygon, sample, elevation, parkColor);
       else parks.addPatch(park.center, park.size, park.rotationY, sample, elevation, parkColor);
+      if (park.paths !== undefined) {
+        pathColor.set(PARK_PATH_COLOR).multiplyScalar(0.94 + park.jitter * 0.12);
+        for (const path of park.paths) crops.addRibbon(path, PARK_PATH_WIDTH, sample, CROP_LAYER, pathColor);
+      }
       if (park.rows !== undefined) {
         const crop = new THREE.Color(CROP_COLORS[Math.floor(park.jitter * CROP_COLORS.length) % CROP_COLORS.length]);
         crop.multiplyScalar(0.9 + park.jitter * 0.2);

@@ -1245,6 +1245,7 @@
 - `cutParcel` (function): function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: ParcelCut): Vec2[] | null — Cut one polygonal parcel out of a block land ring: the frontage arc between two stations, extruded inward along the station normals, clipped back to the block. Returns null when the strip collapses (over-tight corner, sliver arc).
 - `extractGraphBlocks` (function): function extractGraphBlocks(nodes: readonly GraphBlockNode[], edges: readonly GraphBlockEdge[], params: { sidewalkBase: number; curbMargin: number }): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricLevel; street?: number | undefined }[] } — Extract closed blocks from an EXACT street graph — the `nodes`/`edges` a street network already carries — instead of re-deriving topology from welded polylines. Half-edges are ordered by true departure angle at each node, dangling chains are pruned first (returned as `deadEnds` for corridor carving), interior faces are traced through the rotation system, and each face is inset to its land ring by the bordering edges' half-widths (+ curb + sidewalk). Robust against wandered and arc-filleted centerlines, which defeat proximity welding. Pure bounded geometry.
 - `isSliverBlock` (function): function isSliverBlock(land: readonly Vec2[], minArea: number, minWidth: number): boolean — Deterministic sliver verdict shared by classification and tests.
+- `parkPaths` (function): function parkPaths(ring: readonly Vec2[], inset = 1.6): Vec2[][] — Footpaths across a park: straight walks from up to four well-spread convex corners of its ring to an inner hub, plus a loop around the hub on parks big enough to stroll. Polylines in the ring's own frame, every one kept inside the ring; [] for a park too small or too thin to cross.
 - `pointsInPolygon` (function): function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () => number, margin = 1.5): Vec2[] — Sample deterministic points inside a polygon by seeded rejection over its bounds.
 - `sidewalkWidthFor` (function): function sidewalkWidthFor(level: FabricLevel, base: number): number — Sidewalk band width by street hierarchy (base = the district's street-level width).
 
@@ -1252,15 +1253,26 @@
 
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
+- `CITY_LOT_TEMPLATES` (const): const CITY_LOT_TEMPLATES: Readonly<Record<CityLotClass, readonly string[]>> — The named massing templates each class composes from, in pick order.
 - `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
-- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
-- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
+- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" | "skyscraper" | "church" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same piece shapes at a much larger footprint (~30–90 m).
+- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" | "warehouse" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
 - `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
-- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
+- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "hip" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape. A `gable` and a `hip` both keep their ridge along the piece's local x; the hip's ridge is half the piece length, its ends sloping down to the eaves.
 - `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
-- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the zone metric maps to bands.
+
+## @jgengine/core/city/cityDistricts
+
+- `CHARACTER_CLASS_BIAS` (const): const CHARACTER_CLASS_BIAS: Readonly<Record<CityDistrictKind, Partial<Record<CityLotClass, number>>>> — How a character reweights its band's class mix (classes the mix lacks stay absent).
+- `CHARACTER_FILL` (const): const CHARACTER_FILL: Readonly<Record<CityDistrictKind, number>> — How fully a character's blocks fill, as a multiplier on the district's `blockDensity`: a CBD consumes its blocks wall to wall, a suburb keeps its yards.
+- `CityCentre` (interface): interface CityCentre — One development centre in district-local XZ. The first is always the primary (CBD) centre.
+- `CityDistrictField` (interface): interface CityDistrictField — The organic zoning field of one district (district-local XZ in metres).
+- `CityDistrictKind` (type): type CityDistrictKind = "cbd" | "oldtown" | "residential" | "industrial" | "waterfront" | "suburb" | "rural" — A block's district character: what kind of place it reads as.
+- `cityDistrictField` (function): function cityDistrictField(options: { halfX: number; halfZ: number; blockSize: number; profile: CityZoneProfile; /** The band extents ({@link zoneBand}'s): intensity spans each band's range so a core always runs hot. */ coreExtent: number; midExtent: number; rng: (stream: string) => () => number; /*… — Grow a district's zoning field. Footprints a few blocks across get only the primary centre; larger ones add secondary centres (one per ~40 block cells, up to three) spread around it.
+- `districtCharacter` (function): function districtCharacter(options: { band: CityZoneBand; primaryCentre: boolean; industry: number; waterfront: boolean; mix: readonly { item: string; weight: number }[]; }): CityDistrictKind — Name a block's character from its band, the centre that dominates it, the industry field, whether it fronts water, and which classes its mix can grow at all.
 
 ## @jgengine/core/city/cityKind
 
@@ -1299,8 +1311,21 @@
 - `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+- `cityClearings` (function): function cityClearings(objects: readonly SceneKindObject[]): { x: number; z: number; radius: number }[] — The clearance discs of a document's objects, as {@link clearanceZonesFrom} reads them — what a city keeps building-free so it never sits on a spawn, a mine or an objective.
 - `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — The `city` kind's resolve: run {@link CITY_GENERATOR} for one placed volume, with its footprint, frame, the ground sampler and its sibling `cityzone` volumes as the input, and its id as the seed when `meta.seed` is empty. Returns null without a usable footprint.
+
+## @jgengine/core/city/cityStats
+
+- `CityMassingStats` (interface): interface CityMassingStats — Density and render-cost measures of one district.
+- `cityMassingStats` (function): function cityMassingStats(city: ResolvedCity): CityMassingStats — Measure a resolved district's density and massing. Pure; the same plan always gives the same numbers.
+
+## @jgengine/core/city/cityVillage
+
+- `VILLAGE_MAX_CELLS` (const): const VILLAGE_MAX_CELLS: 8 — Footprints with fewer block cells than this grow as a village (1–2 lanes) instead of a street net.
+- `VillagePlan` (interface): interface VillagePlan — A village's lanes plus where its green belongs.
+- `villageGreen` (function): function villageGreen(plan: VillagePlan, options: { halfX: number; halfZ: number; width: number; rng: () => number }): Vec2[] — The village green: an octagon tucked into the corner between the main street and the side lane (or beside the main street at its middle when there is no side lane), sized to the hamlet and kept inside the footprint. Parcels are never cut into it.
+- `villageLanes` (function): function villageLanes(options: { halfX: number; halfZ: number; width: number; curviness: number; branching: number; rng: () => number }): VillagePlan — Lay out a village: `halfX`/`halfZ` the footprint, `width` the lane width, `curviness` how much the main street meanders, `branching` whether the side lane crosses through instead of teeing off.
 
 ## @jgengine/core/cutscene/cutscene.view
 
@@ -6805,10 +6830,10 @@
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
 - `CityInput` (interface): interface CityInput — Where a district stands and what it reads from around it: the city generator's world input. A placed `city` volume hands in its footprint, frame, the terrain and its sibling `cityzone` volumes ({@link resolveCityObject}); without an input (the variant grid) a district grows 400 m square at the origin.
 - `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
-- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
+- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" | "skyscraper" | "church" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same piece shapes at a much larger footprint (~30–90 m).
 - `CityLight` (interface): interface CityLight — One street light: curb position plus the yaw its arm faces (over the road).
 - `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
-- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
+- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" | "warehouse" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
 - `CityParams` (type): type CityParams = ParamsOf<typeof CITY_SCHEMA> — Parsed `city` params.
 - `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
@@ -6816,14 +6841,14 @@
 - `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
 - `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
-- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
+- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "hip" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape. A `gable` and a `hip` both keep their ridge along the piece's local x; the hip's ridge is half the piece length, its ends sloping down to the eaves.
 - `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
 - `CityRules` (type): type CityRules = Omit<CityParams, "style"> & { style: BuildingStyle } — The params a city grows from: the parsed schema values with the floor range ordered and the style narrowed to a known palette.
 - `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
 - `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
 - `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
-- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the zone metric maps to bands.
 - `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
 - `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented

@@ -160,6 +160,10 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
     wall: 0x969ca4, roof: 0xa2a8b0, trim: 0xb4bac2, accent: 0xd2d8e0,
     windowTint: 0xbcd6f0, windowDensity: 0.08, windowIntensity: 0.85, storefront: false, flood: 0,
   }, // pale galvanized metal, almost no windows
+  warehouse: {
+    wall: 0x5e6266, roof: 0x3a3d40, trim: 0x8a8e92, accent: 0xd0a040,
+    windowTint: 0xd8e4ff, windowDensity: 0.12, windowIntensity: 1.0, storefront: false, flood: 0,
+  }, // corrugated grey shed, a few cold strip lights, amber dock canopy
   // --- block-scale landmarks (flood-lit so they pop out of the skyline) ----------
   hall: {
     wall: 0x6c6672, roof: 0xb58a48, trim: 0xffcf70, accent: 0xffd27a,
@@ -177,6 +181,14 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
     wall: 0x3a5248, roof: 0x2a3a34, trim: 0x6ee7a8, accent: 0x6ee7a8,
     windowTint: 0xa8ffcc, windowDensity: 0.5, windowIntensity: 1.8, storefront: false, flood: 0x1c5238,
   }, // green-lit civic campus
+  skyscraper: {
+    wall: 0x1a2c48, roof: 0x101826, trim: 0xc8e0ff, accent: 0x7ad0ff,
+    windowTint: 0x9ad8ff, windowDensity: 0.7, windowIntensity: 2.0, storefront: false, flood: 0x16324e,
+  }, // the signature tower: blue glass, a lit lantern crown and mast
+  church: {
+    wall: 0x7a7266, roof: 0x3c4450, trim: 0xd8c8a0, accent: 0xffd890,
+    windowTint: 0xffc070, windowDensity: 0.3, windowIntensity: 1.6, storefront: false, flood: 0x4a3818,
+  }, // pale stone nave, slate roof, warm lancet windows
 };
 
 
@@ -429,6 +441,38 @@ function pushGable(
   emitTri(out, cos, sin, cx, cz, D, E, F, [1, 0, 0], shade, grow, flood); // right end
   emitQuad(out, cos, sin, cx, cz, A, D, F, C, [0, hd, -h], shade, grow, flood); // -z slope
   emitQuad(out, cos, sin, cx, cz, B, C, F, E, [0, hd, h], shade, grow, flood); // +z slope
+}
+
+/** Hipped roof; ridge along local x running half the length, all four sides sloping to the eaves. */
+function pushHip(
+  out: BoxWriter,
+  cx: number,
+  cz: number,
+  w: number,
+  h: number,
+  d: number,
+  y0: number,
+  ry: number,
+  shade: THREE.Color,
+  grow: number,
+  flood: THREE.Color,
+): void {
+  const cos = Math.cos(ry);
+  const sin = Math.sin(ry);
+  const hw = w / 2;
+  const hd = d / 2;
+  const rw = w / 4;
+  const y1 = y0 + h;
+  const A: [number, number, number] = [-hw, y0, hd];
+  const B: [number, number, number] = [hw, y0, hd];
+  const C: [number, number, number] = [rw, y1, 0];
+  const D: [number, number, number] = [-rw, y1, 0];
+  const E: [number, number, number] = [hw, y0, -hd];
+  const F: [number, number, number] = [-hw, y0, -hd];
+  emitQuad(out, cos, sin, cx, cz, A, B, C, D, [0, hd, h], shade, grow, flood); // +z slope
+  emitQuad(out, cos, sin, cx, cz, E, F, D, C, [0, hd, -h], shade, grow, flood); // -z slope
+  emitTri(out, cos, sin, cx, cz, B, E, C, [h, hw - rw, 0], shade, grow, flood); // +x hip end
+  emitTri(out, cos, sin, cx, cz, F, A, D, [-h, hw - rw, 0], shade, grow, flood); // -x hip end
 }
 
 /** Low-segment elliptical cylinder with a top cap. */
@@ -889,6 +933,9 @@ export function buildCityModel(
             break;
           case "gable":
             pushGable(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
+            break;
+          case "hip":
+            pushHip(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
             break;
           case "cylinder":
             pushCylinder(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
