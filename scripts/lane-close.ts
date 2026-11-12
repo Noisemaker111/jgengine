@@ -178,6 +178,12 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err(`lane:close: landed ${branch} but cannot name its PR; no checks or report to print`);
     return EXIT_CANNOT_ANSWER;
   }
+
+  // Tally benchmarks the tasks this diff touches on base and head and puts the
+  // numbers in the PR body. It never fails the lane; problems print `degraded:`.
+  io.out(`lane:close: ${branch} — tally`);
+  const tally = io.sh(["run", "scripts/tally-pr.ts", String(pr)], true);
+  if (tally.status !== 0) io.err(`lane:close: degraded: tally exited ${tally.status}; benchmark skipped`);
   const view = io.sh(["run", "ci:status", "--json", "--pr", String(pr)], false);
   const parsed = parseJson<{
     ok: boolean;

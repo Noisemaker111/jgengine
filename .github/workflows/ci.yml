@@ -204,6 +204,7 @@ jobs:
       - run: bun run check module-globals
       - run: bun run check games-save-states
       - run: bun run check games-design
+      - run: bun run check games-depth
       - run: bun run check games-ledger
       - run: bun run check games-capabilities --summary
       - name: type-check the reached games

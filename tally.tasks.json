@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    {
+      "name": "preflight",
+      "cmd": "bun run preflight",
+      "paths": ["packages/**", "apps/**", "games/**", "scripts/**"],
+      "runs": 2,
+      "timeoutMs": 600000
+    },
+    {
+      "name": "gen",
+      "cmd": "bun run gen",
+      "paths": ["scripts/**", "packages/**"],
+      "runs": 2,
+      "timeoutMs": 300000
+    }
+  ]
+}
