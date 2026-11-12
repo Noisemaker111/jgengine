@@ -2,11 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   MUZZLE_FLASH_MS,
   NEVER_MS,
-  lastHit,
   lastHurtAtMs,
   lastShot,
   muzzleFlashVisible,
-  noteHit,
   noteHurt,
   notePlayerHealth,
   noteShot,
@@ -23,7 +21,6 @@ describe("feel signals", () => {
     expect(muzzleFlashVisible(0)).toBe(false);
     expect(recoilAt(0)).toBe(0);
     expect(lastShot().atMs).toBe(NEVER_MS);
-    expect(0 - lastHit().atMs).toBe(Number.POSITIVE_INFINITY);
     expect(0 - lastHurtAtMs()).toBe(Number.POSITIVE_INFINITY);
     resetFeel();
   });
@@ -40,14 +37,11 @@ describe("feel signals", () => {
     resetFeel();
   });
 
-  test("hit and hurt signals survive a reset as 'never', not as 'now'", () => {
+  test("the hurt signal survives a reset as 'never', not as 'now'", () => {
     resetFeel();
-    noteHit(9000, true, false);
     noteHurt(9100);
-    expect(lastHit().atMs).toBe(9000);
     expect(lastHurtAtMs()).toBe(9100);
     resetFeel();
-    expect(lastHit().atMs).toBe(NEVER_MS);
     expect(lastHurtAtMs()).toBe(NEVER_MS);
   });
 

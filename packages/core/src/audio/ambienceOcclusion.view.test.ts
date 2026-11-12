@@ -153,6 +153,48 @@ describe("ambience zones", () => {
     expect(ramp.tc).toBeCloseTo(0.08);
     engine.dispose();
   });
+
+  test("a live zone level drives the bed over time, ramped, clamped and composed with the crossfade", async () => {
+    const mock = audioContext();
+    install(mock);
+    const engine = createAudioEngine({
+      sounds: { bed_meadow: sample("bed_meadow", { gain: 0.5 }), bed_shaft: sample("bed_shaft") },
+      zones: [{ ...meadow, gain: 0.8 }, shaft],
+    });
+    // A level set before the first pose waits for it rather than guessing the weights.
+    engine.setZoneLevel("meadow", 0.5);
+    engine.setListenerPose({ position: { x: 0, y: 0, z: 0 }, forward, up });
+    await flush();
+    expect(engine.ambience().levels).toEqual([{ id: "meadow", level: 0.4 }]);
+    const bed = mock.nodes.find((entry) => entry.kind === "gain" && entry.gain.ramps.some((ramp: any) => ramp.value > 0));
+    // weight 1 × zone gain 0.8 × live 0.5 × sound gain 0.5.
+    expect(bed.gain.target).toBeCloseTo(0.2);
+
+    // A gust curve over a few ticks: each new level ramps (never steps) toward its target.
+    const gusts = [0.6, 0.9, 0.7];
+    for (const gust of gusts) engine.setZoneLevel("meadow", gust);
+    expect(bed.gain.ramps.slice(-3).map((ramp: any) => ramp.value)).toEqual(gusts.map((gust) => expect.closeTo(0.8 * gust * 0.5)));
+    expect(bed.gain.ramps.every((ramp: any) => ramp.tc === 0.08)).toBe(true);
+
+    // An unchanged level schedules nothing; out-of-range levels clamp; NaN is silence.
+    const ramps = bed.gain.ramps.length;
+    engine.setZoneLevel("meadow", 0.7);
+    expect(bed.gain.ramps.length).toBe(ramps);
+    engine.setZoneLevel("meadow", 4);
+    expect(engine.ambience().levels).toEqual([{ id: "meadow", level: 0.8 }]);
+    engine.setZoneLevel("meadow", Number.NaN);
+    expect(engine.ambience().levels).toEqual([]);
+    expect(bed.gain.target).toBe(0);
+    engine.setZoneLevel("nowhere", 1);
+
+    // The live level keeps the positional crossfade: half way across, meadow is weight 0.5 × its level.
+    engine.setZoneLevel("meadow", 1);
+    engine.setListenerPose({ position: { x: 5, y: 0, z: 0 }, forward, up });
+    const between = engine.ambience().levels;
+    expect(between.find((entry) => entry.id === "meadow")!.level).toBeCloseTo(0.4);
+    expect(between.find((entry) => entry.id === "shaft")!.level).toBeCloseTo(0.5);
+    engine.dispose();
+  });
 });
 
 describe("geometry occlusion", () => {

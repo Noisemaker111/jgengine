@@ -22,7 +22,7 @@ beforeAll(async () => {
   await Bun.write(entry, `
     import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view'; import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useDragLayer,DraggableCard,DropZone,DragGhost} from '@jgengine/core/inventory/dragLayer.view';
-    import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/ui/provider';
+    import {InventoryGrid,useInventoryTransfer} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/ui/provider';
     import {CardFace} from '@jgengine/core/cards/cards.view';
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog'; import {createGameContext} from '@jgengine/core/runtime/gameContext';
@@ -31,9 +31,16 @@ beforeAll(async () => {
     const add=window.addEventListener.bind(window), remove=window.removeEventListener.bind(window);
     window.addEventListener=(type,fn,options)=>{if(new Error().stack.split('\\n')[2]?.includes('/fixture.js')&&['pointermove','pointerup','pointercancel','lostpointercapture','blur','keydown'].includes(type)){if(!listeners.has(type))listeners.set(type,new Set());listeners.get(type).add(fn)}return add(type,fn,options)};
     window.removeEventListener=(type,fn,options)=>{listeners.get(type)?.delete(fn);return remove(type,fn,options)};
-    const ctx=createGameContext({definition:defineGameDefinition({name:'Drag bag',assets:createAssetCatalog(),multiplayer:'off',inventories:{bag:{slots:6}}}),content:{},player:{userId:'drag-user',isNew:true}});
+    // The stash beside the bag holds gear only, so a potion dropped on it is refused with a reason.
+    const traits={stackLimit:id=>id==='potion'?6:1,kind:id=>id==='potion'?'consumable':'gear'};
+    const ctx=createGameContext({definition:defineGameDefinition({name:'Drag bag',assets:createAssetCatalog(),multiplayer:'off',inventories:{bag:{slots:6,traits},stash:{slots:3,accepts:'gear',tier:'banked'}}}),content:{},player:{userId:'drag-user',isNew:true}});
     ctx.player.inventory.put('bag','sword',1,{slot:0});ctx.player.inventory.put('bag','shield',1,{slot:1});
     ctx.player.inventory.put('bag','potion',3,{slot:2});ctx.player.inventory.put('bag','potion',2,{slot:3});
+    function Grids(){
+      const transfer=useInventoryTransfer();
+      return <><div style={{position:'absolute',left:20,top:20}}><InventoryGrid inventoryId="bag" transfer={transfer} columns={3} size={70} gap={10}/></div>
+        <div style={{position:'absolute',left:20,top:300}}><InventoryGrid inventoryId="stash" transfer={transfer} columns={3} size={70} gap={10}/></div></>;
+    }
     function Board(){
       const [cards,setCards]=useState([{id:'ace',rank:'A',suit:'spades'},{id:'king',rank:'K',suit:'hearts'}]);
       const [drops,setDrops]=useState([]),[hidden,setHidden]=useState(false),[destination,setDestination]=useState(true);
@@ -47,8 +54,8 @@ beforeAll(async () => {
       </div>;
     }
     function Fixture(){const [bag,setBag]=useState(true),[board,setBoard]=useState(true);
-      window.fixture={slots:()=>ctx.player.inventory.state('bag').slots,hideBag:()=>flushSync(()=>setBag(false)),hideBoard:()=>flushSync(()=>setBoard(false)),listeners:()=>Object.fromEntries([...listeners].map(([key,set])=>[key,set.size]))};
-      return <>{bag&&<div style={{position:'absolute',left:20,top:20}}><GameProvider context={ctx}><InventoryGrid inventoryId="bag" columns={3} size={70} gap={10}/></GameProvider></div>}{board&&<Board/>}<div id="outside" style={{position:'absolute',left:600,top:350,width:100,height:100}}>Outside</div></>;
+      window.fixture={slots:()=>ctx.player.inventory.state('bag').slots,stash:()=>ctx.player.inventory.state('stash').slots,hideBag:()=>flushSync(()=>setBag(false)),hideBoard:()=>flushSync(()=>setBoard(false)),listeners:()=>Object.fromEntries([...listeners].map(([key,set])=>[key,set.size]))};
+      return <>{bag&&<GameProvider context={ctx}><Grids/></GameProvider>}{board&&<Board/>}<div id="outside" style={{position:'absolute',left:600,top:350,width:100,height:100}}>Outside</div></>;
     }
     createRoot(document.getElementById('root')).render(<Fixture/>);
   `);
@@ -94,13 +101,13 @@ async function mouseDrag(from: string, to: string) {
 }
 
 test("touch inventory drops move, swap, and merge actual live slots", async () => {
-  const start = await center('[data-slot="0"]'), empty = await center('[data-slot="4"]');
+  const start = await center('[data-inventory-grid="bag"] [data-slot="0"]'), empty = await center('[data-inventory-grid="bag"] [data-slot="4"]');
   await touch("touchStart", [start]); await touch("touchMove", [empty]); await touch("touchEnd", []);
   expect((await slots())[0]).toBeNull(); expect((await slots())[4]).toEqual({ itemId: "sword", count: 1 });
-  const sword = await center('[data-slot="4"]'), shield = await center('[data-slot="1"]');
+  const sword = await center('[data-inventory-grid="bag"] [data-slot="4"]'), shield = await center('[data-inventory-grid="bag"] [data-slot="1"]');
   await touch("touchStart", [sword]); await touch("touchMove", [shield]); await touch("touchEnd", []);
   expect((await slots())[4]).toEqual({ itemId: "shield", count: 1 }); expect((await slots())[1]).toEqual({ itemId: "sword", count: 1 });
-  const potion = await center('[data-slot="2"]'), stack = await center('[data-slot="3"]');
+  const potion = await center('[data-inventory-grid="bag"] [data-slot="2"]'), stack = await center('[data-inventory-grid="bag"] [data-slot="3"]');
   await touch("touchStart", [potion]); await touch("touchMove", [stack]); await touch("touchEnd", []);
   expect((await slots())[2]).toBeNull(); expect((await slots())[3]).toEqual({ itemId: "potion", count: 5 });
   await idle();
@@ -161,7 +168,7 @@ test("Escape and lost capture cancel the drag without consuming the card", async
 
 for (const termination of ["cancel", "blur", "source", "owner", "bag"] as const) {
   test(`${termination} retires pointer ownership without a drop`, async () => {
-    const start = await center(termination === "bag" ? '[data-slot="0"]' : '[data-card="ace"]');
+    const start = await center(termination === "bag" ? '[data-inventory-grid="bag"] [data-slot="0"]' : '[data-card="ace"]');
     await touch("touchStart", [start]); expect(await page.locator('[data-drag-ghost]').count()).toBe(1);
     expect(await page.evaluate(() => (window as any).fixture.listeners().pointermove)).toBe(1);
     if (termination === "cancel") await touch("touchCancel", []);
@@ -210,10 +217,49 @@ test("movement within one target paints the ghost without replacing drag state",
 });
 
 test("inventory keyboard move and right-click split keep their real command consequences", async () => {
-  await page.locator('[data-slot="0"]').focus(); await page.keyboard.press("Enter");
+  await page.locator('[data-inventory-grid="bag"] [data-slot="0"]').focus(); await page.keyboard.press("Enter");
   await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowRight"); await page.keyboard.press("Enter");
   expect((await slots())[0]).toBeNull(); expect((await slots())[4]).toEqual({ itemId: "sword", count: 1 });
-  await page.locator('[data-slot="3"]').click({ button: "right" });
+  await page.locator('[data-inventory-grid="bag"] [data-slot="3"]').click({ button: "right" });
   expect((await slots())[3]).toEqual({ itemId: "potion", count: 1 });
   expect((await slots())[0]).toEqual({ itemId: "potion", count: 1 }); await idle();
+});
+
+async function stash() { return page.evaluate(() => (window as any).fixture.stash()); }
+const bagSlot = (slot: number) => `[data-inventory-grid="bag"] [data-slot="${slot}"]`;
+const stashSlot = (slot: number) => `[data-inventory-grid="stash"] [data-slot="${slot}"]`;
+
+test("a stack drags from the bag grid onto the stash grid, and a refused drop says why", async () => {
+  const sword = await center(bagSlot(0)), target = await center(stashSlot(1));
+  await page.mouse.move(sword.x, sword.y); await page.mouse.down(); await page.mouse.move(target.x, target.y);
+  // One shared drag: the stash slot lights up and only the source grid paints a ghost.
+  expect(await page.locator('[data-dropzone="stash#1"]').getAttribute("data-active")).toBe("");
+  expect(await page.locator("[data-drag-ghost]").count()).toBe(1);
+  await page.mouse.up();
+  expect((await slots())[0]).toBeNull(); expect((await stash())[1]).toEqual({ itemId: "sword", count: 1 });
+  await idle();
+
+  // The stash takes gear only: the potion bounces back, both inventories unchanged, with the reason shown.
+  await mouseDrag(bagSlot(2), stashSlot(0));
+  expect((await slots())[2]).toEqual({ itemId: "potion", count: 3 }); expect((await stash())[0]).toBeNull();
+  const status = page.locator('[data-inventory-grid="stash"] [role="status"]');
+  expect(await status.getAttribute("data-move-refused")).toBe("wrong-kind");
+  expect(await status.textContent()).toBe("That item does not go there");
+
+  // Dragging the sword back onto the shield swaps across the two inventories and clears the refusal.
+  await mouseDrag(stashSlot(1), bagSlot(1));
+  expect((await slots())[1]).toEqual({ itemId: "sword", count: 1 }); expect((await stash())[1]).toEqual({ itemId: "shield", count: 1 });
+  expect(await status.getAttribute("data-move-refused")).toBeNull();
+  await idle();
+});
+
+test("keyboard parity: pick up in the bag, Tab into the stash, drop", async () => {
+  await page.locator(bagSlot(1)).focus(); await page.keyboard.press("Enter");
+  expect(await page.locator(bagSlot(1)).getAttribute("aria-selected")).toBe("true");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.closest("[data-inventory-grid]")?.getAttribute("data-inventory-grid"))).toBe("stash");
+  await page.keyboard.press("ArrowRight"); await page.keyboard.press("ArrowRight"); await page.keyboard.press("Enter");
+  expect((await slots())[1]).toBeNull(); expect((await stash())[2]).toEqual({ itemId: "shield", count: 1 });
+  expect(await page.locator('[aria-selected="true"]').count()).toBe(0);
+  await idle();
 });

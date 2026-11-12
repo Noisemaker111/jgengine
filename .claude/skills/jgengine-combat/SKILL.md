@@ -49,6 +49,23 @@ how the shot travels and what it does on contact as one `ShotSpec`
 nothing else decides it; a splash, damage or falloff field never makes a shot
 travel. A new weapon is a few fields, not a code path, so never branch combat
 code on a weapon id or add a second classifier.
+Impacts are reported at `projectile.settled` and `combat.damage`, and that is
+where marks and markers hang. The impact layer (`presentationEffects.impacts`)
+lays decals into one bounded pool (`vfx/impactDecals`: position, normal, kind,
+fade, oldest evicted) drawn as a single mesh (`vfx/ImpactDecals.draw`); a game
+passes its look book as `impacts.decals` — kinds (look, tint, size, life) and
+which surface takes which by impact class, catalog id or surface kind. A body is
+never marked: an `entity` kind lands on the ground under the hit. A shooter with a
+crosshair sets `hitMarkers: false` and draws `HitMarkerCue`
+(`combat/HitMarkerCue.view`) on its HUD with its own art, colours and timing; the
+model (`combat/hitMarker`) marks only the local player's direct blows (no status
+ticks, no self-harm), folds a volley into its strongest blow, and reads `kill`
+from `lethal` and `crit` from the event. `landDamage` carries a rolled crit as
+`via.crit`, and a DoT routed through `ctx.scene.entity.effect` names its status
+as `via.status`. A runtime used through `landDamage` takes no `events` bus: the
+effect path already announces the blow, and a bus announces it twice.
+Scrap Signal and Harbor Heat are the adopters.
+
 Tune how a weapon feels (recoil, bloom, ADS, shake and rumble) with the
 [weapon-feel recipe](recipes/weapon-feel.md): feel target → `measureWeapon`
 numbers → handling knobs, and `createWeaponFeedbackSignals` into the feedback mixer.

@@ -95,6 +95,7 @@ Render seams fall back to placeholders when content is unauthored: default green
 - Generated environments still need deterministic data assertions; authored environments need scene-document assertions.
 - Bound SFX through `PlayableGame.audio.maxVoices` and game-owned `SoundDef.priority`/`maxVoices`; choose reject or deterministic stealing with `voiceOverflow`. See the spatial audio reference for custom hosts and cleanup.
 - Audio files and licensing belong to `jgengine-assets`; spatial playback policy belongs here.
+- Ambience beds keyed to world state are `audio.zones`, not game-owned loops: drive a bed's loudness each tick with `ctx.game.audio.zoneLevel(id, 0..1)` (ramped, clamped, composed with the crossfade), give independent beds their own `layer` (wind under machinery), and fill the ground between volumes with a `{ kind: "elsewhere" }` zone.
 
 
 ### Territory and placement

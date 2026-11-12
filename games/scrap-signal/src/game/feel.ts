@@ -1,13 +1,7 @@
-export interface HitSignal {
-  atMs: number;
-  crit: boolean;
-  kill: boolean;
-}
-
 /**
  * "This has not happened yet." Zero cannot mean it: game time also starts at zero, so on the first
  * frames of a run `now - 0` is a few milliseconds and every age-gated cue — muzzle flash, recoil,
- * hitmarker, damage vignette — fires at spawn before the player has done anything. A negative
+ * damage vignette — fires at spawn before the player has done anything. A negative
  * infinity sentinel makes the age infinite instead, so a consumer that forgets to special-case
  * "never" still gets the right answer.
  */
@@ -16,7 +10,6 @@ export const NEVER_MS = Number.NEGATIVE_INFINITY;
 const signals = {
   lastShotAtMs: NEVER_MS,
   lastShotFamily: "pistol",
-  lastHit: { atMs: NEVER_MS, crit: false, kill: false } as HitSignal,
   lastHurtAtMs: NEVER_MS,
   lastLevelUpAtMs: NEVER_MS,
 };
@@ -46,14 +39,6 @@ export function recoilAt(nowMs: number): number {
   const since = nowMs - signals.lastShotAtMs;
   if (since < 0 || since >= RECOIL_MS) return 0;
   return Math.sin((since / RECOIL_MS) * Math.PI);
-}
-
-export function noteHit(atMs: number, crit: boolean, kill: boolean): void {
-  signals.lastHit = { atMs, crit, kill };
-}
-
-export function lastHit(): HitSignal {
-  return signals.lastHit;
 }
 
 export function noteHurt(atMs: number): void {
@@ -108,7 +93,6 @@ export function resetFeel(): void {
   equippedGunId = null;
   lastHealth = null;
   signals.lastShotAtMs = NEVER_MS;
-  signals.lastHit = { atMs: NEVER_MS, crit: false, kill: false };
   signals.lastHurtAtMs = NEVER_MS;
   signals.lastLevelUpAtMs = NEVER_MS;
 }

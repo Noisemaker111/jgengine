@@ -49,6 +49,11 @@ export interface DamageAppliedEvent {
   /** The status that ticked, when the damage came from a carried status rather than a direct hit. */
   status?: string;
   /**
+   * True when the blow rolled a critical hit (a damage runtime's hit zone, or `via.crit` on the
+   * effect path). Omitted on a plain hit, so a hit marker or cue reads `crit === true`.
+   */
+  crit?: boolean;
+  /**
    * Where the blow landed, for spatial feedback (a panned cue, a decal, a floating number that
    * belongs on the body rather than on screen). Omitted by an emitter that knows no position, so a
    * listener must fall back to a centred, unattenuated reaction.
@@ -396,6 +401,16 @@ export interface AudioLoopStopEvent {
   id: string;
 }
 
+/**
+ * Live level multiplier `level` (0..1) for the ambience zone bed `id` from `audio.zones`; it composes
+ * with the zone's crossfade weight and authored gain. Emitted every tick to track world state; the
+ * shell clamps, ramps it zipper-free and ignores an unknown `id` (#2276).
+ */
+export interface AudioZoneLevelEvent {
+  id: string;
+  level: number;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "combat.damage": DamageAppliedEvent;
@@ -435,6 +450,7 @@ export interface GameEventMap {
   "audio.loopStart": AudioLoopStartEvent;
   "audio.loopSet": AudioLoopSetEvent;
   "audio.loopStop": AudioLoopStopEvent;
+  "audio.zoneLevel": AudioZoneLevelEvent;
   "entity.animation": EntityAnimationEvent;
   "animation.event": AnimationClipEvent;
   "feedback.cue": FeedbackCueEvent;

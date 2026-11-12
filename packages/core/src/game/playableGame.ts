@@ -49,6 +49,7 @@ import type { I18n } from "../i18n/i18n";
 import type { LootFilterRule } from "../loot/lootFilter";
 import type { RarityStyle } from "../loot/groundItem";
 import type { ImpactClass } from "../combat/impactProfile";
+import type { ImpactDecalsConfig } from "../vfx/impactDecals";
 
 /** How the shell presents `ctx.game.notices`; every field is optional. */
 export interface NoticePresentationConfig extends NoticeFeedConfig {
@@ -770,21 +771,27 @@ export interface PresentationEffectsConfig {
   tracers?: boolean;
   /** Trauma-driven combat camera shake. Default true. */
   shake?: boolean;
-  /** A tick over the spot the local player's attack damaged; red and larger on a kill. Default true. */
+  /**
+   * A tick over the spot the local player's attack damaged; amber on a crit, red and larger on a kill.
+   * Default true. A shooter with a crosshair turns this off and draws `HitMarkerCue`
+   * (`combat/HitMarkerCue.view`) on its HUD instead.
+   */
   hitMarkers?: boolean;
   /** A short flash where each direct-fire shot leaves the gun. Defaults to the `tracers` setting. */
   muzzleFlash?: boolean;
   /**
    * The default impact layer. It is on by default; `false` turns it off.
    * - Sparks and dust at every hit, sized by weapon class.
-   * - Scorch marks where shots miss into a surface.
+   * - Decals where shots land on a surface: a scorch by default, or the game's own look book.
    * - Camera kick and rumble near explosions and crashes.
    * - A short hit-stop on the local player's heavy hits, hits taken and kills.
    * - Killed rigged characters fall as ragdolls, lie 5 s, then sink away (off on the low tier).
    *
-   * An object tunes it: `classes` maps a damage type or effect id to an `ImpactClass`; `marks: false`, `hitstop: false` or `ragdolls: false` drop one part.
+   * An object tunes it: `classes` maps a damage type or effect id to an `ImpactClass`; `decals` is the
+   * game's decal look book (kinds of mark, and which surface takes which); `marks: false`,
+   * `hitstop: false` or `ragdolls: false` drop one part.
    */
-  impacts?: boolean | { classes?: Readonly<Record<string, ImpactClass>>; marks?: boolean; hitstop?: boolean; ragdolls?: boolean };
+  impacts?: boolean | { classes?: Readonly<Record<string, ImpactClass>>; marks?: boolean; decals?: ImpactDecalsConfig; hitstop?: boolean; ragdolls?: boolean };
 }
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */

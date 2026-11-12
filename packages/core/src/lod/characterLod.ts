@@ -84,11 +84,17 @@ export function characterViewTier(view: {
   distance: number;
   /** Whether a ready crowd batch could draw this character. */
   crowd: boolean;
+  /**
+   * The player's focus: the entity the camera follows, or the one targeted or selected. It keeps its
+   * own rig at any distance, so a car the player drives or a guest they inspect never draws as a
+   * crowd copy that per-entity feedback cannot reach.
+   */
+  focus?: boolean | undefined;
   previous?: CharacterLodTier | undefined;
 }): CharacterLodTier {
   if (view.local || view.lod === false) return "full";
   if (!view.shown) return "hidden";
-  return view.crowd ? characterLodTier(view.distance, view.lod, view.previous) : characterRigTier(view.distance, view.lod);
+  return view.crowd && view.focus !== true ? characterLodTier(view.distance, view.lod, view.previous) : characterRigTier(view.distance, view.lod);
 }
 
 /** Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it or it is out of view. @internal */

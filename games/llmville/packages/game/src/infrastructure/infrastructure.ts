@@ -199,6 +199,7 @@ export function moveRackHardware(
     destination.layout,
     RACK_HARDWARE_TRAITS,
     destination.slot,
+    from.kind === "stock" ? stockLayout : rackLayout,
   );
   if (moved.status === "rejected") {
     const reason: RackHardwareMoveError =

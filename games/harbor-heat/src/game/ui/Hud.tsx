@@ -29,6 +29,18 @@ import { ITEM_LABELS } from "../content";
 import { AMMO_STAT_IDS, weaponById } from "../items/weapons/catalog";
 import { deadlineStage, formatCountdown, KeyCap, Label, Lcd, LcdText, money, Row, Text, useIdleFade, useRoom, useVersioned } from "./kit";
 import { DISPLAY, HH } from "./theme";
+import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view";
+import { HARBOR_HIT_MARKER } from "../combat/impactLook";
+
+/** Four short slashes around an open centre, square-capped like the dash's segment digits. */
+const HIT_TICK_ART = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3 L9 9 M21 3 L15 9 M3 21 L9 15 M21 21 L15 15" stroke="#ffffff" stroke-width="3" stroke-linecap="square"/></svg>`;
+
+/** The hit tick over screen centre: cream on a hit, amber on a crit, siren red on a takedown. */
+export function HitTick() {
+  return <HitMarkerCue timing={HARBOR_HIT_MARKER} artwork={HIT_TICK_ART} size={24} gap={26}
+    colors={{ hit: HH.cream, crit: HH.amber, kill: HH.siren }}
+    labels={{ kill: <Label color={HH.siren} text="TAKEDOWN" /> }} />;
+}
 
 type XZ = readonly [number, number];
 type Pt = readonly [number, number];

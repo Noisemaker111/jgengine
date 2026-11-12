@@ -103,6 +103,13 @@ describe("characterViewTier", () => {
     expect(characterViewTier({ ...view, local: true, shown: false, distance: 60 })).toBe("full");
     expect(characterViewTier({ ...view, lod: false, shown: false, distance: 60 })).toBe("full");
   });
+
+  test("the player's focus keeps its own rig where the crowd would take it", () => {
+    expect(characterViewTier({ ...view, distance: 60, crowd: true, focus: true })).toBe("quarter");
+    expect(characterViewTier({ ...view, distance: 5, crowd: true, lod: { crowdDistance: 0 }, focus: true })).toBe("full");
+    expect(characterViewTier({ ...view, distance: 5, crowd: true, lod: { crowdDistance: 0 } })).toBe("crowd");
+    expect(characterViewTier({ ...view, shown: false, crowd: true, distance: 60, focus: true })).toBe("hidden");
+  });
 });
 
 describe("characterLodProbe", () => {

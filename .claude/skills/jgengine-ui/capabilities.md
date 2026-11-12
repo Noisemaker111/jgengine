@@ -386,6 +386,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/ui"`
 
+## inventory-transfer — drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons
+
+- `useInventoryTransfer` (function) · `import { useInventoryTransfer } from "@jgengine/ui"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/ui"`

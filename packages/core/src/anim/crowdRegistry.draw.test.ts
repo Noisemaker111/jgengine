@@ -30,6 +30,21 @@ describe("crowdKindOf", () => {
   test("two characters of different models never share a batch", () => {
     expect(crowdKindOf(guest)).not.toBe(crowdKindOf({ ...guest, url: "brightway-park/guest_b" }));
   });
+
+  test("two looks painted onto one rig are two batches; an unassigned asset changes nothing", () => {
+    const look = (shirt: string): ModelConfig => ({
+      ...guest,
+      materialAssets: [
+        { schemaVersion: 1, id: "shirt", name: "Shirt", family: "standard", capabilities: ["pbr"], surface: { color: shirt } },
+        { schemaVersion: 1, id: "unused", name: "Unused", family: "standard", capabilities: ["pbr"], surface: { color: shirt } },
+      ],
+      materialAssignments: [{ materialId: "shirt", selector: { slot: "Shirt" } }],
+    });
+    expect(crowdKindOf(look("#fff4da"))).not.toBe(crowdKindOf(look("#247f83")));
+    expect(crowdKindOf(look("#fff4da"))).not.toBe(crowdKindOf(guest));
+    const extra = look("#fff4da");
+    expect(crowdKindOf(extra)).toBe(crowdKindOf({ ...extra, materialAssets: extra.materialAssets!.slice(0, 1) }));
+  });
 });
 
 describe("stableCrowdKinds", () => {
@@ -67,7 +82,11 @@ describe("crowdEligible", () => {
     expect(crowdEligible({ ...guest, hiddenNodes: ["Sword"] })).toBe(false);
     expect(crowdEligible({ ...guest, hiddenNodes: [] })).toBe(true);
     expect(crowdEligible({ ...guest, parts: [] })).toBe(false);
-    expect(crowdEligible({ ...guest, materialAssignments: [{ materialId: "a", selector: { mesh: "Body" } }] })).toBe(false);
+    expect(crowdEligible({ ...guest, material: { color: "#ff0000" }, materialAssignments: [{ materialId: "a", selector: { mesh: "Body" } }] })).toBe(false);
+  });
+
+  test("per-slot material assignments are the model's own paint, which the batch reproduces", () => {
+    expect(crowdEligible({ ...guest, materialAssignments: [{ materialId: "a", selector: { slot: "Shirt" } }] })).toBe(true);
   });
 });
 
@@ -83,6 +102,13 @@ describe("crowd clips", () => {
 
   test("a static character bakes no clips", () => {
     expect(crowdClipsOf(guest, [])).toEqual([]);
+  });
+
+  test("a model naming no animation bakes the clips its own rig plays by default", () => {
+    // A Quaternius guest: no `animation` on the model, so the entity's rig resolves "auto" by clip name.
+    const names = ["CharacterArmature|Idle", "CharacterArmature|Walk", "CharacterArmature|Punch"];
+    expect(crowdClipsOf(guest, names)).toEqual(["CharacterArmature|Idle", "CharacterArmature|Walk"]);
+    expect(crowdClipsOf({ ...guest, animation: "none" }, names)).toEqual([]);
   });
 
   test("picks a clip by ground speed", () => {

@@ -12,6 +12,16 @@ export type ReceiveMap = Record<string, ReceiveRule>;
 export interface EffectVia {
   item?: string;
   amount?: number;
+  /**
+   * The blow rolled a critical hit upstream (a damage runtime's hit zone). Carried onto the
+   * `combat.damage` announcement so a hit marker or a cue can tell a crit from a plain hit.
+   */
+  crit?: boolean;
+  /**
+   * This application is one tick of a carried status (`"burn"`), not a direct hit. Carried onto the
+   * `combat.damage` announcement, where hit markers, sparks and hit-stop skip status ticks.
+   */
+  status?: string;
 }
 
 export interface SingleTargetEffectInput {
@@ -131,6 +141,10 @@ export interface EffectDamageApplication {
   lethal: boolean;
   /** The target's position when the spatial seam knows it, for a panned cue or a decal at the hit. */
   at?: EntityPosition;
+  /** The effect's `via.crit`: the blow rolled a critical hit upstream. */
+  crit?: boolean;
+  /** The effect's `via.status`: the carried status this application is a tick of. */
+  status?: string;
 }
 
 export interface EffectSystemDeps {
@@ -269,6 +283,8 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
         remaining: lastStatId === undefined ? null : statPools.get(instanceId, lastStatId)?.current ?? null,
         lethal: result.lethal,
         ...(at === undefined ? {} : { at }),
+        ...(via?.crit === true ? { crit: true } : {}),
+        ...(via?.status === undefined ? {} : { status: via.status }),
       });
     }
     if (result.lethal) {

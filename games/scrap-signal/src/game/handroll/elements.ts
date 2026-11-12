@@ -86,7 +86,8 @@ export function tickDots(ctx: GameContext, dtSeconds: number): void {
         from: record.fromId,
         to: record.targetId,
         effect: "damage",
-        via: { amount: Math.max(1, Math.round(tick.damage)) },
+        // A status tick, not a hit: no hit marker, sparks or hit-stop for each burn.
+        via: { amount: Math.max(1, Math.round(tick.damage)), status: tick.status },
       });
     }
     if (tick.expired) dots.records.delete(tick.id);

@@ -124,6 +124,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `alertSearchArea` (function) · `import { alertSearchArea } from "@jgengine/core/ai/alertLevel"`
 
+## ambience-live-level — a game drives a zone bed's loudness from world state (gusts, a storm, a reactor spooling) while the bed keeps its positional crossfade.
+
+- `ambienceBedLevel` (function) · `import { ambienceBedLevel } from "@jgengine/core/audio/ambience"`
+
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
@@ -1171,6 +1175,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## humanoid-sockets — rig-independent hand sockets for held items
 
 - `addHumanoidSockets` (function) · `import { addHumanoidSockets } from "@jgengine/core/anim/humanoidActionClips.draw"`
+
+## impact-decal-draw — one-draw mesh for an impact decal pool: normal-aligned quads over a shared atlas, faded by vertex alpha
+
+- `createImpactDecalLayer` (function) · `import { createImpactDecalLayer } from "@jgengine/core/vfx/ImpactDecals.draw"`
+
+## impact-decal-kind — choose the decal a shot leaves from the impact class, the catalog id and the surface it struck
+
+- `impactDecalKindFor` (function) · `import { impactDecalKindFor } from "@jgengine/core/vfx/impactDecals"`
+
+## impact-decals — bounded pool of bullet holes, scorches and splashes with surface normal, kind, fade and oldest-first eviction
+
+- `createImpactDecalPool` (function) · `import { createImpactDecalPool } from "@jgengine/core/vfx/impactDecals"`
 
 ## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
 

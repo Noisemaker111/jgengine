@@ -299,9 +299,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
 
+## inventory-slot-key — encode a slot of a named inventory as one drag/drop string and read it back, for moves between two grids
+
+- `parseInventorySlotKey` (function) · `import { parseInventorySlotKey } from "@jgengine/core/inventory/inventoryModel"`
+
 ## inventory-split — split a stack into a target or first-empty slot, honoring a stack limit
 
 - `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
+
+## inventory-transfer — drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons
+
+- `useInventoryTransfer` (function) · `import { useInventoryTransfer } from "@jgengine/core/inventory/inventoryGrid.view"`
 
 ## item-comparison — show per-stat deltas and a weighted verdict for a drop against equipped gear
 

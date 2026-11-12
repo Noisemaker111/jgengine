@@ -265,11 +265,14 @@ function entityMarkerDraw(options: {
       );
       const snap = latest.current;
       const crowdReady = crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind);
-      let tier = characterViewTier({ shown, local: snap.isLocal, lod: snap.model?.lod, distance, crowd: crowdReady, previous: tierRef });
+      const focus = snap.targeted || snap.selected || ctx.camera.followedEntityId() === entityId;
+      let tier = characterViewTier({ shown, local: snap.isLocal, lod: snap.model?.lod, distance, crowd: crowdReady, focus, previous: tierRef });
       if (tier === "crowd" && crowd !== undefined && crowdKind !== undefined) {
         // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
         const painted = ctx.scene.entity.paint.version(entityId) !== 0;
-        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
+        // The batch draws the interpolated render pose the marker just took, as the rig would: the raw
+        // simulation pose steps once per tick, which shows on a car passing close by.
+        batched = !painted && crowd.claim(entityId, crowdKind, { x: scratch[0], y: scratch[1], z: scratch[2], rotationY: scratch[3], speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
         // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
         // earns, so a crowded scene loses draws rather than characters.
         if (!batched) tier = characterRigTier(distance, snap.model?.lod === false ? undefined : snap.model?.lod);

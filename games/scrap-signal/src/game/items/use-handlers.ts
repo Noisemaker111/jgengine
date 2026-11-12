@@ -8,7 +8,7 @@ import { AMMO_LABELS } from "../ammo";
 import { bonus } from "../characters";
 import { combatRngOf, resolveGunHit, type GunHitMods } from "../combat/hitModel";
 import { perkAfterHit, perkDamageScale, perkHitMods, perkShot, watchDeaths, withGunKills } from "../combat/gunPerks";
-import { noteHit, noteShot } from "../feel";
+import { noteShot } from "../feel";
 import { playHit, playShot } from "../audio/drive";
 import { applyElementalProc, gunById, gunMagazine, startReload } from "../handroll";
 import { fireHandling, handlingView, playerStance, shotAim } from "../handling";
@@ -57,7 +57,7 @@ export function hitFeel(crit: boolean, killed: boolean): HitReactionConfig | "en
  * the world takes it as one application, and the feel cues read the same resolution. Errors out on a
  * body the damage model has no profile for — that is the wiring check, not a zero-damage hit.
  */
-function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: string, nowMs: number, shot: GunHitMods = {}): void {
+function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: string, shot: GunHitMods = {}): void {
   const gun = gunById(gunId);
   if (gun === undefined) return;
   // A volley's pellets settle together: when an earlier one killed the body, it has left the scene
@@ -74,7 +74,6 @@ function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: str
     ctx.scene.entity.floatText({ instanceId: targetId, text: strong ? `EFFECTIVE vs ${outcome.resistance.toUpperCase()}!` : `RESISTED by ${outcome.resistance.toUpperCase()}`, kind: strong ? "warn" : "info" });
   }
   const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
-  noteHit(nowMs, outcome.crit, killed);
   // Body feel through the SDK's shared hit reaction: the target flinches (knockback + shell flinch
   // animation), crits add a light shake, and kills use the calibrated enemyKilled preset.
   ctx.scene.entity.hitReaction({ from, to: targetId, config: hitFeel(outcome.crit, killed) });
@@ -167,7 +166,7 @@ const fireGun: ItemUseHandler<GameContext> = {
     const settled = ctx.scene.entity.settleProjectile(shotId);
     if (settled.status === "settled") {
       for (const hit of settled.hits) {
-        landGunHit(ctx, input.from, hit.instanceId, gun.id, nowMs, shot);
+        landGunHit(ctx, input.from, hit.instanceId, gun.id, shot);
       }
       const explosion = gun.weapon.explosion;
       if (settled.hits.length > 0 && explosion !== undefined) {

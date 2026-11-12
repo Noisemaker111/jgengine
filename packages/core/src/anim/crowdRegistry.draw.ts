@@ -37,14 +37,22 @@ const RUN_CLIP_SPEED = 2.6;
 
 /**
  * The identity a character model shares with every other model the GPU crowd can draw: rig url,
- * height normalization and material override. The override's colour is left out: the batch draws it
- * per instance ({@link crowdTintOf}), so traffic resprayed four ways is one draw per material, not
- * four. Whether there is a colour stays in the key, since a tinted batch draws its paint white.
+ * height normalization, material override and per-slot material assignments. The override's colour
+ * is left out: the batch draws it per instance ({@link crowdTintOf}), so traffic resprayed four ways
+ * is one draw per material, not four. Whether there is a colour stays in the key, since a tinted batch
+ * draws its paint white. Assignments stay whole: two looks painted onto one rig are two batches.
  */
 export function crowdKindOf(model: ModelConfig): string {
   const { color, ...shared } = model.material ?? {};
   const material = model.material === undefined ? null : { ...shared, tinted: color !== undefined };
-  return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(material)}`;
+  const assignments = model.materialAssignments ?? [];
+  const slots = assignments.length === 0
+    ? ""
+    : JSON.stringify({
+        assignments,
+        assets: (model.materialAssets ?? []).filter((asset) => assignments.some((assignment) => assignment.materialId === asset.id)),
+      });
+  return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(material)}\u0000${slots}`;
 }
 
 /**
@@ -73,8 +81,11 @@ export function crowdTintOf(model: ModelConfig): string | undefined {
 /**
  * Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can
  * reproduce. A rigged, clip-played, plain model qualifies, and so does a model with no animation at
- * all (a static crowd character) — it has no playback to lose. A model that needs per-entity
- * materials, wind, hidden nodes, IK, attachments or a part composition keeps its own rig.
+ * all (a static crowd character) — it has no playback to lose. Per-slot material assignments are the
+ * model's, not the entity's, so the batch paints its rig with them (a park's guests in palette shirts).
+ * A model that needs wind, hidden nodes, IK, attachments or a part composition keeps its own rig, and
+ * so does one that pairs assignments with a whole-model override: its own rig assigns slots on top of
+ * the overridden materials, which the batch's per-instance tint does not reproduce.
  */
 export function crowdEligible(model: ModelConfig | undefined): model is ModelConfig {
   if (model === undefined || model.lod === false) return false;
@@ -82,20 +93,26 @@ export function crowdEligible(model: ModelConfig | undefined): model is ModelCon
   if (model.partMotion !== undefined) return false;
   if (model.wind !== undefined && model.wind !== false) return false;
   if (model.surfaceDetail === false) return false;
-  if ((model.materialAssignments?.length ?? 0) > 0) return false;
+  if ((model.materialAssignments?.length ?? 0) > 0 && model.material !== undefined) return false;
   if (model.hiddenNodes !== undefined && !(Array.isArray(model.hiddenNodes) && model.hiddenNodes.length === 0)) return false;
   return true;
+}
+
+/** The animation an entity's own rig plays for this model: its own, or `"auto"` when it names none. */
+function crowdAnimationOf(model: ModelConfig): ModelConfig["animation"] {
+  return model.animation ?? "auto";
 }
 
 /**
  * The clips a crowd batch bakes for a model: its resolved idle, walk and run, in that order. Empty
  * when the model plays no clips at all (a static character) or when the rig's clip names do not
  * resolve to locomotion roles, which leaves the character on its own rig instead of drawing a frozen
- * crowd copy.
+ * crowd copy. A model that names no animation plays `"auto"`, as a live entity's own rig does: a
+ * library character's clips resolve by name, so a park guest walks in the batch as it does on its rig.
  * @internal
  */
 export function crowdClipsOf(model: ModelConfig, clipNames: readonly string[]): string[] {
-  const animation = resolveAnimationConfig(model.animation, clipNames);
+  const animation = resolveAnimationConfig(crowdAnimationOf(model), clipNames);
   const states = animation?.states;
   const clips: string[] = [];
   for (const name of [states?.idle, states?.walk, states?.run]) {
@@ -111,7 +128,7 @@ export function crowdClipsOf(model: ModelConfig, clipNames: readonly string[]): 
  * @internal
  */
 export function crowdSpeedBandsOf(model: ModelConfig, clipNames: readonly string[]): CrowdSpeedBands {
-  const states = resolveAnimationConfig(model.animation, clipNames)?.states;
+  const states = resolveAnimationConfig(crowdAnimationOf(model), clipNames)?.states;
   const band = (value: number | undefined, fallback: number): number =>
     value !== undefined && Number.isFinite(value) && value >= 0 ? value : fallback;
   const walk = band(states?.walkSpeed, WALK_CLIP_SPEED);

@@ -21,6 +21,7 @@ import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
+import { HARBOR_DECALS } from "./game/combat/impactLook";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
@@ -49,8 +50,9 @@ export const game = defineGame({
     },
     worldHealthBars: { roles: ["enemy", "hostile"] },
     // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
-  // automatically so a lobbed round never draws a straight fake beam.
-    presentationEffects: { tracers: true },
+  // automatically so a lobbed round never draws a straight fake beam. Shots mark the street through
+  // the shared decal pool, and the HUD's hit marker replaces the engine's world-space tick.
+    presentationEffects: { tracers: true, hitMarkers: false, impacts: { decals: HARBOR_DECALS } },
     worldItem: {
       pickupRadius: 2.4,
       rarityStyle: {

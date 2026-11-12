@@ -572,6 +572,13 @@ export interface GameAudio {  play(sound: string, at?: readonly [number, number,
   ): void;
   /** Stop and dispose retained loop `id` (emits `audio.loopStop`); an unknown `id` is ignored (#1051). */
   stopLoop(id: string): void;
+  /**
+   * Live level for the ambience zone bed `zoneId` from `audio.zones` via `audio.zoneLevel`: `level`
+   * (0..1, clamped by the shell) multiplies the zone's crossfade weight and authored gain, so a bed
+   * driven by gusts, a storm or a spooling reactor keeps its positional handover. Cheap to call every
+   * tick; the shell ramps the bed over ~80 ms. An unknown id is ignored (#2276).
+   */
+  zoneLevel(zoneId: string, level: number): void;
 }
 
 /** The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world. */
