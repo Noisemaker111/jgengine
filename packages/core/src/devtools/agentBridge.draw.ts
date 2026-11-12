@@ -17,8 +17,9 @@ import {
 } from "@jgengine/core/hud/hudDocument";
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports.draw";
 import { resetFrameTelemetry } from "./frameSampler.view";
-import { advanceSimulation } from "../sim/simStepper";
+import { advanceSimulation, type SimAdvanceResult } from "../sim/simStepper";
 import { teleportPlayer } from "../movement/teleport";
+import { playGateReasons } from "../game/controlGate";
 
 /**
  * The input a capture command named by a bare string runs with: a neutral look, so a command that
@@ -32,7 +33,7 @@ export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
 /** Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason. */
 export type AgentBridgeResponse =
   | { ok: true; [key: string]: unknown }
-  | { ok: false; error: string };
+  | { ok: false; error: string; [key: string]: unknown };
 
 /**
  * @internal
@@ -80,6 +81,20 @@ export function applyTimeScale(ctx: Pick<GameContext, "time">, scale: unknown): 
     ctx.time.setTimescale(scale);
   }
   return { ok: true, timescale: ctx.time.timescale(), now: Math.round(ctx.time.now() * 1000) / 1000 };
+}
+
+/**
+ * The `sim_advance` answer: ok only when every requested frame advanced. When play was gated the
+ * answer is not ok, names what holds it, and reports the frames that really advanced before the gate,
+ * so a drive cannot mistake a gated advance for elapsed game time.
+ */
+export function simAdvanceReport(ctx: GameContext | null, result: SimAdvanceResult | null): AgentBridgeResponse {
+  if (result === null) return { ok: false, error: "no sim driver mounted" };
+  const now = ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000;
+  if (!result.gated) return { ok: true, frames: result.frames, now };
+  const reasons = ctx === null ? [] : playGateReasons(ctx);
+  const held = reasons.length > 0 ? reasons.join(", ") : "the shell's gate (e.g. the rotate-device prompt)";
+  return { ok: false, error: `play is gated: ${held}; advanced ${result.frames} frame${result.frames === 1 ? "" : "s"} before the gate`, gated: reasons, frames: result.frames, now };
 }
 
 type EditorHost = { gameId: string; handle(request: AgentBridgeRequest): unknown };
@@ -277,11 +292,7 @@ export function installAgentBridge(options: {
         if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0 || seconds > 120) {
           return { ok: false, error: "sim_advance needs { seconds } in (0, 120]" };
         }
-        return advanceSimulation(seconds).then((frames): AgentBridgeResponse => {
-          if (frames === null) return { ok: false, error: "no sim driver mounted" };
-          const ctx = getContext();
-          return { ok: true, frames, now: ctx === null ? null : Math.round(ctx.time.now() * 1000) / 1000 };
-        });
+        return advanceSimulation(seconds).then((result) => simAdvanceReport(getContext(), result));
       }
       case "notice_push": {
         const ctx = getContext();

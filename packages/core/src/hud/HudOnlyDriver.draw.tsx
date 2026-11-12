@@ -110,7 +110,7 @@ export function HudOnlyDriver({
       return true;
     };
     frameId = requestAnimationFrame(tick);
-    const unregister = registerSimStepper((rawDt) => { simulate(rawDt); });
+    const unregister = registerSimStepper(simulate);
     return () => {
       cancelAnimationFrame(frameId);
       unregister();
