@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { createMissionRuntime, type MissionEvent } from "@jgengine/core/mission/mission";
 
-import { FIRST_SCENARIO, SCENARIOS, recordScenarioWin, scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
+import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
 import { MONTH_DAYS } from "./books";
 import { DAY_LENGTH } from "./catalog";
 
@@ -71,11 +71,10 @@ describe("brightway-park scenarios on the shared mission runtime", () => {
   });
 
   test("scenarios unlock in order: winning one opens the next", () => {
-    expect(scenarioLock(FIRST_SCENARIO)).toBeNull();
-    expect(scenarioLock("star_attraction")).toContain("Brightway Beginnings");
-    expect(scenarioLock("full_house")).toContain("Star Attraction");
-    recordScenarioWin(FIRST_SCENARIO);
-    expect(scenarioLock("star_attraction")).toBeNull();
-    expect(scenarioLock("full_house")).not.toBeNull();
+    expect(scenarioLock(FIRST_SCENARIO, [])).toBeNull();
+    expect(scenarioLock("star_attraction", [])).toContain("Brightway Beginnings");
+    expect(scenarioLock("full_house", [])).toContain("Star Attraction");
+    expect(scenarioLock("star_attraction", [FIRST_SCENARIO])).toBeNull();
+    expect(scenarioLock("full_house", [FIRST_SCENARIO])).not.toBeNull();
   });
 });

@@ -6,7 +6,8 @@ import { session } from "./session";
 import { BUILDABLES } from "./objects/catalog";
 import { MILESTONES } from "./milestones";
 import { park } from "./park";
-import { archiveSave, decodeSave, LEGACY_SAVE_KEY, PARK_ENTRY, parkSave, readParkSave, SAVE_KEY, snapshotPark, STORE_POLICY } from "./persistence";
+import { archiveSave, decodeSave, LEGACY_SAVE_KEY, LEGACY_WON_KEY, PARK_ENTRY, parkProfileDigest, parkSave, PROFILE_SLOT, readParkSave, recordScenarioWin, SAVE_KEY, scenariosWon, snapshotPark, STORE_POLICY } from "./persistence";
+import { FIRST_SCENARIO, scenarioLock } from "./scenarios";
 import { parkReady } from "./world/setup";
 import { closeDay } from "./sim/economy";
 import { MONTH_DAYS } from "./books";
@@ -145,6 +146,23 @@ describe("park saves and real command boundaries", () => {
     expect(readParkSave(section(records.get(PARK_ENTRY)))).not.toBeNull();
     // The old bytes stay put; the document is what a later boot reads.
     expect(records.get(LEGACY_SAVE_KEY)).toBe(JSON.stringify(old));
+  });
+
+  test("won scenarios live in the player's own slot: old wins still unlock, and a fresh park keeps them", async () => {
+    records.set(LEGACY_WON_KEY, JSON.stringify([FIRST_SCENARIO]));
+    const first = await booted();
+    expect(scenariosWon(first.ctx)).toEqual([FIRST_SCENARIO]);
+    expect(scenarioLock("star_attraction", scenariosWon(first.ctx))).toBeNull();
+    await recordScenarioWin(first.ctx, "star_attraction");
+    const written = JSON.parse(records.get(`${SAVE_KEY}:${PROFILE_SLOT}`)!);
+    expect(written.value.systems.scenarios).toEqual([FIRST_SCENARIO, "star_attraction"]);
+    first.ui.invoke("park.start");
+    await settle();
+    await archiveSave(first.ctx);
+    const second = await booted();
+    expect(scenariosWon(second.ctx)).toEqual([FIRST_SCENARIO, "star_attraction"]);
+    // The profile's digest covers the wins: a reloaded player writes the state that was saved.
+    expect(parkProfileDigest(second.ctx)).toBe(parkProfileDigest(first.ctx));
   });
 
   test("a save from before the world model opens a fresh park instead of crashing", async () => {

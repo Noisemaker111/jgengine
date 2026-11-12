@@ -21,6 +21,7 @@ import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffStat
 import { restoreStaff } from "./staff";
 import { guestFlowState, restoreGuestFlow } from "./sim/guests";
 import { parkProfile } from "./parkProfile";
+import { readScenariosWon } from "./scenarios";
 
 /** The park's save document namespace. Brightway keeps one park, the `park` slot. */
 export const SAVE_KEY = "brightway-park.save";
@@ -296,6 +297,66 @@ const records = perContext((ctx: GameContext): ParkRecord => {
   const backend = localSaveBackend(undefined, { errorMode: "throw" });
   return { backend, save: createParkSave(ctx, backend), unreadable: false };
 });
+
+/**
+ * The player's own slot beside the park: the scenarios they have won. A fresh park archives the
+ * `park` slot, so what the player has unlocked lives in a slot of its own and survives it.
+ */
+export const PROFILE_SLOT = "profile";
+/** Where an older build kept the won scenarios; read once and rewritten as the profile's section. */
+export const LEGACY_WON_KEY = "brightway-park.scenarios-won";
+
+interface ParkProfileRecord {
+  readonly save: GameSave;
+  won: string[];
+  /** The boot read; a write waits for it, so it never replaces stored wins with none. */
+  opened: Promise<unknown>;
+}
+
+const profiles = perContext((): ParkProfileRecord => {
+  const state = { won: [] as string[], opened: Promise.resolve() as Promise<unknown> };
+  const save = createGameSave({
+    backend: localSaveBackend(undefined, { errorMode: "throw" }),
+    game: "brightway-park",
+    key: SAVE_KEY,
+    slot: PROFILE_SLOT,
+    systems: [{
+      name: "scenarios",
+      snapshot: () => state.won,
+      // A win recorded before the boot read landed is kept alongside the stored ones.
+      restore: (value) => { state.won = [...new Set([...readScenariosWon(value), ...state.won])]; },
+    }],
+    legacy: { keys: () => [LEGACY_WON_KEY], lift: (stored) => ({ scenarios: JSON.parse(stored[LEGACY_WON_KEY] ?? "null") as unknown }) },
+  });
+  return Object.assign(state, { save });
+});
+
+/** Read the player's profile (the scenarios they have won). Storage that is blocked leaves none won. */
+export async function loadParkProfile(ctx: GameContext): Promise<void> {
+  const profile = profiles(ctx);
+  const opening = profile.save.load();
+  profile.opened = opening.catch(() => undefined);
+  await profile.opened;
+}
+
+/** The scenarios this player has won, kept apart from any one park's save. */
+export function scenariosWon(ctx: GameContext): readonly string[] {
+  return profiles(ctx).won;
+}
+
+/** Record a won scenario and write the profile; without storage the unlock lasts this session only. */
+export async function recordScenarioWin(ctx: GameContext, id: string): Promise<void> {
+  const profile = profiles(ctx);
+  if (profile.won.includes(id)) return;
+  profile.won = [...profile.won, id];
+  await profile.opened;
+  await profile.save.save();
+}
+
+/** The profile document's state digest, for a restore test. */
+export function parkProfileDigest(ctx: GameContext): string {
+  return profiles(ctx).save.digest();
+}
 
 /** This context's park document, for the menu card and a digest. */
 export function parkSave(ctx: GameContext): GameSave {

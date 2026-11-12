@@ -132,31 +132,15 @@ export function scenarioDef(id: string): ScenarioDef | null {
   return SCENARIOS.find((entry) => entry.id === id) ?? null;
 }
 
-const WON_KEY = "brightway-park.scenarios-won";
-
-/** The scenarios this browser has won, kept apart from any one park's save. */
-export function scenariosWon(): readonly string[] {
-  try {
-    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(WON_KEY);
-    const parsed: unknown = raw === null ? [] : JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
-  } catch {
-    return [];
-  }
+/** A stored list of won scenario ids, in the order they were won; anything but an id list is none. */
+export function readScenariosWon(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
 }
 
-export function recordScenarioWin(id: string): void {
-  const won = scenariosWon();
-  if (won.includes(id)) return;
-  try {
-    localStorage.setItem(WON_KEY, JSON.stringify([...won, id]));
-  } catch { /* Browser storage may be disabled: the unlock lasts this session only. */ }
-}
-
-/** Why a scenario is still locked, or null when it can be played. */
-export function scenarioLock(id: string): string | null {
+/** Why a scenario is still locked given the scenarios already won, or null when it can be played. */
+export function scenarioLock(id: string, won: readonly string[]): string | null {
   const def = scenarioDef(id);
   if (def === null) return "No such scenario";
-  if (def.after === undefined || scenariosWon().includes(def.after)) return null;
+  if (def.after === undefined || won.includes(def.after)) return null;
   return `Win ${scenarioDef(def.after)?.title ?? "the one before"} first`;
 }
