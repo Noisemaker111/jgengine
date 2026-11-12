@@ -3,6 +3,7 @@
 @import "@fontsource-variable/jetbrains-mono";
 @import "@fontsource-variable/archivo/wdth.css";
 @import "./home.css";
+@import "./story.css";
 
 @source "../../../registry/jgengine";
 

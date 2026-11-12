@@ -1,9 +1,9 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 
-export const SITE_TITLE = "jgengine — build three.js games 10x faster";
+export const SITE_TITLE = "jgengine — the game engine your coding agent builds on";
 export const SITE_DESCRIPTION =
-  "An open-source TypeScript engine on three.js. A HUD that fits phones, touch controls, saves, walking, driving and flying, physics, terrain, grass, cities, combat and multiplayer are built in. Start a game with one command.";
+  "An open-source TypeScript game engine on three.js, made for coding agents. Say “Make a game that … with jgengine” to your agent. Ten real games run on it, playable in the browser, and every decision behind it is written down with its numbers.";
 
 /** The only human interface outside this monorepo: say this to any coding agent. */
 export const ENTRY_PROMPT = "Make a game that ... with jgengine";
@@ -35,7 +35,7 @@ export const ASSETS_PACKAGE_NAME = "@jgengine/assets";
 
 export const PACKAGES: { name: string; blurb: string }[] = [
   { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, HUD, save, loot, quests, economy; model files have zero deps." },
-  { name: "@jgengine/react", blurb: "React UI layer: GameProvider, hooks, headless primitives." },
+  { name: "@jgengine/react", blurb: "Game UI on the engine's own JSX runtime (no React inside): GameProvider, hooks, primitives." },
   { name: "@jgengine/shell", blurb: "Engine canvas, orbit + first-person camera, input, HUD mounting, GameUiPreview." },
   { name: "@jgengine/ws", blurb: "Browser-safe WebSocket client backend: protocol codec, createWsBackend." },
   { name: "@jgengine/node", blurb: "Standalone authoritative host: tick loop, snapshots, save cadence, WS server." },
