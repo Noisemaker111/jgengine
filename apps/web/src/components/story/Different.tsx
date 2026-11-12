@@ -21,10 +21,10 @@ const AGENT_COMMANDS: readonly [string, string][] = [
 function Point({ n, title, children, proof }: { n: string; title: string; children: ReactNode; proof: ReactNode }) {
   return (
     <li className="point">
-      <span className="point-n" aria-hidden>
-        {n}
-      </span>
       <div className="point-copy">
+        <span className="point-n" aria-hidden>
+          {n}
+        </span>
         <h3>{title}</h3>
         {children}
       </div>

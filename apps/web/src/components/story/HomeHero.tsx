@@ -58,7 +58,7 @@ function useTypedIdea(): { idea: (typeof IDEAS)[number]; shown: string; typing: 
 function GameWall() {
   const covers = GAME_IDS.filter((id) => gameCover(id) !== null);
   if (covers.length === 0) return null;
-  const rows = [0, 1, 2].map((row) => covers.map((_, i) => covers[(i + row * 3) % covers.length]!));
+  const rows = [0, 1, 2, 3].map((row) => covers.map((_, i) => covers[(i + row * 2) % covers.length]!));
   return (
     <div className="wall" aria-hidden>
       <div className="wall-plane">

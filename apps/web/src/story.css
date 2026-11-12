@@ -36,8 +36,8 @@
 .wall-plane {
   display: grid;
   gap: 1.1rem;
-  transform: rotateX(22deg) rotateZ(-9deg) translateY(4%);
-  transform-origin: 60% 40%;
+  transform: rotateX(20deg) rotateZ(-9deg) translateY(-6%);
+  transform-origin: 60% 50%;
 }
 .wall-row {
   display: flex;
@@ -83,10 +83,10 @@
   font-family: var(--font-display);
   font-stretch: 125%;
   font-weight: 900;
-  font-size: clamp(2.35rem, 0.9rem + 6.4vw, 6.4rem);
+  font-size: clamp(2.35rem, 1rem + 4.6vw, 5.1rem);
   line-height: 0.94;
   letter-spacing: -0.045em;
-  max-width: 15ch;
+  max-width: 17ch;
 }
 .story-h1-fixed {
   display: block;
@@ -127,11 +127,9 @@
   }
 }
 .story-real {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
   margin-top: 1.4rem;
+  max-width: 40rem;
+  line-height: 1.6;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   color: var(--jg-muted);
@@ -143,6 +141,9 @@
   text-underline-offset: 3px;
 }
 .live-dot {
+  display: inline-block;
+  margin-right: 0.35rem;
+  vertical-align: 0.05em;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
@@ -311,11 +312,21 @@
 .carts {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(15rem, 1fr);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+}
+.carts > li {
+  scroll-snap-align: start;
 }
 @media (min-width: 1024px) {
   .carts {
+    grid-auto-flow: row;
     grid-template-columns: 1fr;
+    overflow-x: visible;
+    padding-bottom: 0;
     max-height: calc((76rem - 21rem - 3.25rem) * 9 / 16);
     overflow-y: auto;
     padding-right: 0.25rem;
@@ -402,17 +413,16 @@
   overflow: hidden;
 }
 .point-n {
-  position: absolute;
-  right: 1rem;
-  top: 0.2rem;
+  display: block;
+  margin-bottom: 0.6rem;
   font-family: var(--font-display);
   font-stretch: 125%;
   font-weight: 900;
-  font-size: 5.5rem;
-  line-height: 1;
+  font-size: 3.6rem;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
   color: transparent;
-  -webkit-text-stroke: 1px var(--jg-line-strong);
-  pointer-events: none;
+  -webkit-text-stroke: 1.5px var(--jg-accent);
 }
 .point-copy h3 {
   font-family: var(--font-display);
@@ -442,10 +452,6 @@
   }
   .point:nth-child(even) .point-copy {
     order: 2;
-  }
-  .point:nth-child(even) .point-n {
-    right: auto;
-    left: 1rem;
   }
 }
 .term {
@@ -577,13 +583,14 @@
 }
 .gauges div {
   display: grid;
-  grid-template-columns: 7.5rem 1fr;
+  grid-template-columns: 9.5rem 1fr;
   align-items: baseline;
   gap: 1rem;
   padding-bottom: 0.6rem;
   border-bottom: 1px dashed var(--jg-line-strong);
 }
 .gauges dt {
+  white-space: nowrap;
   font-family: var(--font-display);
   font-stretch: 118%;
   font-weight: 850;
@@ -894,12 +901,12 @@
 }
 .bench-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 10.5rem;
   grid-template-areas:
-    "label value"
-    "track track";
+    "label label"
+    "track value";
   gap: 0.3rem 0.75rem;
-  align-items: end;
+  align-items: center;
 }
 .bench-label {
   grid-area: label;
