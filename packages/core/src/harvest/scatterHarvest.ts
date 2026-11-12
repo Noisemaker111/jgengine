@@ -1,5 +1,6 @@
 // @skill jgengine-gameplay
 import type { ScatterClearing } from "../scatter/scatterClearing";
+import { length2 } from "../math/scalar";
 import { createSpatialIndex } from "../spatial/spatialIndex";
 import {
   createResourceNodeField,
@@ -148,7 +149,7 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
       // Geometry first: most of the query is out of reach, and that test is cheaper than the filters.
       const dx = placement.x - strike.x;
       const dz = placement.z - strike.z;
-      const distance = Math.hypot(dx, dz);
+      const distance = length2(dx, dz);
       const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
       if (distance - radius > strike.reach) continue;
       if (distance > radius && angleBetween(Math.atan2(dx, dz), strike.yaw) > cone) continue;

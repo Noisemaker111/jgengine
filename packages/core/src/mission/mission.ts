@@ -227,6 +227,12 @@ export interface MissionTickInput {
   events?: readonly MissionWorldEvent[];
   /** Transient facts for branch and `fact` fail conditions. */
   facts?: Readonly<Record<string, string | number | boolean>>;
+  /**
+   * Read one transient fact by name, in place of `facts`: for a caller whose facts live in more than
+   * one table (saved facts, totals, live facts), so a tick looks up the few a condition names instead
+   * of copying every table into one record.
+   */
+  readFact?: (name: string) => string | number | boolean | undefined;
   /** Actor ids that interacted this frame, for `interact` objectives. */
   interact?: readonly string[];
   /** Survivors on the ground for a `survive` objective; defaults to the living actors in `actors`. */
@@ -572,7 +578,7 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
 
   function factValue(name: string, input: MissionTickInput): string | number | boolean | undefined {
     if (name === "score") return state?.score ?? 0;
-    const fromInput = input.facts?.[name];
+    const fromInput = input.readFact !== undefined ? input.readFact(name) : input.facts?.[name];
     if (fromInput !== undefined) return fromInput;
     return state?.facts[name];
   }

@@ -420,13 +420,6 @@ export const DEFAULT_OBSTACLE_PLAYER_HEIGHT = 1.8;
 /** Extra nudge past a solid face when depenetrating so the escaped capsule lands just outside, not on, the box. */
 const PENETRATION_EPSILON = 1e-3;
 
-interface ObstacleBounds {
-  minX: number;
-  maxX: number;
-  minZ: number;
-  maxZ: number;
-}
-
 function verticalContactTolerance(feetY: number, headY: number, minY: number, maxY: number): number {
   return Number.EPSILON * 8 * Math.max(1, Math.abs(feetY), Math.abs(headY), Math.abs(minY), Math.abs(maxY));
 }
@@ -533,42 +526,23 @@ export function resolveObstacleStep(
   playerHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT,
 ): MovementFrameStep {
   if (!Number.isFinite(playerHeight) || playerHeight <= 0) throw new RangeError("Obstacle player height must be finite and positive.");
-  const feetY = current[1];
-  const headY = feetY + playerHeight;
-  const reachX = Math.abs(stepX) + playerRadius;
-  const reachZ = Math.abs(stepZ) + playerRadius;
-
-  const nearby: ObstacleBounds[] = [];
-  const considerBox = (
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    minZ: number,
-    maxZ: number,
-  ): void => {
-    // Vertical-span cull: a sub-box entirely above the head (walk under the lintel), below the feet,
-    // or low enough to step up onto (`stepUpHeight`) is skipped — walkable ledges don't wall.
-    if (maxY <= feetY + stepUpHeight || minY >= headY - verticalContactTolerance(feetY, headY, minY, maxY)) return;
-    const centerX = (minX + maxX) / 2;
-    const centerZ = (minZ + maxZ) / 2;
-    const halfX = (maxX - minX) / 2;
-    const halfZ = (maxZ - minZ) / 2;
-    if (Math.abs(centerX - current[0]) > halfX + reachX || Math.abs(centerZ - current[2]) > halfZ + reachZ) return;
-    nearby.push({
-      minX: minX - playerRadius,
-      maxX: maxX + playerRadius,
-      minZ: minZ - playerRadius,
-      maxZ: maxZ + playerRadius,
-    });
-  };
+  const query = stepQuery;
+  query.x = current[0];
+  query.z = current[2];
+  query.feetY = current[1];
+  query.headY = current[1] + playerHeight;
+  query.reachX = Math.abs(stepX) + playerRadius;
+  query.reachZ = Math.abs(stepZ) + playerRadius;
+  query.stepUpHeight = stepUpHeight;
+  query.radius = playerRadius;
+  query.count = 0;
   for (const obstacle of obstacles) {
     const px = obstacle.position[0];
     const py = obstacle.position[1];
     const pz = obstacle.position[2];
     if (obstacle.boxes !== undefined && obstacle.boxes.length > 0) {
       for (const box of obstacle.boxes) {
-        considerBox(px + box.min[0], px + box.max[0], py + box.min[1], py + box.max[1], pz + box.min[2], pz + box.max[2]);
+        considerStepBox(query, px + box.min[0], px + box.max[0], py + box.min[1], py + box.max[1], pz + box.min[2], pz + box.max[2]);
       }
       continue;
     }
@@ -577,7 +551,8 @@ export function resolveObstacleStep(
     const cx = px + (offset !== undefined ? offset[0] : 0);
     const cy = py + (offset !== undefined ? offset[1] : 0);
     const cz = pz + (offset !== undefined ? offset[2] : 0);
-    considerBox(
+    considerStepBox(
+      query,
       cx - halfExtents[0],
       cx + halfExtents[0],
       cy - halfExtents[1],
@@ -586,6 +561,8 @@ export function resolveObstacleStep(
       cz + halfExtents[2],
     );
   }
+  const bounds = query.bounds;
+  const inside = query.inside;
 
   // Depenetration escape: axis-clamped sliding alone returns zero on BOTH axes once the capsule is
   // strictly inside a solid box (a prior frame wedged it into a corner, an object spawned overlapping
@@ -595,18 +572,20 @@ export function resolveObstacleStep(
   // normal wall contact never triggers an escape and every existing slide case is unchanged.
   let escapeX = 0;
   let escapeZ = 0;
-  const slideBoxes: ObstacleBounds[] = [];
-  for (const box of nearby) {
-    const insideX = current[0] > box.minX && current[0] < box.maxX;
-    const insideZ = current[2] > box.minZ && current[2] < box.maxZ;
-    if (!insideX || !insideZ) {
-      slideBoxes.push(box);
-      continue;
-    }
-    const toMinX = current[0] - box.minX;
-    const toMaxX = box.maxX - current[0];
-    const toMinZ = current[2] - box.minZ;
-    const toMaxZ = box.maxZ - current[2];
+  for (let index = 0; index < query.count; index += 1) {
+    const base = index * 4;
+    const minX = bounds[base]!;
+    const maxX = bounds[base + 1]!;
+    const minZ = bounds[base + 2]!;
+    const maxZ = bounds[base + 3]!;
+    const insideX = current[0] > minX && current[0] < maxX;
+    const insideZ = current[2] > minZ && current[2] < maxZ;
+    inside[index] = insideX && insideZ ? 1 : 0;
+    if (inside[index] === 0) continue;
+    const toMinX = current[0] - minX;
+    const toMaxX = maxX - current[0];
+    const toMinZ = current[2] - minZ;
+    const toMaxZ = maxZ - current[2];
     const minPen = Math.min(toMinX, toMaxX, toMinZ, toMaxZ);
     if (minPen === toMinX) escapeX = Math.min(escapeX, -(toMinX + PENETRATION_EPSILON));
     else if (minPen === toMaxX) escapeX = Math.max(escapeX, toMaxX + PENETRATION_EPSILON);
@@ -614,20 +593,77 @@ export function resolveObstacleStep(
     else escapeZ = Math.max(escapeZ, toMaxZ + PENETRATION_EPSILON);
   }
 
+  // The boxes the capsule is not inside slide it, X first, then Z against the post-X position.
   let resultX = stepX;
-  for (const box of slideBoxes) {
-    if (current[2] <= box.minZ || current[2] >= box.maxZ) continue;
-    resultX = clampAxisStep(current[0], resultX, box.minX, box.maxX);
+  for (let index = 0; index < query.count; index += 1) {
+    if (inside[index] === 1) continue;
+    const base = index * 4;
+    if (current[2] <= bounds[base + 2]! || current[2] >= bounds[base + 3]!) continue;
+    resultX = clampAxisStep(current[0], resultX, bounds[base]!, bounds[base + 1]!);
   }
 
   const nextX = current[0] + resultX;
   let resultZ = stepZ;
-  for (const box of slideBoxes) {
-    if (nextX <= box.minX || nextX >= box.maxX) continue;
-    resultZ = clampAxisStep(current[2], resultZ, box.minZ, box.maxZ);
+  for (let index = 0; index < query.count; index += 1) {
+    if (inside[index] === 1) continue;
+    const base = index * 4;
+    if (nextX <= bounds[base]! || nextX >= bounds[base + 1]!) continue;
+    resultZ = clampAxisStep(current[2], resultZ, bounds[base + 2]!, bounds[base + 3]!);
   }
 
   return { stepX: resultX + escapeX, stepZ: resultZ + escapeZ };
+}
+
+/**
+ * One {@link resolveObstacleStep} call's capsule and the inflated boxes near it (minX, maxX, minZ, maxZ
+ * per box), kept for the next call: the step is synchronous and steps nothing else meanwhile, so one
+ * scratch serves every walker each tick without a box object per obstacle.
+ */
+interface StepQuery {
+  x: number;
+  z: number;
+  feetY: number;
+  headY: number;
+  reachX: number;
+  reachZ: number;
+  stepUpHeight: number;
+  radius: number;
+  bounds: Float64Array;
+  /** 1 where the capsule starts inside that box (it escapes it rather than sliding on it). */
+  inside: Uint8Array;
+  count: number;
+}
+
+const stepQuery: StepQuery = {
+  x: 0, z: 0, feetY: 0, headY: 0, reachX: 0, reachZ: 0, stepUpHeight: 0, radius: 0,
+  bounds: new Float64Array(64),
+  inside: new Uint8Array(16),
+  count: 0,
+};
+
+function considerStepBox(query: StepQuery, minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number): void {
+  // Vertical-span cull: a sub-box entirely above the head (walk under the lintel), below the feet,
+  // or low enough to step up onto (`stepUpHeight`) is skipped — walkable ledges don't wall.
+  const { feetY, headY } = query;
+  if (maxY <= feetY + query.stepUpHeight || minY >= headY - verticalContactTolerance(feetY, headY, minY, maxY)) return;
+  const centerX = (minX + maxX) / 2;
+  const centerZ = (minZ + maxZ) / 2;
+  const halfX = (maxX - minX) / 2;
+  const halfZ = (maxZ - minZ) / 2;
+  if (Math.abs(centerX - query.x) > halfX + query.reachX || Math.abs(centerZ - query.z) > halfZ + query.reachZ) return;
+  if ((query.count + 1) * 4 > query.bounds.length) {
+    const grown = new Float64Array(query.bounds.length * 2);
+    grown.set(query.bounds);
+    query.bounds = grown;
+    query.inside = new Uint8Array(grown.length / 4);
+  }
+  const base = query.count * 4;
+  const radius = query.radius;
+  query.bounds[base] = minX - radius;
+  query.bounds[base + 1] = maxX + radius;
+  query.bounds[base + 2] = minZ - radius;
+  query.bounds[base + 3] = maxZ + radius;
+  query.count += 1;
 }
 
 /**

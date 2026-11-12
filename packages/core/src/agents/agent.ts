@@ -2,7 +2,6 @@
 import {
   createUtilityBrain,
   type UtilityBrainSnapshot,
-  type UtilityCandidate,
   type UtilityInterrupt,
   type UtilityOption,
   type UtilitySwitchReason,
@@ -203,9 +202,12 @@ export function createAgent(config: AgentConfig): Agent {
   let action: AgentAction = { ...IDLE_ACTION };
   let far = false;
   let scheduleMark: string | null = null;
+  // The schedule phase `scheduleMark` names (`stop@since`), kept apart so a tick compares two values
+  // instead of building the mark string.
+  let markStop = Number.NaN;
+  let markSince = Number.NaN;
   let reason: AgentActionReason | null = null;
   let changed = false;
-  const candidates: UtilityCandidate[] = [];
   let frame: AgentFrame = {
     action,
     mood: moodReader.read(),
@@ -218,9 +220,13 @@ export function createAgent(config: AgentConfig): Agent {
   function applySchedule(now: number): AgentSchedulePhase | null {
     if (schedule === null) return null;
     const phase = schedule.phaseAt(now);
-    const mark = `${phase.stop}@${phase.since}`;
-    if (mark !== scheduleMark) {
+    if (phase.stop !== markStop || phase.since !== markSince || scheduleMark === null) {
+      markStop = phase.stop;
+      markSince = phase.since;
+      const mark = `${phase.stop}@${phase.since}`;
+      const repeated = mark === scheduleMark;
       scheduleMark = mark;
+      if (repeated) return phase;
       if (phase.refill !== null && !phase.travelling) {
         for (const [id, amount] of Object.entries(phase.refill)) needs.refill(id, amount);
       }
@@ -237,34 +243,31 @@ export function createAgent(config: AgentConfig): Agent {
     action = { ...action, option, target, since, score };
   }
 
+  function adopt(target: AgentTarget, nextReason: AgentActionReason, usedFallback: boolean, now: number): void {
+    const nextScore = brain.scoreOf(target.option);
+    const changedIdentity = target.option !== action.option || target.target !== action.target;
+    commit(target.option, target.target, nextScore, now);
+    action = {
+      ...action,
+      fallback: usedFallback ? null : target.fallback ?? null,
+      usedFallback,
+    };
+    changed = changedIdentity;
+    reason = changed ? nextReason : reason;
+  }
+
   function think(targets: readonly AgentTarget[], now: number): void {
-    candidates.length = 0;
-    for (const target of targets) {
-      candidates.push(target.cost === undefined ? { option: target.option } : { option: target.option, cost: target.cost });
-    }
-    const decision = brain.decide(candidates);
+    // A target is a utility candidate already (its option and cost); the brain keeps none of them.
+    const decision = brain.decide(targets);
     const pickedOption = decision.option;
     const pickedTarget = firstOfOption(targets, pickedOption);
     const held = findTarget(targets, action.option, action.target);
-
-    const adopt = (target: AgentTarget, nextReason: AgentActionReason, usedFallback: boolean): void => {
-      const nextScore = brain.scoreOf(target.option);
-      const changedIdentity = target.option !== action.option || target.target !== action.target;
-      commit(target.option, target.target, nextScore, now);
-      action = {
-        ...action,
-        fallback: usedFallback ? null : target.fallback ?? null,
-        usedFallback,
-      };
-      changed = changedIdentity;
-      reason = changed ? nextReason : reason;
-    };
 
     if (action.option !== null && held === null) {
       const fallback = action.fallback;
       const fallbackTarget = fallback === null ? null : findTarget(targets, fallback.option, fallback.target);
       if (fallbackTarget !== null) {
-        adopt(fallbackTarget, "fallback", true);
+        adopt(fallbackTarget, "fallback", true, now);
         return;
       }
       if (pickedTarget === null) {
@@ -273,7 +276,7 @@ export function createAgent(config: AgentConfig): Agent {
         reason = "cleared";
         return;
       }
-      adopt(pickedTarget, decision.reason ?? "unavailable", false);
+      adopt(pickedTarget, decision.reason ?? "unavailable", false, now);
       return;
     }
 
@@ -287,12 +290,12 @@ export function createAgent(config: AgentConfig): Agent {
     }
 
     if (decision.changed && pickedOption !== action.option) {
-      adopt(pickedTarget, decision.reason ?? "score", false);
+      adopt(pickedTarget, decision.reason ?? "score", false, now);
       return;
     }
 
     if (action.option === null) {
-      adopt(pickedTarget, decision.reason ?? "initial", false);
+      adopt(pickedTarget, decision.reason ?? "initial", false, now);
       return;
     }
 
@@ -370,6 +373,8 @@ export function createAgent(config: AgentConfig): Agent {
       action = { ...next.action };
       far = next.far;
       scheduleMark = next.scheduleMark;
+      markStop = Number.NaN;
+      markSince = Number.NaN;
       changed = false;
       reason = null;
     },

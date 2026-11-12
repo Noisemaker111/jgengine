@@ -1,4 +1,5 @@
-import { createPointGrid } from "../spatial/pointGrid";
+import { length3 } from "../math/scalar";
+import { createPointGrid, type PointGrid } from "../spatial/pointGrid";
 
 export type FlockVec3 = readonly [number, number, number];
 
@@ -39,6 +40,19 @@ export function flockSteer(
   config: FlockConfig,
   target?: FlockVec3,
 ): FlockVec3 {
+  const out: [number, number, number] = [0, 0, 0];
+  flockSteerInto(agent, neighbors, config, target, out);
+  return out;
+}
+
+/** {@link flockSteer} written into `out`, so a per-agent step allocates no result. */
+function flockSteerInto(
+  agent: FlockAgent,
+  neighbors: readonly FlockAgent[],
+  config: FlockConfig,
+  target: FlockVec3 | undefined,
+  out: [number, number, number],
+): void {
   const separationWeight = config.separationWeight ?? 1.5;
   const cohesionWeight = config.cohesionWeight ?? 1;
   const alignmentWeight = config.alignmentWeight ?? 1;
@@ -56,12 +70,13 @@ export function flockSteer(
   let alignZ = 0;
   let flockmates = 0;
 
-  for (const other of neighbors) {
+  for (let n = 0; n < neighbors.length; n += 1) {
+    const other = neighbors[n]!;
     if (other === agent) continue;
     const dx = other.position[0] - agent.position[0];
     const dy = other.position[1] - agent.position[1];
     const dz = other.position[2] - agent.position[2];
-    const distance = Math.hypot(dx, dy, dz);
+    const distance = length3(dx, dy, dz);
     if (distance > config.neighborRadius) continue;
     flockmates += 1;
     cohX += other.position[0];
@@ -89,7 +104,7 @@ export function flockSteer(
     const toCentroidX = centroidX - agent.position[0];
     const toCentroidY = centroidY - agent.position[1];
     const toCentroidZ = centroidZ - agent.position[2];
-    const centroidDistance = Math.hypot(toCentroidX, toCentroidY, toCentroidZ);
+    const centroidDistance = length3(toCentroidX, toCentroidY, toCentroidZ);
     const straggling =
       config.stragglerRadius !== undefined && centroidDistance > config.stragglerRadius;
     const cohesion = cohesionWeight * (straggling ? config.stragglerBoost ?? 3 : 1);
@@ -98,7 +113,7 @@ export function flockSteer(
       steerY += (toCentroidY / centroidDistance) * cohesion;
       steerZ += (toCentroidZ / centroidDistance) * cohesion;
     }
-    const alignMagnitude = Math.hypot(alignX, alignY, alignZ);
+    const alignMagnitude = length3(alignX, alignY, alignZ);
     if (alignMagnitude > 1e-9) {
       steerX += (alignX / alignMagnitude) * alignmentWeight;
       steerY += (alignY / alignMagnitude) * alignmentWeight;
@@ -110,7 +125,7 @@ export function flockSteer(
     const toTargetX = target[0] - agent.position[0];
     const toTargetY = target[1] - agent.position[1];
     const toTargetZ = target[2] - agent.position[2];
-    const targetDistance = Math.hypot(toTargetX, toTargetY, toTargetZ);
+    const targetDistance = length3(toTargetX, toTargetY, toTargetZ);
     if (targetDistance > 1e-9) {
       steerX += (toTargetX / targetDistance) * seekWeight;
       steerY += (toTargetY / targetDistance) * seekWeight;
@@ -118,10 +133,17 @@ export function flockSteer(
     }
   }
 
-  const magnitude = Math.hypot(steerX, steerY, steerZ);
-  if (magnitude <= 1e-9) return [0, 0, 0];
+  const magnitude = length3(steerX, steerY, steerZ);
+  if (magnitude <= 1e-9) {
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    return;
+  }
   const scale = accel / magnitude;
-  return [steerX * scale, steerY * scale, steerZ * scale];
+  out[0] = steerX * scale;
+  out[1] = steerY * scale;
+  out[2] = steerZ * scale;
 }
 
 export interface FlockStepAgent {
@@ -134,6 +156,11 @@ interface FlockScratch {
   candidates: Int32Array;
   neighbors: FlockAgent[];
   steer: Float64Array;
+  /** One agent's steering, written by {@link flockSteerInto}. */
+  agentSteer: [number, number, number];
+  /** Rebuilt every step; replaced only when the neighbour radius changes its cell size. */
+  grid: PointGrid | null;
+  gridCell: number;
 }
 
 // A checked-out bundle per in-flight step: an acceleration callback may step another flock, so the
@@ -143,13 +170,17 @@ const flockScratch: FlockScratch[] = [];
 function takeFlockScratch(count: number): FlockScratch {
   let scratch = flockScratch.pop();
   if (scratch === undefined) {
-    scratch = { positions: new Float64Array(0), candidates: new Int32Array(0), neighbors: [], steer: new Float64Array(0) };
+    scratch = { positions: new Float64Array(0), candidates: new Int32Array(0), neighbors: [], steer: new Float64Array(0), agentSteer: [0, 0, 0], grid: null, gridCell: 0 };
   }
   if (scratch.positions.length < count * 3) scratch.positions = new Float64Array(count * 3);
   if (scratch.candidates.length < count) scratch.candidates = new Int32Array(count);
   if (scratch.steer.length < count * 3) scratch.steer = new Float64Array(count * 3);
   scratch.neighbors.length = 0;
   return scratch;
+}
+
+function finiteVec3(value: FlockVec3): boolean {
+  return value.length === 3 && Number.isFinite(value[0]) && Number.isFinite(value[1]) && Number.isFinite(value[2]);
 }
 
 function releaseFlockScratch(scratch: FlockScratch): void {
@@ -194,7 +225,11 @@ function stepFlockInto(
     positions[i * 3 + 1] = position[1];
     positions[i * 3 + 2] = position[2];
   }
-  const grid = createPointGrid({ cellSize });
+  if (scratch.grid === null || scratch.gridCell !== cellSize) {
+    scratch.grid = createPointGrid({ cellSize });
+    scratch.gridCell = cellSize;
+  }
+  const grid = scratch.grid;
   grid.rebuild(positions, count);
   const candidates = scratch.candidates;
   const neighborScratch = scratch.neighbors;
@@ -210,10 +245,11 @@ function stepFlockInto(
       neighbors += 1;
     }
     neighborScratch.length = neighbors;
-    const steer = flockSteer(agents[i]!, neighborScratch, config, target);
+    const steer = scratch.agentSteer;
+    flockSteerInto(agents[i]!, neighborScratch, config, target, steer);
     const base = i * 3;
     const external = acceleration?.(agents[i]!, i);
-    if (external !== undefined && (external.length !== 3 || external.some((axis) => !Number.isFinite(axis)))) throw new Error("flock acceleration must contain three finite components");
+    if (external !== undefined && !finiteVec3(external)) throw new Error("flock acceleration must contain three finite components");
     steerScratch[base] = steer[0] + (external?.[0] ?? 0);
     steerScratch[base + 1] = steer[1] + (external?.[1] ?? 0);
     steerScratch[base + 2] = steer[2] + (external?.[2] ?? 0);
@@ -225,7 +261,7 @@ function stepFlockInto(
     let vx = agent.velocity[0] + steerScratch[base]! * dt;
     let vy = agent.velocity[1] + steerScratch[base + 1]! * dt;
     let vz = agent.velocity[2] + steerScratch[base + 2]! * dt;
-    const speed = Math.hypot(vx, vy, vz);
+    const speed = length3(vx, vy, vz);
     if (speed > config.maxSpeed) {
       const clamp = config.maxSpeed / speed;
       vx *= clamp;
@@ -337,7 +373,7 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
             const ox = (pos[o] ?? 0) - px;
             const oy = (pos[o + 1] ?? 0) - py;
             const oz = (pos[o + 2] ?? 0) - pz;
-            const distance = Math.hypot(ox, oy, oz);
+            const distance = length3(ox, oy, oz);
             if (distance > config.neighborRadius) continue;
             seen += 1;
             mates += 1;
@@ -353,10 +389,10 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
       let sx = sepX * separationWeight, sy = sepY * separationWeight, sz = sepZ * separationWeight;
       if (mates > 0) {
         const tx = cohX / mates - px, ty = cohY / mates - py, tz = cohZ / mates - pz;
-        const centroid = Math.hypot(tx, ty, tz);
+        const centroid = length3(tx, ty, tz);
         const cohesion = cohesionWeight * (straggler !== undefined && centroid > straggler ? stragglerBoost : 1);
         if (centroid > 1e-9) { sx += (tx / centroid) * cohesion; sy += (ty / centroid) * cohesion; sz += (tz / centroid) * cohesion; }
-        const align = Math.hypot(alX, alY, alZ);
+        const align = length3(alX, alY, alZ);
         if (align > 1e-9) { sx += (alX / align) * alignmentWeight; sy += (alY / align) * alignmentWeight; sz += (alZ / align) * alignmentWeight; }
       }
       let gx: number, gy: number, gz: number, seeking = true;
@@ -365,10 +401,10 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
       else { gx = gy = gz = 0; seeking = false; }
       if (seeking) {
         const tx = gx - px, ty = gy - py, tz = gz - pz;
-        const distance = Math.hypot(tx, ty, tz);
+        const distance = length3(tx, ty, tz);
         if (distance > 1e-9) { sx += (tx / distance) * seekWeight; sy += (ty / distance) * seekWeight; sz += (tz / distance) * seekWeight; }
       }
-      const magnitude = Math.hypot(sx, sy, sz);
+      const magnitude = length3(sx, sy, sz);
       const scale = magnitude <= 1e-9 ? 0 : accel / magnitude;
       steer[b] = sx * scale; steer[b + 1] = sy * scale; steer[b + 2] = sz * scale;
     }
@@ -378,7 +414,7 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
       let vx = (vel[b] ?? 0) + (steer[b] ?? 0) * dt;
       let vy = (vel[b + 1] ?? 0) + (steer[b + 1] ?? 0) * dt;
       let vz = (vel[b + 2] ?? 0) + (steer[b + 2] ?? 0) * dt;
-      const speed = Math.hypot(vx, vy, vz);
+      const speed = length3(vx, vy, vz);
       if (speed > config.maxSpeed) { const clamp = config.maxSpeed / speed; vx *= clamp; vy *= clamp; vz *= clamp; }
       vel[b] = vx; vel[b + 1] = vy; vel[b + 2] = vz;
       pos[b] = (pos[b] ?? 0) + vx * dt; pos[b + 1] = (pos[b + 1] ?? 0) + vy * dt; pos[b + 2] = (pos[b + 2] ?? 0) + vz * dt;

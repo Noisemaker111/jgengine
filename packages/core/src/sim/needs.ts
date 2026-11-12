@@ -1,6 +1,6 @@
 import {
   decayMeterMoodles,
-  decayMeters,
+  decayMetersInPlace,
   decayMeterSnapshot,
   decayMeterState,
   initDecayMeters,
@@ -110,7 +110,8 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
 
   return {
     tick(dt) {
-      if (dt > 0) values = decayMeters(values, defs, dt, modifiers);
+      // In place: `values` never leaves this set (reads, states and snapshots copy out of it).
+      if (dt > 0) decayMetersInPlace(values, defs, dt, modifiers);
     },
     ids: () => ids,
     indexOf: (id) => index.get(id) ?? -1,

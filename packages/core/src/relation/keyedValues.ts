@@ -111,6 +111,8 @@ export interface PairKeyOptions {
 const ESCAPE = "\\";
 
 function escapeComponent(value: string, separator: string): string {
+  // Ids rarely hold the separator or the escape: those need no copy.
+  if (value.indexOf(separator) < 0 && value.indexOf(ESCAPE) < 0) return value;
   let out = "";
   for (const ch of value) {
     if (ch === ESCAPE || ch === separator) out += ESCAPE;
@@ -158,7 +160,9 @@ export function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec {
   return {
     directed,
     key(a, b) {
-      const [first, second] = directed || a <= b ? [a, b] : [b, a];
+      const inOrder = directed || a <= b;
+      const first = inOrder ? a : b;
+      const second = inOrder ? b : a;
       return `${escapeComponent(first, separator)}${separator}${escapeComponent(second, separator)}`;
     },
     parse(key) {

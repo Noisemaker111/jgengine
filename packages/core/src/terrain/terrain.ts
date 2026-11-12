@@ -27,7 +27,7 @@ import type { Vec2 } from "../world/geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 import { hashString } from "../random/rng";
 import type { TerraformSnapshot } from "./terraform";
-import { clamp01, lerp } from "../math/scalar";
+import { clamp01, length2, lerp } from "../math/scalar";
 
 /** A surface normal vector at a terrain sample point. */
 export type TerrainNormal = readonly [number, number, number];
@@ -1148,7 +1148,7 @@ function withFlattenMasks(
       // A hypot is never below its larger side: a point outside the mask's square leaves the height alone.
       const outer = Math.max(mask.radius, mask.radius + mask.falloff);
       if (Math.abs(dx) > outer || Math.abs(dz) > outer) continue;
-      const distance = Math.hypot(dx, dz);
+      const distance = length2(dx, dz);
       if (distance <= mask.radius) {
         height = mask.target;
       } else if (distance <= mask.radius + mask.falloff) {

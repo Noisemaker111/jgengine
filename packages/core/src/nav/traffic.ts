@@ -191,7 +191,10 @@ export interface Traffic {
   count(): number;
   ids(): readonly string[];
   car(id: string): TrafficCarView | null;
-  /** Visit every car in insertion order — one view record per car, no snapshot copy. */
+  /**
+   * Visit every car in insertion order through one view record the call refills for each car (its
+   * `position` tuple too), so a per-tick pass over the fleet allocates nothing: copy what you keep.
+   */
   forEachCar(visit: (car: Readonly<TrafficCarView>) => void): void;
   /** Advance the whole fleet by `dt` seconds. */
   tick(dt: number): void;
@@ -237,6 +240,35 @@ const DEFAULT_TUNING: TrafficTuning = {
   watchSeconds: 60,
   turnSpeedFactor: 0.55,
 };
+
+/** A lane's rear-most car this tick and its queue, kept per lane and refilled every tick. */
+interface LaneFront {
+  arc: number;
+  half: number;
+  /** False while the lane holds no car. */
+  present: boolean;
+  /** The lane's cars, rear first: the same array `laneCars` holds. */
+  queue: Car[];
+  /** Cars written into `queue` so far by the refill. */
+  fill: number;
+}
+
+/** Order a lane queue rear first (then by id) in place; an insertion sort, since it is nearly sorted. */
+function sortQueue(queue: Car[]): void {
+  for (let i = 1; i < queue.length; i += 1) {
+    const car = queue[i]!;
+    let j = i - 1;
+    while (j >= 0 && queueOrder(queue[j]!, car) > 0) {
+      queue[j + 1] = queue[j]!;
+      j -= 1;
+    }
+    queue[j + 1] = car;
+  }
+}
+
+function queueOrder(a: Car, b: Car): number {
+  return a.arc - b.arc || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
 
 interface Car {
   id: string;
@@ -337,9 +369,15 @@ export function createTraffic(options: TrafficOptions): Traffic {
   const route = options.route;
   const cars: Car[] = [];
   const carOf = new Map<string, number>();
+  // Each lane's queue, rear first, and its rear-most car: one list and one record per lane, refilled in
+  // place every tick (see resetLaneArrays).
   const laneCars = new Map<string, Car[]>();
-  for (const laneId of laneOf.keys()) laneCars.set(laneId, []);
-  const laneFirst = new Map<string, { arc: number; half: number }>();
+  const laneFront = new Map<string, LaneFront>();
+  for (const laneId of laneOf.keys()) {
+    const queue: Car[] = [];
+    laneCars.set(laneId, queue);
+    laneFront.set(laneId, { arc: 0, half: 0, present: false, queue, fill: 0 });
+  }
   const intersections = new Map<string, IntersectionState>();
 
   /**
@@ -510,9 +548,17 @@ export function createTraffic(options: TrafficOptions): Traffic {
   }
 
   function noteLaneFirst(laneId: string, arc: number): void {
-    const current = laneFirst.get(laneId);
-    const half = tuning.carLength / 2;
-    if (current === undefined || arc < current.arc) laneFirst.set(laneId, { arc, half });
+    const front = laneFront.get(laneId);
+    if (front === undefined || (front.present && arc >= front.arc)) return;
+    front.arc = arc;
+    front.half = tuning.carLength / 2;
+    front.present = true;
+  }
+
+  /** The rear-most car on a lane this tick, or undefined when the lane is empty. */
+  function frontOf(laneId: string): LaneFront | undefined {
+    const front = laneFront.get(laneId);
+    return front?.present === true ? front : undefined;
   }
 
   /** Outbound options at a lane's end, never the lane the car arrived on unless it is the only one. */
@@ -547,7 +593,7 @@ export function createTraffic(options: TrafficOptions): Traffic {
   }
 
   function exitClear(exitLaneId: string, speed: number): boolean {
-    const first = laneFirst.get(exitLaneId);
+    const first = frontOf(exitLaneId);
     if (first === undefined) return true;
     const room = first.arc - first.half - tuning.carLength / 2;
     return room >= Math.max(tuning.minGap, tuning.boxClearance * Math.min(1, Math.max(0.4, speed / 10)));
@@ -806,7 +852,7 @@ export function createTraffic(options: TrafficOptions): Traffic {
   function spawnOn(laneId: string): boolean {
     const lane = laneOf.get(laneId);
     if (lane === undefined) return false;
-    const first = laneFirst.get(laneId);
+    const first = frontOf(laneId);
     if (first !== undefined && first.arc - first.half < tuning.spawnGap) return false;
     const id = `${idPrefix}-${counter}`;
     counter += 1;
@@ -852,23 +898,29 @@ export function createTraffic(options: TrafficOptions): Traffic {
     }
   }
 
+  // Every tick re-queues each lane in place: `length = 0` would drop a list's storage (V8) for the next
+  // push to regrow, and Array.prototype.sort copies into a scratch array per call. Cars barely move
+  // between ticks, so an insertion sort finds each queue almost in order and allocates nothing.
   function resetLaneArrays(): void {
-    for (const list of laneCars.values()) list.length = 0;
-    laneFirst.clear();
-    for (const car of cars) {
-      const list = laneCars.get(car.laneId);
-      if (list === undefined) continue;
-      car.queueIndex = list.length;
-      list.push(car);
+    for (const front of laneFront.values()) {
+      front.present = false;
+      front.fill = 0;
     }
-    for (const [laneId, list] of laneCars) {
-      if (list.length === 0) continue;
-      list.sort((a, b) => a.arc - b.arc || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-      list.forEach((car, index) => {
-        car.queueIndex = index;
-      });
-      const first = list[0]!;
-      laneFirst.set(laneId, { arc: first.arc, half: tuning.carLength / 2 });
+    for (const car of cars) {
+      const front = laneFront.get(car.laneId);
+      if (front === undefined) continue;
+      front.queue[front.fill] = car;
+      front.fill += 1;
+    }
+    for (const front of laneFront.values()) {
+      const list = front.queue;
+      if (list.length !== front.fill) list.length = front.fill;
+      if (front.fill === 0) continue;
+      sortQueue(list);
+      for (let index = 0; index < list.length; index += 1) list[index]!.queueIndex = index;
+      front.arc = list[0]!.arc;
+      front.half = tuning.carLength / 2;
+      front.present = true;
     }
   }
 
@@ -907,18 +959,21 @@ export function createTraffic(options: TrafficOptions): Traffic {
       };
     },
     forEachCar(visit) {
+      const position: [number, number, number] = [0, 0, 0];
+      const view: TrafficCarView = { id: "", laneId: "", arc: 0, position, heading: 0, speed: 0, state: "driving", spotId: null, variant: 0 };
       for (const car of cars) {
-        visit({
-          id: car.id,
-          laneId: car.laneId,
-          arc: car.arc,
-          position: [car.x, car.y, car.z],
-          heading: car.heading,
-          speed: car.speed,
-          state: car.state,
-          spotId: car.spotId,
-          variant: car.variant,
-        });
+        view.id = car.id;
+        view.laneId = car.laneId;
+        view.arc = car.arc;
+        position[0] = car.x;
+        position[1] = car.y;
+        position[2] = car.z;
+        view.heading = car.heading;
+        view.speed = car.speed;
+        view.state = car.state;
+        view.spotId = car.spotId;
+        view.variant = car.variant;
+        visit(view);
       }
     },
     tick(dt) {

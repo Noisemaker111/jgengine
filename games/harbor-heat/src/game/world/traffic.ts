@@ -56,6 +56,8 @@ interface CityTraffic {
   hasParked: Set<string>;
   /** Game time of the last demand/parking pass. */
   lastPolicy: number;
+  /** One body snapshot per car, refilled every tick for the body bind, which keeps none of them. */
+  bodies: BodySnapshot[];
 }
 
 const cityStore = perContext<{ value: CityTraffic | null; stop: (() => void) | null }>(() => ({ value: null, stop: null }));
@@ -268,7 +270,7 @@ function buildTraffic(ctx: GameContext): void {
   const demand = fleetAtHour(ctx.time.calendar().hour);
   seedFleet(traffic, graph, demand);
   traffic.setDemand(demand);
-  const world: CityTraffic = { graph, traffic, parkedAt: new Map(), hasParked: new Set(), lastPolicy: now };
+  const world: CityTraffic = { graph, traffic, parkedAt: new Map(), hasParked: new Set(), lastPolicy: now, bodies: [] };
   seedKerb(traffic, graph, world, now);
   cityStore(ctx).value = world;
 }
@@ -285,20 +287,23 @@ export function tickTraffic(ctx: GameContext, dt: number): void {
     traffic.setDemand(fleetAtHour(ctx.time.calendar().hour));
     parkPass(ctx, now);
   }
-  const bodies: BodySnapshot[] = [];
+  const { bodies } = world;
+  let count = 0;
   traffic.forEachCar((car) => {
-    const [x, , z] = car.position;
+    const x = car.position[0];
+    const z = car.position[2];
+    const body = bodies[count] ?? (bodies[count] = { id: "", kind: "", position: [0, 0, 0] });
+    count += 1;
+    body.id = car.id;
+    body.kind = CAR_KINDS[car.variant % CAR_KINDS.length]!;
+    // A new tuple each tick: the entity store keeps the position it is given.
+    body.position = [x, ctx.world.groundHeightAt(x, z), z];
+    body.rotationY = car.heading;
     // `role` is only read when the entity is first spawned; passing it every tick would make the body
     // bind write a second store update per car per tick.
-    const known = ctx.scene.entity.get(car.id) !== null;
-    bodies.push({
-      id: car.id,
-      kind: CAR_KINDS[car.variant % CAR_KINDS.length]!,
-      position: [x, ctx.world.groundHeightAt(x, z), z],
-      rotationY: car.heading,
-      ...(known ? {} : { role: "prop" as const }),
-    });
+    body.role = ctx.scene.entity.get(car.id) !== null ? undefined : "prop";
   });
+  bodies.length = count;
   ctx.scene.entity.bind("traffic").sync(bodies);
 }
 

@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { hashUnit } from "@jgengine/core/random/rng";
+import { length2 } from "@jgengine/core/math/scalar";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { reservePhase } from "../../handroll";
 import { zoneLevelAt } from "../../world/zones";
@@ -30,7 +31,17 @@ export { rememberHome };
 
 
 function distance2d(a: EntityPosition, b: EntityPosition): number {
-  return Math.hypot(a[0] - b[0], a[2] - b[2]);
+  return length2(a[0] - b[0], a[2] - b[2]);
+}
+
+/** One move order refilled per call: the move reads it and keeps none of it. */
+const moveOrder = { speed: 0, stopDistance: 0, dt: 0 };
+
+function moveEnemy(ctx: GameContext, id: string, target: EntityPosition, speed: number, stopDistance: number, dt: number): void {
+  moveOrder.speed = speed;
+  moveOrder.stopDistance = stopDistance;
+  moveOrder.dt = dt;
+  ctx.scene.entity.moveTowardCommit(id, target, moveOrder);
 }
 
 function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPosition, nowMs: number, dt: number): void {
@@ -46,7 +57,7 @@ function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPos
     };
     wanderTargetsOf(ctx).set(id, plan);
   }
-  ctx.scene.entity.moveTowardCommit(id, plan.target, { speed: def.walkSpeed * 0.45, stopDistance: 0.6, dt });
+  moveEnemy(ctx, id, plan.target, def.walkSpeed * 0.45, 0.6, dt);
 }
 
 function tickRuskNova(ctx: GameContext, def: EnemyDef, enemyId: string, playerPos: EntityPosition, nowMs: number): void {
@@ -101,7 +112,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     const heardAt = engaged ? null : huntTargetFor(ctx, entity.id);
     if (heardAt !== null && distance2d(anchor, heardAt) <= LEASH_RADIUS) {
       dropWindup(ctx, entity.id);
-      ctx.scene.entity.moveTowardCommit(entity.id, heardAt, { speed: def.walkSpeed, stopDistance: 1.4, dt });
+      moveEnemy(ctx, entity.id, heardAt, def.walkSpeed, 1.4, dt);
       continue;
     }
 
@@ -117,7 +128,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     if (!engaged) {
       dropWindup(ctx, entity.id);
       if (leashed) {
-        ctx.scene.entity.moveTowardCommit(entity.id, anchor, { speed: def.walkSpeed, stopDistance: 2, dt });
+        moveEnemy(ctx, entity.id, anchor, def.walkSpeed, 2, dt);
       } else {
         wander(ctx, def, entity.id, entity.position, nowMs, dt);
       }

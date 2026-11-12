@@ -402,6 +402,25 @@ export function solidObstaclesNear(
   return obstacles;
 }
 
+// Scratch for one gather: the query box and the solids in it. A gather is synchronous and calls no
+// other gather, so these serve every walker each tick.
+const solidMin: [number, number, number] = [0, 0, 0];
+const solidMax: [number, number, number] = [0, 0, 0];
+const solidsInBox: WorldSolid[] = [];
+const gatherMin: [number, number, number] = [0, 0, 0];
+const gatherMax: [number, number, number] = [0, 0, 0];
+/** A solid's obstacle, made once: solids are replaced on change, never edited. */
+const solidObstacles = new WeakMap<WorldSolid, CollisionObstacle>();
+
+function cachedSolidObstacle(solid: WorldSolid): CollisionObstacle {
+  let obstacle = solidObstacles.get(solid);
+  if (obstacle === undefined) {
+    obstacle = obstacleFromSolid(solid);
+    solidObstacles.set(solid, obstacle);
+  }
+  return obstacle;
+}
+
 function appendWorldSolidObstacles(
   obstacles: CollisionObstacle[],
   solids: Pick<WorldSolids, "count" | "inBox"> | undefined,
@@ -411,18 +430,22 @@ function appendWorldSolidObstacles(
   height: number,
 ): void {
   if (solids === undefined || solids.count() === 0) return;
-  for (const solid of solids.inBox(
-    [position[0] - reachX, position[1] - height, position[2] - reachZ],
-    [position[0] + reachX, position[1] + 2 * height, position[2] + reachZ],
-  )) {
-    obstacles.push(obstacleFromSolid(solid));
-  }
+  solidMin[0] = position[0] - reachX;
+  solidMin[1] = position[1] - height;
+  solidMin[2] = position[2] - reachZ;
+  solidMax[0] = position[0] + reachX;
+  solidMax[1] = position[1] + 2 * height;
+  solidMax[2] = position[2] + reachZ;
+  const found = solids.inBox(solidMin, solidMax, solidsInBox);
+  for (let index = 0; index < found.length; index += 1) obstacles.push(cachedSolidObstacle(found[index]!));
+  solidsInBox.length = 0;
 }
 
 /**
  * {@link solidObstaclesNear} against a bare source and an already-resolved reach. Pass the source's
  * {@link ObstacleReachCache} to use the version-keyed obstacle index; a source that reports no
- * `version()` keeps the per-query `inBox` gather.
+ * `version()` keeps the per-query `inBox` gather. `out` takes the obstacles instead of a new array
+ * (cleared first), for a caller that slides on them and lets go before its next gather.
  */
 export function sourceObstaclesNear(
   source: SolidObstacleSource,
@@ -432,18 +455,18 @@ export function sourceObstaclesNear(
   reachZ: number,
   height = WALKER_HEIGHT,
   cache?: ObstacleReachCache,
+  out?: CollisionObstacle[],
 ): CollisionObstacle[] {
-  const min: EntityPosition = [
-    position[0] - reachX - reach.horizontal,
-    position[1] - reach.vertical,
-    position[2] - reachZ - reach.horizontal,
-  ];
-  const max: EntityPosition = [
-    position[0] + reachX + reach.horizontal,
-    position[1] + height + reach.vertical,
-    position[2] + reachZ + reach.horizontal,
-  ];
-  const obstacles: CollisionObstacle[] = [];
+  const min = gatherMin;
+  min[0] = position[0] - reachX - reach.horizontal;
+  min[1] = position[1] - reach.vertical;
+  min[2] = position[2] - reachZ - reach.horizontal;
+  const max = gatherMax;
+  max[0] = position[0] + reachX + reach.horizontal;
+  max[1] = position[1] + height + reach.vertical;
+  max[2] = position[2] + reachZ + reach.horizontal;
+  const obstacles: CollisionObstacle[] = out ?? [];
+  obstacles.length = 0;
   if (cache !== undefined && source.version !== undefined) {
     ensureSourceCache(source, cache);
     const index = cache.index;
@@ -526,9 +549,13 @@ export function resolveSourceWalkerStep(
     Math.abs(stepZ) + radius,
     WALKER_HEIGHT,
     cache,
+    walkerObstacles,
   );
   return slideStep(position, stepX, stepZ, obstacles, radius, options.stepUpHeight ?? 0);
 }
+
+/** The obstacles of the walker step being slid; see {@link sourceObstaclesNear}'s `out`. */
+const walkerObstacles: CollisionObstacle[] = [];
 
 /** {@link resolveWalkerStep} against an already-gathered obstacle set. */
 export function slideStep(

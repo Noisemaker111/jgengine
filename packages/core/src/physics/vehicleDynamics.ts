@@ -2,7 +2,7 @@ import type { AxisInput } from "../input/axisInput";
 import type { CollisionObstacle } from "../movement/movementModel";
 import { createVehicleObstacleClamp, motionWithinAttempt, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
-import { clamp, clamp01 } from "../math/scalar";
+import { clamp, clamp01, length2 } from "../math/scalar";
 import type { WindField } from "../world/wind";
 import { brakeFadeShare, brakeTemperatureStep, type VehicleBrakeFadeEffect } from "./brakeFade";
 import { crownBalanceLean, crownShownLean, type VehicleTireCrownEffect } from "./vehicleTireCrown";
@@ -922,7 +922,8 @@ export function createVehicleDynamics(
     const a = L * (1 - clamp01(tuning.frontWeight));
     const b = L - a;
     const half = Math.max(0.15, tuning.trackWidth / 2);
-    const [fx, fz] = forwardOf(state.motion.heading);
+    const fx = Math.sin(state.motion.heading);
+    const fz = Math.cos(state.motion.heading);
     const ground = (along: number, lat: number) => groundAt(state.motion.x + fx * along - fz * lat, state.motion.z + fz * along + fx * lat);
     const fl = ground(a, -half);
     const fr = ground(a, half);
@@ -964,10 +965,11 @@ export function createVehicleDynamics(
       if (hit !== null && (impact === null || hit.closingSpeed > impact.closingSpeed)) impact = hit;
     }
     if (steps === 0) substep(0, input, modifiers, surface, drag, telemetry);
-    const [fx, fz] = forwardOf(state.motion.heading);
+    const fx = Math.sin(state.motion.heading);
+    const fz = Math.cos(state.motion.heading);
     const forwardSpeed = state.motion.vx * fx + state.motion.vz * fz;
     const lateralSpeed = -state.motion.vx * fz + state.motion.vz * fx;
-    const planar = Math.hypot(forwardSpeed, lateralSpeed);
+    const planar = length2(forwardSpeed, lateralSpeed);
     const slide = planar < 2 ? 0 : Math.abs(lateralSpeed) / planar;
     const slip = state.air.airborne
       ? 0
@@ -1029,7 +1031,13 @@ export function createVehicleDynamics(
     };
   }
 
-  /** Both tyres of one axle at their own loads, after load sensitivity or the Magic Formula. */
+  const frontGripScratch = blankAxleGrip();
+  const rearGripScratch = blankAxleGrip();
+
+  /**
+   * Both tyres of one axle at their own loads, after load sensitivity or the Magic Formula, written
+   * into `grip` (one per axle, reused every substep).
+   */
   function axleGrip(
     tire: VehicleTireTuning,
     shape: CurveShape,
@@ -1039,6 +1047,7 @@ export function createVehicleDynamics(
     sensitivity: VehicleLoadSensitivityEffect | undefined,
     formula: Readonly<MagicFormulaTireCoefficients> | undefined,
     formulaDial: number,
+    grip: AxleGrip,
   ): AxleGrip {
     const half = load / 2;
     const shift = Math.min(half, Math.max(0, transfer));
@@ -1046,36 +1055,42 @@ export function createVehicleDynamics(
     const inner = half - shift;
     const muY = tire.peakGrip * gripScale;
     const muX = (tire.longitudinalGrip ?? tire.peakGrip) * gripScale;
-    let grip: AxleGrip;
     if (sensitivity === undefined) {
-      grip = { capY: muY * load, capX: muX * load, capOuter: muY * outer, capInner: muY * inner, bOuter: shape.b, bInner: shape.b, capXInner: muX * inner, capXOuter: muX * outer, cOuter: shape.c, cInner: shape.c, eOuter: shape.e, eInner: shape.e };
+      grip.capY = muY * load;
+      grip.capX = muX * load;
+      grip.capOuter = muY * outer;
+      grip.capInner = muY * inner;
+      grip.bOuter = shape.b;
+      grip.bInner = shape.b;
+      grip.capXInner = muX * inner;
+      grip.capXOuter = muX * outer;
+      grip.cOuter = shape.c;
+      grip.cInner = shape.c;
+      grip.eOuter = shape.e;
+      grip.eInner = shape.e;
     } else {
       const nominal = Math.max(1, sensitivity.nominalLoad ?? half);
       const dial = strengthOf(sensitivity);
       const gripLoss = (sensitivity.grip ?? 0.05) * dial;
       const stiffLoss = (sensitivity.stiffness ?? 0) * dial;
-      const gripAt = (fz: number) => Math.max(0.3, 1 - gripLoss * (fz / nominal - 1));
-      const stiffAt = (fz: number) => Math.max(0.2, 1 - stiffLoss * (fz / nominal - 1));
-      const gOuter = gripAt(outer);
-      const gInner = gripAt(inner);
+      const gOuter = Math.max(0.3, 1 - gripLoss * (outer / nominal - 1));
+      const gInner = Math.max(0.3, 1 - gripLoss * (inner / nominal - 1));
       const capOuter = muY * gOuter * outer;
       const capInner = muY * gInner * inner;
       const capXOuter = muX * gOuter * outer;
       const capXInner = muX * gInner * inner;
-      grip = {
-        capY: capOuter + capInner,
-        capX: capXOuter + capXInner,
-        capOuter,
-        capInner,
-        bOuter: shape.b * stiffAt(outer),
-        bInner: shape.b * stiffAt(inner),
-        capXInner,
-        capXOuter,
-        cOuter: shape.c,
-        cInner: shape.c,
-        eOuter: shape.e,
-        eInner: shape.e,
-      };
+      grip.capY = capOuter + capInner;
+      grip.capX = capXOuter + capXInner;
+      grip.capOuter = capOuter;
+      grip.capInner = capInner;
+      grip.bOuter = shape.b * Math.max(0.2, 1 - stiffLoss * (outer / nominal - 1));
+      grip.bInner = shape.b * Math.max(0.2, 1 - stiffLoss * (inner / nominal - 1));
+      grip.capXInner = capXInner;
+      grip.capXOuter = capXOuter;
+      grip.cOuter = shape.c;
+      grip.cInner = shape.c;
+      grip.eOuter = shape.e;
+      grip.eInner = shape.e;
     }
     if (formula === undefined || formulaDial <= 0) return grip;
     // Each wheel on its own Magic Formula curve; below strength 1 the curve parameters blend from the axle's.
@@ -1096,20 +1111,19 @@ export function createVehicleDynamics(
     };
     const o = wheel(outer, grip.capOuter, grip.capXOuter, grip.bOuter, grip.cOuter, grip.eOuter);
     const n = wheel(inner, grip.capInner, grip.capXInner, grip.bInner, grip.cInner, grip.eInner);
-    return {
-      capY: o.capY + n.capY,
-      capX: o.capX + n.capX,
-      capOuter: o.capY,
-      capInner: n.capY,
-      bOuter: o.b,
-      bInner: n.b,
-      capXOuter: o.capX,
-      capXInner: n.capX,
-      cOuter: o.c,
-      cInner: n.c,
-      eOuter: o.e,
-      eInner: n.e,
-    };
+    grip.capY = o.capY + n.capY;
+    grip.capX = o.capX + n.capX;
+    grip.capOuter = o.capY;
+    grip.capInner = n.capY;
+    grip.bOuter = o.b;
+    grip.bInner = n.b;
+    grip.capXOuter = o.capX;
+    grip.capXInner = n.capX;
+    grip.cOuter = o.c;
+    grip.cInner = n.c;
+    grip.eOuter = o.e;
+    grip.eInner = n.e;
+    return grip;
   }
 
   /** Lateral force of an axle's two tyres at slip `alpha`, as a share of the axle's lateral capacity (signed like the curve). */
@@ -1134,11 +1148,12 @@ export function createVehicleDynamics(
     const b = L - a;
     const iz = Math.max(1, (t.yawInertiaIndex ?? 1) * m * a * b);
     const heading = state.motion.heading;
-    const [fx, fz] = forwardOf(heading);
+    const fx = Math.sin(heading);
+    const fz = Math.cos(heading);
     const u = state.motion.vx * fx + state.motion.vz * fz;
     const v = -state.motion.vx * fz + state.motion.vz * fx;
     const r = state.motion.yawRate;
-    const speed = Math.hypot(state.motion.vx, state.motion.vz);
+    const speed = length2(state.motion.vx, state.motion.vz);
 
     const throttle = clamp01(input.throttle);
     const brakePedal = clamp01(input.brake);
@@ -1272,12 +1287,13 @@ export function createVehicleDynamics(
         transferRear = split.transferRear * dial;
       }
       const side = state.body.lateralAccel >= 0 ? 1 : -1;
-      out.wheelLoads = [
+      setWheelLoads(
+        out,
         Math.max(0, loadFront / 2 + side * transferFront),
         Math.max(0, loadFront / 2 - side * transferFront),
         Math.max(0, loadRear / 2 + side * transferRear),
         Math.max(0, loadRear / 2 - side * transferRear),
-      ];
+      );
     } else {
       const wheel = springForces(suspension, a, b, h);
       loadFront = wheel[0] + wheel[1];
@@ -1285,7 +1301,7 @@ export function createVehicleDynamics(
       transferFront = Math.abs(wheel[0] - wheel[1]) / 2;
       transferRear = Math.abs(wheel[2] - wheel[3]) / 2;
       grounded = loadFront + loadRear > 0;
-      out.wheelLoads = [wheel[0], wheel[1], wheel[2], wheel[3]];
+      setWheelLoads(out, wheel[0], wheel[1], wheel[2], wheel[3]);
       if (grounded) {
         // Gravity along the terrain: the tires hold the car to the surface, so the downhill share acts in-plane.
         const e = 0.5;
@@ -1303,8 +1319,8 @@ export function createVehicleDynamics(
     const sensitivity = on(fx_.loadSensitivity);
     const formula = on(fx_.magicFormula);
     const formulaDial = strengthOf(formula);
-    const gripFront = axleGrip(t.front, frontShape, loadFront, transferFront, gripScale, sensitivity, formula === undefined ? undefined : frontFormula(formula), formulaDial);
-    const gripRear = axleGrip(rearTire, rearShape, loadRear, transferRear, gripScale, sensitivity, formula === undefined ? undefined : rearFormula(formula), formulaDial);
+    const gripFront = axleGrip(t.front, frontShape, loadFront, transferFront, gripScale, sensitivity, formula === undefined ? undefined : frontFormula(formula), formulaDial, frontGripScratch);
+    const gripRear = axleGrip(rearTire, rearShape, loadRear, transferRear, gripScale, sensitivity, formula === undefined ? undefined : rearFormula(formula), formulaDial, rearGripScratch);
     const hbGrip = 1 - handbrake * (1 - (t.handbrakeGrip ?? 0.35));
     const frontShift = Math.min(loadFront / 2, Math.max(0, transferFront));
     state.tires.frontOuterLoad = loadFront / 2 + frontShift;
@@ -1531,7 +1547,7 @@ export function createVehicleDynamics(
       const [wx, wz] = wind.atHeight(state.motion.x, state.motion.z, t.comHeight, state.motion.time);
       const airLong = u - (wx * fx + wz * fz);
       const airLat = v - (-wx * fz + wz * fx);
-      const air = Math.hypot(airLong, airLat);
+      const air = length2(airLong, airLat);
       const dial = strengthOf(aeroDrag);
       drag = 0.5 * AIR_DENSITY * aeroDrag.area * dial * air * airLong;
       sideDrag = 0.5 * AIR_DENSITY * (aeroDrag.sideArea ?? 0) * dial * air * airLat;
@@ -1582,7 +1598,7 @@ export function createVehicleDynamics(
       nu *= keep;
       nv *= keep;
     }
-    const slopePull = Math.hypot(slopeLong, slopeLat);
+    const slopePull = length2(slopeLong, slopeLat);
     // A parked car's static friction holds it on a gentle slope (3% of its weight).
     const holds = slopePull <= 0.03 * weight || brakeInput > 0 || handbrake > 0;
     if (h > 0 && grounded && holds && speed < 0.3 && throttle <= 0 && brakeInput <= 0 && Math.abs(modifiers?.thrust ?? 0) === 0) {
@@ -1590,7 +1606,7 @@ export function createVehicleDynamics(
       nv *= Math.max(0, 1 - 6 * h);
       nr *= Math.max(0, 1 - 6 * h);
       // Rest snap: a parked car settles to exactly zero instead of creeping on an endless decay.
-      if (Math.hypot(nu, nv) < 0.02 && Math.abs(nr) < 0.02) {
+      if (length2(nu, nv) < 0.02 && Math.abs(nr) < 0.02) {
         nu = 0;
         nv = 0;
         nr = 0;
@@ -1607,7 +1623,8 @@ export function createVehicleDynamics(
     if (nu < -reverseCap) nu = -reverseCap;
 
     state.motion.heading = heading + nr * h;
-    const [nfx, nfz] = forwardOf(state.motion.heading);
+    const nfx = Math.sin(state.motion.heading);
+    const nfz = Math.cos(state.motion.heading);
     let nvx = nfx * nu - nfz * nv;
     let nvz = nfz * nu + nfx * nv;
     const toX = state.motion.x + nvx * h;
@@ -1684,7 +1701,8 @@ export function createVehicleDynamics(
   function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number): Corners {
     const t = tuning;
     const half = Math.max(0.15, t.trackWidth / 2);
-    const [fx, fz] = forwardOf(state.motion.heading);
+    const fx = Math.sin(state.motion.heading);
+    const fz = Math.cos(state.motion.heading);
     const sags = staticSags(t, suspension);
     // A leaning single-track vehicle rolls about its tire contacts, so its lean never compresses one side's springs.
     const roll = t.lean !== undefined ? 0 : state.body.bodyRoll;
@@ -2019,7 +2037,7 @@ function combine(
   const used = capX > 0 ? Math.min(1, Math.abs(fx) / capX) : 1;
   const remaining = combined === undefined ? 1 : saturated ? (combinedDial >= 1 ? 0 : 1 - combinedDial) : ellipseRoom(used, exponent, combinedDial);
   const fy = -capY * lateralScale * remaining * curve(grip, slip);
-  const saturation = Math.max(Math.hypot(fx / Math.max(capX, 1e-6), fy / Math.max(capY, 1e-6)), Math.abs(slip) / peakAngle(shape));
+  const saturation = Math.max(length2(fx / Math.max(capX, 1e-6), fy / Math.max(capY, 1e-6)), Math.abs(slip) / peakAngle(shape));
   if (axle === "front") out.satFront = Math.max(out.satFront, saturation);
   else out.satRear = Math.max(out.satRear, saturation);
   return { fx, fy };
@@ -2050,8 +2068,17 @@ function peakAngle(shape: CurveShape): number {
   return shape.peakX / shape.b;
 }
 
-function forwardOf(heading: number): readonly [number, number] {
-  return [Math.sin(heading), Math.cos(heading)];
+/** Write a substep's wheel loads into the tick's telemetry tuple, which is fresh per tick (the step result keeps it). */
+function setWheelLoads(out: Telemetry, frontOuter: number, frontInner: number, rearOuter: number, rearInner: number): void {
+  const loads = out.wheelLoads as [number, number, number, number];
+  loads[0] = frontOuter;
+  loads[1] = frontInner;
+  loads[2] = rearOuter;
+  loads[3] = rearInner;
+}
+
+function blankAxleGrip(): AxleGrip {
+  return { capY: 0, capX: 0, capOuter: 0, capInner: 0, bOuter: 0, bInner: 0, capXInner: 0, capXOuter: 0, cOuter: 0, cInner: 0, eOuter: 0, eInner: 0 };
 }
 
 function freshState(

@@ -1,5 +1,6 @@
 import { createMusicState, resolveMusicState, type MusicStateConfig } from "@jgengine/core/audio/musicState";
 import { advanceStepCadence, createStepCadenceState, type StepCadenceConfig } from "@jgengine/core/audio/stepCadence";
+import { length2 } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
@@ -74,7 +75,7 @@ function threatIntensity(ctx: GameContext, playerPosition: EntityPosition): numb
   for (const entity of ctx.scene.entity.list()) {
     const def = enemyById(entity.name);
     if (def === undefined) continue;
-    const distance = Math.hypot(entity.position[0] - playerPosition[0], entity.position[2] - playerPosition[2]);
+    const distance = length2(entity.position[0] - playerPosition[0], entity.position[2] - playerPosition[2]);
     if (distance > THREAT_RADIUS) continue;
     if (def.family === "boss") intensity += 6;
     else if (def.elite === true) intensity += 2;

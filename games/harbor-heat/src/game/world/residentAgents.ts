@@ -2,6 +2,7 @@ import { createAgentSystem, type AgentSystem, type AgentSystemState, type AgentT
 import type { MoodTier } from "@jgengine/core/agents/mood";
 import type { UtilityOption } from "@jgengine/core/ai/utilityBrain";
 import type { NeedDefinition } from "@jgengine/core/sim/needs";
+import { length2 } from "@jgengine/core/math/scalar";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { Vec3 } from "@jgengine/core/world/geometry";
 
@@ -50,6 +51,8 @@ const MOOD_WEIGHTS = [
   { need: "rest", weight: 1.5 },
 ];
 
+const NO_OFFERS: AgentTarget[] = [];
+
 /** A point of score is about a minute and a bit of walking, so distance alone never wins. */
 const WALK_COST = 0.01;
 
@@ -59,16 +62,27 @@ export const WANDER_PLACE = "place_avenue_cafe";
 /** Saved resident agents, riding the whole-world save with the rest of the stores. */
 export const residentAgentStore = defineStore<AgentSystemState | undefined>("harbor.residentAgents", undefined);
 
-/** Authored resident by id. Looked up per call, so this module keeps no state during the residents cycle. */
+// Built on first use: `residents` imports this module, so RESIDENTS is not there yet when it loads.
+let specById: Map<string, ResidentSpec> | null = null;
+
+/** Authored resident by id. */
 function specOf(id: string): ResidentSpec | undefined {
-  return RESIDENTS.find((spec) => spec.id === id);
+  specById ??= new Map(RESIDENTS.map((spec) => [spec.id, spec]));
+  return specById.get(id);
 }
 
 function walkCost(at: Vec3 | null, to: string, places: (id: string) => Vec3 | null): number {
   if (at === null) return WALK_COST;
   const place = places(to);
   if (place === null) return 0;
-  return (Math.hypot(at[0] - place[0], at[2] - place[2]) / 1.35) * WALK_COST;
+  return (length2(at[0] - place[0], at[2] - place[2]) / 1.35) * WALK_COST;
+}
+
+/** One offer the selector refills in place; the agent system reads it within the member's update. */
+interface Offer {
+  option: string;
+  target: string;
+  cost: number;
 }
 
 /**
@@ -79,13 +93,20 @@ export function residentOffers(
   spec: ResidentSpec,
   at: Vec3 | null,
   places: (id: string) => Vec3 | null,
+  into: Offer[] = [],
 ): AgentTarget[] {
-  return [
-    { option: "meal", target: spec.meal, cost: walkCost(at, spec.meal, places) },
-    { option: "home", target: spec.home, cost: walkCost(at, spec.home, places) },
-    { option: "work", target: spec.work, cost: walkCost(at, spec.work, places) },
-    { option: "wander", target: WANDER_PLACE, cost: walkCost(at, WANDER_PLACE, places) },
-  ];
+  writeOffer(into, 0, "meal", spec.meal, at, places);
+  writeOffer(into, 1, "home", spec.home, at, places);
+  writeOffer(into, 2, "work", spec.work, at, places);
+  writeOffer(into, 3, "wander", WANDER_PLACE, at, places);
+  return into;
+}
+
+function writeOffer(into: Offer[], index: number, option: string, target: string, at: Vec3 | null, places: (id: string) => Vec3 | null): void {
+  const offer = into[index] ?? (into[index] = { option, target, cost: 0 });
+  offer.option = option;
+  offer.target = target;
+  offer.cost = walkCost(at, target, places);
 }
 
 export interface ResidentAgentSystem {
@@ -108,6 +129,7 @@ export function createResidentAgents(options: {
   readonly places: (id: string) => Vec3 | null;
   readonly storage: { read(): AgentSystemState | undefined; write(next: AgentSystemState): void };
 }): ResidentAgentSystem {
+  const offers: Offer[] = [];
   const system = createAgentSystem({
     needs: RESIDENT_NEEDS,
     options: RESIDENT_OPTIONS,
@@ -125,7 +147,8 @@ export function createResidentAgents(options: {
     })),
     select: (view) => {
       const spec = specOf(view.id);
-      return spec === undefined ? [] : residentOffers(spec, view.at, options.places);
+      // One list refilled per resident: the system reads it before it asks for the next one.
+      return spec === undefined ? NO_OFFERS : residentOffers(spec, view.at, options.places, offers);
     },
   });
   return {
