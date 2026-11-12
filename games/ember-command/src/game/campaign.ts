@@ -25,6 +25,7 @@ import { heroPickStore } from "./heroPicks";
 import { hudStore } from "./hudStore";
 import { session } from "./session";
 import { GOLD, LUMBER } from "./tuning";
+import { earn } from "./treasury";
 
 /**
  * The vale campaign: five missions that teach the skirmish in order, run by the engine's mission
@@ -533,8 +534,8 @@ function stageHostiles(ctx: GameContext, hostiles: readonly string[]): void {
 /** Pay the stores the won missions carry, on top of the opening purse. */
 function grantCarriedStores(ctx: GameContext): void {
   const stores = campaignStores(campaignStore.read(ctx));
-  if (stores.gold > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, stores.gold);
-  if (stores.lumber > 0) ctx.game.economy.grant(ctx.player.userId, LUMBER, stores.lumber);
+  earn(ctx, GOLD, stores.gold, "campaign-stores");
+  earn(ctx, LUMBER, stores.lumber, "campaign-stores");
 }
 
 const ROMAN = ["I", "II", "III", "IV", "V"] as const;

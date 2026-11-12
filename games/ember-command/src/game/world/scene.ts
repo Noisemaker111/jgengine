@@ -11,6 +11,7 @@ import { loadHeroPicks } from "../heroActs";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
 import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
+import { earn, openTreasury } from "../treasury";
 import { initResourceField, resetSession, session, type UnitRuntime } from "../session";
 import { recordOutcome } from "../preferences";
 
@@ -71,7 +72,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
   }
   ctx.game.audio.play("fall", event.position);
   if (def.faction === "enemy" && def.kind === "unit") {
-    if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, def.bounty);
+    if (def.bounty > 0) earn(ctx, GOLD, def.bounty, "kill-bounty", event.catalogId);
     grantHeroXp(ctx, heroXpFor(event.catalogId)); // the hero champions the kill
   }
   // A razed Farm lowers the supply cap.
@@ -88,10 +89,6 @@ const OPENING_NOTICE_MS = 12_000;
 /** Spawn the authored roster + resource nodes, wire economy + win/lose, and register the RTS commands. */
 export function setupSkirmish(ctx: GameContext): void {
   for (const entity of ctx.scene.entity.list()) ctx.scene.entity.despawn(entity.id);
-  for (const resource of [GOLD, LUMBER]) {
-    const amount = ctx.game.economy.balance(ctx.player.userId, resource);
-    if (amount > 0) ctx.game.economy.charge(ctx.player.userId, resource, amount);
-  }
   resetSession();
   session.started = false;
   hudStore.reset();
@@ -101,8 +98,7 @@ export function setupSkirmish(ctx: GameContext): void {
   setGamePhase(ctx, "menu");
   ctx.time.pause();
   ctx.game.audio.stopLoop(BED_LOOP);
-  ctx.game.economy.grant(ctx.player.userId, GOLD, STARTING_GOLD);
-  ctx.game.economy.grant(ctx.player.userId, LUMBER, STARTING_LUMBER);
+  openTreasury(ctx, { [GOLD]: STARTING_GOLD, [LUMBER]: STARTING_LUMBER });
 
   const rallyOnPlayer = playerKeepPoint();
 

@@ -1085,6 +1085,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEmptyWallet` (function) · `import { createEmptyWallet } from "@jgengine/core/gameplay"`
 
+## wallet-books — journal every movement of a wallet or world-fact balance with its reason, kept square to the live balance
+
+- `createWalletBooks` (function) · `import { createWalletBooks } from "@jgengine/core/gameplay"`
+
 ## weapon-stats — resolve per-weapon stat values for combat math
 
 - `createWeaponStats` (function) · `import { createWeaponStats } from "@jgengine/core/gameplay"`

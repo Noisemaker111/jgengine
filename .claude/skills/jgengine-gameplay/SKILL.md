@@ -209,6 +209,14 @@ journal cap. Register upkeep, rent or a subscription with `addCharge` and settle
 it on its cadence with `chargeDue` — bounded per charge and per advance, and a
 cycle with no funds is counted as missed rather than overdrawing.
 
+When something else already owns the balance (the engine wallet `ctx.game.economy`, a world-model
+fact such as `keep.gold`), journal it with `createWalletBooks` (`economy/walletBooks`) instead of a
+second balance: `track(reason, mutate)` posts what a wallet call moved, `record` posts a movement that
+already happened, and a difference the books never saw (a load, a host write) posts under a named
+reason, so `unexplained()` stays zero and the history explains the balance. A `defineGameSpec` world
+reports each change to its money facts with the call that caused it through `watch`
+(`WorldFactChange.cause`: place, act, remove, event, ...); map the cause to a reason and `record` it.
+
 Lend and borrow with `buildLoanSchedule` / `createLoanBook` (`economy/loanBook`):
 a schedule in integer minor units (`"amortized"` or `"flat"`), the principal
 posted on the draw, interest and principal posted as separate reason-tagged

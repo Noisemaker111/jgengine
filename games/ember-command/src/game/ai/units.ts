@@ -4,6 +4,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
+import { earn } from "../treasury";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
@@ -121,7 +122,7 @@ function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPo
     return;
   }
   if (distToPoint(self, depot.x, depot.z) <= DEPOT_RANGE) {
-    if (cmd.carried > 0) ctx.game.economy.grant(ctx.player.userId, cmd.resource, cmd.carried);
+    if (cmd.carried > 0) earn(ctx, cmd.resource, cmd.carried, "harvest", u.id);
     cmd.carried = 0;
     if (node !== undefined) cmd.phase = "toNode";
     else u.command = { kind: "idle" };

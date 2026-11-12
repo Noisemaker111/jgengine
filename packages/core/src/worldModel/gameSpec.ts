@@ -18,6 +18,7 @@ import {
   createWorldModel,
   defineWorldModel,
   type WorldEvent,
+  type WorldFactChange,
   type WorldFactValue,
   type WorldHookCall,
   type WorldInstanceView,
@@ -84,6 +85,11 @@ export interface GameSpecDecl {
   defaultPursuer?: string;
   /** Facts the game computes each read (`clock.hour`, `police.stars`); conditions see them, saves never hold them. */
   live?(ctx: GameContext): Readonly<Record<string, WorldFactValue>>;
+  /**
+   * Every numeric change to these facts with the call that caused it, e.g. to journal a purse through
+   * `createWalletBooks`. The listener must not write the world.
+   */
+  watch?: { facts: readonly string[]; onChange(ctx: GameContext, change: WorldFactChange): void };
 }
 
 /** A running game spec: its checked world, the system to install, and the live world per context. */
@@ -140,6 +146,7 @@ export function defineGameSpec(spec: GameSpecDecl): GameSpec {
       ...(spec.onReward !== undefined ? { onReward: (rewards: MissionRewards, jobId: string) => spec.onReward!(ctx, rewards, jobId) } : {}),
       ...(spec.defaultPursuer !== undefined ? { defaultPursuer: spec.defaultPursuer } : {}),
       ...(spec.live !== undefined ? { live: () => spec.live!(ctx) } : {}),
+      ...(spec.watch !== undefined ? { watch: { facts: spec.watch.facts, onChange: (change: WorldFactChange) => spec.watch!.onChange(ctx, change) } } : {}),
     });
   });
 

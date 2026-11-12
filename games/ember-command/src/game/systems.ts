@@ -16,6 +16,7 @@ import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore, type ResearchView } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
 import { GOLD, INCOME_TRICKLE, LUMBER } from "./tuning";
+import { earn } from "./treasury";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 
@@ -215,7 +216,7 @@ const incomeSystem: SystemDefinition = defineSystem({
   tick: { type: "interval", every: 1 },
   update(ctx) {
     if (!matchRunning()) return;
-    ctx.game.economy.grant(ctx.player.userId, GOLD, INCOME_TRICKLE);
+    earn(ctx, GOLD, INCOME_TRICKLE, "income-trickle");
   },
 });
 

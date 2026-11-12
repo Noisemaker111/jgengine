@@ -483,6 +483,34 @@ export interface WorldModelOptions {
   live?: () => Readonly<Record<string, WorldFactValue>>;
   /** Luck for a new world, saved with it (an existing save keeps its own). Give each run its own so runs differ, and sweep seeds in tests. */
   seed?: string | number;
+  /**
+   * Report every numeric change to these facts with what caused it, after the change is written.
+   * A ledger journals a purse this way, so a price, refund or ripple never moves money without a reason.
+   */
+  watch?: WorldFactWatch;
+}
+
+/** What moved a watched fact: the world call that wrote it, and the action, kind or event it named. */
+export interface WorldCause {
+  kind: "change" | "spend" | "set" | "event" | "tick" | "advance" | "place" | "remove" | "act" | "cancel" | "job" | "restore";
+  /** The action id (`act`), kind id (`place`, `remove`), event kind (`event`) or order id (`cancel`). */
+  name: string | null;
+  /** The instance or subject it was done to. */
+  target: string | null;
+}
+
+/** One numeric change to a watched fact. A missing or non-numeric value reads as `0`. */
+export interface WorldFactChange {
+  key: string;
+  from: number;
+  to: number;
+  cause: WorldCause;
+}
+
+/** Facts whose numeric changes are reported, and where to. The listener must not write the world. */
+export interface WorldFactWatch {
+  facts: readonly string[];
+  onChange(change: WorldFactChange): void;
 }
 
 /** What {@link WorldModel.advance} did over the skipped time. */
@@ -841,10 +869,29 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     }
     return current;
   };
+  // The world call writing right now, as a watcher sees it; the outermost call names the cause.
+  let cause: WorldCause | null = null;
+  const caused = <T>(kind: WorldCause["kind"], name: string | null, target: string | null, run: () => T): T => {
+    if (options.watch === undefined || cause !== null) return run();
+    cause = { kind, name, target };
+    try {
+      return run();
+    } finally {
+      cause = null;
+    }
+  };
   const write = (next: WorldModelState) => {
+    const watch = options.watch;
+    const before = watch === undefined ? null : (storage.read() ?? fresh()).facts;
     restoredFrom = next.mission;
     liveInstances = next.instances ?? {};
     storage.write(next);
+    if (watch === undefined || before === null) return;
+    for (const key of watch.facts) {
+      const from = numberOf(before[key]);
+      const to = numberOf(next.facts[key]);
+      if (from !== to) watch.onChange({ key, from, to, cause: cause ?? { kind: "change", name: null, target: null } });
+    }
   };
 
   const placePosition = (id: string): readonly [number, number] | null => {
@@ -1742,6 +1789,26 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       state();
     },
   };
+
+  // Every call that can write a fact names itself as the cause a watcher sees. Internal calls (an
+  // action's ripple, a tick landing an order) go through these too, and the outermost call wins.
+  if (options.watch !== undefined) {
+    const { change, spend, set, emit, tick, advance, startJob, signal, abandonJob, place, remove, act, cancel, restore } = model;
+    model.change = (changes, scale) => caused("change", null, null, () => change(changes, scale));
+    model.spend = (changes) => caused("spend", null, null, () => spend(changes));
+    model.set = (key, value) => caused("set", null, key, () => set(key, value));
+    model.emit = (event) => caused("event", event.kind, event.target ?? null, () => emit(event));
+    model.tick = (dt, input) => caused("tick", null, null, () => tick(dt, input));
+    model.advance = (seconds, advanceOptions) => caused("advance", null, null, () => advance(seconds, advanceOptions));
+    model.startJob = (id) => caused("job", id, null, () => startJob(id));
+    model.signal = (objectiveId) => caused("job", objectiveId, null, () => signal(objectiveId));
+    model.abandonJob = () => caused("job", null, null, () => abandonJob());
+    model.place = (kind, at, placeOptions) => caused("place", kind, null, () => place(kind, at, placeOptions));
+    model.remove = (id) => caused("remove", state().instances?.[id]?.kind ?? null, id, () => remove(id));
+    model.act = (action, target) => caused("act", action, target ?? null, () => act(action, target));
+    model.cancel = (orderId) => caused("cancel", orderId, null, () => cancel(orderId));
+    model.restore = (next) => caused("restore", null, null, () => restore(next));
+  }
 
   function objectiveTarget(): readonly [number, number] | null {
     const active = state().activeJob;

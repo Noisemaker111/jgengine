@@ -266,3 +266,40 @@ describe("what the conversions asked for: tags, full refunds, busy guards, free 
     expect(heard).toEqual(["lamp-1", "lamp-1"]);
   });
 });
+
+describe("a watched fact reports every change with the call that caused it", () => {
+  const keep = defineWorldModel({
+    factions: { keep: { facts: { gold: { value: 300, min: 0 }, lives: 20 } } },
+    slots: { plot: { a1: { position: [10, 0] } } },
+    kinds: { archer: { label: "Archer tower", slot: "plot", cost: { "keep.gold": -150 }, refund: 0.5, facts: { level: 1 } } },
+    actions: {
+      upgrade: { label: "Upgrade", on: "archer", cost: { "keep.gold": -60 }, effect: { level: 1 }, emit: "fanfare" },
+      sell: { label: "Sell", on: "archer", removes: true },
+    },
+    ripples: { bounty: { world: { "keep.gold": 1 } }, fanfare: { world: { "keep.lives": 1, "keep.gold": 5 } } },
+  });
+
+  test("build, upgrade (with its ripple), bounty, sale, a direct set and a load each name their cause", () => {
+    const seen: [string, string | null, string | null, number][] = [];
+    const world = createWorldModel(keep, {
+      watch: { facts: ["keep.gold"], onChange: (change) => seen.push([change.cause.kind, change.cause.name, change.cause.target, change.to - change.from]) },
+    });
+    const saved = world.snapshot();
+    world.place("archer", { slot: "a1" });
+    world.act("upgrade", "archer-1");
+    world.emit({ kind: "bounty", scale: 12 });
+    world.act("sell", "archer-1");
+    world.set("keep.gold", 1000);
+    world.restore(saved);
+    world.change({ "keep.lives": -1 });
+    expect(seen).toEqual([
+      ["place", "archer", null, -150],
+      ["act", "upgrade", "archer-1", -60],
+      ["act", "upgrade", "archer-1", 5],
+      ["event", "bounty", null, 12],
+      ["act", "sell", "archer-1", 105],
+      ["set", null, "keep.gold", 1000 - 212],
+      ["restore", null, null, 300 - 1000],
+    ]);
+  });
+});

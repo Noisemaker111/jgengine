@@ -552,6 +552,12 @@
 - `grant` (function): function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 
+## @jgengine/core/economy/walletBooks
+
+- `WalletBooks` (interface): interface WalletBooks — A reason-tagged journal kept square to a balance something else owns. The wallet or world fact stays the balance the game, HUD and save read; every movement is posted here with why it happened, so the books explain the balance instead of a bare number changing.
+- `WalletBooksOptions` (interface): interface WalletBooksOptions — Options for {@link createWalletBooks}.
+- `createWalletBooks` (function): function createWalletBooks(options: WalletBooksOptions): WalletBooks — Keep a {@link TransactionLedger} as the journal over a balance the game already owns — the engine wallet, a world-model fact. `record` and `track` post each movement with its reason, and any difference the journal did not see (a load, a host write) is posted under a named reason instead of silently drifting, so the history always explains the live balance.
+
 ## @jgengine/core/feed/eventTicker
 
 - `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
@@ -1601,6 +1607,8 @@
 - `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
 - `WaitQueueOptions` (interface): interface WaitQueueOptions — Tunables for {@link createWaitQueue}, every one retunable through a restore.
 - `WaitQueueSnapshot` (interface): interface WaitQueueSnapshot — Serializable line state: who is waiting, and the boardings the estimate is measured from.
+- `WalletBooks` (interface): interface WalletBooks — A reason-tagged journal kept square to a balance something else owns. The wallet or world fact stays the balance the game, HUD and save read; every movement is posted here with why it happened, so the books explain the balance instead of a bare number changing.
+- `WalletBooksOptions` (interface): interface WalletBooksOptions — Options for {@link createWalletBooks}.
 - `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
 - `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
 - `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
@@ -1734,6 +1742,7 @@
 - `createVisitorPopulation` (function): function createVisitorPopulation(options: VisitorPopulationOptions): VisitorPopulation — Create the population a scene reports, with the game owning arrival and leaving policy. A visitor only exists once the world has made its body, so the HUD's count and the bodies on screen are the same list: `admit` returning `null` is a refused arrival, not a number.
 - `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off), and doses land now or over time up to a cap (a narcotic's torpor over 16 seconds, a shield potion to 50). Not only survival: a creature being tamed, a sim's needs and a shooter's shield are each one body of vitals. Plain data, deterministic, bounded by the number of vitals and doses.
 - `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
+- `createWalletBooks` (function): function createWalletBooks(options: WalletBooksOptions): WalletBooks — Keep a {@link TransactionLedger} as the journal over a balance the game already owns — the engine wallet, a world-model fact. `record` and `track` post each movement with its reason, and any difference the journal did not see (a load, a host write) is posted under a named reason instead of silently drifting, so the history always explains the live balance.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
 - `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
@@ -3488,13 +3497,16 @@
 - `WorldAdvanceResult` (interface): interface WorldAdvanceResult — What {@link WorldModel.advance} did over the skipped time.
 - `WorldBlip` (interface): interface WorldBlip — One thing to draw on a map: a place, person, thing, open job or the live objective.
 - `WorldBlipDecl` (interface): interface WorldBlipDecl — What a map draws for a subject.
+- `WorldCause` (interface): interface WorldCause — What moved a watched fact: the world call that wrote it, and the action, kind or event it named.
 - `WorldChanges` (type): type WorldChanges = Readonly<Record<string, WorldFactValue>> — Fact changes: a number adds, a string or flag sets. Keys are relative to the subject the change lands on.
 - `WorldCondition` (type): type WorldCondition = WorldFactValue | { atLeast?: number; atMost?: number; is?: WorldFactValue; not?: boolean } — A test on one fact: equal to a value, or a numeric band, optionally negated.
 - `WorldConditions` (type): type WorldConditions = Readonly<Record<string, WorldCondition>> — Every keyed fact must pass. `jobs.<id>` reads a job's status (`done`, `active`, `failed`).
 - `WorldContact` (interface): interface WorldContact — A phone contact: a known person with their current line and the jobs they offer.
 - `WorldEvent` (interface): interface WorldEvent — Something that happened, reported by the game.
+- `WorldFactChange` (interface): interface WorldFactChange — One numeric change to a watched fact. A missing or non-numeric value reads as `0`.
 - `WorldFactSpec` (interface): interface WorldFactSpec — A fact that settles back toward `rest` by `decay` per second, clamped to `[min, max]`.
 - `WorldFactValue` (type): type WorldFactValue = number | string | boolean — A fact's value: a number that moves, a name (an owner, a place) or a flag.
+- `WorldFactWatch` (interface): interface WorldFactWatch — Facts whose numeric changes are reported, and where to. The listener must not write the world.
 - `WorldFactionDecl` (interface): interface WorldFactionDecl extends SubjectDecl — A faction: a group with shared facts (mood, money) that places and things can belong to.
 - `WorldFactsDecl` (type): type WorldFactsDecl = Readonly<Record<string, WorldFactValue | WorldFactSpec>> — Facts a subject starts with: a plain value, or a {@link WorldFactSpec} for one that calms down.
 - `WorldFlowDecl` (interface): interface WorldFlowDecl — A per-second stream into a fact: income, upkeep, hunger, a reactor's heat.

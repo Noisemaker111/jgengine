@@ -7,11 +7,13 @@ import { createNoticeFeed, type Notice } from "@jgengine/core/notifications/noti
 import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";
 import { TRAINING_CONFIG } from "./production";
 import { resetSession, session } from "./session";
+import { treasuryBooks } from "./treasury";
 
 function ctxWith(positions: Map<string, EntityPosition>, wallet: Record<string, number> = {}): GameContext {
   const balances = { ...wallet };
   return {
     player: { userId: "commander" },
+    time: { now: () => 0 },
     scene: { entity: { get: (id: string) => (positions.has(id) ? { id, position: positions.get(id)! } : null) } },
     game: {
       audio: { play: () => {} },
@@ -117,6 +119,11 @@ describe("base building", () => {
     expect(activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length).toBe(1);
     expect(session.buildArmed).toBeNull();
     expect(ctx.game.economy.balance("commander", "gold")).toBeLessThan(500);
+    // The charge is booked as a build of that building, so the books still explain the stockpile.
+    const spent = treasuryBooks(ctx).entries({ reason: "build" });
+    expect(spent.map((entry) => entry.ref)).toEqual(spent.map(() => "barracks"));
+    expect(-spent.find((entry) => entry.currency === "gold")!.amount).toBe(500 - ctx.game.economy.balance("commander", "gold"));
+    expect(treasuryBooks(ctx).unexplained()).toEqual({ gold: 0, lumber: 0 });
   });
 
   test("a bare right-click with nothing selected says to select troops", () => {
@@ -202,6 +209,7 @@ describe("order and train feedback", () => {
     const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500 });
     trainUnit(ctx, "peasant");
     expect(lastNotice(ctx)?.text).toBe("Training Peasant at the Town Hall.");
+    expect(treasuryBooks(ctx).entries({ reason: "train" }).map((entry) => [entry.ref, entry.amount])).toEqual([["peasant", ctx.game.economy.balance("commander", "gold") - 500]]);
   });
 
   test("order notices count units with the right noun", () => {
