@@ -11,13 +11,17 @@
  *   trigger for a real pit lane that leaves and rejoins the loop).
  * - `deadEnds` — fraction of dangling ends KEPT as cul-de-sacs vs reconnected into loops.
  * - `winding` — for a NET, sideways wander amplitude of every edge, capped so curvature never exceeds
- *   `1 / minCurveRadius`; for a CIRCUIT, how much the control polygon folds and how few deliberate
- *   straights it keeps (a windy lap curves nearly everywhere). `minTurnAngle`/`maxTurnAngle` are HARD
+ *   `1 / minCurveRadius`; for a CIRCUIT, corner density and mix (0 = few, fast corners; 1 = 6 per km,
+ *   slow and technical). `minTurnAngle`/`maxTurnAngle` are HARD
  *   clamps on the corner a NET street may take at any vertex — shallow wiggles are straightened, and every
  *   real corner is replaced with a sampled circular-arc fillet of radius `minCurveRadius` so corners read
  *   as CURVES, never single bevels, sampled so no discrete turn between consecutive samples exceeds ~9°.
- *   A circuit's loop skips that fillet entirely — its centerline is a smooth curvature-floored spline whose
- *   own dense sampling keeps every per-sample turn ≤ ~6°.
+ *   A circuit skips that fillet entirely — its designed centerline is clothoid-entered arcs sampled
+ *   finely enough that every per-sample turn stays ≤ ~6°.
+ * - `lapLength`, `compactness`, `crossover` — CIRCUIT only: the lap length the circuit is designed to
+ *   (shortened only when the volume cannot hold it), how tightly it packs into its footprint, and a
+ *   grade-separated figure-8 crossing. `gridness` pulls a circuit's headings to the axes (a street
+ *   circuit of 90° corners); `minCurveRadius` sets its hairpins.
  * - `bridges` / `tunnels` (with a ground sampler) — a span that dives under `minElevation` becomes a
  *   BRIDGE deck; a span buried under a ridge becomes a TUNNEL bore. Both are path FEATURES on a
  *   continuous edge, so a circuit stays closed as it crosses water or pierces a hill.
@@ -46,24 +50,15 @@
  * mid-district); everything else is a local street, spurs are lanes. Grown chords and spur lanes
  * keep the graph planar — no edge ever crosses another without a shared junction node.
  *
- * Circuit mode is a CURVE-FIRST centerline, not a filleted polygon (which read as straights joined by
- * small corner caps). The layout synthesis is unchanged — seeded points scattered, hulled, a random subset
- * of hull-edge midpoints displaced DEEP inward (the classic random-track method, folded far enough for
- * several concave lobes) with light hairpin/ess/chicane templates — but its polygon is treated as CONTROL
- * POINTS, not the track: 1–3 edges are collapsed onto lines as deliberate STRAIGHTS (start/finish is the
- * longest), a periodic centripetal Catmull-Rom spline is fitted through the points and sampled densely, and
- * a CURVATURE CLAMP (iterative Laplacian smoothing on a coarse uniform working loop, then a re-fit) relaxes
- * every spot tighter than `minCurveRadius` up to the floor. So the lap is MOSTLY continuous curve — long
- * sweepers, flowing esses, parabolic entries, curvature that flows rather than corner-caps — with the
- * straights as deliberate exceptions and a legal hairpin (~`minCurveRadius`) surviving at the floor; radii
- * form a smooth continuum from ~1× to many × `minCurveRadius`. `minCurveRadius` is enforced by the clamp
- * and self-clearance (the sampled spline never runs within ~1.5 track widths of a non-adjacent part of
- * itself) via bounded deterministic reject-and-retry with decaying fold aggression, falling back to a safe
- * simple layout only when every retry crosses. The sampled loop is distributed into many node-to-node edges
- * (nodes exactly ON the spline, each edge carrying its sampled sub-arc); city (net) streets keep the
- * single-radius `minCurveRadius` arc fillet. When branching is meaningful a lane-level PIT LANE offsets
- * parallel to the start/finish straight, leaving the loop at one node and rejoining at another (two
- * degree-3 junctions, never a dead-end stub).
+ * Circuit mode is a DESIGNED lap ({@link designCircuit}): straights and corner complexes from a corner
+ * grammar (hairpin, slow, medium, sweeper, kink, carousel, double-apex, chicane, esses), closed exactly at
+ * `lapLength` by a linear solve, fitted to the volume, picked from several candidates by a lap
+ * simulation, and dressed (elevation, banking, widths, run-off, barriers, pit lane, grandstands). The
+ * sampled lap is distributed into many node-to-node edges (nodes exactly ON the line, each edge carrying
+ * its sampled sub-arc and road heights); city (net) streets keep the single-radius `minCurveRadius` arc
+ * fillet. When branching is meaningful the designed PIT LANE splits off the start straight and rejoins it
+ * as three lane edges (two degree-3 junctions, never a dead-end stub). The design itself rides on the
+ * network as {@link StreetNetwork.circuit}.
  *
  * Output is two coupled views of the graph: atomic node-to-node {@link StreetEdge}s (fed straight into
  * the block/parcel fabric — a race circuit is many edges between distinct nodes, never one fragile
@@ -77,6 +72,7 @@
 import { defineGenerator, type GeneratorContext } from "../generator/generator";
 import { defineParamSchema, type ParamField, type ParamGroup, type ParamPreset, type ParamsOf } from "../generator/paramSchema";
 import { seededStreams } from "../random/rng";
+import { CIRCUIT_LAP_LENGTH_FIELD, SAMPLE_ROUND, designCircuit, type CircuitDesign } from "./circuitDesigner";
 
 /** Add one to `counts[index]` (an unset slot counts from zero). */
 function increment(counts: number[] | Uint16Array, index: number): void {
@@ -203,6 +199,8 @@ export interface StreetNetwork {
   tunnels: StreetFeature[];
   /** Independent cycle count (E − V + components): 0 = pure tree, ≥1 = has loops. */
   loops: number;
+  /** The designed lap and its dressing — `circuit` mode only. */
+  circuit?: CircuitDesign;
 }
 
 /** The street generator's output family: a {@link StreetNetwork}. */
@@ -230,6 +228,7 @@ const STREET_FIELDS = [
   { type: "range", key: "elevation", label: "road elevation", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
   { type: "range", key: "maxGrade", label: "max grade", group: "layout", min: 0.005, max: 0.5, step: 0.005, default: 0.07, explore: [0.01, 0.3] },
   { type: "range", key: "compactness", label: "circuit compactness", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+  { type: "bool", key: "crossover", label: "circuit figure-8 crossover", group: "layout", default: false },
   { type: "number", key: "halfX", label: "half width", group: "footprint", min: 1, default: 200, vary: false },
   { type: "number", key: "halfZ", label: "half depth", group: "footprint", min: 1, default: 200, vary: false },
   { type: "bool", key: "bridges", label: "bridges over gaps", group: "terrain", default: false },
@@ -254,9 +253,18 @@ const STREET_PRESETS = [
   {
     id: "circuit",
     label: "Race circuit",
-    values: { gridness: 0.1, loopiness: 1, connectivity: 0, branching: 0, deadEnds: 0, segmentLength: 60, aspect: 1, winding: 0.5, minCurveRadius: 24, minTurnAngle: 0, maxTurnAngle: 70, width: 12, boulevards: 0 },
+    values: { gridness: 0.15, loopiness: 1, connectivity: 0, branching: 0, deadEnds: 0, segmentLength: 60, aspect: 1, winding: 0.45, minCurveRadius: 11, minTurnAngle: 0, maxTurnAngle: 70, width: 12, boulevards: 0, compactness: 0.3, lapLength: 2400 },
   },
 ] as const satisfies readonly ParamPreset[];
+
+const STREET_SEED_FIELD = { type: "seed", key: "seed", label: "seed", default: "" } as const;
+
+/**
+ * The street dials and seed WITHOUT the circuit lap length, for a generator that brings its own lap
+ * length dial (the race circuit's lap stage) — the street generator still reads it by the same key.
+ * @internal
+ */
+export const STREET_NETWORK_DIAL_FIELDS = [...STREET_FIELDS, STREET_SEED_FIELD] as const;
 
 /**
  * The street generator's params: topology dials (a city street net and a closed circuit are the same
@@ -265,7 +273,7 @@ const STREET_PRESETS = [
  */
 export const STREET_NETWORK_SCHEMA = defineParamSchema({
   groups: STREET_GROUPS,
-  fields: [...STREET_FIELDS, { type: "seed", key: "seed", label: "seed", default: "" }],
+  fields: [...STREET_FIELDS, { ...CIRCUIT_LAP_LENGTH_FIELD, label: "circuit lap length", group: "layout" }, STREET_SEED_FIELD],
   presets: STREET_PRESETS,
 });
 
@@ -290,7 +298,6 @@ const MAX_NODES = 900;
 const MAX_STREETS = 360;
 const MAX_EDGES = 1400;
 const MAX_LANES = 260;
-const MAX_CIRCUIT_TRIES = 20;
 const BETWEENNESS_SOURCES = 40;
 /** Hard cap on the direction change between consecutive arc-fillet samples (≈9°) so filleted corners
  *  render as smooth curves, not chunky polygons, regardless of the (looser) `maxTurnAngle` ceiling. */
@@ -596,6 +603,8 @@ interface RawEdge {
    *  verbatim instead of re-synthesizing a wandered chord between the endpoint nodes. `points[0]` sits on
    *  node `a`, the last on node `b`. */
   points?: StreetVec2[];
+  /** Designed road heights, one per `points` (circuit edges), used verbatim instead of the field. */
+  heights?: number[];
 }
 
 /** Grow the open street NET: lattice nodes, a spanning tree (guaranteed connectivity), then chords,
@@ -759,34 +768,6 @@ function buildNet(
   return { nodes, edges: edges.slice(0, MAX_EDGES) };
 }
 
-/** Convex hull (Andrew's monotone chain), returns hull points CCW. */
-function convexHull(pts: StreetVec2[]): StreetVec2[] {
-  const uniq = pts.slice().sort((p, q) => (p[0] === q[0] ? p[1] - q[1] : p[0] - q[0]));
-  const dedup: StreetVec2[] = [];
-  for (const p of uniq) {
-    const last = dedup[dedup.length - 1];
-    if (last === undefined || Math.hypot(last[0] - p[0], last[1] - p[1]) > 1e-6) dedup.push(p);
-  }
-  const n = dedup.length;
-  if (n < 3) return dedup;
-  const cross = (o: StreetVec2, a: StreetVec2, b: StreetVec2): number =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lower: StreetVec2[] = [];
-  for (const p of dedup) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
-    lower.push(p);
-  }
-  const upper: StreetVec2[] = [];
-  for (let i = n - 1; i >= 0; i -= 1) {
-    const p = dedup[i]!;
-    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
-    upper.push(p);
-  }
-  lower.pop();
-  upper.pop();
-  return lower.concat(upper);
-}
-
 /** True when segments p1–p2 and p3–p4 intersect (including touching). */
 function segSegIntersects(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
   const rx = p2[0] - p1[0];
@@ -814,610 +795,23 @@ function segSegDistance(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: Stre
 }
 
 /**
- * True when no two centerline segments that are FAR APART ALONG THE LOOP (arc-length separation
- * `> gapMin`) run spatially closer than `clearance` — i.e. the track never folds back onto a distant
- * part of itself. Segments within the same corner or between neighboring corners (small arc gap,
- * including the intentional close legs of a hairpin) are excluded, so only genuine self-crossings fail.
- */
-function loopSelfClearing(poly: StreetVec2[], clearance: number, gapMin: number): boolean {
-  const n = poly.length;
-  if (n < 6) return true;
-  const seg: number[] = [];
-  let perimeter = 0;
-  for (let i = 0; i < n; i += 1) {
-    const a = poly[i]!;
-    const b = poly[(i + 1) % n]!;
-    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    seg.push(l);
-    perimeter += l;
-  }
-  const cum: number[] = [0];
-  for (let i = 0; i < n; i += 1) cum.push(cum[i]! + seg[i]!);
-  if (!(clearance > 0)) return true;
-  // A uniform grid with one clearance per cell. Two edges closer than `clearance` always share a cell
-  // once the earlier one is grown by `clearance`, so only those pairs need the exact distance; every
-  // pair left out is farther apart than `clearance`, so the answer matches checking all pairs.
-  let minX = Infinity;
-  let minZ = Infinity;
-  let maxX = -Infinity;
-  let maxZ = -Infinity;
-  for (const p of poly) {
-    minX = Math.min(minX, p[0]);
-    minZ = Math.min(minZ, p[1]);
-    maxX = Math.max(maxX, p[0]);
-    maxZ = Math.max(maxZ, p[1]);
-  }
-  const col = (x: number): number => Math.floor((x - minX) / clearance);
-  const row = (z: number): number => Math.floor((z - minZ) / clearance);
-  const cols = col(maxX) + 1;
-  const rows = row(maxZ) + 1;
-  const cellKey = (c: number, r: number): number => c * rows + r;
-  const edgesIn = new Map<number, number[]>();
-  for (let i = 0; i < n; i += 1) {
-    const a = poly[i]!;
-    const b = poly[(i + 1) % n]!;
-    for (let c = col(Math.min(a[0], b[0])); c <= col(Math.max(a[0], b[0])); c += 1) {
-      for (let r = row(Math.min(a[1], b[1])); r <= row(Math.max(a[1], b[1])); r += 1) {
-        const key = cellKey(c, r);
-        const list = edgesIn.get(key);
-        if (list === undefined) edgesIn.set(key, [i]);
-        else list.push(i);
-      }
-    }
-  }
-  const lastQuery = new Int32Array(n);
-  for (let i = 0; i < n; i += 1) {
-    const a1 = poly[i]!;
-    const a2 = poly[(i + 1) % n]!;
-    const c0 = Math.max(0, col(Math.min(a1[0], a2[0]) - clearance));
-    const c1 = Math.min(cols - 1, col(Math.max(a1[0], a2[0]) + clearance));
-    const r0 = Math.max(0, row(Math.min(a1[1], a2[1]) - clearance));
-    const r1 = Math.min(rows - 1, row(Math.max(a1[1], a2[1]) + clearance));
-    for (let c = c0; c <= c1; c += 1) {
-      for (let r = r0; r <= r1; r += 1) {
-        const list = edgesIn.get(cellKey(c, r));
-        if (list === undefined) continue;
-        for (const j of list) {
-          if (j <= i || lastQuery[j] === i + 1) continue;
-          lastQuery[j] = i + 1;
-          // Edge-to-edge arc-length gap along the loop (0 for edges sharing a vertex, incl. the wrap).
-          const forwardGap = cum[j]! - cum[i + 1]!;
-          const backwardGap = perimeter - cum[j + 1]! + cum[i]!;
-          if (Math.min(forwardGap, backwardGap) <= gapMin) continue; // same corner / neighboring corners
-          if (segSegDistance(a1, a2, poly[j]!, poly[(j + 1) % n]!) < clearance) return false;
-        }
-      }
-    }
-  }
-  return true;
-}
-
-/** Signed area (>0 = CCW). */
-function signedArea(poly: StreetVec2[]): number {
-  let area = 0;
-  const n = poly.length;
-  for (let i = 0; i < n; i += 1) {
-    const a = poly[i]!;
-    const b = poly[(i + 1) % n]!;
-    area += a[0] * b[1] - b[0] * a[1];
-  }
-  return area / 2;
-}
-
-/** Index of the polygon edge with the greatest length (the start/finish straight candidate). */
-function longestEdge(poly: StreetVec2[]): { index: number; length: number } {
-  let index = 0;
-  let length = 0;
-  const n = poly.length;
-  for (let i = 0; i < n; i += 1) {
-    const a = poly[i]!;
-    const b = poly[(i + 1) % n]!;
-    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (l > length) {
-      length = l;
-      index = i;
-    }
-  }
-  return { index, length };
-}
-
-/**
- * Synthesize one closed track polygon: scatter seeded points, take their convex hull, then fold it into
- * a real circuit by displacing hull-edge midpoints INWARD toward the centroid — a random subset pushed
- * DEEP (each deep push is a reflex vertex / concave lobe), the rest left straight so corners pop against
- * straights — keeping the longest edge straight for a start/finish, then carving guaranteed
- * chicane/ess/hairpin corner templates. `aggression` (1 = full depth, decaying on retries) scales fold
- * depth and template count so a clearing layout is found before the safe fallback. Returns the polygon
- * vertices (not duplicated), or null if the hull was degenerate.
- */
-function synthTrack(
-  rules: StreetRules,
-  hx: number,
-  hz: number,
-  rng: () => number,
-  aggression = 1,
-): StreetVec2[] | null {
-  const rx = hx * 0.9;
-  const rz = hz * 0.9;
-  const perimeter = Math.PI * (rx + rz);
-  const target = Math.max(6, Math.min(Math.round(perimeter / (rules.segmentLength * 1.4)), 18));
-  const scatter = Math.max(12, Math.min(target * 2, 40));
-  const pts: StreetVec2[] = [];
-  for (let i = 0; i < scatter; i += 1) {
-    const ang = rng() * TAU;
-    const rad = Math.sqrt(rng());
-    pts.push([Math.cos(ang) * rx * rad, Math.sin(ang) * rz * rad]);
-  }
-  const hull = convexHull(pts);
-  if (hull.length < 4) return null;
-  let cx = 0;
-  let cz = 0;
-  for (const p of hull) {
-    cx += p[0];
-    cz += p[1];
-  }
-  cx /= hull.length;
-  cz /= hull.length;
-  const straightEdge = longestEdge(hull).index;
-  // Probability an edge gets a DEEP inward fold (a real concave lobe) vs a shallow dent vs left straight.
-  const pDeep = 0.2 + rules.winding * 0.4;
-  const pDent = pDeep + 0.3;
-  const poly: StreetVec2[] = [];
-  for (let k = 0; k < hull.length; k += 1) {
-    const p = hull[k]!;
-    const q = hull[(k + 1) % hull.length]!;
-    poly.push([p[0], p[1]]);
-    if (k === straightEdge) continue; // keep the start/finish edge straight — no midpoint
-    const mx = (p[0] + q[0]) / 2;
-    const mz = (p[1] + q[1]) / 2;
-    const dx = cx - mx;
-    const dz = cz - mz;
-    const d = Math.hypot(dx, dz);
-    const edgeLen = Math.hypot(q[0] - p[0], q[1] - p[1]);
-    // Fold class for this edge. DEEP pushes travel a large fraction of the way to the centroid so the
-    // loop genuinely folds (multiple reflex lobes); DENT is a shallow concavity; STRAIGHT leaves the
-    // edge alone so real straights survive. Depth scales with `aggression` so retries relax to clear.
-    const roll = rng();
-    let frac = 0;
-    if (roll < pDeep) frac = (0.4 + rng() * 0.3) * aggression;
-    else if (roll < pDent) frac = (0.1 + rng() * 0.16) * aggression;
-    const amt = Math.min(edgeLen * 0.7, d * Math.min(0.72, frac));
-    if (d > 1e-3 && amt > 1e-3) {
-      poly.push([mx + (dx / d) * amt, mz + (dz / d) * amt]);
-    } else {
-      poly.push([mx, mz]);
-    }
-  }
-  applyCornerTemplates(poly, rules, rng, aggression);
-  // Clamp everything back inside the footprint.
-  for (let i = 0; i < poly.length; i += 1) {
-    poly[i] = [Math.max(-hx + 1, Math.min(hx - 1, poly[i]![0])), Math.max(-hz + 1, Math.min(hz - 1, poly[i]![1]))];
-  }
-  return poly;
-}
-
-/**
- * Carve chicane/ess/hairpin corner templates into a track polygon in place — the corner-VARIETY quota.
- * When `winding ≥ 0.4` the first two templates are a guaranteed HAIRPIN (a deep, narrow inward finger
- * that reverses direction over a short arc — a genuine ~180° U-turn, not a shallow apex) and a
- * guaranteed ESS (alternating left/right corners); further templates (count scaling with `winding` and
- * `aggression`) are random hairpin/ess/chicane. Every template is a LOCAL edit — an inward finger or a
- * pair of opposite perpendicular offsets — so the loop's global self-clearance survives for the
- * reject-and-retry check. Fingers point inward (toward the centroid) so the track folds without leaving
- * the footprint.
- */
-function applyCornerTemplates(poly: StreetVec2[], rules: StreetRules, rng: () => number, aggression = 1): void {
-  const forceVariety = rules.winding >= 0.4;
-  const count = Math.max(forceVariety ? 2 : 0, Math.round(rules.winding * 3 * aggression));
-  if (count <= 0 || poly.length < 6) return;
-  const step = rules.segmentLength;
-  let cx = 0;
-  let cz = 0;
-  for (const p of poly) {
-    cx += p[0];
-    cz += p[1];
-  }
-  cx /= poly.length;
-  cz /= poly.length;
-  for (let c = 0; c < count; c += 1) {
-    const n = poly.length;
-    const i = 1 + Math.floor(rng() * (n - 2));
-    const a = poly[i]!;
-    const b = poly[(i + 1) % n]!;
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const l = Math.hypot(dx, dz);
-    if (l < step * 0.35) continue; // too little room for a legible corner
-    const ux = dx / l;
-    const uz = dz / l;
-    // Inward normal (points toward the loop centroid so fingers fold in, never out of the footprint).
-    const mx = (a[0] + b[0]) / 2;
-    const mz = (a[1] + b[1]) / 2;
-    let nx = -uz;
-    let nz = ux;
-    if ((cx - mx) * nx + (cz - mz) * nz < 0) {
-      nx = -nx;
-      nz = -nz;
-    }
-    const at = (i + 1) % n === 0 ? n : i + 1;
-    const roll = rng();
-    const kind = forceVariety && c === 0 ? "hairpin" : forceVariety && c === 1 ? "ess" : roll < 0.34 ? "hairpin" : roll < 0.67 ? "ess" : "chicane";
-    if (kind === "hairpin") {
-      // Deep, narrow inward finger: enter, cross a short tip, exit → a real U-turn over a short arc.
-      const depth = Math.min(l * 0.85, step * (0.6 + rng() * 0.35) * aggression + step * 0.28);
-      const tip = Math.min(l * 0.45, Math.max(step * 0.1, rules.width * 1.4));
-      const base = l * (0.34 + rng() * 0.12);
-      const t1: StreetVec2 = [a[0] + ux * base + nx * depth, a[1] + uz * base + nz * depth];
-      const t2: StreetVec2 = [a[0] + ux * (base + tip) + nx * depth, a[1] + uz * (base + tip) + nz * depth];
-      poly.splice(at, 0, t1, t2);
-    } else if (kind === "ess") {
-      // Ess: two opposite offsets flanking the edge — alternating corners.
-      const off = step * (0.2 + rng() * 0.26) * aggression;
-      const t1: StreetVec2 = [a[0] + ux * l * 0.32 + nx * off, a[1] + uz * l * 0.32 + nz * off];
-      const t2: StreetVec2 = [a[0] + ux * l * 0.68 - nx * off, a[1] + uz * l * 0.68 - nz * off];
-      poly.splice(at, 0, t1, t2);
-    } else {
-      // Chicane: a quick left-right-left kink (3 points).
-      const off = step * (0.16 + rng() * 0.2) * aggression;
-      const t1: StreetVec2 = [a[0] + ux * l * 0.25 + nx * off, a[1] + uz * l * 0.25 + nz * off];
-      const t2: StreetVec2 = [a[0] + ux * l * 0.5 - nx * off, a[1] + uz * l * 0.5 - nz * off];
-      const t3: StreetVec2 = [a[0] + ux * l * 0.75 + nx * off, a[1] + uz * l * 0.75 + nz * off];
-      poly.splice(at, 0, t1, t2, t3);
-    }
-  }
-}
-
-/** A safe convex fallback track (an inset ellipse with one shallow inward dent) with a long straight. */
-function fallbackTrack(rules: StreetRules, hx: number, hz: number): StreetVec2[] {
-  const rx = hx * 0.82;
-  const rz = hz * 0.82;
-  const k = Math.max(8, Math.min(Math.round((Math.PI * (rx + rz)) / rules.segmentLength), 24));
-  const poly: StreetVec2[] = [];
-  for (let i = 0; i < k; i += 1) {
-    const ang = (i / k) * TAU;
-    // One gentle inward dent so the fallback is not a perfect star-convex blob.
-    const dent = i === Math.floor(k / 2) ? 0.72 : 1;
-    poly.push([Math.cos(ang) * rx * dent, Math.sin(ang) * rz * dent]);
-  }
-  return poly;
-}
-
-/** Circumradius of a point triple = the local fitted radius (∞ for a collinear/straight triple). This is
- *  the SAME metric the curvature clamp enforces and the tests measure, so a clamped loop has no triple
- *  under the floor. @internal */
-function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
-  const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
-  const ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
-  const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2;
-  if (area < 1e-9) return Infinity;
-  return (ab * bc * ca) / (4 * area);
-}
-
-/** Drop consecutive (and wrap) near-coincident vertices so a control ring has well-defined tangents. */
-function dedupeRing(pts: StreetVec2[], eps = 1e-3): StreetVec2[] {
-  const out: StreetVec2[] = [];
-  for (const p of pts) {
-    const last = out[out.length - 1];
-    if (last === undefined || Math.hypot(last[0] - p[0], last[1] - p[1]) > eps) out.push([p[0], p[1]]);
-  }
-  while (out.length > 3 && Math.hypot(out[0]![0] - out[out.length - 1]![0], out[0]![1] - out[out.length - 1]![1]) < eps) {
-    out.pop();
-  }
-  return out;
-}
-
-/**
- * Designate 1–3 control-polygon edges as genuine STRAIGHTS (start/finish is always the longest edge) and
- * collinearize each into a run of on-chord control points, so the fitted spline passes through real
- * straight runs that CONTRAST with an otherwise continuously-curving lap. The inserted interior points are
- * flagged `straight` (they define the dead-straight middle and are protected from the curvature clamp); the
- * original control points stay unflagged so the spline's parabolic entry/exit at each straight end is free
- * to curve and be floored. More straights when `winding` is low (a windy lap curves more).
+ * Distribute a designed circuit loop into the `{nodes, edges}` graph contract: nodes land ON the line at
+ * every straight↔curve boundary, at every `forced` sample (pit entry/exit), and every ~`segmentLength` of
+ * arc inside curved runs; each straight run stays a single edge. Every edge carries its exact sampled
+ * sub-arc (and road heights when present), so the designed centerline survives assembly verbatim.
  * @internal
  */
-function designateStraights(
-  control: StreetVec2[],
-  rules: StreetRules,
-  rng: () => number,
-): { pts: StreetVec2[]; straight: boolean[] } {
-  const m = control.length;
-  const lens = control.map((p, i) => {
-    const q = control[(i + 1) % m]!;
-    return Math.hypot(q[0] - p[0], q[1] - p[1]);
-  });
-  const order = lens.map((_, i) => i).sort((a, b) => lens[b]! - lens[a]!);
-  const chosen = new Set<number>();
-  chosen.add(order[0]!); // start/finish = the longest edge
-  // Fewer extra straights as `winding` rises (a windy lap should curve nearly everywhere); at winding ≥ 0.5
-  // the lap is usually just the start/finish straight so curves dominate the arc length.
-  const extra =
-    rules.winding >= 0.5
-      ? rng() < 0.35
-        ? 1
-        : 0
-      : Math.max(0, Math.min(2, Math.round((1 - rules.winding) * 2)));
-  for (let r = 1; r < order.length && chosen.size < 1 + extra; r += 1) {
-    const e = order[r]!;
-    if (lens[e]! < rules.segmentLength * 1.2) break; // remaining edges too short to read as a straight
-    if (chosen.has((e + 1) % m) || chosen.has((e - 1 + m) % m)) continue; // keep straights apart
-    if (rng() < 0.75) chosen.add(e);
-  }
-  const pts: StreetVec2[] = [];
-  const straight: boolean[] = [];
-  for (let i = 0; i < m; i += 1) {
-    const p = control[i]!;
-    const q = control[(i + 1) % m]!;
-    pts.push([p[0], p[1]]);
-    straight.push(false); // original control points are transition anchors, never protected
-    if (chosen.has(i)) {
-      // Subdivide the edge into on-chord interior points; the CR spline through ≥3 collinear points runs
-      // dead straight between them (only the first/last sub-segment bends toward the adjacent curve).
-      const sub = Math.max(4, Math.round(lens[i]! / rules.segmentLength) + 2);
-      for (let s = 1; s < sub; s += 1) {
-        const t = s / sub;
-        pts.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
-        straight.push(true);
-      }
-    }
-  }
-  return { pts, straight };
-}
-
-/** Evaluate a centripetal Catmull-Rom segment P1→P2 at parameter `u` (Barry–Goldman pyramid). */
-function catmullPoint(
-  p0: StreetVec2,
-  p1: StreetVec2,
-  p2: StreetVec2,
-  p3: StreetVec2,
-  t0: number,
-  t1: number,
-  t2: number,
-  t3: number,
-  u: number,
-): StreetVec2 {
-  const lerp = (a: StreetVec2, b: StreetVec2, ta: number, tb: number): StreetVec2 => {
-    const d = tb - ta;
-    if (Math.abs(d) < 1e-9) return [a[0], a[1]];
-    const w = (u - ta) / d;
-    return [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
-  };
-  const a1 = lerp(p0, p1, t0, t1);
-  const a2 = lerp(p1, p2, t1, t2);
-  const a3 = lerp(p2, p3, t2, t3);
-  const b1 = lerp(a1, a2, t0, t2);
-  const b2 = lerp(a2, a3, t1, t3);
-  return lerp(b1, b2, t1, t2);
-}
-
-/**
- * Fit a periodic CENTRIPETAL Catmull-Rom spline through the closed control points and sample it densely
- * (≤ `sampleStep` chord spacing) so it flows through every point without cusps. Centripetal (α=0.5)
- * parameterization avoids the self-intersections/overshoot of uniform CR. Each sample inherits the
- * `straight` flag of its segment (a segment is straight only when BOTH its control endpoints are flagged),
- * so the protected dead-straight middles are known downstream. @internal
- */
-function fitClosedSpline(
-  control: StreetVec2[],
-  straightControl: boolean[],
-  sampleStep: number,
-): { pts: StreetVec2[]; straight: boolean[] } {
-  const m = control.length;
-  const pts: StreetVec2[] = [];
-  const straight: boolean[] = [];
-  const knot = (a: StreetVec2, b: StreetVec2): number => Math.max(1e-4, Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1])));
-  for (let i = 0; i < m; i += 1) {
-    const p0 = control[(i - 1 + m) % m]!;
-    const p1 = control[i]!;
-    const p2 = control[(i + 1) % m]!;
-    const p3 = control[(i + 2) % m]!;
-    const t0 = 0;
-    const t1 = t0 + knot(p0, p1);
-    const t2 = t1 + knot(p1, p2);
-    const t3 = t2 + knot(p2, p3);
-    const chord = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-    const k = Math.max(1, Math.ceil(chord / sampleStep));
-    const segStraight = straightControl[i]! && straightControl[(i + 1) % m]!;
-    for (let s = 0; s < k; s += 1) {
-      const u = t1 + ((t2 - t1) * s) / k; // s=0 → u=t1 → exactly p1, so the spline hits every control point
-      pts.push(catmullPoint(p0, p1, p2, p3, t0, t1, t2, t3, u));
-      straight.push(segStraight);
-    }
-  }
-  return { pts, straight };
-}
-
-/** Resample a closed polyline to (near-)UNIFORM arc-length spacing `step`. Uniform spacing is what makes a
- *  narrow Laplacian curvature clamp both effective and STABLE: a densely-clustered cusp (where the raw
- *  spline crawls) otherwise defeats a narrow stencil (steps shrink with segment length) and a wide stencil
- *  reaches across the loop's neck and folds it. A sample is flagged straight only when the source segment
- *  it lands on is fully straight, so straight runs are preserved. @internal */
-function resampleClosedUniform(
-  pts: StreetVec2[],
-  straight: boolean[],
-  step: number,
-): { pts: StreetVec2[]; straight: boolean[] } {
-  const P = pts.length;
-  if (P < 4) return { pts: pts.map((p) => [p[0], p[1]] as StreetVec2), straight: straight.slice() };
-  const cum: number[] = [0];
-  let total = 0;
-  for (let i = 0; i < P; i += 1) {
-    const b = pts[(i + 1) % P]!;
-    total += Math.hypot(b[0] - pts[i]![0], b[1] - pts[i]![1]);
-    cum.push(total);
-  }
-  const count = Math.max(8, Math.round(total / Math.max(1e-3, step)));
-  const outP: StreetVec2[] = [];
-  const outS: boolean[] = [];
-  let j = 0;
-  for (let s = 0; s < count; s += 1) {
-    const target = (total * s) / count;
-    while (j < P && cum[j + 1]! < target) j += 1;
-    const seg = cum[j + 1]! - cum[j]!;
-    const f = seg > 1e-9 ? (target - cum[j]!) / seg : 0;
-    const a = pts[j % P]!;
-    const b = pts[(j + 1) % P]!;
-    outP.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
-    outS.push(straight[j % P]! && straight[(j + 1) % P]!);
-  }
-  return { pts: outP, straight: outS };
-}
-
-/** One Jacobi Laplacian smoothing pass over a closed loop: each selected sample moves `lambda` toward the
- *  midpoint of its two immediate neighbors. Diffusion only lowers curvature. Straight runs are NOT specially
- *  protected — a collinear run is already a Laplacian fixpoint (midpoint of collinear neighbors is the point
- *  itself), so straight interiors never move, while the sample where a straight meets a curve is free to
- *  ease the junction (a frozen straight there would leave an un-openable kink). @internal */
-function smoothLoopPass(pts: StreetVec2[], lambda: number, sel: (i: number) => boolean): void {
-  const P = pts.length;
-  const nx = new Array<number>(P);
-  const nz = new Array<number>(P);
-  for (let i = 0; i < P; i += 1) {
-    if (!sel(i)) {
-      nx[i] = pts[i]![0];
-      nz[i] = pts[i]![1];
-      continue;
-    }
-    const a = pts[(i - 1 + P) % P]!;
-    const b = pts[(i + 1) % P]!;
-    nx[i] = pts[i]![0] + lambda * ((a[0] + b[0]) * 0.5 - pts[i]![0]);
-    nz[i] = pts[i]![1] + lambda * ((a[1] + b[1]) * 0.5 - pts[i]![1]);
-  }
-  for (let i = 0; i < P; i += 1) pts[i] = [nx[i]!, nz[i]!];
-}
-
-/**
- * CURVATURE CLAMP (not a corner fillet), on a UNIFORMLY-sampled loop so a narrow stencil is stable: relax
- * the loop so every point respects the radius floor `minR`, preserving flow. Phase A runs a few light
- * global passes that smooth the small curvature steps a C1 Catmull-Rom leaves at its knots (the lap reads
- * as one continuous curve). Phase B iteratively Laplacian-smooths ONLY the samples whose fitted radius is
- * under the floor (and their immediate neighbors), so tight corners open toward ~minR while medium/large
- * curves, sweepers and protected straights are left alone — hairpins settle right at the floor. Diffusion
- * only lowers curvature, so it converges and stops the instant the floor holds. Phase C re-smooths the
- * seam of relaxed regions. Closed loop, no fixed endpoints. @internal
- */
-function relaxCurvature(pts: StreetVec2[], minR: number): void {
-  const P = pts.length;
-  if (P < 8) return;
-  const radiusAt = (i: number): number => circumRadius(pts[(i - 1 + P) % P]!, pts[i]!, pts[(i + 1) % P]!);
-  // Relax to a target comfortably ABOVE the floor so the smooth output spline re-fitted through these
-  // points still clears `minR` where it dips between them, while still leaving the tightest corners as
-  // legal hairpins near the floor.
-  const floor = minR * 1.12;
-  const violators = (): boolean[] | null => {
-    const need = new Array<boolean>(P).fill(false);
-    let any = false;
-    for (let i = 0; i < P; i += 1) {
-      if (radiusAt(i) < floor) {
-        need[i] = true;
-        any = true;
-      }
-    }
-    return any ? need : null;
-  };
-  for (let it = 0; it < 4; it += 1) smoothLoopPass(pts, 0.2, () => true);
-  // Phase B — targeted: smooth each violator and its immediate neighbors until the floor holds. Because a
-  // violator may land ON a straight sample at a straight↔curve junction, its curve-side neighbor (never a
-  // fixpoint) is included so the junction actually eases.
-  for (let it = 0; it < 1500; it += 1) {
-    const need = violators();
-    if (need === null) break;
-    const sel = new Array<boolean>(P).fill(false);
-    for (let i = 0; i < P; i += 1) {
-      if (need[i]) {
-        sel[i] = true;
-        sel[(i - 1 + P) % P] = true;
-        sel[(i + 1) % P] = true;
-      }
-    }
-    smoothLoopPass(pts, 0.5, (i) => sel[i]!);
-    if (it % 20 === 19) smoothLoopPass(pts, 0.1, () => true); // periodic global nudge frees cusps
-  }
-  // Phase B2 — escalating global erosion for any stubborn deep-finger cusp the targeted pass can't open
-  // (a finger too thin to round to `minR` in place); runs only while a violator survives, so a legal lap
-  // is untouched. Straight interiors are collinear Laplacian fixpoints, so they stay crisp under it.
-  for (let guard = 0; guard < 400 && violators() !== null; guard += 1) {
-    smoothLoopPass(pts, 0.25, () => true);
-  }
-  for (let it = 0; it < 2; it += 1) smoothLoopPass(pts, 0.12, () => true);
-}
-
-/** Rotate a sampled loop (and its straight flags) so index 0 is the start of the LONGEST straight run —
- *  the start/finish straight — so distribution can emit it as a single edge. @internal */
-function rotateToStraight(pts: StreetVec2[], straight: boolean[]): void {
-  const P = pts.length;
-  let bestStart = -1;
-  let bestLen = 0;
-  let k = 0;
-  while (k < P) {
-    if (!straight[k]) {
-      k += 1;
-      continue;
-    }
-    const start = k;
-    let len = 0;
-    while (k < P && straight[k]) {
-      k += 1;
-      len += 1;
-    }
-    if (len > bestLen) {
-      bestLen = len;
-      bestStart = start;
-    }
-  }
-  // A run may wrap the seam (straight at both ends of the array) — stitch it and prefer if longer.
-  if (P > 0 && straight[0] && straight[P - 1]) {
-    let head = 0;
-    while (head < P && straight[head]) head += 1;
-    let tail = 0;
-    while (tail < P && straight[P - 1 - tail]) tail += 1;
-    if (head + tail > bestLen) {
-      bestLen = head + tail;
-      bestStart = P - tail;
-    }
-  }
-  if (bestStart <= 0) return;
-  const rp = pts.slice(bestStart).concat(pts.slice(0, bestStart));
-  const rs = straight.slice(bestStart).concat(straight.slice(0, bestStart));
-  for (let j = 0; j < P; j += 1) {
-    pts[j] = rp[j]!;
-    straight[j] = rs[j]!;
-  }
-}
-
-/** Arc length of the longest straight run in a sampled loop (measures the start/finish straight). */
-function longestStraightRun(loop: StreetVec2[], straight: boolean[]): number {
-  const P = loop.length;
-  if (P < 2) return 0;
-  const segLen = (i: number): number => Math.hypot(loop[(i + 1) % P]![0] - loop[i]![0], loop[(i + 1) % P]![1] - loop[i]![1]);
-  let best = 0;
-  let run = 0;
-  for (let k = 0; k < 2 * P; k += 1) {
-    const i = k % P;
-    if (straight[i]) {
-      run += segLen(i);
-      best = Math.max(best, run);
-    } else {
-      run = 0;
-    }
-  }
-  return best; // arc length; a seam-wrapping run is captured by the 2P sweep
-}
-
-/**
- * Distribute a sampled circuit loop into the `{nodes, edges}` graph contract: nodes land ON the spline at
- * every straight↔curve boundary and every ~`segmentLength` of arc inside curved runs; each straight run
- * stays a single edge (the deliberate straight). Every edge carries its exact sampled sub-arc, so the
- * curved centerline survives assembly instead of being rebuilt as a straight chord. @internal
- */
 function distributeLoopEdges(
-  loop: StreetVec2[],
-  straight: boolean[],
+  loop: readonly StreetVec2[],
+  straight: readonly boolean[],
   segmentLength: number,
-): { nodes: StreetVec2[]; edges: RawEdge[] } {
+  forced: readonly number[],
+  heights: readonly number[] | undefined,
+): { nodes: StreetVec2[]; edges: RawEdge[]; nodeAt: Map<number, number> } {
   const P = loop.length;
   const isNode = new Array<boolean>(P).fill(false);
   isNode[0] = true;
+  for (const i of forced) isNode[i] = true;
   for (let i = 0; i < P; i += 1) if (straight[i] !== straight[(i - 1 + P) % P]) isNode[i] = true; // run boundary
   let acc = 0;
   for (let i = 1; i <= P; i += 1) {
@@ -1436,414 +830,78 @@ function distributeLoopEdges(
   const nodeIdx: number[] = [];
   for (let i = 0; i < P; i += 1) if (isNode[i]) nodeIdx.push(i);
   const nodes: StreetVec2[] = nodeIdx.map((i) => [loop[i]![0], loop[i]![1]] as StreetVec2);
+  const nodeAt = new Map<number, number>(nodeIdx.map((i, k) => [i, k]));
   const K = nodeIdx.length;
   const edges: RawEdge[] = [];
   for (let e = 0; e < K; e += 1) {
     const from = nodeIdx[e]!;
     const to = nodeIdx[(e + 1) % K]!;
     const points: StreetVec2[] = [[loop[from]![0], loop[from]![1]]];
+    const edgeHeights: number[] = [heights?.[from] ?? 0];
     let idx = from;
     do {
       idx = (idx + 1) % P;
       points.push([loop[idx]![0], loop[idx]![1]]);
+      edgeHeights.push(heights?.[idx] ?? 0);
     } while (idx !== to);
-    edges.push({ a: e, b: (e + 1) % K, lane: false, points });
+    edges.push({ a: e, b: (e + 1) % K, lane: false, points, ...(heights === undefined ? {} : { heights: edgeHeights }) });
   }
-  return { nodes, edges };
+  return { nodes, edges, nodeAt };
 }
 
 /**
- * The corridor PITCH for the grid-cycle layout: the world spacing between anti-parallel loop strands and
- * the diameter of a leaf hairpin. Sized so, AFTER the curvature floor bulges tight corners, (a) two
- * parallel corridors keep their centrelines ≥ ~1.5·trackWidth apart (well clear) and (b) a hairpin
- * U-turn around a tree leaf has radius pitch/2 ≥ minCurveRadius. The `1.2·minR` term is the
- * post-smoothing bulge budget; the `2.4·minR` floor guarantees the hairpin radius margin. @internal
- */
-function gridCorridorPitch(rules: StreetRules): number {
-  const trackWidth = rules.width * WIDTH_MULT.avenue;
-  const minR = Math.max(1, rules.minCurveRadius);
-  return Math.max(2 * trackWidth + 1.2 * minR, 2.4 * minR);
-}
-
-/** Blob coverage fraction for the grid cycle: ~45% of cells at compactness 0.5, ~85% at 1, tapering to a
- *  near-ring at low compactness so the dial's low end reads as an open GP track. @internal */
-function gridCoverage(compactness: number): number {
-  return Math.max(0.18, Math.min(0.9, 0.05 + compactness * 0.8));
-}
-
-/**
- * SPACE-FILLING grid-cycle LAYOUT — the `compactness` construction. Overlay a coarse grid on the usable
- * footprint (node spacing = 2·{@link gridCorridorPitch} so corridors clear after smoothing), grow a
- * seeded connected blob of cells from the centre (fraction `coverage`), build a seeded random spanning
- * tree over the blob with a DIRECTION-PERSISTENCE bias (longer straight corridors as compactness falls),
- * then trace the single closed wall-follower loop AROUND the tree (the boundary of the tree thickened by
- * half a corridor on each side). That loop is provably one self-avoiding cycle that folds back through
- * the interior: straight tree branches → straights, leaves → hairpins, parallel branches → switchback
- * esses. Its rectilinear corners (collinear runs collapsed, small seeded jitter to de-grid) are returned
- * as CONTROL POINTS for the same curve-first centerline pipeline the hull layout feeds. Returns null on a
- * degenerate footprint or blob. @internal
- */
-function buildGridCycleControl(
-  rules: StreetRules,
-  hx: number,
-  hz: number,
-  rng: () => number,
-  compactness: number,
-  coverage: number,
-): StreetVec2[] | null {
-  const pitch = gridCorridorPitch(rules);
-  // Keep the ENTIRE loop (its corner span plus the spline's convex overshoot) clear of the footprint rim
-  // so the final centerline's footprint clamp never flattens an arc into a sharp corner (which would
-  // defeat the curvature floor). The corner half-span for N node columns is (N − 0.5)·pitch, so the
-  // largest N with (N − 0.5)·pitch ≤ margin·hx is floor(margin·hx/pitch + 0.5).
-  const margin = 0.84;
-  const N = Math.max(2, Math.min(12, Math.floor((margin * hx) / pitch + 0.5)));
-  const M = Math.max(2, Math.min(12, Math.floor((margin * hz) / pitch + 0.5)));
-  if (N < 2 || M < 2) return null;
-  const total = N * M;
-  const dirs: readonly [number, number][] = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ];
-  const cellId = (i: number, j: number): number => j * N + i;
-  const inGrid = (i: number, j: number): boolean => i >= 0 && i < N && j >= 0 && j < M;
-  const ci = Math.floor(N / 2);
-  const cj = Math.floor(M / 2);
-
-  // 1. Blob growth — a connected random cell subset from the centre cell.
-  const target = Math.max(3, Math.min(total, Math.round(Math.max(0.18, Math.min(0.9, coverage)) * total)));
-  const selected = new Set<number>([cellId(ci, cj)]);
-  let guard = 0;
-  while (selected.size < target && guard < total * 12) {
-    guard += 1;
-    const arr = Array.from(selected);
-    const from = arr[Math.floor(rng() * arr.length)]!;
-    const d = dirs[Math.floor(rng() * 4)]!;
-    const ni = (from % N) + d[0];
-    const nj = Math.floor(from / N) + d[1];
-    if (!inGrid(ni, nj)) continue;
-    selected.add(cellId(ni, nj));
-  }
-  if (selected.size < 3) return null;
-
-  // 2. Direction-biased random spanning tree (recursive-backtracker DFS). Persisting the entry direction
-  //    with probability `pPersist` (higher as compactness falls) grows long straight corridors.
-  const start = cellId(ci, cj);
-  const visited = new Set<number>([start]);
-  const enterDir = new Map<number, number>();
-  const treeEdges: [number, number][] = [];
-  const stack = [start];
-  // Direction-persistence probability: high everywhere so corridors run straight for a while (real
-  // straights survive), and higher still as compactness falls so low-compactness laps read as open GP
-  // tracks with a couple of interior excursions rather than a dense maze.
-  const pPersist = 0.55 + (1 - compactness) * 0.35;
-  while (stack.length > 0) {
-    const cur = stack[stack.length - 1]!;
-    const cfi = cur % N;
-    const cfj = Math.floor(cur / N);
-    const opts: { cell: number; dir: number }[] = [];
-    for (let d = 0; d < 4; d += 1) {
-      const ni = cfi + dirs[d]![0];
-      const nj = cfj + dirs[d]![1];
-      if (!inGrid(ni, nj)) continue;
-      const nc = cellId(ni, nj);
-      if (!selected.has(nc) || visited.has(nc)) continue;
-      opts.push({ cell: nc, dir: d });
-    }
-    if (opts.length === 0) {
-      stack.pop();
-      continue;
-    }
-    let choice = opts[Math.floor(rng() * opts.length)]!;
-    const pref = enterDir.get(cur);
-    if (pref !== undefined) {
-      const straightOpt = opts.find((o) => o.dir === pref);
-      if (straightOpt !== undefined && rng() < pPersist) choice = straightOpt;
-    }
-    visited.add(choice.cell);
-    enterDir.set(choice.cell, choice.dir);
-    treeEdges.push([cur, choice.cell]);
-    stack.push(choice.cell);
-  }
-
-  // 3. Thin-tree occupancy on the DOUBLED grid: node cell (i,j) → pixel (2i,2j); a tree edge → the pixel
-  //    between its endpoints. No pixel ever lands on (odd,odd), so the set has no 2×2 block (no ambiguous
-  //    saddle) and, being a tree, no hole — its boundary is a single clean rectilinear loop.
-  const W = 2 * N - 1;
-  const H = 2 * M - 1;
-  const occ = new Set<number>();
-  const pix = (x: number, y: number): number => y * W + x;
-  const has = (x: number, y: number): boolean => x >= 0 && x < W && y >= 0 && y < H && occ.has(pix(x, y));
-  for (const c of visited) occ.add(pix(2 * (c % N), 2 * Math.floor(c / N)));
-  for (const [a, b] of treeEdges) {
-    occ.add(pix((a % N) + (b % N), Math.floor(a / N) + Math.floor(b / N)));
-  }
-
-  // 4. Trace the boundary as directed unit edges with the occupied region on the LEFT (→ CCW), keyed by
-  //    start corner. Non-saddle thin region ⇒ the map is a permutation ⇒ chaining yields one closed loop.
-  const nextC = new Map<number, [number, number]>();
-  const ckey = (x: number, y: number): number => y * (W + 2) + x;
-  let sx = Infinity;
-  let sy = Infinity;
-  for (const p of occ) {
-    const x = p % W;
-    const y = Math.floor(p / W);
-    if (!has(x, y - 1)) nextC.set(ckey(x, y), [x + 1, y]);
-    if (!has(x + 1, y)) nextC.set(ckey(x + 1, y), [x + 1, y + 1]);
-    if (!has(x, y + 1)) nextC.set(ckey(x + 1, y + 1), [x, y + 1]);
-    if (!has(x - 1, y)) nextC.set(ckey(x, y + 1), [x, y]);
-    if (y < sy || (y === sy && x < sx)) {
-      sx = x;
-      sy = y;
-    }
-  }
-  if (!Number.isFinite(sx)) return null;
-  const trace: [number, number][] = [];
-  let curX = sx;
-  let curY = sy;
-  let steps = 0;
-  const limit = (W + 2) * (H + 2) * 4;
-  do {
-    trace.push([curX, curY]);
-    const nx = nextC.get(ckey(curX, curY));
-    if (nx === undefined) break;
-    curX = nx[0];
-    curY = nx[1];
-    steps += 1;
-  } while ((curX !== sx || curY !== sy) && steps < limit);
-  if (trace.length < 4) return null;
-
-  // 5. Keep only turn corners (collapse collinear runs so straights survive as one edge), map to world,
-  //    and add a small seeded jitter (well under a corridor pitch) to de-grid the look.
-  const T = trace.length;
-  const halfX = (2 * N - 1) / 2;
-  const halfY = (2 * M - 1) / 2;
-  const jAmp = compactness * pitch * 0.06;
-  const out: StreetVec2[] = [];
-  for (let i = 0; i < T; i += 1) {
-    const prev = trace[(i - 1 + T) % T]!;
-    const c = trace[i]!;
-    const nxt = trace[(i + 1) % T]!;
-    const cross = (c[0] - prev[0]) * (nxt[1] - c[1]) - (c[1] - prev[1]) * (nxt[0] - c[0]);
-    if (cross === 0) continue; // collinear pass-through — drop it, keeping the straight run one edge
-    const jx = jAmp > 0 ? (rng() - 0.5) * 2 * jAmp : 0;
-    const jz = jAmp > 0 ? (rng() - 0.5) * 2 * jAmp : 0;
-    const wx = (c[0] - halfX) * pitch + jx;
-    const wz = (c[1] - halfY) * pitch + jz;
-    out.push([Math.max(-hx + 1, Math.min(hx - 1, wx)), Math.max(-hz + 1, Math.min(hz - 1, wz))]);
-  }
-  return out.length >= 6 ? out : null;
-}
-
-/**
- * Grow a closed race CIRCUIT as a CURVE-FIRST centerline, not a filleted polygon. The global layout
- * synthesis (hull + deep inward displacement + control-point corner templates) is kept, but its polygon
- * is treated as CONTROL POINTS: 1–3 edges are collapsed onto lines as deliberate straights, then a
- * periodic centripetal Catmull-Rom spline is fitted through the points and sampled densely, and a
- * curvature CLAMP relaxes any spot tighter than `minCurveRadius` — so the lap is MOSTLY continuous curve
- * (long sweepers, flowing esses, parabolic entries) with straights as exceptions, instead of straight
- * chords joined by small corner caps. Self-clearance is checked on the final sampled spline with the same
- * bounded, deterministic reject-and-retry (decaying fold aggression, safe fallback). The sampled loop is
- * distributed into many node-to-node edges (nodes ON the spline), then a lane-level pit spur leaves and
- * rejoins the loop beside the start/finish straight.
+ * Grow a closed race CIRCUIT: the {@link designCircuit} lap — straights and corner complexes from a
+ * corner grammar, closed at `lapLength` and fitted to the volume — distributed into node-to-node loop
+ * edges (nodes ON the designed line, each edge carrying its sampled arc and road heights), plus the
+ * designed pit lane as three lane edges that split off the start straight and rejoin it (two degree-3
+ * junctions, never a dead-end stub).
  */
 function buildCircuit(
   rules: StreetRules,
   hx: number,
   hz: number,
   streams: (s: string) => () => number,
-): { nodes: StreetVec2[]; edges: RawEdge[] } {
-  const trackWidth = rules.width * WIDTH_MULT.avenue;
-  const clearance = trackWidth * 1.5;
-  const gapMin = trackWidth * 5; // arc-length beyond which two nearby segments count as a fold-back
-  const axisExtent = Math.max(hx, hz) * 2 * 0.9;
-  const straightMin = axisExtent * 0.18;
-  const minR = Math.max(1, rules.minCurveRadius);
-  // Sample fine enough that, once the clamp guarantees radius ≥ minR, no discrete turn between samples
-  // exceeds ~6° (step/minR ≤ 0.10 rad). The 8 m cap only lowers the ratio for large-radius tracks.
-  const sampleStep = Math.min(minR * 0.1, 8);
-
-  // Fit a smooth curve-first centerline from a folded control polygon and floor its curvature.
-  const centerline = (control: StreetVec2[], rng: () => number): { loop: StreetVec2[]; straight: boolean[] } | null => {
-    const ded = dedupeRing(control);
-    if (ded.length < 4) return null;
-    const designated = designateStraights(ded, rules, rng);
-    // Two-stage smoothing so the curvature clamp is fast AND the output is finely, continuously sampled:
-    // (1) fit a dense spline and resample to a COARSE uniform working loop (~minR/2 spacing) — coarse
-    // spacing lets a stable narrow Laplacian clamp converge quickly (fine spacing makes each pass a
-    // sagitta-sized crumb); (2) relax that loop to the radius floor; (3) re-fit a dense spline through the
-    // relaxed points for the smooth, ≤~6°/sample output centerline.
-    const fitted = fitClosedSpline(designated.pts, designated.straight, sampleStep * 0.4);
-    if (fitted.pts.length < 8) return null;
-    const coarse = resampleClosedUniform(fitted.pts, fitted.straight, Math.max(sampleStep, minR * 0.4));
-    if (coarse.pts.length < 8) return null;
-    relaxCurvature(coarse.pts, minR);
-    const out = fitClosedSpline(coarse.pts, coarse.straight, sampleStep);
-    const loop = out.pts;
-    const straight = out.straight;
-    if (loop.length < 8) return null;
-    // A few light narrow passes iron out the small curvature STEP a C1 Catmull-Rom leaves at each knot, so
-    // curvature reads continuous ("flows"), not corner-capped — at dense spacing this barely moves points
-    // and only lowers curvature, so the radius floor still holds and straights (collinear fixpoints) stay
-    // crisp.
-    for (let it = 0; it < 8; it += 1) smoothLoopPass(loop, 0.1, () => true);
-    // Safety lift: if the re-fit's C1 overshoot left any sample just under the floor, ease those samples
-    // (and their neighbors) until the floor holds with margin. Mild + local, so it converges quickly and
-    // leaves the flowing shape intact.
-    const liftFloor = minR * 0.98;
-    for (let it = 0; it < 250; it += 1) {
-      const sel = new Array<boolean>(loop.length).fill(false);
-      let any = false;
-      for (let i = 0; i < loop.length; i += 1) {
-        const R = circumRadius(loop[(i - 1 + loop.length) % loop.length]!, loop[i]!, loop[(i + 1) % loop.length]!);
-        if (R < liftFloor) {
-          sel[i] = sel[(i - 1 + loop.length) % loop.length] = sel[(i + 1) % loop.length] = true;
-          any = true;
-        }
-      }
-      if (!any) break;
-      smoothLoopPass(loop, 0.5, (i) => sel[i]!);
-    }
-    // Bounded global fallback for a stubborn residual dip at small minR / dense spacing (targeted passes
-    // crawl there); runs only while a sub-floor sample survives, so a clean lap is untouched.
-    const stillUnder = (): boolean => {
-      for (let i = 0; i < loop.length; i += 1) {
-        if (circumRadius(loop[(i - 1 + loop.length) % loop.length]!, loop[i]!, loop[(i + 1) % loop.length]!) < liftFloor) return true;
-      }
-      return false;
-    };
-    for (let guard = 0; guard < 120 && stillUnder(); guard += 1) smoothLoopPass(loop, 0.15, () => true);
-    // Keep the folded lobes inside the footprint (the clamp only contracts, but a fold can still touch the rim).
-    for (let i = 0; i < loop.length; i += 1) {
-      loop[i] = [Math.max(-hx + 1, Math.min(hx - 1, loop[i]![0])), Math.max(-hz + 1, Math.min(hz - 1, loop[i]![1]))];
-    }
-    return { loop, straight };
-  };
-
-  // The `compactness` dial swaps the LAYOUT source: 0 keeps the hull synthesis (byte-identical), rising
-  // values switch to the space-filling grid spanning-tree cycle. Everything below (spline fit, curvature
-  // floor, straights, clearance, edges) is shared verbatim so only the control-polygon source changes.
-  const compactness = Math.max(0, Math.min(1, rules.compactness));
-  const baseCoverage = gridCoverage(compactness);
-  // A space-filling grid lap should still carry a deliberate main straight of ~3 corridor pitches (a
-  // straight tree branch) alongside the base axis-fraction floor.
-  const compactStraightGate = compactness > 0 ? Math.max(straightMin, 3 * gridCorridorPitch(rules)) : straightMin;
-  let chosen: { loop: StreetVec2[]; straight: boolean[] } | null = null;
-  // Fallback compact candidate (the FIRST clearing one, i.e. the densest / most space-filling, since
-  // coverage only shrinks over attempts): used if no attempt also lands the preferred main straight, so a
-  // seed that never grows a long straight still keeps a folded lap instead of collapsing to the hull.
-  let denseCompact: { loop: StreetVec2[]; straight: boolean[] } | null = null;
-  // Each compact attempt runs the full dense curvature-floored centerline, so cap retries tighter than the
-  // hull path; taking the densest clearing candidate with a real straight usually stops in 1–3 attempts.
-  const maxTries = compactness > 0 ? 8 : MAX_CIRCUIT_TRIES;
-  // A densely-folded compact candidate can clear spatially yet still hide a tight spot the bounded
-  // curvature-floor relaxation couldn't fully open; reject those so an accepted lap always holds the floor.
-  const floorHolds = (loop: StreetVec2[]): boolean => {
-    const L = loop.length;
-    for (let i = 0; i < L; i += 1) {
-      if (circumRadius(loop[(i - 1 + L) % L]!, loop[i]!, loop[(i + 1) % L]!) < minR * 0.95) return false;
-    }
-    return true;
-  };
-  for (let attempt = 0; attempt < maxTries; attempt += 1) {
-    if (compactness > 0) {
-      // Shrink blob coverage gently per retry so a curvature-floor clearance violation resolves
-      // deterministically (a sparser grid folds less tightly) without sacrificing space-filling density.
-      const coverage = Math.max(0.4, baseCoverage - attempt * 0.03);
-      const candidate = buildGridCycleControl(rules, hx, hz, streams(`circuit:grid:${attempt}`), compactness, coverage);
-      if (candidate === null || candidate.length < 6) continue;
-      const cl = centerline(candidate, streams(`circuit:grid-straight:${attempt}`));
-      if (cl === null) continue;
-      if (!loopSelfClearing(cl.loop, clearance, gapMin)) continue;
-      if (!floorHolds(cl.loop)) continue; // curvature floor must hold on the final spline
-      const sr = longestStraightRun(cl.loop, cl.straight);
-      if (sr < straightMin) continue; // no readable straight at all — reject
-      if (denseCompact === null) denseCompact = cl; // first clearing candidate = densest
-      if (sr >= compactStraightGate) {
-        chosen = cl; // densest clearing lap that also lands the preferred main straight
-        break;
-      }
-      continue;
-    }
-    // Fold aggression decays over retries: early attempts push deep folds (a cool, folded circuit);
-    // if none clear, later attempts relax toward a gentler layout so the safe fallback stays rare.
-    const aggression = Math.max(0.42, 1 - attempt * 0.075);
-    const candidate = synthTrack(rules, hx, hz, streams(`circuit:try:${attempt}`), aggression);
-    if (candidate === null || candidate.length < 6) continue;
-    const cl = centerline(candidate, streams(`circuit:straight:${attempt}`));
-    if (cl === null) continue;
-    if (longestStraightRun(cl.loop, cl.straight) < straightMin) continue;
-    if (!loopSelfClearing(cl.loop, clearance, gapMin)) continue;
-    chosen = cl;
-    break;
+): { nodes: StreetVec2[]; edges: RawEdge[]; design: CircuitDesign } {
+  const design = designCircuit({
+    lapLength: rules.lapLength,
+    halfX: hx,
+    halfZ: hz,
+    width: rules.width,
+    winding: rules.winding,
+    gridness: rules.gridness,
+    compactness: rules.compactness,
+    minRadius: rules.minCurveRadius,
+    crossover: rules.crossover,
+    pitLane: rules.branching > 0.25,
+    maxGrade: rules.maxGrade,
+    elevationAt: streetElevationField(rules, rules.seed),
+    streams,
+  });
+  const loop = design.centerline;
+  const P = loop.length;
+  const indexAt = (s: number): number => ((Math.floor(s / design.step + SAMPLE_ROUND) % P) + P) % P;
+  const pit = design.pit;
+  const forced = pit === undefined ? [] : [indexAt(pit.entry), indexAt(pit.exit)];
+  const { nodes, edges, nodeAt } = distributeLoopEdges(loop, design.straight, rules.segmentLength, forced, design.heights);
+  if (pit !== undefined && pit.points.length >= 6) {
+    const m = pit.points.length;
+    const cutA = Math.max(1, Math.round(m * 0.22));
+    const cutB = Math.min(m - 2, Math.round(m * 0.78));
+    const entryNode = nodeAt.get(forced[0]!)!;
+    const exitNode = nodeAt.get(forced[1]!)!;
+    const idA = nodes.length;
+    nodes.push(pit.points[cutA]!);
+    const idB = nodes.length;
+    nodes.push(pit.points[cutB]!);
+    const slice = (from: number, to: number): { points: StreetVec2[]; heights?: number[] } => ({
+      points: pit.points.slice(from, to + 1).map((p) => [p[0], p[1]] as StreetVec2),
+      ...(pit.heights === undefined ? {} : { heights: pit.heights.slice(from, to + 1) }),
+    });
+    edges.push({ a: entryNode, b: idA, lane: true, ...slice(0, cutA) });
+    edges.push({ a: idA, b: idB, lane: true, ...slice(cutA, cutB) });
+    edges.push({ a: idB, b: exitNode, lane: true, ...slice(cutB, m - 1) });
   }
-  // Keep the densest clearing space-filling lap when none also met the preferred main-straight length;
-  // only the total absence of a clearing compact candidate drops through to the hull fallback below.
-  if (chosen === null && denseCompact !== null) chosen = denseCompact;
-  if (chosen === null) chosen = centerline(fallbackTrack(rules, hx, hz), streams("circuit:fallback"));
-  if (chosen === null) {
-    // Degenerate footprint — a bare inset ellipse keeps the loop contract alive.
-    const fb = fallbackTrack(rules, hx, hz);
-    chosen = { loop: fb, straight: new Array<boolean>(fb.length).fill(false) };
-  }
-
-  const loop = chosen.loop;
-  const straight = chosen.straight;
-  // Orient CCW for a stable outward pit normal, then park index 0 on the start/finish straight.
-  if (signedArea(loop) < 0) {
-    loop.reverse();
-    straight.reverse();
-  }
-  rotateToStraight(loop, straight);
-  const { nodes, edges } = distributeLoopEdges(loop, straight, rules.segmentLength);
-  const k = nodes.length;
-
-  // Pit lane: a lane-level chain that leaves the loop one node before the start/finish straight and
-  // rejoins one node after it — two degree-3 junctions on the loop, never a dead-end stub.
-  if (rules.branching > 0.25 && k >= 4 && nodes.length + 2 <= MAX_NODES) {
-    const pitRng = streams("circuit:pit");
-    const si = longestEdge(nodes).index;
-    const leaveIdx = (si - 1 + k) % k;
-    const rejoinIdx = (si + 2) % k;
-    if (leaveIdx !== rejoinIdx && leaveIdx !== si && rejoinIdx !== (si + 1) % k) {
-      const s0 = nodes[si]!;
-      const s1 = nodes[(si + 1) % k]!;
-      const dx = s1[0] - s0[0];
-      const dz = s1[1] - s0[1];
-      const l = Math.hypot(dx, dz) || 1;
-      // Outward normal (away from the loop centroid) so the pit lane sits beside the main straight.
-      let nx = -dz / l;
-      let nz = dx / l;
-      const mx = (s0[0] + s1[0]) / 2;
-      const mz = (s0[1] + s1[1]) / 2;
-      if (mx * nx + mz * nz < 0) {
-        nx = -nx;
-        nz = -nz;
-      }
-      const off = trackWidth * (1.8 + pitRng() * 0.6);
-      const leave = nodes[leaveIdx]!;
-      const rejoin = nodes[rejoinIdx]!;
-      const pitA: StreetVec2 = [leave[0] + nx * off, leave[1] + nz * off];
-      const pitB: StreetVec2 = [rejoin[0] + nx * off, rejoin[1] + nz * off];
-      if (
-        Math.abs(pitA[0]) < hx - 1 &&
-        Math.abs(pitA[1]) < hz - 1 &&
-        Math.abs(pitB[0]) < hx - 1 &&
-        Math.abs(pitB[1]) < hz - 1
-      ) {
-        const idA = nodes.length;
-        nodes.push(pitA);
-        const idB = nodes.length;
-        nodes.push(pitB);
-        edges.push({ a: leaveIdx, b: idA, lane: true });
-        edges.push({ a: idA, b: idB, lane: true });
-        edges.push({ a: idB, b: rejoinIdx, lane: true });
-      }
-    }
-  }
-  return { nodes, edges };
+  return { nodes, edges, design };
 }
 
 /** Decide which topology family the sliders call for. Circuit wins when loops dominate and both
@@ -2034,15 +1092,22 @@ function pointNearPolyline(px: number, pz: number, line: readonly StreetVec2[], 
   return false;
 }
 
-/** 2D segment/segment proper-intersection test (shared endpoints don't count). */
-function segmentsCross(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
+/**
+ * 2D segment/segment proper-intersection test (shared endpoints don't count). An endpoint within a
+ * hair (1e-7 of the segment lengths) of the other segment's line counts as touching, not crossing: a
+ * near-collinear run of offset points otherwise reads as crossing or not on the last bit of libm noise.
+ * @internal
+ */
+export function segmentsCross(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
   const d = (a: StreetVec2, b: StreetVec2, c: StreetVec2): number =>
     (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-  const d1 = d(p3, p4, p1);
-  const d2 = d(p3, p4, p2);
-  const d3 = d(p1, p2, p3);
-  const d4 = d(p1, p2, p4);
-  return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+  const tolerance = 1e-7 * Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) * Math.hypot(p4[0] - p3[0], p4[1] - p3[1]);
+  const side = (value: number): number => (value > tolerance ? 1 : value < -tolerance ? -1 : 0);
+  const d1 = side(d(p3, p4, p1));
+  const d2 = side(d(p3, p4, p2));
+  const d3 = side(d(p1, p2, p3));
+  const d4 = side(d(p1, p2, p4));
+  return d1 * d2 < 0 && d3 * d4 < 0;
 }
 
 /**
@@ -2283,7 +1348,9 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
   const hz = rules.halfZ;
   const streams = seededStreams(`pathnet:${rules.seed}:${Math.round(hx)}:${Math.round(hz)}`);
   const mode = streetNetworkMode(rules);
-  const raw = mode === "circuit" ? buildCircuit(rules, hx, hz, streams) : buildNet(rules, hx, hz, streams);
+  const raw: { nodes: StreetVec2[]; edges: RawEdge[]; design?: CircuitDesign } =
+    mode === "circuit" ? buildCircuit(rules, hx, hz, streams) : buildNet(rules, hx, hz, streams);
+  const design = raw.design;
   const rawNodes = raw.nodes;
   const rawEdges = raw.edges.filter((e) => e.a !== e.b);
 
@@ -2301,14 +1368,11 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
   });
 
   // --- level per edge: chain length drives the hierarchy, so compute chains first (topology only). ---
-  // A synthesized circuit loop carries its OWN pre-sampled smooth-spline centerline per edge (the
-  // curve-first construction), so those edges are used verbatim; only the pit-lane chords (and every
-  // city-net edge) get wandered. Circuit pit chords straighten (winding 0) — their corners come from the
-  // fillet at the pit entry/exit, not sine wander.
-  const wanderRules: StreetRules = mode === "circuit" ? { ...rules, winding: 0 } : rules;
+  // A designed circuit carries its OWN sampled centerline per edge (loop and pit lane), used verbatim;
+  // every city-net edge gets wandered.
   const edgeWander: StreetVec2[][] = rawEdges.map((e) =>
     // Clamp crests to the footprint so a curve near the rim never bulges outside the volume.
-    (e.points ?? wanderEdge(rawNodes[e.a]!, rawNodes[e.b]!, streams(`edge:${e.a}:${e.b}`), wanderRules)).map(
+    (e.points ?? wanderEdge(rawNodes[e.a]!, rawNodes[e.b]!, streams(`edge:${e.a}:${e.b}`), rules)).map(
       ([x, z]) => [Math.max(-hx, Math.min(hx, x)), Math.max(-hz, Math.min(hz, z))] as StreetVec2,
     ),
   );
@@ -2427,12 +1491,14 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
       a: e.a,
       b: e.b,
       points: edgeWander[i]!,
-      width: rules.width * WIDTH_MULT[edgeLevel[i]!],
+      width: design === undefined ? rules.width * WIDTH_MULT[edgeLevel[i]!] : e.lane ? (design.pit?.width ?? design.width) : design.width,
       level: edgeLevel[i]!,
       loop: mode === "circuit" && !e.lane,
     };
-    // Raw (uncapped) field samples for continuity; the grade-limited profile lives on the owning street.
-    if (elevationAt) edge.heights = edge.points.map((p) => elevationAt(p[0], p[1]));
+    // A designed circuit's own road profile; otherwise raw (uncapped) field samples for continuity — the
+    // grade-limited profile lives on the owning street.
+    if (e.heights !== undefined) edge.heights = e.heights.slice();
+    else if (elevationAt) edge.heights = edge.points.map((p) => elevationAt(p[0], p[1]));
     return edge;
   });
 
@@ -2442,27 +1508,29 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
   chains.forEach((chain, ci) => {
     if (streets.length >= MAX_STREETS) return;
     const level = levels[ci]!;
-    const width = rules.width * WIDTH_MULT[level];
+    const width = design === undefined ? rules.width * WIDTH_MULT[level] : chain.lane ? (design.pit?.width ?? design.width) : design.width;
     // Concatenate the chain's atomic wander polylines (dropping duplicated shared vertices).
     const pts: StreetVec2[] = [];
+    const designedHeights: number[] = [];
     chain.edges.forEach((ei, k) => {
       const e = rawEdges[ei]!;
       let seg = edgeWander[ei]!;
+      let segHeights = e.heights;
       // Orient the segment so it continues the chain's node order.
       const wantStart = chain.nodes[k]!;
-      if (e.b === wantStart && e.a !== wantStart) seg = [...seg].reverse();
+      if (e.b === wantStart && e.a !== wantStart) {
+        seg = [...seg].reverse();
+        segHeights = segHeights === undefined ? undefined : [...segHeights].reverse();
+      }
       for (let s = 0; s < seg.length; s += 1) {
         if (pts.length > 0 && s === 0) continue;
         pts.push(seg[s]!);
+        designedHeights.push(segHeights?.[s] ?? 0);
       }
     });
-    // The circuit LOOP is already a smooth, curvature-floored spline (curve-first construction) — its
-    // concatenated edge samples ARE the final centerline, so it skips the polygon fillet entirely.
-    // City nets and circuit pit lanes still fillet their corners at `minCurveRadius`.
-    const isCircuitLoop = mode === "circuit" && chain.loop;
-    const smooth = isCircuitLoop
-      ? pts.map((p) => [p[0], p[1]] as StreetVec2)
-      : clampTurns(pts, minRad, maxRad, rules.minCurveRadius, chain.loop);
+    // A designed circuit's concatenated edge samples ARE the final centerline (loop and pit lane), so
+    // they skip the polygon fillet; city nets fillet their corners at `minCurveRadius`.
+    const smooth = design !== undefined ? pts.map((p) => [p[0], p[1]] as StreetVec2) : clampTurns(pts, minRad, maxRad, rules.minCurveRadius, chain.loop);
     const street: Street = {
       id: streets.length,
       nodes: chain.nodes,
@@ -2472,12 +1540,17 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
       loop: chain.loop,
       features: [],
     };
-    // Grade-limited road-surface heights sampled from the shared field (loops stay continuous at the seam).
-    if (elevationAt) {
+    // A designed circuit carries its own grade-capped profile (crests, a figure-8 flyover); otherwise
+    // grade-limited heights sampled from the shared field (loops stay continuous at the seam).
+    if (design?.heights !== undefined) {
+      street.heights = designedHeights;
+      for (const crossing of design.crossings) street.features.push(...flyoverSpans(smooth, designedHeights, crossing, design.width));
+    } else if (elevationAt) {
       street.heights = gradeCapHeights(smooth, smooth.map((p) => elevationAt(p[0], p[1])), maxGrade, chain.loop);
     }
-    // Flanking pedestrian bands on paved streets (not service lanes).
-    if (level !== "lane" && smooth.length >= 2) {
+    // Flanking pedestrian bands on paved streets (not service lanes, and not a race circuit's track —
+    // its edges carry kerbs, run-off and barriers instead).
+    if (level !== "lane" && smooth.length >= 2 && design === undefined) {
       const d = width / 2 + sidewalkWidth;
       street.sidewalks = { left: offsetPolyline(smooth, d), right: offsetPolyline(smooth, -d) };
     }
@@ -2490,7 +1563,7 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
     }
     // Bridge/tunnel features along this street.
     if (heightAt !== undefined) {
-      street.features = detectFeatures(smooth, heightAt, rules);
+      street.features.push(...detectFeatures(smooth, heightAt, rules));
     }
     streets.push(street);
   });
@@ -2556,7 +1629,24 @@ function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwo
   // Compact node list with final degrees.
   const nodes: StreetNode[] = rawNodes.map((p, i) => ({ id: i, x: p[0], z: p[1], degree: degree[i]! }));
 
-  return { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
+  return { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops, ...(design === undefined ? {} : { circuit: design }) };
+}
+
+/** The deck of a figure-8 flyover on a street: its points over the lower pass, raised clear of it. */
+function flyoverSpans(points: readonly StreetVec2[], heights: readonly number[], crossing: CircuitDesign["crossings"][number], width: number): StreetFeatureSpan[] {
+  const spans: StreetFeatureSpan[] = [];
+  const reach = width * 0.75 + 8;
+  let from = -1;
+  for (let i = 0; i <= points.length; i += 1) {
+    const p = points[i];
+    const over = p !== undefined && Math.hypot(p[0] - crossing.x, p[1] - crossing.z) <= reach && heights[i]! >= crossing.underHeight + 3;
+    if (over && from < 0) from = i;
+    if (!over && from >= 0) {
+      if (i - 1 > from) spans.push({ kind: "bridge", from, to: i - 1, bankHeight: crossing.underHeight });
+      from = -1;
+    }
+  }
+  return spans;
 }
 
 /** Connected-component count over the atomic graph (for the cycle-rank / loop count). */

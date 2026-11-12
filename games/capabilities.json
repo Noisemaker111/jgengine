@@ -1772,6 +1772,36 @@
       "intent": "cycle a vehicle camera between chase, hood and cockpit views at runtime"
     },
     {
+      "id": "circuit-designer",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/circuitDesigner",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "compose a closed race circuit from a corner grammar, fitted to a lap length and a volume"
+    },
+    {
+      "id": "circuit-dressing",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/circuitDressing",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "start line, grid placement and timed sectors for a closed race lap"
+    },
+    {
+      "id": "circuit-sim",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/circuitSim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "lap time, speed trace and braking zones of a closed racing line"
+    },
+    {
       "id": "city-district",
       "packages": [
         "@jgengine/core"

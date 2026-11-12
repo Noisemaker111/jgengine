@@ -2402,6 +2402,9 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
     elevation: rules.elevation,
     maxGrade: rules.maxGrade,
     compactness: rules.compactness,
+    // A circuit-mode district is designed to its race lap length; figure-8s are a race-circuit preset.
+    lapLength: rules.raceLapLength,
+    crossover: false,
     halfX: hx,
     halfZ: hz,
     bridges: rules.bridges,

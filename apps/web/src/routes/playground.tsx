@@ -138,8 +138,9 @@ export const PRESETS: Record<Mode, Partial<Dials>> = {
     winding: 0.55,
     segmentLength: 80,
     aspect: 1,
-    roadWidth: 10,
-    minCurveRadius: 24,
+    roadWidth: 12,
+    // The hairpins sit just above this radius; the designer spans them up to 300 m sweepers.
+    minCurveRadius: 11,
     boulevards: 0,
     elevation: 0.5,
   },
@@ -189,6 +190,9 @@ export function playgroundStreetRules(dials: Dials): PlaygroundStreetDials {
     elevation: dials.elevation,
     maxGrade: MAX_GRADE,
     compactness: dials.trackDensity,
+    // A circuit is designed to the same lap length the street race searches for.
+    lapLength: dials.lapLength,
+    crossover: false,
   };
 }
 
@@ -1014,6 +1018,12 @@ function Playground() {
               <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
           )}
+          {mode === "circuit" && (
+            <>
+              <GroupLabel>Circuit — designed to a lap length</GroupLabel>
+              <Slider label="Lap length (m)" value={dials.lapLength} min={400} max={6000} step={100} onChange={(v) => set({ lapLength: v })} />
+            </>
+          )}
           {mode === "race" && (
             <>
               <GroupLabel>Street race — the lap lifted out of the city</GroupLabel>
@@ -1049,8 +1059,8 @@ function Playground() {
             )}
             {mode === "circuit" && (
               <p>
-                Track density <span className="text-accent-text">{dials.trackDensity}</span> folds the lap into its footprint: 0
-                keeps an open, flowing loop; 1 fills the interior with parallel corridors and switchbacks.
+                Track density <span className="text-accent-text">{dials.trackDensity}</span> packs the lap into its footprint: 0
+                keeps an open, flowing loop; 1 folds bays into it and fits the same lap length into less ground.
               </p>
             )}
             {mode === "race" &&

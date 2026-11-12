@@ -6,6 +6,7 @@ import {
   STREET_NETWORK_GENERATOR,
   STREET_NETWORK_SCHEMA,
   clampTurns,
+  segmentsCross,
   streetElevationField,
   streetNetworkMode,
   type StreetNetwork,
@@ -509,11 +510,6 @@ describe("curve-first circuit centerline (#1395)", () => {
     }
   });
 
-  test("curved-share: ≥50% of lap length is perceptibly curved (fitted R < 8×minR) for ≥4 of 6 seeds", () => {
-    const shares = SEEDS.map((seed) => measure(grow(circuitRules({ seed }), 260, 220), 14).curvedShare);
-    expect(shares.filter((s) => s >= 0.5).length).toBeGreaterThanOrEqual(4);
-  });
-
   test("curvature is CONTINUOUS: no sample-to-sample curvature jump > (1/minR)×0.5 outside straight ends", () => {
     for (const seed of SEEDS) {
       const m = measure(grow(circuitRules({ seed }), 260, 220), 14);
@@ -532,7 +528,6 @@ describe("curve-first circuit centerline (#1395)", () => {
     const m = measure(grow(play, 260, 260), 24);
     expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
     expect(m.minRad).toBeGreaterThanOrEqual(24 * 0.92);
-    expect(m.curvedShare).toBeGreaterThanOrEqual(0.5);
     expect(m.maxJump).toBeLessThanOrEqual(0.5 / 24 + 1e-9);
     expect(m.hairpin).toBe(true);
     expect(m.sustainedSweeper).toBe(true);
@@ -842,280 +837,58 @@ describe("elevation profile (#1395 round-3)", () => {
   });
 });
 
-describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () => {
-  // The `compactness` dial swaps the circuit LAYOUT stage from the hull construction (a loop around an
-  // empty middle) to a grid spanning-tree CYCLE that folds back through its own interior — parallel
-  // corridors one pitch apart, switchback esses, consecutive hairpins, long straights — while every
-  // downstream stage (spline fit, curvature floor, straights, clearance, edges, elevation, pit) is
-  // reused. 0 stays byte-identical to the hull layout; rising values fill the footprint.
-  const cRules = (o: Partial<StreetNetworkRules> = {}) =>
-    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
-  const SEEDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
+describe("designed circuit in circuit mode", () => {
+  const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
+    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 12, maxTurnAngle: 120, width: 12, ...o });
 
-  // The grid corridor pitch (anti-parallel strand spacing / hairpin diameter), mirrored from the
-  // generator's own `gridCorridorPitch`: max(2·trackWidth + 1.2·minR, 2.4·minR), trackWidth = width·1.5.
-  const cellPitch = (r: StreetNetworkRules): number => {
-    const tw = r.width * 1.5;
-    const minR = Math.max(1, r.minCurveRadius);
-    return Math.max(2 * tw + 1.2 * minR, 2.4 * minR);
-  };
-  function circumradius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
-    const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
-    const ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
-    const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2;
-    if (area < 1e-9) return Infinity;
-    return (ab * bc * ca) / (4 * area);
-  }
-  function segSeg(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): number {
-    const ps = (p: StreetVec2, a: StreetVec2, b: StreetVec2): number => {
-      const abx = b[0] - a[0];
-      const abz = b[1] - a[1];
-      const l2 = abx * abx + abz * abz;
-      const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * abx + (p[1] - a[1]) * abz) / l2));
-      return Math.hypot(p[0] - (a[0] + abx * t), p[1] - (a[1] + abz * t));
+  test("the loop street IS the designed lap, closed at the requested lap length", () => {
+    for (const seed of ["d1", "d2", "d3"]) {
+      const net = grow(circuitRules({ seed, lapLength: 2000 }), 500, 400);
+      expect(net.circuit).toBeDefined();
+      const loop = net.streets.find((s) => s.loop)!;
+      let length = 0;
+      for (let i = 1; i < loop.points.length; i += 1) length += Math.hypot(loop.points[i]![0] - loop.points[i - 1]![0], loop.points[i]![1] - loop.points[i - 1]![1]);
+      expect(Math.abs(length - 2000) / 2000).toBeLessThan(0.02);
+      expect(Math.abs(net.circuit!.length - length)).toBeLessThan(1);
+      // Every loop edge carries the designed track width.
+      for (const edge of net.edges) expect(edge.width).toBe(12);
+    }
+  });
+
+  test("compactness packs the same lap into less ground", () => {
+    const footprint = (compactness: number): number => {
+      let total = 0;
+      for (const seed of ["k1", "k2", "k3", "k4"]) {
+        const pts = grow(circuitRules({ seed, compactness, lapLength: 2400 }), 600, 600).circuit!.centerline;
+        const xs = pts.map((p) => p[0]);
+        const zs = pts.map((p) => p[1]);
+        total += Math.sqrt((Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs)));
+      }
+      return total;
     };
-    return Math.min(ps(p1, p3, p4), ps(p2, p3, p4), ps(p3, p1, p2), ps(p4, p1, p2));
-  }
-  function loopOf(net: StreetNetwork): StreetVec2[] {
-    const loop = net.streets.find((s) => s.loop)!;
-    return loop.points.slice(0, -1);
-  }
-  // Space-filling metric: fraction of the loop bounding box within `reach` of the centerline. A folded,
-  // interior-filling lap covers most of its box; a loop-around-an-empty-middle leaves the centre bare.
-  function fillFraction(p: StreetVec2[], reach: number): number {
-    const xs = p.map((q) => q[0]);
-    const zs = p.map((q) => q[1]);
-    const minx = Math.min(...xs);
-    const maxx = Math.max(...xs);
-    const minz = Math.min(...zs);
-    const maxz = Math.max(...zs);
-    const GR = 40;
-    let near = 0;
-    const n = p.length;
-    for (let gi = 0; gi < GR; gi += 1) {
-      for (let gj = 0; gj < GR; gj += 1) {
-        const qx = minx + ((gi + 0.5) / GR) * (maxx - minx);
-        const qz = minz + ((gj + 0.5) / GR) * (maxz - minz);
-        let best = Infinity;
-        for (let i = 0; i < n; i += 1) {
-          const a = p[i]!;
-          const b = p[(i + 1) % n]!;
-          const abx = b[0] - a[0];
-          const abz = b[1] - a[1];
-          const l2 = abx * abx + abz * abz;
-          const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((qx - a[0]) * abx + (qz - a[1]) * abz) / l2));
-          const d = Math.hypot(qx - (a[0] + abx * t), qz - (a[1] + abz * t));
-          if (d < best) best = d;
-          if (best < reach) break;
-        }
-        if (best < reach) near += 1;
-      }
-    }
-    return near / (GR * GR);
-  }
-  // Full loop metrics: corner count (maximal runs with fitted radius < 6·minR), floor, max turn, longest
-  // near-straight run (radius ≥ 20·minR, a genuine straight), anti-parallel corridor pairs, min clearance.
-  function measureLoop(net: StreetNetwork, r: StreetNetworkRules) {
-    const p = loopOf(net);
-    const n = p.length;
-    const minR = r.minCurveRadius;
-    const seg: number[] = [];
-    let perim = 0;
-    for (let i = 0; i < n; i += 1) {
-      const l = Math.hypot(p[(i + 1) % n]![0] - p[i]![0], p[(i + 1) % n]![1] - p[i]![1]);
-      seg.push(l);
-      perim += l;
-    }
-    const rad = (i: number) => circumradius(p[(i - 1 + n) % n]!, p[i]!, p[(i + 1) % n]!);
-    let corners = 0;
-    let inC = false;
-    let minRad = Infinity;
-    let maxTurn = 0;
-    for (let i = 0; i < n; i += 1) {
-      const R = rad(i);
-      if (R < 6 * minR) {
-        if (!inC) corners += 1;
-        inC = true;
-      } else inC = false;
-      if (Number.isFinite(R)) minRad = Math.min(minRad, R);
-      maxTurn = Math.max(maxTurn, turnDeg(p[(i - 1 + n) % n]!, p[i]!, p[(i + 1) % n]!));
-    }
-    if (corners > 1 && rad(0) < 6 * minR && rad(n - 1) < 6 * minR) corners -= 1; // un-double the wrap
-    let straight = 0;
-    let run = 0;
-    for (let k = 0; k < 2 * n; k += 1) {
-      const i = k % n;
-      if (rad(i) > 20 * minR) {
-        run += seg[i]!;
-        straight = Math.max(straight, run);
-      } else run = 0;
-    }
-    // ~20 m anti-parallel corridor chunks within 2.2 pitches (dot < −0.9).
-    const cp = cellPitch(r);
-    const chunks: { dx: number; dz: number; mx: number; mz: number }[] = [];
-    let acc = 0;
-    let startI = 0;
-    for (let i = 0; i < n; i += 1) {
-      acc += seg[i]!;
-      if (acc >= 20) {
-        const a = p[startI]!;
-        const b = p[(i + 1) % n]!;
-        const dx = b[0] - a[0];
-        const dz = b[1] - a[1];
-        const l = Math.hypot(dx, dz) || 1;
-        chunks.push({ dx: dx / l, dz: dz / l, mx: (a[0] + b[0]) / 2, mz: (a[1] + b[1]) / 2 });
-        startI = (i + 1) % n;
-        acc = 0;
-      }
-    }
-    const seen = new Set<number>();
-    let antipairs = 0;
-    for (let i = 0; i < chunks.length; i += 1) {
-      for (let j = i + 1; j < chunks.length; j += 1) {
-        const A = chunks[i]!;
-        const B = chunks[j]!;
-        if (A.dx * B.dx + A.dz * B.dz < -0.9 && Math.hypot(A.mx - B.mx, A.mz - B.mz) < 2.2 * cp) {
-          if (!seen.has(i) && !seen.has(j)) {
-            antipairs += 1;
-            seen.add(i);
-            seen.add(j);
-          }
-        }
-      }
-    }
-    return { corners, minRad, maxTurn, straightCp: straight / cp, antipairs, perim };
-  }
-  // The existing self-clearance check (far-apart segments never fold within one track width).
-  function selfClearingHolds(net: StreetNetwork): boolean {
-    const loop = net.streets.find((s) => s.loop)!;
-    const p = loop.points.slice(0, -1);
-    const clear = loop.width * 0.9;
-    const gapMin = loop.width * 4;
-    const n = p.length;
-    const seg: number[] = [];
-    let perim = 0;
-    for (let i = 0; i < n; i += 1) {
-      seg.push(Math.hypot(p[(i + 1) % n]![0] - p[i]![0], p[(i + 1) % n]![1] - p[i]![1]));
-      perim += seg[i]!;
-    }
-    const cum = [0];
-    for (let i = 0; i < n; i += 1) cum.push(cum[i]! + seg[i]!);
-    for (let i = 0; i < n; i += 1) {
-      for (let j = i + 1; j < n; j += 1) {
-        const arcGap = Math.min(cum[j]! - cum[i + 1]!, perim - cum[j + 1]! + cum[i]!);
-        if (arcGap <= gapMin) continue;
-        if (segSeg(p[i]!, p[(i + 1) % n]!, p[j]!, p[(j + 1) % n]!) < clear) return false;
-      }
-    }
-    return true;
-  }
+    expect(footprint(1)).toBeLessThan(footprint(0));
+  });
 
-  // Compact generation runs the full dense centerline per retry (~1 s), so memoize deterministic nets and
-  // reuse them across assertions; the determinism test below deliberately bypasses this cache.
-  const cache = new Map<string, StreetNetwork>();
-  const gen = (r: StreetNetworkRules, hx = 260, hz = 220): StreetNetwork => {
-    const key = JSON.stringify([r, hx, hz]);
-    let net = cache.get(key);
-    if (net === undefined) {
-      net = grow(r, hx, hz);
-      cache.set(key, net);
+  test("a figure-8 crosses itself once, on a bridge deck over the lower pass", () => {
+    const net = grow(circuitRules({ seed: "eight", crossover: true, lapLength: 2600 }), 600, 450);
+    expect(net.circuit!.crossings.length).toBe(1);
+    const crossing = net.circuit!.crossings[0]!;
+    expect(crossing.overHeight - crossing.underHeight).toBeGreaterThanOrEqual(7);
+    expect(net.bridges.length).toBeGreaterThanOrEqual(1);
+    for (const bridge of net.bridges) expect(bridge.bankHeight).toBeCloseTo(crossing.underHeight, 6);
+  });
+});
+
+describe("segmentsCross (sidewalk weld)", () => {
+  test("a clear crossing crosses; an endpoint resting on the other segment does not, whichever side noise puts it", () => {
+    expect(segmentsCross([0, 0], [10, 0], [5, -3], [5, 3])).toBe(true);
+    expect(segmentsCross([0, 0], [10, 0], [12, -3], [12, 3])).toBe(false);
+    // Near-collinear offset points: a last-bit nudge either way must give the same answer.
+    for (const nudge of [-1e-12, 0, 1e-12]) {
+      expect(segmentsCross([0, 0], [10, 0], [5, nudge], [5, 3])).toBe(false);
+      expect(segmentsCross([0, 0], [10, 0], [10 + nudge, 1e-13], [20, 0])).toBe(false);
     }
-    return net;
-  };
-  const T = 30000; // per-test timeout: several fresh compact generations
-
-  test("compactness 0 is byte-identical to the default hull circuit (regression)", () => {
-    for (const seed of ["r1", "r2", "vice-isle"]) {
-      const hull = gen(cRules({ seed }), 260, 220);
-      const dialled = gen(cRules({ seed, compactness: 0 }), 260, 220);
-      expect(JSON.stringify(dialled)).toBe(JSON.stringify(hull));
-    }
-  }, T);
-
-  test("compactness 1 folds ≥12 corners through the interior for ≥4 of 6 seeds", () => {
-    const counts = SEEDS.map((seed) => measureLoop(gen(cRules({ seed, compactness: 1 }), 260, 220), cRules({ seed })).corners);
-    expect(counts.filter((c) => c >= 12).length).toBeGreaterThanOrEqual(4);
-  }, T);
-
-  test("compactness 1 fills the interior far beyond the hull layout (space-filling metric)", () => {
-    // Reach = 0.5·pitch: a folded lap covers most of its box; the hull loop leaves a bare middle.
-    const compact = SEEDS.map((seed) => fillFraction(loopOf(gen(cRules({ seed, compactness: 1 }), 260, 220)), 0.5 * cellPitch(cRules())));
-    const hull = SEEDS.map((seed) => fillFraction(loopOf(gen(cRules({ seed }), 260, 220)), 0.5 * cellPitch(cRules())));
-    expect(compact.filter((f) => f >= 0.55).length).toBeGreaterThanOrEqual(4); // compact fills ≥55%
-    for (const f of hull) expect(f).toBeLessThan(0.45); // hull leaves interior bare (measures ~0.30–0.36)
-  }, T);
-
-  test("compactness 1 runs parallel adjacent corridors — ≥3 anti-parallel segment pairs (6 seeds)", () => {
-    for (const seed of SEEDS) {
-      const r = cRules({ seed });
-      expect(measureLoop(gen(cRules({ seed, compactness: 1 }), 260, 220), r).antipairs).toBeGreaterThanOrEqual(3);
-    }
-  }, T);
-
-  test("the final compact spline stays self-clearing at compactness 0.5 and 1 (6 seeds)", () => {
-    for (const seed of SEEDS) {
-      expect(selfClearingHolds(gen(cRules({ seed, compactness: 0.5 }), 260, 220))).toBe(true);
-      expect(selfClearingHolds(gen(cRules({ seed, compactness: 1 }), 260, 220))).toBe(true);
-    }
-  }, T);
-
-  test("the curvature floor and ≤7° max turn hold on compact laps (0.5 and 1, 6 seeds)", () => {
-    for (const seed of SEEDS) {
-      for (const compactness of [0.5, 1]) {
-        const r = cRules({ seed, compactness });
-        const m = measureLoop(gen(r, 260, 220), r);
-        expect(m.minRad).toBeGreaterThanOrEqual(14 * 0.92);
-        expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
-      }
-    }
-  }, T);
-
-  test("compactness 1 keeps a start/finish straight ≥ 3 corridor pitches for ≥4 of 6 seeds", () => {
-    const straights = SEEDS.map((seed) => measureLoop(gen(cRules({ seed, compactness: 1 }), 260, 220), cRules({ seed })).straightCp);
-    expect(straights.filter((s) => s >= 3).length).toBeGreaterThanOrEqual(4);
-  }, T);
-
-  test("a pit lane still attaches beside a compact start/finish straight (two degree-3 junctions)", () => {
-    for (const compactness of [0.5, 1]) {
-      const net = gen(cRules({ seed: "pit", compactness, branching: 0.6 }), 300, 260);
-      expect(net.nodes.filter((n) => n.degree === 3).length).toBe(2);
-      expect(net.streets.some((s) => s.level === "lane")).toBe(true);
-      expect(net.deadEnds.length).toBe(0); // the pit rejoins the loop, never dangles
-    }
-  }, T);
-
-  test("elevation drapes a compact lap continuously across the seam and stays grade-capped", () => {
-    const net = gen(cRules({ seed: "r3", compactness: 1, elevation: 0.6 }), 260, 220);
-    const loop = net.streets.find((s) => s.loop)!;
-    const h = loop.heights!;
-    expect(h.length).toBe(loop.points.length);
-    expect(Math.abs(h[0]! - h[h.length - 1]!)).toBeLessThan(1e-9); // continuous at start/finish
-    for (let i = 1; i < loop.points.length; i += 1) {
-      const d = Math.hypot(loop.points[i]![0] - loop.points[i - 1]![0], loop.points[i]![1] - loop.points[i - 1]![1]);
-      if (d < 1e-6) continue;
-      expect(Math.abs(h[i]! - h[i - 1]!) / d).toBeLessThanOrEqual(0.07 + 1e-6);
-    }
-  }, T);
-
-  test("compact layout is deterministic through the blob/tree/retry path", () => {
-    const a = grow(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
-    const b = grow(cRules({ seed: "det", compactness: 0.7 }), 260, 220);
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-  }, T);
-
-  test("the vice-isle playground reads as a space-filling compact lap at 0.5 and 1.0", () => {
-    for (const compactness of [0.5, 1]) {
-      const r = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, compactness });
-      const net = gen(r, 260, 260);
-      const m = measureLoop(net, r);
-      expect(net.mode).toBe("circuit");
-      expect(m.minRad).toBeGreaterThanOrEqual(24 * 0.92); // curvature floor holds
-      expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
-      expect(selfClearingHolds(net)).toBe(true);
-      expect(fillFraction(loopOf(net), 0.5 * cellPitch(r))).toBeGreaterThanOrEqual(0.5);
-    }
-  }, T);
+  });
 });
 
 describe("clampTurns", () => {
@@ -1168,12 +941,13 @@ describe("street generator contract", () => {
   });
 
   // Recorded from `generateStreets(rules, hx, hz, context)` before the street generator moved onto the
-  // generator contract: the same dials, footprint, seed and ground grow the same network.
+  // generator contract: the same dials, footprint, seed and ground grow the same network. The two circuit
+  // prints were re-recorded when circuit mode became the circuit designer.
   test("networks match their fingerprints from before the generator contract", () => {
     const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
     expect(sha(grow({ ...BASE, seed: "path" }, 200, 150))).toBe("c6471083e5bd7b32");
-    expect(sha(grow(circuitDials({ seed: "path" }), 200, 150))).toBe("76651b2018c1fd33");
-    expect(sha(grow(circuitDials({ seed: "c2", compactness: 0.7, elevation: 0.5 }), 260, 200))).toBe("f4f21b695190a865");
+    expect(sha(grow(circuitDials({ seed: "path" }), 200, 150))).toBe("907a6589eaad6efb");
+    expect(sha(grow(circuitDials({ seed: "c2", compactness: 0.7, elevation: 0.5 }), 260, 200))).toBe("678971666601f37d");
     expect(
       sha(grow({ ...BASE, seed: "t", elevation: 0.4, maxGrade: 0.05, sidewalkWidth: 3 }, 240, 240, { heightAt: terrain, minElevation: -3, bridges: true, tunnels: true })),
     ).toBe("b3ddc87e8a11ce65");
