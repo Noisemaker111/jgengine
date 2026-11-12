@@ -254,6 +254,30 @@ describe("createVisitorPopulation", () => {
     second.dispose();
   });
 
+  test("a seeded crowd takes reserved ids, so arrivals never reuse one", () => {
+    const scene = park({ capacity: 10, rate: 2 });
+    const seeded: string[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      const id = scene.population.nextId();
+      scene.spawnBody(id);
+      expect(scene.population.adopt(id)).toBe(true);
+      seeded.push(id);
+    }
+    expect(seeded).toEqual(["visitor#1", "visitor#2", "visitor#3"]);
+    expect(scene.population.arrivalsToday()).toBe(0);
+    expect(scene.population.onSite()).toBe(3);
+    expect(scene.population.snapshot().sequence).toBe(4);
+
+    advance(scene, 0, 2);
+    const ids = scene.population.ids();
+    expect(ids.slice(0, 3)).toEqual(seeded);
+    expect(ids.length).toBeGreaterThan(3);
+    expect(ids[3]).toBe("visitor#4");
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(scene.population.arrivalsToday()).toBe(ids.length - 3);
+    scene.dispose();
+  });
+
   test("reading the count for a HUD does not walk the crowd", () => {
     const scene = park({ capacity: 500, rate: 40, stay: 0 });
     advance(scene, 0, 20);

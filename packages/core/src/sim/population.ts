@@ -128,6 +128,11 @@ export interface VisitorPopulation {
   /** Send one visitor home now (it reached the exit, or the game evicted it). */
   leave(id: string): boolean;
   /**
+   * Reserve the next generated id for a body the game makes itself (a crowd seeded at park open, a
+   * scripted visitor), so it never collides with an arrival's id. `adopt` the body once it exists.
+   */
+  nextId(): string;
+  /**
    * Take over a body the game created itself — one restored from a save, seeded at park open, or
    * scripted. It is on site from now on; pass `arrival: true` when it is also a new arrival today.
    */
@@ -186,9 +191,14 @@ export function createVisitorPopulation(options: VisitorPopulationOptions): Visi
     return { onSite: members.size, capacity: capacityNow, arrivalsToday, departuresToday, now };
   }
 
-  function admitOne(at: number): boolean {
-    const visitor: Visitor = { id: `${idPrefix}${sequence}`, admittedAt: at };
+  function takeId(): string {
+    const id = `${idPrefix}${sequence}`;
     sequence += 1;
+    return id;
+  }
+
+  function admitOne(at: number): boolean {
+    const visitor: Visitor = { id: takeId(), admittedAt: at };
     const position = world.admit(visitor);
     if (position === null || (inside !== undefined && !inside(position))) {
       if (position !== null) world.release(visitor);
@@ -252,6 +262,7 @@ export function createVisitorPopulation(options: VisitorPopulationOptions): Visi
       removeVisitor(visitor);
       return true;
     },
+    nextId: takeId,
     adopt(id, adoption) {
       if (id === "" || members.has(id) || !world.has(id)) return false;
       const saved = adoption?.admittedAt;

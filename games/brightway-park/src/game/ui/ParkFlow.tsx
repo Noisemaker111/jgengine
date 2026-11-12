@@ -10,6 +10,7 @@ import { park } from "../park";
 import { scenarioView } from "../parkReset";
 import { scenarioDef } from "../scenarios";
 import { session } from "../session";
+import { guestPopulation } from "../sim/guests";
 import { parkFlags } from "./parkFlags";
 import { money } from "./ParkDashboard";
 import { BAD, Button, CORAL, CREAM, DISPLAY, GOLD, GOOD, Heading, INK, Row, Tag, Text } from "./look";
@@ -36,7 +37,7 @@ export function ParkFlow() {
       result: scenario?.result ?? null, title: scenario?.title ?? null, reason: scenario?.reason ?? null, hasScenario: scenario !== null,
       reward: def?.mission.rewards?.economy?.["cash"] ?? 0,
       takings: open ? 0 : w.num("park.revenue_today"), yesterday: w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"),
-      cash: screen ? w.num("park.cash") : 0, rating: screen ? Math.round(w.num("park.rating")) : 0, guests: screen ? session.guests.size : 0,
+      cash: screen ? w.num("park.cash") : 0, rating: screen ? Math.round(w.num("park.rating")) : 0, guests: screen ? guestPopulation(ctx).onSite() : 0,
       revenue: screen ? scenario?.revenue ?? 0 : 0, visitors: screen ? scenario?.visitors ?? 0 : 0, screen,
     };
   });

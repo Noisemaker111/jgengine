@@ -57,8 +57,6 @@ export interface Session {
   occupants: Map<string, number>;
   /** The crowd's fresh thoughts, counted every tick. */
   thoughts: ThoughtTally;
-  spawnAcc: number;
-  guestSeq: number;
   started: boolean;
   hasSave: boolean;
   saveStatus: string;
@@ -75,8 +73,6 @@ function freshSession(): Session {
     staff: new Map(),
     occupants: new Map(),
     thoughts: { top: [], complaintShare: 0 },
-    spawnAcc: 0,
-    guestSeq: 0,
     started: false,
     hasSave: false,
     saveStatus: "Saved on builds, ticket changes, pause and day close",
@@ -87,9 +83,4 @@ export const session: Session = freshSession();
 
 export function resetSession(): void {
   Object.assign(session, freshSession());
-}
-
-export function nextGuestId(): string {
-  session.guestSeq += 1;
-  return `guest#${session.guestSeq}`;
 }

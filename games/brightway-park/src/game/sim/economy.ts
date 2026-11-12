@@ -6,6 +6,7 @@ import { LOAN, linesNet, monthLine, park, reportLine, type ParkMetrics } from ".
 import { syncAmbience } from "../audio";
 import { closeParkDay } from "../daySession";
 import { milestonesCrossed } from "../milestones";
+import { guestPopulation } from "./guests";
 import { ratingTarget } from "./rating";
 
 /**
@@ -40,6 +41,8 @@ export function closeDay(ctx: GameContext): void {
     "park.spent_today": -spent,
     "park.guests_today": -w.num("park.guests_today"),
   });
+  // The gate's day closes with the books': today's arrivals start again, the crowd inside stays.
+  guestPopulation(ctx).rollDay();
 
   // The day's boundary is the session loop's: closing it republishes the day number.
   closeParkDay(ctx);

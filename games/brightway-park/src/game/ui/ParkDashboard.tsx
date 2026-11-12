@@ -14,6 +14,7 @@ import { rideBoard } from "../rides";
 import { isShut } from "../rideRefits";
 import { scenarioDef } from "../scenarios";
 import { session } from "../session";
+import { guestPopulation } from "../sim/guests";
 import { BLUE_RIBBON } from "../milestones";
 import { nextMilestone, nextStepText } from "./nextStep";
 import { BAD, Button, Card, DISPLAY, GOOD, Heading, INK, Meter, PENCIL, Row, Rows, Stepper, Tag, Text, WARN, Window } from "./look";
@@ -33,7 +34,7 @@ export function ParkStatus() {
     const refurbishing = w.instances("ride").filter((ride) => isShut(w, ride.id)).length;
     return {
       gate, gateRefusal: gate ? null : w.canAct("open_gate")?.message ?? null, day: w.num("park.day"), open: w.fact("park.open") === true,
-      rating: Math.round(w.num("park.rating")), refurbishing, down: Math.max(0, m.rides - m.ridesOpen - refurbishing), guests: session.guests.size,
+      rating: Math.round(w.num("park.rating")), refurbishing, down: Math.max(0, m.rides - m.ridesOpen - refurbishing), guests: guestPopulation(c).onSite(),
     };
   });
   const world = () => park.of(ctx);
