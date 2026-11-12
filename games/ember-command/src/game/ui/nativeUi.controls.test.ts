@@ -47,7 +47,7 @@ test("the dispatch case writes the campaign record and returns to the title", as
   // The headless page has no scene capture, so the record waits out the thumbnail binding (5 s) and keeps no picture.
   for (let i = 0; i < 160 && !ui.text().includes("Orders written"); i += 1) await ui.settle().then(() => new Promise((r) => setTimeout(r, 50)));
   expect(ui.text()).toContain("Orders written to the campaign record");
-  expect(recordOfSlot(ui.ctx.game.save?.slot() ?? "campaign-1")?.gold).toBe(Math.floor(ui.ctx.game.economy.balance("commander", "gold")));
+  expect((await recordOfSlot(ui.ctx, ui.ctx.game.save?.slot() ?? "campaign-1"))?.gold).toBe(Math.floor(ui.ctx.game.economy.balance("commander", "gold")));
   await ui.press("Return to title");
   for (let i = 0; i < 160 && !ui.text().includes("Take command"); i += 1) await ui.settle().then(() => new Promise((r) => setTimeout(r, 50)));
   expect(hudStore.get().phase).toBe("ready");

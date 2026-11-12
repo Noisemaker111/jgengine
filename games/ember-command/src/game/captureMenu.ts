@@ -16,7 +16,7 @@ export function registerMenuCapture(ctx: GameContext): void {
         state.game.commands.run("match.start", {});
         await saveCampaignRecord(state, "Mara Vell");
         state.game.commands.run("match.title", {});
-        refreshCampaignSlots();
+        await refreshCampaignSlots(state);
       })();
       return state;
     },

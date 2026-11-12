@@ -29,10 +29,10 @@ async function resumeCampaign(ctx: GameContext): Promise<void> {
   restoreCampaign(ctx);
   // The saved kit is the one piece of hero state the campaign carries into this battle.
   loadHeroPicks(ctx);
-  // The field desk reads the commander and the offered mission from the record index.
-  const record = recordOfSlot(save.slot());
+  // The field desk reads the commander and the offered mission from the slot's record document.
+  const record = await recordOfSlot(ctx, save.slot());
   commandProfile.name = record?.name ?? "";
-  refreshCampaignSlots();
+  await refreshCampaignSlots(ctx);
 }
 
 /** @internal No avatar — Ember Command is a commander-view RTS, so a joining player controls the army. */
