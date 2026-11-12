@@ -1,3 +1,4 @@
+import { defineParamSchema } from "../generator/paramSchema";
 import { clamp01, lerp } from "../math/scalar";
 
 /**
@@ -63,6 +64,31 @@ export const VOLUMETRIC_CLOUDS_DEFAULTS: Omit<VolumetricCloudsRules, "fade"> = {
   sunScatter: 0.9,
   seed: "",
 };
+
+/**
+ * The authorable face of {@link VolumetricCloudsConfig}: one field per config key, so a scene
+ * document's `environment.volumetricClouds` validates against it and the editor's lighting panel
+ * draws its controls from it. `fade` shows the default layer height's fade; leaving it unset keeps
+ * the fade following `height`.
+ *
+ * @capability volumetric-clouds author the cloud layer in a scene document's environment
+ */
+export const VOLUMETRIC_CLOUDS_SCHEMA = defineParamSchema({
+  groups: [{ id: "look", label: "Look", collapsed: true }],
+  fields: [
+    { type: "range", key: "coverage", label: "coverage (clear sky share)", min: 0, max: 1, step: 0.01, default: VOLUMETRIC_CLOUDS_DEFAULTS.coverage },
+    { type: "range", key: "density", label: "density", min: 0, max: 6, step: 0.05, default: VOLUMETRIC_CLOUDS_DEFAULTS.density },
+    { type: "number", key: "height", label: "base height", step: 5, default: VOLUMETRIC_CLOUDS_DEFAULTS.height },
+    { type: "number", key: "thickness", label: "thickness", min: 1, step: 5, default: VOLUMETRIC_CLOUDS_DEFAULTS.thickness },
+    { type: "number", key: "speed", label: "drift speed", step: 0.1, default: VOLUMETRIC_CLOUDS_DEFAULTS.speed },
+    { type: "number", key: "scale", label: "puff scale", min: 1, step: 10, default: VOLUMETRIC_CLOUDS_DEFAULTS.scale },
+    { type: "number", key: "fade", label: "horizon fade", min: 1, step: 50, default: VOLUMETRIC_CLOUDS_DEFAULTS.height * 8 },
+    { type: "color", key: "color", label: "shadow colour", default: VOLUMETRIC_CLOUDS_DEFAULTS.color, group: "look" },
+    { type: "color", key: "sunColor", label: "lit edge colour", default: VOLUMETRIC_CLOUDS_DEFAULTS.sunColor, group: "look" },
+    { type: "range", key: "sunScatter", label: "sun scatter", min: 0, max: 1, step: 0.01, default: VOLUMETRIC_CLOUDS_DEFAULTS.sunScatter, group: "look" },
+    { type: "seed", key: "seed", label: "seed", default: VOLUMETRIC_CLOUDS_DEFAULTS.seed, group: "look" },
+  ],
+});
 
 /**
  * Resolve a `VolumetricCloudsConfig` into fully-defaulted, clamped rules — pure, no shader/DOM

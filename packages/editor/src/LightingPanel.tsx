@@ -5,6 +5,7 @@ import type { EditorColorGrading, EditorDocument, EditorEnvironment, EditorLight
 import { bakeLightProbe } from "@jgengine/core/editor/environment";
 import { editorDocumentBounds } from "@jgengine/core/editor/document";
 import { GRASS_STYLE_SCHEMA, resolveGrassStyle } from "@jgengine/core/grass/grassStyle";
+import { resolveVolumetricClouds, VOLUMETRIC_CLOUDS_SCHEMA, type VolumetricCloudsConfig } from "@jgengine/core/sky/volumetricClouds";
 
 import { SliderRow } from "./chromeFields";
 import { NestedSchemaSection } from "./NestedSchemaSection";
@@ -67,7 +68,7 @@ function newProbe(doc: EditorDocument, index: number): EditorLightProbe {
 
 /**
  * Lighting workspace panel — edits `document.environment` (sky preset, time-of-day, intensities,
- * fog, optional horizon/zenith colors, local lights and baked light-probe volumes) through the
+ * fog, optional horizon/zenith colors, the volumetric cloud layer, local lights and baked light-probe volumes) through the
  * session undo stack. No fabricated runtime data: empty document shows defaults as display
  * placeholders; the first edit writes a real bag.
  *
@@ -97,6 +98,14 @@ export function LightingPanel({ session }: { session: EditorSession }) {
       if (next[key] === undefined) delete next[key];
     }
     setGrading(next);
+  };
+
+  const clouds = env?.volumetricClouds;
+  const setClouds = (next: VolumetricCloudsConfig | undefined, coalesce: string) => {
+    const base: EditorEnvironment = { ...(env ?? {}) };
+    if (next === undefined) delete base.volumetricClouds;
+    else base.volumetricClouds = next;
+    commit(Object.keys(base).length === 0 ? undefined : base, coalesce);
   };
 
   const commit = (next: EditorEnvironment | undefined, coalesce?: string) => {
@@ -182,6 +191,29 @@ export function LightingPanel({ session }: { session: EditorSession }) {
             commit(Object.keys(base).length === 0 ? undefined : base, `env:grassStyle:${coalesce}`);
           }}
         />
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <label className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+          <input
+            type="checkbox"
+            className="accent-cyan-400"
+            checked={clouds !== undefined}
+            onChange={(event) => setClouds(event.target.checked ? {} : undefined, "env:clouds:toggle")}
+          />
+          Volumetric clouds
+        </label>
+        {clouds === undefined ? null : (
+          <NestedSchemaSection
+            schema={VOLUMETRIC_CLOUDS_SCHEMA}
+            label="Cloud layer"
+            accent="#9cc4e4"
+            note="The raymarched cloud deck; the weather's cloud cover thickens it. Clear resets it to the engine defaults."
+            authored={{ ...clouds }}
+            effective={{ ...resolveVolumetricClouds(clouds) }}
+            onChange={(next, coalesce) => setClouds(next ?? {}, `env:clouds:${coalesce}`)}
+          />
+        )}
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">

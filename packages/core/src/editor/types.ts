@@ -9,6 +9,7 @@ import type { EditorGridLayer } from "./grid";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import type { IrradianceBakeSettings, IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
 import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
+import type { VolumetricCloudsConfig } from "@jgengine/core/sky/volumetricClouds";
 import type { PointLightingConfig } from "../game/playableGame";
 /** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";
@@ -312,6 +313,11 @@ export interface EditorEnvironment {
    * a named preset. Every grass and ground-cover volume draws with it unless its own `style` overrides it.
    */
   grassStyle?: GrassStyleSettings;
+  /**
+   * The raymarched cloud layer (`sky({ volumetricClouds })`). Present turns the layer on: `{}` draws
+   * it at the engine defaults. Absent leaves whatever the game's `world.ts` sky says.
+   */
+  volumetricClouds?: VolumetricCloudsConfig;
 }
 
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */

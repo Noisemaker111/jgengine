@@ -5639,6 +5639,7 @@
 
 - `CLOUD_NOISE_SIZE` (const): const CLOUD_NOISE_SIZE: 32 — Edge length of the tileable cloud noise volume, in voxels.
 - `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: Omit<VolumetricCloudsRules, "fade"> — Volumetric cloud defaults: a moderate, drifting cumulus layer.
+- `VOLUMETRIC_CLOUDS_SCHEMA` (const): const VOLUMETRIC_CLOUDS_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "coverage"; readonly label: "coverage (clear sky share)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: number; }, { readonly type: "range"; readonly key: "density"; readonly labe… — The authorable face of {@link VolumetricCloudsConfig}: one field per config key, so a scene document's `environment.volumetricClouds` validates against it and the editor's lighting panel draws its controls from it. `fade` shows the default layer height's fade; leaving it unset keeps the fade following `height`.
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()`: a raymarched cloud slab the sky mounts beside its dome (`VolumetricClouds.draw.tsx`). The sky's light colours and shades it through the day, and the weather's cloud cover thickens and greys it. Off by default: omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 

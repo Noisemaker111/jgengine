@@ -2447,8 +2447,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
 
-## volumetric-clouds — raymarched cloud layer, lit by the day and thickened by the weather
+## volumetric-clouds — author the cloud layer in a scene document's environment
 
+- `VOLUMETRIC_CLOUDS_SCHEMA` (const) · `import { VOLUMETRIC_CLOUDS_SCHEMA } from "@jgengine/core/sky/volumetricClouds"`
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
 ## walker-solid-step — slide an NPC's step against the geometry that blocks the player

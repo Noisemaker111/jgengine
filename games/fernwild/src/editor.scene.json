@@ -15675,7 +15675,7 @@
         "motion": "school",
         "count": 24,
         "window": "day",
-        "bandMin": 1.0,
+        "bandMin": 1,
         "bandMax": 4,
         "speed": 1.8,
         "seed": "reef-start"
@@ -41202,6 +41202,16 @@
       "color": "#acd0ec",
       "near": 300,
       "far": 2000
+    },
+    "volumetricClouds": {
+      "coverage": 0.4,
+      "density": 1.4,
+      "height": 420,
+      "thickness": 260,
+      "speed": 5,
+      "scale": 620,
+      "fade": 4200,
+      "seed": "the-island"
     }
   }
 }
