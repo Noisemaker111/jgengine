@@ -1283,6 +1283,8 @@
 - `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
 - `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
+- `CityRaceBarrier` (interface): interface CityRaceBarrier — One barrier run of a chicane: world XZ, the yaw of travel it stands across, and its run length.
+- `CityRaceChicane` (interface): interface CityRaceChicane — A barrier chicane on one of the lap's secondary straights (`entry`/`exit` index the centerline).
 - `CityRaceGridSlot` (interface): interface CityRaceGridSlot — One staggered spawn behind the start line.
 - `CityRaceKerb` (interface): interface CityRaceKerb — One kerb strip hugging a corner's road edge, as a world-space polyline to stripe.
 - `CityRaceSeal` (interface): interface CityRaceSeal — One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and the width the barrier run spans.
@@ -4875,12 +4877,15 @@
 ## @jgengine/core/roads/raceCircuit
 
 - `CIRCUIT_ROUTE_SCHEMA` (const): const CIRCUIT_ROUTE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "lapLength"; readonly label: "lap length"; readonly group: "race"; readonly min: 80; readonly max: 12000; readonly step: 10; readonly default: 2400; readonly unit: "m"; readonly explore: readonly [400, 6000]; }… — The lap stage's own params, for a generator that lifts a lap out of streets it already grew (the `city` kind parses its race dials through this).
+- `CircuitBarrier` (interface): interface CircuitBarrier — One barrier run dropped onto the racing surface for the event (a chicane apex): a line of blocks across the road, perpendicular to `heading`, spanning `width` from one road edge.
+- `CircuitChicane` (interface): interface CircuitChicane — A barrier chicane on a long straight: two runs from opposite road edges a few car lengths apart, forcing a flick across the road. Event-scoped like the seals — only stood up while the race runs.
 - `CircuitCorner` (interface): interface CircuitCorner — One analyzed corner: where the lap turns, how hard, and which way.
 - `CircuitGate` (interface): interface CircuitGate — One checkpoint trigger volume, shaped to hand straight to `raceTrack({ checkpoints })`.
 - `CircuitGridSlot` (interface): interface CircuitGridSlot — One grid slot: a staggered spawn behind the start line.
 - `CircuitKerb` (interface): interface CircuitKerb — One kerb strip on the outside or inside of a corner, as an offset polyline to stripe.
 - `CircuitKerbOptions` (interface): interface CircuitKerbOptions — Kerb strips on the outside and inside of every real corner.
-- `CircuitRoute` (interface): interface CircuitRoute — A closed race lap lifted out of a street network, with everything a race needs hung off it.
+- `CircuitRoute` (interface): interface CircuitRoute — A race lifted out of a street network, with everything a race needs hung off it: a closed lap, or (when {@link CircuitRoute.closed} is false) a point-to-point sprint.
+- `CircuitRouteConstraints` (interface): interface CircuitRouteConstraints — Where and how a street race runs, beyond the lap dials. Every anchor is a graph node id or a volume-local point (snapped to the nearest junction on a street cycle) — so laps over authored streets (`streetNetworkFromPaths`) can name junctions by position. - `kind` — `"lap"` (default) or a point-to-point `"sprint"`. - `via` — anchors the race must pass, in order. - `start` — where the race starts: a lap is routed through it and its start line (with the whole grid on a straight) goes as near it as the straights allow; a sprint starts there. - `finish` — a sprint's end (default: wherever a route of about `lapLength` lands). - `landmarks` — points the score rewards passing within 40 m of. - `avoidEdges` — edges of other races the score steers away from, so a city's laps differ.
 - `CircuitRouteParams` (type): type CircuitRouteParams = ParamsOf<typeof CIRCUIT_ROUTE_SCHEMA> — Parsed lap params.
 - `CircuitSeal` (interface): interface CircuitSeal — One street closed off where it leaves the lap — the thing that turns public roads into an instanced event. Stands just off the junction, spanning the sealed street's full width.
 - `CircuitSealKind` (type): type CircuitSealKind = "barrier" | "cones" | "fence" — How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing.
@@ -4889,8 +4894,57 @@
 - `RACE_CIRCUIT_OUTPUT` (const): const RACE_CIRCUIT_OUTPUT: "race-circuit" — The race circuit generator's output family: a {@link RaceCircuit}.
 - `RACE_CIRCUIT_SCHEMA` (const): const RACE_CIRCUIT_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: "loopiness"; readonly l… — The race circuit's params: the street generator's dials and footprint, then the lap dials.
 - `RaceCircuit` (interface): interface RaceCircuit — One generated race: the streets it was lifted from, and the lap (null when they hold no drivable cycle).
+- `StreetRace` (interface): interface StreetRace — One lifted race: its id, label, and the route (null when the streets hold no fitting route).
+- `StreetRaceKind` (type): type StreetRaceKind = "lap" | "sprint" — A closed lap, or a point-to-point sprint from one end of the city to another.
+- `StreetRaceSpec` (interface): interface StreetRaceSpec extends CircuitRouteConstraints — One named race a city hosts: a lap or sprint, its anchors, and any lap dials it overrides.
 - `circuitKerbs` (function): function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] — Red/white kerb strips hugging both road edges through each corner. Returns the polylines and stripe pitch as data; the renderer owns the mesh and the colors.
-- `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): CircuitRoute | null — Lift a closed, sealed-off race lap out of an existing street network. Returns `null` when the network has no drivable cycle (a pure tree of dead-end streets), so callers can fall back or warn rather than render a broken race.
+- `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">, constraints: CircuitRouteConstraints = {}): CircuitRoute | null — Lift a sealed-off street race out of an existing street network: a closed lap by default, or a point-to-point sprint, optionally pinned through `via` anchors in order from a `start` hint ({@link CircuitRouteConstraints}). Returns `null` when no route fits (a pure tree of dead-end streets, or anchors the streets cannot link without crossing themselves), so callers can fall back or warn rather than render a broken race.
+- `extractStreetRaces` (function): function extractStreetRaces(network: StreetNetwork, specs: readonly StreetRaceSpec[], defaults: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): StreetRace[] — Lift several named races out of one street network — a city's race calendar. Each race is searched with its own seed (`<seed>:<id>`), and races without anchors are steered away from the streets the earlier ones already use, so a city's laps differ instead of all picking the same best loop.
+
+## @jgengine/core/roads/raceEvents
+
+- `activeStreetRaceEvents` (function): function activeStreetRaceEvents(): string[] — Every running race key, sorted.
+- `endStreetRaceEvent` (function): function endStreetRaceEvent(key: string): void — Take the race's barriers down again: the event is over and the streets reopen. Idempotent.
+- `startStreetRaceEvent` (function): function startStreetRaceEvent(key: string): void — Stand the barriers of the race keyed `key` up: the event has started. Idempotent.
+- `streetRaceEventActive` (function): function streetRaceEventActive(key: string): boolean — Whether the race keyed `key` is running (its barriers stand).
+- `subscribeStreetRaceEvents` (function): function subscribeStreetRaceEvents(listener: () => void): () => void — Call `listener` whenever a race event starts or ends; returns the unsubscribe.
+
+## @jgengine/core/roads/raceLapSearch
+
+- `LapAnchor` (type): type LapAnchor = { node: number } | { edge: number } — Where a race must pass: a junction (node index), or the middle of a street (edge index into {@link LapGraph.edges}) which the route then drives end to end.
+- `LapCornerSummary` (interface): interface LapCornerSummary — A corner as the scorer sees it: absolute turn (radians), direction, and arc position (m).
+- `LapGraph` (interface): interface LapGraph — The street graph as directed links (each edge both ways), dense node indices and per-link headings, built once per search. Link `2k` runs edge `k` from `a` to `b`, link `2k + 1` back.
+- `LapOutline` (interface): interface LapOutline — Assembled street-centerline outline of a candidate, at the network's own sampling.
+- `LapScoreRules` (interface): interface LapScoreRules { lapLength: number; arterialBias: number; landmarks?: readonly StreetVec2[]; landmarkReach?: number; avoidEdges?: ReadonlySet<number>; chicanes: boolean } — ⚠ undocumented · used by `lapScore`: How good a lap is to race, higher is better.
+- `LapSearchRequest` (interface): interface LapSearchRequest { closed: boolean; lapLength: number; arterialBias: number; anchors: LapAnchor[]; startOnly?: boolean; finish: LapAnchor | null; seed: string; attempts?: number } — ⚠ undocumented · used by `lapCandidates`: Generate distinct candidate routes.
+- `LapSummary` (interface): interface LapSummary — Everything the lap score reads: measured off the graph outline or off a shaped racing line.
+- `LineGate` (interface): interface LineGate — A lateral window the line must pass through at one sample (offset along the street's left normal).
+- `MAX_LAP_TURN` (const): const MAX_LAP_TURN: number — Sharpest turn a lap takes at a junction (radians). Beyond this it doubles back on itself.
+- `METRIC_CHORD` (const): const METRIC_CHORD: 10 — Chord span (m) the line metrics measure curvature across.
+- `OVERTAKE_STRAIGHT` (const): const OVERTAKE_STRAIGHT: 250 — A straight at least this long, ending in a slow corner, is an overtaking spot (m).
+- `PlannedChicane` (interface): interface PlannedChicane — One planned barrier chicane: arc distance (m, along the street centerline) of its first barrier.
+- `SLOW_CORNER_RADIUS` (const): const SLOW_CORNER_RADIUS: 40 — Radius (m) under which the line counts as a slow corner for overtaking and braking.
+- `STRAIGHT_RADIUS` (const): const STRAIGHT_RADIUS: 250 — Radius (m) over which the line counts as straight.
+- `angleDelta` (function): function angleDelta(a: number, b: number): number — ⚠ undocumented
+- `arcProfile` (function): function arcProfile(points: readonly StreetVec2[], closed: boolean): { at: number[]; total: number } — Arc length at each point and the total (closed: including the closing span).
+- `buildLapGraph` (function): function buildLapGraph(network: StreetNetwork): LapGraph — ⚠ undocumented
+- `chicaneGates` (function): function chicaneGates(chicanes: readonly PlannedChicane[], widths: readonly number[], spacing: number, count: number): { gates: LineGate[]; barriers: { index: number; side: -1 | 1; gap: number }[] } — Lateral gates for planned chicanes on the evenly sampled street centerline: at each barrier the line must pass through the gap the barrier leaves on the open side.
+- `circumRadius` (function): function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number — Radius of the circle through three points; Infinity when they are collinear.
+- `cornerClass` (function): function cornerClass(corner: Pick<LapCornerSummary, "angle" | "radius">): "hairpin" | "square" | "tight" | "medium" | "sweeper" | "kink" — Corner class the variety score counts.
+- `cornerTurn` (function): function cornerTurn(points: readonly StreetVec2[], at: readonly number[], total: number, entry: number, exit: number, closed: boolean, reachBefore: number, reachAfter: number): number — Heading change (radians, signed) across a corner, read just outside its tight span.
+- `edgeLength` (function): function edgeLength(points: readonly StreetVec2[]): number — ⚠ undocumented
+- `lapCandidates` (function): function lapCandidates(graph: LapGraph, request: LapSearchRequest): number[][] — Generate distinct candidate routes. Free laps chain legs round a random polygon of waypoints sized (adaptively) for the target length; anchored laps and sprints route through their anchors in order, with detour waypoints added — only when the anchors alone fall short of the target — to grow the route toward it.
+- `lapScore` (function): function lapScore(summary: LapSummary, rules: LapScoreRules): number — How good a lap is to race, higher is better. Reads the same {@link LapSummary} whether it came off the graph outline (cheap, for every candidate) or off the shaped racing line (for the finalists).
+- `outlineOf` (function): function outlineOf(graph: LapGraph, links: readonly number[], closed: boolean): LapOutline — ⚠ undocumented
+- `planar` (function): function planar(a: number, b: number): number — Length of (a, b): `sqrt` is correctly rounded on every libm, `Math.hypot` is not (and is slower).
+- `quantizedScore` (function): function quantizedScore(score: number): number — Score quantised for comparison, so 1-ULP float noise never flips which lap wins.
+- `radiusProfile` (function): function radiusProfile(points: readonly StreetVec2[], span: number, closed: boolean): number[] — Per-point radius over a ~`span` meter chord; an open line reads Infinity where the chord runs off an end.
+- `resolveAnchor` (function): function resolveAnchor(graph: LapGraph, anchor: number | StreetVec2): LapAnchor — Resolve a via/start/finish anchor. A node id is that junction. A point snaps to the nearest street junction when one is within {@link ANCHOR_NODE_REACH} (or no farther than the nearest street); otherwise to the street it lies on, so a checkpoint authored mid-block pins that block.
+- `shapeRacingLine` (function): function shapeRacingLine(base: readonly StreetVec2[], widths: readonly number[], closed: boolean, cut: number, gates: readonly LineGate[] = []): StreetVec2[] — The minimum-curvature line inside the asphalt. `base` is the street centerline sampled evenly; every point may move up to `cut × halfWidth` from the NEAREST street segment around it (so inside a junction it can use the plaza where two carriageways overlap), and `gates` pin lateral windows (the gaps a chicane's barriers leave). Smoothed coarse-to-fine with a bending-energy stencil, so wobbly streets become straights and corners take the widest arc the street allows.
+- `simulateLap` (function): function simulateLap(points: readonly StreetVec2[], radii: readonly number[], closed: boolean): { speeds: number[]; time: number; brakingZones: number } — Point-mass lap simulation: corner speed v ≤ √(μgR), then forward (traction) and backward (braking) passes. Returns speeds per point and the heavy braking zones (≥ 50 km/h shed).
+- `squareShare` (function): function squareShare(corners: readonly Pick<LapCornerSummary, "angle" | "radius">[]): number — Share of corners that are plain right angles.
+- `straightRuns` (function): function straightRuns(radii: readonly number[], at: readonly number[], total: number, closed: boolean, bridge = false): { start: number; length: number }[] — Straight runs (arc start, length; m) of the line — radius over {@link STRAIGHT_RADIUS} at a {@link METRIC_CHORD} chord — in lap order.
+- `summarizeOutline` (function): function summarizeOutline(outline: LapOutline, closed: boolean, rules: LapScoreRules): { summary: LapSummary; chicanes: PlannedChicane[] } — The lap as the designer reads it off the street outline, before any line is shaped: corners from the simplified outline (close turns merged into hairpins or straightened into esses), straights between them, and the barrier chicanes the secondary straights will get.
 
 ## @jgengine/core/roads/roads
 
@@ -4967,6 +5021,13 @@
 ## @jgengine/core/roads/streetGeometryPreview.view
 
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
+
+## @jgengine/core/roads/streetNetworkFromPaths
+
+- `StreetNetworkFromPaths` (interface): interface StreetNetworkFromPaths extends StreetNetwork — The adapted network, plus which street each input path became.
+- `StreetNetworkFromPathsOptions` (interface): interface StreetNetworkFromPathsOptions — Options for {@link streetNetworkFromPaths}.
+- `StreetPath` (interface): interface StreetPath — One authored road: a centerline polyline with its carriageway width and hierarchy level.
+- `streetNetworkFromPaths` (function): function streetNetworkFromPaths(paths: readonly StreetPath[], options: StreetNetworkFromPathsOptions = {}): StreetNetworkFromPaths — Build a street network from authored road polylines. Roads join wherever they cross, wherever one ends within `snap` of another, and wherever two ends meet; every other path vertex stays a shape point inside an edge.
 
 ## @jgengine/core/roads/streetNetworkPreview.draw
 

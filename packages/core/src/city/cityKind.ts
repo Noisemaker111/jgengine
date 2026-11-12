@@ -21,7 +21,9 @@
  * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots, parked vehicles,
  * junction signals and sign posts) resolves as bounded, seeded data hooked to the network. Turn `race` on and the district also hands back a
  * {@link ResolvedRace}: a closed lap lifted out of its OWN streets with every side street leaving it
- * sealed off — the Monaco / open-world street-race model, not a separate track. Child `cityzone` volumes override the band/mix
+ * sealed off (barriers stood only while `startStreetRaceEvent(<volume id>)` holds) — the Monaco /
+ * open-world street-race model, not a separate track. `extractStreetRaces` on {@link ResolvedCity.network}
+ * lifts more named laps and sprints. Child `cityzone` volumes override the band/mix
  * locally, so hand-placed intent wins over the profile. Named presets (Manhattan, Los Angeles,
  * Beverly Hills, rural Ohio…) ship as plain slider bundles on the schema. Pure config + resolver
  * here; the instanced renderer lives in the `shell`. Everything is deterministic per seed and
@@ -764,6 +766,22 @@ export interface CityRaceSeal {
   kind: CircuitSealKind;
 }
 
+/** One barrier run of a chicane: world XZ, the yaw of travel it stands across, and its run length. */
+export interface CityRaceBarrier {
+  x: number;
+  z: number;
+  heading: number;
+  width: number;
+  kind: CircuitSealKind;
+}
+
+/** A barrier chicane on one of the lap's secondary straights (`entry`/`exit` index the centerline). */
+export interface CityRaceChicane {
+  entry: number;
+  exit: number;
+  barriers: readonly CityRaceBarrier[];
+}
+
 /** One kerb strip hugging a corner's road edge, as a world-space polyline to stripe. */
 export interface CityRaceKerb {
   points: readonly RoadPoint[];
@@ -812,7 +830,12 @@ export interface ResolvedRace {
   length: number;
   /** Ids of the district streets the lap runs on — style exactly these as track surface. */
   streets: readonly string[];
+  /**
+   * Side streets closed off, and the chicanes' barriers: EVENT-SCOPED — the renderer stands them up
+   * only while `startStreetRaceEvent(<city volume id>)` holds (`roads/raceEvents`).
+   */
   seals: readonly CityRaceSeal[];
+  chicanes: readonly CityRaceChicane[];
   corners: readonly CircuitCorner[];
   kerbs: readonly CityRaceKerb[];
   /** Ordered gates, finish last — ready for `raceTrack({ checkpoints, laps })`. */
@@ -1688,6 +1711,14 @@ function raceToWorld(
           return { x, z, heading: heading(seal.heading), width: seal.width, kind: seal.kind };
         })
       : [],
+    chicanes: route.chicanes.map((chicane) => ({
+      entry: chicane.entry,
+      exit: chicane.exit,
+      barriers: chicane.barriers.map((barrier) => {
+        const [x, z] = toWorld(barrier.x, barrier.z);
+        return { x, z, heading: heading(barrier.heading), width: barrier.width, kind: barrier.kind };
+      }),
+    })),
     corners: route.corners.map((corner) => ({ ...corner })),
     kerbs: circuitKerbs(route)
       .slice(0, MAX_RACE_KERBS)

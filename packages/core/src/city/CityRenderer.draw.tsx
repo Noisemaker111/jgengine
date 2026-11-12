@@ -62,6 +62,7 @@ import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } fr
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 import { registerStreetNetworkPreviews } from "@jgengine/core/roads/streetNetworkPreview.draw";
+import { streetRaceEventActive, subscribeStreetRaceEvents } from "@jgengine/core/roads/raceEvents";
 import { registerCityPreview } from "./cityPreview.draw";
 import { junctionSurface } from "./cityJunctionSurface";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -1582,8 +1583,8 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     [furniture],
   );
 
-  // Race dressing: resurface the lap, stripe its kerbs, paint start/finish + grid, and stand a
-  // barrier across every sealed side street — the visual proof the race is a section of this city.
+  // Race dressing: resurface the lap, stripe its kerbs, paint start/finish + grid, and (only while
+  // the race event runs) stand a barrier across every sealed side street and the chicane apexes.
   const race = useMemo(() => {
     if (resolved?.race === undefined) return null;
     const route = resolved.race;
@@ -1727,20 +1728,24 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         decals.addQuad([corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)], RACE_EDGE);
       }
     }
-    for (const seal of route.seals) {
-      const fx = Math.sin(seal.heading);
-      const fz = Math.cos(seal.heading);
-      const ax = Math.cos(seal.heading);
-      const az = -Math.sin(seal.heading);
-      const span = seal.width + 3;
+    // A run of red/white blocks across the road, perpendicular to `heading`, centred on (x, z).
+    const standRun = (x: number, z: number, heading: number, span: number): void => {
+      const fx = Math.sin(heading);
+      const fz = Math.cos(heading);
+      const ax = Math.cos(heading);
+      const az = -Math.sin(heading);
       const blocks = Math.max(3, Math.round(span / 1.4));
       const halfRun = span / blocks / 2;
       for (let s = 0; s < blocks; s += 1) {
         const u = -span / 2 + ((s + 0.5) / blocks) * span;
-        const cx = seal.x + ax * u;
-        const cz = seal.z + az * u;
+        const cx = x + ax * u;
+        const cz = z + az * u;
         barriers.addSealBlock(cx, cz, sample(cx, cz), 1.05, halfRun, 0.28, [ax, az], [fx, fz], s % 2 === 0 ? KERB_RED : KERB_WHITE);
       }
+    };
+    for (const seal of route.seals) standRun(seal.x, seal.z, seal.heading, seal.width + 3);
+    for (const chicane of route.chicanes) {
+      for (const barrier of chicane.barriers) standRun(barrier.x, barrier.z, barrier.heading, barrier.width);
     }
     const geometries: THREE.BufferGeometry[] = [];
     const meshes: THREE.Object3D[] = [];
@@ -1762,17 +1767,18 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       meshes.push(mesh);
     }
     const sealGeom = barriers.build();
+    let barrierMesh: THREE.Mesh | null = null;
     if (sealGeom !== null) {
       geometries.push(sealGeom);
-      const mesh = new THREE.Mesh(
+      barrierMesh = new THREE.Mesh(
         sealGeom,
         new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.04, side: THREE.DoubleSide }),
       );
-      mesh.castShadow = true;
-      mesh.frustumCulled = false;
-      meshes.push(mesh);
+      barrierMesh.castShadow = true;
+      barrierMesh.frustumCulled = false;
+      meshes.push(barrierMesh);
     }
-    return { meshes, geometries, materials: meshes.map((mesh) => (mesh as THREE.Mesh).material as THREE.Material) };
+    return { meshes, geometries, barrierMesh, materials: meshes.map((mesh) => (mesh as THREE.Mesh).material as THREE.Material) };
   }, [resolved, sample]);
   useEffect(
     () => () => {
@@ -1782,6 +1788,16 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     },
     [race],
   );
+  // Seals and chicane barriers are event-scoped: they stand only while this district's race runs.
+  useEffect(() => {
+    const mesh = race?.barrierMesh ?? null;
+    if (mesh === null) return;
+    const sync = (): void => {
+      mesh.visible = streetRaceEventActive(object.id);
+    };
+    sync();
+    return subscribeStreetRaceEvents(sync);
+  }, [race, object.id]);
 
   const quality = useTerrainQuality();
   const surfaceDetail = object.meta?.["surfaceDetail"] !== false;

@@ -134,7 +134,7 @@ describe("city generator contract", () => {
     const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
     expect(print(resolveCityObject(volume({})))).toBe("179d436408d389ae");
     expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("ea3abd48fb77ed76");
-    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("d65e9769b67b5938");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("e9fdc4c286e4830c");
     expect(
       print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
     ).toBe("2d4d88327a6805ed");
