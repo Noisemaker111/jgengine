@@ -130,6 +130,18 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 120, silver: 240, gold: 400 },
   },
   {
+    id: "daily-reroute",
+    track: "reroute",
+    label: "Daily Reroute",
+    tier: "night-crew",
+    blurb: "The foreman lays a new haul road every day. Nobody has driven it before you, not even HOBBS. Medals go on where you finish.",
+    metric: "place",
+    targets: { bronze: 3, silver: 2, gold: 1 },
+    rivals: "all",
+    garage: true,
+    rewards: { bronze: 90, silver: 180, gold: 320 },
+  },
+  {
     id: "crusher-rush",
     track: "row-six",
     label: "Crusher Rush",

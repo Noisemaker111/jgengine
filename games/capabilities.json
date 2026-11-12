@@ -2202,6 +2202,36 @@
       "intent": "named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore"
     },
     {
+      "id": "course-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/courseGenerator",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "generate a designed race course with shortcuts, hazard spacing, set-pieces and fillable slots"
+    },
+    {
+      "id": "course-kind",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/courseKind",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "editor-placeable race course in the scene: generated from seed and dials with pinned set-pieces, or fully authored"
+    },
+    {
+      "id": "course-layout",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/courseLayout",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "route course with tagged hazard/gate/drop/zone/dressing slots, playability check and drive-time sim"
+    },
+    {
       "id": "course-metrics",
       "packages": [
         "@jgengine/core"

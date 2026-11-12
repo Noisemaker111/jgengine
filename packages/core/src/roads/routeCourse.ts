@@ -6,6 +6,11 @@
  * on, how far off the centreline, is it inside the walls, where does the gate at 210 m stand - and
  * this module answers them from the one authored description.
  *
+ * The main line is either laid from pieces or given as a centreline polyline (a lap lifted from a
+ * street network, see `courseFromCircuit`), and it is either open (a sprint: walls cap both ends) or
+ * `closed` (a lap: the end joins the start, `s` and progress wrap, and the finish line can sit
+ * anywhere). Every query below works the same on either.
+ *
  * Distances: each route has its own arc length `s`. `progress` is main-line distance; on a branch it
  * maps linearly from the branch's `from` to its `to`, so a shorter shortcut gains progress faster per
  * metre and a race order, a chaser's gap or a split reads the same on either path.
@@ -55,10 +60,15 @@ export interface CourseBranchSpec {
   id: string;
   from: number;
   to: number;
-  /** Interior control points; the branch is a smooth curve through them, leaving and rejoining tangent to the main line. */
-  via: readonly CourseVec2[];
+  /**
+   * Interior control points; the branch is a smooth curve through them, leaving and rejoining tangent
+   * to the main line. Omitted, the branch runs the straight chord between its two junctions.
+   */
+  via?: readonly CourseVec2[];
   halfWidth?: number;
   tag?: string;
+  /** Game data the branch carries (a sign's label), untouched by the course. */
+  data?: Readonly<Record<string, string | number | boolean>>;
 }
 
 /** A timed window: active for `active` seconds out of every `period`, shifted by `phase`. */
@@ -74,7 +84,7 @@ export interface CourseSpanSpec {
   tag: string;
   /** Route id; default the main line. */
   route?: string;
-  /** Route-local metres. */
+  /** Route-local metres. On a closed main line, `from > to` wraps past the seam. */
   from: number;
   to: number;
   /** Lateral band `[min, max]` the span covers; default the whole width. */
@@ -85,11 +95,32 @@ export interface CourseSpanSpec {
   data?: Readonly<Record<string, string | number | boolean>>;
 }
 
-/** Everything {@link buildRouteCourse} lays out: where the main line starts, its pieces, branches and spans. */
+/** A main line given as a polyline instead of pieces: a lap lifted from streets, an editor path. */
+export interface CourseCenterline {
+  points: readonly CourseVec2[];
+  /** Half-width at each point; default the course's. */
+  halfWidths?: readonly number[];
+  /** Surface height at each point; default 0. */
+  elevations?: readonly number[];
+}
+
+/**
+ * Everything {@link buildRouteCourse} lays out: the main line (pieces from a start pose, or a
+ * centreline), whether it closes into a lap, its branches and spans.
+ */
 export interface RouteCourseSpec {
-  start: { x: number; z: number; heading: number; elevation?: number };
+  /** Where the pieces start. Required with `pieces`. */
+  start?: { x: number; z: number; heading: number; elevation?: number };
   halfWidth: number;
-  pieces: readonly CoursePiece[];
+  /** The main line laid turtle-style from `start`. Give this or `centerline`. */
+  pieces?: readonly CoursePiece[];
+  /** The main line as a polyline. Give this or `pieces`. */
+  centerline?: CourseCenterline;
+  /**
+   * A lap: the main line's end joins its start. Pieces must bring the turtle back to the start
+   * (within one sample step); a centreline is closed from its last point back to its first.
+   */
+  closed?: boolean;
   branches?: readonly CourseBranchSpec[];
   spans?: readonly CourseSpanSpec[];
   /** Sample spacing along every route, metres. Default 2. */
@@ -153,7 +184,7 @@ export interface CourseSpan extends CourseSpanSpec {
 export interface CourseCheckpointOptions {
   /** Main-line distances of the ordinary checkpoints, ascending. */
   at: readonly number[];
-  /** Main-line distance of the finish line. */
+  /** Main-line distance of the finish line (a lap's start/finish line when the course is closed). */
   finish: number;
   /** Vertical half-extent of every trigger box. Default 8. */
   height?: number;
@@ -163,12 +194,14 @@ export interface CourseCheckpointOptions {
 
 /** A built course: geometry queries, the wall clamp, spans, racing lines and race checkpoints. */
 export interface RouteCourse {
-  /** Main-line length, metres. */
+  /** Main-line length, metres (a lap's length when closed). */
   readonly length: number;
+  /** True for a lap: main-line `s` and progress wrap at `length`, and the main line has no end walls. */
+  readonly closed: boolean;
   readonly routes: readonly CourseRouteInfo[];
   readonly spans: readonly CourseSpan[];
   readonly bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
-  /** Point on a route at route-local `s`, `offset` metres off the centreline. */
+  /** Point on a route at route-local `s`, `offset` metres off the centreline. `s` wraps on a closed main line. */
   pointAt(route: string, s: number, offset?: number): CoursePoint;
   /** Main-line progress of route-local `s`. */
   progressOf(route: string, s: number): number;
@@ -190,7 +223,10 @@ export interface RouteCourse {
    * centre - a racing line for `pathTargetAhead`, a guide for a scripted driver.
    */
   line(options?: { take?: readonly string[]; offset?: (progress: number) => number; step?: number }): readonly CourseVec2[];
-  /** Checkpoint ring and branch forks, ready for `raceTrack({ checkpoints, forks })`. */
+  /**
+   * Checkpoint ring and branch forks, ready for `raceTrack({ checkpoints, forks })`. On a closed
+   * course the ring runs from the finish line round to it again, so it also suits `laps`.
+   */
   checkpoints(options: CourseCheckpointOptions): { checkpoints: readonly Checkpoint[]; forks: readonly RaceFork[] };
   /**
    * Terrain height that rides the course: the route's own elevation inside `shoulder` metres of the
@@ -219,8 +255,8 @@ interface Route {
   length: number;
   from: number;
   to: number;
-  /** A branch's ends open into the main line; the main line's ends are walls. */
-  capped: boolean;
+  /** A lap: the last sample is the first, `s` wraps and neither end is a wall. Open routes cap both ends. */
+  closed: boolean;
   tag?: string;
 }
 
@@ -250,16 +286,44 @@ interface Samples {
   elev: number[];
 }
 
+function layCenterline(spec: RouteCourseSpec, line: CourseCenterline): Samples {
+  const samples: Samples = { x: [], z: [], hw: [], elev: [] };
+  line.points.forEach((point, index) => {
+    const hw = line.halfWidths?.[index] ?? spec.halfWidth;
+    if (!(hw > 0)) throw new Error("route course: half-width must be positive");
+    const last = samples.x.length - 1;
+    // Repeated points carry no heading; keep the first.
+    if (last >= 0 && Math.hypot(point[0] - samples.x[last]!, point[1] - samples.z[last]!) < 1e-6) return;
+    samples.x.push(point[0]);
+    samples.z.push(point[1]);
+    samples.hw.push(hw);
+    samples.elev.push(line.elevations?.[index] ?? 0);
+  });
+  const keys = ["x", "z", "hw", "elev"] as const;
+  if (spec.closed === true) {
+    const last = samples.x.length - 1;
+    if (last > 0 && Math.hypot(samples.x[last]! - samples.x[0]!, samples.z[last]! - samples.z[0]!) < 1e-6) for (const key of keys) samples[key].pop();
+    for (const key of keys) samples[key].push(samples[key][0]!);
+  }
+  if (samples.x.length < (spec.closed === true ? 4 : 2)) throw new Error("route course: a centreline needs more distinct points");
+  return samples;
+}
+
 function layMainLine(spec: RouteCourseSpec, step: number): { samples: Samples; tags: { tag: string; from: number; to: number }[] } {
-  const samples: Samples = { x: [spec.start.x], z: [spec.start.z], hw: [spec.halfWidth], elev: [spec.start.elevation ?? 0] };
+  if (spec.centerline !== undefined) return { samples: layCenterline(spec, spec.centerline), tags: [] };
+  const start = spec.start;
+  const pieces = spec.pieces ?? [];
+  if (start === undefined) throw new Error("route course: pieces need a start");
+  if (pieces.length === 0) throw new Error("route course: needs at least one piece or a centreline");
+  const samples: Samples = { x: [start.x], z: [start.z], hw: [spec.halfWidth], elev: [start.elevation ?? 0] };
   const tags: { tag: string; from: number; to: number }[] = [];
-  let x = spec.start.x;
-  let z = spec.start.z;
-  let heading = spec.start.heading;
-  let elevation = spec.start.elevation ?? 0;
+  let x = start.x;
+  let z = start.z;
+  let heading = start.heading;
+  let elevation = start.elevation ?? 0;
   let width = spec.halfWidth;
   let distance = 0;
-  for (const piece of spec.pieces) {
+  for (const piece of pieces) {
     const target = piece.halfWidth ?? spec.halfWidth;
     if (target <= 0) throw new Error("route course: half-width must be positive");
     const rise = piece.rise ?? 0;
@@ -298,6 +362,15 @@ function layMainLine(spec: RouteCourseSpec, step: number): { samples: Samples; t
     elevation += rise;
     width = target;
   }
+  if (spec.closed === true) {
+    const gap = Math.hypot(x - start.x, z - start.z);
+    if (gap > step) throw new Error(`route course: closed pieces end ${gap.toFixed(2)} m from the start; a lap must come back to it`);
+    const last = samples.x.length - 1;
+    samples.x[last] = start.x;
+    samples.z[last] = start.z;
+    samples.hw[last] = samples.hw[0]!;
+    samples.elev[last] = samples.elev[0]!;
+  }
   return { samples, tags };
 }
 
@@ -332,7 +405,7 @@ function resample(dense: readonly CourseVec2[], step: number): CourseVec2[] {
   return out;
 }
 
-function makeRoute(id: string, index: number, samples: Samples, from: number, to: number | null, capped: boolean, tag?: string): Route {
+function makeRoute(id: string, index: number, samples: Samples, from: number, to: number | null, closed: boolean, tag?: string): Route {
   const count = samples.x.length;
   const s = new Float64Array(count);
   const heading = new Float64Array(Math.max(1, count - 1));
@@ -355,13 +428,25 @@ function makeRoute(id: string, index: number, samples: Samples, from: number, to
     length,
     from,
     to: to ?? from + length,
-    capped,
+    closed,
     ...(tag === undefined ? {} : { tag }),
   };
 }
 
+/** Route-local `s` brought onto the route: wrapped round a lap, clamped to the ends otherwise. */
+function onRoute(route: Route, s: number): number {
+  if (!route.closed) return Math.max(0, Math.min(route.length, s));
+  return ((s % route.length) + route.length) % route.length;
+}
+
+/** Metres between two `s` on a route, the short way round a lap. */
+function alongGap(route: Route, a: number, b: number): number {
+  const gap = Math.abs(a - b);
+  return route.closed ? Math.min(gap, route.length - gap) : gap;
+}
+
 function segmentAt(route: Route, s: number): number {
-  const clamped = Math.max(0, Math.min(route.length, s));
+  const clamped = onRoute(route, s);
   let lo = 0;
   let hi = route.s.length - 1;
   while (hi - lo > 1) {
@@ -381,9 +466,9 @@ function segmentAt(route: Route, s: number): number {
 export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
   const step = spec.step ?? 2;
   if (!(step > 0)) throw new Error("route course: step must be positive");
-  if (spec.pieces.length === 0) throw new Error("route course: needs at least one piece");
+  if (spec.pieces !== undefined && spec.centerline !== undefined) throw new Error("route course: give pieces or a centreline, not both");
   const laid = layMainLine(spec, step);
-  const main = makeRoute(MAIN_ROUTE, 0, laid.samples, 0, null, true);
+  const main = makeRoute(MAIN_ROUTE, 0, laid.samples, 0, null, spec.closed === true);
   const routes: Route[] = [main];
   const byId = new Map<string, Route>([[MAIN_ROUTE, main]]);
 
@@ -398,7 +483,8 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     if (next !== undefined && next.from < branch.to) throw new Error(`route course: branches "${branch.id}" and "${next.id}" overlap`);
     const a = pointOn(main, branch.from, 0);
     const b = pointOn(main, branch.to, 0);
-    const controls: CourseVec2[] = [[a.x, a.z], ...branch.via, [b.x, b.z]];
+    const via: readonly CourseVec2[] = branch.via ?? [1 / 3, 2 / 3].map((t) => [a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t] as const);
+    const controls: CourseVec2[] = [[a.x, a.z], ...via, [b.x, b.z]];
     const lead = Math.max(4, Math.hypot(controls[1]![0] - a.x, controls[1]![1] - a.z));
     const tail = Math.max(4, Math.hypot(controls[controls.length - 2]![0] - b.x, controls[controls.length - 2]![1] - b.z));
     const padded: CourseVec2[] = [
@@ -528,7 +614,7 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     const hw = route.hw[seg]! + (route.hw[seg + 1]! - route.hw[seg]!) * t;
     const beforeStart = seg === 0 && raw < 0;
     const pastEnd = seg === route.x.length - 2 && raw > 1;
-    if (beforeStart || pastEnd) {
+    if (!route.closed && (beforeStart || pastEnd)) {
       const along = beforeStart ? -raw * len : (raw - 1) * len;
       return fill(out, route, seg, s, lateral, dist, Math.max(along, Math.abs(lateral) - hw), false, beforeStart ? 0 : route.length);
     }
@@ -584,16 +670,16 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       case "all": return true;
       case "inside": return entry.inside;
       case "insideOnRoute": return entry.inside && entry.route.id === hinted?.route;
-      case "insideNearHint": return entry.inside && entry.route.id === hinted?.route && Math.abs(entry.s - hinted.s) < HINT_WINDOW;
+      case "insideNearHint": return entry.inside && entry.route.id === hinted?.route && alongGap(entry.route, entry.s, hinted.s) < HINT_WINDOW;
       case "insideOnJoined": return entry.inside && entry.route === joinedRoute;
-      case "nearHint": return entry.route.id === hinted?.route && Math.abs(entry.s - hinted.s) < HINT_WINDOW;
+      case "nearHint": return entry.route.id === hinted?.route && alongGap(entry.route, entry.s, hinted.s) < HINT_WINDOW;
     }
   }
 
   function keyOf(entry: Candidate, by: By): number {
     if (by === "dist") return entry.dist;
     if (by === "excess") return entry.excess;
-    return Math.abs(progressOn(entry.route, entry.s) - (hinted?.progress ?? 0));
+    return alongGap(main, progressOn(entry.route, entry.s), hinted?.progress ?? 0);
   }
 
   /** The first pooled candidate with the smallest key among those `only` accepts, or null when none is. */
@@ -665,6 +751,7 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
 
   const course: RouteCourse = {
     length: main.length,
+    closed: main.closed,
     routes: routes.map((entry) => ({
       id: entry.id,
       length: entry.length,
@@ -700,7 +787,8 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       const out: CourseSpan[] = [];
       for (const span of spans) {
         if (span.route !== fix.route || (tag !== undefined && span.tag !== tag)) continue;
-        if (fix.s < span.from || fix.s > span.to) continue;
+        const within = span.from <= span.to ? fix.s >= span.from && fix.s <= span.to : fix.s >= span.from || fix.s <= span.to;
+        if (!within) continue;
         if (span.offset !== undefined && (fix.offset < span.offset[0] || fix.offset > span.offset[1])) continue;
         if (span.cycle !== undefined) {
           const local = (((time + (span.cycle.phase ?? 0)) % span.cycle.period) + span.cycle.period) % span.cycle.period;
@@ -714,7 +802,9 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       if (!(spacing > 0)) throw new Error("route course: edge spacing must be positive");
       const out: CourseEdgePoint[] = [];
       for (const entry of routes) {
-        for (let s = 0; s <= entry.length + 1e-6; s += spacing) {
+        // A lap's seam is one place: its last post would stand on its first.
+        const end = entry.closed ? entry.length - spacing * 0.5 : entry.length + 1e-6;
+        for (let s = 0; s <= end; s += spacing) {
           for (const side of ["left", "right"] as const) {
             const centre = pointOn(entry, s, 0);
             const offset = (side === "left" ? 1 : -1) * (centre.halfWidth + inset);
@@ -748,8 +838,10 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
         cursor = branch.to;
       }
       walk(main, cursor, main.length);
-      const end = pointOn(main, main.length, offsetAt(main.length));
-      out.push([end.x, end.z]);
+      if (!main.closed) {
+        const end = pointOn(main, main.length, offsetAt(main.length));
+        out.push([end.x, end.z]);
+      }
       return out;
     },
     checkpoints(options) {
@@ -761,18 +853,24 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
         return { id, center: [point.x, point.elevation, point.z], half: [half, height, half] };
       };
       const branchRoutes = routes.filter((entry) => entry !== main);
-      const ordinary = [...options.at].filter((at) => at < options.finish).sort((a, b) => a - b);
-      const mainline: { at: number; cp: Checkpoint }[] = [];
+      // Race order: metres along the main line, or on a lap metres past the finish line, which closes the ring.
+      const lap = main.closed ? main.length : 0;
+      const key = (at: number): number => (lap > 0 ? (((at - options.finish) % lap) + lap) % lap : at);
+      const finishKey = lap > 0 ? lap : options.finish;
+      const ordinary = [...options.at].filter((at) => (lap > 0 ? key(at) > 0 : true) && key(at) < finishKey).sort((a, b) => key(a) - key(b));
+      const mainline: { key: number; cp: Checkpoint }[] = [];
       const forks: RaceFork[] = [];
       const inFork = (at: number): Route | undefined => branchRoutes.find((entry) => at > entry.from && at < entry.to);
-      for (const at of ordinary) if (inFork(at) === undefined) mainline.push({ at, cp: box(`cp-${Math.round(at)}`, main, at) });
+      for (const at of ordinary) if (inFork(at) === undefined) mainline.push({ key: key(at), cp: box(`cp-${Math.round(at)}`, main, at) });
       for (const entry of branchRoutes) {
-        if (!mainline.some((item) => item.at <= entry.from)) mainline.push({ at: Math.max(0, entry.from - 1), cp: box(`cp-${entry.id}-in`, main, Math.max(0, entry.from - 1)) });
+        if (lap > 0 && key(entry.to) < key(entry.from)) throw new Error(`route course: branch "${entry.id}" crosses the finish line`);
+        const before = lap > 0 ? entry.from - 1 : Math.max(0, entry.from - 1);
+        if (!mainline.some((item) => item.key <= key(entry.from))) mainline.push({ key: key(before), cp: box(`cp-${entry.id}-in`, main, before) });
       }
-      mainline.push({ at: options.finish, cp: box("finish", main, options.finish) });
-      mainline.sort((a, b) => a.at - b.at);
+      mainline.push({ key: finishKey, cp: box("finish", main, options.finish) });
+      mainline.sort((a, b) => a.key - b.key);
       for (const entry of branchRoutes) {
-        const afterIndex = mainline.reduce((last, item, index) => (item.at <= entry.from ? index : last), -1);
+        const afterIndex = mainline.reduce((last, item, index) => (item.key <= key(entry.from) ? index : last), -1);
         if (afterIndex >= mainline.length - 1) throw new Error(`route course: branch "${entry.id}" rejoins after the finish line`);
         const inside = ordinary.filter((at) => at > entry.from && at < entry.to);
         const mainStops = inside.length > 0 ? inside : [(entry.from + entry.to) / 2];
@@ -833,13 +931,13 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
 }
 
 function progressOn(route: Route, s: number): number {
-  const clamped = Math.max(0, Math.min(route.length, s));
+  const clamped = onRoute(route, s);
   if (route.id === MAIN_ROUTE) return clamped;
   return route.from + (route.length === 0 ? 0 : (clamped / route.length) * (route.to - route.from));
 }
 
 function pointOn(route: Route, s: number, offset: number): CoursePoint {
-  const clamped = Math.max(0, Math.min(route.length, s));
+  const clamped = onRoute(route, s);
   const seg = segmentAt(route, clamped);
   const span = route.s[seg + 1]! - route.s[seg]!;
   const f = span === 0 ? 0 : (clamped - route.s[seg]!) / span;
@@ -848,7 +946,10 @@ function pointOn(route: Route, s: number, offset: number): CoursePoint {
   // Blend toward the neighbouring segment's heading near each vertex so a posed gate or wall post
   // turns smoothly through a bend instead of stepping at every sample.
   const here = route.heading[seg]!;
-  const neighbour = f < 0.5 ? route.heading[Math.max(0, seg - 1)]! : route.heading[Math.min(route.heading.length - 1, seg + 1)]!;
+  const last = route.heading.length - 1;
+  const before = seg > 0 ? seg - 1 : route.closed ? last : 0;
+  const after = seg < last ? seg + 1 : route.closed ? 0 : last;
+  const neighbour = f < 0.5 ? route.heading[before]! : route.heading[after]!;
   const weight = f < 0.5 ? 0.5 - f : f - 0.5;
   const heading = here + wrapAngle(neighbour - here) * weight;
   return {

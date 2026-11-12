@@ -13,9 +13,49 @@ import { createRunSession } from "../run/session";
 import { driveCourse } from "../testing/courseDriver";
 import { createVehicleController } from "../vehicle/controller";
 import { FLAT_YARD_GROUND } from "./ground";
-import { ROW_SIX_TRACK, TRACKS, trackById, type Track } from "./catalog";
+import type { SessionSnapshot } from "../run/session";
+import { createCoursePilot } from "../testing/courseDriver";
+import { buildTrack, REROUTE_DAY, rerouteTrackDef, ROW_SIX_TRACK, TRACKS, trackById, type Track } from "./catalog";
 
 const LAID = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
+
+/**
+ * The five hand-made courses as they were laid from TypeScript piece lists, before they moved into
+ * editor.scene.json as `course` markers: main-line length, each shortcut (main-line from, to, its own
+ * length), each barricade (route, run metres) and each hazard (route, course metres).
+ */
+const AUTHORED: Readonly<Record<string, { length: number; branches: readonly (readonly [string, number, number, number])[]; gates: readonly (readonly [string, string, number])[]; hazards: readonly (readonly [string, string, number, number])[] }>> = {
+  "slag-river": {
+    length: 779.5,
+    branches: [["ladle-bridge", 183, 311, 88.6]],
+    gates: [["slag_plow_crust", "main", 108], ["slag_jump_ladle", "ladle-bridge", 187], ["slag_jump_skimmer", "main", 388], ["slag_plow_pigs", "main", 455], ["slag_jump_trough", "main", 618], ["slag_plow_shed", "main", 668]],
+    hazards: [["spurt-pool", "main", 238, 254], ["spurt-mid-1", "main", 468, 480], ["spurt-mid-2", "main", 538, 550], ["spurt-last", "main", 700, 712], ["hairpin-1", "main", 329, 404], ["hairpin-2", "main", 564, 640]],
+  },
+  "rail-yard": {
+    length: 837.5,
+    branches: [["shed-cut", 394, 549, 107.7]],
+    gates: [["rail_plow_sleepers", "main", 108], ["rail_jump_buffer", "main", 252], ["rail_plow_shed", "shed-cut", 405], ["rail_plow_container", "main", 598], ["rail_jump_last", "main", 735]],
+    hazards: [["crossing-a", "main", 270, 278], ["crossing-b", "main", 672, 680], ["shed-oil", "shed-cut", 18, 100]],
+  },
+  "smelter-climb": {
+    length: 806.1,
+    branches: [["tapping-floor", 656, 763, 86.2]],
+    gates: [["smelt_plow_moulds", "main", 108], ["smelt_jump_ramp", "main", 190], ["smelt_plow_scrap", "main", 400], ["smelt_jump_rail", "main", 455], ["smelt_plow_tap", "tapping-floor", 640]],
+    hazards: [["pour-ramp-1", "main", 285, 296], ["pour-pin-1", "main", 352, 368], ["pour-ramp-2", "main", 485, 496], ["pour-pin-2", "main", 572, 588], ["pour-tap", "tapping-floor", 34, 46]],
+  },
+  "conveyor-maze": {
+    length: 850.8,
+    branches: [["belt-hall", 163, 284, 89.5]],
+    gates: [["belt_plow_pallets", "main", 92], ["belt_jump_hall", "belt-hall", 160], ["belt_jump_feed", "main", 275], ["belt_plow_bales", "main", 430], ["belt_jump_sorter", "main", 600], ["belt_plow_shutter", "main", 690]],
+    hazards: [["hall-belt", "belt-hall", 6, 70], ["long-way-belt", "main", 200, 246], ["feed-belt", "main", 312, 358], ["return-belt", "main", 466, 522], ["sorter-belt", "main", 630, 696], ["out-belt", "main", 772, 820]],
+  },
+  "flooded-quarry": {
+    length: 882.2,
+    branches: [["pit-wade", 519, 636, 82.6]],
+    gates: [["pit_plow_spoil", "main", 108], ["pit_jump_ramp", "main", 200], ["pit_plow_pump", "main", 322], ["pit_jump_crusher", "main", 596], ["pit_plow_rockfall", "main", 700], ["pit_jump_rim", "main", 772]],
+    hazards: [["flood-south", "main", 352, 413], ["flood-floor", "main", 476, 516], ["flood-exit", "main", 639, 672], ["pool", "pit-wade", 4, 78]],
+  },
+};
 
 /** A yard save in memory whose career has every tier open. */
 function memory() {
@@ -37,10 +77,10 @@ function runOn(track: Track, take: readonly string[] = [], sweep = false) {
 }
 
 describe("yard tracks", () => {
-  test("six tracks, each a different shape: no two share a length, a bend count or a shortcut", () => {
-    expect(TRACKS).toHaveLength(6);
+  test("seven tracks, each a different shape: no two share a length, a bend count or a shortcut", () => {
+    expect(TRACKS).toHaveLength(7);
     const turns = (track: Track) => track.def.pieces.filter((piece) => piece.kind === "turn").length;
-    expect(new Set(TRACKS.map((track) => Math.round(track.exitAt))).size).toBe(6);
+    expect(new Set(TRACKS.map((track) => Math.round(track.exitAt))).size).toBe(7);
     expect(new Set(LAID.map(turns)).size).toBeGreaterThanOrEqual(4);
     for (const track of LAID) expect(track.def.branches.length).toBeGreaterThan(0);
   });
@@ -121,7 +161,7 @@ describe("yard tracks", () => {
       // The pit wade trades the deep pool for distance: no faster, never much slower.
       else expect(short.runTime).toBeLessThan(long.runTime + 1);
     }
-  }, 30_000); // drives all six tracks twice at 60 Hz; the default 5 s budget is tight on a shared CI runner (took 5.08 s)
+  }, 90_000); // drives every laid track twice at 60 Hz: ~8 s alone, 37 s on a loaded four-core runner
 
   test("a gate on a shortcut only stops karts on that shortcut", () => {
     const track = trackById("rail-yard")!;
@@ -144,6 +184,57 @@ describe("yard tracks", () => {
     expect(free.route).toBe(MAIN_ROUTE);
     expect(free.run!).toBeGreaterThan(shed.atZ);
   });
+
+  test("the scene's courses lay the five hand-made tracks exactly as their piece lists did", () => {
+    for (const [id, want] of Object.entries(AUTHORED)) {
+      const track = trackById(id)!;
+      expect(Math.round(track.course.length * 10) / 10).toBe(want.length);
+      expect(track.course.routes.slice(1).map((route) => [route.id, route.from, route.to, Math.round(route.length * 10) / 10])).toEqual(want.branches.map((entry) => [...entry]));
+      expect(track.gates.map((gate) => [gate.id, gate.route, gate.atZ])).toEqual(want.gates.map((entry) => [...entry]));
+      expect(track.hazardSpans.map((span) => [span.id, span.route, span.from, span.to])).toEqual(want.hazards.map((entry) => [...entry]));
+    }
+  });
+
+  test("the Reroute is a new generated course every day, each one drivable, its shortcut faster and riskier", () => {
+    const tuning = tuningFrom(PARTS);
+    const days = Array.from({ length: 10 }, (_, index) => `2026-11-${String(index + 1).padStart(2, "0")}`);
+    const shapes = new Set<string>();
+    for (const day of days) {
+      const track = buildTrack(rerouteTrackDef(day));
+      shapes.add(JSON.stringify(track.def.pieces));
+      expect(track.def.branches).toHaveLength(1);
+      expect(track.gates).toHaveLength(5);
+      expect(track.gates.some((gate) => gate.dropsAt !== undefined)).toBe(true);
+      expect(track.pickups).toHaveLength(PARTS.length);
+      // The shortcut is a gamble: a barricade or a timed spill stands on it.
+      const shortcut = track.def.branches[0]!.id;
+      expect(track.gates.some((gate) => gate.route === shortcut) || track.hazardSpans.some((span) => span.route === shortcut && span.cycle !== undefined)).toBe(true);
+      // Clear of every hand-made track's ground.
+      for (const other of LAID.filter((entry) => entry.id !== "reroute")) {
+        const a = track.course.bounds;
+        const b = other.course.bounds;
+        expect(Math.max(b.minZ - a.maxZ, a.minZ - b.maxZ, b.minX - a.maxX, a.minX - b.maxX)).toBeGreaterThan(120);
+      }
+      const drive = (take: readonly string[]): number => {
+        const pilot = createCoursePilot(track, { take });
+        const kart = createVehicleController({ position: track.spawn.position, heading: track.spawn.heading }, track);
+        let pose = kart.tick(1 / 60, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }, tuning, { jumpPressed: false, plowBracing: true, time: 0 }, () => 0);
+        for (let time = 0; time < 120; time += 1 / 60) {
+          if ((pose.run ?? 0) >= track.exitAt) return time;
+          // type-escape: the pilot reads only the pose, run, route, clock and drops of a session snapshot.
+          const snap = { pose, run: pose.run ?? 0, route: pose.route ?? MAIN_ROUTE, runTime: time, collectedIds: new Set<string>() } as unknown as SessionSnapshot;
+          const frame = pilot(snap);
+          pose = kart.tick(1 / 60, { ...frame.axis, handbrake: 0 }, tuning, { jumpPressed: frame.input.jumpPressed, plowBracing: true, time }, () => 0);
+        }
+        throw new Error(`reroute ${day}: never reached the gate on ${take.join(",") || "the long way"} (stuck at ${pose.run?.toFixed(0)} m)`);
+      };
+      const long = drive([]);
+      const short = drive([shortcut]);
+      expect(short).toBeLessThan(long);
+    }
+    expect(shapes.size).toBe(days.length);
+    expect(trackById("reroute")!.def).toEqual(rerouteTrackDef(REROUTE_DAY));
+  }, 60_000); // ten generated courses, each driven twice at 60 Hz
 
   test("the rail yard's freight throws a kart back off the crossing", () => {
     const track = trackById("rail-yard")!;
