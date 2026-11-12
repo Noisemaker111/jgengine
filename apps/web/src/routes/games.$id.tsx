@@ -8,6 +8,7 @@ import { GameCard } from "../components/GameCard";
 import { GAME_IDS, gameBlurb, gameCredit, gameParts, gameSeed, gameTitle, isGameId } from "../lib/games";
 import { EngineTour } from "../live/EngineTour";
 import { seo } from "../lib/seo";
+import { trackEvent } from "../lib/analytics";
 
 export const Route = definePage({
   head: ({ params }) => {
@@ -26,6 +27,11 @@ function GamePage() {
   const frameWrapRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [supportsFullscreen, setSupportsFullscreen] = useState(false);
+
+  // The player starts as soon as the page draws, so a visit to a game's page is a play.
+  useEffect(() => {
+    if (isGameId(id)) trackEvent("game_play", { game: id });
+  }, [id]);
 
   useEffect(() => {
     setSupportsFullscreen(

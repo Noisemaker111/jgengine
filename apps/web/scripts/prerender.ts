@@ -1,7 +1,7 @@
 // `bun scripts/prerender.ts` (run by `bun run build` after `vite build`): writes every page of the
 // site as a static HTML file into dist/client, drawn by the engine's own JSX renderer through
 // `src/site/render.tsx`, linking the hashed files the client build made. Also writes 404.html,
-// which the Worker serves for any path with no page.
+// which the Worker serves for any path with no page, and sitemap.xml listing every page written.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,6 +64,7 @@ function assetsFor(source: string | null): PageAssets {
     fonts,
     modulePreloads: [...js].map((file) => `/${file}`),
     scripts: [`/${client.file}`],
+    analytics: true,
   };
 }
 
@@ -91,7 +92,8 @@ try {
   const missing = await render.renderPage("/404", assetsFor);
   if (missing.status !== 404) fail(`the not-found page rendered status ${missing.status}`);
   writeFileSync(join(clientDir, "404.html"), missing.html);
-  console.log(`prerender: ${paths.length} pages and 404.html written to dist/client`);
+  writeFileSync(join(clientDir, "sitemap.xml"), render.renderSitemap());
+  console.log(`prerender: ${paths.length} pages, 404.html and sitemap.xml written to dist/client`);
 } finally {
   await server.close();
 }

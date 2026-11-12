@@ -17,6 +17,7 @@ import { Page, PageHero, SectionHeading } from "../components/Layout";
 import { LiveDemos } from "../live/LiveDemos";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";
+import { trackEvent } from "../lib/analytics";
 
 export const Route = definePage({
   head: () =>
@@ -801,7 +802,17 @@ function Playground() {
   const viewerHost = useRef<HTMLDivElement>(null);
   const worldRef = useRef<PlaygroundWorldHandle | null>(null);
   const builtOnce = useRef(false);
-  const set = (patch: Partial<Dials>) => setDials((d) => ({ ...d, ...patch }));
+  // A playground start is the visitor's first change to the generated world on this visit.
+  const started = useRef(false);
+  const markStarted = () => {
+    if (started.current) return;
+    started.current = true;
+    trackEvent("playground_start");
+  };
+  const set = (patch: Partial<Dials>) => {
+    markStarted();
+    setDials((d) => ({ ...d, ...patch }));
+  };
 
   useEffect(() => {
     const parsed = parsePlaygroundQuery(window.location.search);

@@ -300,6 +300,7 @@ export function Footer() {
               Noisemaker111/jgengine
             </a>
           </p>
+          <p>Visits are counted with Databuddy analytics.</p>
           <p>Not related to automotive “JG Engines”.</p>
         </div>
       </div>
