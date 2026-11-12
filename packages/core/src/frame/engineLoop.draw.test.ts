@@ -41,17 +41,15 @@ function fakeCanvas(): HTMLCanvasElement {
 }
 
 let rafQueue: FrameRequestCallback[] = [];
-let originalRaf: typeof globalThis.requestAnimationFrame;
-let originalCancel: typeof globalThis.cancelAnimationFrame;
-let originalResizeObserver: typeof globalThis.ResizeObserver;
-let originalWindow: typeof globalThis.window;
+// Put each stubbed global back exactly: absent stays absent. Assigning the saved undefined back left an
+// own `window` key holding undefined, and a later file that stubs `window` only when the key is
+// missing then ran with no window (#3194).
+const STUBBED = ["requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver", "window"] as const;
+let saved = new Map<string, PropertyDescriptor | undefined>();
 
 beforeEach(() => {
   rafQueue = [];
-  originalRaf = globalThis.requestAnimationFrame;
-  originalCancel = globalThis.cancelAnimationFrame;
-  originalResizeObserver = globalThis.ResizeObserver;
-  originalWindow = globalThis.window;
+  saved = new Map(STUBBED.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
   globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
     rafQueue.push(callback);
     return rafQueue.length;
@@ -72,10 +70,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  globalThis.requestAnimationFrame = originalRaf;
-  globalThis.cancelAnimationFrame = originalCancel;
-  globalThis.ResizeObserver = originalResizeObserver;
-  (globalThis as { window?: unknown }).window = originalWindow;
+  for (const [name, descriptor] of saved) {
+    if (descriptor === undefined) Reflect.deleteProperty(globalThis, name);
+    else Object.defineProperty(globalThis, name, descriptor);
+  }
   bindFrameSource(null);
 });
 
