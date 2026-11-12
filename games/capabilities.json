@@ -4673,6 +4673,16 @@
       "intent": "seeded, schema-driven procedural generator with variants and editor exposure"
     },
     {
+      "id": "generator-metrics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/lapSim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them"
+    },
+    {
       "id": "gesture-resume",
       "packages": [
         "@jgengine/core"
