@@ -212,7 +212,8 @@
 }
 .press-screen {
   position: relative;
-  aspect-ratio: 16 / 9;
+  /* The game lays out at 1280x800 (PressStart's GAME_VIEW) and is scaled to this box. */
+  aspect-ratio: 16 / 10;
   border-radius: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--jg-line-strong);
@@ -225,6 +226,34 @@
   height: 100%;
   border: 0;
   background: #06080a;
+}
+/* Phones, touch tablets and the Full screen button: the game takes the viewport, still on this page. */
+.press-screen.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.press-size {
+  position: absolute;
+  top: max(0.6rem, env(safe-area-inset-top));
+  right: max(0.6rem, env(safe-area-inset-right));
+  z-index: 1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.press-size:hover {
+  background: rgb(0 0 0 / 0.75);
 }
 .press-cover {
   position: absolute;
@@ -327,7 +356,7 @@
     grid-template-columns: 1fr;
     overflow-x: visible;
     padding-bottom: 0;
-    max-height: calc((76rem - 21rem - 3.25rem) * 9 / 16);
+    max-height: calc((76rem - 21rem - 3.25rem) * 10 / 16);
     overflow-y: auto;
     padding-right: 0.25rem;
   }

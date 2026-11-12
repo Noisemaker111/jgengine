@@ -208,6 +208,16 @@ describe("report route probe", () => {
     expect(await probeReportRoute("/__jgengine/report", "deepward", offline as unknown as typeof fetch)).toBe(false);
     expect(await probeReportRoute("/__jgengine/report", "deepward", null)).toBe(false);
   });
+
+  test("a page no dev server served makes no request, so jgengine.com logs no 404 per game", async () => {
+    let asked = 0;
+    const answer = () => { asked += 1; return Promise.resolve(new Response(JSON.stringify({ error: "no report yet" }), { status: 404, headers: { "content-type": "application/json" } })); };
+    const probe = (cookie: string) => probeReportRoute("/__jgengine/report", "deepward", answer as unknown as typeof fetch, 1_000, cookie);
+    expect(await probe("theme=dark")).toBe(false);
+    expect(asked).toBe(0);
+    expect(await probe("theme=dark; jg_report_route=1")).toBe(true);
+    expect(asked).toBe(1);
+  });
 });
 
 describe("devtools lean report", () => {
