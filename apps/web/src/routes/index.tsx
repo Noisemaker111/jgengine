@@ -1,20 +1,18 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { Link } from "../site/link";
 import { definePage } from "../site/routes";
-import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-import { HeroShowcase } from "../components/HeroShowcase";
 import { GitHubIcon, Page } from "../components/Layout";
 import { CodeBlock } from "../components/marketing";
-import { EngineTour } from "../live/EngineTour";
 import { PromptStudio } from "../components/PromptStudio";
-import { CAPABILITIES, capability } from "../lib/capabilities";
-import { GAME_IDS, gameCover, gameTitle } from "../lib/games";
+import { DecisionLog } from "../components/story/DecisionLog";
+import { Different, OpenNumbers, Stack } from "../components/story/Different";
+import { HomeHero } from "../components/story/HomeHero";
+import { PressStart } from "../components/story/PressStart";
+import { EngineTour } from "../live/EngineTour";
+import { CAPABILITIES } from "../lib/capabilities";
 import { seo } from "../lib/seo";
 import { REPO_URL, SITE_DESCRIPTION, SITE_TITLE } from "../lib/site";
-import { BASELINE_GPU, MEASURED_GAME_COUNT, SCENE_READY_RANGE_MS, WORST_MENU_CLICK_MS, secondsCeil } from "../lib/siteFacts";
-import { snippet } from "../snippets";
-import { SYSTEMS } from "../lib/systems";
 
 export const Route = definePage({
   head: () => seo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
@@ -30,268 +28,73 @@ next steps:
   bun dev   # walkable base: WASD + jump, HUD canvas
   # F2+E in the browser opens the scene editor`;
 
-const SYNC_OUTPUT = `# add "ws" to engine in jgengine.json, then:
-$ npx jgengine sync
-sync Tide-Runner: updated package.json`;
-
-const DESKTOP_OUTPUT = `$ npx jgengine desktop
-.jgengine/desktop/<Name>.exe                          runs without installing
-.jgengine/desktop/<Name>_<version>_x64-setup.exe      installer`;
-
-const AGENT_TOOLS: readonly { command: string; does: string }[] = [
-  { command: "jgengine create", does: "Starts a playable game and installs the engine's skills into the project, so the agent knows the API before it writes a line." },
-  { command: "jgengine find <words>", does: "Names the folder, exports and capability for a concept, so the agent reuses the engine instead of writing its own." },
-  { command: "jgengine recipe <name>", does: "Prints a wired, type-checked snippet for a common joint: combat, loot, quests, vehicles, co-op." },
-  { command: "jgengine shoot · drive", does: "Boots the game headless, takes a real screenshot and plays it with keys and clicks, so the agent sees what it built." },
-];
-
-/** Games that use the controllers shown in the movement section, and what each one does there. */
-const CONTROLLER_PROOF: readonly { id: string; does: string }[] = [
-  { id: "drift-foundry", does: "Drive: physics racing on the vehicle model" },
-  { id: "harbor-heat", does: "Walk, drive and fly in one city" },
-];
-
 function Home() {
-  const controllerProof = CONTROLLER_PROOF.filter((item) => GAME_IDS.includes(item.id) && gameCover(item.id) !== null);
   return (
     <Page>
-      <HeroShowcase />
-
-      <section className="proof-strip" aria-label="jgengine in numbers">
-        <div className="proof-inner">
-          <Stat value="1" label="command to a walkable 3D game" />
-          <Stat value={String(CAPABILITIES.length)} label="engine capabilities, each with its import" />
-          <Stat value={`< ${secondsCeil(WORST_MENU_CLICK_MS)}`} label="slowest menu click while a game loads" />
-          <Stat value={String(GAME_IDS.length)} label="games built on it, playable here" />
-        </div>
-      </section>
+      <HomeHero />
+      <PressStart />
+      <Different />
+      <DecisionLog />
+      <Stack />
 
       <EngineTour
         demos={["car", "projectiles", "keys", "grass", "saves", "minimap", "xp"]}
-        eyebrow="Live"
-        title="Try the engine here."
-        lede="Each demo runs the engine in your browser and plays itself. Take over with the keys or mouse, or move a control and the code under it changes. Highlighted lines are the ones doing what the demo is doing right now."
+        eyebrow="Touch the engine"
+        title="This page runs the engine too."
+        lede="Each demo plays itself in your browser. Take over with the keys or mouse, or move a control and the code under it changes. The highlighted lines are the ones doing the work right now."
       />
 
-      <div id="features">
-        <Feature
-          id="start"
-          eyebrow="Start"
-          title="One command to a game you can walk around in."
-          body={
-            <>
-              <p>
-                You get terrain, sky, a player that walks and jumps, a HUD and the scene editor, plus the engine's skills
-                for your coding agent. <code className="inline-code">jgengine.json</code> lists the engine packages the game
-                uses; add one and <code className="inline-code">sync</code> installs it.
-              </p>
-            </>
-          }
-        >
-          <CodeBlock code={CREATE_OUTPUT} filename="terminal" />
-          <CodeBlock code={SYNC_OUTPUT} filename="terminal" />
-        </Feature>
+      <OpenNumbers />
 
-        <Feature
-          id="mobile"
-          alt
-          eyebrow="Phones"
-          title="A HUD that fits every screen, with touch controls."
-          body={
-            <>
-              <p>
-                Give each panel an anchor and a priority. The engine places them so they never cover each other, folds the
-                least important into a tap-to-open chip when room runs out, and only then scales the HUD down.
-              </p>
-              <p>
-                On a phone, movement gets a stick and your actions get buttons, with no extra code. List the buttons you
-                want, or swap sets when the player gets in a car.
-              </p>
-            </>
-          }
-          demo={
-            <figure className="device-pair">
-              <img src="/demo/hud-desktop.webp" alt="Beacon Bastion's HUD on a desktop screen" width={1280} height={720} loading="lazy" decoding="async" />
-              <img src="/demo/hud-phone.webp" alt="The same HUD laid out on a phone" width={390} height={844} loading="lazy" decoding="async" className="device-phone" />
-              <figcaption>Beacon Bastion, one HUD on desktop and phone. Real captures.</figcaption>
-            </figure>
-          }
-        >
-          <CodeBlock code={snippet("mobile-hud.tsx")} filename="src/game/ui/GameUI.tsx" />
-        </Feature>
-
-        <Feature
-          id="movement"
-          eyebrow="Movement"
-          title="Walking, driving and flying that feel right from the start."
-          body={
-            <>
-              <p>
-                A new game already walks: capsule movement with jump, steps and slopes. Cars are force-based and built from
-                separate effects, from tyre grip and weight transfer to drag and each driver aid, so any of them can be
-                switched off or retuned. Flight comes in hover, creative,
-                spectator and noclip modes, and aircraft have their own model.
-              </p>
-            </>
-          }
-          demo={
-            controllerProof.length > 0 ? (
-              <ul className="proof-tiles" aria-label="Games using these controllers">
-                {controllerProof.map((item) => (
-                  <li key={item.id}>
-                    <Link to="/games/$id" params={{ id: item.id }}>
-                      <img src={gameCover(item.id)!} alt="" width={800} height={450} loading="lazy" decoding="async" />
-                      <span className="proof-tile-title">{gameTitle(item.id)}</span>
-                      <span className="proof-tile-does">{item.does}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : undefined
-          }
-        >
-          <CodeBlock code={snippet("controllers.ts")} filename="src/game/movement.ts" />
-        </Feature>
-
-        <Feature
-          id="physics"
-          alt
-          eyebrow="Physics"
-          title="Physics built in. Rapier when you need more."
-          body={
-            <>
-              <p>
-                The built-in solver handles gravity, jumping, character movement and collision with no dependencies. Pass{" "}
-                <code className="inline-code">@jgengine/rapier</code> as the backend for rigid bodies, joints (fixed, hinge,
-                ball, distance, spring) and continuous collision. Both pass the same backend test suite.
-              </p>
-            </>
-          }
-        >
-          <CodeBlock code={snippet("physics.ts")} filename="src/world.ts" />
-        </Feature>
-
-        <Feature
-          id="desktop"
-          eyebrow="Windows"
-          title="Ship it as a Windows .exe."
-          body={
-            <>
-              <p>
-                Run <code className="inline-code">npx jgengine desktop</code> in a game folder, or{" "}
-                <code className="inline-code">bun run desktop</code> in a game you created. You get a{" "}
-                <code className="inline-code">.exe</code> that runs without installing, plus an installer for everyone else.
-              </p>
-              <p>Building it needs Rust and the Visual Studio C++ Build Tools on the machine that builds.</p>
-            </>
-          }
-        >
-          <CodeBlock code={DESKTOP_OUTPUT} filename="terminal" />
-        </Feature>
-      </div>
-
-      <section className="band band-alt" aria-labelledby="systems-heading">
+      <section id="start" className="band" aria-labelledby="start-heading">
         <div className="band-inner">
           <header className="band-head">
             <div>
-              <p className="eyebrow">Systems</p>
-              <h2 id="systems-heading" className="band-title">
-                Deep systems, all with knobs.
+              <p className="eyebrow">Start</p>
+              <h2 id="start-heading" className="story-h2">
+                Three ways in. Pick the one that fits.
               </h2>
             </div>
             <p className="band-lede">
-              The hard parts ship in the engine and are tuned with plain options, not rewritten per game. Each card shows the
-              line that imports it.
+              Most people only need the first. The second is what the agent runs for you. The third is for a game you already have.
             </p>
           </header>
-          <ul className="systems">
-            {SYSTEMS.map((system) => {
-              const row = system.ref === undefined ? undefined : capability(system.ref);
-              return (
-                <li key={system.name} className="system">
-                  <h3>{system.name}</h3>
-                  <p>{system.line}</p>
-                  <ul className="knobs" aria-label={`${system.name} options`}>
-                    {system.knobs.map((knob) => (
-                      <li key={knob}>{knob}</li>
-                    ))}
-                  </ul>
-                  <code className="system-import">{row?.exports[0]?.importLine ?? system.home}</code>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="band-foot">
-            <Link to="/playground" className="btn btn-primary">
-              Grow a city with sliders <span className="arrow" aria-hidden>→</span>
-            </Link>
-            <Link to="/docs" className="btn btn-secondary">
-              Search all {CAPABILITIES.length} capabilities <span className="arrow" aria-hidden>→</span>
-            </Link>
-            <Link to="/cookbook" className="btn btn-secondary">
-              Thirty features in a few lines <span className="arrow" aria-hidden>→</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="band" aria-labelledby="speed-heading">
-        <div className="band-inner">
-          <header className="band-head">
-            <div>
-              <p className="eyebrow">Loading</p>
-              <h2 id="speed-heading" className="band-title">
-                The menu answers in under a second.
-              </h2>
-            </div>
-            <p className="band-lede">
-              The menu answers while the world is still loading. Every change that touches a game is timed against a saved
-              baseline, and one that makes a game load slower fails the check.
-            </p>
-          </header>
-          <div className="speed-grid">
-            <Stat value={`${WORST_MENU_CLICK_MS} ms`} label={`slowest menu click on a cold load, across ${MEASURED_GAME_COUNT} games`} />
-            <Stat
-              value={`${secondsCeil(SCENE_READY_RANGE_MS[0])}–${secondsCeil(SCENE_READY_RANGE_MS[1])}`}
-              label="until the full 3D scene is ready, by game"
-            />
-            <Stat value={BASELINE_GPU} label="the machine the baseline is measured on" />
-          </div>
-        </div>
-      </section>
-
-      <section className="band band-alt" aria-labelledby="agents-heading">
-        <div className="band-inner agents">
-          <div>
-            <p className="eyebrow">Made for coding agents</p>
-            <h2 id="agents-heading" className="band-title">
-              Say what you want. Your agent builds it.
-            </h2>
-            <p className="band-lede mt-5">
-              Claude Code, Codex, Cursor or any agent that runs commands. The engine gives it the map, the parts, and a way to
-              check its own work.
-            </p>
-            <ul className="agent-tools">
-              {AGENT_TOOLS.map((tool) => (
-                <li key={tool.command}>
-                  <code>{tool.command}</code>
-                  <p>{tool.does}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 text-sm text-muted">
-              Agents can also read{" "}
-              <a href="/llms.txt" className="link">
-                llms.txt
-              </a>{" "}
-              and{" "}
-              <a href="/agents.md" className="link">
-                agents.md
-              </a>
-              .
-            </p>
-          </div>
-          <PromptStudio />
+          <ol className="doors">
+            <li className="door">
+              <span className="door-n">1</span>
+              <h3>Say it to your agent.</h3>
+              <p>Claude Code, Codex, Cursor, or any agent that can run commands. Edit the idea, copy it, paste it.</p>
+              <PromptStudio />
+            </li>
+            <li className="door">
+              <span className="door-n">2</span>
+              <h3>Scaffold it yourself.</h3>
+              <p>
+                One command gives you a walkable 3D game, a HUD, the scene editor and the agent skills. Bun or npm, no global
+                install.
+              </p>
+              <CodeBlock code={CREATE_OUTPUT} filename="terminal" />
+            </li>
+            <li className="door">
+              <span className="door-n">3</span>
+              <h3>Take one part.</h3>
+              <p>
+                Already have a three.js game? Pull in health, XP, saves or the minimap on their own, with no rewrite. Search all{" "}
+                {CAPABILITIES.length} capabilities with their imports.
+              </p>
+              <div className="door-links">
+                <Link to="/adopt" className="btn btn-secondary">
+                  Use one system <span className="arrow" aria-hidden>→</span>
+                </Link>
+                <Link to="/docs" className="btn btn-secondary">
+                  Search capabilities <span className="arrow" aria-hidden>→</span>
+                </Link>
+                <Link to="/cookbook" className="btn btn-secondary">
+                  Cookbook <span className="arrow" aria-hidden>→</span>
+                </Link>
+              </div>
+            </li>
+          </ol>
         </div>
       </section>
 
@@ -310,54 +113,11 @@ function Home() {
               <GitHubIcon /> Get the source
             </a>
             <Link to="/games" className="btn btn-secondary">
-              See games built with it
+              Play the games
             </Link>
           </div>
         </div>
       </section>
     </Page>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="stat">
-      <span className="stat-value">{value}</span>
-      <span className="stat-label">{label}</span>
-    </div>
-  );
-}
-
-function Feature({
-  id,
-  eyebrow,
-  title,
-  body,
-  demo,
-  alt = false,
-  children,
-}: {
-  id: string;
-  eyebrow: string;
-  title: string;
-  body: ReactNode;
-  demo?: ReactNode;
-  alt?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <section className={alt ? "band band-alt" : "band"} aria-labelledby={`${id}-heading`}>
-      <div className="band-inner feature">
-        <div className="feature-copy">
-          <p className="eyebrow">{eyebrow}</p>
-          <h2 id={`${id}-heading`} className="band-title">
-            {title}
-          </h2>
-          <div className="feature-body">{body}</div>
-          {demo}
-        </div>
-        <div className="feature-code">{children}</div>
-      </div>
-    </section>
   );
 }
