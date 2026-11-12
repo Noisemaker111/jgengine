@@ -1,18 +1,61 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useState } from "@jgengine/core/ui/jsx";
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { GAME_IDS, gameBlurb, gameCover, gameTitle } from "../../lib/games";
+
+/**
+ * The viewport a framed game lays out for. Its title menu is built for a desktop window: at 1024x640
+ * Drift Foundry and Harbor Heat clip theirs, and in the frame's own ~720x450 or a phone's 360x225 most
+ * menus showed a logo and nothing to press. The game gets this size and the frame scales the picture.
+ */
+const GAME_VIEW = { width: 1280, height: 800 };
+
+/** Phones and touch tablets play over the whole screen, in their own touch layout, not a scaled desktop. */
+const FULL_SCREEN_QUERY = "(max-width: 639px), (pointer: coarse)";
 
 /** A game picker over one live viewport: the cover until the visitor presses play, then the real game. */
 export function PressStart() {
   const games = GAME_IDS.filter((id) => gameCover(id) !== null);
   const [selected, setSelected] = useState(games[0] ?? "");
   const [playing, setPlaying] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [scale, setScale] = useState(0);
+  const screen = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = screen.current;
+    if (node === null || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setScale(node.clientWidth / GAME_VIEW.width));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const root = document.documentElement;
+    const before = root.style.overflow;
+    root.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && document.activeElement?.tagName !== "IFRAME") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      root.style.overflow = before;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [expanded]);
+
   if (games.length === 0) return null;
   const pick = (id: string) => {
     setSelected(id);
     setPlaying(false);
+    setExpanded(false);
   };
+  const play = () => {
+    setPlaying(true);
+    setExpanded(typeof matchMedia === "function" && matchMedia(FULL_SCREEN_QUERY).matches);
+  };
+  const framed = playing && !expanded;
   return (
     <section id="play" className="press" data-theme="dark" aria-labelledby="play-heading">
       <div className="press-inner">
@@ -28,16 +71,21 @@ export function PressStart() {
           </p>
         </header>
         <div className="press-stage">
-          <div className="press-screen gizmo">
+          <div ref={screen} className={expanded ? "press-screen gizmo is-expanded" : "press-screen gizmo"}>
             {playing ? (
               <iframe
                 key={selected}
                 src={`/play/?game=${selected}`}
                 title={`${gameTitle(selected)}, playable`}
                 allow="fullscreen; xr-spatial-tracking; gamepad"
+                style={
+                  framed
+                    ? { width: `${GAME_VIEW.width}px`, height: `${GAME_VIEW.height}px`, transform: `scale(${scale})`, transformOrigin: "0 0" }
+                    : undefined
+                }
               />
             ) : (
-              <button type="button" className="press-cover" onClick={() => setPlaying(true)} aria-label={`Play ${gameTitle(selected)} here`}>
+              <button type="button" className="press-cover" onClick={play} aria-label={`Play ${gameTitle(selected)} here`}>
                 <img src={gameCover(selected)!} alt="" width={800} height={450} decoding="async" />
                 <span className="press-play">
                   <span className="press-play-icon" aria-hidden>
@@ -48,10 +96,17 @@ export function PressStart() {
                 <span className="press-note">Click inside the game for keyboard and mouse. Sound starts on your first click.</span>
               </button>
             )}
-            <div className="press-hud" aria-hidden>
-              <span>{playing ? "● live" : "○ ready"}</span>
-              <span>/play/?game={selected}</span>
-            </div>
+            {playing ? (
+              <button type="button" className="press-size" onClick={() => setExpanded(!expanded)}>
+                {expanded ? "Close" : "Full screen"}
+              </button>
+            ) : null}
+            {expanded ? null : (
+              <div className="press-hud" aria-hidden>
+                <span>{playing ? "● live" : "○ ready"}</span>
+                <span>/play/?game={selected}</span>
+              </div>
+            )}
           </div>
           <ol className="carts" aria-label="Games">
             {games.map((id, i) => (
