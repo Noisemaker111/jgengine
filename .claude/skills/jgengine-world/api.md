@@ -4272,6 +4272,7 @@
 - `PLANT_MESH_OUTPUT` (const): const PLANT_MESH_OUTPUT: "plant-mesh" — The generator output family a grown plant returns: a {@link PlantMesh}.
 - `PlantGrownGeneratorOptions` (interface): interface PlantGrownGeneratorOptions — Options for {@link createPlantGrownGenerator}.
 - `createPlantGrownGenerator` (function): function createPlantGrownGenerator(cache: PlantCache, options: PlantGrownGeneratorOptions = {}): GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly labe… — A grown-plant generator over one cache. `prepare` grows in a worker (or in slices off the frame, or loads from storage); `generate` answers from the cache, growing on the spot only when nothing prepared it.
+- `plantSiteOf` (function): function plantSiteOf(params: Pick<PlantGrownParams, "light" | "stand">): PlantEnvironment — The site a grown plant's params describe: the open temperate site under its `light`, and an even-aged stand around it when `stand` is above 0. At 0 it is open-grown, as an isolated tree is.
 - `plantStructureKey` (function): function plantStructureKey(request: PlantGrowRequest): string — The cache key of a grown structure: species and its version, simulation version, seed, age, day and site. Anything that changes what grows is in it; nothing about the look is.
 - `plantStyleOf` (function): function plantStyleOf(params: PlantGrownParams): PlantStyle — The style a grown plant's params describe.
 
@@ -4311,6 +4312,7 @@
 
 ## @jgengine/core/plants/growth/plantEnvironment
 
+- `MIN_STAND_SPACING_INDEX` (const): const MIN_STAND_SPACING_INDEX: 0.15 — Closest spacing index a stand is grown at; closer than this a stand self-thins (Hart–Becking).
 - `OPEN_TEMPERATE_SITE` (const): const OPEN_TEMPERATE_SITE: PlantEnvironment — A temperate, well-watered, fertile open site at 45° N: the site Carmean's curves describe.
 - `PlantEnvironment` (interface): interface PlantEnvironment — Where a plant grows, as plain numbers so it serialises and hashes.
 - `SIDE_LIGHT_SHARE` (const): const SIDE_LIGHT_SHARE: 0.6 — Share of an overcast sky's light that reaches a randomly oriented leaf from more than 45° off the zenith: with sky radiance ∝ 1 + 2 cos θ (Moon & Spencer 1942, the CIE standard overcast sky) it is (cos 45° + cos² 45°) / 2 ≈ 0.6. The shadow cone covers the light from within 45° of the zenith.
@@ -5132,7 +5134,7 @@
 - `createTriggerOutcome` (function): function createTriggerOutcome(): TriggerOutcomeStore — Default runtime for the built-in {@link BUILTIN_TRIGGER_ACTIONS}: a small serializable outcome the HUD renders, with no engine-side UI. Pass {@link TriggerOutcomeStore.handlers} to {@link createAuthoredTriggerRuntime} and read {@link TriggerOutcomeStore.get} from the HUD via `useSyncExternalStore` — that is the whole zero-code "reach the zone to win" wiring.
 - `getTriggerAction` (function): function getTriggerAction(id: string): TriggerActionDefinition | undefined — Registered definition for an action id, or undefined when the game never declared it.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
-- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
+- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box), whose bounds are centred on `center` ({@link volumeHalfSize}). Cylinder height defaults to its diameter when omitted.
 - `registerBuiltinTriggerActions` (function): function registerBuiltinTriggerActions(): void — Register the engine's built-in {@link BUILTIN_TRIGGER_ACTIONS} so they appear in the editor's trigger inspector. Idempotent; call at module load (a game may still register its own actions or re-register a built-in id to override it).
 - `registerTriggerAction` (function): function registerTriggerAction(definition: TriggerActionDefinition): void — Declare a game action the editor can assign to volume/marker triggers. Idempotent per `id` (last registration wins). Call at module load next to catalogs.
 
@@ -7482,7 +7484,7 @@
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `pointGravity` (function): function pointGravity(options: PointGravityOptions): GravityField — Radial gravity toward one center, with optional inverse-square falloff for planetary worlds.
 - `pointInPolygon` (function): function pointInPolygon(ring: readonly Vec2[], x: number, z: number): boolean — Even-odd point-in-polygon test.
-- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
+- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box), whose bounds are centred on `center` ({@link volumeHalfSize}). Cylinder height defaults to its diameter when omitted.
 - `pointSetRegion` (function): function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> — A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point table" region. `contains` is exact membership. Empty when the set is empty.
 - `polygonArea` (function): function polygonArea(ring: readonly Vec2[]): number — Absolute polygon area.
 - `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
@@ -7984,11 +7986,14 @@
 
 ## @jgengine/core/world/sceneShapes
 
+- `DEFAULT_VOLUME_HALF_SIZE` (const): const DEFAULT_VOLUME_HALF_SIZE: 5 — A box volume's half size per axis when it has no `halfExtents`; a sphere's or cylinder's radius likewise.
 - `SceneDocumentLike` (interface): interface SceneDocumentLike — The minimal document shape scatter/vegetation resolve against — markers, volumes, and paths only. Any `EditorDocument` satisfies it structurally; this module never imports the editor domain, so world stays the one-directional dependency editor already builds on.
 - `SceneMarkerLike` (interface): interface SceneMarkerLike — The minimal point-object shape clearance reads from a document's markers; any `EditorMarker` satisfies it.
 - `ScenePathLike` (interface): interface ScenePathLike — The minimal polyline shape {@link resolveScatterRegion} et al. read; any `EditorPath` satisfies it.
 - `ScenePoint3` (interface): interface ScenePoint3 — A world-space point — structurally compatible with the editor's `EditorVec3`.
 - `SceneVolumeLike` (interface): interface SceneVolumeLike — The minimal volume shape vegetation/clearance/triggers read; any `EditorVolume` satisfies it.
+- `volumeCenterOnGround` (function): function volumeCenterOnGround(volume: Pick<SceneVolumeLike, "shape" | "radius" | "height" | "halfExtents">, ground: ScenePoint3): ScenePoint3 — The `center` that stands a box or cylinder on `ground`: raised by its half height, so its bottom face is at `ground.y`. A sphere is centred on the point itself.
+- `volumeHalfSize` (function): function volumeHalfSize(volume: Pick<SceneVolumeLike, "shape" | "radius" | "height" | "halfExtents">): ScenePoint3 — Half sizes of a volume's bounds, which are centred on `center` on every axis: a box spans `center ± halfExtents`, a cylinder `center.y ± height / 2` (height defaults to its diameter), a sphere `center ± radius`. Runtime containment and the editor's drawing both read this, so a volume authored to stand on the floor has `center.y` at the floor plus its half height.
 
 ## @jgengine/core/world/segment
 
