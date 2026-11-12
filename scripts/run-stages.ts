@@ -90,7 +90,6 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "recipes", script: "scripts/check-recipes.ts", jobs: ["types"], reads: [".claude/", "games/"] },
   { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"], reads: [".claude/", "apps/", "packages/"], skipsTests: true },
   { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"], reads: ["packages/ui/src/", "registry/"] },
-  { name: "street-rule-parity", script: "scripts/check-street-rule-parity.ts", jobs: ["types"], reads: ["packages/core/src/city/cityKind.ts", "packages/core/src/roads/streetGenerator.ts", "packages/editor/src/handlers/streets.ts"] },
   { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
   // Reads the whole tree: a file named `nul` anywhere breaks every Windows checkout.
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },

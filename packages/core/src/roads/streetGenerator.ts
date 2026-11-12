@@ -35,7 +35,7 @@
  *   exposed as {@link StreetNetwork.elevationAt} so renderers drape junction welds, sidewalks, and
  *   building bases off the SAME field for weld-continuous ground.
  *
- *   Road elevation is WHOLLY SEPARATE from the `context.heightAt` TERRAIN sampler that drives
+ *   Road elevation is WHOLLY SEPARATE from the `heightAt` TERRAIN input that drives
  *   bridges/tunnels: `elevationAt` shapes the road surface itself; `heightAt` is the world ground the
  *   road bridges over or bores through. They never interact — a flat-elevation network can still span
  *   bridges, and an elevated network's `heights[]` say nothing about where terrain gaps or ridges are.
@@ -74,6 +74,8 @@
  *
  * @capability street-generator seed-driven procedural streets and race circuits from one slider-driven engine
  */
+import { defineGenerator, type GeneratorContext } from "../generator/generator";
+import { defineParamSchema, type ParamField, type ParamGroup, type ParamPreset, type ParamsOf } from "../generator/paramSchema";
 import { seededStreams } from "../random/rng";
 
 /** Add one to `counts[index]` (an unset slot counts from zero). */
@@ -155,7 +157,7 @@ export interface Street {
   sidewalks?: StreetSidewalks;
   /** Per-point road-surface height (one per `points`), present only when `elevation > 0`. Grade-limited
    *  so no consecutive pair exceeds `maxGrade`; a loop stays continuous (`heights[0] === heights.at(-1)`).
-   *  This is ROAD elevation, not the `context.heightAt` terrain that drives bridges/tunnels. */
+   *  This is ROAD elevation, not the `heightAt` terrain input that drives bridges/tunnels. */
   heights?: number[];
 }
 
@@ -201,76 +203,87 @@ export interface StreetNetwork {
   tunnels: StreetFeature[];
   /** Independent cycle count (E − V + components): 0 = pure tree, ≥1 = has loops. */
   loops: number;
-  /** The shared road-surface height FIELD (volume-local), present only when `elevation > 0`. Sample it
-   *  to drape junction welds, sidewalks, and building bases so every surface meets the road continuously
-   *  — the streets/edges sample this exact field. Distinct from the `context.heightAt` terrain sampler. */
-  elevationAt?: (x: number, z: number) => number;
 }
 
-/** Fully-defaulted slider set the generator reads. */
-export interface StreetNetworkRules {
-  seed: string;
-  /** Organic boundary clipping amount, when supported by the caller. */
-  outline?: number;
-  /** 1 = regular lattice nodes; 0 = organic scatter. */
-  gridness: number;
-  /** 0 = tree (dead-ends); 1 = a single closed circuit. */
-  loopiness: number;
-  /** Extra chord edges between neighbors → mesh density. */
-  connectivity: number;
-  /** Spur-lane density forking off the mains (and, in a circuit, the pit-lane trigger). */
-  branching: number;
-  /** Share of branch streets that use residential side-street rules. */
-  residentialBranches?: number;
-  /** Fraction of dangling ends kept as cul-de-sacs (vs reconnected). */
-  deadEnds: number;
-  /** Target node spacing / block size, world units. */
-  segmentLength: number;
-  /** Cross-axis spacing multiplier (≥1 = long skinny Manhattan blocks). */
-  aspect: number;
-  /** Sideways wander amplitude, 0..1 (and circuit corner-template density). */
-  winding: number;
-  /** Minimum curve radius (m) — caps wander curvature and sets the corner-fillet radius. */
-  minCurveRadius: number;
-  /** Shallowest corner (degrees) a street keeps — gentler bends are straightened. */
-  minTurnAngle: number;
-  /** Sharpest corner (degrees) between consecutive centerline samples — sharper corners are filleted. */
-  maxTurnAngle: number;
-  /** Base street width; the hierarchy scales off it. */
-  width: number;
-  /** Share of avenues upgraded to boulevards, 0..1. */
-  boulevards: number;
-  /** Pedestrian band width paved on each side of boulevard/avenue/street levels. Default ~2. */
-  sidewalkWidth?: number;
-  /** Road-surface relief amplitude, 0..1. 0 (default) = dead flat and byte-identical to a pre-elevation
-   *  network; 1 ≈ 22 m of relief across a ~520 m volume (scaled to the footprint). */
-  elevation?: number | undefined;
-  /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
-  maxGrade?: number;
-  /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around
-   *  an empty middle), BYTE-IDENTICAL to a pre-compactness network. Rising values switch the circuit
-   *  LAYOUT stage to a grid spanning-tree CYCLE that folds back through its own interior: parallel
-   *  adjacent runs one corridor pitch apart, switchback esses, consecutive hairpins, and long straights
-   *  from straight tree branches, with footprint coverage rising with the dial (~45% of grid cells at
-   *  0.5, ~85% at 1). Everything downstream — spline fit, curvature floor, straight designation,
-   *  self-clearance, edge distribution, elevation, pit lane — is reused unchanged. Only meaningful in
-   *  circuit mode; ignored by the street net. */
-  compactness?: number;
-}
+/** The street generator's output family: a {@link StreetNetwork}. */
+export const STREET_NETWORK_OUTPUT = "street-network";
 
-/** Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network. */
-export interface StreetNetworkContext {
-  /** Volume-local ground height sampler. */
+/** The generator id a caller or the editor's variant grid names. */
+export const STREET_NETWORK_GENERATOR_ID = "streets";
+
+/** The topology dials, shared by every generator that grows a street network first (the race circuit). */
+const STREET_FIELDS = [
+  { type: "range", key: "gridness", label: "grid-ness", group: "layout", min: 0, max: 1, step: 0.01, default: 0.9 },
+  { type: "range", key: "loopiness", label: "loopiness", group: "layout", min: 0, max: 1, step: 0.01, default: 0.2 },
+  { type: "range", key: "connectivity", label: "connectivity", group: "layout", min: 0, max: 1, step: 0.01, default: 0.35 },
+  { type: "range", key: "branching", label: "branching", group: "layout", min: 0, max: 1, step: 0.01, default: 0.3 },
+  { type: "range", key: "deadEnds", label: "dead ends", group: "layout", min: 0, max: 1, step: 0.01, default: 0.5 },
+  { type: "range", key: "segmentLength", label: "block size", group: "layout", min: 10, max: 400, step: 0.5, default: 48, unit: "m", explore: [20, 140] },
+  { type: "range", key: "aspect", label: "block aspect", group: "layout", min: 1, max: 4, step: 0.05, default: 1, explore: [1, 3] },
+  { type: "range", key: "winding", label: "winding", group: "layout", min: 0, max: 1, step: 0.01, default: 0.2 },
+  { type: "range", key: "minCurveRadius", label: "min curve radius", group: "layout", min: 2, max: 200, step: 0.5, default: 30, unit: "m", explore: [6, 120] },
+  { type: "range", key: "minTurnAngle", label: "min turn angle", group: "layout", min: 0, max: 90, step: 0.5, default: 0, unit: "°" },
+  { type: "range", key: "maxTurnAngle", label: "max turn angle", group: "layout", min: 10, max: 180, step: 0.5, default: 120, unit: "°", explore: [30, 180] },
+  { type: "range", key: "width", label: "street width", group: "layout", min: 2, max: 40, step: 0.5, default: 7, unit: "m", explore: [3, 16] },
+  { type: "range", key: "boulevards", label: "boulevards", group: "layout", min: 0, max: 1, step: 0.01, default: 0.3 },
+  { type: "range", key: "sidewalkWidth", label: "sidewalk width", group: "layout", min: 0, max: 6, step: 0.1, default: 2, unit: "m" },
+  { type: "range", key: "elevation", label: "road elevation", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+  { type: "range", key: "maxGrade", label: "max grade", group: "layout", min: 0.005, max: 0.5, step: 0.005, default: 0.07, explore: [0.01, 0.3] },
+  { type: "range", key: "compactness", label: "circuit compactness", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+  { type: "number", key: "halfX", label: "half width", group: "footprint", min: 1, default: 200, vary: false },
+  { type: "number", key: "halfZ", label: "half depth", group: "footprint", min: 1, default: 200, vary: false },
+  { type: "bool", key: "bridges", label: "bridges over gaps", group: "terrain", default: false },
+  { type: "bool", key: "tunnels", label: "tunnels through ridges", group: "terrain", default: false },
+  { type: "number", key: "minElevation", label: "bridge below y", group: "terrain", step: 0.5, default: -2, vary: false },
+  { type: "range", key: "tunnelClearance", label: "tunnel ridge height", group: "terrain", min: 1, max: 40, step: 0.5, default: 6, unit: "m" },
+] as const satisfies readonly ParamField[];
+
+const STREET_GROUPS = [
+  { id: "layout", label: "Layout" },
+  { id: "footprint", label: "Footprint" },
+  { id: "terrain", label: "Terrain features", collapsed: true },
+] as const satisfies readonly ParamGroup[];
+
+/** The two ends of the slider space, as presets: an open street net and a closed race circuit. */
+const STREET_PRESETS = [
+  {
+    id: "net",
+    label: "Street net",
+    values: { gridness: 0.9, loopiness: 0.2, connectivity: 0.35, branching: 0.3, deadEnds: 0.5, segmentLength: 48, aspect: 1, winding: 0.2, minCurveRadius: 30, minTurnAngle: 0, maxTurnAngle: 120, width: 7, boulevards: 0.3 },
+  },
+  {
+    id: "circuit",
+    label: "Race circuit",
+    values: { gridness: 0.1, loopiness: 1, connectivity: 0, branching: 0, deadEnds: 0, segmentLength: 60, aspect: 1, winding: 0.5, minCurveRadius: 24, minTurnAngle: 0, maxTurnAngle: 70, width: 12, boulevards: 0 },
+  },
+] as const satisfies readonly ParamPreset[];
+
+/**
+ * The street generator's params: topology dials (a city street net and a closed circuit are the same
+ * dials at opposite extremes), the volume-local footprint `halfX` × `halfZ` it grows inside, and the
+ * bridge/tunnel switches its ground `input` drives.
+ */
+export const STREET_NETWORK_SCHEMA = defineParamSchema({
+  groups: STREET_GROUPS,
+  fields: [...STREET_FIELDS, { type: "seed", key: "seed", label: "seed", default: "" }],
+  presets: STREET_PRESETS,
+});
+
+/** Parsed street generator params. */
+export type StreetNetworkParams = ParamsOf<typeof STREET_NETWORK_SCHEMA>;
+
+/** The street generator's world input: the ground it bridges over and bores through. */
+export interface StreetNetworkInput {
+  /**
+   * Volume-local ground height. A span diving under `minElevation` becomes a bridge, one buried under
+   * a ridge `tunnelClearance` above its banks a tunnel (with `bridges` / `tunnels` on). Without it the
+   * network has no features. Distinct from the road-surface `elevation` field.
+   */
   heightAt?: ((x: number, z: number) => number) | undefined;
-  /** Ground below this (local) height is a gap streets bridge over. */
-  minElevation?: number;
-  /** Emit bridge decks over sub-`minElevation` gaps. */
-  bridges?: boolean;
-  /** Emit tunnel bores where the ground rises this far above a span's banks. */
-  tunnels?: boolean;
-  /** Ridge height above the banks that triggers a tunnel. Default 6. */
-  tunnelClearance?: number;
 }
+
+/** The params one generate call grows from, with its resolved seed. */
+type StreetRules = Omit<StreetNetworkParams, "seed"> & { readonly seed: string };
 
 const TAU = Math.PI * 2;
 const MAX_NODES = 900;
@@ -279,7 +292,6 @@ const MAX_EDGES = 1400;
 const MAX_LANES = 260;
 const MAX_CIRCUIT_TRIES = 20;
 const BETWEENNESS_SOURCES = 40;
-const DEFAULT_SIDEWALK_WIDTH = 2;
 /** Hard cap on the direction change between consecutive arc-fillet samples (≈9°) so filleted corners
  *  render as smooth curves, not chunky polygons, regardless of the (looser) `maxTurnAngle` ceiling. */
 const MAX_ARC_STEP_RAD = (9 * Math.PI) / 180;
@@ -472,7 +484,7 @@ function makeWander(rng: () => number, amplitude: number, wavelength: number): (
 }
 
 /** The wander amplitude for a segment, capped so peak curvature never dips under `minCurveRadius`. */
-function windingAmplitude(rules: StreetNetworkRules, wavelength: number): number {
+function windingAmplitude(rules: StreetRules, wavelength: number): number {
   const want = rules.winding * rules.segmentLength * 0.34;
   // Peak curvature of A·sin(2πt/λ) is A·(2π/λ)²; keep radius ≥ minCurveRadius (0.35 covers the octave mix).
   const cap = (0.35 * wavelength * wavelength) / (4 * Math.PI * Math.PI * Math.max(1, rules.minCurveRadius));
@@ -480,7 +492,7 @@ function windingAmplitude(rules: StreetNetworkRules, wavelength: number): number
 }
 
 /** Sample a straight chord a→b into a wandered polyline (endpoints pinned exactly on the nodes). */
-function wanderEdge(a: StreetVec2, b: StreetVec2, rng: () => number, rules: StreetNetworkRules): StreetVec2[] {
+function wanderEdge(a: StreetVec2, b: StreetVec2, rng: () => number, rules: StreetRules): StreetVec2[] {
   const dx = b[0] - a[0];
   const dz = b[1] - a[1];
   const len = Math.hypot(dx, dz);
@@ -512,7 +524,7 @@ interface Lattice {
 }
 
 /** Lay seed nodes: a regular lattice at `gridness` 1, jittered toward organic scatter as it drops. */
-function seedLattice(rules: StreetNetworkRules, hx: number, hz: number, rng: () => number): Lattice {
+function seedLattice(rules: StreetRules, hx: number, hz: number, rng: () => number): Lattice {
   const spacingX = rules.segmentLength * Math.max(1, rules.aspect);
   const spacingZ = rules.segmentLength;
   const cols = Math.max(2, Math.min(Math.round((hx * 2) / spacingX), 30));
@@ -589,7 +601,7 @@ interface RawEdge {
 /** Grow the open street NET: lattice nodes, a spanning tree (guaranteed connectivity), then chords,
  *  loop-closing reconnections, and spur lanes — all driven by the sliders. */
 function buildNet(
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   hx: number,
   hz: number,
   streams: (s: string) => () => number,
@@ -919,7 +931,7 @@ function longestEdge(poly: StreetVec2[]): { index: number; length: number } {
  * vertices (not duplicated), or null if the hull was degenerate.
  */
 function synthTrack(
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   hx: number,
   hz: number,
   rng: () => number,
@@ -994,7 +1006,7 @@ function synthTrack(
  * reject-and-retry check. Fingers point inward (toward the centroid) so the track folds without leaving
  * the footprint.
  */
-function applyCornerTemplates(poly: StreetVec2[], rules: StreetNetworkRules, rng: () => number, aggression = 1): void {
+function applyCornerTemplates(poly: StreetVec2[], rules: StreetRules, rng: () => number, aggression = 1): void {
   const forceVariety = rules.winding >= 0.4;
   const count = Math.max(forceVariety ? 2 : 0, Math.round(rules.winding * 3 * aggression));
   if (count <= 0 || poly.length < 6) return;
@@ -1056,7 +1068,7 @@ function applyCornerTemplates(poly: StreetVec2[], rules: StreetNetworkRules, rng
 }
 
 /** A safe convex fallback track (an inset ellipse with one shallow inward dent) with a long straight. */
-function fallbackTrack(rules: StreetNetworkRules, hx: number, hz: number): StreetVec2[] {
+function fallbackTrack(rules: StreetRules, hx: number, hz: number): StreetVec2[] {
   const rx = hx * 0.82;
   const rz = hz * 0.82;
   const k = Math.max(8, Math.min(Math.round((Math.PI * (rx + rz)) / rules.segmentLength), 24));
@@ -1106,7 +1118,7 @@ function dedupeRing(pts: StreetVec2[], eps = 1e-3): StreetVec2[] {
  */
 function designateStraights(
   control: StreetVec2[],
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   rng: () => number,
 ): { pts: StreetVec2[]; straight: boolean[] } {
   const m = control.length;
@@ -1447,7 +1459,7 @@ function distributeLoopEdges(
  * U-turn around a tree leaf has radius pitch/2 ≥ minCurveRadius. The `1.2·minR` term is the
  * post-smoothing bulge budget; the `2.4·minR` floor guarantees the hairpin radius margin. @internal
  */
-function gridCorridorPitch(rules: StreetNetworkRules): number {
+function gridCorridorPitch(rules: StreetRules): number {
   const trackWidth = rules.width * WIDTH_MULT.avenue;
   const minR = Math.max(1, rules.minCurveRadius);
   return Math.max(2 * trackWidth + 1.2 * minR, 2.4 * minR);
@@ -1472,7 +1484,7 @@ function gridCoverage(compactness: number): number {
  * degenerate footprint or blob. @internal
  */
 function buildGridCycleControl(
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   hx: number,
   hz: number,
   rng: () => number,
@@ -1638,7 +1650,7 @@ function buildGridCycleControl(
  * rejoins the loop beside the start/finish straight.
  */
 function buildCircuit(
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   hx: number,
   hz: number,
   streams: (s: string) => () => number,
@@ -1713,7 +1725,7 @@ function buildCircuit(
   // The `compactness` dial swaps the LAYOUT source: 0 keeps the hull synthesis (byte-identical), rising
   // values switch to the space-filling grid spanning-tree cycle. Everything below (spline fit, curvature
   // floor, straights, clearance, edges) is shared verbatim so only the control-polygon source changes.
-  const compactness = Math.max(0, Math.min(1, rules.compactness ?? 0));
+  const compactness = Math.max(0, Math.min(1, rules.compactness));
   const baseCoverage = gridCoverage(compactness);
   // A space-filling grid lap should still carry a deliberate main straight of ~3 corridor pitches (a
   // straight tree branch) alongside the base axis-fraction floor.
@@ -1837,7 +1849,7 @@ function buildCircuit(
 /** Decide which topology family the sliders call for. Circuit wins when loops dominate and both
  *  branching and mesh connectivity are low — exactly the "race track" corner of the slider space.
  *  @internal */
-export function streetNetworkMode(rules: StreetNetworkRules): StreetNetworkMode {
+export function streetNetworkMode(rules: Pick<StreetNetworkParams, "loopiness" | "branching" | "connectivity">): StreetNetworkMode {
   const score = rules.loopiness * (1 - rules.branching * 0.7) * (1 - rules.connectivity * 0.7);
   return score >= 0.45 ? "circuit" : "net";
 }
@@ -1910,7 +1922,7 @@ interface LevelContext {
  */
 function levelForStreets(
   chains: { nodes: number[]; length: number; lane: boolean; loop: boolean }[],
-  rules: StreetNetworkRules,
+  rules: StreetRules,
   rng: () => number,
   ctx: LevelContext,
 ): StreetLevel[] {
@@ -2164,21 +2176,21 @@ function weldOffset(raw: StreetVec2[], centerline: readonly StreetVec2[], absd: 
 }
 
 /**
- * The road-surface elevation field {@link generateStreets} drapes a network over for these rules and
- * half-extents, or `undefined` when the `elevation` dial is 0 (flat). It depends only on the seed, the
- * extents and the dial, so a renderer can rebuild the same ground a resolved city's streets were laid
- * on. Wholly separate from the `heightAt` terrain sampler that drives bridges/tunnels.
+ * The road-surface elevation field {@link STREET_NETWORK_GENERATOR} drapes a network over for these
+ * params and its seed, or `undefined` when the `elevation` dial is 0 (flat). It depends only on the
+ * seed, the footprint and the dial, so a renderer can rebuild the same ground a generated network's
+ * streets were laid on. Wholly separate from the `heightAt` ground input that drives bridges/tunnels.
  */
 export function streetElevationField(
-  rules: Pick<StreetNetworkRules, "seed" | "elevation">,
-  hx: number,
-  hz: number,
+  params: Pick<StreetNetworkParams, "elevation" | "halfX" | "halfZ">,
+  seed: string,
 ): ((x: number, z: number) => number) | undefined {
-  const elevationDial = rules.elevation ?? 0;
-  if (elevationDial <= 0) return undefined;
-  const streams = seededStreams(`pathnet:${rules.seed}:${Math.round(hx)}:${Math.round(hz)}`);
+  if (params.elevation <= 0) return undefined;
+  const hx = params.halfX;
+  const hz = params.halfZ;
+  const streams = seededStreams(`pathnet:${seed}:${Math.round(hx)}:${Math.round(hz)}`);
   // Dial 1 ≈ 22 m relief across a ~520 m volume, scaled to this footprint.
-  return makeElevationField(streams("elevation"), Math.max(hx, hz) * 2, elevationDial * Math.max(hx, hz) * 2 * (22 / 520));
+  return makeElevationField(streams("elevation"), Math.max(hx, hz) * 2, params.elevation * Math.max(hx, hz) * 2 * (22 / 520));
 }
 
 /**
@@ -2265,20 +2277,10 @@ function gradeCapHeights(points: readonly StreetVec2[], heights: number[], maxGr
   return out;
 }
 
-/**
- * Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic
- * per `(rules.seed, hx, hz, context)`. Pass a {@link StreetNetworkContext} with a ground sampler to turn
- * water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to
- * world space.
- *
- * @capability street-generator build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
- */
-export function generateStreets(
-  rules: StreetNetworkRules,
-  hx: number,
-  hz: number,
-  context: StreetNetworkContext = {},
-): StreetNetwork {
+/** Grow the whole network for one params set, seed and ground input, in volume-local coordinates. */
+function growStreets(rules: StreetRules, input: StreetNetworkInput): StreetNetwork {
+  const hx = rules.halfX;
+  const hz = rules.halfZ;
   const streams = seededStreams(`pathnet:${rules.seed}:${Math.round(hx)}:${Math.round(hz)}`);
   const mode = streetNetworkMode(rules);
   const raw = mode === "circuit" ? buildCircuit(rules, hx, hz, streams) : buildNet(rules, hx, hz, streams);
@@ -2303,7 +2305,7 @@ export function generateStreets(
   // curve-first construction), so those edges are used verbatim; only the pit-lane chords (and every
   // city-net edge) get wandered. Circuit pit chords straighten (winding 0) — their corners come from the
   // fillet at the pit entry/exit, not sine wander.
-  const wanderRules: StreetNetworkRules = mode === "circuit" ? { ...rules, winding: 0 } : rules;
+  const wanderRules: StreetRules = mode === "circuit" ? { ...rules, winding: 0 } : rules;
   const edgeWander: StreetVec2[][] = rawEdges.map((e) =>
     // Clamp crests to the footprint so a curve near the rim never bulges outside the volume.
     (e.points ?? wanderEdge(rawNodes[e.a]!, rawNodes[e.b]!, streams(`edge:${e.a}:${e.b}`), wanderRules)).map(
@@ -2412,13 +2414,13 @@ export function generateStreets(
   });
 
   // --- road-surface elevation field (opt-in; flat + byte-identical when the dial is 0) ---
-  const maxGrade = rules.maxGrade ?? 0.07;
-  const elevationAt = streetElevationField(rules, hx, hz);
+  const maxGrade = rules.maxGrade;
+  const elevationAt = streetElevationField(rules, rules.seed);
 
   // --- assemble atomic edges ---
   const minRad = (rules.minTurnAngle * Math.PI) / 180;
   const maxRad = (rules.maxTurnAngle * Math.PI) / 180;
-  const sidewalkWidth = rules.sidewalkWidth ?? DEFAULT_SIDEWALK_WIDTH;
+  const sidewalkWidth = rules.sidewalkWidth;
   const edges: StreetEdge[] = rawEdges.map((e, i) => {
     const edge: StreetEdge = {
       id: i,
@@ -2435,7 +2437,7 @@ export function generateStreets(
   });
 
   // --- assemble chained streets (smoothed geometry for rendering) ---
-  const heightAt = context.heightAt;
+  const heightAt = input.heightAt;
   const streets: Street[] = [];
   chains.forEach((chain, ci) => {
     if (streets.length >= MAX_STREETS) return;
@@ -2488,7 +2490,7 @@ export function generateStreets(
     }
     // Bridge/tunnel features along this street.
     if (heightAt !== undefined) {
-      street.features = detectFeatures(smooth, heightAt, context);
+      street.features = detectFeatures(smooth, heightAt, rules);
     }
     streets.push(street);
   });
@@ -2554,10 +2556,7 @@ export function generateStreets(
   // Compact node list with final degrees.
   const nodes: StreetNode[] = rawNodes.map((p, i) => ({ id: i, x: p[0], z: p[1], degree: degree[i]! }));
 
-  const network: StreetNetwork = { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
-  // Expose the shared field only when elevation is on, so a flat network stays byte-identical.
-  if (elevationAt) network.elevationAt = elevationAt;
-  return network;
+  return { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
 }
 
 /** Connected-component count over the atomic graph (for the cycle-rank / loop count). */
@@ -2577,12 +2576,12 @@ function countComponents(n: number, edges: RawEdge[]): number {
 function detectFeatures(
   points: readonly StreetVec2[],
   heightAt: (x: number, z: number) => number,
-  context: StreetNetworkContext,
+  rules: Pick<StreetRules, "minElevation" | "tunnelClearance" | "bridges" | "tunnels">,
 ): StreetFeatureSpan[] {
-  const minEl = context.minElevation ?? -2;
-  const clearance = context.tunnelClearance ?? 6;
-  const wantBridge = context.bridges === true;
-  const wantTunnel = context.tunnels === true;
+  const minEl = rules.minElevation;
+  const clearance = rules.tunnelClearance;
+  const wantBridge = rules.bridges;
+  const wantTunnel = rules.tunnels;
   if (!wantBridge && !wantTunnel) return [];
   const spans: StreetFeatureSpan[] = [];
   const heights = points.map((p) => heightAt(p[0], p[1]));
@@ -2618,3 +2617,23 @@ function detectFeatures(
   }
   return spans;
 }
+
+/**
+ * The street generator: a whole street/track graph grown inside a `halfX` × `halfZ` footprint from
+ * the topology dials and an injected seed. A city street net and a closed race circuit are the same
+ * generator at opposite slider extremes (the `net` and `circuit` presets). Pass a ground sampler as
+ * the `input` to turn water gaps into bridges and ridges into tunnels. The output is plain data in
+ * volume-local coordinates, the same for the same params, seed and input; rebuild the road-surface
+ * field with {@link streetElevationField}.
+ *
+ * @capability street-generator build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
+ */
+export const STREET_NETWORK_GENERATOR = defineGenerator({
+  id: STREET_NETWORK_GENERATOR_ID,
+  label: "Streets",
+  output: STREET_NETWORK_OUTPUT,
+  schema: STREET_NETWORK_SCHEMA,
+  generate(params, context: GeneratorContext<StreetNetworkInput>): StreetNetwork {
+    return growStreets({ ...params, seed: context.seed }, context.input ?? {});
+  },
+});

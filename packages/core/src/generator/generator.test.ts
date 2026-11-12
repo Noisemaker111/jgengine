@@ -14,6 +14,7 @@ import {
   untypedGenerator,
   runGenerator,
   variantIndexAt,
+  type GeneratorContext,
 } from "./generator";
 import { defineParamSchema } from "./paramSchema";
 
@@ -50,6 +51,21 @@ describe("generator context", () => {
   test("detail is clamped to 0..1", () => {
     expect(generatorContext("s", 3).detail).toBe(1);
     expect(generatorContext("s", -1).detail).toBe(0);
+  });
+
+  test("a declared world input reaches generate, and is absent when the caller hands none", () => {
+    const LIFTED = defineGenerator({
+      id: "test-lifted",
+      label: "Lifted",
+      output: "points",
+      schema: SCHEMA,
+      generate(params, context: GeneratorContext<{ ground: (x: number) => number }>) {
+        return context.input?.ground(params.count) ?? -1;
+      },
+    });
+    expect(runGenerator(LIFTED, { count: 3 }, { input: { ground: (x) => x * 10 } })).toBe(30);
+    expect(runGenerator(LIFTED, { count: 3 })).toBe(-1);
+    expect("input" in generatorContext("s")).toBe(false);
   });
 });
 

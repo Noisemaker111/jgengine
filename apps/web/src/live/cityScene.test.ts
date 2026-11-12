@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { resolveCityObject } from "@jgengine/core/city/cityKind";
-import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
+import { parseParams } from "@jgengine/core/generator/paramSchema";
+import { CIRCUIT_ROUTE_SCHEMA, extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import { buildRaceDressing, cityRevealState } from "./cityScene";
 
 describe("city road reveal ordering", () => {
@@ -36,7 +37,7 @@ function raceFixture(): CircuitRoute {
     meta: { seed: "vice-isle", gridness: 0.7, loopiness: 0.5, connectivity: 0.55, branching: 0.3, boulevards: 0.35, blockSize: 100 },
   });
   if (city?.network === undefined) throw new Error("fixture city grew no streets");
-  const route = extractCircuitRoute(city.network, { seed: "vice-isle", lapLength: 2400 });
+  const route = extractCircuitRoute(city.network, parseParams(CIRCUIT_ROUTE_SCHEMA, { lapLength: 2400 }), { seed: "vice-isle" });
   if (route === null) throw new Error("fixture city has no drivable lap");
   return route;
 }

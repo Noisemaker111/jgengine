@@ -921,7 +921,6 @@
         "blockSize": 24,
         "blockAspect": 1,
         "openSpace": 0.15,
-        "buildingDensity": 0.85,
         "streetWidth": 3.5,
         "boulevards": 0,
         "gravelLanes": true,

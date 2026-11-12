@@ -532,7 +532,7 @@ describe("static gates", () => {
     for (const gate of ["games-save-states", "game-determinism", "asset-availability"]) {
       expect(landing).toContain(gate);
     }
-    for (const gate of ["layers", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
+    for (const gate of ["layers", "hud-tokens", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
       expect(landing).not.toContain(gate);
     }
     // A game can commit a `nul` as easily as the engine can.

@@ -61,6 +61,8 @@ import { createSurfaceRibbonMaterial } from "@jgengine/core/roads/surfaceRibbonM
 import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
+import { registerStreetNetworkPreviews } from "@jgengine/core/roads/streetNetworkPreview.draw";
+import { registerCityPreview } from "./cityPreview.draw";
 import { junctionSurface } from "./cityJunctionSurface";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { EngineDrawMount, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -629,7 +631,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const baysDeep = Math.min(6, Math.max(2, Math.round(lot.size[1] / 2.4)));
       const building = generateBuilding({
         id: lot.id,
-        seed: lot.id,
+        seed: lot.seed,
         center: [0, 0],
         floors: Math.min(8, lot.floors),
         baysWide,
@@ -699,7 +701,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const jitterAmp = lot.zone === "edge" ? 0.4 : lot.zone === "mid" ? 0.28 : 0.18;
       // Each building draws its wall colour from the style's tone family, then shifts value/hue on
       // top — one flat hue per style is what makes a whole skyline read as a single paint bucket.
-      const idHash = hashString(lot.id);
+      const idHash = hashString(lot.seed);
       lotWall.copy(wallTones[idHash % wallTones.length]!);
       const shade = ((idHash >>> 8) % 1024) / 1024;
       const hue = ((idHash >>> 19) % 512) / 512;
@@ -1861,8 +1863,13 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   );
 }
 
-/** Registers the `city` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/**
+ * Registers the `city` volume runtime renderer and the variant-tile previews of the city, street and
+ * race circuit generators. Called by `registerBuiltinSceneKindRenderers`. @internal
+ */
 export function registerCityRenderer(): void {
+  registerCityPreview();
+  registerStreetNetworkPreviews();
   registerSceneKindRenderer(CITY_KIND, ({ objects, context }) => (
     <>
       {objects.map((object) => (

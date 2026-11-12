@@ -11,14 +11,24 @@
 import { seededRng, type SeededRng } from "../random/rng";
 import { jitterParams, parseParams, type ParamSchema, type ParamsOf } from "./paramSchema";
 
-/** What a generate step receives besides its params: the seed and seeded streams derived from it. */
-export interface GeneratorContext {
+/**
+ * What a generate step receives besides its params: the seed, seeded streams derived from it, and
+ * the generator's declared world input.
+ * @typeParam Input world data the output depends on that params cannot hold (see {@link GeneratorContext.input}).
+ */
+export interface GeneratorContext<Input = unknown> {
   /** The resolved seed string. */
   readonly seed: string;
   /** A seeded stream for one named purpose; the same seed and name always replay the same sequence. */
   random(stream?: string): SeededRng;
   /** Detail level the output is baked at, 1 full to near 0 coarsest. */
   readonly detail: number;
+  /**
+   * World data the caller hands in that a `meta` bag cannot hold: a ground sampler, neighbouring
+   * volumes. Undefined in the variant grid and previews, so a generator with an input still generates
+   * from params and seed alone. Same params, seed and input always give the same output.
+   */
+  readonly input?: Input | undefined;
 }
 
 /**
@@ -27,7 +37,7 @@ export interface GeneratorContext {
  * @typeParam Schema the param schema, declared with `defineParamSchema` for exact param types.
  * @typeParam Output what one generate call returns (parts, a field, a heightfield, placements …).
  */
-export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, Output = unknown> {
+export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, Output = unknown, Input = unknown> {
   readonly id: string;
   readonly label: string;
   readonly schema: Schema;
@@ -44,24 +54,27 @@ export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, O
    * or {@link prepareGeneratorVariants}; an unprepared `generate` must still return the same output,
    * only slower.
    */
-  prepare?(params: ParamsOf<Schema>, context: GeneratorContext): Promise<void>;
-  generate(params: ParamsOf<Schema>, context: GeneratorContext): Output;
+  prepare?(params: ParamsOf<Schema>, context: GeneratorContext<Input>): Promise<void>;
+  generate(params: ParamsOf<Schema>, context: GeneratorContext<Input>): Output;
 }
 
 /** The output type of a generator. */
 export type GeneratorOutput<Definition> = Definition extends GeneratorDefinition<ParamSchema, infer Output> ? Output : never;
 
-/** Declare a generator with its schema and output types inferred. */
-export function defineGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition<Schema, Output> {
+/** Declare a generator with its schema, output and input types inferred. */
+export function defineGenerator<Schema extends ParamSchema, Output, Input = unknown>(
+  definition: GeneratorDefinition<Schema, Output, Input>,
+): GeneratorDefinition<Schema, Output, Input> {
   return definition;
 }
 
-/** The context a generate call receives for `seed` at `detail`. @internal */
-export function generatorContext(seed: string, detail = 1): GeneratorContext {
+/** The context a generate call receives for `seed` at `detail`, with an optional world `input`. @internal */
+export function generatorContext<Input = unknown>(seed: string, detail = 1, input?: Input): GeneratorContext<Input> {
   return {
     seed,
     detail: Math.max(0, Math.min(1, detail)),
     random: (stream) => seededRng(stream === undefined || stream.length === 0 ? seed : `${seed}/${stream}`),
+    ...(input === undefined ? {} : { input }),
   };
 }
 
@@ -76,35 +89,37 @@ export function generatorSeed(schema: ParamSchema, meta: Readonly<Record<string,
 }
 
 /** Options for {@link runGenerator}. */
-export interface RunGeneratorOptions {
+export interface RunGeneratorOptions<Input = unknown> {
   /** Seed used when `meta` carries none. Default the generator id. */
   fallbackSeed?: string;
   /** Detail level, 0..1. Default 1. */
   detail?: number;
+  /** The generator's world input (see {@link GeneratorContext.input}). */
+  input?: Input;
 }
 
 /** Parse `meta` against the generator's schema, resolve its seed and generate. */
-export function runGenerator<Schema extends ParamSchema, Output>(
-  definition: GeneratorDefinition<Schema, Output>,
+export function runGenerator<Schema extends ParamSchema, Output, Input = unknown>(
+  definition: GeneratorDefinition<Schema, Output, Input>,
   meta: Readonly<Record<string, unknown>> | undefined,
-  options: RunGeneratorOptions = {},
+  options: RunGeneratorOptions<Input> = {},
 ): Output {
   const seed = generatorSeed(definition.schema, meta, options.fallbackSeed ?? definition.id);
-  return definition.generate(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1));
+  return definition.generate(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1, options.input));
 }
 
 /**
  * Await a generator's `prepare` for the output {@link runGenerator} would return with the same
  * arguments. Resolves at once for a generator without one.
  */
-export async function prepareGenerator<Schema extends ParamSchema, Output>(
-  definition: GeneratorDefinition<Schema, Output>,
+export async function prepareGenerator<Schema extends ParamSchema, Output, Input = unknown>(
+  definition: GeneratorDefinition<Schema, Output, Input>,
   meta: Readonly<Record<string, unknown>> | undefined,
-  options: RunGeneratorOptions = {},
+  options: RunGeneratorOptions<Input> = {},
 ): Promise<void> {
   if (definition.prepare === undefined) return;
   const seed = generatorSeed(definition.schema, meta, options.fallbackSeed ?? definition.id);
-  await definition.prepare(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1));
+  await definition.prepare(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1, options.input));
 }
 
 /** One seeded variant: the `meta` it would write, and its parsed params and seed. */

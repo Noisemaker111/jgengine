@@ -538,6 +538,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## city-district — editor-authorable procedural city district (streets, zoning, buildings, furniture)
 
+- `CITY_GENERATOR` (const) · `import { CITY_GENERATOR } from "@jgengine/core/world"`
 - `citySolids` (function) · `import { citySolids } from "@jgengine/core/city/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/city/cityBlocks"`
 - `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/polygon"`
@@ -1842,6 +1843,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `quadrupedStride` (function) · `import { quadrupedStride } from "@jgengine/core/movement/reference/quadrupedGait"`
 
+## race-circuit — lift a closed, sealed-off race lap out of an existing city street network
+
+- `RACE_CIRCUIT_GENERATOR` (const) · `import { RACE_CIRCUIT_GENERATOR } from "@jgengine/core/roads/raceCircuit"`
+
 ## radio-stations — in-vehicle radio: stations that keep broadcasting while untuned, a dial with next/previous/off, a now-playing readout, and news/DJ bulletins fed by game events with priority, cooldown and break-in
 
 - `createRadio` (function) · `import { createRadio } from "@jgengine/core/audio/radio"`
@@ -2208,7 +2213,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
-- `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/roads/streetGenerator"`
+- `STREET_NETWORK_GENERATOR` (const) · `import { STREET_NETWORK_GENERATOR } from "@jgengine/core/roads/streetGenerator"`
 
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 

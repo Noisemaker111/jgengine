@@ -3,7 +3,7 @@
  * the whole synthesis, from a rigid Manhattan grid (`gridness` 1, `curviness` 0) to winding
  * hillside estates, a two-road crossroads farm town, or — at the loopiness-high / branching-and-
  * connectivity-low corner — a closed RACE CIRCUIT. Streets come from the unified seed-driven
- * {@link generateStreets} engine (city and track are the same generator at opposite slider
+ * {@link STREET_NETWORK_GENERATOR} (city and track are the same generator at opposite slider
  * extremes), carry a visible hierarchy (boulevards with medians, avenues, streets, lanes —
  * optionally gravel), and connect or deliberately dead-end into cul-de-sac bulbs; water gaps become
  * styled bridge decks and ridges become tunnel bores, both path features on continuous streets so a
@@ -31,7 +31,8 @@
  */
 import { seededStreams } from "../random/rng";
 import { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "../scene/sceneKinds";
-import { parseParams, type ParamSchema, type WeightedParamEntry } from "../generator/paramSchema";
+import { defineGenerator, registerGenerator, runGenerator, type GeneratorContext } from "../generator/generator";
+import { defineParamSchema, parseParams, type ParamsOf, type WeightedParamEntry } from "../generator/paramSchema";
 import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_STYLE, type BuildingStyle } from "../buildings/buildings";
 import {
   buildLandmarkPieces,
@@ -48,9 +49,10 @@ import {
   type CityLotPiece,
   type CityTreeSpecies,
   type CityZoneBand,
-  type CityZoneProfile,
 } from "./cityContent";
 import {
+  CIRCUIT_ROUTE_SCHEMA,
+  RACE_CIRCUIT_GENERATOR,
   circuitKerbs,
   extractCircuitRoute,
   type CircuitCorner,
@@ -64,12 +66,11 @@ import type { RoadEnvironmentDescriptor } from "../world/features";
 import type { WorldSolid } from "../world/worldSolids";
 import type { RoadPoint } from "../roads/roads";
 import {
-  generateStreets,
-  streetNetworkMode,
+  STREET_NETWORK_GENERATOR,
   type StreetFeatureKind,
   type StreetLevel,
   type StreetNetwork,
-  type StreetNetworkRules,
+  type StreetNetworkParams,
   type Street,
 } from "../roads/streetGenerator";
 import {
@@ -92,235 +93,8 @@ export const CITY_KIND = "city";
 /** The editor volume kind that locally overrides a city's zone band/mix — a district in a district. */
 export const CITY_ZONE_KIND = "cityzone";
 
-/** Fully-defaulted city params parsed from a volume's `meta`. */
-export interface CityRules {
-  /** 1 = strict orthogonal grid (regular spacing, full through-streets); 0 = organic irregular net. */
-  gridness: number;
-  /** How much individual streets wander sideways. 0 = ruler-straight. */
-  curviness: number;
-  /** Density of branch lanes forking off the main streets, 0..1. */
-  branching: number;
-  /** How loopy the network is: 0 = a tree that dead-ends; 1 collapses to one closed circuit (a race
-   * track). High loopiness with branching/connectivity near zero is the "race circuit" corner. */
-  loopiness: number;
-  /** Extra chord edges knitting neighbors together — mesh density. 1 = a dense connected grid. */
-  connectivity: number;
-  /** Fraction of dangling ends kept as cul-de-sacs (vs reconnected into loops), 0..1. */
-  deadEnds: number;
-  /** Minimum curve radius (m): caps street wander curvature and corner tightness. */
-  minCurveRadius: number;
-  /** Shallowest corner (degrees) a street keeps — gentler bends straighten out. */
-  minTurnAngle: number;
-  /** Sharpest corner (degrees) a street may take — tighter ones are beveled away. */
-  maxTurnAngle: number;
-  /** Organic boundary clipping, 0..1. 0 fills the volume's rectangle; higher grows lobes and bays. */
-  outline: number;
-  /** Share of branch lanes grown as winding residential side streets, 0..1. */
-  residentialBranches: number;
-  /** Road-surface relief, 0..1. 0 is dead flat; 1 is ~22 m of rise and fall across a ~520 m district. */
-  elevation: number;
-  /** Steepest road grade (rise/run) the elevation pass allows on any street. */
-  maxGrade: number;
-  /** Circuit space-filling, 0..1. 0 is a flowing loop around an empty middle; higher folds the lap
-   * back through its own interior (switchbacks, hairpins, parallel runs). Circuit mode only. */
-  compactness: number;
-  /** Lay parcels + buildings against the streets (city fabric). Off = bare roads/track, no plots. */
-  fabric: boolean;
-  /** Streets bore through ridges on tunnel decks instead of climbing over them. */
-  tunnels: boolean;
-  /** Target block size (street spacing) in meters. */
-  blockSize: number;
-  /** Cross-axis spacing multiplier — 2+ gives long skinny Manhattan blocks with avenue/street rhythm. */
-  blockAspect: number;
-  /** Fraction of blocks left unbuilt as intentional open space (parks/plazas/fields), 0..1. */
-  openSpace: number;
-  /** Fraction of every street's frontage that carries a building, 0..1 — the compactness dial. */
-  roadsideOccupancy: number;
-  /** Chance deep blocks fill their interior with a second row of buildings, 0..1. */
-  blockDensity: number;
-  /** Base gap from the sidewalk edge to a lot's front, in meters (class factors scale it). */
-  buildingRoadSetback: number;
-  /** Base side gap between neighboring lots, in meters (rowhouses nearly touch, farms spread). */
-  buildingSpacing: number;
-  /** How strongly development clumps: junctions grow denser, density drifts in smooth waves, and
-   * same-class runs form — 0 is uniform, 1 is strongly clustered. */
-  clusterStrength: number;
-  /** Main street width in meters (boulevards/avenues render wider, lanes narrower). */
-  streetWidth: number;
-  /** Share of avenues upgraded to median-divided boulevards, 0..1. */
-  boulevards: number;
-  /** Branch lanes render as gravel instead of asphalt (rural roads, alleys). */
-  gravelLanes: boolean;
-  /** District-wide surface: `auto` keeps asphalt mains (+ gravel lanes per `gravelLanes`); `gravel` unpaves everything. */
-  surface: "auto" | "gravel";
-  /** Zone banding: radial core-out, inverted (wealth at the rim), or spatially uniform mixing. */
-  profile: CityZoneProfile;
-  /** Fraction of the district radius covered by the core band. */
-  coreExtent: number;
-  /** Fraction of the district radius where the mid band ends and the edge begins. */
-  midExtent: number;
-  /** Weighted building-class mix of the core band. */
-  coreMix: WeightedParamEntry[];
-  /** Weighted building-class mix of the middle band. */
-  midMix: WeightedParamEntry[];
-  /** Weighted building-class mix of the edge band. */
-  edgeMix: WeightedParamEntry[];
-  /** Global lot footprint multiplier — estates want 1.5+, dense infill wants <1. */
-  lotScale: number;
-  /**
-   * Share of buildable blocks given whole to one civic landmark (hall, arena, market or campus,
-   * picked by zone band), 0..1. Default 0.
-   */
-  landmarks: number;
-  /** Minimum building floors (district clamp over the class ranges). */
-  floorsMin: number;
-  /** Maximum building floors (district clamp over the class ranges). */
-  floorsMax: number;
-  /** Height of one floor in meters. */
-  floorHeight: number;
-  /** Street-tree planting density, 0..1. */
-  treeDensity: number;
-  /** Weighted species mix for street/park trees. */
-  treeMix: WeightedParamEntry[];
-  /** Street-light density along non-lane streets, 0..1. */
-  lightDensity: number;
-  /** Parked-vehicle density along street curbs and inside parking pads, 0..1. */
-  parkedCars: number;
-  /** Junction control density, 0..1: mast-arm signals on arterial crossings, sign posts below them. */
-  signals: number;
-  /** Ring estate lots (mansions) with perimeter hedges and a gated gap. */
-  hedges: boolean;
-  /** Connect houses/estates/farms to their street with driveways. */
-  driveways: boolean;
-  /** Give commercial lots (shops, slabs) a parking pad behind the building. */
-  parking: boolean;
-  /** Unbuilt non-core blocks become crop-row farm fields instead of parks. */
-  fields: boolean;
-  /** Steepest ground (rise over run) a lot will build on; steeper slopes stay open cliff/canyon. */
-  maxSlope: number;
-  /** Lots below this ground height are skipped — keeps buildings out of rivers/lakes/canyons floors. */
-  minElevation: number;
-  /** Streets crossing ground below `minElevation` span it on a bridge deck instead of clipping. */
-  bridges: boolean;
-  /** Bridge silhouette: arched deck, overhead truss, or a plain beam span. */
-  bridgeStyle: "arch" | "truss" | "beam";
-  /** Render sidewalks flanking asphalt streets. */
-  sidewalks: boolean;
-  /** Sidewalk band width in meters at "street" hierarchy (boulevards scale up, lanes down). */
-  sidewalkWidth: number;
-  /** Lift an instanced street race out of the district's own streets (see {@link ResolvedRace}). */
-  race: boolean;
-  /** Target race lap length in meters — the search keeps the cycle closest to this. */
-  raceLapLength: number;
-  /** 0 races any street; 1 keeps the lap on avenues and boulevards only. */
-  raceArterial: number;
-  /** Ordered checkpoint gates placed around the lap. */
-  raceCheckpoints: number;
-  /** Laps the race runs. */
-  raceLaps: number;
-  /** Close every side street leaving the lap with barriers — what makes it an instanced event. */
-  raceSeals: boolean;
-  /** Starting grid slots behind the line (0 = no grid). */
-  raceGridSlots: number;
-  /** Radius (m) the racing line is worked toward at the lap's junction corners. */
-  raceCornerRadius: number;
-  /** Building style palette id (see {@link BUILDING_STYLE_PALETTES}). */
-  style: BuildingStyle;
-  /**
-   * Name of the `BuildingKit` the near-LOD facades render with, or `""` for the palette blocks.
-   * A game registers its bound art under this name; the document carries only the name, so a scene
-   * stays portable and small.
-   */
-  buildingKit: string;
-  /** Seed string; same seed reproduces the same city. Empty falls back to the volume id. */
-  seed: string;
-}
-
-/** City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge. */
-export const CITY_DEFAULTS: CityRules = {
-  gridness: 0.85,
-  curviness: 0.15,
-  branching: 0.4,
-  loopiness: 0,
-  connectivity: 0.88,
-  deadEnds: 0.35,
-  minCurveRadius: 24,
-  minTurnAngle: 0,
-  maxTurnAngle: 150,
-  outline: 0,
-  residentialBranches: 0,
-  elevation: 0,
-  maxGrade: 0.07,
-  compactness: 0,
-  fabric: true,
-  tunnels: true,
-  blockSize: 48,
-  blockAspect: 1,
-  openSpace: 0.12,
-  roadsideOccupancy: 0.88,
-  blockDensity: 0.6,
-  buildingRoadSetback: 2.5,
-  buildingSpacing: 1.4,
-  clusterStrength: 0.5,
-  streetWidth: 7,
-  boulevards: 0.35,
-  gravelLanes: false,
-  surface: "auto",
-  profile: "core-out",
-  coreExtent: 0.35,
-  midExtent: 0.7,
-  coreMix: [
-    { item: "tower", weight: 3 },
-    { item: "slab", weight: 1 },
-    { item: "shop", weight: 1 },
-  ],
-  midMix: [
-    { item: "slab", weight: 2 },
-    { item: "rowhouse", weight: 2 },
-    { item: "shop", weight: 1 },
-  ],
-  edgeMix: [
-    { item: "house", weight: 3 },
-    { item: "rowhouse", weight: 1 },
-  ],
-  lotScale: 1,
-  landmarks: 0,
-  floorsMin: 1,
-  floorsMax: 30,
-  floorHeight: 3,
-  treeDensity: 0.5,
-  treeMix: [
-    { item: "broadleaf", weight: 3 },
-    { item: "conifer", weight: 1 },
-  ],
-  lightDensity: 0.5,
-  parkedCars: 0.55,
-  signals: 0.7,
-  hedges: true,
-  driveways: true,
-  parking: true,
-  fields: false,
-  maxSlope: 0.5,
-  minElevation: -2,
-  bridges: true,
-  bridgeStyle: "arch",
-  sidewalks: true,
-  sidewalkWidth: 1.9,
-  race: false,
-  raceLapLength: 1200,
-  raceArterial: 0.7,
-  raceCheckpoints: 12,
-  raceLaps: 3,
-  raceSeals: true,
-  raceGridSlots: 12,
-  raceCornerRadius: 9,
-  style: DEFAULT_BUILDING_STYLE,
-  buildingKit: "",
-  seed: "",
-};
-
 /** The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam. */
-export const CITY_SCHEMA: ParamSchema = {
+export const CITY_SCHEMA = defineParamSchema({
   groups: [
     { id: "layout", label: "Layout" },
     { id: "race", label: "Race" },
@@ -330,101 +104,101 @@ export const CITY_SCHEMA: ParamSchema = {
     { id: "greenery", label: "Greenery & furniture" },
   ],
   fields: [
-    { type: "range", key: "gridness", label: "grid-ness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.gridness },
-    { type: "range", key: "curviness", label: "curviness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.curviness },
-    { type: "range", key: "branching", label: "branching", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.branching },
-    { type: "range", key: "loopiness", label: "loopiness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.loopiness },
-    { type: "range", key: "connectivity", label: "connectivity", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.connectivity },
-    { type: "range", key: "deadEnds", label: "dead ends", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.deadEnds },
-    { type: "range", key: "minCurveRadius", label: "min curve radius", group: "layout", min: 6, max: 120, step: 1, default: CITY_DEFAULTS.minCurveRadius, unit: "m" },
-    { type: "range", key: "minTurnAngle", label: "min turn angle", group: "layout", min: 0, max: 60, step: 1, default: CITY_DEFAULTS.minTurnAngle, unit: "°" },
-    { type: "range", key: "maxTurnAngle", label: "max turn angle", group: "layout", min: 30, max: 180, step: 1, default: CITY_DEFAULTS.maxTurnAngle, unit: "°" },
-    { type: "range", key: "outline", label: "outline", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.outline },
-    { type: "range", key: "residentialBranches", label: "residential branches", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.residentialBranches },
-    { type: "range", key: "elevation", label: "road elevation", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.elevation },
-    { type: "range", key: "maxGrade", label: "max grade", group: "layout", min: 0.01, max: 0.3, step: 0.005, default: CITY_DEFAULTS.maxGrade },
-    { type: "range", key: "compactness", label: "circuit compactness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.compactness },
-    { type: "range", key: "blockSize", label: "block size", group: "layout", min: 20, max: 140, step: 1, default: CITY_DEFAULTS.blockSize, unit: "m" },
-    { type: "range", key: "blockAspect", label: "block aspect", group: "layout", min: 1, max: 3, step: 0.05, default: CITY_DEFAULTS.blockAspect },
-    { type: "range", key: "openSpace", label: "open space", group: "layout", min: 0, max: 0.9, step: 0.01, default: CITY_DEFAULTS.openSpace },
-    { type: "range", key: "streetWidth", label: "street width", group: "layout", min: 3, max: 16, step: 0.5, default: CITY_DEFAULTS.streetWidth, unit: "m" },
-    { type: "range", key: "boulevards", label: "boulevards", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.boulevards },
-    { type: "bool", key: "gravelLanes", label: "gravel lanes", group: "layout", default: CITY_DEFAULTS.gravelLanes },
+    { type: "range", key: "gridness", label: "grid-ness", group: "layout", min: 0, max: 1, step: 0.01, default: 0.85 },
+    { type: "range", key: "curviness", label: "curviness", group: "layout", min: 0, max: 1, step: 0.01, default: 0.15 },
+    { type: "range", key: "branching", label: "branching", group: "layout", min: 0, max: 1, step: 0.01, default: 0.4 },
+    { type: "range", key: "loopiness", label: "loopiness", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+    { type: "range", key: "connectivity", label: "connectivity", group: "layout", min: 0, max: 1, step: 0.01, default: 0.88 },
+    { type: "range", key: "deadEnds", label: "dead ends", group: "layout", min: 0, max: 1, step: 0.01, default: 0.35 },
+    { type: "range", key: "minCurveRadius", label: "min curve radius", group: "layout", min: 6, max: 120, step: 1, default: 24, unit: "m" },
+    { type: "range", key: "minTurnAngle", label: "min turn angle", group: "layout", min: 0, max: 60, step: 1, default: 0, unit: "°" },
+    { type: "range", key: "maxTurnAngle", label: "max turn angle", group: "layout", min: 30, max: 180, step: 1, default: 150, unit: "°" },
+    { type: "range", key: "outline", label: "outline", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+    { type: "range", key: "residentialBranches", label: "residential branches", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+    { type: "range", key: "elevation", label: "road elevation", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+    { type: "range", key: "maxGrade", label: "max grade", group: "layout", min: 0.01, max: 0.3, step: 0.005, default: 0.07 },
+    { type: "range", key: "compactness", label: "circuit compactness", group: "layout", min: 0, max: 1, step: 0.01, default: 0 },
+    { type: "range", key: "blockSize", label: "block size", group: "layout", min: 20, max: 140, step: 1, default: 48, unit: "m" },
+    { type: "range", key: "blockAspect", label: "block aspect", group: "layout", min: 1, max: 3, step: 0.05, default: 1 },
+    { type: "range", key: "openSpace", label: "open space", group: "layout", min: 0, max: 0.9, step: 0.01, default: 0.12 },
+    { type: "range", key: "streetWidth", label: "street width", group: "layout", min: 3, max: 16, step: 0.5, default: 7, unit: "m" },
+    { type: "range", key: "boulevards", label: "boulevards", group: "layout", min: 0, max: 1, step: 0.01, default: 0.35 },
+    { type: "bool", key: "gravelLanes", label: "gravel lanes", group: "layout", default: false },
     {
       type: "select",
       key: "surface",
       label: "surface",
       group: "layout",
-      default: CITY_DEFAULTS.surface,
+      default: "auto",
       options: [{ value: "auto" }, { value: "gravel" }],
     },
-    { type: "bool", key: "fabric", label: "buildings & parcels", group: "layout", default: CITY_DEFAULTS.fabric },
+    { type: "bool", key: "fabric", label: "buildings & parcels", group: "layout", default: true },
     { type: "bool", key: "solid", label: "solid buildings", group: "layout", default: true },
-    { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: CITY_DEFAULTS.bridges },
-    { type: "bool", key: "tunnels", label: "tunnels through ridges", group: "layout", default: CITY_DEFAULTS.tunnels },
+    { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: true },
+    { type: "bool", key: "tunnels", label: "tunnels through ridges", group: "layout", default: true },
     {
       type: "select",
       key: "bridgeStyle",
       label: "bridge style",
       group: "layout",
-      default: CITY_DEFAULTS.bridgeStyle,
+      default: "arch",
       options: [{ value: "arch" }, { value: "truss" }, { value: "beam" }],
     },
-    { type: "bool", key: "sidewalks", label: "sidewalks", group: "layout", default: CITY_DEFAULTS.sidewalks },
-    { type: "range", key: "sidewalkWidth", label: "sidewalk width", group: "layout", min: 1, max: 4, step: 0.1, default: CITY_DEFAULTS.sidewalkWidth, unit: "m" },
+    { type: "bool", key: "sidewalks", label: "sidewalks", group: "layout", default: true },
+    { type: "range", key: "sidewalkWidth", label: "sidewalk width", group: "layout", min: 1, max: 4, step: 0.1, default: 1.9, unit: "m" },
     { type: "action", key: "layoutRandomize", label: "randomize layout", group: "layout", action: "randomize" },
-    { type: "bool", key: "race", label: "street race", group: "race", default: CITY_DEFAULTS.race },
-    { type: "range", key: "raceLapLength", label: "lap length", group: "race", min: 200, max: 6000, step: 50, default: CITY_DEFAULTS.raceLapLength, unit: "m" },
-    { type: "range", key: "raceArterial", label: "arterial bias", group: "race", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.raceArterial },
-    { type: "range", key: "raceCheckpoints", label: "checkpoints", group: "race", min: 2, max: 48, step: 1, default: CITY_DEFAULTS.raceCheckpoints },
-    { type: "range", key: "raceLaps", label: "laps", group: "race", min: 1, max: 20, step: 1, default: CITY_DEFAULTS.raceLaps },
-    { type: "bool", key: "raceSeals", label: "seal side streets", group: "race", default: CITY_DEFAULTS.raceSeals },
-    { type: "range", key: "raceGridSlots", label: "grid slots", group: "race", min: 0, max: 40, step: 1, default: CITY_DEFAULTS.raceGridSlots },
-    { type: "range", key: "raceCornerRadius", label: "corner radius", group: "race", min: 3, max: 40, step: 1, default: CITY_DEFAULTS.raceCornerRadius, unit: "m" },
+    { type: "bool", key: "race", label: "street race", group: "race", default: false },
+    { type: "range", key: "raceLapLength", label: "lap length", group: "race", min: 200, max: 6000, step: 50, default: 1200, unit: "m" },
+    { type: "range", key: "raceArterial", label: "arterial bias", group: "race", min: 0, max: 1, step: 0.01, default: 0.7 },
+    { type: "range", key: "raceCheckpoints", label: "checkpoints", group: "race", min: 2, max: 48, step: 1, default: 12 },
+    { type: "range", key: "raceLaps", label: "laps", group: "race", min: 1, max: 20, step: 1, default: 3 },
+    { type: "bool", key: "raceSeals", label: "seal side streets", group: "race", default: true },
+    { type: "range", key: "raceGridSlots", label: "grid slots", group: "race", min: 0, max: 40, step: 1, default: 12 },
+    { type: "range", key: "raceCornerRadius", label: "corner radius", group: "race", min: 3, max: 40, step: 1, default: 9, unit: "m" },
     {
       type: "select",
       key: "profile",
       label: "zone profile",
       group: "zoning",
-      default: CITY_DEFAULTS.profile,
+      default: "core-out",
       options: [{ value: "core-out" }, { value: "inverted" }, { value: "uniform" }],
     },
-    { type: "range", key: "coreExtent", label: "core extent", group: "zoning", min: 0.05, max: 0.9, step: 0.01, default: CITY_DEFAULTS.coreExtent },
-    { type: "range", key: "midExtent", label: "mid extent", group: "zoning", min: 0.1, max: 0.95, step: 0.01, default: CITY_DEFAULTS.midExtent },
-    { type: "weightedList", key: "coreMix", label: "core mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.coreMix },
-    { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.midMix },
-    { type: "weightedList", key: "edgeMix", label: "edge mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.edgeMix },
-    { type: "range", key: "lotScale", label: "lot scale", group: "zoning", min: 0.5, max: 2.5, step: 0.05, default: CITY_DEFAULTS.lotScale },
-    { type: "range", key: "landmarks", label: "landmarks", group: "zoning", min: 0, max: 0.5, step: 0.01, default: CITY_DEFAULTS.landmarks },
-    { type: "range", key: "roadsideOccupancy", label: "roadside occupancy", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.roadsideOccupancy },
-    { type: "range", key: "blockDensity", label: "block density", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.blockDensity },
-    { type: "range", key: "buildingRoadSetback", label: "road setback", group: "placement", min: 0, max: 12, step: 0.1, default: CITY_DEFAULTS.buildingRoadSetback, unit: "m" },
-    { type: "range", key: "buildingSpacing", label: "building spacing", group: "placement", min: 0.2, max: 10, step: 0.1, default: CITY_DEFAULTS.buildingSpacing, unit: "m" },
-    { type: "range", key: "clusterStrength", label: "cluster strength", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.clusterStrength },
-    { type: "range", key: "floorsMin", label: "floors min", group: "buildings", min: 1, max: 60, step: 1, default: CITY_DEFAULTS.floorsMin },
-    { type: "range", key: "floorsMax", label: "floors max", group: "buildings", min: 1, max: 60, step: 1, default: CITY_DEFAULTS.floorsMax },
-    { type: "range", key: "floorHeight", label: "floor height", group: "buildings", min: 2, max: 5, step: 0.1, default: CITY_DEFAULTS.floorHeight, unit: "m" },
-    { type: "range", key: "maxSlope", label: "max slope", group: "buildings", min: 0.05, max: 2, step: 0.05, default: CITY_DEFAULTS.maxSlope },
-    { type: "number", key: "minElevation", label: "build above y", group: "buildings", step: 0.5, default: CITY_DEFAULTS.minElevation },
+    { type: "range", key: "coreExtent", label: "core extent", group: "zoning", min: 0.05, max: 0.9, step: 0.01, default: 0.35 },
+    { type: "range", key: "midExtent", label: "mid extent", group: "zoning", min: 0.1, max: 0.95, step: 0.01, default: 0.7 },
+    { type: "weightedList", key: "coreMix", label: "core mix", group: "zoning", itemLabel: "class", default: [{ item: "tower", weight: 3 }, { item: "slab", weight: 1 }, { item: "shop", weight: 1 }] },
+    { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: [{ item: "slab", weight: 2 }, { item: "rowhouse", weight: 2 }, { item: "shop", weight: 1 }] },
+    { type: "weightedList", key: "edgeMix", label: "edge mix", group: "zoning", itemLabel: "class", default: [{ item: "house", weight: 3 }, { item: "rowhouse", weight: 1 }] },
+    { type: "range", key: "lotScale", label: "lot scale", group: "zoning", min: 0.5, max: 2.5, step: 0.05, default: 1 },
+    { type: "range", key: "landmarks", label: "landmarks", group: "zoning", min: 0, max: 0.5, step: 0.01, default: 0 },
+    { type: "range", key: "roadsideOccupancy", label: "roadside occupancy", group: "placement", min: 0, max: 1, step: 0.01, default: 0.88 },
+    { type: "range", key: "blockDensity", label: "block density", group: "placement", min: 0, max: 1, step: 0.01, default: 0.6 },
+    { type: "range", key: "buildingRoadSetback", label: "road setback", group: "placement", min: 0, max: 12, step: 0.1, default: 2.5, unit: "m" },
+    { type: "range", key: "buildingSpacing", label: "building spacing", group: "placement", min: 0.2, max: 10, step: 0.1, default: 1.4, unit: "m" },
+    { type: "range", key: "clusterStrength", label: "cluster strength", group: "placement", min: 0, max: 1, step: 0.01, default: 0.5 },
+    { type: "range", key: "floorsMin", label: "floors min", group: "buildings", min: 1, max: 60, step: 1, default: 1 },
+    { type: "range", key: "floorsMax", label: "floors max", group: "buildings", min: 1, max: 60, step: 1, default: 30 },
+    { type: "range", key: "floorHeight", label: "floor height", group: "buildings", min: 2, max: 5, step: 0.1, default: 3, unit: "m" },
+    { type: "range", key: "maxSlope", label: "max slope", group: "buildings", min: 0.05, max: 2, step: 0.05, default: 0.5 },
+    { type: "number", key: "minElevation", label: "build above y", group: "buildings", step: 0.5, default: -2 },
     {
       type: "select",
       key: "style",
       label: "style",
       group: "buildings",
-      default: CITY_DEFAULTS.style,
+      default: DEFAULT_BUILDING_STYLE,
       options: Object.keys(BUILDING_STYLE_PALETTES).map((style) => ({ value: style })),
     },
-    { type: "text", key: "buildingKit", label: "building kit", group: "buildings", default: CITY_DEFAULTS.buildingKit },
-    { type: "range", key: "treeDensity", label: "tree density", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.treeDensity },
-    { type: "weightedList", key: "treeMix", label: "tree mix", group: "greenery", itemLabel: "species", default: CITY_DEFAULTS.treeMix },
-    { type: "range", key: "lightDensity", label: "street lights", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.lightDensity },
-    { type: "range", key: "parkedCars", label: "parked cars", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.parkedCars },
-    { type: "range", key: "signals", label: "traffic signals", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.signals },
-    { type: "bool", key: "hedges", label: "estate hedges", group: "greenery", default: CITY_DEFAULTS.hedges },
-    { type: "bool", key: "driveways", label: "driveways", group: "greenery", default: CITY_DEFAULTS.driveways },
-    { type: "bool", key: "parking", label: "parking lots", group: "greenery", default: CITY_DEFAULTS.parking },
-    { type: "bool", key: "fields", label: "farm fields", group: "greenery", default: CITY_DEFAULTS.fields },
-    { type: "seed", key: "seed", label: "seed", default: CITY_DEFAULTS.seed },
+    { type: "text", key: "buildingKit", label: "building kit", group: "buildings", default: "" },
+    { type: "range", key: "treeDensity", label: "tree density", group: "greenery", min: 0, max: 1, step: 0.01, default: 0.5 },
+    { type: "weightedList", key: "treeMix", label: "tree mix", group: "greenery", itemLabel: "species", default: [{ item: "broadleaf", weight: 3 }, { item: "conifer", weight: 1 }] },
+    { type: "range", key: "lightDensity", label: "street lights", group: "greenery", min: 0, max: 1, step: 0.01, default: 0.5 },
+    { type: "range", key: "parkedCars", label: "parked cars", group: "greenery", min: 0, max: 1, step: 0.01, default: 0.55 },
+    { type: "range", key: "signals", label: "traffic signals", group: "greenery", min: 0, max: 1, step: 0.01, default: 0.7 },
+    { type: "bool", key: "hedges", label: "estate hedges", group: "greenery", default: true },
+    { type: "bool", key: "driveways", label: "driveways", group: "greenery", default: true },
+    { type: "bool", key: "parking", label: "parking lots", group: "greenery", default: true },
+    { type: "bool", key: "fields", label: "farm fields", group: "greenery", default: false },
+    { type: "seed", key: "seed", label: "seed", default: "" },
   ],
   presets: [
     {
@@ -745,10 +519,10 @@ export const CITY_SCHEMA: ParamSchema = {
       },
     },
   ],
-};
+});
 
 /** Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix. */
-export const CITY_ZONE_SCHEMA: ParamSchema = {
+export const CITY_ZONE_SCHEMA = defineParamSchema({
   fields: [
     {
       type: "select",
@@ -759,83 +533,27 @@ export const CITY_ZONE_SCHEMA: ParamSchema = {
     },
     { type: "weightedList", key: "mix", label: "class mix", itemLabel: "class", default: [] },
   ],
-};
+});
 
-/** Parse a volume's `meta` into fully-defaulted city rules. @internal */
-export function readCityRules(meta: Record<string, unknown> | undefined): CityRules {
-  const params = parseParams(CITY_SCHEMA, meta);
-  const floorsMin = params["floorsMin"] as number;
-  const floorsMax = params["floorsMax"] as number;
-  // Legacy documents tuned `buildingDensity`; honor it as the occupancy dial when the volume
-  // predates the placement params (and only then — presets/authors that set the new keys win).
-  const legacyDensity = meta?.["buildingDensity"];
-  const hasLegacy = typeof legacyDensity === "number" && Number.isFinite(legacyDensity) && meta?.["roadsideOccupancy"] === undefined;
+/** Parsed `city` params. */
+export type CityParams = ParamsOf<typeof CITY_SCHEMA>;
+
+/**
+ * The params a city grows from: the parsed schema values with the floor range ordered and the style
+ * narrowed to a known palette.
+ */
+export type CityRules = Omit<CityParams, "style"> & { style: BuildingStyle };
+
+function isBuildingStyle(value: string): value is BuildingStyle {
+  return Object.hasOwn(BUILDING_STYLE_PALETTES, value);
+}
+
+function cityRules(params: CityParams): CityRules {
   return {
-    gridness: params["gridness"] as number,
-    curviness: params["curviness"] as number,
-    branching: params["branching"] as number,
-    loopiness: params["loopiness"] as number,
-    connectivity: params["connectivity"] as number,
-    deadEnds: params["deadEnds"] as number,
-    minCurveRadius: params["minCurveRadius"] as number,
-    minTurnAngle: params["minTurnAngle"] as number,
-    maxTurnAngle: params["maxTurnAngle"] as number,
-    outline: params["outline"] as number,
-    residentialBranches: params["residentialBranches"] as number,
-    elevation: params["elevation"] as number,
-    maxGrade: params["maxGrade"] as number,
-    compactness: params["compactness"] as number,
-    fabric: params["fabric"] as boolean,
-    tunnels: params["tunnels"] as boolean,
-    blockSize: params["blockSize"] as number,
-    blockAspect: params["blockAspect"] as number,
-    openSpace: params["openSpace"] as number,
-    roadsideOccupancy: hasLegacy ? Math.max(0, Math.min(1, legacyDensity)) : (params["roadsideOccupancy"] as number),
-    blockDensity: hasLegacy ? Math.max(0, Math.min(1, legacyDensity * 0.8)) : (params["blockDensity"] as number),
-    buildingRoadSetback: params["buildingRoadSetback"] as number,
-    buildingSpacing: params["buildingSpacing"] as number,
-    clusterStrength: params["clusterStrength"] as number,
-    streetWidth: params["streetWidth"] as number,
-    boulevards: params["boulevards"] as number,
-    gravelLanes: params["gravelLanes"] as boolean,
-    surface: params["surface"] as CityRules["surface"],
-    profile: params["profile"] as CityZoneProfile,
-    coreExtent: params["coreExtent"] as number,
-    midExtent: params["midExtent"] as number,
-    coreMix: params["coreMix"] as WeightedParamEntry[],
-    midMix: params["midMix"] as WeightedParamEntry[],
-    edgeMix: params["edgeMix"] as WeightedParamEntry[],
-    lotScale: params["lotScale"] as number,
-    landmarks: params["landmarks"] as number,
-    floorsMin: Math.min(floorsMin, floorsMax),
-    floorsMax: Math.max(floorsMin, floorsMax),
-    floorHeight: params["floorHeight"] as number,
-    treeDensity: params["treeDensity"] as number,
-    treeMix: params["treeMix"] as WeightedParamEntry[],
-    lightDensity: params["lightDensity"] as number,
-    parkedCars: params["parkedCars"] as number,
-    signals: params["signals"] as number,
-    hedges: params["hedges"] as boolean,
-    driveways: params["driveways"] as boolean,
-    parking: params["parking"] as boolean,
-    fields: params["fields"] as boolean,
-    maxSlope: params["maxSlope"] as number,
-    minElevation: params["minElevation"] as number,
-    bridges: params["bridges"] as boolean,
-    bridgeStyle: params["bridgeStyle"] as CityRules["bridgeStyle"],
-    sidewalks: params["sidewalks"] as boolean,
-    sidewalkWidth: params["sidewalkWidth"] as number,
-    race: params["race"] as boolean,
-    raceLapLength: params["raceLapLength"] as number,
-    raceArterial: params["raceArterial"] as number,
-    raceCheckpoints: params["raceCheckpoints"] as number,
-    raceLaps: params["raceLaps"] as number,
-    raceSeals: params["raceSeals"] as boolean,
-    raceGridSlots: params["raceGridSlots"] as number,
-    raceCornerRadius: params["raceCornerRadius"] as number,
-    style: params["style"] as BuildingStyle,
-    buildingKit: (params["buildingKit"] as string | undefined) ?? CITY_DEFAULTS.buildingKit,
-    seed: params["seed"] as string,
+    ...params,
+    floorsMin: Math.min(params.floorsMin, params.floorsMax),
+    floorsMax: Math.max(params.floorsMin, params.floorsMax),
+    style: isBuildingStyle(params.style) ? params.style : DEFAULT_BUILDING_STYLE,
   };
 }
 
@@ -872,6 +590,11 @@ export interface CityIntersection {
 /** One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor. */
 export interface CityLot {
   id: string;
+  /**
+   * The lot's own seed, derived from the district's: what a renderer seeds the lot's near-detail
+   * building and its paint from, so the same lot id in two districts still differs.
+   */
+  seed: string;
   center: RoadPoint;
   size: readonly [number, number];
   rotationY: number;
@@ -1133,7 +856,7 @@ export interface ResolvedCity {
   race?: ResolvedRace;
   /**
    * The street graph the district grew from, in district-local XZ (before `center` and `rotationY`).
-   * Plain data: rebuild its road-surface field with `streetElevationField(rules, hx, hz)`.
+   * Plain data: rebuild its road-surface field with `streetElevationField({ elevation, halfX, halfZ }, seed)`.
    */
   network?: StreetNetwork;
 }
@@ -1208,6 +931,8 @@ const MAX_VEHICLES = 900;
 const MAX_SIGNALS = 640;
 const MAX_RACE_SEALS = 400;
 const MAX_RACE_KERBS = 320;
+/** Ridge height (m) above a street's banks that bores it through as a tunnel. */
+const CITY_TUNNEL_CLEARANCE = 6;
 const TAU = Math.PI * 2;
 
 /** Body footprint per silhouette as `[half width across, half length along the heading]`. */
@@ -1994,25 +1719,42 @@ function raceToWorld(
   };
 }
 
+/** The city generator's output family: a {@link ResolvedCity}. */
+export const CITY_OUTPUT = "city";
+
 /**
- * Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned
- * frontage lots with massing pieces → furniture, all in the volume's local frame and then
- * rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain
- * always resolves to the identical plan. When `context` provides a ground sampler, lots respect
- * the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When
- * `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override
- * band/mix. Returns null without a usable footprint.
- *
- * @capability city-district resolve a `city` volume into deterministic streets, zoned lots, parks, and furniture
+ * Where a district stands and what it reads from around it: the city generator's world input. A
+ * placed `city` volume hands in its footprint, frame, the terrain and its sibling `cityzone` volumes
+ * ({@link resolveCityObject}); without an input (the variant grid) a district grows 400 m square at the origin.
  */
-export function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null {
-  const center = object.center ?? object.position;
-  if (center === undefined) return null;
-  const he = object.halfExtents;
-  const hx = axisValue(he?.x) ?? object.radius ?? 0;
-  const hz = axisValue(he?.z) ?? object.radius ?? 0;
-  const rules = readCityRules(object.meta);
-  const rotationY = object.rotationY ?? 0;
+export interface CityInput {
+  /** World centre of the district. Default the origin. */
+  center?: { x: number; y: number; z: number };
+  /** Half-extents of the footprint (m). Default 200 each. */
+  halfX?: number;
+  halfZ?: number;
+  /** Yaw of the district frame (radians). Default 0. */
+  rotationY?: number;
+  /** World ground height; lots respect the `maxSlope` cliff rule and streets bridge gaps and bore ridges over it. */
+  sampleHeight?: ((x: number, z: number) => number) | undefined;
+  /** Sibling `cityzone` volumes: lots inside one adopt its band and mix. */
+  zoneOverrides?: readonly SceneKindObject[] | undefined;
+}
+
+/** The default district footprint half-extent (m) when the input names none. */
+const DEFAULT_CITY_HALF_EXTENT = 200;
+
+/**
+ * Synthesize the deterministic city plan: streets → bridges → parks → zoned frontage lots with
+ * massing pieces → furniture, all in the district's local frame and then rotated/translated into
+ * world space. Every random draw comes from the injected seed.
+ */
+function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): ResolvedCity {
+  const input = context.input ?? {};
+  const center = input.center ?? { x: 0, y: 0, z: 0 };
+  const hx = input.halfX ?? DEFAULT_CITY_HALF_EXTENT;
+  const hz = input.halfZ ?? DEFAULT_CITY_HALF_EXTENT;
+  const rotationY = input.rotationY ?? 0;
   const empty: ResolvedCity = {
     center: [center.x, center.y, center.z],
     size: [hx * 2, hz * 2],
@@ -2039,7 +1781,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   const sin = Math.sin(rotationY);
   const toWorld = (x: number, z: number): RoadPoint => [center.x + x * cos + z * sin, center.z - x * sin + z * cos];
 
-  const sampleHeight = context?.sampleHeight;
+  const sampleHeight = input.sampleHeight;
   const heightAt =
     sampleHeight === undefined
       ? null
@@ -2059,7 +1801,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
         };
 
   // Child `cityzone` volumes override the band (and optionally the class mix) for lots inside them.
-  const overrides = (context?.zoneOverrides ?? context?.objects ?? []).filter((volume) => volume.kind === CITY_ZONE_KIND);
+  const overrides = (input.zoneOverrides ?? []).filter((volume) => volume.kind === CITY_ZONE_KIND);
   const overrideAt =
     overrides.length === 0
       ? null
@@ -2078,23 +1820,20 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
             const lz = dx * Math.sin(yaw) + dz * Math.cos(yaw);
             if (Math.abs(lx) > vhx || Math.abs(lz) > vhz) continue;
             const params = parseParams(CITY_ZONE_SCHEMA, volume.meta);
-            const mix = params["mix"] as WeightedParamEntry[];
-            return { band: params["band"] as CityZoneBand, mix: mix.length > 0 ? mix : null };
+            return { band: params.band, mix: params.mix.length > 0 ? params.mix : null };
           }
           return null;
         };
 
-  const streams = seededStreams(`city:${rules.seed.length > 0 ? rules.seed : object.id}`);
+  const streams = seededStreams(`city:${context.seed}`);
   // The unified path-network engine grows the whole road/track graph from the sliders — a city street
-  // net and a closed race circuit are the SAME generator at opposite slider extremes.
-  const netRules: StreetNetworkRules = {
-    seed: rules.seed.length > 0 ? rules.seed : object.id,
-    outline: rules.outline,
+  // net and a closed race circuit are the SAME generator at opposite slider extremes. It shares this
+  // district's seed, and reads the ground through the district frame.
+  const streetParams: StreetNetworkParams = {
     gridness: rules.gridness,
     loopiness: rules.loopiness,
     connectivity: rules.connectivity,
     branching: rules.branching,
-    residentialBranches: rules.residentialBranches,
     deadEnds: rules.deadEnds,
     segmentLength: rules.blockSize,
     aspect: rules.blockAspect,
@@ -2108,15 +1847,15 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     elevation: rules.elevation,
     maxGrade: rules.maxGrade,
     compactness: rules.compactness,
-  };
-  const network = generateStreets(netRules, hx, hz, {
-    heightAt: heightAt ?? undefined,
-    minElevation: rules.minElevation,
+    halfX: hx,
+    halfZ: hz,
     bridges: rules.bridges,
     tunnels: rules.tunnels,
-  });
-  // The resolved city stays plain data: the road-surface field is rebuilt with `streetElevationField`.
-  const { elevationAt: _surface, ...networkData } = network;
+    minElevation: rules.minElevation,
+    tunnelClearance: CITY_TUNNEL_CLEARANCE,
+    seed: context.seed,
+  };
+  const network = STREET_NETWORK_GENERATOR.generate(streetParams, { ...context, input: { heightAt: heightAt ?? undefined } });
   // Resolve each generated street's surface + sidewalk from its hierarchy level.
   const surfaceFor = (level: StreetLevel): CityStreet["surface"] =>
     rules.surface === "gravel" || (level === "lane" && rules.gravelLanes) ? "gravel" : "asphalt";
@@ -2151,15 +1890,18 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   // The race is a SECTION OF THIS CITY blocked off: the same streets the district already grew,
   // with a closed lap lifted out of them. A district with no drivable cycle simply has no race.
   const route = rules.race
-    ? extractCircuitRoute(network, {
-        seed: netRules.seed,
-        lapLength: rules.raceLapLength,
-        arterialBias: rules.raceArterial,
-        minCornerRadius: rules.raceCornerRadius,
-        checkpoints: rules.raceCheckpoints,
-        laps: rules.raceLaps,
-        gridSlots: rules.raceGridSlots,
-      })
+    ? extractCircuitRoute(
+        network,
+        parseParams(CIRCUIT_ROUTE_SCHEMA, {
+          lapLength: rules.raceLapLength,
+          arterialBias: rules.raceArterial,
+          minCornerRadius: rules.raceCornerRadius,
+          checkpoints: rules.raceCheckpoints,
+          laps: rules.raceLaps,
+          gridSlots: rules.raceGridSlots,
+        }),
+        context,
+      )
     : null;
   // Fabric (block/parcel/building subdivision) is optional: a bare road or race track leaves it off,
   // so a circuit never carries forced-on plots — parcels and buildings appear only when you want it.
@@ -2378,7 +2120,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     size: [hx * 2, hz * 2],
     rotationY,
     rules,
-    network: networkData,
+    network,
     streets: local.map((street, i) => ({
       id: `street:${i}`,
       points: street.points.map(([x, z]) => toWorld(x, z)),
@@ -2442,6 +2184,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     })),
     lots: lotResult.lots.map((lot) => ({
       id: lot.id,
+      seed: `${context.seed}/${lot.id}`,
       center: toWorld(lot.center[0], lot.center[1]),
       size: lot.size,
       rotationY: lot.rotationY - rotationY,
@@ -2458,7 +2201,8 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       id: park.id,
       center: toWorld(park.center[0], park.center[1]),
       size: park.size,
-      rotationY: -rotationY,
+      // Never -0: a stored plan must read back identical.
+      rotationY: rotationY === 0 ? 0 : -rotationY,
       type: park.type,
       jitter: park.jitter,
       ...(park.polygon === undefined ? {} : { polygon: park.polygon.map(([x, z]) => toWorld(x, z)) }),
@@ -2499,10 +2243,56 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   };
 }
 
-/** Registers the `city` + `cityzone` scene kinds (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */
+/**
+ * The city generator: a whole district (street network, blocks, parcels, zoned lots with massing
+ * pieces, parks and street furniture, and with `race` on a sealed-off lap through its own streets)
+ * from the {@link CITY_SCHEMA} params and one injected seed. Same params, seed and {@link CityInput}
+ * always give the identical plain-data plan.
+ *
+ * @capability city-district editor-authorable procedural city district (streets, zoning, buildings, furniture)
+ */
+export const CITY_GENERATOR = defineGenerator({
+  id: "city",
+  label: "City / track",
+  output: CITY_OUTPUT,
+  schema: CITY_SCHEMA,
+  generate(params, context: GeneratorContext<CityInput>): ResolvedCity {
+    return generateCity(cityRules(params), context);
+  },
+});
+
+/**
+ * The `city` kind's resolve: run {@link CITY_GENERATOR} for one placed volume, with its footprint,
+ * frame, the ground sampler and its sibling `cityzone` volumes as the input, and its id as the seed
+ * when `meta.seed` is empty. Returns null without a usable footprint.
+ *
+ * @capability city-district resolve a `city` volume into deterministic streets, zoned lots, parks, and furniture
+ */
+export function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null {
+  const center = object.center ?? object.position;
+  if (center === undefined) return null;
+  const input: CityInput = {
+    center,
+    halfX: axisValue(object.halfExtents?.x) ?? object.radius ?? 0,
+    halfZ: axisValue(object.halfExtents?.z) ?? object.radius ?? 0,
+    rotationY: object.rotationY ?? 0,
+    sampleHeight: context?.sampleHeight,
+    zoneOverrides: context?.zoneOverrides ?? context?.objects,
+  };
+  return runGenerator(CITY_GENERATOR, object.meta, { fallbackSeed: object.id, input });
+}
+
+/**
+ * Registers the street, race circuit and city generators and the `city` + `cityzone` scene kinds
+ * (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal
+ */
 export function registerCityKind(): void {
+  registerGenerator(STREET_NETWORK_GENERATOR);
+  registerGenerator(RACE_CIRCUIT_GENERATOR);
+  registerGenerator(CITY_GENERATOR);
   registerSceneKind<ResolvedCity | null>({
     kind: CITY_KIND,
+    generator: CITY_GENERATOR.id,
     target: "volume",
     label: "City / track",
     addCategory: "Studios",
@@ -2516,22 +2306,7 @@ export function registerCityKind(): void {
       const resolved = resolveCityObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
       if (resolved.streets.length === 0) return `Footprint too small — needs at least ${Math.ceil(resolved.rules.blockSize * 1.5)} m across.`;
-      const mode = streetNetworkMode({
-        seed: resolved.rules.seed,
-        gridness: resolved.rules.gridness,
-        loopiness: resolved.rules.loopiness,
-        connectivity: resolved.rules.connectivity,
-        branching: resolved.rules.branching,
-        deadEnds: resolved.rules.deadEnds,
-        segmentLength: resolved.rules.blockSize,
-        aspect: resolved.rules.blockAspect,
-        winding: resolved.rules.curviness,
-        minCurveRadius: resolved.rules.minCurveRadius,
-        minTurnAngle: resolved.rules.minTurnAngle,
-        maxTurnAngle: resolved.rules.maxTurnAngle,
-        width: resolved.rules.streetWidth,
-        boulevards: resolved.rules.boulevards,
-      });
+      const mode = resolved.network?.mode ?? "net";
       const feats = [
         resolved.bridges.length > 0 ? `${resolved.bridges.length} bridges` : "",
         resolved.tunnels.length > 0 ? `${resolved.tunnels.length} tunnels` : "",
@@ -2558,8 +2333,7 @@ export function registerCityKind(): void {
     schema: CITY_ZONE_SCHEMA,
     note: (object) => {
       const params = parseParams(CITY_ZONE_SCHEMA, object.meta);
-      const mix = params["mix"] as WeightedParamEntry[];
-      return `Pins the "${params["band"] as string}" band${mix.length > 0 ? " with a custom mix" : ""} inside any city district it overlaps.`;
+      return `Pins the "${params.band}" band${params.mix.length > 0 ? " with a custom mix" : ""} inside any city district it overlaps.`;
     },
   });
 }
