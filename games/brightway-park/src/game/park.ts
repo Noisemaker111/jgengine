@@ -19,6 +19,7 @@ import { SCENARIOS } from "./scenarios";
 import { BOOK_LINES, CAMPAIGNS } from "./books";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
 import { retuneRideUpkeep, rideRunActions, rideRunFacts } from "./rideRefits";
+import { drawLoan, repayLoan } from "./sim/bank";
 
 /**
  * Brightway Park is one declaration. Every ride, stall, path and post is a kind on the park lot;
@@ -35,7 +36,8 @@ export { LOT, sizeOf };
 
 /**
  * The bank: the park opens owing `start`, may borrow up to `max` in steps of `step`, and pays
- * `monthlyRate` interest on what it owes when each month closes.
+ * `monthlyRate` interest on what it owes when each month closes. The loan runs on the shared loan
+ * book (`sim/bank.ts`); `park.loan_owed` is the balance it publishes.
  */
 export const LOAN = { start: 10_000, max: 25_000, step: 1_000, monthlyRate: 0.04 } as const;
 
@@ -188,16 +190,20 @@ const actions: Record<string, WorldActionDecl> = {
     label: `Borrow $${LOAN.step.toLocaleString()}`,
     when: { "park.loan_owed": { atMost: LOAN.max - LOAN.step } },
     refuse: `The bank won't lend more than $${LOAN.max.toLocaleString()}`,
-    world: { "park.cash": LOAN.step, "park.loan_owed": LOAN.step, [monthLine("loan")]: LOAN.step },
+    // The till takes the money; the loan book draws it on the line (`bank_draw`).
+    world: { "park.cash": LOAN.step, [monthLine("loan")]: LOAN.step },
     note: `Borrowed $${LOAN.step.toLocaleString()} from the bank`,
+    hook: "bank_draw",
   },
   repay_loan: {
     label: `Repay $${LOAN.step.toLocaleString()}`,
     when: { "park.loan_owed": { atLeast: LOAN.step } },
     refuse: "The park owes the bank nothing",
     cost: { "park.cash": -LOAN.step },
-    world: { "park.loan_owed": -LOAN.step, [monthLine("loan")]: -LOAN.step },
+    // The till pays; the loan book takes it off the line (`bank_repay`).
+    world: { [monthLine("loan")]: -LOAN.step },
     note: `Paid $${LOAN.step.toLocaleString()} back to the bank`,
+    hook: "bank_repay",
   },
 };
 
@@ -386,7 +392,7 @@ export const park = defineGameSpec({
       leave: { world: { "park.guests": -1 } },
       breakdown: { world: { "park.buzz": -15, "park.breakdowns": 1 }, note: "A ride broke down - the crowd groans", hook: "dispatch_crew" },
       repaired: { world: { "park.buzz": 6 } },
-      // The month's interest on the loan, scaled by what it comes to.
+      // The month's interest the loan book charged, scaled by what it comes to.
       interest: {
         when: { "park.loan_owed": { atLeast: 1 } },
         world: { "park.cash": -1, "park.spent_today": 1, "park.interest_paid": 1, [monthLine("interest")]: 1 },
@@ -403,6 +409,8 @@ export const park = defineGameSpec({
     dispatch_crew: (ctx, call) => {
       if (call.event?.by !== undefined) dispatchCrew(ctx, call.world, call.event.by);
     },
+    bank_draw: (ctx, call) => drawLoan(ctx, call.world),
+    bank_repay: (ctx, call) => repayLoan(ctx, call.world),
   },
   onReady: (ctx, instance) => spawnObject(ctx, instance),
   onRemoved: (ctx, gone) => despawnObject(ctx, gone.id, Number(gone.refund["park.cash"] ?? 0)),

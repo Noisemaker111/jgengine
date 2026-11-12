@@ -2,10 +2,11 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BOOK_LINES, MONTH_DAYS, monthLabel, parkDate } from "../books";
-import { LOAN, linesNet, monthLine, park, reportLine, type ParkMetrics } from "../park";
+import { linesNet, monthLine, park, reportLine, type ParkMetrics } from "../park";
 import { syncAmbience } from "../audio";
 import { closeParkDay } from "../daySession";
 import { milestonesCrossed } from "../milestones";
+import { chargeMonth } from "./bank";
 import { guestPopulation } from "./guests";
 import { ratingTarget } from "./rating";
 
@@ -55,15 +56,13 @@ export function closeDay(ctx: GameContext): void {
 }
 
 /**
- * Close a month: charge the loan's interest, file every line of the books as `report.*` (with
- * building and land as what is left of the till's change), start the next month's lines at zero,
- * and count a month that ends in the red. The second in a row closes the park.
+ * Close a month: charge the loan's interest on the loan book, file every line of the books as
+ * `report.*` (with building and land as what is left of the till's change), start the next month's
+ * lines at zero, and count a month that ends in the red. The second in a row closes the park.
  */
 export function closeMonth(ctx: GameContext, monthIndex: number): void {
   const w = park.of(ctx);
-  const owed = w.num("park.loan_owed");
-  const interest = Math.round(owed * LOAN.monthlyRate);
-  if (interest > 0) w.emit({ kind: "interest", scale: interest });
+  const interest = chargeMonth(ctx, monthIndex);
 
   const cash = w.num("park.cash");
   const profit = cash - w.num("month.cash_start");

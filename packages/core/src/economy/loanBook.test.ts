@@ -56,7 +56,9 @@ describe("repayment schedule", () => {
     expect(() => buildLoanSchedule(terms({ periods: 0 }))).toThrow("integer >= 1");
     expect(() => buildLoanSchedule(terms({ periodSeconds: 0 }))).toThrow("must be positive");
     expect(() => buildLoanSchedule(terms({ ratePerPeriod: -1 }))).toThrow("non-negative");
-    expect(() => buildLoanSchedule(terms({ method: "balloon" as "flat" }))).toThrow('"amortized" or "flat"');
+    expect(() => buildLoanSchedule(terms({ method: "balloon" as "flat" }))).toThrow('"amortized", "flat" or "revolving"');
+    expect(() => buildLoanSchedule(terms({ method: "revolving" }))).toThrow("limit must be");
+    expect(() => buildLoanSchedule(terms({ method: "revolving", limit: 5_000 }))).toThrow("limit must be");
   });
 });
 
@@ -138,6 +140,78 @@ describe("drawing and servicing a loan", () => {
     expect(loans.originate(terms())).toBeNull();
     expect(loans.originate(terms({ id: "other", account: "ghost" }))).toBeNull();
     expect(ledger.entries({ reason: "loan-draw" })).toHaveLength(1);
+  });
+});
+
+describe("a revolving credit line", () => {
+  const line = (overrides: Partial<LoanTerms> = {}): LoanTerms => ({
+    id: "line", principal: 10_000, ratePerPeriod: 0.04, periodSeconds: 60, startSeconds: 60, method: "revolving", limit: 25_000, ...overrides,
+  });
+
+  test("each period charges interest on what is outstanding when it falls due, and no principal", () => {
+    const { ledger, loans } = book(0);
+    const loan = loans.originate(line())!;
+    expect(loan).toMatchObject({ outstanding: 10_000, periods: 0, limit: 25_000, settled: false });
+    expect(loan.schedule).toMatchObject({ method: "revolving", payments: [], totalInterest: 0 });
+    expect(loans.nextPayment("line")).toEqual({ index: 1, dueSeconds: 60, interest: 400, principal: 0, amount: 400, balanceAfter: 10_000 });
+
+    expect(loans.draw("line", 2_000, 10)).toEqual({ ok: true, applied: 2_000, outstanding: 12_000 });
+    expect(loans.repay("line", 1_000, 20)).toMatchObject({ ok: true, applied: 1_000, outstanding: 11_000 });
+    expect(loans.advance(60).paid).toEqual([{ index: 1, dueSeconds: 60, interest: 440, principal: 0, amount: 440, balanceAfter: 11_000 }]);
+    // Two more periods at once: each charges on the balance, which interest does not raise.
+    expect(loans.advance(180).paid.map((payment) => payment.interest)).toEqual([440, 440]);
+    expect(loans.loan("line")).toMatchObject({ paid: 3, interestPaid: 1_320, paidAmount: 2_320, outstanding: 11_000, settled: false });
+    expect(ledger.totals()).toEqual({
+      "loan-draw": { count: 2, net: 12_000 },
+      "loan-repayment": { count: 1, net: -1_000 },
+      "loan-interest": { count: 3, net: -1_320 },
+    });
+  });
+
+  test("a draw past the limit is refused, and a line repaid to zero stays open for the next draw", () => {
+    const { ledger, loans } = book(20_000);
+    loans.originate(line());
+    expect(loans.draw("line", 15_000, 1)).toMatchObject({ ok: true, outstanding: 25_000 });
+    expect(loans.draw("line", 1, 2)).toEqual({ ok: false, applied: 0, outstanding: 25_000 });
+    expect(loans.draw("line", 0, 2)).toBeNull();
+    expect(loans.repay("line", 30_000, 3)).toEqual({ ok: true, applied: 25_000, outstanding: 0, settled: false });
+    // A period with nothing owed passes without a posting.
+    expect(loans.advance(60).paid).toEqual([]);
+    expect(loans.nextPayment("line")).toMatchObject({ index: 2, dueSeconds: 120, interest: 0 });
+    expect(ledger.entries({ reason: "loan-interest" })).toHaveLength(0);
+    expect(loans.draw("line", 1_000, 70)).toMatchObject({ ok: true, outstanding: 1_000 });
+    expect(loans.advance(120).paid).toMatchObject([{ index: 2, interest: 40 }]);
+    // A term loan has no line to draw on.
+    loans.originate({ id: "bond", principal: 100, ratePerPeriod: 0, periods: 1, periodSeconds: 60, startSeconds: 60 });
+    expect(loans.draw("bond", 10, 80)).toBeNull();
+  });
+
+  test("an overdraft book charges a borrower with no funds into the red instead of into arrears", () => {
+    const ledger = createTransactionLedger();
+    ledger.openAccount("biz", "cents", 0);
+    const loans = createLoanBook({ ledger, currency: "cents", account: "biz", maxMissed: 1, overdraft: true });
+    loans.originate(line());
+    ledger.post({ at: 1, account: "biz", currency: "cents", amount: -10_000, reason: "purchase" });
+    expect(loans.advance(120)).toMatchObject({ missed: [], defaulted: [] });
+    expect(ledger.balanceOf("biz", "cents")).toBe(-800);
+    expect(loans.repay("line", 1_000, 130)).toMatchObject({ ok: true, outstanding: 9_000 });
+    expect(ledger.balanceOf("biz", "cents")).toBe(-1_800);
+    expect(loans.loan("line")).toMatchObject({ missed: 0, defaulted: false });
+  });
+
+  test("a line round-trips through JSON with its limit, and restore holds it to that limit", () => {
+    const { loans } = book(0);
+    loans.originate(line());
+    loans.draw("line", 5_000, 5);
+    loans.advance(60);
+    const saved = JSON.parse(JSON.stringify(loans.snapshot()));
+    const { loans: restored } = book(0);
+    expect(restored.restore(saved)).toBe(true);
+    expect(restored.loan("line")).toEqual(loans.loan("line"));
+    expect(restored.nextPayment("line")).toEqual(loans.nextPayment("line"));
+    expect(restored.draw("line", 10_001, 61)).toMatchObject({ ok: false });
+    const over = { loans: [{ ...saved.loans[0], outstanding: 25_001 }] };
+    expect(restored.restore(over)).toBe(false);
   });
 });
 
