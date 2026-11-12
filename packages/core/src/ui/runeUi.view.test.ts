@@ -15,3 +15,16 @@ test("native property patches wait behind the queued spec until Rune's first fra
   finally { if (!hadWindow) Reflect.deleteProperty(globalThis, "window"); }
   expect(calls).toEqual(["spec", "patch"]);
 });
+
+test("the Rune bundle loads under the app base, so the site's /play/ runner finds /play/jg-ui", async () => {
+  const { runeBundleUrl } = await import("./runeUi.view");
+  const { setAssetBase } = await import("../assets/assetBase");
+  try {
+    expect(runeBundleUrl()).toBe("/jg-ui/jg_ui.js");
+    setAssetBase("/play/");
+    expect(runeBundleUrl()).toBe("/play/jg-ui/jg_ui.js");
+    expect(runeBundleUrl("https://cdn.example/jg-ui")).toBe("https://cdn.example/jg-ui/jg_ui.js");
+  } finally {
+    setAssetBase("/");
+  }
+});

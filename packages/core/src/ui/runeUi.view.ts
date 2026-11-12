@@ -10,6 +10,7 @@
  * game canvas underneath, over a widget they land on Rune.
  */
 
+import { resolveAssetBaseUrl } from "../assets/assetBase";
 import { RuneValueSlots, type RuneTextSlots } from "./rune/valueSlots";
 import { createRunePassThrough } from "./runePassThrough";
 
@@ -40,10 +41,20 @@ export interface RuneUiFrame {
   nativeRects?: [string, [number, number, number, number]][];
 }
 
+const DEFAULT_BASE = "/jg-ui";
+
+/**
+ * The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from
+ * `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
+ */
+export function runeBundleUrl(baseUrl: string = DEFAULT_BASE): string {
+  return resolveAssetBaseUrl(`${baseUrl}/jg_ui.js`);
+}
+
 export interface RuneUiOptions {
   /** Canvas element id; the bridge creates `<canvas id>` when absent. */
   canvasId?: string;
-  /** Where the wasm bundle is served from. */
+  /** Where the wasm bundle is served from (default `/jg-ui`, under the installed app base). */
   baseUrl?: string;
   /** TrueType/OpenType font URLs (not WOFF), fetched while the GPU starts. */
   fonts?: readonly string[];
@@ -78,7 +89,6 @@ interface BoundValue {
 }
 
 const DEFAULT_CANVAS_ID = "jg-ui";
-const DEFAULT_BASE = "/jg-ui";
 
 /**
  * One mounted Rune UI layer. Create once per page; games describe their trees with
@@ -127,7 +137,6 @@ export class RuneUi {
   /** Load the wasm bundle and mount it on a full-viewport canvas above the game. */
   static async create(options: RuneUiOptions = {}): Promise<RuneUi> {
     const canvasId = options.canvasId ?? DEFAULT_CANVAS_ID;
-    const base = options.baseUrl ?? DEFAULT_BASE;
     const zIndexCss = String(options.zIndex ?? 40);
     let canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
     if (canvas === null) {
@@ -136,7 +145,7 @@ export class RuneUi {
       canvas.style.cssText = `position:fixed;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;z-index:${zIndexCss}`;
       document.body.appendChild(canvas);
     }
-    const mod = (await import(/* @vite-ignore */ `${base}/jg_ui.js`)) as JgUiModule;
+    const mod = (await import(/* @vite-ignore */ runeBundleUrl(options.baseUrl))) as JgUiModule;
     const initialized = await mod.default();
     const ui = new RuneUi(canvas, mod, zIndexCss, initialized.memory);
     ui.wirePassThrough();
