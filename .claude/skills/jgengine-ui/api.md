@@ -2093,6 +2093,7 @@
 - `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
+- `runeBundleUrl` (function): function runeBundleUrl(baseUrl: string = DEFAULT_BASE): string — The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
 
 ## @jgengine/core/ui/sceneSwap.view
 
