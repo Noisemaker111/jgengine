@@ -25,8 +25,14 @@ const CITY_BLOCK_URL = art("city-block");
  * authored city bus (`scripts/author-harbor.mjs`).
  */
 const CAR_PAINT = ["Paint 1 Carmine", "Paint 2 Carmine"];
+/**
+ * A traffic car has no clips, so the shared crowd batch draws it exactly as its own model would, at
+ * any distance: the fleet is one instanced draw per car material instead of one per car. The car the
+ * player drives, targets or selects keeps its own model (the engine's focus rule).
+ */
+const TRAFFIC_LOD = { crowdDistance: 0 } as const;
 function car(color: string): ModelConfig {
-  return { ...libraryModel(CAR_MODEL_NAME), material: { ...GLOSS, color, materials: CAR_PAINT } };
+  return { ...libraryModel(CAR_MODEL_NAME), material: { ...GLOSS, color, materials: CAR_PAINT }, lod: TRAFFIC_LOD };
 }
 
 /** The cruiser's white roof, doors and hood panel: the car's second paint slot. */
@@ -77,7 +83,7 @@ const TRAFFIC_BODIES: Record<string, ModelPick> = {
 };
 
 export const entityModels: Record<string, ModelConfig> = {
-  ...resolveModelPlan(assets, TRAFFIC_BODIES),
+  ...Object.fromEntries(Object.entries(resolveModelPlan(assets, TRAFFIC_BODIES)).map(([id, model]) => [id, { ...model, lod: TRAFFIC_LOD }])),
   air_helicopter: aircraft("helicopter", "heli paint"),
   air_trainer: aircraft("floatplane", "plane paint"),
   air_prop: aircraft("floatplane", "plane paint", "#7fd1c4"),

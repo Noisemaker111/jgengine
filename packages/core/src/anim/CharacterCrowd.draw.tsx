@@ -2,6 +2,7 @@
 // @skill jgengine-world
 import { useEffect, useMemo, useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
@@ -26,12 +27,13 @@ import {
   type CrowdMember,
   type CrowdSpeedBands,
 } from "./crowdRegistry.draw";
-import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
+import { applyMaterialOverrideToMaterial, overrideTargets, type MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch.draw";
-import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
+import { loadModelMaterialTextures, preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
+import { applyMaterialAssignments } from "@jgengine/core/material/materialAsset.draw";
 import { modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
 import {
   bakeSkinnedCrowd,
@@ -55,6 +57,24 @@ interface CrowdBatchEnv {
 }
 
 /**
+ * A copy of a loaded rig with the model's per-slot material assignments applied, resolved exactly as
+ * the entity's own rig resolves them, for the crowd bake to merge. `materials` are the assigned
+ * materials the copy owns; the caller disposes them once the batch has cloned what it draws. Throws
+ * when an assignment names a slot the rig lacks, as the entity path does.
+ * @internal
+ */
+export function crowdSlotSource(
+  scene: THREE.Object3D,
+  model: Pick<ModelConfig, "materialAssets" | "materialAssignments">,
+  textures?: ReadonlyMap<string, MaterialOverrideTextures>,
+): { scene: THREE.Object3D; materials: THREE.Material[] } {
+  const assignments = model.materialAssignments ?? [];
+  const copy = cloneSkinned(scene);
+  const used = (model.materialAssets ?? []).filter((asset) => assignments.some((assignment) => assignment.materialId === asset.id));
+  return { scene: copy, materials: applyMaterialAssignments(copy, used, assignments, textures, { unmatched: "throw" }) };
+}
+
+/**
  * One character kind's crowd batch as a draw: loads the model, bakes the crowd rig, builds the
  * instanced draws and materials, registers the kind's readiness and capacity, then writes every
  * visible member's clip sample into the instance buffers each frame — the draw-side `CrowdBatch`.
@@ -71,6 +91,7 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
   let materials: THREE.Material[] = [];
   let depthMaterial: THREE.Material | null = null;
   let skipped: THREE.Material | null = null;
+  let slotTextures: { dispose(): void } | null = null;
   let meshes: { main: THREE.InstancedMesh; mirrors: THREE.InstancedMesh[] } | null = null;
   let placement: { scale: number; offset: THREE.Vector3 } | null = null;
   let clips: ReturnType<typeof crowdClipsOf> = [];
@@ -99,6 +120,8 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
     depthMaterial = null;
     skipped?.dispose();
     skipped = null;
+    slotTextures?.dispose();
+    slotTextures = null;
     baked?.dispose();
     baked = null;
     uniforms = null;
@@ -116,13 +139,32 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
     const capacity = characterLodPolicy(model.lod === false ? undefined : model.lod).crowdCapacity;
     // A model that plays clips but resolves none of them to locomotion keeps its own rig: batching it
     // would draw a frozen stance. A model with no clips at all is a static character, which batches.
+    let slotMaterials: THREE.Material[] = [];
     if (!(clipNames.length > 0 && clips.length === 0)) {
       try {
-        baked = bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips, fps: env.fps });
+        let scene: THREE.Object3D = gltf.scene;
+        const assignments = model.materialAssignments ?? [];
+        if (assignments.length > 0) {
+          // Slot assignments resolve against the loaded rig exactly as the entity's own rig resolves
+          // them, on a copy, so the bake merges the painted slots that rig would draw.
+          const textures = await loadModelMaterialTextures(model);
+          if (cancelled || stateRef === null) {
+            textures.dispose();
+            return;
+          }
+          slotTextures = textures;
+          const assigned = crowdSlotSource(gltf.scene, model, textures.assets);
+          scene = assigned.scene;
+          slotMaterials = assigned.materials;
+        }
+        baked = bakeSkinnedCrowd({ scene, animations: gltf.animations }, { clips, fps: env.fps });
       } catch {
-        // A model can carry clips without a skin (a node-transform prop animation). It keeps its own
-        // rig rather than entering the crowd path, which is what the readiness flag then reports.
+        // A model can carry clips without a skin (a node-transform prop animation), or name a slot its
+        // rig lacks. It keeps its own rig rather than entering the crowd path, which is what the
+        // readiness flag then reports.
         warnOnce(`character-crowd:${model.url}`, `[jgengine] character crowd: "${model.url}" cannot be baked and stays on its own rig`);
+        for (const material of slotMaterials) material.dispose();
+        slotMaterials = [];
         baked = null;
       }
     }
@@ -145,6 +187,8 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
       if (painted[index] === true && "color" in target && target.color instanceof THREE.Color) target.color.set(0xffffff);
       return uniforms === null ? target : patchCrowdMaterial(target, uniforms);
     });
+    // The assigned slots were only the bake's source: the batch draws its own clones of them.
+    for (const material of slotMaterials) material.dispose();
     depthMaterial = uniforms === null ? null : patchCrowdMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uniforms);
     skipped = new THREE.MeshBasicMaterial({ visible: false });
     const build = (list: THREE.Material[]) => {
