@@ -109,8 +109,21 @@ export interface EngineFrameBoard {
  * `rootScene` keeps the real scene reachable for scene-level state.
  */
 export function childFrameState(state: EngineFrameState, parent: THREE.Object3D): EngineFrameState {
-  return { ...state, scene: parent as THREE.Scene, rootScene: state.rootScene ?? state.scene };
+  const cached = childStates.get(parent);
+  if (cached !== undefined && cached.base === state) return cached.child;
+  // Built once per parent and kept: every other field reads through to `state` (its prototype), so the
+  // child sees each frame's elapsed and delta live, and a per-frame forward to a child draw allocates
+  // nothing — a copy per call was one object per mounted model per frame.
+  const child = Object.create(state, {
+    scene: { value: parent, enumerable: true },
+    rootScene: { value: state.rootScene ?? state.scene, enumerable: true },
+  }) as EngineFrameState;
+  childStates.set(parent, { base: state, child });
+  return child;
 }
+
+/** The scoped state last built for each parent, with the state it reads through to. */
+const childStates = new WeakMap<THREE.Object3D, { base: EngineFrameState; child: EngineFrameState }>();
 
 /**
  * Compose child draws under one THREE.Group: mounts each child with

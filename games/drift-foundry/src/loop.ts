@@ -113,6 +113,9 @@ export function onTick(ctx: GameContext, dt: number): void {
   const world = worldRuntimeStore.peek(ctx);
   if (session === undefined || input === undefined || world === undefined) return;
 
+  // One snapshot of the run before this tick's step: building one walks the whole session (standings,
+  // radio, rivals), and nothing below changes the session until `session.tick`.
+  const before = session.snapshot();
   // Swap the run objects over when the next event races another track, and restore all consumed
   // scenery when a new run resets the session.
   const track = trackOf(session);
@@ -121,7 +124,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     placeRunObjects(ctx, track);
     worldRuntimeStore.write(ctx, createWorldRuntime(track === ROW_SIX_TRACK ? placeZoneDressing(ctx) : world.propRows, track.id));
     input.reset();
-  } else if (session.snapshot().collectedIds.size < world.removedMarkers.size || session.snapshot().runTime < world.lastRunTime) {
+  } else if (before.collectedIds.size < world.removedMarkers.size || before.runTime < world.lastRunTime) {
     const rows = track === ROW_SIX_TRACK ? placeZoneDressing(ctx) : world.propRows;
     placeRunObjects(ctx, track);
     worldRuntimeStore.write(ctx, createWorldRuntime(rows, track.id));
@@ -129,7 +132,6 @@ export function onTick(ctx: GameContext, dt: number): void {
   }
   const currentWorld = worldRuntimeStore.peek(ctx)!;
 
-  const before = session.snapshot();
   const axis = input.sample(dt, ctx.input, before.phase === "running" && !before.paused);
   const jumpPressed = input.consumeJump() || ctx.input.justPressed("jumpHop");
   const plowBracing = ctx.input.isDown("plowBrace") || input.isDown("plowBrace");

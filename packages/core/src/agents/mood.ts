@@ -1,6 +1,5 @@
 import { clamp } from "../math/scalar";
 import type { NeedSet } from "../sim/needs";
-import { tierAt } from "../threshold/thresholds";
 
 /** One need's say in the mood score; weights are relative, so they need no fixed total. */
 export interface MoodWeight {
@@ -39,13 +38,14 @@ export interface MoodSnapshot {
 export function moodTierOf(score: number, tiers: readonly MoodTier[]): MoodTier {
   let lowest = tiers[0];
   if (lowest === undefined) throw new RangeError("A mood tier list needs at least one tier");
-  const best = tierAt(
-    tiers.map((tier) => ({ at: tier.at, id: tier })),
-    score,
-  );
-  if (best !== null) return best.id;
-  for (const tier of tiers) if (tier.at < lowest.at) lowest = tier;
-  return lowest;
+  // The highest tier the score reaches (the first of equals), as `tierAt` reads boundaries, without
+  // building a boundary list per read.
+  let best: MoodTier | null = null;
+  for (const tier of tiers) {
+    if (score >= tier.at && (best === null || tier.at > best.at)) best = tier;
+    if (tier.at < lowest.at) lowest = tier;
+  }
+  return best ?? lowest;
 }
 
 /**
@@ -62,6 +62,17 @@ export function readMood(
   tiers: readonly MoodTier[],
   sources?: Readonly<Record<string, number>>,
 ): Mood {
+  const score = moodScore(needs, weights, sources);
+  const tier = moodTierOf(score, tiers);
+  return { score, tier: tier.id, label: tier.label };
+}
+
+/** {@link readMood}'s 0-100 score alone. */
+function moodScore(
+  needs: Pick<NeedSet, "ids" | "fraction">,
+  weights: readonly MoodWeight[],
+  sources: Readonly<Record<string, number>> | undefined,
+): number {
   let total = 0;
   let weighted = 0;
   const declared = needs.ids();
@@ -73,10 +84,8 @@ export function readMood(
   }
   const base = total > 0 ? weighted / total : 0;
   let bias = 0;
-  if (sources !== undefined) for (const value of Object.values(sources)) bias += value;
-  const score = clamp(base * 100 + bias, 0, 100);
-  const tier = moodTierOf(score, tiers);
-  return { score, tier: tier.id, label: tier.label };
+  if (sources !== undefined) for (const id in sources) bias += sources[id]!;
+  return clamp(base * 100 + bias, 0, 100);
 }
 
 /** A mood reader that keeps the game-raised biases, so a queue or a litter patch moves mood too. */
@@ -112,9 +121,19 @@ export function createMoodReader(config: {
     config.needs.ids().map((need) => ({ need, weight: 1 }));
   let tiers: readonly MoodTier[] = config.tiers;
   let sources: Record<string, number> = {};
+  // A read that lands on the same score and tier as the last one returns that same record: an agent
+  // reads its mood every tick, and it moves far more slowly than that.
+  let last: Mood | null = null;
 
   return {
-    read: () => readMood(config.needs, weights, tiers, sources),
+    read() {
+      const score = moodScore(config.needs, weights, sources);
+      const tier = moodTierOf(score, tiers);
+      if (last === null || last.score !== score || last.tier !== tier.id || last.label !== tier.label) {
+        last = { score, tier: tier.id, label: tier.label };
+      }
+      return last;
+    },
     setSource(id, value) {
       if (!Number.isFinite(value) || value === 0) {
         const { [id]: _dropped, ...rest } = sources;

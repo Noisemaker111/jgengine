@@ -1485,20 +1485,14 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       let missionEvents: readonly MissionEvent[] = [];
       let jobEvents: WorldJobEvent[] = [];
       if (current.activeJob !== null) {
-        // One facts table, not two copies of it: allFacts already returns a fresh record when totals
-        // or live facts exist, so the transient input facts merge into that copy directly.
-        const baseFacts = allFacts(next);
+        // The job reads the facts its conditions name, each as every reader sees it (the tick's input
+        // facts over live facts, totals and the saved table), so no table is copied per tick.
         const overrides = input.facts;
-        let tickFacts: Readonly<Record<string, WorldFactValue>> = baseFacts;
-        if (overrides !== undefined) {
-          const keys = Object.keys(overrides);
-          if (keys.length > 0) {
-            const merged: Record<string, WorldFactValue> = baseFacts === next.facts ? { ...next.facts } : baseFacts as Record<string, WorldFactValue>;
-            for (const key of keys) merged[key] = overrides[key]!;
-            tickFacts = merged;
-          }
-        }
-        missionEvents = runtime.tick(dt, { ...input, facts: tickFacts });
+        const live = options.live?.();
+        const ticked = next;
+        const readFact = (key: string): WorldFactValue | undefined =>
+          overrides !== undefined && Object.hasOwn(overrides, key) ? overrides[key] : factOf(key, ticked, live);
+        missionEvents = runtime.tick(dt, { ...input, readFact });
         const settled = settleMission(missionEvents, next);
         next = settled.next;
         jobEvents = settled.jobs;

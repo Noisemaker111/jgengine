@@ -76,8 +76,8 @@
 - `AgentScheduleConfig` (interface): interface AgentScheduleConfig — An agent's whole day as data: what it does, where, and when.
 - `AgentSchedulePhase` (interface): interface AgentSchedulePhase — Where a schedule puts an agent at one instant.
 - `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
-- `AgentSelectView` (interface): interface AgentSelectView — What a selector is told about the member asking: who it is, its live agent, and where it stands.
-- `AgentSelector` (type): type AgentSelector = (view: AgentSelectView) => readonly AgentTarget[] — Everything the member could do right now, as the game's world offers it. Declared once per system.
+- `AgentSelectView` (interface): interface AgentSelectView — What a selector is told about the member asking: who it is, its live agent, and where it stands. One record the system refills for each member, so read it during the call and keep none of it.
+- `AgentSelector` (type): type AgentSelector = (view: AgentSelectView) => readonly AgentTarget[] — Everything the member could do right now, as the game's world offers it. Declared once per system. The system reads the list within the member's update, so a selector may refill one list per call.
 - `AgentSnapshot` (interface): interface AgentSnapshot — Serializable whole agent: needs, feeling, held action, day-plan cursor and the far flag.
 - `AgentSystem` (interface): interface AgentSystem — A whole cast of agents behind one factory and one tick.
 - `AgentSystemConfig` (interface): interface AgentSystemConfig — The game's data, in one place: what its people need, what they can do, and how they feel.
@@ -3348,6 +3348,7 @@
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
 - `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to `NeedSet.tick`.
+- `decayMetersInPlace` (function): function decayMetersInPlace(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): void — {@link decayMeters} written into `values` itself: the per-tick form for a meter set that owns its record and hands out no reference to it (`NeedSet`), so a cast of agents decays without a new record each tick.
 - `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a `createNeedSet` closure.
 - `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to `NeedSet.refill`.
 

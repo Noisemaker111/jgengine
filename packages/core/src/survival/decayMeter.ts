@@ -123,6 +123,25 @@ export function decayMeters(
 }
 
 /**
+ * {@link decayMeters} written into `values` itself: the per-tick form for a meter set that owns its
+ * record and hands out no reference to it (`NeedSet`), so a cast of agents decays without a new record
+ * each tick.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function decayMetersInPlace(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+  dt: number,
+  modifier?: DecayModifier,
+): void {
+  if (dt <= 0) return;
+  for (const def of defs) {
+    values[def.id] = bounded(def, valueOf(values, def), -applyStatRate(def.rate, modifier, def.id) * dt);
+  }
+}
+
+/**
  * Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new
  * record; throws on an unknown id. The pure counterpart to `NeedSet.refill`.
  *

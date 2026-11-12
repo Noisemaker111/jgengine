@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import {
   changeStatPool,
   createStatPool,
@@ -115,12 +116,14 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
     return createStatPool({ current: port.current(), max: Math.max(0, port.max()), min: 0 });
   }
 
+  // The two reads every tick makes, without building the pool `readPool` hands to a change.
   function readCurrent(): number {
-    return readPool().current;
+    if (port === undefined) return ownPool.current;
+    return clamp(port.current(), 0, readMax());
   }
 
   function readMax(): number {
-    return readPool().max;
+    return port === undefined ? ownPool.max : Math.max(0, port.max());
   }
 
   /** Adopt a computed pool, writing through the port when the shield does not own the value. */
@@ -211,7 +214,9 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
       sinceDamageMs += dtSeconds * 1000;
       syncExternal();
       if (sinceDamageMs < activeDelayMs) return;
-      write(changeStatPool(readPool(), Math.max(0, rates?.regenPerSecond ?? baseRegenPerSecond) * dtSeconds).pool);
+      // A full shield has nothing to regenerate: skip writing the value it already holds.
+      const full = port === undefined ? ownPool.current >= ownPool.max : port.current() === readMax();
+      if (!full) write(changeStatPool(readPool(), Math.max(0, rates?.regenPerSecond ?? baseRegenPerSecond) * dtSeconds).pool);
       observe();
     },
   };

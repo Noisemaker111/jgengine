@@ -62,8 +62,21 @@ function check(condition: boolean, message: string): void {
   if (!condition) throw new RangeError(message);
 }
 
+/**
+ * Node lists already checked, with the standing tracks each node reads: authored nodes are data that
+ * does not change, so a tree rebuilt every tick over the same list re-checks only the tracks against
+ * its standing instead of walking every cost curve and predicate again.
+ */
+const checkedNodes = new WeakMap<readonly UpgradeNodeDef[], readonly (readonly [nodeId: string, trackId: string])[]>();
+
 /** Check authored upgrade nodes; throws `RangeError` naming the offending node or field. */
 export function assertUpgrades(config: UpgradeTreeConfig): void {
+  const checked = checkedNodes.get(config.nodes);
+  if (checked !== undefined) {
+    for (const [nodeId, trackId] of checked) checkTrack(config, nodeId, trackId);
+    return;
+  }
+  const tracksRead: [string, string][] = [];
   const nodes = new Set<string>();
   for (const node of config.nodes) {
     const id = node.id.trim();
@@ -81,10 +94,8 @@ export function assertUpgrades(config: UpgradeTreeConfig): void {
     }
     for (const trackId of standingTracksRead(node.standing)) {
       check(trackId.trim() !== "", `Upgrade node "${id}" names an empty standing track`);
-      check(
-        config.standing === undefined || config.standing.hasTrack(trackId),
-        `Upgrade node "${id}" reads unknown standing track "${trackId}"`,
-      );
+      checkTrack(config, id, trackId);
+      tracksRead.push([id, trackId]);
     }
   }
   for (const node of config.nodes) {
@@ -93,6 +104,12 @@ export function assertUpgrades(config: UpgradeTreeConfig): void {
       check(nodes.has(required), `Upgrade node "${node.id}" requires unknown node "${required}"`);
     }
   }
+  checkedNodes.set(config.nodes, tracksRead);
+}
+
+function checkTrack(config: UpgradeTreeConfig, nodeId: string, trackId: string): void {
+  if (config.standing === undefined || config.standing.hasTrack(trackId)) return;
+  throw new RangeError(`Upgrade node "${nodeId}" reads unknown standing track "${trackId}"`);
 }
 
 /**

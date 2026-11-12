@@ -11,6 +11,16 @@ export function length2(x: number, y: number): number {
   return Math.sqrt(x * x + y * y);
 }
 
+/**
+ * Length of the vector (x, y, z) as `sqrt(x*x + y*y + z*z)`: {@link length2} in three dimensions. V8's
+ * `Math.hypot` also copies its arguments into a fresh array on every call, garbage a per-agent loop
+ * makes thousands of times a second.
+ * @internal
+ */
+export function length3(x: number, y: number, z: number): number {
+  return Math.sqrt(x * x + y * y + z * z);
+}
+
 /** Constrain a value to the inclusive `[min, max]` range.
  * @internal
  */

@@ -43,7 +43,8 @@ export interface WorldSolids {
   layer(layer: string): readonly WorldSolid[];
   layers(): readonly string[];
   /** Every solid whose world AABB overlaps `min`..`max`. Bounded by a uniform XZ hash grid. */
-  inBox(min: readonly [number, number, number], max: readonly [number, number, number]): WorldSolid[];
+  /** Solids overlapping the box. With `out`, they are written into it (cleared first) and it is returned. */
+  inBox(min: readonly [number, number, number], max: readonly [number, number, number], out?: WorldSolid[]): WorldSolid[];
   /** Optional accelerated ray candidates; finite coordinates/direction and nonnegative finite distance, normalized internally. */
   inRay?(origin: readonly [number, number, number], direction: readonly [number, number, number], maxDistance: number, work?: WorldSolidRayWork): WorldSolid[];
   /** Every solid in every layer. */
@@ -219,9 +220,10 @@ export function createWorldSolids(options: { cellSize?: number } = {}): WorldSol
     },
     layer: (layer) => layerMap.get(layer)?.map((entry) => entry.solid) ?? [],
     layers: () => [...layerMap.keys()],
-    inBox(min, max) {
+    inBox(min, max, into) {
       stamp += 1;
-      const out: WorldSolid[] = [];
+      const out: WorldSolid[] = into ?? [];
+      out.length = 0;
       if (total === 0) return out;
       const x0 = cellOf(min[0]);
       const x1 = cellOf(max[0]);

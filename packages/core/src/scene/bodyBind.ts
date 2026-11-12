@@ -1,4 +1,3 @@
-import { definedOnly } from "../data/definedOnly";
 import type { EntityRole, EntityUpdatePatch, SpawnPositionInput } from "./entityStore";
 
 /**
@@ -13,7 +12,7 @@ export interface BodySnapshot {
   rotationY?: number;
   rotationX?: number;
   rotationZ?: number;
-  role?: EntityRole;
+  role?: EntityRole | undefined;
   meta?: unknown;
 }
 
@@ -34,7 +33,7 @@ export interface BodyBindPose {
   rotationY?: number | undefined;
   rotationX?: number | undefined;
   rotationZ?: number | undefined;
-  dt?: number;
+  dt?: number | undefined;
 }
 
 /** Structural entity-store seam a {@link BodyBind} mirrors onto — satisfied by `ctx.scene.entity` itself. */
@@ -86,13 +85,20 @@ export interface BodyBind {
  */
 export function createBodyBind(deps: BodyBindDeps): BodyBind {
   const bound = new Set<string>();
+  // The sync each bound id was last seen in: an id whose stamp is behind the current sync was dropped.
+  // A stamp per id instead of a fresh "seen" set, and one pose and patch object refilled per body, so a
+  // sync of hundreds of bodies a tick allocates nothing of its own (the deps read them and keep nothing).
+  const seenAt = new Map<string, number>();
+  let stamp = 0;
+  const pose: BodyBindPose = { position: [0, 0, 0] };
+  const patch: { role?: EntityRole | undefined; meta?: unknown } = {};
   let teleportHandler: BodyTeleportHandler | null = null;
 
   return {
     sync(bodies, dt) {
-      const seen = new Set<string>();
+      stamp += 1;
       for (const body of bodies) {
-        seen.add(body.id);
+        seenAt.set(body.id, stamp);
         const alreadyBound = bound.has(body.id);
         if (!alreadyBound && !deps.has(body.id)) {
           deps.spawn(body.kind, {
@@ -105,23 +111,26 @@ export function createBodyBind(deps: BodyBindDeps): BodyBind {
             meta: body.meta,
           });
         } else {
-          deps.setPose(body.id, {
-            position: body.position,
-            rotationY: body.rotationY,
-            rotationX: body.rotationX,
-            rotationZ: body.rotationZ,
-            ...(dt === undefined ? {} : { dt }),
-          });
+          pose.position = body.position;
+          pose.rotationY = body.rotationY;
+          pose.rotationX = body.rotationX;
+          pose.rotationZ = body.rotationZ;
+          pose.dt = dt;
+          deps.setPose(body.id, pose);
           if (body.role !== undefined || body.meta !== undefined) {
-            deps.update(body.id, definedOnly({ role: body.role, meta: body.meta }));
+            patch.role = body.role;
+            patch.meta = body.meta;
+            // An undefined field is "leave as is" to the store, the same as one left out.
+            deps.update(body.id, patch as EntityUpdatePatch);
           }
         }
         bound.add(body.id);
       }
       for (const id of bound) {
-        if (seen.has(id)) continue;
+        if (seenAt.get(id) === stamp) continue;
         deps.despawn(id);
         bound.delete(id);
+        seenAt.delete(id);
       }
     },
     boundIds() {

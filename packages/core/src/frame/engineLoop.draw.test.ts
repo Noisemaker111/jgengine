@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { createEngineLoop, type EngineDraw } from "./engineLoop.draw";
+import { childFrameState, createEngineLoop, type EngineDraw } from "./engineLoop.draw";
 import { bindFrameSource } from "./frameBoard.draw";
 
 /**
@@ -181,4 +181,20 @@ test("demand renders only after invalidate, and dispose stops everything", () =>
   }
   pumpFrames();
   expect(renderer.renders).toBe(2);
+});
+
+test("a scoped child state is one object per parent and reads each frame's clock live", () => {
+  const renderer = fakeRenderer();
+  const loop = createEngineLoop({ canvas: fakeCanvas(), renderer, frameloop: "never" });
+  const parent = new THREE.Group();
+  const child = childFrameState(loop.state, parent);
+  expect(childFrameState(loop.state, parent)).toBe(child);
+  expect(child.scene).toBe(parent as unknown as THREE.Scene);
+  expect(child.rootScene).toBe(loop.scene);
+  expect(childFrameState(child, new THREE.Group()).rootScene).toBe(loop.scene);
+  loop.advance(2);
+  loop.state.elapsed = 2.5;
+  expect(child.elapsed).toBe(2.5);
+  expect(child.camera).toBe(loop.camera);
+  loop.dispose();
 });

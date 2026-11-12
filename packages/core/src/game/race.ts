@@ -270,7 +270,6 @@ export class RaceState {
   standings(): readonly RacerProgress[] {
     return this.order
       .map((id) => this.racers.get(id)!)
-      .slice()
       .sort((a, b) => this.compare(a, b, null))
       .map((r) => this.snapshot(r));
   }

@@ -147,6 +147,8 @@ export function gridShards(options: GridShardsOptions): StreamCell[] {
   return shards;
 }
 
+const NO_SHARDS: readonly StreamerShard[] = [];
+
 /** The budget an unlimited setting stores, so a snapshot stays plain JSON. */
 const UNLIMITED = Number.MAX_SAFE_INTEGER;
 
@@ -179,7 +181,9 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
   const shards = new Map<string, StreamerShard>();
   const always: StreamerShard[] = [];
   const bucketSize = Math.max(1, config.bucketSize ?? Math.max(tuning.loadRadius, 32));
-  const buckets = new Map<string, StreamerShard[]>();
+  // Buckets by column then row: an update reads several each, and a numeric key builds no string.
+  const buckets = new Map<number, Map<number, StreamerShard[]>>();
+  const bucketAt = (bx: number, bz: number): readonly StreamerShard[] => buckets.get(bx)?.get(bz) ?? NO_SHARDS;
   for (const shard of config.shards) {
     if (shards.has(shard.id)) throw new Error(`createWorldStreamer: duplicate shard id "${shard.id}"`);
     shards.set(shard.id, shard);
@@ -190,9 +194,13 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
     const { min, max } = shard.bounds;
     for (let bz = Math.floor(min[1] / bucketSize); bz <= Math.floor(max[1] / bucketSize); bz += 1) {
       for (let bx = Math.floor(min[0] / bucketSize); bx <= Math.floor(max[0] / bucketSize); bx += 1) {
-        const key = `${bx},${bz}`;
-        const list = buckets.get(key);
-        if (list === undefined) buckets.set(key, [shard]);
+        let column = buckets.get(bx);
+        if (column === undefined) {
+          column = new Map();
+          buckets.set(bx, column);
+        }
+        const list = column.get(bz);
+        if (list === undefined) column.set(bz, [shard]);
         else list.push(shard);
       }
     }
@@ -200,7 +208,10 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
   const resident = new Map<string, "loading" | "ready">();
   const loadOrder: { id: string; distance: number }[] = [];
   const unloadOrder: { id: string; distance: number }[] = [];
-  const seen = new Set<string>();
+  // The update that last weighed each shard, so a shard in several buckets is weighed once per update.
+  const seenAt = new Map<string, number>();
+  let stamp = 0;
+  const singleFocus: StreamFocus[] = [];
 
   const nearest = (shard: StreamerShard, focus: readonly StreamFocus[]): number => {
     let best = Infinity;
@@ -210,7 +221,11 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
 
   return {
     update(input) {
-      const focus: readonly StreamFocus[] = "x" in input ? [input] : input;
+      let focus: readonly StreamFocus[];
+      if ("x" in input) {
+        singleFocus[0] = input;
+        focus = singleFocus;
+      } else focus = input;
       const load: string[] = [];
       const unload: string[] = [];
       for (const shard of always) {
@@ -222,14 +237,14 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
       if (focus.length === 0) return { load, unload, pending: 0 };
       loadOrder.length = 0;
       unloadOrder.length = 0;
-      seen.clear();
+      stamp += 1;
       const reach = tuning.loadRadius;
       for (const point of focus) {
         for (let bz = Math.floor((point.z - reach) / bucketSize); bz <= Math.floor((point.z + reach) / bucketSize); bz += 1) {
           for (let bx = Math.floor((point.x - reach) / bucketSize); bx <= Math.floor((point.x + reach) / bucketSize); bx += 1) {
-            for (const shard of buckets.get(`${bx},${bz}`) ?? []) {
-              if (seen.has(shard.id) || resident.has(shard.id)) continue;
-              seen.add(shard.id);
+            for (const shard of bucketAt(bx, bz)) {
+              if (seenAt.get(shard.id) === stamp || resident.has(shard.id)) continue;
+              seenAt.set(shard.id, stamp);
               const distance = nearest(shard, focus);
               if (distance <= tuning.loadRadius) loadOrder.push({ id: shard.id, distance });
             }
@@ -246,11 +261,13 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
       unloadOrder.sort((a, b) => b.distance - a.distance || (a.id < b.id ? -1 : 1));
       const loads = Math.min(loadOrder.length, tuning.loadsPerUpdate);
       const unloads = Math.min(unloadOrder.length, tuning.unloadsPerUpdate);
-      for (const { id } of unloadOrder.slice(0, unloads)) {
+      for (let index = 0; index < unloads; index += 1) {
+        const id = unloadOrder[index]!.id;
         resident.delete(id);
         unload.push(id);
       }
-      for (const { id } of loadOrder.slice(0, loads)) {
+      for (let index = 0; index < loads; index += 1) {
+        const id = loadOrder[index]!.id;
         resident.set(id, awaitReady ? "loading" : "ready");
         load.push(id);
       }
@@ -264,7 +281,7 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
       return true;
     },
     shardAt(x, z) {
-      for (const shard of buckets.get(`${Math.floor(x / bucketSize)},${Math.floor(z / bucketSize)}`) ?? []) {
+      for (const shard of bucketAt(Math.floor(x / bucketSize), Math.floor(z / bucketSize))) {
         const bounds = shard.bounds;
         if (bounds !== undefined && x >= bounds.min[0] && x < bounds.max[0] && z >= bounds.min[1] && z < bounds.max[1]) return shard;
       }

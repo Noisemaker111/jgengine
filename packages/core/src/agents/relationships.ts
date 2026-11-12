@@ -84,7 +84,10 @@ export interface RelationshipBook {
   prefersCompanyOf(a: string, b: string): boolean;
   /** WHY: the rule that keeps a couple from being posted to opposite shifts is an opinion threshold, not a flag. */
   refusesToSplit(a: string, b: string): boolean;
-  /** Every agent this one has shared anything with, sorted by id. Allocates - UI and tests. */
+  /**
+   * Every agent this one has shared anything with, sorted by id. The list is kept between calls and
+   * replaced, never changed, when a new pair appears, so a per-tick pass reads it without a copy.
+   */
   partnersOf(a: string): readonly string[];
   policy(): Required<RelationshipPolicy>;
   retune(patch: RelationshipPolicy): void;
@@ -110,12 +113,56 @@ export function createRelationshipBook(policy: RelationshipPolicy = {}): Relatio
   let current: Required<RelationshipPolicy> = { ...DEFAULTS, ...policy };
   const codec = createPairKeyCodec();
   let pairs = new Map<string, Relationship>();
+  // Each agent's partners, sorted; a list is replaced (never edited) when the agent meets someone new.
+  let partners = new Map<string, readonly string[]>();
+  // Encoded pair keys by first id then second, so the per-tick reads build no key string.
+  const keys = new Map<string, Map<string, string>>();
 
-  const pairKey = (a: string, b: string): string => codec.key(a, b);
-  const read = (a: string, b: string): Relationship => pairs.get(pairKey(a, b)) ?? { familiarity: 0, opinion: 0 };
+  const pairKey = (a: string, b: string): string => {
+    let row = keys.get(a);
+    if (row === undefined) {
+      row = new Map();
+      keys.set(a, row);
+    }
+    let key = row.get(b);
+    if (key === undefined) {
+      key = codec.key(a, b);
+      row.set(b, key);
+    }
+    return key;
+  };
+  const read = (a: string, b: string): Relationship => pairs.get(pairKey(a, b)) ?? STRANGERS;
 
+  const meet = (a: string, b: string): void => {
+    const known = partners.get(a) ?? NO_PARTNERS;
+    let at = 0;
+    while (at < known.length && known[at]! < b) at += 1;
+    if (known[at] === b) return;
+    // A new list with `b` in its sorted place; the old one may still be in a caller's hands.
+    const next = known.slice(0, at);
+    next.push(b);
+    for (let index = at; index < known.length; index += 1) next.push(known[index]!);
+    partners.set(a, next);
+  };
+  const indexPartners = (): void => {
+    partners = new Map();
+    for (const key of pairs.keys()) {
+      const [first, second] = codec.parse(key);
+      meet(first, second);
+      meet(second, first);
+    }
+  };
+
+  let milestoneBoundaries: ThresholdBoundary<RelationshipMilestone>[] | null = null;
   const boundaries = (): ThresholdBoundary<RelationshipMilestone>[] =>
-    current.milestones.map((milestone) => ({ id: milestone, at: milestone.at }));
+    (milestoneBoundaries ??= current.milestones.map((milestone) => ({ id: milestone, at: milestone.at })));
+  /** Whether a milestone sits between two opinions, so a step can cross one. */
+  const spansMilestone = (from: number, to: number): boolean => {
+    const low = Math.min(from, to);
+    const high = Math.max(from, to);
+    for (const milestone of current.milestones) if (milestone.at > low && milestone.at <= high) return true;
+    return false;
+  };
 
   const gate = (milestone: RelationshipMilestone, pair: Relationship): boolean =>
     pair.familiarity >= (milestone.requiresFamiliarity ?? 0);
@@ -142,11 +189,18 @@ export function createRelationshipBook(policy: RelationshipPolicy = {}): Relatio
         familiarity: clamp(before.familiarity + familiarityDelta, 0, current.familiarityMax),
         opinion: clamp(before.opinion + opinionDelta, current.opinionMin, current.opinionMax),
       };
-      pairs.set(pairKey(a, b), after);
-      const crossed = crossThresholds(boundaries(), before.opinion, after.opinion)
-        .filter((crossing) => crossing.direction === "up")
-        .map((crossing) => crossing.id)
-        .filter((milestone) => gate(milestone, after));
+      const key = pairKey(a, b);
+      if (!pairs.has(key)) {
+        meet(a, b);
+        meet(b, a);
+      }
+      pairs.set(key, after);
+      const crossed = !spansMilestone(before.opinion, after.opinion)
+        ? NO_MILESTONES
+        : crossThresholds(boundaries(), before.opinion, after.opinion)
+          .filter((crossing) => crossing.direction === "up")
+          .map((crossing) => crossing.id)
+          .filter((milestone) => gate(milestone, after));
       return { a, b, before, after, crossed };
     },
     milestone: (a, b) => reached(read(a, b)),
@@ -179,17 +233,12 @@ export function createRelationshipBook(policy: RelationshipPolicy = {}): Relatio
       return a !== b && reached(read(a, b))?.id === "bonded";
     },
     partnersOf(a) {
-      const ids: string[] = [];
-      for (const key of pairs.keys()) {
-        const [first, second] = codec.parse(key);
-        if (first === a) ids.push(second);
-        else if (second === a) ids.push(first);
-      }
-      return ids.sort();
+      return partners.get(a) ?? NO_PARTNERS;
     },
     policy: () => ({ ...current, milestones: current.milestones }),
     retune(patch) {
       current = { ...current, ...patch };
+      milestoneBoundaries = null;
     },
     snapshot: () => {
       const out: Record<string, Relationship> = {};
@@ -198,6 +247,7 @@ export function createRelationshipBook(policy: RelationshipPolicy = {}): Relatio
     },
     restore(next) {
       current = { ...DEFAULTS, ...next.policy };
+      milestoneBoundaries = null;
       const restored = new Map<string, Relationship>();
       for (const [key, pair] of Object.entries(next.pairs)) {
         if (!Number.isFinite(pair.familiarity) || !Number.isFinite(pair.opinion)) continue;
@@ -207,6 +257,12 @@ export function createRelationshipBook(policy: RelationshipPolicy = {}): Relatio
         });
       }
       pairs = restored;
+      indexPartners();
     },
   };
 }
+
+/** How two agents who have never met stand. */
+const STRANGERS: Relationship = Object.freeze({ familiarity: 0, opinion: 0 });
+const NO_PARTNERS: readonly string[] = Object.freeze([]);
+const NO_MILESTONES: readonly RelationshipMilestone[] = Object.freeze([]);

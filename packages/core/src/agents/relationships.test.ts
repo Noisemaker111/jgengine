@@ -105,4 +105,17 @@ describe("createRelationshipBook", () => {
     book.retune({ milestones: [{ id: "crew", label: "Crew", at: 30 }] });
     expect(book.label("ada", "bo")).toBe("crew");
   });
+
+  test("partnersOf keeps one sorted list per agent and replaces it, never edits it, on a new pair", () => {
+    const book = createRelationshipBook({ milestones: MILESTONES });
+    book.socialise("ada", "dee");
+    book.socialise("ada", "bo");
+    const before = book.partnersOf("ada");
+    expect(before).toEqual(["bo", "dee"]);
+    book.socialise("ada", "bo");
+    expect(book.partnersOf("ada")).toBe(before);
+    book.socialise("cy", "ada");
+    expect(book.partnersOf("ada")).toEqual(["bo", "cy", "dee"]);
+    expect(before).toEqual(["bo", "dee"]);
+  });
 });

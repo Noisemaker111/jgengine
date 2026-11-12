@@ -155,6 +155,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `decayMeterSnapshot` (function) · `import { decayMeterSnapshot } from "@jgengine/core/gameplay"`
 - `decayMeterState` (function) · `import { decayMeterState } from "@jgengine/core/gameplay"`
 - `decayMeters` (function) · `import { decayMeters } from "@jgengine/core/gameplay"`
+- `decayMetersInPlace` (function) · `import { decayMetersInPlace } from "@jgengine/core/survival/decayMeter"`
 - `initDecayMeters` (function) · `import { initDecayMeters } from "@jgengine/core/gameplay"`
 - `refillMeter` (function) · `import { refillMeter } from "@jgengine/core/gameplay"`
 

@@ -25,7 +25,10 @@ export interface AgentMoodConfig {
   readonly tiers?: readonly MoodTier[];
 }
 
-/** What a selector is told about the member asking: who it is, its live agent, and where it stands. */
+/**
+ * What a selector is told about the member asking: who it is, its live agent, and where it stands.
+ * One record the system refills for each member, so read it during the call and keep none of it.
+ */
 export interface AgentSelectView {
   readonly id: string;
   /** The live agent, for a selector that reads needs, mood or the held action. */
@@ -37,7 +40,10 @@ export interface AgentSelectView {
   readonly far: boolean;
 }
 
-/** Everything the member could do right now, as the game's world offers it. Declared once per system. */
+/**
+ * Everything the member could do right now, as the game's world offers it. Declared once per system.
+ * The system reads the list within the member's update, so a selector may refill one list per call.
+ */
 export type AgentSelector = (view: AgentSelectView) => readonly AgentTarget[];
 
 /** Where a system keeps its save data: a key-value store, a save slot, or a test's map. */
@@ -158,6 +164,16 @@ export function createAgentSystem(config: AgentSystemConfig): AgentSystem {
   const order: string[] = [];
   let hydrated = false;
   let lastNow = 0;
+  // Refilled for each member a tick: the selector's view, and the targets with the system's fallback
+  // filled in. Neither outlives the member's update, so a tick of the whole cast allocates neither.
+  const view: { id: string; agent: Agent; at: Vec3 | null; now: number; far: boolean } = {
+    id: "",
+    agent: null as unknown as Agent,
+    at: null,
+    now: 0,
+    far: false,
+  };
+  const filled: FilledTarget[] = [];
 
   function selectFor(id: string): AgentSelector | undefined {
     return selectors.get(id) ?? config.select;
@@ -255,14 +271,12 @@ export function createAgentSystem(config: AgentSystemConfig): AgentSystem {
         if (!agent.isFar()) {
           const selector = selectFor(id);
           if (selector !== undefined) {
-            targets = selector({
-              id,
-              agent,
-              at: config.position?.(id) ?? null,
-              now: time,
-              far: false,
-            });
-            if (config.fallback !== undefined) targets = withFallback(targets, config.fallback);
+            view.id = id;
+            view.agent = agent;
+            view.at = config.position?.(id) ?? null;
+            view.now = time;
+            targets = selector(view);
+            if (config.fallback !== undefined) targets = withFallback(targets, config.fallback, filled);
           }
         }
         frames.set(id, agent.update({ dt, now: time, targets }));
@@ -313,15 +327,32 @@ export function createAgentSystem(config: AgentSystemConfig): AgentSystem {
   return system;
 }
 
-/** Targets keep their own fallback; the rest inherit the system's one. */
-function withFallback(targets: readonly AgentTarget[], fallback: AgentFallback): readonly AgentTarget[] {
-  let changed = false;
-  const next = targets.map((target) => {
-    if (target.fallback !== undefined) return target;
-    changed = true;
-    return { ...target, fallback };
-  });
-  return changed ? next : targets;
+/** A target with the system's fallback filled in, refilled in place every tick. */
+interface FilledTarget {
+  option: string;
+  target: string;
+  cost: number;
+  fallback: AgentFallback;
+}
+
+/**
+ * Targets keep their own fallback; the rest inherit the system's one. Written into `into`'s records
+ * (a missing cost reads as 0, as the brain prices it), so the copy costs no allocation once warm.
+ */
+function withFallback(targets: readonly AgentTarget[], fallback: AgentFallback, into: FilledTarget[]): readonly AgentTarget[] {
+  let missing = false;
+  for (const target of targets) if (target.fallback === undefined) missing = true;
+  if (!missing) return targets;
+  for (let index = 0; index < targets.length; index += 1) {
+    const target = targets[index]!;
+    const record = into[index] ?? (into[index] = { option: "", target: "", cost: 0, fallback });
+    record.option = target.option;
+    record.target = target.target;
+    record.cost = target.cost ?? 0;
+    record.fallback = target.fallback ?? fallback;
+  }
+  into.length = targets.length;
+  return into;
 }
 
 /** Spread a config field only when the game set it, so `createAgent`'s own default stands otherwise. */

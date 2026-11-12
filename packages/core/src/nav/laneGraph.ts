@@ -172,7 +172,16 @@ function totalLength(lengths: readonly number[]): number {
 }
 
 /** Interpolated world point and heading at `arc` along a polyline. */
-function samplePolyline(points: readonly Waypoint[], lengths: readonly number[], arc: number): { at: Waypoint; heading: number } {
+/** Scratch for a heading read, which needs the sample and keeps none of it. */
+const headingSample = { x: 0, y: 0, z: 0, heading: 0 };
+
+/** The point and heading at `arc` along a polyline, written into `out`: the per-car, per-tick form. */
+function samplePolylineInto(
+  points: readonly Waypoint[],
+  lengths: readonly number[],
+  arc: number,
+  out: { x: number; y: number; z: number; heading: number },
+): void {
   const clamped = Math.max(0, Math.min(arc, totalLength(lengths)));
   let remaining = clamped;
   for (let i = 0; i < lengths.length; i += 1) {
@@ -181,15 +190,19 @@ function samplePolyline(points: readonly Waypoint[], lengths: readonly number[],
     const b = points[i + 1]!;
     if (remaining <= length || i === lengths.length - 1) {
       const t = length <= EPSILON ? 0 : Math.min(1, remaining / length);
-      return {
-        at: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t],
-        heading: Math.atan2(b[0] - a[0], b[2] - a[2]),
-      };
+      out.x = a[0] + (b[0] - a[0]) * t;
+      out.y = a[1] + (b[1] - a[1]) * t;
+      out.z = a[2] + (b[2] - a[2]) * t;
+      out.heading = Math.atan2(b[0] - a[0], b[2] - a[2]);
+      return;
     }
     remaining -= length;
   }
-  const only = points[0] ?? ([0, 0, 0] as Waypoint);
-  return { at: only, heading: 0 };
+  const only = points[0];
+  out.x = only === undefined ? 0 : only[0];
+  out.y = only === undefined ? 0 : only[1];
+  out.z = only === undefined ? 0 : only[2];
+  out.heading = 0;
 }
 
 /** Fallback heading for a degenerate polyline, from the span's declared endpoints. */
@@ -208,13 +221,11 @@ export function lanePoseInto(
   lateral: number,
   out: { x: number; y: number; z: number; heading: number },
 ): void {
-  const sample = samplePolyline(lane.points, lane.segmentLengths, arc);
-  const forwardX = Math.sin(sample.heading);
-  const forwardZ = Math.cos(sample.heading);
-  out.x = sample.at[0] + forwardZ * lateral;
-  out.y = sample.at[1];
-  out.z = sample.at[2] - forwardX * lateral;
-  out.heading = sample.heading;
+  samplePolylineInto(lane.points, lane.segmentLengths, arc, out);
+  const forwardX = Math.sin(out.heading);
+  const forwardZ = Math.cos(out.heading);
+  out.x += forwardZ * lateral;
+  out.z -= forwardX * lateral;
 }
 
 interface NodeCluster {
@@ -555,7 +566,8 @@ export function createLaneGraph(config: LaneGraphConfig): LaneGraph {
       if (lane.segmentLengths.length === 0) {
         return endpointHeading(lane.points[0]!, lane.points[lane.points.length - 1]!);
       }
-      return samplePolyline(lane.points, lane.segmentLengths, arc).heading;
+      samplePolylineInto(lane.points, lane.segmentLengths, arc, headingSample);
+      return headingSample.heading;
     },
   };
 }

@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RelationshipBook } from "@jgengine/core/agents/relationships";
+import { length2 } from "@jgengine/core/math/scalar";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { householdBook, memberAgent, syncBook, syncMember } from "../agents";
 
@@ -329,7 +330,6 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
       probeShift(ctx, member.id, state.day);
       agent.needs.refill("energy", -0.2 * dt);
       if (member.shiftProgress >= SHIFT_SECONDS) {
-        const book = householdBook(state);
         const friend = state.order.some((id) => {
           const other = state.members[id];
           if (other === undefined || other.id === member.id || !book.prefersCompanyOf(member.id, other.id)) return false;
@@ -358,12 +358,12 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
   }
 
   const workable = availability.work && !consolesOffline(state, now) && !isIll(member, now);
-  let desire = chooseDesire(agent, now, { ...availability, work: workable, social: availability.social && member.needs.social < 50 }, member.lifestyle === "yield" && shiftIsOpen(member, now) && member.workToday < SHIFT_SECONDS && !member.recovering && workable, findIdleCompanion(ctx, state, member) !== null);
+  let desire = chooseDesire(agent, now, { ...availability, work: workable, social: availability.social && member.needs.social < 50 }, member.lifestyle === "yield" && shiftIsOpen(member, now) && member.workToday < SHIFT_SECONDS && !member.recovering && workable, findIdleCompanion(ctx, state, member, book) !== null);
   if (member.recovering && member.needs.energy > 60 && member.needs.hunger > 50 && availability.fun) desire = { kind: "need", goal: "fun" };
   const basicReady = member.needs.hunger > 45 && member.needs.energy > 45 && member.needs.social > 25 && member.needs.fun > 25;
   const bloomTime = member.lifestyle === "bloom" && shiftIsOpen(member, now) && member.harvestToday === 0 && !member.recovering && !isIll(member, now) && basicReady;
   if (bloomTime && critical.value >= 35) desire = { kind: "need", goal: "fun" };
-  if (householdPhase(now) === "bond" && member.needs.social < 90 && basicReady && findIdleCompanion(ctx, state, member) !== null) desire = { kind: "socialize" };
+  if (householdPhase(now) === "bond" && member.needs.social < 90 && basicReady && findIdleCompanion(ctx, state, member, book) !== null) desire = { kind: "socialize" };
   if (householdPhase(now) === "torpor" && member.needs.energy < 80 && availability.energy && member.needs.hunger > 35) desire = { kind: "need", goal: "energy" };
   if (member.recovering && !availability.energy && member.needs.energy < 60) {
     agent.needs.refill("energy", 1.5 * dt);
@@ -388,7 +388,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
       concern(ctx, state, member, stationShortfall(role, planter, furnished));
     }
   } else if (desire.kind === "socialize") {
-    const companion = findIdleCompanion(ctx, state, member);
+    const companion = findIdleCompanion(ctx, state, member, book);
     if (companion !== null) startConversation(state, member, companion, now, false);
   } else {
     if (action.kind !== "wander" || now >= member.actionUntil) {
@@ -436,7 +436,8 @@ function companySpot(ctx: GameContext, state: HouseholdState, book: Relationship
   return spot;
 }
 
-function findIdleCompanion(ctx: GameContext, state: HouseholdState, member: MemberState): MemberState | null {
+/** The idle member `member` would most like to join: the warmest in the tick's book, less the walk. */
+function findIdleCompanion(ctx: GameContext, state: HouseholdState, member: MemberState, book: RelationshipBook): MemberState | null {
   const mine = positionOf(ctx, member.id);
   if (mine === null) return null;
   let companion: MemberState | null = null;
@@ -447,8 +448,8 @@ function findIdleCompanion(ctx: GameContext, state: HouseholdState, member: Memb
     if (other === undefined || !isIdleish(other) || other.assignedByPlayer || other.needs.hunger < 25 || other.needs.energy < 25) continue;
     const theirs = positionOf(ctx, id);
     if (theirs === null) continue;
-    const distance = Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2]);
-    const score = householdBook(state).opinion(member.id, other.id) - distance;
+    const distance = length2(mine[0] - theirs[0], mine[2] - theirs[2]);
+    const score = book.opinion(member.id, other.id) - distance;
     if (score > best) { best = score; companion = other; }
   }
   return companion;
@@ -472,7 +473,7 @@ function stepSocialPairs(ctx: GameContext, state: HouseholdState, now: number, d
     if (b === undefined || b.action.kind !== "social" || b.action.withId !== a.id) continue;
     const mine = positionOf(ctx, a.id);
     const theirs = positionOf(ctx, b.id);
-    if (mine === null || theirs === null || Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2]) > SOCIAL_RANGE) continue;
+    if (mine === null || theirs === null || length2(mine[0] - theirs[0], mine[2] - theirs[2]) > SOCIAL_RANGE) continue;
     const tense = a.stress >= 65 && b.stress >= 65;
     for (const m of [a, b]) {
       memberAgent(m, ctx.rng).needs.refill("social", (tense ? 3 : 9) * dt);

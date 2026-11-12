@@ -41,7 +41,7 @@ import {
   type SceneRaycastApi,
 } from "../../scene/sceneRaycast";
 import { createSpatialApi, type SpatialApi } from "../../scene/spatial";
-import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "../../movement/movementModel";
+import { DEFAULT_OBSTACLE_PLAYER_RADIUS, type CollisionObstacle } from "../../movement/movementModel";
 import {
   createObstacleReachCache,
   slideStep,
@@ -233,6 +233,8 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     version: () => objects.version(),
   };
 
+  // One walker step is gathered and slid at a time, so its obstacles share one list.
+  const walkerObstacles: CollisionObstacle[] = [];
   const spatial = createSpatialApi({
     resolvePosition: (instanceId) => entities.get(instanceId)?.position,
     candidates: entities.ids,
@@ -251,6 +253,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
           Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
           undefined,
           walkerReach,
+          walkerObstacles,
         ),
       ),
     ...(occluder !== undefined ? { occluder } : {}),
