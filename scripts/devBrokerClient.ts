@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { headRevision } from "./captureRevision";
 import { checkoutIdentity } from "./devServerMarker";
-import { BROKER_PROTOCOL, brokerEnabled, brokerPort, brokerStatePath, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
+import { BROKER_PROTOCOL, brokerEnabled, brokerLogPath, brokerPort, brokerStatePath, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
 import { localPostJson, localRequest } from "./localhostHttp";
 import { pidAlive } from "./renderSlots";
 import { startOutsideCaller } from "./outsideCaller";
@@ -50,7 +50,8 @@ export async function stopBroker(): Promise<boolean> {
  * 2026-11-08), taking its Chrome, its dev servers and every capture on them along.
  */
 function launchBroker(script: string): void {
-  startOutsideCaller(process.execPath, [script, "serve"], { cwd: tmpdir() });
+  // Its runtime's own last words (a panic its handlers never see) land in the broker log on POSIX.
+  startOutsideCaller(process.execPath, [script, "serve"], { cwd: tmpdir(), outputPath: brokerLogPath() });
 }
 
 let unavailable: string | null = null;
@@ -142,11 +143,13 @@ export function treeFingerprint(root: string, gameDir: string | null): string {
   return parts.join("|");
 }
 
-const leases = new Set<string>();
+/** What each lease this run holds is for ("the runner dev server", "the shared browser"), by lease id. */
+const leases = new Map<string, string>();
 let exitHookArmed = false;
 
-function rememberLease(leaseId: string): void {
-  leases.add(leaseId);
+function rememberLease(leaseId: string, what: string, brokerPid: number | null): void {
+  leases.set(leaseId, what);
+  if (brokerPid !== null) watchBroker(brokerPid);
   if (exitHookArmed) return;
   exitHookArmed = true;
   // The broker frees a dead pid's leases on its next sweep; this only makes a clean exit instant.
@@ -155,11 +158,68 @@ function rememberLease(leaseId: string): void {
 
 export async function releaseLease(leaseId: string): Promise<void> {
   leases.delete(leaseId);
+  if (leases.size === 0) stopWatchingBroker();
   await localPostJson(`${brokerBase()}/v1/release`, { leaseId }, 3_000).catch(() => null);
 }
 
+/** How often a run holding a lease checks that its broker lives: `JG_BROKER_WATCH_MS`, 2 s by default. */
+export function brokerWatchMs(env: NodeJS.ProcessEnv = process.env): number {
+  const ms = Number(env["JG_BROKER_WATCH_MS"]);
+  return Number.isFinite(ms) && ms > 0 ? ms : 2_000;
+}
+
+/**
+ * The line a run prints when the broker it leased from dies under it. A broker owns its servers and
+ * browser, so they end with it, and the run's next page load is refused; without this line the run
+ * failed later with `net::ERR_CONNECTION_REFUSED` and nothing named the cause (#3085).
+ */
+export function brokerDeathLine(brokerPid: number, port: number, held: readonly string[], logPath: string): string {
+  const what = held.length === 0 ? "its lease" : [...new Set(held)].join(" and ");
+  return `degraded: dev server ended: the broker (pid ${brokerPid} on :${port}) died while this run held ${what}; its log is ${logPath}, and the next request starts a new broker`;
+}
+
+let watching: { pid: number; timer: ReturnType<typeof setInterval> } | null = null;
+
+/**
+ * Watch the broker this run holds leases from, and print {@link brokerDeathLine} once if it dies.
+ * The check is a signal-0 probe of its pid every {@link brokerWatchMs}; the timer never keeps the
+ * process alive. A later request after a death finds no broker and starts a new one.
+ */
+export function watchBroker(
+  brokerPid: number,
+  options: { isAlive?: (pid: number) => boolean; log?: (line: string) => void; everyMs?: number } = {},
+): void {
+  if (watching?.pid === brokerPid) return;
+  stopWatchingBroker();
+  const isAlive = options.isAlive ?? pidAlive;
+  const log = options.log ?? ((line: string) => console.error(line));
+  const timer = setInterval(() => {
+    if (isAlive(brokerPid)) return;
+    stopWatchingBroker();
+    log(brokerDeathLine(brokerPid, brokerPort(), [...leases.values()], brokerLogPath()));
+    // Its leases died with it; nothing is left to release, and a new request must not skip the broker.
+    leases.clear();
+    unavailable = null;
+  }, options.everyMs ?? brokerWatchMs());
+  timer.unref?.();
+  watching = { pid: brokerPid, timer };
+}
+
+/** Stop watching the broker (every lease released, or it died). */
+export function stopWatchingBroker(): void {
+  if (watching === null) return;
+  clearInterval(watching.timer);
+  watching = null;
+}
+
+/** Forget every lease and stop watching, as a new run would; for tests. */
+export function forgetLeases(): void {
+  leases.clear();
+  stopWatchingBroker();
+}
+
 export async function releaseAll(): Promise<void> {
-  await Promise.all([...leases].map((leaseId) => releaseLease(leaseId)));
+  await Promise.all([...leases.keys()].map((leaseId) => releaseLease(leaseId)));
 }
 
 function label(cwd: string): string {
@@ -183,7 +243,8 @@ export async function brokerServer(
   preferredPort?: number,
   log: (line: string) => void = (line) => console.error(line),
 ): Promise<BrokerServer | null> {
-  if ((await ensureBroker({ log })) === null) return null;
+  const broker = await ensureBroker({ log });
+  if (broker === null) return null;
   const root = checkoutIdentity(cwd);
   const gameDir = servedGameDir();
   const response = await localPostJson<ServerGrant & { error?: string }>(
@@ -201,7 +262,7 @@ export async function brokerServer(
   );
   if (response.status !== 200) throw new Error(`broker: ${response.body.error ?? `server request answered ${response.status}`}`);
   const grant = response.body;
-  rememberLease(grant.leaseId);
+  rememberLease(grant.leaseId, `the ${kind} dev server ${grant.base}`, broker.pid);
   detail(`broker: ${grant.reused ? "reused" : "started"} ${kind} ${grant.base} for ${root}${gameDir === null ? "" : ` (game dir ${gameDir})`}`);
   if (grant.stale !== undefined) log(`broker: ${grant.stale}`);
   return { port: grant.port, base: grant.base, reused: grant.reused };
@@ -209,14 +270,15 @@ export async function brokerServer(
 
 /** The shared browser's debug port, or null when the broker is unavailable. */
 export async function brokerChrome(cwd: string, log: (line: string) => void = (line) => console.error(line)): Promise<{ chromePort: number; started: boolean } | null> {
-  if ((await ensureBroker({ log })) === null) return null;
+  const broker = await ensureBroker({ log });
+  if (broker === null) return null;
   const response = await localPostJson<{ leaseId: string; chromePort: number; started: boolean; error?: string }>(
     `${brokerBase()}/v1/chrome`,
     { clientPid: process.pid, label: label(cwd) },
     90_000,
   );
   if (response.status !== 200) throw new Error(`broker: ${response.body.error ?? `browser request answered ${response.status}`}`);
-  rememberLease(response.body.leaseId);
+  rememberLease(response.body.leaseId, "the shared browser", broker.pid);
   return { chromePort: response.body.chromePort, started: response.body.started };
 }
 
@@ -257,7 +319,7 @@ export async function brokerCaptureTurn(
   ).finally(() => clearInterval(progress));
   if (response.status !== 200) throw new Error(`capture turn: ${response.body.error ?? `answered ${response.status}`}`);
   const grant = response.body;
-  rememberLease(grant.leaseId);
+  rememberLease(grant.leaseId, "a turn in the shared browser", runningBrokerPid(brokerPort()));
   if (grant.waitedMs >= 1_000) log(`broker: waited ${(grant.waitedMs / 1000).toFixed(1)}s for the shared browser`);
   return { release: () => releaseLease(grant.leaseId), waitedMs: grant.waitedMs, chromePort: grant.chromePort };
 }

@@ -1,17 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import { createServer as createNetServer, type AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   BrokerCore,
   brokerHandler,
+  brokerLogPath,
+  brokerStatePath,
   serverEnv,
   serverKey,
   type BrokerDeps,
   type LaunchedChrome,
   type LaunchedServer,
   type ServerRequest,
+  unannouncedDeath,
 } from "./devBroker";
 import { localPostJson, localRequest } from "./localhostHttp";
 
@@ -390,4 +396,80 @@ describe("broker over HTTP with real child processes", () => {
       await new Promise<void>((resolve) => http.close(() => resolve()));
     }
   });
+});
+
+describe("a broker's death is never silent (#3085)", () => {
+  test("a state file whose broker is gone is a death from outside, dated by its last refresh", () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-broker-death-"));
+    try {
+      const path = brokerStatePath(4498, dir);
+      expect(unannouncedDeath(path, () => false)).toBeNull();
+      writeFileSync(path, JSON.stringify({ pid: 4242, port: 4498, protocol: 2, startedAt: "2026-11-08T00:10:46.000Z", aliveAt: "2026-11-08T00:29:50.000Z" }));
+      expect(unannouncedDeath(path, () => true)).toBeNull();
+      const line = unannouncedDeath(path, (pid) => pid !== 4242);
+      expect(line).toContain("broker died unannounced: pid 4242");
+      expect(line).toContain("ready since 2026-11-08T00:10:46.000Z, last seen alive 2026-11-08T00:29:50.000Z");
+      writeFileSync(path, "{not json");
+      expect(unannouncedDeath(path, () => false)).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // The real broker, three times on a private port and temp dir, with the 20-minute cycle shortened by
+  // its knobs: killed from outside (logged by the next broker), stopped (logged by itself, no death
+  // line after), and idle (it stops itself and says so).
+  test("a real broker killed from outside is reported by the next one; a stopped or idle one is not", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-broker-life-"));
+    const port = await new Promise<number>((resolve) => {
+      const probe = createNetServer();
+      probe.listen(0, "127.0.0.1", () => {
+        const free = (probe.address() as AddressInfo).port;
+        probe.close(() => resolve(free));
+      });
+    });
+    const log = () => (existsSync(brokerLogPath(dir)) ? readFileSync(brokerLogPath(dir), "utf8") : "");
+    const statePath = brokerStatePath(port, dir);
+    const start = (idleMinutes: string) => {
+      const child = spawn(process.execPath, [join(import.meta.dir, "devBroker.ts"), "serve"], {
+        cwd: dir,
+        stdio: "ignore",
+        windowsHide: true,
+        env: { ...process.env, TMPDIR: dir, TEMP: dir, TMP: dir, JG_BROKER_PORT: String(port), JG_BROKER_SWEEP_MS: "50", JG_BROKER_IDLE_MINUTES: idleMinutes },
+      });
+      const exited = new Promise<number | null>((resolve) => child.once("exit", (code) => resolve(code)));
+      return { pid: child.pid!, exited };
+    };
+    const ready = async (pid: number): Promise<void> => {
+      for (let turn = 0; turn < 300 && !log().includes(`broker ready on :${port} (pid ${pid}`); turn += 1) await Bun.sleep(50);
+      expect(log()).toContain(`broker ready on :${port} (pid ${pid}`);
+    };
+    try {
+      const killed = start("60");
+      await ready(killed.pid);
+      await Bun.sleep(400); // a few sweeps, so the state file carries a refreshed aliveAt
+      expect(JSON.parse(readFileSync(statePath, "utf8")).aliveAt).toBeString();
+      process.kill(killed.pid, "SIGKILL");
+      await killed.exited;
+      expect(log()).not.toContain("broker died unannounced");
+
+      const stopped = start("60");
+      await ready(stopped.pid);
+      expect(log()).toContain(`broker died unannounced: pid ${killed.pid}`);
+      process.kill(stopped.pid, "SIGTERM");
+      await stopped.exited;
+      expect(log()).toContain("broker stopping: SIGTERM");
+      expect(existsSync(statePath)).toBe(false);
+
+      // 0.005 min is 300 ms: the idle stop the broker takes after 10 minutes in use.
+      const idle = start("0.005");
+      await ready(idle.pid);
+      expect(await idle.exited).toBe(0);
+      expect(log()).toContain("broker stopping: idle with nothing running");
+      expect(log().match(/broker died unannounced/g)).toHaveLength(1);
+      expect(log()).not.toContain("no stop or crash line (pid");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });

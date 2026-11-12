@@ -5,7 +5,19 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 
 import { BROKER_PROTOCOL } from "./devBroker";
-import { brokerStatusOrNull, captureQueueLine, captureWaitMs, ensureBroker, forgetBrokerUnavailable, stopBroker, treeFingerprint } from "./devBrokerClient";
+import {
+  brokerDeathLine,
+  brokerStatusOrNull,
+  brokerWatchMs,
+  captureQueueLine,
+  captureWaitMs,
+  ensureBroker,
+  forgetBrokerUnavailable,
+  forgetLeases,
+  stopBroker,
+  treeFingerprint,
+  watchBroker,
+} from "./devBrokerClient";
 import { brokerStatePath } from "./devBroker";
 import { tmpdir } from "node:os";
 
@@ -140,3 +152,30 @@ test("a running broker that is slow to answer is joined: no second broker, no ru
     }
   }
 }, 20_000);
+
+// #3085: a broker that died took the run's dev server with it, and the run failed later with
+// ERR_CONNECTION_REFUSED and nothing naming the cause.
+test("a run whose broker dies says so once, as degraded, naming what it held", async () => {
+  let alive = true;
+  const lines: string[] = [];
+  try {
+    watchBroker(4242, { isAlive: () => alive, log: (line) => lines.push(line), everyMs: 10 });
+    await Bun.sleep(50);
+    expect(lines).toEqual([]);
+    alive = false;
+    for (let turn = 0; turn < 100 && lines.length === 0; turn += 1) await Bun.sleep(10);
+    await Bun.sleep(50);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toStartWith("degraded: dev server ended: the broker (pid 4242 on :");
+  } finally {
+    forgetLeases();
+  }
+});
+
+test("the death line names the leases the run held, and the log to read", () => {
+  expect(brokerDeathLine(7, 4498, ["the runner dev server http://127.0.0.1:5200", "the shared browser", "the shared browser"], "/tmp/jgengine-broker.log")).toBe(
+    "degraded: dev server ended: the broker (pid 7 on :4498) died while this run held the runner dev server http://127.0.0.1:5200 and the shared browser; its log is /tmp/jgengine-broker.log, and the next request starts a new broker",
+  );
+  expect(brokerWatchMs({})).toBe(2_000);
+  expect(brokerWatchMs({ JG_BROKER_WATCH_MS: "250" })).toBe(250);
+});

@@ -1,3 +1,5 @@
+import { request as httpRequest } from "node:http";
+
 import { createGameRuntime, type GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { LEADERBOARD_PENDING_KEY } from "@jgengine/core/runtime/hostPersistence";
 import { markPlayerDirty, markServerDirty, type GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
@@ -129,5 +131,25 @@ export function createChunkTestRuntime(gameId = "chunk-game"): GameRuntime {
         },
       },
     },
+  });
+}
+
+/**
+ * A request to a server this test started on 127.0.0.1, over `node:http`. Never `fetch`: Bun's
+ * fetch sends 127.0.0.1 through `HTTP_PROXY`, so a run whose environment carries a proxy (the
+ * machine's, or one a proxy test left set) read a live local server as ConnectionRefused (#3080).
+ */
+export function localRequest(url: string, method = "GET"): Promise<{ status: number; json: () => unknown }> {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const request = httpRequest({ hostname: target.hostname, port: target.port, path: target.pathname + target.search, method }, (response) => {
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk: string) => (body += chunk));
+      response.on("end", () => resolve({ status: response.statusCode ?? 0, json: () => JSON.parse(body) as unknown }));
+      response.on("error", reject);
+    });
+    request.on("error", reject);
+    request.end();
   });
 }

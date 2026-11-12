@@ -135,3 +135,18 @@ export function playControlsActive(ctx: GameContext): boolean {
   return ctx.game.store.get(PLAY_CONTROLS_STORE_KEY) !== false &&
     !actionContextStack(ctx).ids().some((id) => id === "menu" || id.startsWith(SUSPENSION_PREFIX));
 }
+
+/**
+ * Why play controls are off in this context, empty when they are on: `"play controls off"` for the
+ * store switch, then each gating action context id in stack order (`menu`, or `suspension` for each
+ * {@link suspendPlayControls} lease). Lets a tool that finds play gated say what holds it.
+ */
+export function playGateReasons(ctx: GameContext): string[] {
+  const reasons: string[] = [];
+  if (ctx.game.store.get(PLAY_CONTROLS_STORE_KEY) === false) reasons.push("play controls off");
+  for (const id of actionContextStack(ctx).ids()) {
+    if (id === "menu") reasons.push("menu");
+    else if (id.startsWith(SUSPENSION_PREFIX)) reasons.push("suspension");
+  }
+  return reasons;
+}

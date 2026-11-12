@@ -3,19 +3,16 @@ import { createWeaponTriggers, type WeaponTriggerShot, type WeaponTriggers } fro
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { seededRng } from "@jgengine/core/random/rng";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { AMMO_LABELS } from "../ammo";
 import { bonus } from "../characters";
-import { resolveGunHit, type GunHitMods } from "../combat/hitModel";
+import { combatRngOf, resolveGunHit, type GunHitMods } from "../combat/hitModel";
 import { perkAfterHit, perkDamageScale, perkHitMods, perkShot, watchDeaths, withGunKills } from "../combat/gunPerks";
 import { noteHit, noteShot } from "../feel";
 import { playHit, playShot } from "../audio/drive";
 import { applyElementalProc, gunById, gunMagazine, startReload } from "../handroll";
 import { fireHandling, handlingView, playerStance, shotAim } from "../handling";
 import type { HitReactionConfig } from "@jgengine/core/combat/hitReaction";
-
-const combatRng = seededRng("scrap-combat-procs");
 
 export const GRENADE = { damage: 55, radius: 4.2, fuseTime: 1.3, speed: 18, intervalMs: 900 };
 
@@ -82,7 +79,7 @@ function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: str
   // animation), crits add a light shake, and kills use the calibrated enemyKilled preset.
   ctx.scene.entity.hitReaction({ from, to: targetId, config: hitFeel(outcome.crit, killed) });
   playHit(ctx, ctx.scene.entity.get(targetId)?.position ?? [0, 0, 0], outcome.crit);
-  applyElementalProc(ctx, combatRng, gun, from, targetId);
+  applyElementalProc(ctx, combatRngOf(ctx), gun, from, targetId);
   perkAfterHit(ctx, gun, from, targetId, outcome, wasAlive && (killed || died.has(targetId)));
 }
 
@@ -120,9 +117,9 @@ const fireGun: ItemUseHandler<GameContext> = {
     // Perk shot events read the magazine before the round leaves it (Opening Shot wants a full mag).
     const shot = perkShot(ctx, gun, input.aim);
     // Free-shot refund: roll before spending so a refunded shot leaves the mag untouched. The
-    // `combatRng()` draw stays gated behind `ammoRefund > 0` and happens once per fired shot, so the
-    // shared proc/crit rng stream keeps the same order.
-    const free = bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund");
+    // `combatRngOf(ctx)()` draw stays gated behind `ammoRefund > 0` and happens once per fired shot, so
+    // the world's proc/crit rng stream keeps the same order.
+    const free = bonus("ammoRefund") > 0 && combatRngOf(ctx)() < bonus("ammoRefund");
     if (free) ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
     // The trigger spends the round, starts the interval and presents the shot (see `presentGunShot`).
     triggers.pull({ ...pull, free });

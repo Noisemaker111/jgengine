@@ -141,9 +141,10 @@
 ## @jgengine/core/devtools/agentBridge.draw
 
 - `AgentBridgeRequest` (type): type AgentBridgeRequest = { method: string } & Record<string, unknown> — One RPC call into the agent bridge: a verb name plus its verb-specific fields.
-- `AgentBridgeResponse` (type): type AgentBridgeResponse = | { ok: true; [key: string]: unknown } | { ok: false; error: string } — Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason.
+- `AgentBridgeResponse` (type): type AgentBridgeResponse = | { ok: true; [key: string]: unknown } | { ok: false; error: string; [key: string]: unknown } — Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason.
 - `CAPTURE_COMMAND_INPUT` (const): const CAPTURE_COMMAND_INPUT: { readonly yaw: 0; readonly pitch: 0; readonly aim: { readonly yaw: 0; readonly pitch: 0; }; } — The input a capture command named by a bare string runs with: a neutral look, so a command that reads an aim or heading gets one. Shared by the dev runner's capture mode and `capture_run`.
 - `applyTimeScale` (function): function applyTimeScale(ctx: Pick<GameContext, "time">, scale: unknown): AgentBridgeResponse — ⚠ undocumented
+- `simAdvanceReport` (function): function simAdvanceReport(ctx: GameContext | null, result: SimAdvanceResult | null): AgentBridgeResponse — The `sim_advance` answer: ok only when every requested frame advanced. When play was gated the answer is not ok, names what holds it, and reports the frames that really advanced before the gate, so a drive cannot mistake a gated advance for elapsed game time.
 
 ## @jgengine/core/devtools/collisionDebug
 

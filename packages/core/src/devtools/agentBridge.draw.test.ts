@@ -5,7 +5,10 @@ import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { withRendererBackendOverride } from "@jgengine/core/settings/rendererBackend";
 
-import { applySetting, applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge.draw";
+import { setPlayControlsActive, suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { advanceSimulation, registerSimStepper } from "@jgengine/core/sim/simStepper";
+
+import { applySetting, applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, simAdvanceReport, waitForEditorHost } from "./agentBridge.draw";
 
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
@@ -112,6 +115,45 @@ describe("capture_run", () => {
     } finally {
       globals.window = previousWindow;
     }
+  });
+});
+
+describe("simAdvanceReport", () => {
+  const gameCtx = () => {
+    const store = new Map<string, unknown>();
+    return {
+      game: { store: { set: (key: string, value: unknown) => store.set(key, value), get: (key: string) => store.get(key) } },
+      time: { now: () => 4.5 },
+    } as unknown as GameContext;
+  };
+
+  test("answers ok with the frames run when every frame advanced", () => {
+    expect(simAdvanceReport(gameCtx(), { frames: 1200, gated: false })).toEqual({ ok: true, frames: 1200, now: 4.5 });
+  });
+
+  test("is not ok while play is gated, names the gate and counts no gated frame as advanced", async () => {
+    const ctx = gameCtx();
+    const release = suspendPlayControls(ctx);
+    // The driver's step advances nothing and says so while play is gated, as FrameDriver's simulate does.
+    const unregister = registerSimStepper(() => false);
+    const report = simAdvanceReport(ctx, await advanceSimulation(60, 0.05, async () => {}));
+    unregister();
+    release();
+    expect(report).toEqual({ ok: false, error: "play is gated: suspension; advanced 0 frames before the gate", gated: ["suspension"], frames: 0, now: 4.5 });
+  });
+
+  test("names a menu and play controls switched off", () => {
+    const ctx = gameCtx();
+    setPlayControlsActive(ctx, false);
+    const report = simAdvanceReport(ctx, { frames: 7, gated: true });
+    expect(report.ok).toBe(false);
+    expect(report.error).toBe("play is gated: play controls off, menu; advanced 7 frames before the gate");
+    expect(report.frames).toBe(7);
+  });
+
+  test("names the shell's own gate when no game context holds play, and reports a missing driver", () => {
+    expect(simAdvanceReport(gameCtx(), { frames: 0, gated: true }).error).toBe("play is gated: the shell's gate (e.g. the rotate-device prompt); advanced 0 frames before the gate");
+    expect(simAdvanceReport(gameCtx(), null)).toEqual({ ok: false, error: "no sim driver mounted" });
   });
 });
 

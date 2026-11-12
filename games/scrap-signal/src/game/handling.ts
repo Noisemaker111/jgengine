@@ -114,7 +114,8 @@ interface HandlingSlot {
 }
 
 const handlingOf = perContext((): HandlingSlot => ({ gunId: null, handling: null, view: null }));
-const recoilRng = seededRng("scrap-handling");
+/** The world's recoil stream; per world, so one world's spray never shifts another's. */
+const recoilRngOf = perContext(() => seededRng("scrap-handling"));
 
 function slotFor(ctx: GameContext, gun: GunDef | null): HandlingSlot {
   const slot = handlingOf(ctx);
@@ -127,7 +128,7 @@ function slotFor(ctx: GameContext, gun: GunDef | null): HandlingSlot {
   if (slot.gunId !== gun.id || slot.handling === null) {
     // A swapped gun starts settled: its cone and climb are its own, not the last gun's.
     slot.gunId = gun.id;
-    slot.handling = createWeaponHandling(handlingTuning(gun), { random: recoilRng });
+    slot.handling = createWeaponHandling(handlingTuning(gun), { random: recoilRngOf(ctx) });
     slot.view = { handling: slot.handling.frame(), presentation: presentationFor(gun) };
   }
   return slot;
