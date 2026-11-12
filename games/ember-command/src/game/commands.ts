@@ -8,6 +8,7 @@ import { BUILD_CONFIG } from "./building";
 import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type FormationKind } from "./formations";
 import { TRAINING_CONFIG } from "./production";
 import { GOLD, LUMBER, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
+import { earn, spend } from "./treasury";
 import { raiseBuilding } from "./systems";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
@@ -118,9 +119,7 @@ function placeBuilding(ctx: GameContext, type: string, x: number, z: number): bo
   const result = enqueue(session.buildQueue, BUILD_CONFIG, { type, x, z });
   if (!result.ok) return false;
   session.buildQueue = result.state;
-  for (const [currency, amount] of Object.entries(def.cost)) {
-    ctx.game.economy.charge(ctx.player.userId, currency, amount);
-  }
+  spend(ctx, def.cost, "build", type);
   notify(ctx, `Raising ${type.replaceAll("_", " ")} — construction is underway.`, "success");
   ctx.game.audio.play("place", [x, 0, z]);
   return true;
@@ -227,9 +226,7 @@ export function trainUnit(ctx: GameContext, unitId: string): GameContext {
   const result = enqueue(session.production, TRAINING_CONFIG, { unitId });
   if (!result.ok) return ctx;
   session.production = result.state;
-  for (const [currency, amount] of Object.entries(def.cost)) {
-    ctx.game.economy.charge(ctx.player.userId, currency, amount);
-  }
+  spend(ctx, def.cost, "train", unitId);
   const trainer = BARRACKS_UNITS.has(unitId) ? "Barracks" : "Town Hall";
   notify(ctx, `Training ${combatantDef(unitId)?.label ?? unitId} at the ${trainer}.`, "success");
   return ctx;
@@ -264,9 +261,7 @@ function research(ctx: GameContext, upgradeId: string): GameContext {
   const result = enqueue(session.research.queue, RESEARCH_CONFIG, { upgradeId, toRank: rank + 1 });
   if (!result.ok) return ctx;
   session.research.queue = result.state;
-  for (const [currency, amount] of Object.entries(up.cost(rank))) {
-    ctx.game.economy.charge(ctx.player.userId, currency, amount);
-  }
+  spend(ctx, up.cost(rank), "research", upgradeId);
   return ctx;
 }
 
@@ -380,8 +375,8 @@ export function registerCommands(ctx: GameContext): void {
         const keep = livingUnits("player", "building").find((u) => u.catalogId === "keep_player")?.guardPoint;
         if (keep === undefined) return state;
         raiseBuilding(state, { type: "barracks", x: keep.x + 12, z: keep.z + 6 });
-        state.game.economy.grant(state.player.userId, GOLD, 600);
-        state.game.economy.grant(state.player.userId, LUMBER, 300);
+        earn(state, GOLD, 600, "dev-grant");
+        earn(state, LUMBER, 300, "dev-grant");
         if (input?.doctrine !== undefined) research(state, input.doctrine);
         return state;
       },

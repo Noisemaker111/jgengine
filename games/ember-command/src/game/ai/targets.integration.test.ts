@@ -6,7 +6,7 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { combatantDef } from "../catalog";
 import { content } from "../content";
 import { playerDepot, resetSession, session, type UnitRuntime } from "../session";
-import { tacticalDamage } from "../tactics";
+import { matchupDamage, matchups } from "../matchups";
 import { GOLD } from "../tuning";
 import { acquireTarget, tickUnits } from "./units";
 
@@ -44,9 +44,10 @@ describe("who the Marauders go for", () => {
     spawn(ctx, "footman", "guard", [2, 0, 0], "player");
     spawn(ctx, "farm", "farm", [5, 0, 0], "player");
     expect(acquireTarget(ctx, session.units.get("breaker")!, at(ctx, "breaker"), 9)).toBe("farm");
-    expect(tacticalDamage(17, "reaver", "farm", 2)).toBe(34);
-    expect(tacticalDamage(17, "reaver", "footman", 2)).toBe(17);
-    expect(tacticalDamage(8, "grunt", "farm", 2)).toBe(8);
+    const unit = (id: string) => session.units.get(id)!;
+    expect(matchupDamage(matchups(ctx), 17, unit("breaker"), unit("farm"), 2)).toBe(34);
+    expect(matchupDamage(matchups(ctx), 17, unit("breaker"), unit("guard"), 2)).toBe(17);
+    expect(matchupDamage(matchups(ctx), 8, { id: "raider", catalogId: "grunt" }, unit("farm"), 2)).toBe(8);
   });
 
   test("a preference never reaches past the aggro radius", () => {

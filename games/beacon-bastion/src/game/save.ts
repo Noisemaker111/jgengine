@@ -6,12 +6,13 @@ import type { PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ClockSnapshot } from "@jgengine/core/time/simClock";
+import type { LedgerState } from "@jgengine/core/economy/transactionLedger";
 import type { WorldFactValue, WorldModelState } from "@jgengine/core/worldModel/worldModel";
 
 import { BASE_CATALOG_ID, BASE_ENTITY_ID } from "./entities/base/catalog";
 import { creepDef } from "./entities/enemies/catalog";
 import { resetProjectiles } from "./combat/pendingProjectiles";
-import { keep, resetKeep, spawnStandingTowers } from "./keep";
+import { keep, keepBooks, resetKeep, spawnStandingTowers } from "./keep";
 import { newShield, newSpeedStats, resetSession, session, type BossRuntime } from "./session";
 import { freshLegacy, openingKeep, readLegacy, relicLoop, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { campaign, freshCampaign, readCampaign } from "./campaign";
@@ -259,10 +260,27 @@ export function worldSystem(ctx: GameContext): GameSaveSystem {
       if (!validWorldSave(section)) return freshKeep();
       for (const tower of keep.of(ctx).instances()) ctx.scene.entity.despawn(tower.id);
       keep.of(ctx).restore(section);
+      // A loaded keep opens its books at the purse it brought; the `books` section, when saved, replaces them.
+      keepBooks(ctx).reset("load");
       spawnStandingTowers(ctx);
       worldLoaded(ctx).restored = true;
     },
     reset: freshKeep,
+  };
+}
+
+/**
+ * The keep's books as their own section, after the world: a restore puts the saved journal back and
+ * squares it to the purse the world brought. A fresh or older keep keeps the books the world opened.
+ */
+export function booksSystem(ctx: GameContext): GameSaveSystem {
+  return {
+    name: "books",
+    snapshot: () => keepBooks(ctx).snapshot(),
+    restore: (section) => {
+      if (!worldLoaded(ctx).restored || typeof section !== "object" || section === null) return;
+      keepBooks(ctx).restore(section as LedgerState, "load");
+    },
   };
 }
 
@@ -347,7 +365,7 @@ export function beaconSave(ctx: GameContext): GameSave {
     clock: () => ctx.time.now(),
     playtime: () => ctx.time.now(),
     // The bank first, so a keep with no stored world opens with the purse that bank allows.
-    systems: [campaignSystem(ctx), legacySystem(ctx), worldSystem(ctx), defenseSystem(ctx), profileSystem()],
+    systems: [campaignSystem(ctx), legacySystem(ctx), worldSystem(ctx), booksSystem(ctx), defenseSystem(ctx), profileSystem()],
   });
   slot.save = save;
   return save;

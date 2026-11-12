@@ -4,11 +4,12 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
+import { earn } from "../treasury";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
-import { tacticalDamage } from "../tactics";
+import { matchupDamage, matchups } from "../matchups";
 import { raiseCombatNoise } from "./director";
 
 /** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
@@ -121,7 +122,7 @@ function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPo
     return;
   }
   if (distToPoint(self, depot.x, depot.z) <= DEPOT_RANGE) {
-    if (cmd.carried > 0) ctx.game.economy.grant(ctx.player.userId, cmd.resource, cmd.carried);
+    if (cmd.carried > 0) earn(ctx, cmd.resource, cmd.carried, "harvest", u.id);
     cmd.carried = 0;
     if (node !== undefined) cmd.phase = "toNode";
     else u.command = { kind: "idle" };
@@ -177,7 +178,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
       if (action === "attack") {
         const base = def.damage + heroAttackBonus(ctx, u.catalogId);
-        const resolved = factionDamage(tacticalDamage(base, u.catalogId, target.catalogId, distXZ(self.position, ent.position)), u.faction, target.faction);
+        const matched = matchupDamage(matchups(ctx), base, u, target, distXZ(self.position, ent.position));
+        const resolved = factionDamage(matched, u.faction, target.faction);
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
         const amount = resolved * lineMultiplier(u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });

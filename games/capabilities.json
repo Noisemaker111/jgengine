@@ -12558,6 +12558,16 @@
       "intent": "hold currency balances with charge and affordability checks"
     },
     {
+      "id": "wallet-books",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/economy/walletBooks",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "journal every movement of a wallet or world-fact balance with its reason, kept square to the live balance"
+    },
+    {
       "id": "warn-once",
       "packages": [
         "@jgengine/core"

@@ -1,5 +1,7 @@
+import { createWalletBooks, type WalletBooks } from "@jgengine/core/economy/walletBooks";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineGameSpec } from "@jgengine/core/worldModel/gameSpec";
 import type { WorldActionDecl, WorldKindDecl, WorldModel, WorldTotalDecl } from "@jgengine/core/worldModel/worldModel";
 import { upgradeOptions, upgradePathActions, upgradePathFacts, type UpgradeOption } from "@jgengine/core/worldModel/upgradePaths";
@@ -9,6 +11,7 @@ import { editorLayers } from "../editorLayers";
 import { STARTING_GOLD, STARTING_LIVES } from "./entities/base/catalog";
 import { TOWER_IDS, towerDef, type TowerDef } from "./entities/towers/catalog";
 import { baseTowerFacts, TOWER_FACTS, TOWER_LADDERS, type TowerFact } from "./entities/towers/ladders";
+import { PURSE_ACCOUNT, PURSE_CURRENCY, PURSE_FACT, purseReason, purseRef } from "./purse";
 import { finishRun } from "./waves/legacy";
 import { BUILD_PLOTS } from "./world/path";
 import { session } from "./session";
@@ -135,6 +138,13 @@ export const keep = defineGameSpec({
     session.towerShots.delete(id);
     if (session.inspectedTowerId === id) session.inspectedTowerId = null;
   },
+  // Every move of the purse (a build, an upgrade, a sale, a bounty, held pay) goes into the keep's books.
+  watch: {
+    facts: [PURSE_FACT],
+    onChange(ctx, change) {
+      keepBooks(ctx).record(PURSE_CURRENCY, change.to - change.from, purseReason(change.cause), purseRef(change.cause));
+    },
+  },
   onLanded(ctx, action) {
     if (action === "sell") ctx.game.audio.play("sell");
     else if (action.startsWith("aim_")) ctx.game.audio.play("select");
@@ -143,6 +153,18 @@ export const keep = defineGameSpec({
 });
 
 export const keepOf = (ctx: GameContext): WorldModel => keep.of(ctx);
+
+/**
+ * The keep's books: the shared transaction ledger kept square to `keep.gold`, with every movement's
+ * reason. A fresh keep opens them with its opening purse, so the history explains the whole balance.
+ */
+export const keepBooks = perContext((ctx: GameContext): WalletBooks => createWalletBooks({
+  account: PURSE_ACCOUNT,
+  currencies: [PURSE_CURRENCY],
+  balance: () => keep.of(ctx).num(PURSE_FACT),
+  now: () => ctx.time.now(),
+  opening: "opening-purse",
+}));
 
 /** A defense that already fell or held: nothing more is built, released or banked. */
 export function runEnded(world: WorldModel): boolean {
@@ -219,6 +241,7 @@ export function resetKeep(ctx: GameContext, opening: { gold: number; lives: numb
   world.set("keep.gold", opening.gold);
   world.set("keep.lives", opening.lives);
   world.set("keep.lives_max", opening.lives);
+  keepBooks(ctx).reset("opening-purse");
 }
 
 /** Put every ready tower of the stored world back on the field (after a load). */

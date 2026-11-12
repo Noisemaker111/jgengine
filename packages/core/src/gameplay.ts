@@ -169,6 +169,7 @@ export {
   type ChargeResult,
   type Overdraft,
 } from "./economy/wallet";
+export { createWalletBooks, type WalletBooks, type WalletBooksOptions } from "./economy/walletBooks";
 export {
   createEventTicker,
   type EventTicker,
