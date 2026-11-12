@@ -81,6 +81,39 @@ export function brokerLogPath(dir = tmpdir()): string {
   return join(dir, "jgengine-broker.log");
 }
 
+/** What a broker's state file holds while it runs; it is removed when the broker ends announced. */
+export interface BrokerState {
+  pid: number;
+  port: number;
+  protocol: number;
+  startedAt: string;
+  /** Refreshed while the broker runs, so a death from outside is dated to within {@link BROKER_ALIVE_EVERY_MS}. */
+  aliveAt?: string;
+}
+
+/** How often a running broker refreshes `aliveAt` in its state file. */
+export const BROKER_ALIVE_EVERY_MS = 10_000;
+
+/**
+ * The line a starting broker logs for the one before it on its port when that one ended without a
+ * word: a broker that stops or crashes logs why and removes its state file, so a state file whose
+ * pid is gone means something ended it from outside (a signal it cannot catch, a job or session
+ * ending, the runtime dying). Every thread's dev server ended with it, and without this line the
+ * log showed only a run of `broker ready` lines about 20 minutes apart (#3085). Null when there is
+ * no state file, it cannot be read, or its broker still runs.
+ */
+export function unannouncedDeath(statePath: string, isAlive: (pid: number) => boolean): string | null {
+  let state: Partial<BrokerState>;
+  try {
+    state = JSON.parse(readFileSync(statePath, "utf8")) as Partial<BrokerState>;
+  } catch {
+    return null;
+  }
+  if (typeof state.pid !== "number" || isAlive(state.pid)) return null;
+  const seen = state.aliveAt ?? state.startedAt ?? "an unknown time";
+  return `broker died unannounced: pid ${state.pid} (ready since ${state.startedAt ?? "an unknown time"}, last seen alive ${seen}) ended without a stop or crash line, so something outside it ended it (a kill it cannot catch, its job or session ending, or the runtime dying); every server it owned ended with it`;
+}
+
 /** The identity the dev server's own `/__jgengine/server` route reports for this root and game dir. */
 export function servedIdentity(root: string, gameDir: string | null): string {
   return gameDir === null ? root : `${root}|game-dir:${gameDir}`;
@@ -873,46 +906,74 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
     captureSlots: captureSlots(env),
     captureMaxMs: captureMaxMs(env),
   });
+  const port = brokerPort(env);
+  const statePath = brokerStatePath(port);
+  // Every way this process ends says so in the log; `announced` marks the ones that already did.
+  let announced = false;
+  const clearState = (): void => {
+    try {
+      const state = JSON.parse(readFileSync(statePath, "utf8")) as { pid?: number };
+      if (state.pid === process.pid) unlinkSync(statePath);
+    } catch {
+      /* no state to clear */
+    }
+  };
   let stopping = false;
   const stop = async (reason: string): Promise<void> => {
     if (stopping) return;
     stopping = true;
+    announced = true;
     writeLog(`broker stopping: ${reason}`);
     await core.shutdown();
-    try {
-      const state = JSON.parse(readFileSync(brokerStatePath(brokerPort(env)), "utf8")) as { pid?: number };
-      if (state.pid === process.pid) unlinkSync(brokerStatePath(brokerPort(env)));
-    } catch {
-      /* no state to clear */
-    }
+    clearState();
     process.exit(0);
+  };
+  const crash = (line: string): void => {
+    announced = true;
+    writeLog(`broker crashed: ${line}`);
+    clearState();
+    process.exit(1);
   };
   // The broker runs with its output thrown away, so a crash would otherwise end it, and every server it
   // owns, without a line anywhere.
-  process.on("uncaughtException", (error) => {
-    writeLog(`broker crashed: ${error.stack ?? error.message}`);
-    process.exit(1);
-  });
-  process.on("unhandledRejection", (reason) => {
-    writeLog(`broker crashed: unhandled rejection ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}`);
-    process.exit(1);
+  process.on("uncaughtException", (error) => crash(error.stack ?? error.message));
+  process.on("unhandledRejection", (reason) => crash(`unhandled rejection ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}`));
+  process.on("exit", (code) => {
+    if (!announced) writeLog(`broker exiting with code ${code} and no stop or crash line (pid ${process.pid})`);
   });
   const http = createHttpServer(brokerHandler(core, (reason) => void stop(reason)));
   http.requestTimeout = 0;
-  const port = brokerPort(env);
   await new Promise<void>((resolve) => {
     http.once("error", (error: NodeJS.ErrnoException) => {
-      if (error.code === "EADDRINUSE") process.exit(0);
+      announced = true;
+      if (error.code === "EADDRINUSE") {
+        writeLog(`broker not started: :${port} is already served (pid ${process.pid} exits)`);
+        process.exit(0);
+      }
       writeLog(`broker could not listen on :${port}: ${error.message}`);
       process.exit(1);
     });
     http.listen(port, "127.0.0.1", () => resolve());
   });
-  writeFileSync(brokerStatePath(port), JSON.stringify({ pid: process.pid, port, protocol: BROKER_PROTOCOL, startedAt: new Date().toISOString() }));
+  // This broker owns the port, so a state file still here belongs to one that died without a word.
+  const death = unannouncedDeath(statePath, pidAlive);
+  if (death !== null) writeLog(death);
+  const state: BrokerState = { pid: process.pid, port, protocol: BROKER_PROTOCOL, startedAt: new Date().toISOString() };
+  writeFileSync(statePath, JSON.stringify(state));
   writeLog(`broker ready on :${port} (pid ${process.pid}, idle ${Math.round(idleMs / 60_000)}m)`);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.once(signal, () => void stop(signal));
   const sweepMs = Number(env["JG_BROKER_SWEEP_MS"]) > 0 ? Number(env["JG_BROKER_SWEEP_MS"]) : 2_000;
+  const aliveEveryMs = Math.min(BROKER_ALIVE_EVERY_MS, sweepMs * 5);
+  let aliveWrittenAt = Date.now();
   const timer = setInterval(() => {
+    if (!stopping && Date.now() - aliveWrittenAt >= aliveEveryMs) {
+      aliveWrittenAt = Date.now();
+      try {
+        writeFileSync(statePath, JSON.stringify({ ...state, aliveAt: new Date(aliveWrittenAt).toISOString() }));
+      } catch {
+        /* a missed refresh only blurs the date of a later death */
+      }
+    }
     void core.sweep().then((idle) => {
       if (idle) {
         clearInterval(timer);

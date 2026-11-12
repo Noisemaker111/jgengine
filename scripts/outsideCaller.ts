@@ -10,11 +10,18 @@
  * share, and it gets exactly the environment passed in.
  */
 import { spawn, spawnSync } from "node:child_process";
+import { closeSync, openSync } from "node:fs";
 
 export interface StartOutsideCallerOptions {
   cwd: string;
   /** The whole environment the process starts with. Defaults to this process's. */
   env?: NodeJS.ProcessEnv;
+  /**
+   * Append the process's stdout and stderr to this file instead of discarding them, so a runtime
+   * that dies before its own handlers run (a panic, an abort) still leaves its last words. Not on
+   * Windows, where WMI starts the process with no handles of ours.
+   */
+  outputPath?: string;
 }
 
 /** One argument as a Windows C runtime reads it back from a command line. */
@@ -50,7 +57,14 @@ const WMI_CREATE =
 export function startOutsideCaller(file: string, args: readonly string[], options: StartOutsideCallerOptions): number {
   const env = options.env ?? process.env;
   if (process.platform !== "win32") {
-    const child = spawn(file, [...args], { cwd: options.cwd, env, detached: true, stdio: "ignore" });
+    let out: number | null = null;
+    try {
+      if (options.outputPath !== undefined) out = openSync(options.outputPath, "a");
+    } catch {
+      out = null; // an unwritable log only loses the output, never the start
+    }
+    const child = spawn(file, [...args], { cwd: options.cwd, env, detached: true, stdio: out === null ? "ignore" : ["ignore", out, out] });
+    if (out !== null) closeSync(out);
     child.unref();
     if (child.pid === undefined) throw new Error(`could not start ${file}`);
     return child.pid;
