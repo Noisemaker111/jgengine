@@ -11,12 +11,12 @@ test("browser fixtures pack UI and stop borrowing React peers", () => {
 });
 
 test("a component ports both React and SDK UI imports and stays unchanged on rerun", () => {
-  const source = 'import { useState, type ReactNode } from "react";\nimport { GameProvider } from "@jgengine/react";\nimport { useGameContext } from "@jgengine/react/provider";\nexport function Counter(): ReactNode { const [n] = useState(1); return <GameProvider>{n}</GameProvider>; }';
+  const source = 'import { useState, type ReactNode } from "react";\nimport { GameProvider } from "@jgengine/ui";\nimport { useGameContext } from "@jgengine/ui/provider";\nexport function Counter(): ReactNode { const [n] = useState(1); return <GameProvider>{n}</GameProvider>; }';
   const first = portSource("Counter.tsx", source);
   expect(first.notes).toEqual([]);
   expect(first.text).toContain('from "@jgengine/core/ui/jsx"');
-  expect(first.text).toContain('from "@jgengine/react"');
-  expect(first.text).toContain('from "@jgengine/react/provider"');
+  expect(first.text).toContain('from "@jgengine/ui"');
+  expect(first.text).toContain('from "@jgengine/ui/provider"');
   const stamped = stampJsxSource(first.text);
   expect(stampJsxSource(portSource("Counter.tsx", stamped).text)).toBe(stamped);
 });

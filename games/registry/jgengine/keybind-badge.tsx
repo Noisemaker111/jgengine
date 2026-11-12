@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useDisplayProfile } from "@jgengine/react";
+import { useDisplayProfile } from "@jgengine/ui";
 
 const chamfer = (cut: number) =>
   `polygon(${cut}px 0, calc(100% - ${cut}px) 0, 100% ${cut}px, 100% calc(100% - ${cut}px), calc(100% - ${cut}px) 100%, ${cut}px 100%, 0 calc(100% - ${cut}px), 0 ${cut}px)`;

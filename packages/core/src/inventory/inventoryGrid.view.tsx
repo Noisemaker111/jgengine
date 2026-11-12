@@ -7,7 +7,7 @@ import { moveGridFocus, type FocusDirection } from "@jgengine/core/ui/actionMode
 import { DragGhost, DraggableCard, DropZone, useDragLayer } from "@jgengine/core/inventory/dragLayer.view";
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useInventoryGrid } from "@jgengine/react/hooks";
+import { useInventoryGrid } from "@jgengine/ui/hooks";
 
 /**
  * A drop-in NxN inventory grid bound to a live inventory: `<InventoryGrid inventoryId="bag" columns={4} />`

@@ -118,7 +118,7 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
     // bare basename plus a relative `-C` dir extracts identically on GNU tar,
     // bsdtar, and Linux.
     execFileSync("tar", ["-xzf", basename(tgz), "-C", extractName], { cwd: packCacheDir, timeout: 60_000 });
-    // Each package lands under its npm name, which can differ from its folder (packages/ui is @jgengine/react).
+    // Each package lands under its npm name, which can differ from its folder.
     const name = npmNameOfFolder(pkg);
     const destination = name.startsWith("@jgengine/") ? join(modules, ...name.split("/")) : join(scope, pkg);
     renameSync(join(extractDir, "package"), destination);

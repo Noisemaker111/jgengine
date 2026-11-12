@@ -92,10 +92,10 @@ describe("jgengine sync", () => {
     expect(() => planSync(dir, standalone)).toThrow('"editor": true needs "editor" in "engine"');
   });
 
-  test("rejects the unpublished @jgengine/ui name before sync can add a dependency npm does not have", async () => {
+  test("rejects the renamed @jgengine/react name before sync can add the deprecated package", async () => {
     const dir = await createdGame();
-    editConfig(dir, (config) => { config.engine = config.engine.map((name) => name === "react" ? "ui" : name); });
-    expect(() => planSync(dir, standalone)).toThrow('"engine" names @jgengine/ui, which npm does not have');
+    editConfig(dir, (config) => { config.engine = config.engine.map((name) => name === "ui" ? "react" : name); });
+    expect(() => planSync(dir, standalone)).toThrow('"engine" names @jgengine/react, which was renamed; use "ui"');
   });
 
   test("a game from an older scaffold loses its harness copies and runs the CLI's shoot and drive", async () => {
@@ -161,7 +161,7 @@ describe("jgengine sync at a workspace root", () => {
   }
 
   test("moves the root catalog's pins to this engine, keeps each game's catalog: declarations, and --check sees it", async () => {
-    const { root, game } = await workspace({ "@jgengine/core": "^0.1.0", "@jgengine/react": "0.1.0", react: "19.2.3" });
+    const { root, game } = await workspace({ "@jgengine/core": "^0.1.0", "@jgengine/ui": "0.1.0", react: "19.2.3" });
     const before = readFileSync(join(root, "package.json"), "utf8");
     const checked = await quietly(() => runSync([root, "--check"]));
     expect(checked.code).toBe(1);
@@ -172,7 +172,7 @@ describe("jgengine sync at a workspace root", () => {
     expect(synced.code).toBe(0);
     expect(synced.out).toContain(`@jgengine 0.1.0 → ${sdkVersion()}`);
     const catalog = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { workspaces: { catalog: Record<string, string> } }).workspaces.catalog;
-    expect(catalog).toEqual({ "@jgengine/core": `^${sdkVersion()}`, "@jgengine/react": sdkVersion(), react: "19.2.3" });
+    expect(catalog).toEqual({ "@jgengine/core": `^${sdkVersion()}`, "@jgengine/ui": sdkVersion(), react: "19.2.3" });
     const manifest = JSON.parse(readFileSync(join(game, "package.json"), "utf8")) as { dependencies: Record<string, string> };
     expect(manifest.dependencies["@jgengine/core"]).toBe("catalog:");
     expect((await quietly(() => runSync([root, "--check"]))).code).toBe(0);

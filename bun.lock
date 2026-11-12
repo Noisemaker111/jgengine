@@ -25,8 +25,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
       },
       "devDependencies": {
         "@tailwindcss/vite": "catalog:",
@@ -110,9 +110,9 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/sql": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "@jgengine/ws": "workspace:*",
         "next": "^15.3.0",
         "pg": "^8.13.0",
@@ -147,9 +147,9 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/sql": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "@jgengine/ws": "workspace:*",
         "@tanstack/react-router": "^1.121.0",
         "@tanstack/react-start": "^1.121.0",
@@ -175,8 +175,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -194,8 +194,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -213,8 +213,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -232,8 +232,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "@jgengine/ws": "workspace:*",
         "three": "catalog:",
       },
@@ -252,8 +252,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -272,8 +272,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -291,8 +291,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "@jgengine/ws": "workspace:*",
         "three": "catalog:",
       },
@@ -311,8 +311,8 @@
         "@convex-dev/better-auth": "catalog:",
         "@jgengine/convex": "workspace:*",
         "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "@llmville/backend": "workspace:*",
         "@llmville/game": "workspace:*",
         "@t3-oss/env-core": "^0.13.1",
@@ -366,8 +366,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -381,7 +381,7 @@
     "games/registry": {
       "name": "@games/hud-components",
       "dependencies": {
-        "@jgengine/react": "workspace:*",
+        "@jgengine/ui": "workspace:*",
       },
     },
     "games/scrap-signal": {
@@ -391,8 +391,8 @@
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -452,14 +452,14 @@
         "three-stdlib": "catalog:",
       },
       "peerDependencies": {
-        "@jgengine/react": "^0.57.0",
         "@jgengine/shell": "^0.57.0",
+        "@jgengine/ui": "^0.57.0",
         "three": ">=0.187.0",
         "three-stdlib": "^2.0.0",
       },
       "optionalPeers": [
-        "@jgengine/react",
         "@jgengine/shell",
+        "@jgengine/ui",
         "three",
         "three-stdlib",
       ],
@@ -471,8 +471,8 @@
         "@jgengine/assets": "^0.57.0",
         "@jgengine/core": "^0.57.0",
         "@jgengine/navbake": "^0.57.0",
-        "@jgengine/react": "^0.57.0",
         "@jgengine/shell": "^0.57.0",
+        "@jgengine/ui": "^0.57.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -537,7 +537,7 @@
       "version": "0.57.0",
       "dependencies": {
         "@jgengine/core": "^0.57.0",
-        "@jgengine/react": "^0.57.0",
+        "@jgengine/ui": "^0.57.0",
         "@jgengine/ws": "^0.57.0",
       },
       "devDependencies": {
@@ -561,7 +561,7 @@
       },
     },
     "packages/ui": {
-      "name": "@jgengine/react",
+      "name": "@jgengine/ui",
       "version": "0.57.0",
       "dependencies": {
         "@jgengine/core": "^0.57.0",
@@ -578,8 +578,8 @@
       "name": "jgengine-registry",
       "dependencies": {
         "@jgengine/core": "workspace:*",
-        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
+        "@jgengine/ui": "workspace:*",
       },
     },
   },
@@ -869,11 +869,11 @@
 
     "@jgengine/rapier": ["@jgengine/rapier@workspace:packages/rapier"],
 
-    "@jgengine/react": ["@jgengine/react@workspace:packages/ui"],
-
     "@jgengine/shell": ["@jgengine/shell@workspace:packages/shell"],
 
     "@jgengine/sql": ["@jgengine/sql@workspace:packages/sql"],
+
+    "@jgengine/ui": ["@jgengine/ui@workspace:packages/ui"],
 
     "@jgengine/ws": ["@jgengine/ws@workspace:packages/ws"],
 

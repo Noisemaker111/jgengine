@@ -75,7 +75,7 @@
       "title": "Entity Vital Bar",
       "description": "VitalBar bound to a live entity stat via useEntityStat \u2014 the one-line health bar for any entity instance.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "vital-bar"
@@ -87,7 +87,7 @@
           "target": "components/ui/entity-vital-bar.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: const { userId } = usePlayer(); <EntityVitalBar instanceId={userId} statId=\"health\" />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: const { userId } = usePlayer(); <EntityVitalBar instanceId={userId} statId=\"health\" />"
     },
     {
       "name": "ability-slot",
@@ -414,7 +414,7 @@
         "action-bar"
       ],
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "files": [
         {
@@ -423,7 +423,7 @@
           "target": "components/ui/ability-action-bar.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider> ancestor from @jgengine/react \u2014 AbilityActionBar reads live ability slot state via useAbilitySlots(kit) on every render, polling the engine at ~80ms."
+      "docs": "Requires a <GameProvider> ancestor from @jgengine/ui \u2014 AbilityActionBar reads live ability slot state via useAbilitySlots(kit) on every render, polling the engine at ~80ms."
     },
     {
       "name": "hotbar-selector",
@@ -484,7 +484,7 @@
         "item-grid"
       ],
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "files": [
         {
@@ -493,7 +493,7 @@
           "target": "components/ui/inventory-slot-grid.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider> ancestor from @jgengine/react \u2014 InventorySlotGrid reads live inventory slots via useInventory(inventoryId)."
+      "docs": "Requires a <GameProvider> ancestor from @jgengine/ui \u2014 InventorySlotGrid reads live inventory slots via useInventory(inventoryId)."
     },
     {
       "name": "equipment-doll",
@@ -682,7 +682,7 @@
       "title": "Game Event Floats",
       "description": "CombatFloatLayer wired to the entity.floatText game event via useGame \u2014 spawns and auto-expires floats from live combat.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "combat-float-layer"
@@ -694,7 +694,7 @@
           "target": "components/ui/game-event-floats.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <GameEventFloats /> subscribes to entity.floatText events and renders a CombatFloatLayer; pass mapEvent to customize the event \u2192 CombatFloatEntry mapping."
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <GameEventFloats /> subscribes to entity.floatText events and renders a CombatFloatLayer; pass mapEvent to customize the event \u2192 CombatFloatEntry mapping."
     },
     {
       "name": "hit-marker",
@@ -766,7 +766,7 @@
       "title": "Feed Kill Feed",
       "description": "KillFeed bound to a live game feed action via useFeed, mapping raw feed entries to kill-feed rows.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "kill-feed"
@@ -778,7 +778,7 @@
           "target": "components/ui/feed-kill-feed.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedKillFeed action=\"kill\" mapEntry={(entry) => ({ id: entry.id, left: entry.payload.killer, right: entry.payload.victim })} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <FeedKillFeed action=\"kill\" mapEntry={(entry) => ({ id: entry.id, left: entry.payload.killer, right: entry.payload.victim })} />"
     },
     {
       "name": "announcement-banner",
@@ -947,7 +947,7 @@
       "title": "Feed Pickup Toasts",
       "description": "PickupToastStack bound to a live game feed action via useFeed, mapping raw feed entries to pickup toasts.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "pickup-toast-stack"
@@ -959,7 +959,7 @@
           "target": "components/ui/feed-pickup-toasts.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedPickupToasts action=\"pickup\" mapEntry={(entry) => ({ id: entry.id, label: entry.payload.item })} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <FeedPickupToasts action=\"pickup\" mapEntry={(entry) => ({ id: entry.id, label: entry.payload.item })} />"
     },
     {
       "name": "level-up-splash",
@@ -967,7 +967,7 @@
       "title": "Level Up Splash",
       "description": "Radial-glow level-up splash that flashes in on the stat.levelUp game event via useGame and auto-dismisses.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "files": [
         {
@@ -1009,7 +1009,7 @@
           }
         }
       },
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <LevelUpSplash stat=\"level\" /> listens for stat.levelUp events via useGame and flashes the new level for durationMs."
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <LevelUpSplash stat=\"level\" /> listens for stat.levelUp events via useGame and flashes the new level for durationMs."
     },
     {
       "name": "score-readout",
@@ -1179,7 +1179,7 @@
       "title": "Wallet Currency Display",
       "description": "CurrencyDisplay bound to a live wallet balance via useCurrency \u2014 the one-line currency readout for any currency id.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "currency-display"
@@ -1191,7 +1191,7 @@
           "target": "components/ui/wallet-currency-display.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <WalletCurrencyDisplay currencyId=\"gold\" name=\"Gold\" />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <WalletCurrencyDisplay currencyId=\"gold\" name=\"Gold\" />"
     },
     {
       "name": "objective-channel",
@@ -1299,7 +1299,7 @@
       "title": "Event Charge Meter",
       "description": "ChargeMeter bound to a live EventMeter via useEventMeter \u2014 the one-line charge bar for combo/ultimate/hype meters.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "charge-meter"
@@ -1311,7 +1311,7 @@
           "target": "components/ui/event-charge-meter.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: const meter = useMemo(() => new EventMeter({ max: 100 }), []); <EventChargeMeter meter={meter} label=\"Ultimate\" />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: const meter = useMemo(() => new EventMeter({ max: 100 }), []); <EventChargeMeter meter={meter} label=\"Ultimate\" />"
     },
     {
       "name": "hud-panel",
@@ -1405,7 +1405,7 @@
       "title": "Journal Quest Tracker",
       "description": "QuestTracker bound to the live quest journal via useQuestJournal, mapped through a describe() projector.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "quest-tracker"
@@ -1417,7 +1417,7 @@
           "target": "components/ui/journal-quest-tracker.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <JournalQuestTracker describe={(quest) => ({ id: quest.questId, title: quest.questId, objectives: quest.objectives.map((o) => ({ id: o.id, label: o.id, count: o.progress, target: o.count, complete: o.complete })) })} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <JournalQuestTracker describe={(quest) => ({ id: quest.questId, title: quest.questId, objectives: quest.objectives.map((o) => ({ id: o.id, label: o.id, count: o.progress, target: o.count, complete: o.complete })) })} />"
     },
     {
       "name": "scoreboard-overlay",
@@ -1472,7 +1472,7 @@
       "title": "Stat Leaderboard",
       "description": "RankList bound to a live stat leaderboard via useLeaderboard, with optional userId-to-display-name resolution.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "rank-list"
@@ -1484,7 +1484,7 @@
           "target": "components/ui/stat-leaderboard.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <StatLeaderboard stat=\"kills\" scope=\"global\" limit={10} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <StatLeaderboard stat=\"kills\" scope=\"global\" limit={10} />"
     },
     {
       "name": "combat-log-panel",
@@ -1516,7 +1516,7 @@
       "title": "Feed Combat Log",
       "description": "CombatLogPanel bound to a live game feed action via useFeed, mapped through a mapLine() projector.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "combat-log-panel"
@@ -1528,7 +1528,7 @@
           "target": "components/ui/feed-combat-log.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <FeedCombatLog action=\"combat.hit\" mapLine={(entry, i) => ({ id: String(i), text: String(entry.data), tone: \"damage\" })} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <FeedCombatLog action=\"combat.hit\" mapLine={(entry, i) => ({ id: String(i), text: String(entry.data), tone: \"damage\" })} />"
     },
     {
       "name": "vendor-panel",
@@ -1765,7 +1765,7 @@
       "title": "Death Overlay Bound",
       "description": "DeathScreenView bound to the local player's dead state via useLocalPlayerDead \u2014 renders nothing while alive.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "death-screen-view"
@@ -1777,7 +1777,7 @@
           "target": "components/ui/death-overlay-bound.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: <DeathOverlayBound statId=\"health\" onRespawn={respawn} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: <DeathOverlayBound statId=\"health\" onRespawn={respawn} />"
     },
     {
       "name": "results-screen",
@@ -2097,7 +2097,7 @@
       "title": "Entity Chat Bubble",
       "description": "ChatBubble bound to a live entity's latest proximity chat message via useEntityChatBubble \u2014 the one-line speech bubble for any entity instance.",
       "dependencies": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
       "registryDependencies": [
         "chat-bubble"
@@ -2109,7 +2109,7 @@
           "target": "components/ui/entity-chat-bubble.tsx"
         }
       ],
-      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/react. Usage: project the entity's world position to screen-percent x/y and pass it down: <EntityChatBubble instanceId={userId} x={screenX} y={screenY} />"
+      "docs": "Requires a <GameProvider context={ctx}> ancestor from @jgengine/ui. Usage: project the entity's world position to screen-percent x/y and pass it down: <EntityChatBubble instanceId={userId} x={screenX} y={screenY} />"
     },
     {
       "name": "interaction-ring",

@@ -3,7 +3,7 @@ import { useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh.draw";
 import { modelBindPosePositions } from "./modelBindPose.draw";

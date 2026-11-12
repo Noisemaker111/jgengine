@@ -16,7 +16,7 @@ import type { WeaponPresentationTuning } from "@jgengine/core/combat/weaponPrese
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

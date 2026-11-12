@@ -149,7 +149,7 @@ have their own version lines.
 | Package | What it is |
 | --- | --- |
 | [`@jgengine/core`](packages/core) | The engine: feature folders with model, view and draw files, `GameContext`, entities, commands, combat, HUD, saves, inventory, world. No dependencies; three.js is an optional peer for draw files. Import by deep path. |
-| [`@jgengine/react`](packages/ui) | Game UI on the engine's JSX runtime: `GameProvider`, hooks, primitives. It contains no React; the npm name stayed because renaming it broke trusted publishing (#3142). |
+| [`@jgengine/ui`](packages/ui) | Game UI on the engine's JSX runtime: `GameProvider`, hooks, primitives. No React inside. Published as `@jgengine/react` until 0.57.0; that name is deprecated: replace it with `@jgengine/ui` in imports and `"react"` with `"ui"` in `jgengine.json`'s `engine` list. |
 | [`@jgengine/shell`](packages/shell) | The game player: three.js canvas on the engine frame loop, cameras, input, HUD mounting. You supply a `GameRegistry`. |
 | [`@jgengine/rapier`](packages/rapier) | Rapier physics backend: capsules, shapecasts, CCD, joints. The built-in solver needs none of it. |
 | [`@jgengine/ws`](packages/ws) | Browser-safe multiplayer over a pluggable pipe (WebSocket, socket.io, WebRTC, loopback), with an authoritative host and router. |

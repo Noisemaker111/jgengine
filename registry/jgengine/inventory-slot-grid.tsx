@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
-import { useInventory } from "@jgengine/react/hooks";
+import { useInventory } from "@jgengine/ui/hooks";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 
 import { ItemGrid, type ItemGridSlot } from "@/components/ui/item-grid";

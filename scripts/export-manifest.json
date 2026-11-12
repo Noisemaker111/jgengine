@@ -1589,7 +1589,7 @@
     ".",
     "./index"
   ],
-  "@jgengine/react": [
+  "@jgengine/ui": [
     ".",
     "./engineStore",
     "./engineStyles",

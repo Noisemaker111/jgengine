@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { afterEach, describe, expect, test } from "bun:test";
@@ -97,7 +97,7 @@ describe("shared store", () => {
     writeFileSync(join(dir, "a.txt"), "hello\n");
     const hashed = spawnSync("git", ["hash-object", join(dir, "a.txt")], { encoding: "utf8" }).stdout.trim();
     expect(blobId(readFileSync(join(dir, "a.txt")))).toBe(hashed);
-    const relative = join(".scratch", dir.split("/.scratch/")[1]!, "a.txt");
-    expect(treeDigests(root, [relative])(relative)).toBe(hashed);
+    const path = relative(root, join(dir, "a.txt")).replaceAll("\\", "/");
+    expect(treeDigests(root, [path])(path)).toBe(hashed);
   });
 });

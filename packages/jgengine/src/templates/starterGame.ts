@@ -400,7 +400,7 @@ export const credits: CreditsDocument = project.credits;
 export const starterGameUiTsx = (id: string, name: string) => `import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { KitHint, KitVitals } from "@jgengine/core/hud/kitHud.view";
 import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 
 import { run } from "../../loop";
 import { credits } from "../credits";

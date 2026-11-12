@@ -3,7 +3,7 @@
 import type { ReactElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

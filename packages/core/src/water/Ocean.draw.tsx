@@ -2,7 +2,7 @@
 // @skill jgengine-world
 import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 
 import type { SlicedJob } from "@jgengine/core/run/slicedWork";
 import { runSliced } from "@jgengine/core/run/slicedWork";

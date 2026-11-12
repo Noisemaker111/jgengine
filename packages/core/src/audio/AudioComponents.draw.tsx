@@ -2,7 +2,7 @@
 // @skill jgengine-world
 import { useRef } from "@jgengine/core/ui/jsx";
 import { Quaternion, Vector3 } from "three";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { AudioEngine } from "./audioEngine.view";
 import { installAudioProbe } from "./audioProbe.view";
 import { createEmitterTracker, type EmitterPose, type EmitterSources, type EmitterTracker } from "./emitterTracking.view";

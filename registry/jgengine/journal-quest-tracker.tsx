@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { QuestInstance } from "@jgengine/core/mission/quest";
-import { useQuestJournal } from "@jgengine/react/hooks";
+import { useQuestJournal } from "@jgengine/ui/hooks";
 
 import { QuestTracker, type TrackedQuest } from "@/components/ui/quest-tracker";
 

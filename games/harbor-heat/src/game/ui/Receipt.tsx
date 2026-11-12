@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { Button, clockText, Heading, KeyLegend, Label, Row, Scrim, Text, useRoom, useScreenTouch } from "./kit";
 import { HH, DISPLAY } from "./theme";
 

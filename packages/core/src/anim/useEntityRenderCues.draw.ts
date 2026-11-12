@@ -12,7 +12,7 @@ import {
   type RenderCueTuning,
 } from "@jgengine/core/combat/renderCues";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 /**
  * Live motion + animation cues for one entity, read from a mutable ref inside

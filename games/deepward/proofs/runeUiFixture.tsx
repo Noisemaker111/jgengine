@@ -6,7 +6,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { Root } from "@jgengine/core/ui/jsx/reconciler";
 import { RuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { RuneNode, nativeSpec, nativeTreeHost, type RuneTreeSink } from "@jgengine/core/ui/rune/nativeTree";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
 import { physics, world } from "../src/world";
 import { initialize, seatPlayer, stageMidDive, viewStore, whenReady } from "../src/game/controls";

@@ -6,7 +6,7 @@ import type { SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import type { WorldInviteTarget } from "@jgengine/core/social/social";
 import { createLocalVoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import { ChatPanel } from "@jgengine/core/chat/chat.view";
-import { usePlayer } from "@jgengine/react/hooks";
+import { usePlayer } from "@jgengine/ui/hooks";
 import {
   AddFriendButton,
   EmoteWheel,

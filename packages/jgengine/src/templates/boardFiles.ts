@@ -127,7 +127,7 @@ describe("board rules", () => {
 `;
 
 /** `src/game/ui/GameUI.tsx` for a 2D board game. */
-export const boardGameUiTsx = (name: string) => `import { useStore } from "@jgengine/react/store";
+export const boardGameUiTsx = (name: string) => `import { useStore } from "@jgengine/ui/store";
 
 import { board } from "../../loop";
 

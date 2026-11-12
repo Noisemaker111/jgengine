@@ -12,8 +12,8 @@ import {
   RingGeometry,
   SphereGeometry,
 } from "three";
-import { useGameContext } from "@jgengine/react/provider";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
 

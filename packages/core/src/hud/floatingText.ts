@@ -119,7 +119,7 @@ const NUMERIC_STRIDE = 9;
  * spawn → rise/drift → fade → reap lifecycle: `kind` is a free string and `color`
  * a passthrough hint, so nothing here couples to combat or any genre. Presentation
  * (projecting each entry to the screen and styling it per `kind`) lives in
- * `@jgengine/react`'s `FloatingText`.
+ * `@jgengine/ui`'s `FloatingText`.
  *
  * @capability floating-text deterministic pooled world-anchored floating combat text / damage numbers with rise, drift, fade, and serializable state
  */

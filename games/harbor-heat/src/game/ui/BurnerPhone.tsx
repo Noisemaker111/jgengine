@@ -2,7 +2,7 @@
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneView, type RuneActionProps } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { clockText, Label, Lcd, LcdText, Row, Text } from "./kit";
 import { HH, DISPLAY } from "./theme";
 

@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { GameContextBridge, useOptionalGameContext } from "@jgengine/react/provider";
+import { GameContextBridge, useOptionalGameContext } from "@jgengine/ui/provider";
 
 import { StudioStage, type StudioMood } from "@jgengine/core/scene/StudioStage.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";

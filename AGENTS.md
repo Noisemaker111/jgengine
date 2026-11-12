@@ -7,7 +7,7 @@ Games run package source from the same commit, not npm releases.
 
 - UI is JSX on the engine's own runtime (`@jgengine/core/ui/jsx`), never React. Every game in
   `games/` sets `uiRenderer: "rune"` and draws through Rune (Rust in `native/`, compiled to wasm).
-  `@jgengine/react` is the npm name of `packages/ui`; it contains no React. `bun run check react-free`
+  `@jgengine/ui` (`packages/ui`) contains no React; `@jgengine/react` is its deprecated old name. `bun run check react-free`
   names the few host folders that keep React.
 - three.js is plain JavaScript on the engine's frame loop (`packages/core/src/frame/`). No React
   Three Fiber or drei. WebGL is the default; WebGPU is a preview (`?renderer=webgpu`).

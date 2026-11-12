@@ -27,8 +27,8 @@
       "@jgengine/shell/*": ["../shell/src/*"],
       "@jgengine/sql": ["../sql/src/index.ts"],
       "@jgengine/sql/*": ["../sql/src/*"],
-      "@jgengine/react": ["../ui/src/index.ts"],
-      "@jgengine/react/*": ["../ui/src/*"],
+      "@jgengine/ui": ["../ui/src/index.ts"],
+      "@jgengine/ui/*": ["../ui/src/*"],
       "@jgengine/ws": ["../ws/src/index.ts"],
       "@jgengine/ws/*": ["../ws/src/*"]
     }

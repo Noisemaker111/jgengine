@@ -10,7 +10,7 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
+import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/ui";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";

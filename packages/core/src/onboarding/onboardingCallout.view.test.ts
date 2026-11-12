@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 
 import type { OnboardingConfig } from "./onboarding";
 import { OnboardingCallout } from "./onboardingCallout.view";

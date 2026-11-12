@@ -9,11 +9,11 @@ import { useBrowserSuspension } from "@jgengine/core/runtime/browserLifecycle.vi
 import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
-import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useGameContext } from "@jgengine/react/provider";
-import { useStore } from "@jgengine/react/store";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/ui/store";
+import { useGameStore } from "@jgengine/ui/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMBER, Button, DIM, Frame, FULL, Heading, RED, Row, Section, Sheet, Tag, TEAL, Text, deepwardTheme } from "./dock";
 import { groundDistance, EXIT, roomAt } from "../../world";

@@ -17,8 +17,8 @@ import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import { clamp } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
-import { usePlayer } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { usePlayer } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import {

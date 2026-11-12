@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
-import { useStore } from "@jgengine/react/store";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/ui/store";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 

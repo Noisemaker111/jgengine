@@ -9,7 +9,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGame } from "@jgengine/react/hooks";
+import { useGame } from "@jgengine/ui/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";

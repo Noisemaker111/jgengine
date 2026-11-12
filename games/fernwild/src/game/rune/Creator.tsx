@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { BODIES, cleanLook, DEFAULT_LOOK, HEIGHT, START_REGIONS, type SurvivorLook } from "../character";
 import { islandBake } from "../islandMap";

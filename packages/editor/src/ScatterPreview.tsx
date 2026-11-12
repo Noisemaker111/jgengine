@@ -4,7 +4,7 @@ import { memo, useMemo } from "@jgengine/core/ui/jsx";
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import { resolveScatter, type ScatterInstance, type ScatterTerrain } from "@jgengine/core/scatter/scatterRegion";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 
 import type { EditorHostApi } from "./session";

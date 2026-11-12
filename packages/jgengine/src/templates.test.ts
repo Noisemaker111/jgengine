@@ -259,8 +259,8 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(pkg.dependencies["@jgengine/core"]).toBe("^0.8.0");
     expect(fileOf(files, "tsconfig.json")).not.toContain("../../packages");
     const css = fileOf(files, "src/index.css");
-    expect(css).toContain('@import "@jgengine/react/styles.css"');
-    expect(css).toContain('@source "../node_modules/@jgengine/react/dist"');
+    expect(css).toContain('@import "@jgengine/ui/styles.css"');
+    expect(css).toContain('@source "../node_modules/@jgengine/ui/dist"');
     expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
     // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
     expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');

@@ -4,7 +4,7 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
 import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 
 import * as THREE from "three";
 

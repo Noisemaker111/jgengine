@@ -28,7 +28,7 @@ import {
 } from "./crowdRegistry.draw";
 import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch.draw";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";

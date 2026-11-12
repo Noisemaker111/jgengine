@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@jgengine/editor": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/shell": "workspace:*"
   },
   "devDependencies": {

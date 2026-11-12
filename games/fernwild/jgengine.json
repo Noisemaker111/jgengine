@@ -12,7 +12,7 @@
     "assets",
     "core",
     "editor",
-    "react",
+    "ui",
     "shell"
   ],
   "suite": {
