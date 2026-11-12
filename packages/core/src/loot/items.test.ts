@@ -4,8 +4,9 @@ import type { LootBaseDef, LootCatalog, LootManufacturerDef } from "./lootGen";
 import { createInventorySet } from "../inventory/inventoryModel";
 import { createShopStock } from "../economy/shopStock";
 import { createEmptyWallet, balance, grant } from "../economy/wallet";
-import { seededRng } from "../random/rng";
-import { compareToEquipped, itemMass, rollDrop, type ItemDrop } from "./drop";
+import { runGenerator } from "../generator/generator";
+import { compareToEquipped, itemMass, type ItemDrop } from "./drop";
+import { defineLootGenerator } from "./lootGenerator";
 import { createRunHaul } from "./haul";
 import { createItemLedger, salvageItem, salvageValue } from "./salvage";
 import { createVendorRotation, itemPrice, stockVendor, type VendorPriceRule } from "./vendor";
@@ -44,6 +45,19 @@ const catalog: LootCatalog = {
   levelScale: [[1, 1], [10, 2.2]],
 };
 
+const LOOT = defineLootGenerator({ id: "test.items", label: "Test items", catalog });
+
+/** One seeded drop through the loot generator, with the id a stash names it by. */
+function seededDrop(seed: string, options: { level: number; base?: string; rarity?: string }): ItemDrop {
+  const [item] = runGenerator(LOOT, { seed, count: 1, level: options.level, base: options.base ?? "", rarity: options.rarity ?? "" });
+  return { ...item!, id: `drop:${seed}` };
+}
+
+/** `count` seeded items for a vendor shelf. */
+function shelf(seed: string, level: number, count: number) {
+  return runGenerator(LOOT, { seed, level, count });
+}
+
 function traits() {
   return { stackLimit: () => 99 };
 }
@@ -59,21 +73,21 @@ function memoryStorage() {
 
 describe("deterministic level-gated drops", () => {
   test("the same seed rolls the same item", () => {
-    const a = rollDrop(catalog, "run-7:drop-1", { level: 4 });
-    const b = rollDrop(catalog, "run-7:drop-1", { level: 4 });
+    const a = seededDrop("run-7:drop-1", { level: 4 });
+    const b = seededDrop("run-7:drop-1", { level: 4 });
     expect(a).toEqual(b);
     expect(a.id).toBe("drop:run-7:drop-1");
   });
 
   test("a different seed changes the roll", () => {
-    const a = rollDrop(catalog, "seed-a", { level: 4, baseId: "pistol", rarity: "common" });
-    const b = rollDrop(catalog, "seed-b", { level: 4, baseId: "pistol", rarity: "common" });
+    const a = seededDrop("seed-a", { level: 4, base: "pistol", rarity: "common" });
+    const b = seededDrop("seed-b", { level: 4, base: "pistol", rarity: "common" });
     expect(a.affixes[0]?.value).not.toBe(b.affixes[0]?.value);
   });
 
   test("an affix below its minLevel never rolls", () => {
     for (let i = 0; i < 60; i += 1) {
-      const item = rollDrop(catalog, `low-${i}`, { level: 1, baseId: "pistol" });
+      const item = seededDrop(`low-${i}`, { level: 1, base: "pistol" });
       expect(item.affixes.some((affix) => affix.id === "piercing")).toBe(false);
     }
   });
@@ -81,7 +95,7 @@ describe("deterministic level-gated drops", () => {
   test("the same affix enters the pool at its minLevel", () => {
     let seen = false;
     for (let i = 0; i < 200 && !seen; i += 1) {
-      const item = rollDrop(catalog, `high-${i}`, { level: 5, baseId: "pistol", rarity: "rare" });
+      const item = seededDrop(`high-${i}`, { level: 5, base: "pistol", rarity: "rare" });
       seen = item.affixes.some((affix) => affix.id === "piercing");
     }
     expect(seen).toBe(true);
@@ -89,15 +103,15 @@ describe("deterministic level-gated drops", () => {
 
   test("a base below its minLevel is neither rolled nor pinned", () => {
     for (let i = 0; i < 60; i += 1) {
-      expect(rollDrop(catalog, `base-low-${i}`, { level: 2 }).baseId).toBe("pistol");
+      expect(seededDrop(`base-low-${i}`, { level: 2 }).baseId).toBe("pistol");
     }
-    expect(() => rollDrop(catalog, "pinned", { level: 1, baseId: "rifle" })).toThrow(/item level 3/);
-    expect(rollDrop(catalog, "pinned", { level: 3, baseId: "rifle" }).baseId).toBe("rifle");
+    expect(() => seededDrop("pinned", { level: 1, base: "rifle" })).toThrow(/item level 3/);
+    expect(seededDrop("pinned", { level: 3, base: "rifle" }).baseId).toBe("rifle");
   });
 
   test("mass grows with level and older saves fall back to one", () => {
-    expect(rollDrop(catalog, "mass-1", { level: 1, baseId: "pistol" }).mass).toBe(2);
-    expect(rollDrop(catalog, "mass-6", { level: 6, baseId: "pistol" }).mass).toBe(3);
+    expect(seededDrop("mass-1", { level: 1, base: "pistol" }).mass).toBe(2);
+    expect(seededDrop("mass-6", { level: 6, base: "pistol" }).mass).toBe(3);
     expect(itemMass({})).toBe(1);
   });
 });
@@ -253,10 +267,7 @@ describe("vendor stock", () => {
   test("stock is rolled, priced and replaced on refresh", () => {
     const shop = createShopStock();
     const options = {
-      catalog,
-      rng: seededRng("vendor-1"),
-      level: 2,
-      count: 3,
+      items: shelf("vendor-1", 2, 3),
       price: rule,
       idPrefix: "test.shelf",
     };
@@ -266,7 +277,7 @@ describe("vendor stock", () => {
     expect(first[0]!.entry.price.amount).toBe(itemPrice(first[0]!.item, rule).buy);
     expect(first[0]!.entry.sellPrice?.amount).toBe(Math.floor(first[0]!.entry.price.amount * 0.4));
 
-    const second = stockVendor(shop, { ...options, rng: seededRng("vendor-2") });
+    const second = stockVendor(shop, { ...options, items: shelf("vendor-2", 2, 3) });
     expect(shop.list()).toHaveLength(3);
     expect(shop.list().map((entry) => entry.id)).toEqual(second.map((offer) => offer.entry.id));
   });
@@ -274,7 +285,7 @@ describe("vendor stock", () => {
   test("a purchase charges the shared wallet", () => {
     const shop = createShopStock();
     const offers = stockVendor(shop, {
-      catalog, rng: seededRng("buy"), level: 1, count: 1, price: rule, idPrefix: "buy",
+      items: shelf("buy", 1, 1), price: rule, idPrefix: "buy",
     });
     const wallet = grant(createEmptyWallet(), "credits", 1000);
     const result = shop.buy(offers[0]!.entry.id, wallet);

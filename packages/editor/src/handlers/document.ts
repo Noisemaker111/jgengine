@@ -22,6 +22,7 @@ import {
   type GeneratorDefinition,
   type GeneratorVariantOptions,
 } from "@jgengine/core/generator/generator";
+import { generatorVariantText } from "@jgengine/core/generator/generatorText";
 import { findSchemaPreset, validateParams, type ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { EDITOR_RUN_MODES } from "../session";
@@ -527,7 +528,10 @@ export const documentHandlers: Pick<
       result: {
         generator: definition.id,
         ...(request.id === undefined ? {} : { id: request.id }),
-        variants: variants.map((variant) => ({ index: variant.index, seed: variant.seed, meta: variant.meta })),
+        variants: variants.map((variant) => {
+          const text = generatorVariantText(definition, variant);
+          return { index: variant.index, seed: variant.seed, meta: variant.meta, ...(text === undefined ? {} : { text }) };
+        }),
       },
     };
   },

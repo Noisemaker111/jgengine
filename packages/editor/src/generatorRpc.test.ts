@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
+import { defineGenerator, registerGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { defineParamSchema, parseParams } from "@jgengine/core/generator/paramSchema";
+import { defineNameGenerator, registerNameGeneratorText } from "@jgengine/core/random/nameGen";
 import { PARTS_OUTPUT, partsBounds } from "@jgengine/core/scene/assetGenerator";
 import { registerSceneKind } from "@jgengine/core/scene/sceneKinds";
 
@@ -137,6 +138,19 @@ describe("generator RPC verbs", () => {
     expect(recordsAt(byGenerator, "variants")).toHaveLength(4);
     const fromMarker = resultOf(api.handle({ method: "generator_variants", id: "crate", count: 2 }));
     expect(fromMarker["generator"]).toBe("test_rpc_crate");
+    expect(recordsAt(fromMarker, "variants")[0]?.["text"]).toBeUndefined();
+    dispose();
+  });
+
+  test("generator_variants returns text lines for a text-preview family: twenty name sets from one call", () => {
+    const names = defineNameGenerator({ id: "test_rpc_names", label: "Test names", syllables: { onset: ["k", "v"], nucleus: ["a", "o"], coda: ["n", ""] }, defaults: { count: 3 } });
+    registerGenerator(names);
+    registerNameGeneratorText();
+    const { api, dispose } = host();
+    const variants = recordsAt(resultOf(api.handle({ method: "generator_variants", generator: "test_rpc_names", count: 20 })), "variants");
+    expect(variants).toHaveLength(20);
+    expect(variants[0]?.["text"]).toEqual(runGenerator(names, recordAt(variants[0] ?? {}, "meta")));
+    expect(variants.every((variant) => Array.isArray(variant["text"]) && variant["text"].length === 3)).toBe(true);
     dispose();
   });
 

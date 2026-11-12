@@ -5784,16 +5784,6 @@
       "intent": "track which rolled item instances are still owned, salvaged or sold"
     },
     {
-      "id": "item-roll",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/drop",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "roll one deterministic, level-gated item from a seed"
-    },
-    {
       "id": "item-run-haul",
       "packages": [
         "@jgengine/core"

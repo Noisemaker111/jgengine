@@ -18,6 +18,9 @@ import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../buildings/buildingGenerator";
 import { registerNatureGenerators } from "../nature/natureGenerators";
 import { registerSurfaceMaterialGenerator } from "../material/surfaceMaterialGenerator";
+import { registerItemGeneratorText } from "../item/itemGenerator";
+import { registerLootGeneratorText } from "../loot/lootGenerator";
+import { registerNameGeneratorText } from "../random/nameGen";
 import { registerGroundCoverKind } from "../plants/groundCover/groundCoverField";
 import { registerNavAuthoringKinds } from "../nav/navAuthoringKinds";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
@@ -101,4 +104,7 @@ export function registerBuiltinSceneKinds(): void {
   registerBuildingGenerator();
   registerNatureGenerators();
   registerSurfaceMaterialGenerator();
+  registerNameGeneratorText();
+  registerLootGeneratorText();
+  registerItemGeneratorText();
 }

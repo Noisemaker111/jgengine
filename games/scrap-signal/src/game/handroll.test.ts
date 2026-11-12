@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { resolveTableDamage } from "@jgengine/core/combat/damage/damageTable";
+import { getGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { seededRng } from "@jgengine/core/random/rng";
 import {
   type GunDef,
+  GUN_GENERATOR,
   gunById,
   gunProvenance,
   rollGun,
@@ -98,6 +100,28 @@ describe("xp curve", () => {
     expect(progress.level).toBe(2);
     expect(progress.xp).toBe(10);
     expect(progress.levelsGained).toBe(1);
+  });
+});
+
+describe("gun rolls on the generator contract", () => {
+  test("a live stream rolls the same guns it rolled before the generator (fixed-seed fingerprint)", () => {
+    const rng = seededRng("fp-guns");
+    const first = [rollGun(rng, 1, { luck: 4, maxRarity: "rare" }), rollGun(rng, 2, { family: "pistol", rarity: "common" }), rollGun(rng, 3, { luck: 6 })];
+    expect(first.map((gun) => [gun.name, gun.rarity, gun.family, gun.weapon.damage, gun.element])).toEqual([
+      ["Burning Pyrotechnic Pocket Relay", "uncommon", "pistol", 15, "incendiary"],
+      ["Surplus Rivetpress", "common", "pistol", 14, "none"],
+      ["Crowdsourced Tracklayer", "uncommon", "rifle", 15, "none"],
+    ]);
+    const sixgun = rollGun(seededRng("quest"), 4, { legendary: "Sixgun" });
+    expect([sixgun.name, sixgun.rarity, sixgun.weapon.damage]).toEqual(["Sixgun", "legendary", 50]);
+  });
+
+  test("the registered generator rolls the same gun from a seed as the live roll on that seed's stream", () => {
+    const seeded = runGenerator(GUN_GENERATOR, { seed: "chest-9", level: 5, luck: 4 });
+    const { id: _id, perks: _perks, ...live } = rollGun(seededRng("chest-9"), 5, { luck: 4 });
+    expect(seeded.item).toEqual(live);
+    expect(seeded.summary[0]).toBe(live.name);
+    expect(getGenerator("scrap-signal.gun")?.output).toBe(GUN_GENERATOR.output);
   });
 });
 

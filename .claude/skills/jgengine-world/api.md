@@ -1758,7 +1758,7 @@
 
 ## @jgengine/core/generator/GeneratorVariantGrid.draw
 
-- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with none shows its seed only.
+- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with only a text preview (names, loot, rolled items) prints its lines in the tile instead, and a family with neither shows its index only.
 - `GeneratorVariantGridProps` (interface): interface GeneratorVariantGridProps — Props for {@link GeneratorVariantGrid}.
 
 ## @jgengine/core/generator/generator
@@ -1798,6 +1798,13 @@
 - `GeneratorPreviewProps` (interface): interface GeneratorPreviewProps — What a preview draws: the generator and one of its variants.
 - `getGeneratorPreview` (function): function getGeneratorPreview(output: string): GeneratorPreview | undefined — The preview registered for an output family, or undefined when that family has none.
 - `registerGeneratorPreview` (function): function registerGeneratorPreview(output: string, preview: GeneratorPreview): void — Register the preview for a generator output family (`"parts"`, `"grass-field"`, …). Replaces an earlier one.
+
+## @jgengine/core/generator/generatorText
+
+- `GeneratorTextPreview` (type): type GeneratorTextPreview = (output: unknown) => readonly string[] — One output as a few short lines of text, most telling first.
+- `generatorVariantText` (function): function generatorVariantText(definition: GeneratorDefinition, variant: Pick<GeneratorVariant, "seed" | "params">): readonly string[] | undefined — One variant's output as text lines, or undefined when its family registers no text preview. `definition` is the untyped (registered) form, so the variant's params are parsed on the way in. Params a catalog cannot roll (a pinned base above the item level) read as one `no output:` line instead of throwing, so one bad variant does not blank the grid.
+- `getGeneratorText` (function): function getGeneratorText(output: string): GeneratorTextPreview | undefined — The text preview registered for an output family, or undefined when that family has none.
+- `registerGeneratorText` (function): function registerGeneratorText(output: string, preview: GeneratorTextPreview): void — Register the text preview for a generator output family (`"names"`, `"loot-items"`, …). Replaces an earlier one.
 
 ## @jgengine/core/generator/paramSchema
 

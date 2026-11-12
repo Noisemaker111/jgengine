@@ -1,5 +1,5 @@
 import type { ShopStock, ShopStockEntry } from "../economy/shopStock";
-import { rollLoot, type LootCatalog, type LootItem } from "./lootGen";
+import type { LootItem } from "./lootGen";
 import type { ItemDrop } from "./drop";
 
 /** How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier. */
@@ -22,15 +22,10 @@ export interface VendorOffer {
   entry: ShopStockEntry;
 }
 
-/** What stocking a vendor reads: the roll catalog, a seeded rng and the pricing policy. */
+/** What stocking a vendor reads: the rolled items and the pricing policy. */
 export interface StockVendorOptions {
-  catalog: LootCatalog;
-  /** Injected random source; pass a seeded generator so the shelf is reproducible. */
-  rng: () => number;
-  /** Item level rolled onto the shelf. */
-  level: number;
-  /** How many items to roll. */
-  count: number;
+  /** The shelf's items, in shelf order; roll them with a loot generator (`defineLootGenerator`) from a seed so the shelf is reproducible. */
+  items: readonly LootItem[];
   price: VendorPriceRule;
   /** Stable id prefix for this vendor, e.g. `"harbor.guns"`. */
   idPrefix: string;
@@ -55,9 +50,9 @@ export function itemPrice(
 }
 
 /**
- * Roll a vendor's shelf and add it to an existing {@link ShopStock}. Entries added by a previous
- * call with the same `idPrefix` are removed first, so a refresh replaces the shelf instead of
- * throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
+ * Price a vendor's rolled shelf and add it to an existing {@link ShopStock}; item `i` gets the id
+ * `<idPrefix>:<i>`. Entries added by a previous call with the same `idPrefix` are removed first, so
+ * a refresh replaces the shelf instead of throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
  *
  * @capability item-vendor stock a vendor with rolled items priced through the shared economy
  */
@@ -66,11 +61,8 @@ export function stockVendor(shop: ShopStock, options: StockVendorOptions): Vendo
     if (entry.id.startsWith(`${options.idPrefix}:`)) shop.remove(entry.id);
   }
   const offers: VendorOffer[] = [];
-  for (let i = 0; i < Math.max(0, Math.floor(options.count)); i += 1) {
-    const item: ItemDrop = {
-      ...rollLoot(options.catalog, options.rng, { level: options.level }),
-      id: `${options.idPrefix}:${i}`,
-    };
+  for (const [i, rolled] of options.items.entries()) {
+    const item: ItemDrop = { ...rolled, id: `${options.idPrefix}:${i}` };
     const price = itemPrice(item, options.price);
     const entry: ShopStockEntry = {
       id: item.id,

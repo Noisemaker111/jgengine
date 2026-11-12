@@ -317,7 +317,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
 
+- `defineItemGenerator` (function) · `import { defineItemGenerator } from "@jgengine/core/gameplay"`
 - `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
+- `rollItemRecipe` (function) · `import { rollItemRecipe } from "@jgengine/core/gameplay"`
 
 ## item-identity — resolve which match/set bonuses an item qualifies for
 
@@ -339,10 +341,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## item-ledger — track which rolled item instances are still owned, salvaged or sold
 
 - `createItemLedger` (function) · `import { createItemLedger } from "@jgengine/core/loot/salvage"`
-
-## item-roll — roll one deterministic, level-gated item from a seed
-
-- `rollDrop` (function) · `import { rollDrop } from "@jgengine/core/loot/drop"`
 
 ## item-run-haul — carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails
 
@@ -445,6 +443,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## loot-generation — roll a named item from bases, parts, affixes, rarity weights, manufacturer personalities and level scaling
 
+- `defineLootGenerator` (function) · `import { defineLootGenerator } from "@jgengine/core/gameplay"`
 - `rollLoot` (function) · `import { rollLoot } from "@jgengine/core/gameplay"`
 
 ## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
@@ -529,7 +528,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## name-generator — generate procedural names from templates and word banks
 
-- `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
+- `defineNameGenerator` (function) · `import { defineNameGenerator } from "@jgengine/core/gameplay"`
 
 ## narrative-batch-validation — locate stale canon, oversized batches, explicit character/fact/chronology contradictions and dialogue graph issues for bounded repair
 

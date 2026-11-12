@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createItemLedger, salvageItem } from "@jgengine/core/loot/salvage";
 import { compareToEquipped } from "@jgengine/core/loot/drop";
-import { BREAKDOWN, COMPARE_OPTIONS, ITEM_CATALOG, RARITIES, breakdownValue, compareToPrepared, itemValue, itemWeight, kindOf, rollItem, weaponStats } from "./items";
+import { getGenerator, runGenerator } from "@jgengine/core/generator/generator";
+import { BREAKDOWN, COMPARE_OPTIONS, ITEM_CATALOG, ITEM_LOOT, RARITIES, breakdownValue, compareToPrepared, itemValue, itemWeight, kindOf, rollItem, weaponStats } from "./items";
 import { CACHE_WEIGHT, bankHaul, canCache, loadOf, loseHaul } from "./haul";
 import { depart, newDive, newHome, settle, takeLoot, type Dive, type ItemKind } from "./state";
 import { weaponReadout } from "./combat";
@@ -128,5 +129,24 @@ describe("weight, bank and loss", () => {
     expect(again.ok === false && again.reason).toBe("already-spent");
     expect(ledger.canUse(ink.id)).toBe(false);
     expect(ledger.snapshot()).toEqual({ [ink.id]: "salvaged" });
+  });
+});
+
+describe("item rolls on the generator contract", () => {
+  test("a room seed rolls the same item it rolled before the generator (fixed-seed fingerprint)", () => {
+    const item = rollItem("service-rifle", 5, "room-3-service-rifle", "id-3");
+    expect([item.name, item.rarity, item.stats, item.mass, item.id]).toEqual([
+      "Kessler Service rifle",
+      "common",
+      { value: 80.85, damage: 40.425, rate: 2.695 },
+      9.8,
+      "id-3",
+    ]);
+  });
+
+  test("rollItem is the registered generator's roll for that seed, kind and level", () => {
+    expect(getGenerator("deepward.items")?.output).toBe(ITEM_LOOT.output);
+    const [rolled] = runGenerator(ITEM_LOOT, { seed: "room-1-cells", count: 1, level: 4, base: "cells" });
+    expect({ ...rolled!, id: "x" }).toEqual(rollItem("cells", 4, "room-1-cells", "x"));
   });
 });
