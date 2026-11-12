@@ -11,6 +11,12 @@ import { RevealFadePass, RevealSnapshotPass } from "./revealFade.draw";
 import { SceneCompositePass } from "./sceneCompositePass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
+/** Put `Image` back exactly: absent under bun stays absent, never an own key holding undefined (#3194). */
+function restoreImage(previous: PropertyDescriptor | undefined): void {
+  if (previous === undefined) Reflect.deleteProperty(globalThis, "Image");
+  else Object.defineProperty(globalThis, "Image", previous);
+}
+
 test("graph resizes and disposes the current Three Bokeh through its pass lifecycle", () => {
   const renderer = {
     getPixelRatio: () => 1,
@@ -102,7 +108,7 @@ test("a settings surface is offered only the stages this chain can build", () =>
 });
 
 test("every pass carries its class name, so a minified production build still reports post:BeautyPass", () => {
-  const original = globalThis.Image;
+  const original = Object.getOwnPropertyDescriptor(globalThis, "Image");
   globalThis.Image = class {
     src = "";
     width = 0;
@@ -116,12 +122,12 @@ test("every pass carries its class name, so a minified production build still re
     for (const pass of graph.composer.passes) expect(Reflect.get(pass, "name"), pass.constructor.name).toBe(pass.constructor.name.replace(/^_/, ""));
     disposeGraph(graph);
   } finally {
-    globalThis.Image = original;
+    restoreImage(original);
   }
 });
 
 test("AO reads the beauty pass depth instead of rendering the scene again", () => {
-  const original = globalThis.Image;
+  const original = Object.getOwnPropertyDescriptor(globalThis, "Image");
   globalThis.Image = class {
     src = "";
     width = 0;
@@ -146,7 +152,7 @@ test("AO reads the beauty pass depth instead of rendering the scene again", () =
     expect(graph.composer.renderTarget1.samples).toBe(0);
     disposeGraph(graph);
   } finally {
-    globalThis.Image = original;
+    restoreImage(original);
   }
 });
 
@@ -178,7 +184,7 @@ test("the AO depth source follows what the chain can sample", () => {
 });
 
 test("a lower tier builds fewer passes and renders them into a smaller target", () => {
-  const originalImage = globalThis.Image;
+  const originalImage = Object.getOwnPropertyDescriptor(globalThis, "Image");
   globalThis.Image = class {
     src = "";
     width = 0;
@@ -212,13 +218,13 @@ test("a lower tier builds fewer passes and renders them into a smaller target", 
     expect(low.composer.renderTarget1.width).toBe(448);
   } finally {
     for (const graph of [low, medium, high, ultra]) disposeGraph(graph);
-    globalThis.Image = originalImage;
+    restoreImage(originalImage);
   }
 });
 
 describe("effects after the reveal", () => {
   const withImage = <T,>(run: () => T): T => {
-    const original = globalThis.Image;
+    const original = Object.getOwnPropertyDescriptor(globalThis, "Image");
     globalThis.Image = class {
       src = "";
       width = 0;
@@ -227,7 +233,7 @@ describe("effects after the reveal", () => {
     try {
       return run();
     } finally {
-      globalThis.Image = original;
+      restoreImage(original);
     }
   };
   const fullChain = () =>
@@ -355,7 +361,7 @@ describe("effects after the reveal", () => {
 
 describe("each render effect is off unless the game or its look asks for it", () => {
   const graphStages = (config: Parameters<typeof planPostStages>[0], quality: "low" | "medium" | "high" | "ultra" = "high") => {
-    const original = globalThis.Image;
+    const original = Object.getOwnPropertyDescriptor(globalThis, "Image");
     Object.assign(globalThis, { Image: class { src = ""; width = 0; height = 0; } });
     try {
       const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages(config, quality), 320, 180);
@@ -363,7 +369,7 @@ describe("each render effect is off unless the game or its look asks for it", ()
       disposeGraph(graph);
       return stages;
     } finally {
-      Object.assign(globalThis, { Image: original });
+      restoreImage(original);
     }
   };
 
