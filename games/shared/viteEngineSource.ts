@@ -13,7 +13,7 @@ const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
 /** The rendering libraries engine packages take as peers; the game's copy is the one copy. */
 export const ENGINE_PEERS = ["three", "three-stdlib"] as const;
 
-/** Each engine package by its npm name (`@jgengine/react` lives in `packages/ui`) resolved to its `src`, so a game runs the engine in this repo with no build. */
+/** Each engine package by its npm name (`@jgengine/ui` lives in `packages/ui`) resolved to its `src`, so a game runs the engine in this repo with no build. */
 export function engineSourceAliases(dir = packagesDir): Alias[] {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "src")))

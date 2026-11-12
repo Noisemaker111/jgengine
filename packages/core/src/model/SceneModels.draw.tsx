@@ -4,7 +4,7 @@ import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } fr
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { modelForLook } from "./modelLook";
 
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

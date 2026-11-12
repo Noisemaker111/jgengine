@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/sql": "workspace:*",
     "@jgengine/ws": "workspace:*",
     "@jgengine/shell": "workspace:*",

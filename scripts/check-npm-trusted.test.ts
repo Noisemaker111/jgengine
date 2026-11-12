@@ -12,6 +12,9 @@ test("a package npm has never seen is refused, because trusted publishing cannot
 test("a package whose latest version came from a token, not trusted publishing, is refused", () => {
   expect(trustedPublishProblem("@jgengine/core", 200, byToken("0.55.1"))).toContain("not published by trusted publishing");
   expect(trustedPublishProblem("@jgengine/core", 200, trusted("0.55.1"))).toBeNull();
+  const bootstrap = (versions: string[]) => ({ "dist-tags": { latest: versions[versions.length - 1] }, versions: Object.fromEntries(versions.map((v) => [v, { _npmUser: { name: "noisemaker11" } }])) });
+  expect(trustedPublishProblem("@jgengine/ui", 200, bootstrap(["0.0.0-stage", "0.0.0-bootstrap.0"]))).toBeNull();
+  expect(trustedPublishProblem("@jgengine/ui", 200, bootstrap(["0.0.0-bootstrap.0", "0.58.0"]))).toContain("not published by trusted publishing");
 });
 
 test("one bad package refuses the whole set, and an unreadable registry fails closed", async () => {
@@ -29,6 +32,6 @@ test("one bad package refuses the whole set, and an unreadable registry fails cl
 test("the checked set is the Publish workflow's list, under each package's npm name", () => {
   const names = publishedPackageNames();
   expect(names[0]).toBe("@jgengine/core");
-  expect(names).toContain("@jgengine/react");
+  expect(names).toContain("@jgengine/ui");
   expect(names).toContain("jgengine");
 });

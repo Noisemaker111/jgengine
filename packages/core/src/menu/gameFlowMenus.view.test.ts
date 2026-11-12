@@ -7,7 +7,7 @@ import { openTitle, togglePause, playGame, showMenuPane } from "@jgengine/core/g
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 
 import { GameFlowUI, type GameFlowMenuContent } from "./gameFlowMenus.view";
 

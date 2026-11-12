@@ -8,7 +8,7 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { Coins, Hotbar } from "@jgengine/core/hud/hudReadouts.view";
-import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/ui/hooks";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";

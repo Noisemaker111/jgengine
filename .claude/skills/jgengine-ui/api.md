@@ -43,7 +43,7 @@
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
 - `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
 - `ModalInput` (type): type ModalInput = Omit<ModalRecord, "id"> & { id?: string } — A modal to push — {@link ModalRecord} with an optional id (auto-assigned when absent).
-- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the UI chrome in `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
+- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the UI chrome in `@jgengine/ui` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
 - `ModalResolution` (interface): interface ModalResolution — The outcome of closing a modal via {@link ModalStack.resolve} (or an auto-dismiss) — the closed record's identity plus the free-form `result` string the caller chose. Delivered to the `onResolve` option and stashed as {@link ModalStack.lastResolution}.
 - `ModalStack` (interface): interface ModalStack — An observable, serializable stack of modal dialogs. See {@link createModalStack}.
 - `ModalStackEntry` (interface): interface ModalStackEntry — A serialized stack entry: the opaque record plus the clock time it opened (for timer restore).
@@ -217,7 +217,7 @@
 - `FloatingTextPosition` (type): type FloatingTextPosition = readonly [number, number, number] — A world-space anchor `[x, y, z]` a floating-text entry rises from.
 - `FloatingTextSnapshot` (interface): interface FloatingTextSnapshot — Serializable state for save/restore and deterministic replay.
 - `FloatingTextView` (interface): interface FloatingTextView — A live entry resolved for rendering: current world position and fade/scale over life.
-- `createFloatingTextField` (function): function createFloatingTextField(config: FloatingTextFieldConfig = {}): FloatingTextField — A generic, allocation-aware field of world-anchored floating text: damage numbers, heals, crits, XP/gold gains, status pops, dialogue barks — anything a game wants to say at a point in the world for a moment. It is dt-driven (call `update(dt)` each frame) and deterministic: the only randomness is the horizontal drift jitter, which flows from the injected `seed`, so the same seed and the same emit/update sequence reproduce identical motion, and `snapshot`/`restore` round-trips the live pool. The model owns only the spawn → rise/drift → fade → reap lifecycle: `kind` is a free string and `color` a passthrough hint, so nothing here couples to combat or any genre. Presentation (projecting each entry to the screen and styling it per `kind`) lives in `@jgengine/react`'s `FloatingText`.
+- `createFloatingTextField` (function): function createFloatingTextField(config: FloatingTextFieldConfig = {}): FloatingTextField — A generic, allocation-aware field of world-anchored floating text: damage numbers, heals, crits, XP/gold gains, status pops, dialogue barks — anything a game wants to say at a point in the world for a moment. It is dt-driven (call `update(dt)` each frame) and deterministic: the only randomness is the horizontal drift jitter, which flows from the injected `seed`, so the same seed and the same emit/update sequence reproduce identical motion, and `snapshot`/`restore` round-trips the live pool. The model owns only the spawn → rise/drift → fade → reap lifecycle: `kind` is a free string and `color` a passthrough hint, so nothing here couples to combat or any genre. Presentation (projecting each entry to the screen and styling it per `kind`) lives in `@jgengine/ui`'s `FloatingText`.
 
 ## @jgengine/core/hud/floatingText.view
 
@@ -229,7 +229,7 @@
 
 ## @jgengine/core/hud/floatingTextWorld.draw
 
-- `WorldFloatingText` (function): function WorldFloatingText({ field, advance = true, styleFor, fontSizePx, className, ...layout }: WorldFloatingTextProps): JSX.Element — One-line drop-in for world-anchored floating text: mounts inside the scene, (optionally) advances a core {@link FloatingTextField} each frame, samples the live camera to project every live entry to the screen, and renders `@jgengine/react`'s {@link FloatingText} through a fullscreen `<Html>` overlay. This is the turnkey way a game gets damage numbers / heal pops / XP gains from its own field without wiring projection by hand — the camera binding, viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
+- `WorldFloatingText` (function): function WorldFloatingText({ field, advance = true, styleFor, fontSizePx, className, ...layout }: WorldFloatingTextProps): JSX.Element — One-line drop-in for world-anchored floating text: mounts inside the scene, (optionally) advances a core {@link FloatingTextField} each frame, samples the live camera to project every live entry to the screen, and renders `@jgengine/ui`'s {@link FloatingText} through a fullscreen `<Html>` overlay. This is the turnkey way a game gets damage numbers / heal pops / XP gains from its own field without wiring projection by hand — the camera binding, viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
 - `WorldFloatingTextProps` (interface): interface WorldFloatingTextProps extends FloatingTextLayoutOptions — Props for {@link WorldFloatingText}.
 
 ## @jgengine/core/hud/hudButton.view
@@ -1187,7 +1187,7 @@
 - `Messages` (type): type Messages = Readonly<Record<string, Message>> — Flat message table for one locale: key → template string or plural forms.
 - `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
 - `ModalInput` (type): type ModalInput = Omit<ModalRecord, "id"> & { id?: string } — A modal to push — {@link ModalRecord} with an optional id (auto-assigned when absent).
-- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the UI chrome in `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
+- `ModalRecord` (interface): interface ModalRecord — Headless, serializable model for a stack of modal dialogs — the data layer behind a pause menu, a "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to close) and nothing about how they look: the model NEVER interprets a record's `kind` or a resolution's `result` string — those are free-form game vocabulary the UI chrome in `@jgengine/ui` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
 - `ModalResolution` (interface): interface ModalResolution — The outcome of closing a modal via {@link ModalStack.resolve} (or an auto-dismiss) — the closed record's identity plus the free-form `result` string the caller chose. Delivered to the `onResolve` option and stashed as {@link ModalStack.lastResolution}.
 - `ModalStack` (interface): interface ModalStack — An observable, serializable stack of modal dialogs. See {@link createModalStack}.
 - `ModalStackEntry` (interface): interface ModalStackEntry — A serialized stack entry: the opaque record plus the clock time it opened (for timer restore).
@@ -1219,7 +1219,7 @@
 - `ScreenMarkerLayout` (interface): interface ScreenMarkerLayout — Where and how to draw one marker, from {@link layoutScreenMarker}.
 - `ScreenMarkerOptions` (interface): interface ScreenMarkerOptions — Options for {@link layoutScreenMarker}.
 - `ScreenMarkerViewport` (interface): interface ScreenMarkerViewport — The `{ width, height }` of the viewport the marker is laid out within (CSS px).
-- `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/react`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
+- `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/ui`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
 - `SelectionFocusDirection` (type): type SelectionFocusDirection = "next" | "prev" | "first" | "last" — A 1-D focus move within the selection member strip.
 - `SelectionGroup` (interface): interface SelectionGroup — A bucket of same-`kind` entities in a large selection — the RTS "12 Marines" control chip.
 - `SelectionView` (interface): interface SelectionView — A resolved multi-selection view model. `primary` is the focused entity's full detail; `members` is the stable-order strip; `groups` buckets members by kind (count-desc, then label) for the portrait-overflow case; `grouped` is the hint that the selection is large enough to prefer groups over per-member portraits.
@@ -2105,7 +2105,7 @@
 - `ScreenMarkerLayout` (interface): interface ScreenMarkerLayout — Where and how to draw one marker, from {@link layoutScreenMarker}.
 - `ScreenMarkerOptions` (interface): interface ScreenMarkerOptions — Options for {@link layoutScreenMarker}.
 - `ScreenMarkerViewport` (interface): interface ScreenMarkerViewport — The `{ width, height }` of the viewport the marker is laid out within (CSS px).
-- `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/react`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
+- `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/ui`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
 - `layoutScreenMarker` (function): function layoutScreenMarker(projection: ScreenProjection, viewport: ScreenMarkerViewport, options: ScreenMarkerOptions = {}): ScreenMarkerLayout — Pure, allocation-aware screen-marker math: given a projected target point, the viewport, and a `margin`, decide whether the target is on-screen and where to draw its marker. An on-screen point passes straight through (`onScreen: true`). An off-screen — or behind-camera — point is CLAMPED to the viewport edge (inset by `margin`) with `angle` set to the bearing from screen center toward the target, so a caller can pin an arrow to the frame edge and rotate it to point the way. Behind-camera projections have mirrored coordinates, so the bearing is flipped to face the true direction. This is the edge-clamp/arrow half that `layoutEntityFrames` lacks (it culls off-screen entries instead). No allocation when an `out` object is supplied — reuse one across a whole frame's waypoints.
 
 ## @jgengine/core/ui/scrollRail.view
@@ -2192,7 +2192,72 @@
 - `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 
-## @jgengine/react
+## @jgengine/shell/GamePhaseStamp
+
+- `GamePhaseStamp` (function): function GamePhaseStamp(): null — ⚠ undocumented
+
+## @jgengine/shell/GamePlayer
+
+- `GamePlayerProps` (type): type GamePlayerProps = { gameId: string; registry: GameRegistry; fallbackGameId?: string; loading?: ReactNode; multiplayer?: ShellMultiplayer | null; } — ⚠ undocumented
+
+## @jgengine/shell/GamePlayerShell
+
+- `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
+
+## @jgengine/shell/GameUiPreview
+
+- `GameUiPreview` (function): function GameUiPreview({ playable, scenario = defaultUiScenario, }: { playable: PlayableGame; scenario?: UiPreviewScenario | undefined; }): JSX.Element — ⚠ undocumented
+- `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
+- `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
+
+## @jgengine/shell/drivers/FrameDriver
+
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, recorder, onFrameMs, }: { ctx: GameContext; playabl… — ⚠ undocumented
+- `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
+
+## @jgengine/shell/mountGamePlayer
+
+- `MountGamePlayerOptions` (interface): interface MountGamePlayerOptions extends Omit<GamePlayerProps, "loading"> — What a host page passes to {@link mountGamePlayer}.
+- `mountGamePlayer` (function): function mountGamePlayer(container: Element, options: MountGamePlayerOptions): () => void — Run a game inside any page: mounts the registry-driven player into `container` and returns the function that takes it down. This is how a host written in another UI library (a React, Next or TanStack app, a plain page) embeds the engine: give it an element and call this from the host's own mount hook. Call it again with new options after unmounting to switch games.
+
+## @jgengine/shell/registry
+
+- `GameErrorScreenProps` (type): type GameErrorScreenProps = { report: CrashReport | null; phase: string; retry: () => void } — Props the game's own error screen receives when the UI or the tick fails. `report` is the scrubbed report the reporter got, or null when the seam dropped it as a duplicate.
+- `GameHealth` (interface): interface GameHealth extends GameHealthConfig — Crash, telemetry and auto-quality config plus the game's own recoverable error screen.
+- `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
+- `PlayableGame` (type): type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps>, TProbe, ComponentType<RemotePlayersProps> > & { /** HUD theme the shell applies at the `G… — The concrete UI-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
+- `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
+- `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
+- `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
+
+## @jgengine/shell/shellConstants
+
+- `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
+- `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
+
+## @jgengine/shell/useRuntimeHealth
+
+- `useRuntimeHealth` (function): function useRuntimeHealth(args: { playable: PlayableGame; settingsStore: SettingsStore; quality: GraphicsQuality; overrides: GraphicsProfileOverrides | undefined; }): { health: RuntimeHealth | null; onFrameMs: ((frameMs: number) => void) | undefined } — Wire the game's `health` config for one session: the crash seam (with window error and unhandled-rejection handlers), the telemetry queue, and auto quality. Returns `null` health when the game set none. `onFrameMs` takes each rendered frame; auto quality moves the tier through the settings store only while the player's Auto quality setting is on, and a tier the player picks ends it.
+
+## @jgengine/shell/world/GridWorldScene
+
+- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload.
+- `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
+
+## @jgengine/shell/world/WorldEntityFrames
+
+- `WorldEntityFrames` (function): function WorldEntityFrames<E extends EntityFrameEntry>({ entries, renderFrame, tickMs = 0, className, anchorTransform, ...layout }: WorldEntityFramesProps<E>): JSX.Element — Mounts inside the scene, samples the live camera each frame (throttled by `tickMs`), and renders `@jgengine/ui`'s {@link EntityFrames} through a fullscreen UI overlay. This is the one-line way a game gets overhead enemy nameplates/health bars from its own entity array without a store: pass `entries` + a `renderFrame` that composes the shipped bars. The projection, viewport culling, and stacking come for free.
+- `WorldEntityFramesProps` (interface): interface WorldEntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions — Props for {@link WorldEntityFrames}.
+- `projectWorldToScreen` (function): function projectWorldToScreen(scratch: THREE.Vector3, camera: THREE.Camera, worldPosition: readonly [number, number, number], width: number, height: number): EntityScreenProjection — Pure world→screen projection: NDC via `camera.project`, mapped to CSS pixels. `behind` is set when the point falls outside the near/far clip range (NDC z beyond [-1, 1]), which covers positions behind the camera. Exposed for tests and for callers wiring their own frame loop around a bare THREE camera.
+- `useWorldProjection` (function): function useWorldProjection(): ProjectEntity — Returns a {@link ProjectEntity} bound to the live engine camera and canvas size — the world→screen half of the data-first entity-frame seam. Call the returned function with a world position to get a CSS-pixel screen point (or `null`/`behind` when the point is outside the frustum). Reads the camera fresh on every call, so sample it inside a frame loop. Games that already own their entities use this to feed `@jgengine/ui`'s `EntityFrames` without mirroring state into a store.
+
+## @jgengine/shell/world/WorldScene
+
+- `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): null — ⚠ undocumented
+- `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
+- `drawsScaledModel` (function): function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean — Whether an object draws its catalog model through a per-placement scale group. A scaled placement skips the per-catalog bounds measurement, which would otherwise record one instance's stretched size as every instance's footprint.
+
+## @jgengine/ui
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions { intervalMs?: number } — ⚠ undocumented · used by `useEventMeter`: Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline…
 - `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
@@ -2503,7 +2568,7 @@
 - `OnboardingCalloutCardProps` (interface): interface OnboardingCalloutCardProps — Props for {@link OnboardingCalloutCard}.
 - `OnboardingCalloutProps` (interface): interface OnboardingCalloutProps — Props for {@link OnboardingCallout}.
 - `OnboardingCalloutTheme` (interface): interface OnboardingCalloutTheme — Reskin tokens for {@link OnboardingCallout}.
-- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/ui` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
 - `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, onInteract, }: { manager: PanelsManager; /** Called as windows open and close (`cue` is `panel:<id>`) — the seam a UI sound system hooks. */ onInteract?: HudInt… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
 - `PanelKeyResult` (interface): interface PanelKeyResult — UI chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
 - `PanelsManager` (interface): interface PanelsManager — The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}.
@@ -2828,18 +2893,18 @@
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
-## @jgengine/react/engineStore
+## @jgengine/ui/engineStore
 
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> { on<K extends keyof TEventMap>(eventName: K, listener: (payload: TEventMap[K]) => void): () => void } — ⚠ undocumented
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> { getState(): TState; subscribe(listener: (state: TState) => void): () => void } — ⚠ undocumented
 
-## @jgengine/react/engineStyles
+## @jgengine/ui/engineStyles
 
-- `ENGINE_STYLESHEET` (const): const ENGINE_STYLESHEET: string — The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`). Every rule sits in the `components.jgengine` cascade layer, so unlayered game CSS, a game's own `components` rules and Tailwind utilities win without `!important`. It first declares `theme, base, components, utilities` so Tailwind v4's preflight stays below engine controls even when the engine sheet loads first. The shell injects it; games that mount outside the shell import `@jgengine/react/styles.css`, which holds the same text.
+- `ENGINE_STYLESHEET` (const): const ENGINE_STYLESHEET: string — The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`). Every rule sits in the `components.jgengine` cascade layer, so unlayered game CSS, a game's own `components` rules and Tailwind utilities win without `!important`. It first declares `theme, base, components, utilities` so Tailwind v4's preflight stays below engine controls even when the engine sheet loads first. The shell injects it; games that mount outside the shell import `@jgengine/ui/styles.css`, which holds the same text.
 - `ensureEngineStyles` (function): function ensureEngineStyles(doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Injects {@link ENGINE_STYLESHEET} into `doc` once. Safe to call repeatedly and during SSR (no-op).
 - `useEngineStyles` (function): function useEngineStyles(): void — Ensures the engine stylesheet is in the document before the calling component paints. Engine primitives call it, so they animate and show interaction states even outside the shell.
 
-## @jgengine/react/hooks
+## @jgengine/ui/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions { intervalMs?: number } — ⚠ undocumented · used by `useEventMeter`: Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline…
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
@@ -2897,102 +2962,37 @@
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
-## @jgengine/react/preview
+## @jgengine/ui/preview
 
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
 
-## @jgengine/react/previewFixtures
+## @jgengine/ui/previewFixtures
 
-- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/ui` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
 - `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
 - `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
 - `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
 
-## @jgengine/react/provider
+## @jgengine/ui/provider
 
 - `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): JSX.Element — Re-provide a captured {@link GameContext} across a nested UI reconciler boundary. A nested renderer that mounts its own UI root does NOT inherit a `GameProvider` from the outer tree â€” hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 
-## @jgengine/react/selectSnapshot
+## @jgengine/ui/selectSnapshot
 
 - `HotSelectionPace` (type): type HotSelectionPace = "frame" | "tick" — Which clock a hot selection kept pace with.
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
 - `selectionEqual` (function): function selectionEqual(previous: unknown, next: unknown): boolean — Whether two selections show the same thing: the same value, or arrays and plain objects whose entries are the same all the way down (a record or class instance compares by identity). A selector that builds a view (`{ title, steps: [{ id, label, done }] }`) is unchanged while every value in it is, so the component does not re-render for a store change it does not show.
 
-## @jgengine/react/store
+## @jgengine/ui/store
 
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 
-## @jgengine/react/testFixtures
+## @jgengine/ui/testFixtures
 
 - `MENU_THEME_STYLE` (const): const MENU_THEME_STYLE: GameMenuStyle — Menu theme tokens passed through the `style` prop with no cast. This file is type-checked and kept out of the build, so the compiler proves the prop accepts `--jg-*` custom properties on every typecheck while nothing ships from here.
-
-## @jgengine/shell/GamePhaseStamp
-
-- `GamePhaseStamp` (function): function GamePhaseStamp(): null — ⚠ undocumented
-
-## @jgengine/shell/GamePlayer
-
-- `GamePlayerProps` (type): type GamePlayerProps = { gameId: string; registry: GameRegistry; fallbackGameId?: string; loading?: ReactNode; multiplayer?: ShellMultiplayer | null; } — ⚠ undocumented
-
-## @jgengine/shell/GamePlayerShell
-
-- `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
-
-## @jgengine/shell/GameUiPreview
-
-- `GameUiPreview` (function): function GameUiPreview({ playable, scenario = defaultUiScenario, }: { playable: PlayableGame; scenario?: UiPreviewScenario | undefined; }): JSX.Element — ⚠ undocumented
-- `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
-- `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
-
-## @jgengine/shell/drivers/FrameDriver
-
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, recorder, onFrameMs, }: { ctx: GameContext; playabl… — ⚠ undocumented
-- `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
-
-## @jgengine/shell/mountGamePlayer
-
-- `MountGamePlayerOptions` (interface): interface MountGamePlayerOptions extends Omit<GamePlayerProps, "loading"> — What a host page passes to {@link mountGamePlayer}.
-- `mountGamePlayer` (function): function mountGamePlayer(container: Element, options: MountGamePlayerOptions): () => void — Run a game inside any page: mounts the registry-driven player into `container` and returns the function that takes it down. This is how a host written in another UI library (a React, Next or TanStack app, a plain page) embeds the engine: give it an element and call this from the host's own mount hook. Call it again with new options after unmounting to switch games.
-
-## @jgengine/shell/registry
-
-- `GameErrorScreenProps` (type): type GameErrorScreenProps = { report: CrashReport | null; phase: string; retry: () => void } — Props the game's own error screen receives when the UI or the tick fails. `report` is the scrubbed report the reporter got, or null when the seam dropped it as a duplicate.
-- `GameHealth` (interface): interface GameHealth extends GameHealthConfig — Crash, telemetry and auto-quality config plus the game's own recoverable error screen.
-- `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps>, TProbe, ComponentType<RemotePlayersProps> > & { /** HUD theme the shell applies at the `G… — The concrete UI-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
-- `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
-- `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
-- `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
-
-## @jgengine/shell/shellConstants
-
-- `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
-- `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
-
-## @jgengine/shell/useRuntimeHealth
-
-- `useRuntimeHealth` (function): function useRuntimeHealth(args: { playable: PlayableGame; settingsStore: SettingsStore; quality: GraphicsQuality; overrides: GraphicsProfileOverrides | undefined; }): { health: RuntimeHealth | null; onFrameMs: ((frameMs: number) => void) | undefined } — Wire the game's `health` config for one session: the crash seam (with window error and unhandled-rejection handlers), the telemetry queue, and auto quality. Returns `null` health when the game set none. `onFrameMs` takes each rendered frame; auto quality moves the tier through the settings store only while the player's Auto quality setting is on, and a tier the player picks ends it.
-
-## @jgengine/shell/world/GridWorldScene
-
-- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload.
-- `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
-
-## @jgengine/shell/world/WorldEntityFrames
-
-- `WorldEntityFrames` (function): function WorldEntityFrames<E extends EntityFrameEntry>({ entries, renderFrame, tickMs = 0, className, anchorTransform, ...layout }: WorldEntityFramesProps<E>): JSX.Element — Mounts inside the scene, samples the live camera each frame (throttled by `tickMs`), and renders `@jgengine/react`'s {@link EntityFrames} through a fullscreen UI overlay. This is the one-line way a game gets overhead enemy nameplates/health bars from its own entity array without a store: pass `entries` + a `renderFrame` that composes the shipped bars. The projection, viewport culling, and stacking come for free.
-- `WorldEntityFramesProps` (interface): interface WorldEntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions — Props for {@link WorldEntityFrames}.
-- `projectWorldToScreen` (function): function projectWorldToScreen(scratch: THREE.Vector3, camera: THREE.Camera, worldPosition: readonly [number, number, number], width: number, height: number): EntityScreenProjection — Pure world→screen projection: NDC via `camera.project`, mapped to CSS pixels. `behind` is set when the point falls outside the near/far clip range (NDC z beyond [-1, 1]), which covers positions behind the camera. Exposed for tests and for callers wiring their own frame loop around a bare THREE camera.
-- `useWorldProjection` (function): function useWorldProjection(): ProjectEntity — Returns a {@link ProjectEntity} bound to the live engine camera and canvas size — the world→screen half of the data-first entity-frame seam. Call the returned function with a world position to get a CSS-pixel screen point (or `null`/`behind` when the point is outside the frustum). Reads the camera fresh on every call, so sample it inside a frame loop. Games that already own their entities use this to feed `@jgengine/react`'s `EntityFrames` without mirroring state into a store.
-
-## @jgengine/shell/world/WorldScene
-
-- `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): null — ⚠ undocumented
-- `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
-- `drawsScaledModel` (function): function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean — Whether an object draws its catalog model through a per-placement scale group. A scaled placement skips the per-catalog bounds measurement, which would otherwise record one instance's stretched size as every instance's footprint.

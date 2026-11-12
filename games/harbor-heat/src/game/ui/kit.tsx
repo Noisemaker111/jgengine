@@ -7,7 +7,7 @@ import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 import { readLive, type Live, type LiveValue } from "@jgengine/core/ui/liveValue";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createGameMenuSound, type GameMenuSound } from "@jgengine/core/menu/gameMenuSound.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { activeTouchControlsMode, setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { harborTheme, HH } from "./theme";
 

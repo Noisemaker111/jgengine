@@ -11,7 +11,7 @@ Use the engine's JSX runtime for the map component, then add the two focused
 JGengine packages:
 
 ```sh
-bun add @jgengine/core @jgengine/react
+bun add @jgengine/core @jgengine/ui
 ```
 
 The minimap needs no Three.js renderer or `GameProvider`.

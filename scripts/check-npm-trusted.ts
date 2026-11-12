@@ -10,6 +10,12 @@
  * (`_npmUser.trustedPublisher`), which npm writes only for an OIDC publish. Reading the registry needs
  * no credentials. A registry that cannot be read fails closed.
  *
+ * A new name is claimed once by hand with a `0.0.0-bootstrap.N` version (a short-lived token, then the
+ * trusted publisher is added on npmjs.com and the token deleted); a package whose only versions are
+ * bootstrap ones passes, because its first trusted publish is the release itself. `@jgengine/ui` was
+ * claimed this way on 2026-11-12. The registry cannot show whether the trusted publisher was added, so
+ * add it before releasing.
+ *
  *   bun scripts/check-npm-trusted.ts
  */
 import { readFileSync } from "node:fs";
@@ -28,11 +34,16 @@ interface Packument {
   versions?: Record<string, { _npmUser?: { trustedPublisher?: { id?: string } } }>;
 }
 
+/** The hand-published version that only claims a new name on npm, and npm's own staged-publishing placeholder. */
+const BOOTSTRAP_VERSION = /^0\.0\.0-(?:bootstrap\.\d+|stage)$/;
+
 /** Why `name` cannot be published by trusted publishing, or null when it can. */
 export function trustedPublishProblem(name: string, status: number, body: unknown): string | null {
   if (status === 404) return `${name} is not on npm; trusted publishing cannot create a package, so publish it under a name npm already has`;
   if (status !== 200) return `${name}: the registry answered ${status}, so its publishing cannot be checked`;
   const packument = body as Packument;
+  const versions = Object.keys(packument.versions ?? {});
+  if (versions.length > 0 && versions.every((version) => BOOTSTRAP_VERSION.test(version))) return null;
   const latest = packument["dist-tags"]?.["latest"];
   if (latest === undefined) return `${name} has no latest version on npm`;
   const publisher = packument.versions?.[latest]?._npmUser?.trustedPublisher?.id;

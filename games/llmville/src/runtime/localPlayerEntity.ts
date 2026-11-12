@@ -3,7 +3,7 @@ import { Euler } from "three";
 
 import type { MovementCommitFrame } from "@jgengine/core/game/playableGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LOCAL_PLAYER_CATALOG_ID, LOCAL_PLAYER_WALK_SPEED } from "@llmville/game/game/content";
 import { standingStep, type PlayerPosition } from "@llmville/game/movement/playerMovement";
 import { resolvePlayerSpeed } from "@llmville/game/user/personalUpgrades";

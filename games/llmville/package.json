@@ -25,7 +25,7 @@
     "zod": "catalog:",
     "@jgengine/core": "workspace:*",
     "@jgengine/convex": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/shell": "workspace:*"
   },
   "exports": {

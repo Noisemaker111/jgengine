@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@jgengine/react": "workspace:*"
+    "@jgengine/ui": "workspace:*"
   }
 }

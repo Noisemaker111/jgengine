@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/shell": "workspace:*"
   }
 }

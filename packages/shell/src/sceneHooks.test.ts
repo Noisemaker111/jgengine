@@ -3,8 +3,8 @@ import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { GameProvider } from "@jgengine/react/provider";
-import { useSceneEntities, useSceneObjects } from "@jgengine/react/hooks";
+import { GameProvider } from "@jgengine/ui/provider";
+import { useSceneEntities, useSceneObjects } from "@jgengine/ui/hooks";
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 function fixture(): GameContext {

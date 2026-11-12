@@ -5,8 +5,8 @@ import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNo
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { useHasSettings, useSettings } from "@jgengine/core/settings/settings.view";
-import { useGamePhase, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGamePhase, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { CreditsDocument } from "./credits";
 import { GameMenu } from "./gameMenu.view";
 import { CreditsPane } from "./gameMenuSaves.view";

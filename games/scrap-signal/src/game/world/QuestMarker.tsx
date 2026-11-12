@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";
 import type { WaypointEntry } from "@jgengine/core/map/waypoints";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";

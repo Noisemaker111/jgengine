@@ -87,7 +87,7 @@ function enginePaths(): Record<string, string[]> {
   const paths: Record<string, string[]> = {};
   for (const name of packages) {
     const src = join(packagesDir, name, "src");
-    // A folder's npm name can differ from it: packages/ui publishes as @jgengine/react.
+    // A folder's npm name can differ from it, so read it from the package.json.
     const npmName = npmNameOfFolder(name);
     paths[npmName] = [join(src, "index.ts")];
     paths[`${npmName}/*`] = [join(src, "*")];

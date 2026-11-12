@@ -6,7 +6,7 @@ import type { AmbienceZoneDef } from "@jgengine/core/audio/ambience";
 import type { GameContext, GameContextEntityEntry, GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { AudioProbe } from "@jgengine/core/audio/audioProbe.view";

@@ -25,16 +25,16 @@ Reach for these before hand-rolling.
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
-- \`usePanels\` (function) · \`import { usePanels } from "@jgengine/react"\`
+- \`usePanels\` (function) · \`import { usePanels } from "@jgengine/ui"\`
 
 ## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD
 
-- \`PanelHost\` (function) · \`import { PanelHost } from "@jgengine/react"\`
+- \`PanelHost\` (function) · \`import { PanelHost } from "@jgengine/ui"\`
 
 ## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
 
-- \`BarTokens\` (interface) · \`import { BarTokens } from "@jgengine/react"\`
-- \`barTokens\` (function) · \`import { barTokens } from "@jgengine/react"\`
+- \`BarTokens\` (interface) · \`import { BarTokens } from "@jgengine/ui"\`
+- \`barTokens\` (function) · \`import { barTokens } from "@jgengine/ui"\`
 `;
 
 describe("parseCapabilities", () => {
@@ -46,7 +46,7 @@ describe("parseCapabilities", () => {
     // description keeps its own " — " ("...dialogs above the HUD" had none, but slug split must be first-only)
     expect(host.description).toBe("render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD");
     expect(host.symbols).toEqual(["PanelHost"]);
-    expect(host.imports).toEqual(['import { PanelHost } from "@jgengine/react"']);
+    expect(host.imports).toEqual(['import { PanelHost } from "@jgengine/ui"']);
   });
 
   test("captures every bullet's symbol and import (multi-export capability)", () => {
@@ -79,7 +79,7 @@ describe("searchCapabilities", () => {
 
   test("matches against import path and symbol, not just prose", () => {
     expect(searchCapabilities(index, "PanelHost").map((e) => e.slug)).toEqual(["panel-host"]);
-    expect(searchCapabilities(index, "@jgengine/react").length).toBe(3);
+    expect(searchCapabilities(index, "@jgengine/ui").length).toBe(3);
   });
 
   test("tokens match whole stemmed words, not substrings", () => {
@@ -118,7 +118,7 @@ describe("renderFindResults", () => {
   test("shows the skill, slug, description, and import for each match", () => {
     const out = renderFindResults(searchCapabilities(index, "toggleable window"), "toggleable window");
     expect(out).toContain("[jgengine-ui] use-panels");
-    expect(out).toContain('import { usePanels } from "@jgengine/react"');
+    expect(out).toContain('import { usePanels } from "@jgengine/ui"');
   });
 
   test("no-match output points at broader discovery, not a dead end", () => {

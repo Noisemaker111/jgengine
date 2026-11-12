@@ -3,7 +3,7 @@ import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "@
 
 import { hudType } from "@jgengine/core/hud/hudTokens";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 
 /** Reskin tokens for {@link OnboardingCallout}. */
 export interface OnboardingCalloutTheme {

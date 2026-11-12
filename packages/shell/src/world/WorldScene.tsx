@@ -23,8 +23,8 @@ import {
   endFallbackPass,
   reportFallbackSeam,
 } from "@jgengine/core/devtools/fallbackSeams";
-import { useGameContext } from "@jgengine/react/provider";
-import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/ui/hooks";
 
 import { defaultSurfaceMaterial, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

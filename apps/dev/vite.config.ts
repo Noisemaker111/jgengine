@@ -51,7 +51,7 @@ function textureCompression(): Plugin {
 }
 
 // Every workspace package resolves to its source, so the runner never needs a build. Keyed on the
-// package's npm name, not its folder: packages/ui is published as @jgengine/react.
+// package's npm name, not its folder: packages/ui is published as @jgengine/ui.
 const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
 const packageAliases = readdirSync(packagesDir, { withFileTypes: true }).flatMap((entry) => {
   if (!existsSync(join(packagesDir, entry.name, "package.json"))) return [];

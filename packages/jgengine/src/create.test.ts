@@ -145,7 +145,7 @@ describe("runCreate", () => {
       expect(await runCreate([join(parent, "Board Probe"), "--template", "2d", "--standalone", "--no-install", "--no-skills"])).toBe(0);
       expect(existsSync(join(parent, "Board-Probe", "src", "game", "board.ts"))).toBe(true);
       expect(existsSync(join(parent, "Board-Probe", "src", "editor.scene.json"))).toBe(false);
-      expect(JSON.parse(readFileSync(join(parent, "Board-Probe", "jgengine.json"), "utf8"))).toMatchObject({ template: "2d", engine: ["assets", "core", "react", "shell"] });
+      expect(JSON.parse(readFileSync(join(parent, "Board-Probe", "jgengine.json"), "utf8"))).toMatchObject({ template: "2d", engine: ["assets", "core", "shell", "ui"] });
     } finally {
       log.mockRestore();
     }

@@ -2,8 +2,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { DialogueChoice, DialogueDef } from "@jgengine/core/ui/components.view";
 import { dialogueSlot } from "@jgengine/core/dialogue/dialogue";
-import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { cityOf } from "../cityRuntime";
 import { bestRaceStore, garageStore, houseStore, shopStore } from "../commands";
 import { UPGRADES, upgradesStore, type UpgradeShop } from "../progression/upgrades";

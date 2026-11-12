@@ -2,9 +2,9 @@
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { useSaveSlots, relativeSavedAt } from "@jgengine/core/save/saveSlots.view";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 

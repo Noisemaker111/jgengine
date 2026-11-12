@@ -45,7 +45,7 @@ export function packPublicPackage(pkg: string): Promise<string> {
   return tarball;
 }
 
-/** Install the published file set of each `packages/<pkg>` into `<root>/node_modules/<its npm name>` (packages/ui is @jgengine/react). */
+/** Install the published file set of each `packages/<pkg>` into `<root>/node_modules/<its npm name>` */
 export async function installPublicPackages(root: string, packages: readonly string[]): Promise<void> {
   await Promise.all(packages.map(async pkg => {
     const tarball = await packPublicPackage(pkg);
