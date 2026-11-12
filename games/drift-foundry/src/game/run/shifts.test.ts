@@ -3,7 +3,9 @@ import { describe, expect, test } from "bun:test";
 
 import { COMPACTOR_PLAN, COMPACTOR_SURGES } from "../compactor/schedule";
 import { RIVAL_DEFS } from "../race/opponents";
-import { createShiftLoop, readRunState, RUN_STATE_KEY, saveRunState } from "./shiftState";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { createFoundrySave } from "../foundrySave";
+import { createShiftLoop, readRunState, RUN_STATE_KEY } from "./shiftState";
 import { compactorPlanForShift, rivalsForShift, shiftInfo, SHIFT_LABELS, SHIFT_TABLE } from "./shifts";
 
 function loop() {
@@ -21,12 +23,11 @@ function shiftSequence(runs: number): (string | null)[] {
   return played;
 }
 
-function storage(seed: Record<string, string> = {}) {
-  return {
-    getItem: (key: string) => seed[key] ?? null,
-    setItem: (key: string, value: string) => { seed[key] = value; },
-    seed,
-  };
+/** The yard's save as a reload reads it: a fresh document over the same backend. */
+async function reload(backend: SaveBackend) {
+  const save = createFoundrySave(backend);
+  await save.load();
+  return save;
 }
 
 describe("drift foundry shifts", () => {
@@ -90,43 +91,49 @@ describe("drift foundry shifts", () => {
     }
   });
 
-  test("run state survives a save and reload, and the next shift is the same one", () => {
-    const store = storage();
+  test("run state survives a save and reload, and the next shift is the same one", async () => {
+    const backend = memorySaveBackend();
+    const store = await reload(backend);
     const run = loop();
     for (let index = 0; index < 3; index += 1) {
       run.start();
       run.carry(40);
       run.settle({ outcome: "banked" });
     }
-    expect(saveRunState(run.snapshot(), store)).toBe(true);
+    store.profile.run = run.snapshot();
+    expect(await store.write()).toBe(true);
 
     const reopened = loop();
-    const saved = readRunState(store);
+    const saved = (await reload(backend)).profile.run;
     expect(saved).not.toBeNull();
     reopened.restore(saved!);
     expect(reopened.snapshot()).toEqual(run.snapshot());
     expect(reopened.start().optionId).toBe(run.start().optionId);
   });
 
-  test("a saved run keeps its salvage at risk", () => {
-    const store = storage();
+  test("a saved run keeps its salvage at risk", async () => {
+    const backend = memorySaveBackend();
+    const store = await reload(backend);
     const run = loop();
     run.start();
     run.carry(75);
-    saveRunState(run.snapshot(), store);
+    store.profile.run = run.snapshot();
+    await store.write();
     const reopened = loop();
-    reopened.restore(readRunState(store)!);
+    reopened.restore((await reload(backend)).profile.run!);
     expect(reopened.carried()).toBe(75);
   });
 
-  test("a junk or impossible save is ignored instead of trusted", () => {
-    const junk = storage({ [RUN_STATE_KEY]: "{\"run\":-2}" });
-    expect(readRunState(junk)).toBeNull();
-    const behind = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 1, completed: 4, haul: 0, changeId: null, bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
-    expect(readRunState(behind)).toBeNull();
+  test("a junk or impossible save is ignored instead of trusted", async () => {
+    expect(readRunState({ run: -2 })).toBeNull();
+    expect(readRunState({ run: 1, completed: 4, haul: 0, changeId: null, bankedTotal: 0, lostTotal: 0, bestHaul: 0 })).toBeNull();
     expect(readRunState(undefined)).toBeNull();
-    const legacy = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 3, completed: 2, haul: 5, changeId: "hobbs-line", bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
-    expect(readRunState(legacy)).toEqual({ session: 3, closed: 2, carried: 5, optionId: "hobbs-line" });
-    expect(readRunState(storage({ [RUN_STATE_KEY]: "not json" }))).toBeNull();
+    // A run an older build kept at its own key, in its older field names, lifts into the run section.
+    const backend = memorySaveBackend();
+    await backend.write(RUN_STATE_KEY, JSON.stringify({ run: 3, completed: 2, haul: 5, changeId: "hobbs-line", bankedTotal: 0, lostTotal: 0, bestHaul: 0 }));
+    expect((await reload(backend)).profile.run).toEqual({ session: 3, closed: 2, carried: 5, optionId: "hobbs-line" });
+    const junk = memorySaveBackend();
+    await junk.write(RUN_STATE_KEY, "not json");
+    expect((await reload(junk)).profile.run).toBeNull();
   });
 });

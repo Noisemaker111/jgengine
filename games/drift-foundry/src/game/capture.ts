@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { steerToward } from "@jgengine/core/movement/steering";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
-import { readCareer, saveCareer } from "./career";
+import { foundrySaveOf } from "./foundrySave";
 import { YARD_EVENTS } from "./events/catalog";
 import { createRunSession, runSessionStore, type SessionSnapshot } from "./run/session";
 import { PICKUPS } from "./run/pickups";
@@ -126,9 +126,10 @@ export function registerCaptureCommands(ctx: GameContext): void {
     apply(state, input) {
       if (input.openAll === true) {
         // A capture profile starts with a blank career; gold on every event opens every tier.
-        const career = readCareer(localStorage);
-        saveCareer({ ...career, medals: { best: Object.fromEntries(YARD_EVENTS.map((event) => [event.id, event.targets.gold])) } }, localStorage);
-        runSessionStore.write(state, createRunSession(state.world.groundHeightAt, undefined, state.game.notices));
+        const save = foundrySaveOf(state);
+        save.profile.career = { ...save.profile.career, medals: { best: Object.fromEntries(YARD_EVENTS.map((event) => [event.id, event.targets.gold])) } };
+        void save.write();
+        runSessionStore.write(state, createRunSession(state.world.groundHeightAt, save, state.game.notices));
       }
       if (input.event !== undefined) {
         const session = runSessionStore.peek(state);

@@ -1,8 +1,6 @@
 import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/replay/recordingBuffer";
 import { interpolateRecordedPose } from "@jgengine/core/replay/replayLoop";
 
-import type { RunStorage } from "./records";
-
 /**
  * The ghost of your best run on a timed event, Trackmania-style: the kart's pose is recorded ten
  * times a second on the run clock, the fastest escape on each event is kept, and the next run on that
@@ -21,6 +19,7 @@ export interface SavedGhost {
   frames: readonly (readonly [number, number, number, number, number])[];
 }
 
+/** Where an older build kept the ghosts; the yard document lifts them into its `ghosts` section. */
 export const GHOST_KEY = "drift-foundry.ghost.v1";
 const SAMPLE_SECONDS = 0.1;
 /** A long stall at a wall still fits: two and a half minutes of frames at the sample rate. */
@@ -28,30 +27,16 @@ const MAX_FRAMES = 1500;
 
 const round = (value: number): number => Math.round(value * 100) / 100;
 
-export function readGhosts(storage?: RunStorage): Record<string, SavedGhost> {
-  try {
-    const data = JSON.parse(storage?.getItem(GHOST_KEY) ?? "null") as Record<string, SavedGhost> | null;
-    if (data === null || typeof data !== "object") return {};
-    const clean: Record<string, SavedGhost> = {};
-    for (const [id, ghost] of Object.entries(data)) {
-      if (typeof ghost?.time !== "number" || !Array.isArray(ghost.frames)) continue;
-      const frames = ghost.frames.filter((row) => Array.isArray(row) && row.length === 5 && row.every((n) => typeof n === "number" && Number.isFinite(n)));
-      if (frames.length > 1) clean[id] = { time: ghost.time, frames };
-    }
-    return clean;
-  } catch {
-    return {};
+/** The stored `ghosts` section: each event's ghost whose frames are whole numbers rows; the rest drop. */
+export function readGhosts(value: unknown): Record<string, SavedGhost> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+  const clean: Record<string, SavedGhost> = {};
+  for (const [id, ghost] of Object.entries(value as Record<string, Partial<SavedGhost> | null>)) {
+    if (typeof ghost?.time !== "number" || !Array.isArray(ghost.frames)) continue;
+    const frames = ghost.frames.filter((row) => Array.isArray(row) && row.length === 5 && row.every((n) => typeof n === "number" && Number.isFinite(n)));
+    if (frames.length > 1) clean[id] = { time: ghost.time, frames };
   }
-}
-
-export function saveGhost(eventId: string, ghost: SavedGhost, storage?: RunStorage): boolean {
-  if (storage === undefined) return false;
-  try {
-    storage.setItem(GHOST_KEY, JSON.stringify({ ...readGhosts(storage), [eventId]: ghost }));
-    return true;
-  } catch {
-    return false;
-  }
+  return clean;
 }
 
 /** Records the live run; `take` hands back the frames once it escapes. */

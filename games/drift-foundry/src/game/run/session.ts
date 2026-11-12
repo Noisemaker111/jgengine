@@ -9,8 +9,8 @@ import type { SessionSettlement } from "@jgengine/core/run/sessionLoop";
 import { activeSurge, compactorGap, compactorZAt, type CompactorPlan, type CompactorSurge } from "../compactor/schedule";
 import { lineReading } from "./haul";
 import { compactorPlanForShift, rivalsForShift, shiftInfo, type ShiftEffect } from "./shifts";
-import { createShiftLoop, readRunState, saveRunState, type RunBank } from "./shiftState";
-import { createGhostRecorder, readGhosts, replayGhost, saveGhost, type GhostPose, type GhostReplay } from "./ghost";
+import { createShiftLoop, type RunBank } from "./shiftState";
+import { createGhostRecorder, replayGhost, type GhostPose, type GhostReplay } from "./ghost";
 import { resolveCrusherContact } from "../compactor/contact";
 import { partInSlotId, tuningFrom, type KartTuning } from "../parts/build";
 import type { DriftFoundryPartDef } from "../parts/catalog";
@@ -26,9 +26,10 @@ import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
 import { ROW_SIX_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
 import { FLAT_YARD_GROUND } from "../tracks/ground";
-import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RunStorage } from "./records";
-import { checkpointParts, readParkedRun, saveParkedRun, type ParkedRun } from "./progress";
-import { ESCAPE_BONUS, bankOf, buyPart as buyGaragePart, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
+import { completeRun, type PersonalBest, type RunRecords } from "./records";
+import { createFoundrySave, type FoundrySave } from "../foundrySave";
+import { checkpointParts, type ParkedRun } from "./progress";
+import { ESCAPE_BONUS, bankOf, buyPart as buyGaragePart, garageRows, medalsOf, ownedParts, SALVAGE_CREDITS, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
 import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric, MEDALS, targetText, YARD_EVENTS, YARD_TIERS, type MedalId, type YardEvent } from "../events/catalog";
 
 /**
@@ -221,19 +222,30 @@ export function ghostKey(event: YardEvent): string {
 const runOf = (pose: VehicleTelemetry): number => pose.run ?? pose.position[2];
 const lateralOf = (pose: VehicleTelemetry): number => pose.lateral ?? pose.position[0];
 
-/** `notices` is the game's shared feed (`ctx.game.notices`); pickups, saves and armor saves surface there. */
+/**
+ * `save` is the yard's save document: the session starts from its profile and writes each change
+ * back into it (a memory-only yard by default). `notices` is the game's shared feed
+ * (`ctx.game.notices`); pickups, saves and armor saves surface there.
+ */
 export function createRunSession(
   groundHeightAt: (x: number, z: number) => number = FLAT_YARD_GROUND,
-  storage: RunStorage | undefined = browserRecordStorage(),
+  save: FoundrySave = createFoundrySave(null),
   notices?: Pick<NoticeFeed, "push">,
 ): RunSession {
+  const profile = save.profile;
+  /** Write the yard's document as the profile stands; a write the browser refuses calls `refused`. */
+  function persist(refused?: () => void): boolean {
+    if (!save.persistent) return false;
+    void save.write().then((kept) => { if (!kept) refused?.(); });
+    return true;
+  }
   let begun = false;
   let paused = false;
   let suspended = false;
-  let records = readRecords(storage);
+  let records = structuredClone(profile.records);
   let recordsSaved = true;
   let personalBest: PersonalBest = "unchanged";
-  let parkedRun = readParkedRun(storage);
+  let parkedRun = structuredClone(profile.parked);
   let runTime = 0;
   let installed: readonly DriftFoundryPartDef[] = [];
   let collected = new Set<string>();
@@ -251,7 +263,7 @@ export function createRunSession(
   const radioFeed = createGameFeed({ limit: TICKER_LIMIT });
   let radioCounter = 0;
   let outcome: RunOutcome | null = null;
-  let career: CareerSave = readCareer(storage);
+  let career: CareerSave = structuredClone(profile.career);
   let careerSaved = true;
   /** The event the open run races; a locked or unknown saved choice falls back to the salvage run. */
   function currentEvent(): YardEvent {
@@ -264,7 +276,7 @@ export function createRunSession(
   if (parkedRun !== null && (parkedRun.track ?? ROW_SIX_TRACK.id) !== track.id) parkedRun = null;
   const startingParts = (): readonly DriftFoundryPartDef[] => (event.garage ? ownedParts(career) : []);
   const ghostRecorder = createGhostRecorder();
-  let ghosts = readGhosts(storage);
+  let ghosts = structuredClone(profile.ghosts);
   let ghostReplay: GhostReplay | null = null;
   /** A run resumed from a parked checkpoint has no frames before the park, so it never becomes the ghost. */
   let ghostRecording = true;
@@ -278,9 +290,10 @@ export function createRunSession(
   // carry writes the loop's own state and a checkpoint of the live run, so a reload or a crash
   // mid-run comes back to the haul and the route instead of the pit.
   const loop = createShiftLoop({
-    load: () => readRunState(storage),
+    load: () => structuredClone(profile.run),
     save: (state) => {
-      runSaved = saveRunState(state, storage);
+      profile.run = { ...state };
+      runSaved = persist(() => { runSaved = false; });
     },
   });
   let shift: { id: string; label: string; hint: string } | null = shiftInfo(loop.offer().optionId);
@@ -543,20 +556,24 @@ export function createRunSession(
   function checkpointLiveRun(): void {
     if (phaseNow() !== "running" || runTime <= 0) return;
     const checkpoint = checkpointNow();
-    if (saveParkedRun(checkpoint, storage)) parkedRun = checkpoint;
+    profile.parked = checkpoint;
+    if (persist()) parkedRun = checkpoint;
   }
 
   function parkRun(): void {
     if (phaseNow() !== "running" || pose.airborne || pose.speedKmh > 0.1 || runTime <= 0) return;
     const checkpoint: ParkedRun = checkpointNow();
-    if (saveParkedRun(checkpoint, storage)) {
+    // The salvage in the kart's hold is part of the parked run; the loop has already written it, and
+    // this keeps an explicit park in step with an autosaved one.
+    profile.parked = checkpoint;
+    profile.run = loop.snapshot();
+    const refused = () => notify("THIS BROWSER COULD NOT SAVE YOUR PARKED RUN", "warn");
+    if (persist(() => { runSaved = false; refused(); })) {
       parkedRun = checkpoint;
-      // The salvage in the kart's hold is part of the parked run; the loop has already written it, and
-      // this keeps an explicit park in step with an autosaved one.
-      runSaved = saveRunState(loop.snapshot(), storage);
+      runSaved = true;
       notify("PARKED RUN SAVED — CONTINUE FROM THE PIT", "success");
     }
-    else notify("THIS BROWSER COULD NOT SAVE YOUR PARKED RUN", "warn");
+    else refused();
   }
 
   const nextOf = (board: ReturnType<typeof medalsOf>, id: string): { medal: MedalId; text: string } | null => {
@@ -651,7 +668,6 @@ export function createRunSession(
     const completed = completeRun(records, { kind: outcome?.kind === "won" ? "won" : "crushed", time: runTime, distance: Math.max(0, Math.min(track.exitAt, runOf(pose))) });
     records = completed.records;
     personalBest = completed.personalBest;
-    recordsSaved = saveRecords(records, storage);
     // What the loop settled is the whole payment: an escape banks its line-scaled salvage, a wreck
     // carries its salvaged haul into the bank's lost counter and leaves the banked credits alone.
     career = settleRun(career, {
@@ -661,10 +677,15 @@ export function createRunSession(
       medals: pendingMedals,
     });
     pendingMedals = undefined;
-    careerSaved = saveCareer(career, storage);
-    runSaved = saveRunState(loop.snapshot(), storage);
     parkedRun = null;
-    saveParkedRun(null, storage);
+    profile.records = records;
+    profile.career = career;
+    profile.run = loop.snapshot();
+    profile.parked = null;
+    const kept = persist(() => { recordsSaved = false; careerSaved = false; runSaved = false; });
+    recordsSaved = kept;
+    careerSaved = kept;
+    runSaved = kept;
   }
 
   /** The career-derived part of a snapshot: rebuilt only when the career or the picked event changes, not every tick. */
@@ -776,17 +797,19 @@ export function createRunSession(
       if (!medalsOf(career).isOpen(eventId)) return { ok: false, reason: `${chosen.label} is still locked` };
       if (chosen.id === event.id) return { ok: true };
       career = { ...career, event: chosen.id };
-      careerSaved = saveCareer(career, storage);
       // A parked run belongs to the event it started in; picking another event drops it.
       parkedRun = null;
-      saveParkedRun(null, storage);
+      profile.career = career;
+      profile.parked = null;
+      careerSaved = persist(() => { careerSaved = false; });
       reset();
       return { ok: true };
     },
     buyPart(slot) {
       try {
         career = buyGaragePart(career, slot);
-        careerSaved = saveCareer(career, storage);
+        profile.career = career;
+        careerSaved = persist(() => { careerSaved = false; });
         if (phaseNow() === "start") {
           installed = startingParts();
           rebuildTuning();
@@ -798,7 +821,8 @@ export function createRunSession(
     },
     restart() {
       parkedRun = null;
-      saveParkedRun(null, storage);
+      profile.parked = null;
+      persist();
       reset();
       begun = true;
       pushRadio("BOLT IT ON, GO GO");
@@ -926,8 +950,9 @@ export function createRunSession(
         const previousGhost = ghosts[key];
         if (event.metric === "time" && ghostRecording && (previousGhost === undefined || runTime < previousGhost.time)) {
           const ghost = ghostRecorder.take(runTime);
-          if (saveGhost(key, ghost, storage)) ghosts = readGhosts(storage);
-          else ghosts = { ...ghosts, [key]: ghost };
+          ghosts = { ...ghosts, [key]: ghost };
+          profile.ghosts = ghosts;
+          persist();
         }
         outcome = {
           kind: "won",

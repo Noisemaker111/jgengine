@@ -32,13 +32,15 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     1 top speed and 0.2 turn rate for clearing walls.
   - Route. Eight full-width barricades at z = 110, 150, 210, 250, 300, 350, 400, 440 alternate
     plow and jump. A jump needs 0.65 m of air, so coil springs are mandatory, not decorative.
-  - Records. Attempts, escapes, best time and farthest distance save to `drift-foundry.records.v1`;
-    pausing while stopped and grounded parks the build and clock at `drift-foundry.parked-run.v1`.
+  - Records. Attempts, escapes, best time and farthest distance save to the `records` section of the
+    yard's one save document (`drift-foundry.yard:yard`, the shared `saveDocument`); pausing while
+    stopped and grounded parks the build and clock in its `parked` section. A yard an older build
+    kept under its six `drift-foundry.*.v1` keys lifts into the document on the first read.
   - Run. Every run carries salvage - 25 cr per part swept plus 100 cr at the gate - and an escape
     banks it scaled by the line: `×0.5` to `×1.8`, from barriers cleared (+0.05 each), finish place
     (+0.30/+0.15/+0.05), beating par (+0.20 under 36 s) and minus 0.10 per folded-nose stage and per
     armor save. A wreck loses everything the run carried and keeps the bank. The haul, the shift it
-    draws and the banked/lost totals save to `drift-foundry.run.v1`, so a career survives a reload.
+    draws and the banked/lost totals save to the document's `run` section, so a career survives a reload.
   - Shifts. The first run is honest; every run after it draws one change from
     `src/game/run/shifts.ts` by seed (`drift-foundry-run:run:N`, no repeat, night crew only after two
     runs): HOBBS's line tightens 45% and his pace rises 4%, TALLY loses his tow, the crusher starts
@@ -72,7 +74,7 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     drops swept (40 s). A 4 s stall is survivable on the Salvage Run and fatal on Night Shift and
     Crusher Rush.
   - Ghost. Timed events record the kart ten times a second on the engine recording buffer; the
-    fastest escape on each is saved to `drift-foundry.ghost.v1` and replays as a see-through teal
+    fastest escape on each is saved to the document's `ghosts` section and replays as a see-through teal
     kart on the next run, with the tower reading metres ahead of or behind it.
   - Field. Three rivals start ahead of you in the same corridor: TALLY (easy, EV build, wanders
     gate to gate), MOSS (standard, Salvage V6, weaves for the free side) and HOBBS (expert, Truck

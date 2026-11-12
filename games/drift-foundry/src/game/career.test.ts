@@ -6,19 +6,21 @@ import {
   newCareer,
   ownedParts,
   readCareer,
-  saveCareer,
   settleRun,
   standingOf,
   YARD_COUNTER,
   DRIVER,
   type CareerSave,
-  type CareerStorage,
 } from "./career";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { createFoundrySave } from "./foundrySave";
 import { PARTS } from "./parts/catalog";
 
-function memory(): CareerStorage {
-  const data = new Map<string, string>();
-  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); } };
+/** The yard's save as a reload reads it: a fresh document over the same backend. */
+async function reload(backend: SaveBackend) {
+  const save = createFoundrySave(backend);
+  await save.load();
+  return save;
 }
 
 function standingAt(score: number, career: CareerSave = newCareer()): CareerSave {
@@ -65,15 +67,17 @@ describe("yard career", () => {
     expect(twoRungs(25).price).toBe(661);
   });
 
-  test("buying a rung spends credits, owns the part and survives a reload", () => {
-    const storage = memory();
-    const start = rich(standingAt(0), 500);
-    expect(saveCareer(start, storage)).toBe(true);
-    const bought = buyPart(readCareer(storage), "engine");
+  test("buying a rung spends credits, owns the part and survives a reload", async () => {
+    const backend = memorySaveBackend();
+    const start = createFoundrySave(backend, { career: rich(standingAt(0), 500) });
+    expect(await start.write()).toBe(true);
+    const shop = await reload(backend);
+    const bought = buyPart(shop.profile.career, "engine");
     expect(bought.bank.banked).toBe(350);
     expect(ownedParts(bought).map(part => part.id)).toEqual(["salvage_v6"]);
-    saveCareer(bought, storage);
-    const reloaded = readCareer(storage);
+    shop.profile.career = bought;
+    expect(await shop.write()).toBe(true);
+    const reloaded = (await reload(backend)).profile.career;
     expect(reloaded.bank.banked).toBe(350);
     expect(reloaded.ladders.ranks.engine).toBe(1);
     expect(ownedParts(reloaded).map(part => part.id)).toEqual(["salvage_v6"]);
@@ -93,12 +97,12 @@ describe("yard career", () => {
     for (const gate of YARD_COUNTER.gates()) expect(ids.has(gate.unlock as never)).toBe(true);
   });
 
-  test("a damaged or missing career file reads as a fresh pit", () => {
-    const storage = memory();
-    storage.setItem("drift-foundry.career.v1", "{");
-    expect(readCareer(storage).bank.banked).toBe(0);
-    storage.setItem("drift-foundry.career.v1", JSON.stringify({ version: 1, bank: { banked: -5 } }));
-    expect(readCareer(storage).standing.records).toEqual({});
+  test("a damaged or missing career file reads as a fresh pit", async () => {
+    const backend = memorySaveBackend();
+    await backend.write("drift-foundry.career.v1", "{");
+    expect((await reload(backend)).profile.career.bank.banked).toBe(0);
+    expect(readCareer({ version: 1, bank: { banked: -5 } }).standing.records).toEqual({});
+    expect(readCareer(undefined).bank.banked).toBe(0);
   });
 
   test("the same two events produce the same money, standing and garage", () => {
