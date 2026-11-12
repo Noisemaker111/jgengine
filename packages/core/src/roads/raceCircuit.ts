@@ -17,7 +17,9 @@
  * winner into a racing line that uses the junction plazas. Callers can pin `via` anchors the lap
  * passes in order, a `start` hint, or ask for a point-to-point `sprint`
  * ({@link CircuitRouteConstraints}); {@link extractStreetRaces} lifts several named races out of one
- * city. On a `circuit` (the generator's closed-loop mode) the loop edges ARE the cycle.
+ * city. On a `circuit` (the generator's closed-loop mode) the generator's DESIGNED lap
+ * ({@link CircuitDesign}) is the route, with its corner types, banking, elevation, pit lane (part of
+ * the event, never sealed), run-off, walls, grandstands and figure-8 crossings carried through.
  *
  * Volume-local XZ coords throughout, matching {@link StreetNetwork}; the caller rotates/translates
  * into world space. Deterministic: same network + rules ⇒ identical route, with bounded search work.
@@ -56,7 +58,29 @@ import {
   type LapSummary,
   type PlannedChicane,
 } from "./raceLapSearch";
-import { STREET_NETWORK_GENERATOR, STREET_NETWORK_SCHEMA, type StreetEdge, type StreetLevel, type StreetNetwork, type StreetNetworkInput, type StreetVec2 } from "./streetGenerator";
+import {
+  CIRCUIT_LAP_LENGTH_FIELD,
+  SAMPLE_ROUND,
+  type CircuitCornerKind,
+  type CircuitCrossing,
+  type CircuitDesign,
+  type CircuitDesignBrake,
+  type CircuitGrandstand,
+  type CircuitPitLane,
+  type CircuitRunoff,
+  type CircuitWall,
+} from "./circuitDesigner";
+import { GRID_FRONT_GAP, GRID_ROW_PITCH, gridLength, lapTimeProfile, startLineOffset, timedSectors } from "./circuitDressing";
+import {
+  STREET_NETWORK_DIAL_FIELDS,
+  STREET_NETWORK_GENERATOR,
+  STREET_NETWORK_SCHEMA,
+  type StreetEdge,
+  type StreetLevel,
+  type StreetNetwork,
+  type StreetNetworkInput,
+  type StreetVec2,
+} from "./streetGenerator";
 
 /** Road hierarchy rank — higher is wider/more arterial. Shared with the fabric's ordering. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
@@ -93,7 +117,8 @@ export type CircuitSealKind = "barrier" | "cones" | "fence";
 /**
  * The lap dials the route search answers to (defaults: a ~2.4 km arterial street lap with 12 gates,
  * 3 laps and barriered side streets).
- * - `lapLength` — target lap (or sprint) length (m); length error is the heaviest term of the lap score.
+ * - `lapLength` — target lap (or sprint) length (m); length error is the heaviest term of the lap score
+ *   (a designed closed circuit is built to it).
  * - `arterialBias` — 0 races any street; 1 routes and scores the lap toward avenues and boulevards.
  * - `minCornerRadius` — radius (m) a turn must be tighter than (×4, at least 40 m) to count as a
  *   corner, and on a `circuit` loop the radius the corner-rounding pass works toward. The achieved
@@ -102,7 +127,8 @@ export type CircuitSealKind = "barrier" | "cones" | "fence";
  * - `gateHeight` — height (m) of a checkpoint gate volume.
  * - `gridSlots` — starting grid slots behind the line (0 = no grid).
  * - `sealKind` — how the side streets leaving the lap are closed off.
- * - `sectors` — timing sectors the lap splits into.
+ * - `sectors` — timing sectors the lap splits into: on a lap each takes about an equal share of the
+ *   simulated lap time and breaks just past a significant corner.
  * - `sampleStep` — arc-length spacing (m) the lap is resampled to: city streets are sampled for a road
  *   ribbon, far too coarsely for a racing surface, corner analysis or kerbs.
  * - `cornerCut` — how far the racing line may stray from the NEAREST street centerline, as a fraction
@@ -112,7 +138,7 @@ export type CircuitSealKind = "barrier" | "cones" | "fence";
  *   for the overtake); off, every straight runs flat out.
  */
 const CIRCUIT_ROUTE_FIELDS = [
-  { type: "range", key: "lapLength", label: "lap length", group: "race", min: 80, max: 12000, step: 10, default: 2400, unit: "m", explore: [400, 6000] },
+  { ...CIRCUIT_LAP_LENGTH_FIELD, group: "race" },
   { type: "range", key: "arterialBias", label: "arterial bias", group: "race", min: 0, max: 1, step: 0.01, default: 0.7 },
   { type: "range", key: "minCornerRadius", label: "corner radius", group: "race", min: 3, max: 60, step: 0.5, default: 9, unit: "m" },
   { type: "range", key: "checkpoints", label: "checkpoints", group: "race", min: 2, max: 64, step: 1, default: 12 },
@@ -194,6 +220,8 @@ export interface CircuitCorner {
   entry: number;
   /** `centerline` index where it ends. */
   exit: number;
+  /** The corner's type in the corner grammar — present on a designed closed circuit. */
+  kind?: CircuitCornerKind;
 }
 
 /** One checkpoint trigger volume, shaped to hand straight to `raceTrack({ checkpoints })`. */
@@ -286,6 +314,19 @@ export interface CircuitRoute {
    * this to report what the lap really is — widen `streetWidth` to buy a smoother one.
    */
   tightestRadius: number;
+  /** Road roll per point, radians (positive raises the right edge) — designed circuits only. */
+  banking?: number[];
+  /** Simulated lap time (s) and braking zones (arc lengths from index 0) — designed circuits only. */
+  lapTime?: number;
+  brakingZones?: CircuitDesignBrake[];
+  /** Pit lane joined to the lap at two junctions, with garages — designed circuits only. */
+  pit?: CircuitPitLane;
+  /** Run-off areas, permanent wall runs and grandstand spots — designed circuits only. */
+  runoff?: CircuitRunoff[];
+  walls?: CircuitWall[];
+  grandstands?: CircuitGrandstand[];
+  /** Grade-separated crossings of a figure-8 — designed circuits only. */
+  crossings?: CircuitCrossing[];
 }
 
 interface Adjacency {
@@ -715,8 +756,10 @@ function buildSeals(
   edges: readonly number[],
   adjacency: Adjacency,
   kind: CircuitSealKind,
+  open: ReadonlySet<number> = new Set(),
 ): CircuitSeal[] {
-  const onRoute = new Set(edges);
+  // `open` edges belong to the event (a circuit's pit lane): never barriered off.
+  const onRoute = new Set([...edges, ...open]);
   const seals: CircuitSeal[] = [];
   // The widest lap road meeting each node sets how far back a barrier must stand.
   const lapHalfWidth = new Map<number, number>();
@@ -761,7 +804,8 @@ export interface CircuitKerbOptions {
 }
 
 /**
- * Red/white kerb strips hugging both road edges through each corner. Returns the polylines and
+ * Red/white kerb strips where a racing line touches the road edge: an inside kerb across the apex (the
+ * middle of the corner) and an outside kerb at the track-out (apex to exit). Returns the polylines and
  * stripe pitch as data; the renderer owns the mesh and the colors.
  */
 export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] {
@@ -781,9 +825,18 @@ export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = 
       cursor = (cursor + 1) % n;
     }
     if (span.length < 3) return;
-    for (const side of [-1, 1] as const) {
+    // Inside is the side the corner turns toward: a right-hander (direction 1) has its inside on the right.
+    const inside: -1 | 1 = corner.direction === 1 ? 1 : -1;
+    const apexAt = Math.max(0, span.indexOf(corner.apex));
+    const third = Math.max(1, Math.floor(span.length / 3));
+    const insideFrom = Math.max(0, Math.min(apexAt - Math.floor(third / 2), span.length - 3));
+    const pieces: [-1 | 1, number[]][] = [
+      [inside, span.slice(insideFrom, Math.max(insideFrom + 3, Math.min(span.length, apexAt + Math.ceil(third / 2) + 1)))],
+      [inside === 1 ? -1 : 1, span.slice(Math.min(apexAt, span.length - 3))],
+    ];
+    for (const [side, part] of pieces) {
       const run: StreetVec2[] = [];
-      for (const at of span) {
+      for (const at of part) {
         const here = points[at]!;
         // Mitre on the neighbour-to-neighbour tangent: a per-segment normal fans the strip open on
         // the outside of a corner, which is exactly where a kerb must stay flush to the road edge.
@@ -1030,6 +1083,10 @@ export function extractCircuitRoute(
   const adjacency = buildAdjacency(network);
   const closed = constraints.kind !== "sprint";
   const constrained = constraints.via !== undefined || constraints.start !== undefined || !closed;
+  if (network.mode === "circuit" && network.circuit !== undefined && !constrained) {
+    const designedLoop = loopCandidate(network);
+    if (designedLoop !== null) return designedRoute(network.circuit, designedLoop, adjacency, network, resolved);
+  }
   let nodes: number[];
   let edges: number[];
   let arterialShare: number;
@@ -1071,8 +1128,7 @@ export function extractCircuitRoute(
   const straightRadius = Math.max(cornerThreshold * 3, 200);
 
   // The whole grid stands on a straight: never in a corner.
-  const rows = Math.ceil(resolved.gridSlots / 2);
-  const gridLength = rows > 0 ? 8 + (rows - 1) * 9 + 4 : 0;
+  const gridSpan = gridLength(resolved.gridSlots);
   let preferred: number | null = closed ? null : 0;
   if (constraints.start !== undefined) {
     const hint = typeof constraints.start === "number" ? adjacency.nodeAt.get(constraints.start) : { x: constraints.start[0], z: constraints.start[1] };
@@ -1090,63 +1146,17 @@ export function extractCircuitRoute(
     }
   }
   const metric = radiusProfile(centerline, METRIC_CHORD, closed);
-  const startIndex = placeStart(metric, at, total, closed, gridLength, preferred) ?? (closed ? findStartIndex(radii, at, total, straightRadius) : indexAtDistance(at, total, gridLength + 4, false));
-  const startPoint = centerline[startIndex]!;
-  const startHeading = headingAt(centerline, startIndex, closed);
-  const startWidth = widths[startIndex] ?? 10;
-  const across = startHeading + Math.PI / 2;
-  const start: CircuitStart = {
-    x: startPoint[0],
-    z: startPoint[1],
-    heading: startHeading,
-    line: [
-      [startPoint[0] + Math.sin(across) * startWidth * 0.5, startPoint[1] + Math.cos(across) * startWidth * 0.5],
-      [startPoint[0] - Math.sin(across) * startWidth * 0.5, startPoint[1] - Math.cos(across) * startWidth * 0.5],
-    ],
-    distance: at[startIndex]!,
-    width: startWidth,
-  };
-
-  const grid: CircuitGridSlot[] = [];
-  for (let slot = 0; slot < resolved.gridSlots; slot += 1) {
-    const row = Math.floor(slot / 2);
-    const column = slot % 2 === 0 ? -1 : 1;
-    const back = 8 + row * 9;
-    const index = indexAtDistance(at, total, at[startIndex]! - back, closed);
-    const point = centerline[index]!;
-    const heading = headingAt(centerline, index, closed);
-    const lateral = heading + Math.PI / 2;
-    const offset = (widths[index] ?? startWidth) * 0.22 * column;
-    grid.push({
-      x: point[0] + Math.sin(lateral) * offset,
-      z: point[1] + Math.cos(lateral) * offset,
-      heading,
-    });
-  }
-
-  // Gates are evenly spaced with the finish line LAST, so `raceTrack` treats the start/finish
-  // crossing as the lap boundary; a sprint's gates run from the start line to the far end. A lap's
-  // finish IS the start line: placing it by distance (start + spacing * count, wrapped by `total`)
-  // lands within an ulp of `at[startIndex]`, so libm's last bit picked the sample before or after the
-  // line and moved the finish by a whole step.
-  const checkpoints: CircuitGate[] = [];
-  const raceDistance = closed ? total : total - at[startIndex]!;
-  const gateSpacing = raceDistance / resolved.checkpoints;
-  for (let gate = 1; gate <= resolved.checkpoints; gate += 1) {
-    const finish = gate === resolved.checkpoints;
-    const index = finish ? (closed ? startIndex : centerline.length - 1) : indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate, closed);
-    const point = centerline[index]!;
-    const height = heights?.[index] ?? 0;
-    const halfWidth = (widths[index] ?? startWidth) * 0.5 + 1.5;
-    checkpoints.push({
-      id: gate === resolved.checkpoints ? "finish" : `cp${gate}`,
-      center: [point[0], height + resolved.gateHeight * 0.5, point[1]],
-      half: [halfWidth, resolved.gateHeight * 0.5, 2.5],
-    });
-  }
-
-  const sectors: number[] = [];
-  for (let sector = 0; sector < resolved.sectors; sector += 1) sectors.push(sector / resolved.sectors);
+  const startIndex = placeStart(metric, at, total, closed, gridSpan, preferred) ?? (closed ? findStartIndex(radii, at, total, straightRadius) : indexAtDistance(at, total, gridSpan + 4, false));
+  const start = startAt(centerline, widths, at, startIndex, closed);
+  const grid = gridBehind(centerline, widths, at, total, startIndex, resolved.gridSlots, closed);
+  const checkpoints = raceGates(centerline, widths, heights, at, total, startIndex, closed, resolved);
+  // A lap's sectors split its simulated lap time, breaking just past corners; a sprint's split evenly.
+  const profile = closed ? lapTimeProfile(centerline) : null;
+  const breaks = corners.map((corner) => indexAtDistance(at, total, at[corner.exit]! + 15, closed));
+  const sectors =
+    profile === null
+      ? Array.from({ length: resolved.sectors }, (_, k) => k / resolved.sectors)
+      : timedSectors(profile.time, profile.lapTime, at, total, startIndex, breaks, resolved.sectors);
 
   const chicanes: CircuitChicane[] = [];
   for (let k = 0; k + 1 < barriers.length; k += 2) {
@@ -1195,6 +1205,162 @@ export function extractCircuitRoute(
   };
 }
 
+/** The start/finish line across the road at `index`. */
+function startAt(centerline: readonly StreetVec2[], widths: readonly number[], at: readonly number[], index: number, closed: boolean): CircuitStart {
+  const point = centerline[index]!;
+  const heading = headingAt(centerline, index, closed);
+  const width = widths[index] ?? 10;
+  const across = heading + Math.PI / 2;
+  return {
+    x: point[0],
+    z: point[1],
+    heading,
+    line: [
+      [point[0] + Math.sin(across) * width * 0.5, point[1] + Math.cos(across) * width * 0.5],
+      [point[0] - Math.sin(across) * width * 0.5, point[1] - Math.cos(across) * width * 0.5],
+    ],
+    distance: at[index]!,
+    width,
+  };
+}
+
+/** Staggered grid slots in pairs behind the line at `startIndex`. */
+function gridBehind(
+  centerline: readonly StreetVec2[],
+  widths: readonly number[],
+  at: readonly number[],
+  total: number,
+  startIndex: number,
+  slots: number,
+  closed: boolean,
+): CircuitGridSlot[] {
+  const grid: CircuitGridSlot[] = [];
+  for (let slot = 0; slot < slots; slot += 1) {
+    const row = Math.floor(slot / 2);
+    const column = slot % 2 === 0 ? -1 : 1;
+    const index = indexAtDistance(at, total, at[startIndex]! - (GRID_FRONT_GAP + row * GRID_ROW_PITCH), closed);
+    const point = centerline[index]!;
+    const heading = headingAt(centerline, index, closed);
+    const lateral = heading + Math.PI / 2;
+    const offset = (widths[index] ?? widths[startIndex] ?? 10) * 0.22 * column;
+    grid.push({ x: point[0] + Math.sin(lateral) * offset, z: point[1] + Math.cos(lateral) * offset, heading });
+  }
+  return grid;
+}
+
+/**
+ * Gates evenly spaced with the finish line LAST, so `raceTrack` treats the start/finish crossing as the
+ * lap boundary; a sprint's gates run from the start line to the far end. A lap's finish IS the start
+ * line: placing it by distance (start + spacing * count, wrapped by `total`) lands within an ulp of
+ * `at[startIndex]`, so libm's last bit picked the sample before or after the line and moved the finish
+ * by a whole step.
+ */
+function raceGates(
+  centerline: readonly StreetVec2[],
+  widths: readonly number[],
+  heights: readonly number[] | null,
+  at: readonly number[],
+  total: number,
+  startIndex: number,
+  closed: boolean,
+  resolved: CircuitRouteParams,
+): CircuitGate[] {
+  const checkpoints: CircuitGate[] = [];
+  const raceDistance = closed ? total : total - at[startIndex]!;
+  const gateSpacing = raceDistance / resolved.checkpoints;
+  for (let gate = 1; gate <= resolved.checkpoints; gate += 1) {
+    const finish = gate === resolved.checkpoints;
+    const index = finish ? (closed ? startIndex : centerline.length - 1) : indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate, closed);
+    const point = centerline[index]!;
+    const height = heights?.[index] ?? 0;
+    const halfWidth = (widths[index] ?? widths[startIndex] ?? 10) * 0.5 + 1.5;
+    checkpoints.push({
+      id: finish ? "finish" : `cp${gate}`,
+      center: [point[0], height + resolved.gateHeight * 0.5, point[1]],
+      half: [halfWidth, resolved.gateHeight * 0.5, 2.5],
+    });
+  }
+  return checkpoints;
+}
+
+/**
+ * A designed closed circuit as a route: the design resampled to `sampleStep`, its corners, start line
+ * on the start straight with the whole grid behind it, timed sectors at the designed break points, the
+ * pit lane left open, and the dressing carried through.
+ */
+function designedRoute(design: CircuitDesign, loop: Candidate, adjacency: Adjacency, network: StreetNetwork, resolved: CircuitRouteParams): CircuitRoute {
+  const length = design.length;
+  const count = Math.max(12, Math.min(8000, Math.floor(length / resolved.sampleStep + SAMPLE_ROUND)));
+  const spacing = length / count;
+  const m = design.centerline.length;
+  const lerpAt = (values: readonly number[], s: number): number => {
+    const u = s / design.step;
+    const i = Math.floor(u);
+    const t = u - i;
+    const a = values[((i % m) + m) % m]!;
+    const b = values[(((i + 1) % m) + m) % m]!;
+    return a + (b - a) * t;
+  };
+  const xs = design.centerline.map((p) => p[0]);
+  const zs = design.centerline.map((p) => p[1]);
+  const centerline: StreetVec2[] = [];
+  const widths: number[] = [];
+  const banking: number[] = [];
+  const heights: number[] | null = design.heights === undefined ? null : [];
+  const time: number[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const s = i * spacing;
+    centerline.push([lerpAt(xs, s), lerpAt(zs, s)]);
+    widths.push(lerpAt(design.widths, s));
+    banking.push(lerpAt(design.banking, s));
+    if (heights !== null) heights.push(lerpAt(design.heights!, s));
+    // Elapsed time wraps at the seam: interpolate inside the lap only.
+    const u = s / design.step;
+    const j = Math.min(m - 1, Math.floor(u));
+    time.push(j + 1 < m ? design.time[j]! + (design.time[j + 1]! - design.time[j]!) * (u - j) : design.time[j]!);
+  }
+  const { at, total } = arcProfile(centerline, true);
+  const indexAt = (s: number): number => ((Math.floor(s / spacing + SAMPLE_ROUND) % count) + count) % count;
+  const corners: CircuitCorner[] = design.corners.map((corner) => ({
+    apex: indexAt(corner.apex),
+    radius: corner.radius,
+    angle: Math.abs(corner.turn),
+    direction: corner.turn > 0 ? -1 : 1,
+    entry: indexAt(corner.entry),
+    exit: indexAt(corner.exit),
+    kind: corner.kind,
+  }));
+  const startIndex = indexAt(startLineOffset(design.startStraight.to - design.startStraight.from, resolved.gridSlots));
+  const pitEdges = new Set(network.edges.filter((edge) => !edge.loop).map((edge) => edge.id));
+  return {
+    closed: true,
+    centerline,
+    widths,
+    ...(heights === null ? {} : { heights }),
+    length: total,
+    edges: loop.edges,
+    nodes: loop.nodes,
+    seals: buildSeals(loop.nodes, loop.edges, adjacency, resolved.sealKind, pitEdges),
+    chicanes: [],
+    corners,
+    checkpoints: raceGates(centerline, widths, heights, at, total, startIndex, true, resolved),
+    laps: resolved.laps,
+    start: startAt(centerline, widths, at, startIndex, true),
+    grid: gridBehind(centerline, widths, at, total, startIndex, resolved.gridSlots, true),
+    sectors: timedSectors(time, design.lapTime, at, total, startIndex, design.sectorBreaks.map(indexAt), resolved.sectors),
+    arterialShare: loop.arterial,
+    tightestRadius: Math.min(...design.corners.map((corner) => corner.radius)),
+    banking,
+    lapTime: design.lapTime,
+    brakingZones: design.brakingZones,
+    ...(design.pit === undefined ? {} : { pit: design.pit }),
+    runoff: design.runoff,
+    walls: design.walls,
+    grandstands: design.grandstands,
+    crossings: design.crossings,
+  };
+}
+
 /** One named race a city hosts: a lap or sprint, its anchors, and any lap dials it overrides. */
 export interface StreetRaceSpec extends CircuitRouteConstraints {
   /** Stable id: seeds the race's own search and names it in the result. */
@@ -1238,21 +1404,52 @@ export interface RaceCircuit {
 
 const streetPreset = (id: string): Readonly<Record<string, unknown>> => STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === id)?.values ?? {};
 
-/** The race circuit's params: the street generator's dials and footprint, then the lap dials. */
+/** The closed-circuit characters share a pit lane, a full grid and the circuit topology dials. */
+const closedCircuit = (values: Record<string, unknown>): Record<string, unknown> => ({ ...streetPreset("circuit"), branching: 0.4, gridSlots: 20, ...values });
+
+/**
+ * The race circuit's params: the street generator's dials and footprint, then the lap dials. The lap
+ * length is one dial for both: the length a closed circuit is designed to, and the route a street race
+ * searches for.
+ */
 export const RACE_CIRCUIT_SCHEMA = defineParamSchema({
   groups: [...(STREET_NETWORK_SCHEMA.groups ?? []), { id: "race", label: "Race" }],
-  fields: [...STREET_NETWORK_SCHEMA.fields, ...CIRCUIT_ROUTE_FIELDS],
+  fields: [...STREET_NETWORK_DIAL_FIELDS, ...CIRCUIT_ROUTE_FIELDS],
   presets: [
     { id: "street-race", label: "Street race", values: { ...streetPreset("net"), connectivity: 0.85, loopiness: 0.3, segmentLength: 90, width: 9, lapLength: 1200 } },
-    { id: "circuit", label: "Closed circuit", values: { ...streetPreset("circuit"), gridSlots: 16 } },
+    {
+      id: "circuit",
+      label: "Closed circuit (flowing classic)",
+      values: closedCircuit({ gridness: 0.1, winding: 0.4, minCurveRadius: 11, width: 13, compactness: 0.25, elevation: 0.6, maxGrade: 0.08, lapLength: 3200 }),
+    },
+    {
+      id: "street-circuit",
+      label: "Street circuit (tight)",
+      values: closedCircuit({ gridness: 0.9, winding: 0.75, minCurveRadius: 10, width: 11, compactness: 0.6, elevation: 0.15, maxGrade: 0.06, lapLength: 2400 }),
+    },
+    {
+      id: "high-speed",
+      label: "High-speed",
+      values: closedCircuit({ gridness: 0.05, winding: 0.05, minCurveRadius: 12, width: 14, compactness: 0, elevation: 0.3, maxGrade: 0.05, lapLength: 4200 }),
+    },
+    {
+      id: "technical",
+      label: "Technical",
+      values: closedCircuit({ gridness: 0.3, winding: 0.95, minCurveRadius: 10, width: 12, compactness: 0.85, elevation: 0.4, maxGrade: 0.07, lapLength: 2800 }),
+    },
+    {
+      id: "figure-8",
+      label: "Figure-8",
+      values: closedCircuit({ gridness: 0.1, winding: 0.5, minCurveRadius: 11, width: 12, compactness: 0.3, elevation: 0.3, maxGrade: 0.07, crossover: true, lapLength: 3000 }),
+    },
   ],
 });
 
 /**
  * The race circuit generator: grows a street network ({@link STREET_NETWORK_GENERATOR}) and lifts a
  * closed, sealed-off lap out of it with {@link extractCircuitRoute}, both from the one injected seed.
- * Street dials at the `circuit` end give a purpose-built closed track; at the `net` end, a street race
- * through a city's own blocks. The ground `input` turns gaps into bridges and ridges into tunnels.
+ * Street dials at the `circuit` end give a purpose-built closed track designed to `lapLength`; at the
+ * `net` end, a street race through a city's own blocks. The ground `input` turns gaps into bridges and ridges into tunnels.
  *
  * @capability race-circuit lift a closed, sealed-off race lap out of an existing city street network
  */

@@ -123,7 +123,9 @@ describe("city generator contract", () => {
   // edge "crossings") got platform-independent answers; `otherLibm.test.ts` keeps them that way.
   // Re-recorded deliberately when the content pass landed (organic multi-centre zoning, block fill,
   // massing templates, landmarks/squares/parks, the village regime): every fabric plan changed, while
-  // the fabric-free `circuit` and `rally` plans — pure street output — kept their prints.
+  // the fabric-free `circuit` and `rally` plans — pure street output — kept their prints. The street
+  // race and circuit prints were re-recorded when the race start moved to stand the grid on the start
+  // straight, lap sectors split by simulated time, and circuit districts became designed laps.
   test("plans match their recorded fingerprints", () => {
     const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
     const volume = (meta: Record<string, unknown>, rotationY = 0): SceneKindObject => ({
@@ -137,7 +139,7 @@ describe("city generator contract", () => {
     const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
     expect(print(resolveCityObject(volume({})))).toBe("88303e5611499bf4");
     expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("b7fc0e65cbf9fc70");
-    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("f787c6c9f0961493");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("c83d5f3a0b6c5263");
     expect(
       print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
     ).toBe("5e1cc7126cc92ed6");
@@ -148,7 +150,7 @@ describe("city generator contract", () => {
       losangeles: "05e15a667b7b544d",
       beverlyhills: "4a98bdbaf663c0c2",
       ruralohio: "48ea680e2e32aa86",
-      circuit: "7c152308a32e3153",
+      circuit: "9c20f3884cea3aa4",
       rally: "05ad2ae4e5321edd",
       metropolis: "a937cc6616602443",
     };
@@ -1108,17 +1110,26 @@ describe("elevation, compactness, and default stability", () => {
     }
   });
 
-  test("compactness folds a circuit lap back through its own footprint", () => {
-    const circuit = { seed: "compact", loopiness: 1, connectivity: 0.05, branching: 0.15, deadEnds: 0, fabric: false, blockSize: 95, streetWidth: 12 };
-    const lapLength = (compactness: number): number => {
-      const city = resolveCityObject(cityVolume({ ...circuit, compactness }, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+  test("a circuit district designs its lap to the race lap length, and compactness packs it tighter", () => {
+    const circuit = { loopiness: 1, connectivity: 0.05, branching: 0.15, deadEnds: 0, fabric: false, blockSize: 95, streetWidth: 12, minCurveRadius: 12, raceLapLength: 2000 };
+    const lap = (seed: string, compactness: number): { length: number; footprint: number } => {
+      const city = resolveCityObject(cityVolume({ ...circuit, seed, compactness }, { halfExtents: { x: 500, y: 10, z: 500 } }))!;
       const loop = city.streets.reduce((longest, street) => (street.points.length > longest.points.length ? street : longest));
-      return loop.points.reduce(
-        (sum, point, i) => (i === 0 ? 0 : sum + Math.hypot(point[0] - loop.points[i - 1]![0], point[1] - loop.points[i - 1]![1])),
-        0,
-      );
+      const length = loop.points.reduce((sum, point, i) => (i === 0 ? 0 : sum + Math.hypot(point[0] - loop.points[i - 1]![0], point[1] - loop.points[i - 1]![1])), 0);
+      const xs = loop.points.map((p) => p[0]);
+      const zs = loop.points.map((p) => p[1]);
+      return { length, footprint: Math.sqrt((Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs))) };
     };
-    expect(lapLength(1)).toBeGreaterThan(lapLength(0) * 1.5);
+    let open = 0;
+    let packed = 0;
+    for (const seed of ["compact-1", "compact-2", "compact-3"]) {
+      const a = lap(seed, 0);
+      const b = lap(seed, 1);
+      expect(Math.abs(a.length - 2000) / 2000).toBeLessThan(0.02);
+      open += a.footprint;
+      packed += b.footprint;
+    }
+    expect(packed).toBeLessThan(open);
   });
 
   test("the new dials leave shipped documents resolving exactly as they did", () => {

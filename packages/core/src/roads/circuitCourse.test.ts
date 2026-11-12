@@ -14,7 +14,7 @@ function lap(preset: string, seed: string) {
 }
 
 describe("courseFromCircuit", () => {
-  for (const [preset, seed] of [["circuit", "a"], ["street-race", "b"]] as const) {
+  for (const [preset, seed] of [["circuit", "a"], ["street-circuit", "a"], ["high-speed", "a"], ["technical", "a"], ["figure-8", "a"], ["street-race", "b"]] as const) {
     test(`a ${preset} lap becomes a closed course that starts on its start line`, () => {
       const route = lap(preset, seed);
       const { course, gates, laps } = courseFromCircuit(route);

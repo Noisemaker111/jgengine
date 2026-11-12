@@ -4840,6 +4840,43 @@
 - `CircuitCourseOptions` (interface): interface CircuitCourseOptions — Options for {@link courseFromCircuit}.
 - `courseFromCircuit` (function): function courseFromCircuit(route: CircuitRoute, options: CircuitCourseOptions = {}): CircuitCourse — Turn a lifted lap into a closed {@link RouteCourse} that starts at the circuit's start line. `course.checkpoints({ at: gates.slice(0, -1), finish: 0 })` hands straight to `raceTrack({ checkpoints, laps })`.
 
+## @jgengine/core/roads/circuitDesigner
+
+- `CIRCUIT_LAP_LENGTH_FIELD` (const): const CIRCUIT_LAP_LENGTH_FIELD: { readonly type: "range"; readonly key: "lapLength"; readonly label: "lap length"; readonly min: 80; readonly max: 12000; readonly step: 10; readonly default: 2400; readonly unit: "m"; readonly explore: readonly [400, 6000]; } — The lap-length dial a closed circuit is designed to (and a street race searches for).
+- `CircuitCornerKind` (type): type CircuitCornerKind = "hairpin" | "slow" | "medium" | "sweeper" | "kink" | "carousel" | "double-apex" | "chicane" | "esses" — The corner grammar. Inserts (`chicane`, `esses`, and paired `kink`s) have zero net turn.
+- `CircuitCrossing` (interface): interface CircuitCrossing — A grade-separated crossing of a figure-8: one pass bridges over the other.
+- `CircuitDesign` (interface): interface CircuitDesign — A designed lap and its dressing. Index 0 is the start of the start straight; arrays are per centerline sample.
+- `CircuitDesignBrake` (interface): interface CircuitDesignBrake — One braking zone of the simulated lap, as arc lengths.
+- `CircuitDesignCorner` (interface): interface CircuitDesignCorner — One designed corner (one arc of a complex), positions as arc length from the start of the start straight.
+- `CircuitDesignInput` (interface): interface CircuitDesignInput — What the designer reads. Dials are the street generator's, read the circuit way.
+- `CircuitDesignStraight` (interface): interface CircuitDesignStraight — A run of zero curvature, positions as arc length.
+- `CircuitGarage` (interface): interface CircuitGarage — A garage box beside the pit lane.
+- `CircuitGrandstand` (interface): interface CircuitGrandstand — A grandstand spot facing the track.
+- `CircuitPitLane` (interface): interface CircuitPitLane — The pit lane: splits off the start straight, runs parallel behind the pit wall, rejoins before turn 1.
+- `CircuitRunoff` (interface): interface CircuitRunoff — A run-off area on one side of the track: gravel trap or asphalt.
+- `CircuitWall` (interface): interface CircuitWall — A permanent wall run beside the track: tyre wall, armco or concrete (pit) wall.
+- `SAMPLE_ROUND` (const): const SAMPLE_ROUND: 0.4321 — Where a metres → samples conversion rounds up: off the half-step, so nice numbers never tie.
+- `designCircuit` (function): function designCircuit(input: CircuitDesignInput): CircuitDesign — Design one circuit. Always returns a closed lap: when no candidate fits the volume at the requested length the lap is shortened step by step, ending at a simple fallback that fits anything.
+
+## @jgengine/core/roads/circuitDressing
+
+- `GRID_FRONT_GAP` (const): const GRID_FRONT_GAP: 8 — ⚠ undocumented
+- `GRID_ROW_PITCH` (const): const GRID_ROW_PITCH: 9 — Grid rows stand this far apart, the front row this far behind the line (m).
+- `gridLength` (function): function gridLength(slots: number): number — Length of road (m) a grid of `slots` cars occupies behind the line, front row to last row.
+- `lapTimeProfile` (function): function lapTimeProfile(centerline: readonly StreetVec2[]): { time: number[]; lapTime: number } — Simulated per-sample time of a lap read straight off its geometry (for laps with no design).
+- `startLineOffset` (function): function startLineOffset(straightLength: number, slots: number): number — Arc distance from the start of a straight to the start/finish line: far enough in that the whole grid stands on the straight behind it, and short of the braking zone at its end.
+- `timedSectors` (function): function timedSectors(time: readonly number[], lapTime: number, at: readonly number[], total: number, startIndex: number, breaks: readonly number[], count: number): number[] — Timing-sector starts as lap fractions (from the start line, `[0, …]`): each boundary sits near an equal share of the lap TIME, snapped to the nearest `breaks` sample (just past a significant corner) when one is close enough in time. `time` is elapsed seconds per sample from sample 0.
+
+## @jgengine/core/roads/circuitSim
+
+- `LapBrakingZone` (interface): interface LapBrakingZone — One stretch where the car brakes: where it starts and ends, and the speeds either side.
+- `LapSimCar` (interface): interface LapSimCar — Car model for {@link simulateLap}. Defaults: a downforce racer (μ 1.7, 90 m/s, 9 m/s² drive, 30 m/s² braking).
+- `LapSimResult` (interface): interface LapSimResult — The simulated lap: speed and elapsed time per sample, the lap time and its braking zones.
+- `circumRadius` (function): function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number — Radius of the circle through three points; Infinity when they are collinear.
+- `closedCurvature` (function): function closedCurvature(points: readonly StreetVec2[], span: number): number[] — Per-sample curvature (1/R) of a closed polyline, measured through the points ±`span` meters away.
+- `closedSpacing` (function): function closedSpacing(points: readonly StreetVec2[]): number[] — Arc distance from each sample of a closed polyline to the next.
+- `simulateLap` (function): function simulateLap(curvature: readonly number[], spacing: readonly number[], car: LapSimCar = {}, banking?: readonly number[]): LapSimResult — Simulate one flying lap. `curvature` is 1/R per sample (sign ignored), `spacing` the arc distance from each sample to the next (closed: the last sample joins the first), `banking` an optional road roll per sample (radians; tilting into the corner helps).
+
 ## @jgengine/core/roads/courseGenerator
 
 - `COURSE_GENERATOR` (const): const COURSE_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: "course"; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 300; readonly max… — The course generator: a designed, seeded race course with shortcuts, hazard spacing, drop set-pieces and fillable slots, inside a footprint. Its output previews in the editor's variant grid and backs the `course` scene kind.
@@ -4901,7 +4938,7 @@
 
 ## @jgengine/core/roads/raceCircuit
 
-- `CIRCUIT_ROUTE_SCHEMA` (const): const CIRCUIT_ROUTE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "lapLength"; readonly label: "lap length"; readonly group: "race"; readonly min: 80; readonly max: 12000; readonly step: 10; readonly default: 2400; readonly unit: "m"; readonly explore: readonly [400, 6000]; }… — The lap stage's own params, for a generator that lifts a lap out of streets it already grew (the `city` kind parses its race dials through this).
+- `CIRCUIT_ROUTE_SCHEMA` (const): const CIRCUIT_ROUTE_SCHEMA: ParamSchema<readonly [{ readonly group: "race"; readonly type: "range"; readonly key: "lapLength"; readonly label: "lap length"; readonly min: 80; readonly max: 12000; readonly step: 10; readonly default: 2400; readonly unit: "m"; readonly explore: readonly [400, 6000]; }… — The lap stage's own params, for a generator that lifts a lap out of streets it already grew (the `city` kind parses its race dials through this).
 - `CircuitBarrier` (interface): interface CircuitBarrier — One barrier run dropped onto the racing surface for the event (a chicane apex): a line of blocks across the road, perpendicular to `heading`, spanning `width` from one road edge.
 - `CircuitChicane` (interface): interface CircuitChicane — A barrier chicane on a long straight: two runs from opposite road edges a few car lengths apart, forcing a flick across the road. Event-scoped like the seals — only stood up while the race runs.
 - `CircuitCorner` (interface): interface CircuitCorner — One analyzed corner: where the lap turns, how hard, and which way.
@@ -4915,14 +4952,14 @@
 - `CircuitSeal` (interface): interface CircuitSeal — One street closed off where it leaves the lap — the thing that turns public roads into an instanced event. Stands just off the junction, spanning the sealed street's full width.
 - `CircuitSealKind` (type): type CircuitSealKind = "barrier" | "cones" | "fence" — How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing.
 - `CircuitStart` (interface): interface CircuitStart — The start/finish line: where it is, which way cars face, and the painted line across the road.
-- `RACE_CIRCUIT_GENERATOR` (const): const RACE_CIRCUIT_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: … — The race circuit generator: grows a street network ({@link STREET_NETWORK_GENERATOR}) and lifts a closed, sealed-off lap out of it with {@link extractCircuitRoute}, both from the one injected seed. Street dials at the `circuit` end give a purpose-built closed track; at the `net` end, a street race through a city's own blocks. The ground `input` turns gaps into bridges and ridges into tunnels.
+- `RACE_CIRCUIT_GENERATOR` (const): const RACE_CIRCUIT_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: … — The race circuit generator: grows a street network ({@link STREET_NETWORK_GENERATOR}) and lifts a closed, sealed-off lap out of it with {@link extractCircuitRoute}, both from the one injected seed. Street dials at the `circuit` end give a purpose-built closed track designed to `lapLength`; at the `net` end, a street race through a city's own blocks. The ground `input` turns gaps into bridges and ridges into tunnels.
 - `RACE_CIRCUIT_OUTPUT` (const): const RACE_CIRCUIT_OUTPUT: "race-circuit" — The race circuit generator's output family: a {@link RaceCircuit}.
-- `RACE_CIRCUIT_SCHEMA` (const): const RACE_CIRCUIT_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: "loopiness"; readonly l… — The race circuit's params: the street generator's dials and footprint, then the lap dials.
+- `RACE_CIRCUIT_SCHEMA` (const): const RACE_CIRCUIT_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: "loopiness"; readonly l… — The race circuit's params: the street generator's dials and footprint, then the lap dials. The lap length is one dial for both: the length a closed circuit is designed to, and the route a street race searches for.
 - `RaceCircuit` (interface): interface RaceCircuit — One generated race: the streets it was lifted from, and the lap (null when they hold no drivable cycle).
 - `StreetRace` (interface): interface StreetRace — One lifted race: its id, label, and the route (null when the streets hold no fitting route).
 - `StreetRaceKind` (type): type StreetRaceKind = "lap" | "sprint" — A closed lap, or a point-to-point sprint from one end of the city to another.
 - `StreetRaceSpec` (interface): interface StreetRaceSpec extends CircuitRouteConstraints — One named race a city hosts: a lap or sprint, its anchors, and any lap dials it overrides.
-- `circuitKerbs` (function): function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] — Red/white kerb strips hugging both road edges through each corner. Returns the polylines and stripe pitch as data; the renderer owns the mesh and the colors.
+- `circuitKerbs` (function): function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] — Red/white kerb strips where a racing line touches the road edge: an inside kerb across the apex (the middle of the corner) and an outside kerb at the track-out (apex to exit). Returns the polylines and stripe pitch as data; the renderer owns the mesh and the colors.
 - `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">, constraints: CircuitRouteConstraints = {}): CircuitRoute | null — Lift a sealed-off street race out of an existing street network: a closed lap by default, or a point-to-point sprint, optionally pinned through `via` anchors in order from a `start` hint ({@link CircuitRouteConstraints}). Returns `null` when no route fits (a pure tree of dead-end streets, or anchors the streets cannot link without crossing themselves), so callers can fall back or warn rather than render a broken race.
 - `extractStreetRaces` (function): function extractStreetRaces(network: StreetNetwork, specs: readonly StreetRaceSpec[], defaults: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): StreetRace[] — Lift several named races out of one street network — a city's race calendar. Each race is searched with its own seed (`<seed>:<id>`), and races without anchors are steered away from the streets the earlier ones already use, so a city's laps differ instead of all picking the same best loop.
 
