@@ -115,6 +115,33 @@ const reserve: MagazineReserve = {
 // magazine: { capacity: 30, reloadMs: 1800, reserve }
 ```
 
+When the pool is a stat (`ctx.scene.entity.stats`, or any store with `get` and
+`delta`), `statPoolReserve(stats, ownerId, statId)` is that adapter, and a
+`WeaponSystem` takes it as `deps.magazineReserve`.
+
+## Gate shots from an item-use handler
+
+When the gun fires from an input or item-use handler on the game clock and the
+engine projectile delivers the shot, `createWeaponTriggers` is the gate: one bank
+per world (`perContext`), `pull({ shooter, weapon, nowMs, intervalMs, rounds, ammo })`
+returns `fired`, `cooling`, `reloading` or `empty`, and `onShot` listeners present
+each shot that left. `ammo` is a `Magazine`, or a `MagazineReserve` for a gun that
+fires straight from its pool. `check` answers without spending, for a game that
+rolls a free round before the spend.
+
+```ts
+const triggersOf = perContext((ctx) => {
+  const triggers = createWeaponTriggers({ dryPull: "cooldown" });
+  triggers.onShot((shot) => presentShot(ctx, shot)); // sound, shake, muzzle feel
+  return triggers;
+});
+const pulled = triggersOf(ctx).pull({
+  shooter: input.from, weapon: gun.id, nowMs: ctx.time.now() * 1000, intervalMs: gun.fireIntervalMs,
+  rounds: 1, ammo: statPoolReserve(ctx.scene.entity.stats, input.from, "ammo_9mm"),
+});
+if (pulled.status === "fired") ctx.scene.entity.fireProjectile({ from: input.from, via: { amount: 0 }, aim, effect: "damage" });
+```
+
 ## Save and restore
 
 The magazine exposes `loaded()`/`reserve()`/`reloadFraction()` and the cadence

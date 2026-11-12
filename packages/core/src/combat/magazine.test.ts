@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createMagazine } from "@jgengine/core/combat/magazine";
+import { createMagazine, statPoolReserve } from "@jgengine/core/combat/magazine";
 
 describe("createMagazine", () => {
   test("starts full with a self-managed reserve", () => {
@@ -330,6 +330,46 @@ describe("interrupted reloads", () => {
   test("an idle snapshot keeps its old shape", () => {
     const mag = createMagazine({ capacity: 4, reloadMs: 500, reserve: 8 });
     expect("paused" in mag.snapshot()).toBe(false);
+  });
+});
+
+describe("statPoolReserve", () => {
+  function store(initial: Record<string, number>) {
+    const pools: Record<string, number> = { ...initial };
+    return {
+      pools,
+      stats: {
+        get: (owner: string, stat: string) => (`${owner}.${stat}` in pools ? { current: pools[`${owner}.${stat}`]! } : null),
+        delta: (owner: string, stat: string, amount: number) => { pools[`${owner}.${stat}`]! += amount; },
+      },
+    };
+  }
+
+  test("reloads draw from the stat, and a shared pool is spent by every magazine on it", () => {
+    const { pools, stats } = store({ "p1.ammo_light": 10 });
+    const pistol = createMagazine({ capacity: 6, reloadMs: 100, loaded: 0, reserve: statPoolReserve(stats, "p1", "ammo_light") });
+    const smg = createMagazine({ capacity: 8, reloadMs: 100, loaded: 0, reserve: statPoolReserve(stats, "p1", "ammo_light") });
+    expect(pistol.startReload()).toBe(true);
+    pistol.tick(0.1);
+    expect([pistol.loaded(), pools["p1.ammo_light"]]).toEqual([6, 4]);
+    expect(smg.reserve()).toBe(4);
+    expect(smg.startReload()).toBe(true);
+    smg.tick(0.1);
+    expect([smg.loaded(), pools["p1.ammo_light"]]).toEqual([4, 0]);
+    expect(pistol.fire(1)).toBe(true);
+    expect(pistol.canReload()).toBe(false);
+    pistol.addReserve(5);
+    expect(pools["p1.ammo_light"]).toBe(5);
+    expect(pistol.canReload()).toBe(true);
+  });
+
+  test("a missing stat is an empty reserve and refuses a spend", () => {
+    const { stats } = store({});
+    const reserve = statPoolReserve(stats, "npc", "ammo_light");
+    expect(reserve.current()).toBe(0);
+    expect(reserve.spend(1)).toBe(false);
+    expect(reserve.spend(0)).toBe(true);
+    expect(createMagazine({ capacity: 6, reloadMs: 100, loaded: 0, reserve }).canReload()).toBe(false);
   });
 });
 

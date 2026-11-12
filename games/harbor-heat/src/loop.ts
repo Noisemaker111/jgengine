@@ -267,7 +267,7 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 }
 
 function onInit(ctx: GameContext): void {
-  resetWeaponState();
+  resetWeaponState(ctx);
   resetMissionState(ctx);
   // Build the mission session here so its probe is on the window from boot, not from the first parcel.
   courierLoop(ctx);

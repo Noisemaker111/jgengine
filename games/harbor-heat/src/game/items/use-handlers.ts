@@ -1,42 +1,57 @@
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
+import { statPoolReserve } from "@jgengine/core/combat/magazine";
+import { createWeaponTriggers, type WeaponTriggerShot, type WeaponTriggers } from "@jgengine/core/combat/weaponTriggers";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import { cityEvent } from "../cityRuntime";
 import { landExplosion, landWeaponHit } from "../combat/hitModel";
 import { AMMO_STAT_IDS, gearById, weaponById } from "./weapons/catalog";
 import { gunIntervalScale } from "../progression/upgrades";
 
-const lastFiredAt = new Map<string, number>();
-
-export function resetWeaponState(): void {
-  lastFiredAt.clear();
+/** What a gun shot looks and sounds like to the street: the camera kicks and the block hears it. */
+function presentGunShot(ctx: GameContext, shot: WeaponTriggerShot): void {
+  const def = weaponById(shot.weapon);
+  if (def?.use !== "fireGun") return;
+  cameraShake(def.ammo === "shell" ? 0.28 : 0.1);
+  const shooter = ctx.scene.entity.get(shot.shooter);
+  if (shooter !== null) cityEvent(ctx, { kind: "gunfire", at: shooter.position, by: shot.shooter });
 }
 
-function gate(ctx: GameContext, from: string, id: string, intervalMs: number): boolean {
-  const nowMs = ctx.time.now() * 1000;
-  const key = `${from}:${id}`;
-  if (nowMs < (lastFiredAt.get(key) ?? 0)) return false;
-  lastFiredAt.set(key, nowMs + intervalMs);
-  return true;
+/**
+ * Every shooter's trigger per weapon, on the game clock. A dry pull waits out the weapon's interval,
+ * so "OUT OF AMMO" repeats at the gun's cadence rather than every frame.
+ */
+const triggersOf = perContext((ctx): WeaponTriggers => {
+  const triggers = createWeaponTriggers({ dryPull: "cooldown" });
+  triggers.onShot((shot) => presentGunShot(ctx, shot));
+  return triggers;
+});
+
+/** The weapon triggers for this world: cadence state and the per-shot presentation seam. */
+export function weaponTriggers(ctx: GameContext): WeaponTriggers {
+  return triggersOf(ctx);
+}
+
+export function resetWeaponState(ctx: GameContext): void {
+  triggersOf(ctx).clear();
 }
 
 const fireGun: ItemUseHandler<GameContext> = {
   apply(ctx, input) {
     const def = weaponById(input.itemId);
     if (def === undefined) return { state: ctx, error: "unknown-weapon" };
-    if (!gate(ctx, input.from, def.id, def.fireIntervalMs * (input.from === ctx.player.userId ? gunIntervalScale(ctx) : 1))) return { state: ctx };
+    const pulled = triggersOf(ctx).pull({
+      shooter: input.from,
+      weapon: def.id,
+      nowMs: ctx.time.now() * 1000,
+      intervalMs: def.fireIntervalMs * (input.from === ctx.player.userId ? gunIntervalScale(ctx) : 1),
+      // Guns fire straight from the shooter's ammo stat: Harbor Heat has no magazines.
+      ...(def.ammo === "none" ? {} : { rounds: def.ammoPerShot, ammo: statPoolReserve(ctx.scene.entity.stats, input.from, AMMO_STAT_IDS[def.ammo]) }),
+    });
+    if (pulled.status === "empty") ctx.scene.entity.floatText({ instanceId: input.from, text: "OUT OF AMMO", kind: "warn" });
+    if (pulled.status !== "fired") return { state: ctx };
 
-    if (def.ammo !== "none") {
-      const statId = AMMO_STAT_IDS[def.ammo];
-      const ammo = ctx.scene.entity.stats.get(input.from, statId);
-      if (ammo === null || ammo.current < def.ammoPerShot) {
-        ctx.scene.entity.floatText({ instanceId: input.from, text: "OUT OF AMMO", kind: "warn" });
-        return { state: ctx };
-      }
-      ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
-    }
-
-    cameraShake(def.ammo === "shell" ? 0.28 : 0.1);
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     // The projectile owns delivery, the cone and the muzzle→impact tracer. It carries no payload:
     // the shot reports who it reached, and the shared damage chart decides what the hit is worth.
@@ -46,8 +61,6 @@ const fireGun: ItemUseHandler<GameContext> = {
       aim,
       effect: "damage",
     });
-    const shooter = ctx.scene.entity.get(input.from);
-    if (shooter !== null) cityEvent(ctx, { kind: "gunfire", at: shooter.position, by: input.from });
     const settled = ctx.scene.entity.settleProjectile(shotId);
     if (settled.status === "settled" && settled.hits.length > 0) {
       const hit = settled.hits[0];
@@ -74,7 +87,8 @@ const throwGrenade: ItemUseHandler<GameContext> = {
       return { state: ctx, error: "not-throwable" };
     }
     if (ctx.player.inventory.count("backpack", input.itemId) < 1) return { state: ctx };
-    if (!gate(ctx, input.from, def.id, def.fireIntervalMs)) return { state: ctx };
+    const thrown = triggersOf(ctx).pull({ shooter: input.from, weapon: def.id, nowMs: ctx.time.now() * 1000, intervalMs: def.fireIntervalMs });
+    if (thrown.status !== "fired") return { state: ctx };
     ctx.player.inventory.take("backpack", input.itemId, 1);
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     const shotId = ctx.scene.entity.fireProjectile({

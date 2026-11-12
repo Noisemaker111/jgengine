@@ -28,6 +28,17 @@ same `WeaponDefinition`: `loot/lootGen` rolls the item and `loot/lootWeapon`'s
 `lootWeaponDefinition` maps its stats onto one, so no second weapon type exists;
 see
 [reference.md](reference.md#weapons-as-data).
+When the reserve is a shared ammo stat (every gun of one ammo class spends it,
+pickups refill it), wrap it once with `statPoolReserve(stats, owner, statId)`
+(`combat/magazine`) and hand that to `createMagazine({ reserve })` or
+`createWeaponSystem`'s `deps.magazineReserve`; never mirror the stat into a
+numeric `reserve`. When a gun fires from an input or item-use handler on the game
+clock and the engine projectile delivers the shot, gate it with
+`createWeaponTriggers` (`combat/weaponTriggers`), kept per world with
+`perContext`: cadence per shooter and weapon, the ammo spend from a magazine or
+straight from a reserve, and `onShot` as the one seam where the game presents a
+shot (sound, shake, muzzle feel, AI noise) with its own numbers. Scrap Signal and
+Harbor Heat are the adopters.
 For scene-backed `createProjectileSystem`, inject authoritative `rng`; spread
 samples independent pellet rays and prediction stays on the center ray. The
 weapon-plumbing recipe covers the bounded cone and cover contracts.

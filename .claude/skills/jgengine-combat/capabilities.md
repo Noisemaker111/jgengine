@@ -369,6 +369,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `patchStatPool` (function) · `import { patchStatPool } from "@jgengine/core/combat"`
 
+## stat-pool-reserve — draw a magazine's reloads, or a weapon's shots, from a shared ammo stat pool
+
+- `statPoolReserve` (function) · `import { statPoolReserve } from "@jgengine/core/combat"`
+
 ## status-application — resolve a data-defined status application with chance, matchup scaling, and stacking policy
 
 - `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
@@ -464,3 +468,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weapon-system — run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime
 
 - `createWeaponSystem` (function) · `import { createWeaponSystem } from "@jgengine/core/combat"`
+
+## weapon-triggers — gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam
+
+- `createWeaponTriggers` (function) · `import { createWeaponTriggers } from "@jgengine/core/combat"`

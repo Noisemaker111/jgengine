@@ -121,10 +121,12 @@ export {
 } from "./combat/hitZones";
 export {
   createMagazine,
+  statPoolReserve,
   type Magazine,
   type MagazineConfig,
   type MagazineReserve,
   type MagazineSnapshot,
+  type ReserveStatAccess,
 } from "./combat/magazine";
 export {
   createProjectileSystem,
@@ -301,6 +303,17 @@ export {
   type WeaponSystemState,
   type WeaponTickResult,
 } from "./combat/weaponSystem";
+export {
+  createWeaponTriggers,
+  type WeaponAmmoSource,
+  type WeaponPull,
+  type WeaponPullResult,
+  type WeaponPullStatus,
+  type WeaponTriggerShot,
+  type WeaponTriggers,
+  type WeaponTriggersConfig,
+  type WeaponTriggersSnapshot,
+} from "./combat/weaponTriggers";
 export { createAccumulatorMeter, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";

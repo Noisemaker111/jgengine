@@ -5,6 +5,39 @@ export interface MagazineReserve {
   gain?(amount: number): void;
 }
 
+/**
+ * The two calls a {@link statPoolReserve} needs from the caller's stat store: read a pool's current
+ * value and move it by a signed amount. `ctx.scene.entity.stats` satisfies it, and so does any store
+ * that can read and nudge a named number per owner.
+ */
+export interface ReserveStatAccess {
+  get(ownerId: string, statId: string): { current: number } | null;
+  delta(ownerId: string, statId: string, amount: number): unknown;
+}
+
+/**
+ * A {@link MagazineReserve} over one owner's ammo stat, so the stat stays the only owner of the count:
+ * pickups, other weapons sharing that ammo type and the reload all read and write the same pool. A
+ * missing stat reads as an empty reserve, which blocks a reload or a reserve-fed shot.
+ *
+ * @capability stat-pool-reserve draw a magazine's reloads, or a weapon's shots, from a shared ammo stat pool
+ */
+export function statPoolReserve(stats: ReserveStatAccess, ownerId: string, statId: string): MagazineReserve {
+  const current = (): number => stats.get(ownerId, statId)?.current ?? 0;
+  return {
+    current,
+    spend(amount) {
+      if (amount <= 0) return true;
+      if (amount > current()) return false;
+      stats.delta(ownerId, statId, -amount);
+      return true;
+    },
+    gain(amount) {
+      if (amount > 0) stats.delta(ownerId, statId, amount);
+    },
+  };
+}
+
 /** Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from. */
 export interface MagazineConfig {
   capacity: number;
@@ -228,5 +261,6 @@ export function createMagazine(config: MagazineConfig): Magazine {
     },
   };
 }
+
 
 // Measurement line batch5.

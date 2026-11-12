@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS } from "./ammo";
 import { pickCharacter, resetCharacterState, talentTree } from "./characters";
 import {
-  consumeRound,
+  gunMagazine,
   effectiveMagSize,
   type GunDef,
   isReloading,
@@ -62,20 +62,20 @@ describe("magazine adoption onto createMagazine", () => {
     expect(isReloading(ctx, gun)).toBe(false);
   });
 
-  test("consumeRound spends ammoPerShot and refuses once empty", () => {
+  test("a magazine spends ammoPerShot and refuses once empty", () => {
     const { ctx } = makeCtx({ [AMMO]: 100 });
     const gun = testGun({ ammoPerShot: 2, magSize: 5 });
-    expect(consumeRound(ctx, gun)).toBe(true); // 5 -> 3
+    expect(gunMagazine(ctx, gun).fire(gun.ammoPerShot)).toBe(true); // 5 -> 3
     expect(magLoaded(ctx, gun)).toBe(3);
-    expect(consumeRound(ctx, gun)).toBe(true); // 3 -> 1
-    expect(consumeRound(ctx, gun)).toBe(false); // 1 < 2, no effect
+    expect(gunMagazine(ctx, gun).fire(gun.ammoPerShot)).toBe(true); // 3 -> 1
+    expect(gunMagazine(ctx, gun).fire(gun.ammoPerShot)).toBe(false); // 1 < 2, no effect
     expect(magLoaded(ctx, gun)).toBe(1);
   });
 
   test("reload draws from the shared ammo-type reserve after reloadMs of ticks", () => {
     const { ctx, reserve } = makeCtx({ [AMMO]: 12 });
     const gun = testGun({ magSize: 5, reloadMs: 2000 });
-    for (let i = 0; i < 5; i += 1) consumeRound(ctx, gun); // empty the mag
+    for (let i = 0; i < 5; i += 1) gunMagazine(ctx, gun).fire(gun.ammoPerShot); // empty the mag
     expect(magLoaded(ctx, gun)).toBe(0);
 
     expect(startReload(ctx, gun)).toBe(true);
@@ -95,7 +95,7 @@ describe("magazine adoption onto createMagazine", () => {
   test("reload takes only what the reserve can supply (partial refill)", () => {
     const { ctx, reserve } = makeCtx({ [AMMO]: 3 });
     const gun = testGun({ magSize: 5, reloadMs: 1000 });
-    for (let i = 0; i < 5; i += 1) consumeRound(ctx, gun);
+    for (let i = 0; i < 5; i += 1) gunMagazine(ctx, gun).fire(gun.ammoPerShot);
     expect(startReload(ctx, gun)).toBe(true);
     tickReloads(ctx, 1.0);
     expect(magLoaded(ctx, gun)).toBe(3); // only 3 available
@@ -108,17 +108,17 @@ describe("magazine adoption onto createMagazine", () => {
 
     const dry = makeCtx({ [AMMO]: 0 });
     const gun = testGun();
-    for (let i = 0; i < 5; i += 1) consumeRound(dry.ctx, gun);
+    for (let i = 0; i < 5; i += 1) gunMagazine(dry.ctx, gun).fire(gun.ammoPerShot);
     expect(startReload(dry.ctx, gun)).toBe(false); // reserve exhausted
 
     const mid = makeCtx({ [AMMO]: 100 });
     const gun2 = testGun();
-    consumeRound(mid.ctx, gun2);
+    gunMagazine(mid.ctx, gun2).fire(gun2.ammoPerShot);
     expect(startReload(mid.ctx, gun2)).toBe(true);
     expect(startReload(mid.ctx, gun2)).toBe(false); // already reloading
   });
 
-  test("mag capacity tracks live magSize talent bonus (rebuild on drift)", () => {
+  test("mag capacity tracks live magSize talent bonus (retuned on drift)", () => {
     const { ctx } = makeCtx({ [AMMO]: 100 });
     const gun = testGun({ magSize: 10, reloadMs: 1000 });
     expect(magLoaded(ctx, gun)).toBe(10);
@@ -131,8 +131,8 @@ describe("magazine adoption onto createMagazine", () => {
     tree.allocate("gunk_expanded_drum");
     expect(effectiveMagSize(gun)).toBe(12);
 
-    // Fire a round, then reload: the rebuilt magazine now fills to the larger capacity.
-    consumeRound(ctx, gun); // loaded 10 -> 9, capacity now 12
+    // Fire a round, then reload: the retuned magazine now fills to the larger capacity.
+    gunMagazine(ctx, gun).fire(gun.ammoPerShot); // loaded 10 -> 9, capacity now 12
     expect(magLoaded(ctx, gun)).toBe(9);
     expect(startReload(ctx, gun)).toBe(true);
     tickReloads(ctx, 1.0);

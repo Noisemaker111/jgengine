@@ -1,6 +1,8 @@
 import type { ProjectileShotInput } from "@jgengine/core/combat/projectiles";
+import { createWeaponTriggers, type WeaponTriggerShot, type WeaponTriggers } from "@jgengine/core/combat/weaponTriggers";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { AMMO_LABELS } from "../ammo";
@@ -9,31 +11,38 @@ import { resolveGunHit, type GunHitMods } from "../combat/hitModel";
 import { perkAfterHit, perkDamageScale, perkHitMods, perkShot, watchDeaths, withGunKills } from "../combat/gunPerks";
 import { noteHit, noteShot } from "../feel";
 import { playHit, playShot } from "../audio/drive";
-import {
-  applyElementalProc,
-  cancelReload,
-  consumeRound,
-  gunById,
-  isReloading,
-  magLoaded,
-  startReload,
-} from "../handroll";
+import { applyElementalProc, gunById, gunMagazine, startReload } from "../handroll";
 import { fireHandling, handlingView, playerStance, shotAim } from "../handling";
 import type { HitReactionConfig } from "@jgengine/core/combat/hitReaction";
 
 const combatRng = seededRng("scrap-combat-procs");
-const lastFiredAt = new Map<string, number>();
-const lastWarnAt = new Map<string, number>();
 
 export const GRENADE = { damage: 55, radius: 4.2, fuseTime: 1.3, speed: 18, intervalMs: 900 };
 
-export function resetWeaponState(): void {
-  lastFiredAt.clear();
-  lastWarnAt.clear();
+/** A gun shot as the player feels it: the viewmodel's muzzle flash and kick, the report, the shake. */
+function presentGunShot(ctx: GameContext, shot: WeaponTriggerShot): void {
+  const gun = gunById(shot.weapon);
+  if (gun === undefined) return;
+  noteShot(shot.nowMs, gun.family);
+  playShot(ctx, gun.family);
+  cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
+}
+
+/** Per-world weapon state: every trigger's cadence (guns and the grenade) and the warning throttle. */
+const weaponsOf = perContext((ctx): { triggers: WeaponTriggers; lastWarnAt: Map<string, number> } => {
+  const triggers = createWeaponTriggers();
+  triggers.onShot((shot) => presentGunShot(ctx, shot));
+  return { triggers, lastWarnAt: new Map() };
+});
+
+/** The weapon triggers for this world: cadence state and the per-shot presentation seam. */
+export function weaponTriggers(ctx: GameContext): WeaponTriggers {
+  return weaponsOf(ctx).triggers;
 }
 
 function warn(ctx: GameContext, from: string, text: string): void {
   const nowMs = ctx.time.now() * 1000;
+  const lastWarnAt = weaponsOf(ctx).lastWarnAt;
   const at = lastWarnAt.get(from) ?? 0;
   if (nowMs - at < 600) return;
   lastWarnAt.set(from, nowMs);
@@ -84,34 +93,39 @@ const fireGun: ItemUseHandler<GameContext> = {
     const nowMs = ctx.time.now() * 1000;
     // A sprinting chassis has its gun down: the trigger waits until the sprint ends.
     if (playerStance(ctx).sprinting) return { state: ctx, error: "sprinting" };
-    if (isReloading(ctx, gun)) {
+    const reloading = gunMagazine(ctx, gun);
+    if (reloading.isReloading()) {
       // Rounds still in the magazine: the trigger cuts the reload short and fires them.
-      if (magLoaded(ctx, gun) < gun.ammoPerShot) return { state: ctx };
-      cancelReload(ctx, gun);
+      if (!reloading.canFire(gun.ammoPerShot)) return { state: ctx };
+      reloading.cancelReload();
     }
+    // Read again: a talent or perk change that waited out the reload retunes the magazine now.
+    const magazine = gunMagazine(ctx, gun);
 
-    const gateKey = `${input.from}:${gun.id}`;
-    const readyAt = lastFiredAt.get(gateKey) ?? 0;
-    if (nowMs < readyAt) return { state: ctx };
-
-    if (magLoaded(ctx, gun) < gun.ammoPerShot) {
+    const triggers = weaponTriggers(ctx);
+    const pull = {
+      shooter: input.from,
+      weapon: gun.id,
+      nowMs,
+      intervalMs: Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))),
+      rounds: gun.ammoPerShot,
+      ammo: magazine,
+    };
+    const ready = triggers.check(pull);
+    if (ready === "cooling") return { state: ctx };
+    if (ready === "empty") {
       if (!startReload(ctx, gun)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
       return { state: ctx };
     }
     // Perk shot events read the magazine before the round leaves it (Opening Shot wants a full mag).
     const shot = perkShot(ctx, gun, input.aim);
-    // Free-shot refund: roll before spending so a refunded shot leaves the mag untouched (the old code
-    // spent the round then added it back). The `combatRng()` draw stays gated behind `ammoRefund > 0` and
-    // happens once per fired shot, so the shared proc/crit rng stream keeps the same order.
-    if (bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund")) {
-      ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
-    } else {
-      consumeRound(ctx, gun);
-    }
-    lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));
-    noteShot(nowMs, gun.family);
-    playShot(ctx, gun.family);
-    cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
+    // Free-shot refund: roll before spending so a refunded shot leaves the mag untouched. The
+    // `combatRng()` draw stays gated behind `ammoRefund > 0` and happens once per fired shot, so the
+    // shared proc/crit rng stream keeps the same order.
+    const free = bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund");
+    if (free) ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
+    // The trigger spends the round, starts the interval and presents the shot (see `presentGunShot`).
+    triggers.pull({ ...pull, free });
 
     const look = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     // The cone and climb are the engine handling's: read the climb before this shot adds to it.
@@ -182,10 +196,8 @@ const throwGrenade: ItemUseHandler<GameContext> = {
       warn(ctx, input.from, "NO GRENADES");
       return { state: ctx };
     }
-    const nowMs = ctx.time.now() * 1000;
-    const readyAt = lastFiredAt.get(`${input.from}:grenade`) ?? 0;
-    if (nowMs < readyAt) return { state: ctx };
-    lastFiredAt.set(`${input.from}:grenade`, nowMs + GRENADE.intervalMs);
+    const thrown = weaponTriggers(ctx).pull({ shooter: input.from, weapon: "grenade", nowMs: ctx.time.now() * 1000, intervalMs: GRENADE.intervalMs });
+    if (thrown.status !== "fired") return { state: ctx };
     ctx.scene.entity.stats.delta(input.from, "grenades", -1);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };

@@ -9,7 +9,7 @@ import { activeCharacter, pickCharacter, resetCharacterState, talentTree } from 
 import { resolveGunHit, syncCombatTargets, isFluxed } from "./combat/hitModel";
 import { earn, cashEntries } from "./cash";
 import {
-  consumeRound,
+  gunMagazine,
   enterDowned,
   gunById,
   magLoaded,
@@ -67,7 +67,7 @@ function fluxGun(): GunDef {
 function runState(ctx: GameContext) {
   const picked = rollGun(seededRng("save-document-gun"), 4, { family: "pistol" });
   ctx.player.inventory.put("hotbar", picked.id, 1, { slot: 0 });
-  for (let shot = 0; shot < 5; shot += 1) consumeRound(ctx, picked);
+  for (let shot = 0; shot < 5; shot += 1) gunMagazine(ctx, picked).fire(picked.ammoPerShot);
   session.selectSlot(ctx, 2);
   enterDowned(ctx);
   return picked;
