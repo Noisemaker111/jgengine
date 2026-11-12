@@ -1,5 +1,5 @@
 import { seededRng } from "../../random/rng";
-import { siteModifier, OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../growth/plantEnvironment";
+import { MIN_STAND_SPACING_INDEX, siteModifier, OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../growth/plantEnvironment";
 import { PLANT_PI, plantCos, plantExp, plantLog, plantPow, plantSin } from "../growth/plantMath";
 import type { PlantSpecies } from "../species/plantSpecies";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../species/speciesReference";
@@ -590,6 +590,6 @@ export function standTreeGrowth(options: Pick<StandOptions, "species" | "seed" |
   const spacingIndex = spacingM / Math.max(BREAST_HEIGHT_M, tree.heightM);
   const base = options.site ?? OPEN_TEMPERATE_SITE;
   const env: PlantEnvironment = { ...base, light: Math.max(0.05, Math.min(1, tree.meanLight)) };
-  if (spacingIndex < 1) env.stand = { spacingIndex: Math.max(0.15, spacingIndex) };
+  if (spacingIndex < 1) env.stand = { spacingIndex: Math.max(MIN_STAND_SPACING_INDEX, spacingIndex) };
   return { species, env, seed: `${options.seed}:${tree.serial}`, ageYears: Math.round(tree.ageYears) };
 }

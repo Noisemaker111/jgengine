@@ -13,7 +13,7 @@ import { PLANT_LIBRARY } from "../species/data/plantLibrary";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { hashPlantStructure } from "../structure/plantStructure";
 import { createWorkerPlantGrower } from "./plantGrowPool";
-import { createPlantGrownGenerator, PLANT_GROWN_SCHEMA, PLANT_MESH_OUTPUT } from "./plantGrown";
+import { createPlantGrownGenerator, PLANT_GROWN_SCHEMA, PLANT_MESH_OUTPUT, plantSiteOf } from "./plantGrown";
 
 /** The three looks the milestone asks for, built only from style params. */
 const REALISTIC = { foliage: "leaves", shading: "lit", barkGrain: true };
@@ -140,6 +140,32 @@ describe("plant.grown", () => {
     expect(snag.leaves.positions.length).toBe(0);
     expect(snag.structureHash).not.toBe(living.structureHash);
     expect(snag.stats.heightM).toBeLessThan(living.stats.heightM);
+  });
+
+  test("a closer stand grows a higher clear bole; stand 0 is the open-grown tree, unchanged (#2735)", () => {
+    const generator = createPlantGrownGenerator(createPlantCache());
+    const maple = { species: "acer-saccharum", age: 25, seed: "tree~v0" };
+    const lowestLeaf = (stand?: number): number => {
+      const { positions } = runGenerator(generator, stand === undefined ? maple : { ...maple, stand }).leaves;
+      let lowest = Number.POSITIVE_INFINITY;
+      for (let i = 1; i < positions.length; i += 3) lowest = Math.min(lowest, positions[i] ?? 0);
+      return lowest;
+    };
+    const [open, sparse, stocked] = [lowestLeaf(0), lowestLeaf(0.6), lowestLeaf(0.25)];
+    expect(sparse).toBeGreaterThan(open);
+    expect(stocked).toBeGreaterThan(sparse);
+    expect(open).toBeLessThan(1);
+    expect(stocked, "a fully stocked 25-year maple has no foliage at eye level").toBeGreaterThan(2);
+
+    // Open-grown stays the default and grows exactly what it grew before the setting existed.
+    const grownOpen = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, "tree~v0");
+    grownOpen.step(25);
+    const before = hashPlantStructure(grownOpen.structure(200));
+    expect(runGenerator(generator, maple).structureHash).toBe(before);
+    expect(runGenerator(generator, { ...maple, stand: 0 }).structureHash).toBe(before);
+    expect(parseParams(PLANT_GROWN_SCHEMA, maple).stand, "open-grown by default").toBe(0);
+    expect(plantSiteOf({ light: 1, stand: 0 })).toEqual(OPEN_TEMPERATE_SITE);
+    expect(plantSiteOf({ light: 1, stand: 0.05 }).stand, "closer than a stand self-thins to").toEqual({ spacingIndex: 0.15 });
   });
 
   test("detail picks the mesh level from one structure", () => {
