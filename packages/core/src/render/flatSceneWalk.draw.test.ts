@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { sceneWalkStarts, setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 
-import { installFlatSceneWalk, type FlatWalkRenderer } from "./flatSceneWalk.draw";
+import { installFlatSceneWalk, reuseSceneWalk, type FlatWalkRenderer } from "./flatSceneWalk.draw";
 
 type Any = THREE.Object3D & Record<string, unknown>;
 
@@ -220,4 +220,61 @@ test("a render that reuses the beauty matrices walks the real scene, and a shado
   renderer2.shadowMap.type = THREE.BasicShadowMap;
   renderer2.render(scene2, camera);
   expect(shadowScenes.map((drawn) => drawn === scene2)).toEqual([true, false, true]);
+});
+
+/** Run `render` with the scene's matrix pass off, as a postfx prepass draws. */
+function withoutMatrixPass<T>(scene: THREE.Object3D, render: () => T): T {
+  scene.matrixWorldAutoUpdate = false;
+  try {
+    return render();
+  } finally {
+    scene.matrixWorldAutoUpdate = true;
+  }
+}
+
+/** The scene children three's walk started from on each render, as the flat walk left them. */
+function recordWalkRoots(renderer: FlatWalkRenderer, scene: THREE.Object3D): THREE.Object3D[][] {
+  const walked: THREE.Object3D[][] = [];
+  const lists = renderer.renderLists;
+  const get = lists.get;
+  lists.get = (drawn, depth) => {
+    const list = get.call(lists, drawn, depth);
+    walked.push(scene.children);
+    return list;
+  };
+  return walked;
+}
+
+test("a prepass inside reuseSceneWalk walks the beauty render's starts and acts on what a full walk of the scene would", () => {
+  const camera = new THREE.PerspectiveCamera();
+  camera.position.set(5, 5, 30);
+  camera.updateMatrixWorld();
+  for (let seed = 1; seed <= 40; seed += 1) {
+    const scene = randomScene(seed);
+    skipCulledMatrices(scene);
+    const renderer = walkingRenderer();
+    renderer.render(scene, camera);
+    const full = withoutMatrixPass(scene, () => renderer.render(scene, camera));
+
+    installFlatSceneWalk(renderer, scene);
+    renderer.render(scene, camera);
+    const starts = sceneWalkStarts(scene)?.starts;
+    const walked = recordWalkRoots(renderer, scene);
+    const prepass = withoutMatrixPass(scene, () => reuseSceneWalk(scene, () => renderer.render(scene, camera)));
+    expect(prepass).toEqual(full);
+    expect(walked[0]).toBe(starts as THREE.Object3D[]);
+    expect(scene.children.every((child) => child.parent === scene)).toBe(true);
+  }
+});
+
+test("a matrix pass between the beauty render and a reusing prepass leaves the prepass walking the real scene", () => {
+  const scene = randomScene(11);
+  skipCulledMatrices(scene);
+  const renderer = walkingRenderer();
+  installFlatSceneWalk(renderer, scene);
+  renderer.render(scene, new THREE.PerspectiveCamera());
+  scene.updateMatrixWorld();
+  const walked = recordWalkRoots(renderer, scene);
+  withoutMatrixPass(scene, () => reuseSceneWalk(scene, () => renderer.render(scene, new THREE.PerspectiveCamera())));
+  expect(walked[0]!.every((child) => child.parent === scene)).toBe(true);
 });

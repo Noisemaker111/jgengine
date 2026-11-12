@@ -206,7 +206,12 @@ describe("CSM lifecycle", () => {
     const material = new THREE.MeshStandardMaterial();
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material);
     let authoredDraws = 0;
-    const prior = () => { authoredDraws++; };
+    const seen: { self: unknown; args: unknown[] } = { self: null, args: [] };
+    const prior = function (this: unknown, ...args: unknown[]) {
+      authoredDraws++;
+      seen.self = this;
+      seen.args = args;
+    } as THREE.Object3D["onBeforeRender"];
     mesh.onBeforeRender = prior;
     group.add(mesh);
     expect(calls).toEqual([material]);
@@ -216,6 +221,11 @@ describe("CSM lifecycle", () => {
     for (let frame = 0; frame < 100; frame++) draw();
     expect(calls).toEqual([material, replacement]);
     expect(authoredDraws).toBe(100);
+    // The authored hook gets the mesh and three's six arguments, as three would have called it.
+    expect(seen.self).toBe(mesh);
+    expect(seen.args.length).toBe(6);
+    expect(seen.args[1]).toBe(scene);
+    expect(seen.args[4]).toBe(replacement);
     group.remove(mesh);
     expect(mesh.onBeforeRender).toBe(prior);
     const afterRemoval = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());

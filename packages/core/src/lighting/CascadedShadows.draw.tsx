@@ -435,8 +435,11 @@ export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () 
       lastMaterial = mesh.material;
       patchMesh(mesh);
     };
-    const before: typeof prior = function (this: THREE.Object3D, ...args) {
-      prior.apply(this, args);
+    // Runs for every draw of every mesh, shadow passes included: the arguments are passed on as
+    // they came, never gathered into an array, and three's empty default hook is not called at all.
+    const authored = prior !== THREE.Object3D.prototype.onBeforeRender;
+    const before: typeof prior = function (this: THREE.Object3D, renderer, drawnScene, camera, geometry, material, group) {
+      if (authored) prior.call(this, renderer, drawnScene, camera, geometry, material, group);
       checkSwap();
     };
     node.addEventListener("childadded", added);
