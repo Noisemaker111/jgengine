@@ -905,11 +905,13 @@ export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRou
   }
 
   // Gates are evenly spaced around the lap with the finish line LAST, so `raceTrack` treats the
-  // start/finish crossing as the lap boundary.
+  // start/finish crossing as the lap boundary. The finish IS the start line: placing it by distance
+  // (start + spacing * count, wrapped by `total`) lands within an ulp of `at[startIndex]`, so libm's
+  // last bit picked the sample before or after the line and moved the finish by a whole step.
   const checkpoints: CircuitGate[] = [];
   const gateSpacing = total / resolved.checkpoints;
   for (let gate = 1; gate <= resolved.checkpoints; gate += 1) {
-    const index = indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate);
+    const index = gate === resolved.checkpoints ? startIndex : indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate);
     const point = centerline[index]!;
     const height = heights?.[index] ?? 0;
     const halfWidth = (widths[index] ?? startWidth) * 0.5 + 1.5;

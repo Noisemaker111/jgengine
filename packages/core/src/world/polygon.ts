@@ -143,13 +143,26 @@ export function dedupeRing(ring: readonly Vec2[], epsilon = 1e-6): Vec2[] {
   return out.length >= 3 ? out : [];
 }
 
+/**
+ * Distance (m) within which a point counts as ON a line. Edges conformed onto a block boundary run
+ * collinear with it, and their orientation then is rounding noise that libm's last bit flips: a
+ * touching or collinear pair is never a crossing, on every platform.
+ */
+const ON_LINE = 1e-7;
+
+/** Which side of line p→q point r lies on: 1 left, -1 right, 0 within {@link ON_LINE} of it. */
+function lineSide(p: Vec2, q: Vec2, r: Vec2): number {
+  const qx = q[0] - p[0];
+  const qz = q[1] - p[1];
+  const cross = qx * (r[1] - p[1]) - qz * (r[0] - p[0]);
+  // |cross| = |pq| × distance from r to the line; compare squared to skip the root.
+  if (cross * cross <= ON_LINE * ON_LINE * (qx * qx + qz * qz)) return 0;
+  return cross > 0 ? 1 : -1;
+}
+
+/** True when segments ab and cd properly cross: each strictly straddles the other's line. */
 function segmentsCross(a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean {
-  const o = (p: Vec2, q: Vec2, r: Vec2): number => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
-  const o1 = o(a, b, c);
-  const o2 = o(a, b, d);
-  const o3 = o(c, d, a);
-  const o4 = o(c, d, b);
-  return o1 * o2 < 0 && o3 * o4 < 0;
+  return lineSide(a, b, c) * lineSide(a, b, d) < 0 && lineSide(c, d, a) * lineSide(c, d, b) < 0;
 }
 
 /** True when any two non-adjacent edges of the ring properly cross. O(n²), fine for block-scale n. */
@@ -444,9 +457,17 @@ export function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number,
 }
 
 /**
+ * Clearance (m) a fitted rect keeps from the polygon boundary. Callers often ask for exactly the
+ * polygon's own extent, which puts the rect's corners ON the boundary: a test that libm's last bit
+ * decides. Testing a hair outside makes "touches the boundary" fail the same way on every platform.
+ */
+const FIT_TOLERANCE = 1e-6;
+
+/**
  * Fit the largest rect (up to `maxW`×`maxD`, oriented to `rotationY`, centered near `[cx, cz]`)
  * inside a polygon by bounded bisection on a single scale factor. Deterministic; returns null
- * when even `minScale` of the request does not fit after nudging the center inward.
+ * when even `minScale` of the request does not fit after nudging the center inward. A rect must
+ * clear the boundary by a micron; one that merely touches it does not fit.
  */
 export function fitRectInPolygon(
   ring: readonly Vec2[],
@@ -463,12 +484,14 @@ export function fitRectInPolygon(
   centers.push([cx + (gx - cx) * 0.35, cz + (gz - cz) * 0.35], [cx + (gx - cx) * 0.7, cz + (gz - cz) * 0.7]);
   for (const [ux, uz] of centers) {
     if (!pointInPolygon(ring, ux, uz)) continue;
-    if (rectInsidePolygon(ring, ux, uz, maxW / 2, maxD / 2, rotationY)) return { w: maxW, d: maxD, cx: ux, cz: uz };
+    const fits = (scale: number): boolean =>
+      rectInsidePolygon(ring, ux, uz, (maxW * scale) / 2 + FIT_TOLERANCE, (maxD * scale) / 2 + FIT_TOLERANCE, rotationY);
+    if (fits(1)) return { w: maxW, d: maxD, cx: ux, cz: uz };
     let lo = 0;
     let hi = 1;
     for (let iter = 0; iter < 9; iter += 1) {
       const mid = (lo + hi) / 2;
-      if (rectInsidePolygon(ring, ux, uz, (maxW * mid) / 2, (maxD * mid) / 2, rotationY)) lo = mid;
+      if (fits(mid)) lo = mid;
       else hi = mid;
     }
     if (lo >= minScale) return { w: maxW * lo, d: maxD * lo, cx: ux, cz: uz };

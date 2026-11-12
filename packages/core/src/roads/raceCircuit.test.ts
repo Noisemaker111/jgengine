@@ -333,11 +333,12 @@ describe("race circuit generator contract", () => {
   });
 
   // Recorded from `extractCircuitRoute(network, { seed, ...rules })` before the lap moved onto the
-  // generator contract: the same streets, dials and seed lift the same lap.
+  // generator contract: the same streets, dials and seed lift the same lap. Re-recorded once when the
+  // finish gate moved onto the start line instead of whichever sample libm's last bit picked.
   test("laps match their fingerprints from before the generator contract", () => {
     const net = grow({ ...CITY_NET, seed: "lap", connectivity: 0.85, loopiness: 0.3 }, 300, 300);
-    expect(sha(lap(net, { seed: "lap", lapLength: 1200, checkpoints: 8 }))).toBe("77368da2cc9793f7");
+    expect(sha(lap(net, { seed: "lap", lapLength: 1200, checkpoints: 8 }))).toBe("adc1e60a9654c55c");
     const loop = grow({ ...CIRCUIT_NET, seed: "lap2" }, 250, 250);
-    expect(sha(lap(loop, { seed: "lap2", gridSlots: 6, sealKind: "cones", sectors: 4 }))).toBe("6da6842679fe3588");
+    expect(sha(lap(loop, { seed: "lap2", gridSlots: 6, sealKind: "cones", sectors: 4 }))).toBe("49d9c1c3c4471443");
   });
 });

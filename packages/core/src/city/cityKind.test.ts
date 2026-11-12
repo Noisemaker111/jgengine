@@ -118,7 +118,9 @@ describe("city generator contract", () => {
   });
 
   // Recorded from `resolveCityObject` before the city moved onto the generator contract (rules echo
-  // and the new lot seeds left out): the move changed no layout.
+  // and the new lot seeds left out): the move changed no layout. Re-recorded once when ties that
+  // libm's last bit decided (finish gate, frontage street, boundary-touching rect fits, collinear
+  // edge "crossings") got platform-independent answers; `otherLibm.test.ts` keeps them that way.
   test("plans match their fingerprints from before the generator contract", () => {
     const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
     const volume = (meta: Record<string, unknown>, rotationY = 0): SceneKindObject => ({
@@ -130,22 +132,22 @@ describe("city generator contract", () => {
       meta,
     });
     const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
-    expect(print(resolveCityObject(volume({})))).toBe("d7b6bc14800d4b47");
+    expect(print(resolveCityObject(volume({})))).toBe("179d436408d389ae");
     expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("ea3abd48fb77ed76");
-    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("93baf12361cbab43");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("d65e9769b67b5938");
     expect(
       print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
-    ).toBe("f3b2e4fa972cae0b");
+    ).toBe("2d4d88327a6805ed");
     const zone: SceneKindObject = { id: "z", kind: "cityzone", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 60, y: 5, z: 60 }, meta: { band: "edge", mix: [{ item: "barn", weight: 1 }] } };
-    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("7078f5d2feb52036");
+    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("4f9f171f16fcc3c3");
     const presets: Record<string, string> = {
-      manhattan: "bafa5ab6d7283208",
-      losangeles: "28795b66b0ebc077",
-      beverlyhills: "9989a021701a0f14",
+      manhattan: "5b00dcc3eef48f81",
+      losangeles: "c5c812f0e1eb4fd5",
+      beverlyhills: "ab76ec61e8d73555",
       ruralohio: "d9a5389271b33f22",
       circuit: "7c152308a32e3153",
       rally: "05ad2ae4e5321edd",
-      metropolis: "73d98b32dd218912",
+      metropolis: "9360d71826e28654",
     };
     for (const preset of CITY_SCHEMA.presets ?? []) {
       expect(print(resolveCityObject(volume({ ...preset.values, seed: `p-${preset.id}` })))).toBe(presets[preset.id]!);
@@ -1118,7 +1120,8 @@ describe("elevation, compactness, and default stability", () => {
     const bare = resolveCityObject(cityVolume())!;
     expect([bare.streets.length, bare.lots.length]).toEqual([173, 235]);
     const seeded = resolveCityObject(cityVolume({ seed: "d" }))!;
-    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 252]);
+    // 255, not 252, since collinear parcel edges stopped counting as crossings by rounding noise.
+    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 255]);
   });
 });
 
