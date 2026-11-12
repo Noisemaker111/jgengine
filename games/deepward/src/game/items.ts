@@ -1,6 +1,8 @@
 import type { AffixPool, RarityTier } from "@jgengine/core/item/affix";
-import { compareToEquipped, itemMass, rollDrop, type EquippedComparison, type ItemDrop } from "@jgengine/core/loot/drop";
-import { assertLootCatalog, validateLootItem, type LootBaseDef, type LootCatalog, type LootComparisonOptions, type LootItem, type LootManufacturerDef } from "@jgengine/core/loot/lootGen";
+import { registerGenerator, runGenerator } from "@jgengine/core/generator/generator";
+import { compareToEquipped, itemMass, type EquippedComparison, type ItemDrop } from "@jgengine/core/loot/drop";
+import { defineLootGenerator } from "@jgengine/core/loot/lootGenerator";
+import { validateLootItem, type LootBaseDef, type LootCatalog, type LootComparisonOptions, type LootItem, type LootManufacturerDef } from "@jgengine/core/loot/lootGen";
 import type { SalvageTable } from "@jgengine/core/loot/salvage";
 import { salvageValue } from "@jgengine/core/loot/salvage";
 
@@ -70,7 +72,7 @@ const MANUFACTURERS: readonly LootManufacturerDef[] = [
   { id: "kessler", name: "Kessler", bases: ["service-rifle"], favoredPools: ["kessler"] },
 ];
 
-/** Every Deepward item roll reads this one table; a bad entry throws at module load. */
+/** Every Deepward item roll reads this one table; {@link ITEM_LOOT} checks it at module load. */
 export const ITEM_CATALOG: LootCatalog = {
   bases: BASES,
   parts: [],
@@ -79,11 +81,16 @@ export const ITEM_CATALOG: LootCatalog = {
   manufacturers: MANUFACTURERS,
   levelScale: [[1, 1], [4, 1.28], [8, 1.55], [12, 1.9]],
 };
-assertLootCatalog(ITEM_CATALOG);
+
+/** Deepward's item rolls as a loot generator; a bad catalog entry throws here, at module load. */
+export const ITEM_LOOT = defineLootGenerator({ id: "deepward.items", label: "Deepward items", catalog: ITEM_CATALOG, defaults: { count: 1 } });
+registerGenerator(ITEM_LOOT);
 
 /** Item level is the depth of the room it was found in, and the same seed always rolls the same item. */
 export function rollItem(kind: ItemKind, level: number, seed: string, id: string): Item {
-  return rollDrop(ITEM_CATALOG, seed, { id, level: Math.min(12, Math.max(1, Math.round(level))), baseId: kind });
+  const [item] = runGenerator(ITEM_LOOT, { seed, count: 1, level: Math.min(12, Math.max(1, Math.round(level))), base: kind }, { fallbackSeed: seed });
+  if (item === undefined) throw new Error(`deepward: no item rolled for "${kind}"`);
+  return { ...item, id };
 }
 
 /** What the rail assays an item at, in scrip: the roll's own value stat, never a separate table. */

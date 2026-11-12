@@ -9,6 +9,7 @@ import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.d
 
 import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/generator/generator";
 import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.draw";
+import { generatorVariantText, getGeneratorText } from "@jgengine/core/generator/generatorText";
 
 /** Props for {@link GeneratorVariantGrid}. */
 export interface GeneratorVariantGridProps {
@@ -139,16 +140,35 @@ function VariantTile({
   );
 }
 
+/** A tile for an output family with no 3D form: the variant's text preview, one line per row, clipped to the tile. */
+function VariantTextTile({ definition, variant }: { definition: GeneratorDefinition; variant: GeneratorVariant }) {
+  const lines = generatorVariantText(definition, variant) ?? [];
+  return (
+    <div
+      data-variant-text={variant.index}
+      style={{ position: "absolute", inset: 0, padding: "4px 4px 14px", overflow: "hidden", textAlign: "left", fontSize: 9, lineHeight: 1.25, color: "#d7dde3" }}
+    >
+      {lines.map((line, row) => (
+        <div key={row} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through
  * one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context.
- * Tiles draw through the preview registered for the generator's output family; a family with none
- * shows its seed only.
+ * Tiles draw through the preview registered for the generator's output family; a family with only a
+ * text preview (names, loot, rolled items) prints its lines in the tile instead, and a family with
+ * neither shows its index only.
  */
 export function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps) {
   const tiles = useRef(new Map<string, VariantTile>());
   const rendererFactory = useEngineRendererFactory("webgl");
   const hasPreview = getGeneratorPreview(definition.output) !== undefined;
+  const hasText = !hasPreview && getGeneratorText(definition.output) !== undefined;
   const keptSet = new Set(kept ?? []);
   return (
     <div style={{ position: "relative" }}>
@@ -173,6 +193,8 @@ export function GeneratorVariantGrid({ definition, variants, selected, kept, onP
             >
               {hasPreview ? (
                 <VariantTile definition={definition} variant={variant} tiles={tiles} />
+              ) : hasText ? (
+                <VariantTextTile definition={definition} variant={variant} />
               ) : null}
               <span style={{ position: "absolute", zIndex: 2, left: 4, bottom: 2, fontSize: 10, color: "#e8e8e8", textShadow: "0 1px 2px #000" }}>
                 {keptSet.has(variant.index) ? "📌 " : ""}

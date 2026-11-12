@@ -38,20 +38,41 @@ Pins consume no choice RNG and must satisfy the same pool and constraints;
 incompatible pins backtrack earlier unpinned choices or return `unsatisfiable`
 within the configured attempt and pick budgets.
 
-Roll whole named gear from an authored catalog with `rollLoot`
-(`loot/lootGen`): bases with mount slots, parts, affix pools, weighted rarity
-tiers, manufacturer stat personalities and a level curve, all caller data.
-`validateLootItem` names each defect, `compareLootItems` returns per-stat deltas
-and a weighted score, and `lootWeaponDefinition` (`loot/lootWeapon`) projects a
-rolled item onto a `WeaponDefinition` for `createWeaponSystem`. `createLootRoller`
-counts drops per rarity for a debug probe and snapshots its counters.
+Item, loot and name rolls are generators on the shared contract
+(`generator/generator`): declare one, `registerGenerator` it, roll it with
+`runGenerator(definition, { seed, ...params })`, and the editor's variant grid and
+the `generator_variants` verb roll twenty seeded variants of it, printed as text
+lines (`generator/generatorText`). The game's data (catalog, syllables, steps)
+stays in the game; the params are counts, levels and pins.
 
-Roll a campaign drop with `rollDrop` (`loot/drop`) and show `compareToEquipped`
-against worn gear; carry and bank it with `createRunHaul` (`loot/haul`), which
-weighs the hold through the encumbrance rules and drops the hold on `fail`. Break
-an item down once with `salvageItem` and `createItemLedger` (`loot/salvage`), and
-price a vendor shelf through the wallet with `stockVendor` (`loot/vendor`).
-Bases and affixes take `minLevel`; bases take `mass`, which a roll carries forward.
+- Names: `defineNameGenerator` (`random/nameGen`) over a syllable bank; params
+  `count`, `minSyllables`, `maxSyllables`, `capitalize`, `template` (`{name}`
+  placeholders, see `fillTemplate`). Odd Orbit's alien names are the adopter.
+- Composed items: an `ItemRecipe` (`item/itemGenerator`) names a param schema,
+  the `GenSchema` steps those params produce, the pins they set and how the
+  choices `build` the game's item. `defineItemGenerator(recipe)` is the seeded
+  generator; `rollItemRecipe(recipe, params, rng)` rolls the same recipe from a
+  live stream (a session's chest stream). Scrap Signal's guns are the adopter.
+
+Roll whole named gear from an authored catalog with `defineLootGenerator`
+(`loot/lootGenerator`): the catalog's bases with mount slots, parts, affix pools,
+weighted rarity tiers, manufacturer stat personalities and a level curve are
+caller data; params are `count`, `level` and optional `rarity`/`manufacturer`/`base`
+pins, and a shorter roll is a prefix of a longer one. `rollLoot` (`loot/lootGen`)
+is the one-item roll it composes, for a live stream such as a loot table's
+`proceduralLootEntry`. `validateLootItem` names each defect, `compareLootItems`
+returns per-stat deltas and a weighted score, and `lootWeaponDefinition`
+(`loot/lootWeapon`) projects a rolled item onto a `WeaponDefinition` for
+`createWeaponSystem`. `createLootRoller` counts drops per rarity for a debug probe
+and snapshots its counters.
+
+Show a drop with `compareToEquipped` (`loot/drop`) against worn gear; carry and
+bank it with `createRunHaul` (`loot/haul`), which weighs the hold through the
+encumbrance rules and drops the hold on `fail`. Break an item down once with
+`salvageItem` and `createItemLedger` (`loot/salvage`), and price a rolled shelf
+through the wallet with `stockVendor(shop, { items, price, idPrefix })`
+(`loot/vendor`). Bases and affixes take `minLevel`; bases take `mass`, which a
+roll carries forward.
 
 Sample
 catalog, distribution check and generated-weapon proof are in

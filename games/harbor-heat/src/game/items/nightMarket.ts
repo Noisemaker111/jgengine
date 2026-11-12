@@ -1,9 +1,9 @@
 import { createShopStock } from "@jgengine/core/economy/shopStock";
 import type { AffixPool, RarityTier } from "@jgengine/core/item/affix";
-import type { LootCatalog } from "@jgengine/core/loot/lootGen";
-import { rollLoot, type LootItem } from "@jgengine/core/loot/lootGen";
+import { registerGenerator, runGenerator } from "@jgengine/core/generator/generator";
+import type { LootCatalog, LootItem } from "@jgengine/core/loot/lootGen";
+import { defineLootGenerator } from "@jgengine/core/loot/lootGenerator";
 import { stockVendor, type VendorPriceRule } from "@jgengine/core/loot/vendor";
-import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { credLevel } from "../progression/cred";
@@ -52,7 +52,12 @@ const catalog: LootCatalog = {
   levelScale: [[1, 1], [10, 1.7], [20, 2.4]],
 };
 
+/** The night market's shelf as a loot generator: a day's seed and the player's cred level roll its guns. */
+export const NIGHT_MARKET_LOOT = defineLootGenerator({ id: "harbor-heat.night-market", label: "Harbor Heat night market", catalog, defaults: { count: 3 } });
+registerGenerator(NIGHT_MARKET_LOOT);
+
 const DAY_SECONDS = 240;
+const SHELF_SIZE = 3;
 const priceRule: VendorPriceRule = {
   currency: "cash",
   base: 180,
@@ -83,11 +88,9 @@ function parseId(id: string): { day: number; level: number; index: number } | nu
   return { day: Number(match[1]), level: Number(match[2]), index: Number(match[3]) };
 }
 
-function rollAt(day: number, level: number, index: number): LootItem {
-  const rng = seededRng(`harbor-market:${day}`);
-  let item = rollLoot(catalog, rng, { level });
-  for (let i = 0; i < index; i += 1) item = rollLoot(catalog, rng, { level });
-  return item;
+/** The first `count` guns a market day rolls at `level`; a shorter roll is a prefix of a longer one. */
+function marketShelf(day: number, level: number, count: number): LootItem[] {
+  return runGenerator(NIGHT_MARKET_LOOT, { seed: `harbor-market:${day}`, level, count });
 }
 
 function toWeapon(def: WeaponDef): WeaponDef {
@@ -98,7 +101,8 @@ function toWeapon(def: WeaponDef): WeaponDef {
 export function marketGunById(id: string): WeaponDef | null {
   const parsed = parseId(id);
   if (parsed === null) return null;
-  const item = rollAt(parsed.day, parsed.level, parsed.index);
+  const item = marketShelf(parsed.day, parsed.level, parsed.index + 1)[parsed.index];
+  if (item === undefined) return null;
   const base = BASES.find((entry) => entry.id === item.baseId) ?? BASES[0]!;
   return toWeapon({
     id,
@@ -120,10 +124,7 @@ export function ensureNightMarket(ctx: GameContext): MarketView {
   const level = Math.max(1, credLevel(ctx));
   const shop = createShopStock();
   const offers = stockVendor(shop, {
-    catalog,
-    rng: seededRng(`harbor-market:${day}`),
-    level,
-    count: 3,
+    items: marketShelf(day, level, SHELF_SIZE),
     price: priceRule,
     idPrefix: `market.${day}.${level}`,
   });

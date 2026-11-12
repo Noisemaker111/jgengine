@@ -739,16 +739,18 @@ export {
   type ScatterGeneratorItem,
 } from "./scatter/scatterGenerator";
 export {
+  SCATTER_GENERATOR,
   SCATTER_PATH_KIND,
+  SCATTER_SCHEMA,
   clearanceZonesFrom,
   isScatterPath,
-  readScatterPalette,
-  readScatterRules,
   resolveScatter,
   resolveScatterRegion,
   scatterRegionEstimate,
   scatterRegionFromPath,
   type ScatterInstance,
+  type ScatterParams,
+  type ScatterPlot,
   type ScatterTerrain,
 } from "./scatter/scatterRegion";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";

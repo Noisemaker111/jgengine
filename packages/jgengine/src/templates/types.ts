@@ -16,7 +16,7 @@ export interface EditorSceneDoc {
   [key: string]: unknown;
 }
 
-/** The landform starts `create --landform` offers; core's `terrain/terrainGenerator` grows them. */
+/** The landform starts `create --landform` offers: presets of core's landform generator schema (`LANDFORM_SCHEMA`). */
 export const LANDFORM_START_NAMES = ["glacial-valley", "dunes", "coast"] as const;
 
 /** One landform start name. */

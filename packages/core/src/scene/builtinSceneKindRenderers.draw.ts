@@ -19,6 +19,7 @@ import { registerGrassPreview } from "@jgengine/core/grass/grassPreview.draw";
 import { registerPartsPreview } from "./GeneratedAssetRenderer.draw";
 import { registerNatureDraw } from "@jgengine/core/nature/naturePreview.draw";
 import { registerSurfaceMaterialDraw } from "@jgengine/core/material/surfaceMaterialPreview.draw";
+import { registerScatterPreview } from "@jgengine/core/scatter/scatterPreview.draw";
 
 let registered = false;
 
@@ -36,6 +37,7 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerPartsPreview();
   registerNatureDraw();
   registerSurfaceMaterialDraw();
+  registerScatterPreview();
 }
 
 /** The draw half of each on-demand system: its renderers and mesh builders. */
@@ -47,6 +49,10 @@ const ON_DEMAND_DRAW: Readonly<Record<OnDemandSceneKindId, () => Promise<void>>>
   plants: async () => {
     const { registerPlantDraw } = await import("@jgengine/core/plants/grown/plantGrown.draw");
     registerPlantDraw();
+  },
+  landform: async () => {
+    const { registerLandformPreview } = await import("@jgengine/core/landform/generator/landformPreview.draw");
+    registerLandformPreview();
   },
 };
 

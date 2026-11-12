@@ -268,7 +268,7 @@ export const terrainHandlers: Pick<
         label: "foliage",
         meta: {
           density: request.density ?? 0.15,
-          ...(request.item === undefined ? {} : { item: request.item }),
+          ...(request.item === undefined ? {} : { palette: [{ item: request.item, weight: 1 }] }),
           ...(request.seed === undefined ? {} : { seed: request.seed }),
           ...(request.minSpacing === undefined ? {} : { minSpacing: request.minSpacing }),
         },

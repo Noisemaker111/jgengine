@@ -1,34 +1,9 @@
 // @skill jgengine-gameplay
-import {
-  compareLootItems,
-  rollLoot,
-  type LootCatalog,
-  type LootComparisonOptions,
-  type LootItem,
-  type LootRollOptions,
-  type LootStatDelta,
-} from "./lootGen";
-import { seededRng } from "../random/rng";
+import { compareLootItems, type LootComparisonOptions, type LootItem, type LootStatDelta } from "./lootGen";
 
 /** A rolled item with a stable instance id, so a stash, ledger and vendor stock can name it. */
 export interface ItemDrop extends LootItem {
   id: string;
-}
-
-/** {@link rollDrop} options: the loot roll plus the instance id (defaults to `drop:<seed>`). */
-export interface RollDropOptions extends LootRollOptions {
-  id?: string;
-}
-
-/**
- * Roll one item from a seed. Same seed, catalog and options produce the same id, name, affixes,
- * stats and mass on every run; level gates which bases and affixes are in the pool.
- *
- * @capability item-roll roll one deterministic, level-gated item from a seed
- */
-export function rollDrop(catalog: LootCatalog, seed: string | number, options: RollDropOptions = {}): ItemDrop {
-  const item = rollLoot(catalog, seededRng(seed), options);
-  return { ...item, id: options.id ?? `drop:${String(seed)}` };
 }
 
 /** A per-stat delta from the equipped item to the candidate; positive `delta` means the candidate is larger. */

@@ -1,4 +1,4 @@
-import { isEditorTerrainGenerator } from "../terrain/terrainGenerator";
+import { isEditorTerrainGenerator } from "../landform/generator/landformDocument";
 import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
 import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
 import { authoredHiddenNodes } from "./modelNodeVisibility";
@@ -319,7 +319,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     ...(resolved.materialAssets === undefined ? {} : { materialAssets: structuredClone(resolved.materialAssets) }),
     ...(grids === undefined ? {} : { grids }),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
-    ...(isEditorTerrainGenerator(resolved.terrainGenerator) ? { terrainGenerator: { ...resolved.terrainGenerator } } : {}),
+    ...(isEditorTerrainGenerator(resolved.terrainGenerator) ? { terrainGenerator: { generator: resolved.terrainGenerator.generator, params: { ...resolved.terrainGenerator.params } } } : {}),
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
     ...(resolved.minimap === undefined ? {} : { minimap: cloneMinimapBake(resolved.minimap) }),

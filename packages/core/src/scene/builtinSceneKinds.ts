@@ -8,7 +8,7 @@
  * engine edits (see `examples/studios`). Call
  * {@link registerBuiltinSceneKinds} once at startup (idempotent).
  */
-import { SCATTER_PATH_KIND } from "../scatter/scatterRegion";
+import { SCATTER_GENERATOR, SCATTER_PATH_KIND, SCATTER_SCHEMA } from "../scatter/scatterRegion";
 import { registerWaterKind } from "../water/waterKind";
 import { registerGrassKind } from "@jgengine/core/grass/grassKind";
 import { registerSoilKind } from "../world/soilKind";
@@ -18,33 +18,15 @@ import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../buildings/buildingGenerator";
 import { registerNatureGenerators } from "../nature/natureGenerators";
 import { registerSurfaceMaterialGenerator } from "../material/surfaceMaterialGenerator";
+import { registerItemGeneratorText } from "../item/itemGenerator";
+import { registerLootGeneratorText } from "../loot/lootGenerator";
+import { registerNameGeneratorText } from "../random/nameGen";
 import { registerGroundCoverKind } from "../plants/groundCover/groundCoverField";
 import { registerNavAuthoringKinds } from "../nav/navAuthoringKinds";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind } from "./sceneKinds";
+import { registerGenerator } from "../generator/generator";
 import { type ParamSchema } from "../generator/paramSchema";
-
-/**
- * The scatter/foliage region schema. `palette` (what fills the area) leads the schema body and
- * `density` is the single coverage slider hoisted into the shared `CoverageSection` (see the kind's
- * `coverage` descriptor), so a scatter region reads as Area → Assets → Density like every other
- * scatterable kind; the rest is kind-specific tuning.
- */
-export const SCATTER_SCHEMA: ParamSchema = {
-  fields: [
-    { type: "weightedList", key: "palette", label: "species (weighted)", itemLabel: "grass / tree id", default: [{ item: "grass", weight: 1 }] },
-    { type: "range", key: "density", label: "density", min: 0, max: 2, step: 0.01, default: 0.15, unit: "/m²" },
-    { type: "number", key: "minSpacing", label: "spacing", step: 0.25, default: 1.5, min: 0 },
-    { type: "number", key: "minScale", label: "min scale", step: 0.05, default: 0.8, min: 0 },
-    { type: "number", key: "maxScale", label: "max scale", step: 0.05, default: 1.3, min: 0 },
-    { type: "number", key: "maxSlope", label: "max slope", step: 0.05, default: 0, min: 0 },
-    { type: "number", key: "edgeFalloff", label: "edge fade", step: 0.5, default: 0, min: 0 },
-    { type: "bool", key: "alignToNormal", label: "align to slope", default: false },
-    { type: "bool", key: "autoAvoid", label: "auto-avoid gameplay spots", default: true },
-    { type: "number", key: "clearance", label: "clears others (m)", step: 0.25, default: 0, min: 0 },
-    { type: "seed", key: "seed", label: "seed", default: "" },
-  ],
-};
 
 const LIGHT_SCHEMA: ParamSchema = {
   fields: [
@@ -67,8 +49,10 @@ export function registerBuiltinSceneKinds(): void {
   if (registered) return;
   registered = true;
 
+  registerGenerator(SCATTER_GENERATOR);
   registerSceneKind({
     kind: SCATTER_PATH_KIND,
+    generator: SCATTER_GENERATOR.id,
     target: "path",
     label: "Foliage / scatter",
     pathShape: "area",
@@ -101,4 +85,7 @@ export function registerBuiltinSceneKinds(): void {
   registerBuildingGenerator();
   registerNatureGenerators();
   registerSurfaceMaterialGenerator();
+  registerNameGeneratorText();
+  registerLootGeneratorText();
+  registerItemGeneratorText();
 }

@@ -5784,16 +5784,6 @@
       "intent": "track which rolled item instances are still owned, salvaged or sold"
     },
     {
-      "id": "item-roll",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/drop",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "roll one deterministic, level-gated item from a seed"
-    },
-    {
       "id": "item-run-haul",
       "packages": [
         "@jgengine/core"
@@ -6218,7 +6208,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/terrain/terrainGenerator",
+      "module": "@jgengine/core/landform/generator/landformStart",
       "gameFacing": false,
       "probe": null,
       "intent": "start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed"
@@ -10011,6 +10001,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "spread points over fields at random so equal totals differ"
+    },
+    {
+      "id": "scatter-region-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scatter/scatterRegion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a scatter region's params from a seed, for the editor's variant grid"
     },
     {
       "id": "scatter-solids",

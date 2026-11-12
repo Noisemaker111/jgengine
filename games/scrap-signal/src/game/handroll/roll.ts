@@ -1,4 +1,7 @@
-import { generate, type GenProvenance, type GenSchema } from "@jgengine/core/item/itemgen";
+import { registerGenerator } from "@jgengine/core/generator/generator";
+import { defineParamSchema, type ParamsOf } from "@jgengine/core/generator/paramSchema";
+import { defineItemGenerator, rollItemRecipe, type ItemRecipe } from "@jgengine/core/item/itemGenerator";
+import type { GenProvenance, GenSchema } from "@jgengine/core/item/itemgen";
 import { pickUniform, pickWeighted } from "@jgengine/core/random/pick";
 import {
   ELEMENTS,
@@ -17,7 +20,7 @@ import {
   type GunRarity,
 } from "./guns";
 import { derivePerks } from "./perks";
-import { uniqueGun } from "./uniques";
+import { UNIQUE_GUNS, uniqueGun } from "./uniques";
 
 /**
  * The gun catalog is a process-global registry, not per-context: the engine resolves item stats,
@@ -150,91 +153,156 @@ function procChanceFor(element: GunElement, tier: GunRarity): number {
   return 0.25 + tier.elementChance * 0.4;
 }
 
-export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
+const ANY = { value: "", label: "any" } as const;
+
+/** What a gun roll takes; an empty pin is drawn, and pins follow {@link RollGunOptions}. */
+const GUN_SCHEMA = defineParamSchema({
+  fields: [
+    { type: "number", key: "level", label: "level", min: 1, step: 1, default: 1, explore: [1, 30] },
+    { type: "number", key: "luck", label: "luck", min: 0, step: 0.1, default: 1, explore: [1, 6] },
+    { type: "select", key: "family", label: "family", options: [ANY, ...FAMILY_BASES.map((base) => ({ value: base.family }))], default: "", vary: false },
+    { type: "select", key: "rarity", label: "rarity", options: [ANY, ...RARITY_TIERS.map((tier) => ({ value: tier.id }))], default: "", vary: false },
+    { type: "select", key: "maxRarity", label: "rarest tier", options: [ANY, ...RARITY_TIERS.map((tier) => ({ value: tier.id }))], default: "", vary: false },
+    { type: "select", key: "maker", label: "maker", options: [ANY, ...MANUFACTURERS.map((maker) => ({ value: maker.id }))], default: "", vary: false },
+    {
+      type: "select",
+      key: "legendary",
+      label: "named legendary",
+      options: [ANY, ...Object.values(LEGENDARY_NAMES).flatMap((entries) => entries.map(([, name]) => ({ value: name })))],
+      default: "",
+      vary: false,
+    },
+    { type: "select", key: "unique", label: "quest unique", options: [ANY, ...UNIQUE_GUNS.map((gun) => ({ value: gun.name }))], default: "", vary: false },
+    { type: "seed", key: "seed", label: "seed", default: "" },
+  ],
+});
+
+type GunParams = ParamsOf<typeof GUN_SCHEMA>;
+
+/** A rolled gun before the registry gives it an id and its perks. */
+export type GunRoll = Omit<GunDef, "id" | "perks">;
+
+/** The steps a roll pins and the rarest tier it may land on. */
+function gunPins(params: GunParams): { pin: Record<string, string>; maxRarity: Rarity } {
   const pin: Record<string, string> = {};
-  if (options.family !== undefined) pin["family"] = options.family;
-  if (options.rarity !== undefined) pin["rarity"] = options.rarity;
-  if (options.maker !== undefined) pin["maker"] = options.maker;
-  if (options.legendary !== undefined) {
-    const entry = legendaryEntry(options.legendary);
-    if (entry === undefined) throw new Error(`unknown legendary: ${options.legendary}`);
+  if (params.family !== "") pin["family"] = params.family;
+  if (params.rarity !== "") pin["rarity"] = params.rarity;
+  if (params.maker !== "") pin["maker"] = params.maker;
+  if (params.legendary !== "") {
+    const entry = legendaryEntry(params.legendary);
+    if (entry === undefined) throw new Error(`unknown legendary: ${params.legendary}`);
     pin["family"] = entry.family;
     pin["rarity"] = "legendary";
-    pin["maker"] = `${entry.maker}:${options.legendary}`;
+    pin["maker"] = `${entry.maker}:${params.legendary}`;
   }
-  const unique = options.unique === undefined ? undefined : uniqueGun(options.unique);
-  if (options.unique !== undefined && unique === undefined) throw new Error(`unknown unique: ${options.unique}`);
-  if (unique !== undefined) {
+  if (params.unique !== "") {
+    const unique = uniqueGun(params.unique);
+    if (unique === undefined) throw new Error(`unknown unique: ${params.unique}`);
     pin["family"] = unique.family;
     pin["rarity"] = unique.rarity;
     pin["maker"] = unique.maker;
   }
   // A pinned plain maker cannot land on a named legendary, whose maker ids carry the name.
-  const ceiling: Rarity = pin["maker"] !== undefined && options.legendary === undefined ? "epic" : "legendary";
-  const wanted = options.maxRarity ?? ceiling;
+  const ceiling: Rarity = pin["maker"] !== undefined && params.legendary === "" ? "epic" : "legendary";
+  const wanted = params.maxRarity === "" ? ceiling : params.maxRarity;
   const maxRarity = pin["rarity"] !== undefined ? "legendary" : rarityRank(wanted) < rarityRank(ceiling) ? wanted : ceiling;
-  const rolled = generate(gunSelectionSchema(options.luck ?? 1, maxRarity), rng, { pin });
-  if (!rolled.ok) throw new Error(`gun roll failed: ${rolled.reason}`);
-  const base = rolled.result.values["family"] as FamilyBase;
-  const tier = rolled.result.values["rarity"] as GunRarity;
-  const rarity = tier.id;
-  const maker = rolled.result.values["maker"] as { manufacturer: Manufacturer; legendaryName: string | null };
-  const manufacturer = maker.manufacturer;
-  const legendaryName = maker.legendaryName;
+  return { pin, maxRarity };
+}
 
-  let element: GunElement = "none";
-  if (unique !== undefined) element = unique.element;
-  else if (manufacturer.neverElemental !== true) {
-    if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
-    else if (manufacturer.id === "Voltek" || rng() < tier.elementChance) element = pick(rng, ELEMENTS);
-  }
+/** Scrap Signal's gun roll: family, rarity and maker on the generation seam, then the gun's own numbers and name. */
+const GUN_RECIPE: ItemRecipe<typeof GUN_SCHEMA, GunRoll> = {
+  id: "scrap-signal.gun",
+  label: "Scrap Signal gun",
+  schema: GUN_SCHEMA,
+  steps: (params) => gunSelectionSchema(params.luck, gunPins(params).maxRarity),
+  pin: (params) => gunPins(params).pin,
+  build(result, params, rng): GunRoll {
+    const unique = params.unique === "" ? undefined : uniqueGun(params.unique);
+    const base = result.values["family"] as FamilyBase;
+    const tier = result.values["rarity"] as GunRarity;
+    const rarity = tier.id;
+    const maker = result.values["maker"] as { manufacturer: Manufacturer; legendaryName: string | null };
+    const manufacturer = maker.manufacturer;
+    const legendaryName = maker.legendaryName;
 
-  const gunLevel = options.level ?? level;
-  const levelMult = LEVEL_DAMAGE_GROWTH ** (gunLevel - 1);
-  const jitter = 0.92 + rng() * 0.16;
-  const damage = Math.max(1, Math.round(base.stats.damage * tier.mult * manufacturer.damage * levelMult * jitter));
-  const magSize = Math.max(2, Math.round(base.magSize * manufacturer.mag));
-  const elementPrefix = element === "none" ? "" : `${ELEMENT_PREFIX[element]} `;
-  const name = unique !== undefined
-    ? unique.name
-    : legendaryName !== null
-      ? `${elementPrefix}${legendaryName}`
-      : `${elementPrefix}${pick(rng, manufacturer.prefixes)} ${pick(rng, base.nouns)}`;
+    let element: GunElement = "none";
+    if (unique !== undefined) element = unique.element;
+    else if (manufacturer.neverElemental !== true) {
+      if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
+      else if (manufacturer.id === "Voltek" || rng() < tier.elementChance) element = pick(rng, ELEMENTS);
+    }
 
-  gunSerial += 1;
-  const def: GunDef = {
-    id: `gun_${gunSerial}_${base.family}_${rarity}`,
-    kind: "gun",
-    name,
-    family: base.family,
-    manufacturer: manufacturer.id,
-    model: unique !== undefined ? `unique:${unique.name}` : legendaryName !== null ? `legendary:${legendaryName}` : `${manufacturer.id}:${base.family}`,
-    rarity,
-    element,
-    level: gunLevel,
-    ammo: base.ammo,
-    auto: base.auto,
-    ammoPerShot: base.ammoPerShot,
-    magSize,
-    reloadMs: Math.round(base.reloadMs * manufacturer.reload),
-    elementChance: procChanceFor(element, tier),
-    elementDps: Math.max(1, Math.round(damage * 0.35)),
-    use: "fireGun",
-    weapon: {
-      damage,
-      range: base.stats.range,
-      spread: Math.round(base.stats.spread * manufacturer.spread * (rarity === "legendary" ? 0.7 : 1) * 100) / 100,
-      fireIntervalMs: Math.max(60, Math.round(base.stats.fireIntervalMs * manufacturer.interval * (2 - tier.mult))),
-      critChance: Math.min(0.5, base.stats.critChance + (tier.mult - 1) * 0.08),
-      critMult: base.stats.critMult,
-      ...(base.stats.pellets !== undefined ? { pellets: base.stats.pellets } : {}),
-      ...(base.stats.projectile !== undefined ? { projectile: base.stats.projectile } : {}),
-      ...(element === "explosive" && base.family !== "launcher" ? { explosion: { radius: 2.2 } } : {}),
-      ...(base.stats.explosion !== undefined ? { explosion: base.stats.explosion } : {}),
-    },
+    const gunLevel = params.level;
+    const levelMult = LEVEL_DAMAGE_GROWTH ** (gunLevel - 1);
+    const jitter = 0.92 + rng() * 0.16;
+    const damage = Math.max(1, Math.round(base.stats.damage * tier.mult * manufacturer.damage * levelMult * jitter));
+    const magSize = Math.max(2, Math.round(base.magSize * manufacturer.mag));
+    const elementPrefix = element === "none" ? "" : `${ELEMENT_PREFIX[element]} `;
+    const name = unique !== undefined
+      ? unique.name
+      : legendaryName !== null
+        ? `${elementPrefix}${legendaryName}`
+        : `${elementPrefix}${pick(rng, manufacturer.prefixes)} ${pick(rng, base.nouns)}`;
+
+    return {
+      kind: "gun",
+      name,
+      family: base.family,
+      manufacturer: manufacturer.id,
+      model: unique !== undefined ? `unique:${unique.name}` : legendaryName !== null ? `legendary:${legendaryName}` : `${manufacturer.id}:${base.family}`,
+      rarity,
+      element,
+      level: gunLevel,
+      ammo: base.ammo,
+      auto: base.auto,
+      ammoPerShot: base.ammoPerShot,
+      magSize,
+      reloadMs: Math.round(base.reloadMs * manufacturer.reload),
+      elementChance: procChanceFor(element, tier),
+      elementDps: Math.max(1, Math.round(damage * 0.35)),
+      use: "fireGun",
+      weapon: {
+        damage,
+        range: base.stats.range,
+        spread: Math.round(base.stats.spread * manufacturer.spread * (rarity === "legendary" ? 0.7 : 1) * 100) / 100,
+        fireIntervalMs: Math.max(60, Math.round(base.stats.fireIntervalMs * manufacturer.interval * (2 - tier.mult))),
+        critChance: Math.min(0.5, base.stats.critChance + (tier.mult - 1) * 0.08),
+        critMult: base.stats.critMult,
+        ...(base.stats.pellets !== undefined ? { pellets: base.stats.pellets } : {}),
+        ...(base.stats.projectile !== undefined ? { projectile: base.stats.projectile } : {}),
+        ...(element === "explosive" && base.family !== "launcher" ? { explosion: { radius: 2.2 } } : {}),
+        ...(base.stats.explosion !== undefined ? { explosion: base.stats.explosion } : {}),
+      },
+    };
+  },
+  describe: (gun) => [gun.name, `${gun.rarity} ${gun.family} · ${gun.manufacturer} · L${gun.level}`, `${gun.weapon.damage} dmg · ${gun.magSize} mag · ${gun.element}`],
+};
+
+/** The gun roll as a seeded generator, so the editor and agents can roll variants of it. */
+export const GUN_GENERATOR = defineItemGenerator(GUN_RECIPE);
+registerGenerator(GUN_GENERATOR);
+
+/**
+ * Roll a gun from a live stream (a session's chest or drop stream) and register it: the same recipe
+ * {@link GUN_GENERATOR} rolls from a seed, then a fresh serial id and the perks that id derives.
+ */
+export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
+  const params: GunParams = {
+    level: options.level ?? level,
+    luck: options.luck ?? 1,
+    family: options.family ?? "",
+    rarity: options.rarity ?? "",
+    maxRarity: options.maxRarity ?? "",
+    maker: options.maker ?? "",
+    legendary: options.legendary ?? "",
+    unique: options.unique ?? "",
+    seed: "",
   };
+  const rolled = rollItemRecipe(GUN_RECIPE, params, rng);
+  gunSerial += 1;
+  const def: GunDef = { id: `gun_${gunSerial}_${rolled.item.family}_${rolled.item.rarity}`, ...rolled.item };
   // Perks come off the gun's own id stream (see `derivePerks`), never the roll rng above.
   def.perks = derivePerks(def);
-  gunProvenanceById.set(def.id, rolled.result.provenance);
+  gunProvenanceById.set(def.id, rolled.provenance);
   return registerGun(def);
 }

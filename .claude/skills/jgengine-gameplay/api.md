@@ -1222,6 +1222,7 @@
 - `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `carriedEntries` (@jgengine/core/inventory/carryLoad): Every filled stack in the given inventories as load entries, in slot order.
 - `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
 - `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
+- `ItemRecipe` (interface): interface ItemRecipe<Schema extends ParamSchema, Item> — A game's composed item roll: its params, the choice steps they produce, and how the choices become an item.
 - `ItemUseHandler` (interface): interface ItemUseHandler<TState> { can?(state: TState, input: ItemUseInput): ItemUseRejection | null; apply(state: TState, input: ItemUseInput): ItemUseResult<TState> } — ⚠ undocumented
 - `ItemUseInput` (interface): interface ItemUseInput { from: string; itemId: string; inventoryId?: string; aim?: Aim; held?: boolean } — ⚠ undocumented
 - `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
@@ -1230,6 +1231,7 @@
 - `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
 - `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
+- `LOOT_ITEMS_OUTPUT` (const): const LOOT_ITEMS_OUTPUT: "loot-items" — The output family every loot generator writes: the rolled items, in roll order.
 - `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.
 - `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
 - `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
@@ -1272,6 +1274,8 @@
 - `LootComparisonOptions` (interface): interface LootComparisonOptions — Caller policy for the comparison score.
 - `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
 - `LootFilterRule` (interface): interface LootFilterRule { id: string; when?: Predicate; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootGeneratorDefinition` (interface): interface LootGeneratorDefinition extends GeneratorDefinition<ReturnType<typeof lootSchema>, LootItem[]> — A declared loot generator: its output is the rolled items, and it keeps the catalog it rolls from.
+- `LootGeneratorSpec` (interface): interface LootGeneratorSpec — What a game declares: an id and label for the registry, its catalog and its defaults.
 - `LootInstalledPart` (interface): interface LootInstalledPart — One part occupying one slot of a rolled item.
 - `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "level-gated-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-f… — A defect found by {@link validateLootItem}.
 - `LootItem` (interface): interface LootItem — One rolled item: the base, maker, rarity, level, composed name, chosen parts, rolled affixes and resolved stats. Plain JSON, so a save stores it and the instance registry can key it.
@@ -1351,7 +1355,10 @@
 - `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
 - `MountSlotDef` (interface): interface MountSlotDef { id: string; accepts: string | readonly string[]; required?: boolean } — ⚠ undocumented · used by `slotAccepts`: Attach parts into an item's mount slots and resolve the combined stats.
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
+- `NAMES_OUTPUT` (const): const NAMES_OUTPUT: "names" — The output family every name generator writes: an ordered list of names.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `NameGeneratorDefinition` (type): type NameGeneratorDefinition = GeneratorDefinition<ReturnType<typeof nameSchema>, string[]> — A declared name generator: its output is the rolled names, in order.
+- `NameGeneratorSpec` (interface): interface NameGeneratorSpec — What a game declares: an id and label for the registry, its syllable bank and its defaults.
 - `NearAgentSnapshot` (interface): interface NearAgentSnapshot — Serializable state of one near agent: where it walks, what it needs, what it last chose.
 - `NearAgentView` (interface): interface NearAgentView — Everything a near agent is doing, for a HUD, a probe or a test. Allocates.
 - `NearAgents` (interface): interface NearAgents — The near half of the world: the game's real simulation. Only residents inside the radius are ever spawned here, which is what keeps far agents free of navigation and utility scoring.
@@ -1412,6 +1419,7 @@
 - `PriceStats` (interface): interface PriceStats — Aggregated market stats for one item over the retained samples.
 - `QueueEntry` (interface): interface QueueEntry — One guest waiting their turn, and when they joined the line.
 - `QueueWait` (interface): interface QueueWait — A wait estimate read off the queue's own measured throughput.
+- `ROLLED_ITEM_OUTPUT` (const): const ROLLED_ITEM_OUTPUT: "rolled-item" — The output family every item generator writes: one {@link RolledItem}.
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
 - `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
@@ -1459,6 +1467,7 @@
 - `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
 - `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented
+- `RolledItem` (interface): interface RolledItem<Item> — One rolled item, the provenance of its choices, and a few lines of text that name it.
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
@@ -1534,6 +1543,7 @@
 - `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
 - `StationRateTuning` (interface): interface StationRateTuning — Caller-owned output tuning in production cycles per game-second.
 - `StationWorker` (interface): interface StationWorker — One assigned worker's caller-resolved contribution; stat names and modifiers stay caller-owned.
+- `SyllableBank` (interface): interface SyllableBank — The parts one syllable is built from: an optional onset, a nucleus and an optional coda.
 - `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
 - `SystemTick` (type): type SystemTick = | { type: "fixed"; /** Steps per game-second. Default 60. */ rate?: number; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { type: "frame"; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { t… — How a system is scheduled. Omit `tick` (or use only `events`) for event-driven systems. Multiple systems may share the same channel; order within a channel is deterministic by stage then optional `before`/`after` constraints — never import order.
@@ -1712,7 +1722,6 @@
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
-- `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
 - `createNearAgents` (function): function createNearAgents(options: NearAgentsOptions): NearCrowdAgents — Create the near-side simulation: agents on a nav mesh with decaying needs and a utility brain each. The off-screen world decides which agents exist here, so a resident beyond its radius costs this seam nothing at all — no path, no need tick, no decision.
 - `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 - `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
@@ -1761,7 +1770,10 @@
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
 - `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to `NeedSet.tick`.
 - `defendMission` (function): function defendMission(options: DefendMissionOptions): MissionDef — Hold a position for a duration, scored by what is left standing: one `survive` objective whose `minSurvivors` gate is the fail condition and whose completion banks the survivors as the mission score. Same primitive a timed delivery uses, with a guard.
+- `defineItemGenerator` (function): function defineItemGenerator<Schema extends ParamSchema, Item>(recipe: ItemRecipe<Schema, Item>): GeneratorDefinition<Schema, RolledItem<Item>> — The seeded generator for a recipe: `generate` is {@link rollItemRecipe} on the context's default stream, so a seed regrows the same item. Register it with `registerGenerator` to list it in the editor and to agents.
+- `defineLootGenerator` (function): function defineLootGenerator(spec: LootGeneratorSpec): LootGeneratorDefinition — Declare a seeded loot generator over a game's catalog, checked once here. Its `generate` rolls every item from the context's default stream in order through {@link rollLoot}, so the first N items of a longer roll are the same N items. Register it with `registerGenerator` to list it in the editor and to agents.
 - `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
+- `defineNameGenerator` (function): function defineNameGenerator(spec: NameGeneratorSpec): NameGeneratorDefinition — Declare a seeded name generator over a game's syllable bank. Its `generate` draws every name from the context's default stream in order, so the first N names of a longer roll are the same N names. Register it with `registerGenerator` to list it in the editor and to agents.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `defineXpCurve` (function): function defineXpCurve(def: XpCurveDef): XpCurve — Resolve authored XP curve data: the threshold per level, the lifetime XP it sits at, a plain-words growth rule, and the level an XP total reaches under the cap. One data record with one growth rule keeps a rebalance in the save-visible definition rather than in formulas scattered across a game.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
@@ -1780,6 +1792,7 @@
 - `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
 - `fifoOrdering` (function): function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Pure FIFO ordering by enqueue sequence.
+- `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — Fill `{key}` placeholders from `vars`; a function var is called once per occurrence, and unknown placeholders are left as written.
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset — a game that runs live from boot declares that intent explicitly with `defineGame({ lifecycle: "always-live" })` rather than relying on the silent default.
@@ -1866,6 +1879,7 @@
 - `rideChoiceOptions` (function): function rideChoiceOptions(rides: readonly RideDefinition[], taste: RideTaste, policy: RideChoicePolicy = {}): UtilityOption[] — Compile a guest's taste and the park's ride data into utility options, so the guest's pick comes from `createUtilityBrain` like every other decision it makes. Ride choice is one more set of options a guest can score, not a separate scoring function.
 - `rideQueueCostWeight` (function): function rideQueueCostWeight(taste: RideTaste): number — Score points per second of queue wait: a guest's own tolerance is the denominator. A guest who merges rides into a brain that also scores food and exits uses this as its `costWeight`.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
+- `rollItemRecipe` (function): function rollItemRecipe<Schema extends ParamSchema, Item>(recipe: ItemRecipe<Schema, Item>, params: ParamsOf<Schema>, rng: () => number): RolledItem<Item> — Roll one item from a recipe with an injected random source: resolve its choice steps (honouring pins), then build the item from the same stream. Throws when the steps cannot be satisfied, naming the recipe and the reason.
 - `rollLoot` (function): function rollLoot(catalog: LootCatalog, rng: () => number, options: LootRollOptions = {}): LootItem — Roll one item from a catalog: a base and maker, a weighted rarity, one part per slot, rarity-count affixes, level-scaled stats and a name composed from maker, rarity, part, affix words and base. Deterministic for a given `rng`; every field it reads is caller data. Validate a catalog built outside {@link createLootRoller} once with {@link assertLootCatalog} before rolling from it.
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `saveBindingOverrides` (function): function saveBindingOverrides(gameId: string, overrides: BindingOverrides, storage: Pick<WebStorageLike, "setItem" | "removeItem"> | null | undefined = defaultStorage()): void — Store a game's whole rebind map (an empty one clears it), as the shell does whenever the game's rebinds change.
@@ -2109,7 +2123,7 @@
 - `ItemBaseDef` (interface): interface ItemBaseDef { id: string; name: string; baseStats: Record<string, number>; pools: readonly string[] } — ⚠ undocumented
 - `RarityTier` (interface): interface RarityTier extends ThresholdBoundary — A rarity step of the Ladder: `at` is its place in the rarity order, the roll itself is by `weight`.
 - `RolledAffix` (interface): interface RolledAffix { id: string; stat: string; op: AffixOp; value: number } — ⚠ undocumented
-- `RolledItem` (interface): interface RolledItem { baseId: string; rarity: string; name: string; affixes: readonly RolledAffix[]; stats: Record<string, number> } — ⚠ undocumented
+- `RolledItem` (interface): interface RolledItem { baseId: string; rarity: string; name: string; affixes: readonly RolledAffix[]; stats: Record<string, number> } — ⚠ undocumented · used by `defineItemGenerator` (@jgengine/core/gameplay): The seeded generator for a recipe: `generate` is {@link rollItemRecipe} on the context's default stream, so a seed regrows the same item.
 - `RollerConfig` (interface): interface RollerConfig { pools: readonly AffixPool[]; rarities: readonly RarityTier[] } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the item. Deterministic for a given `rng`.
 - `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
@@ -2134,6 +2148,14 @@
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
+
+## @jgengine/core/item/itemGenerator
+
+- `ItemRecipe` (interface): interface ItemRecipe<Schema extends ParamSchema, Item> — A game's composed item roll: its params, the choice steps they produce, and how the choices become an item.
+- `ROLLED_ITEM_OUTPUT` (const): const ROLLED_ITEM_OUTPUT: "rolled-item" — The output family every item generator writes: one {@link RolledItem}.
+- `RolledItem` (interface): interface RolledItem<Item> — One rolled item, the provenance of its choices, and a few lines of text that name it.
+- `defineItemGenerator` (function): function defineItemGenerator<Schema extends ParamSchema, Item>(recipe: ItemRecipe<Schema, Item>): GeneratorDefinition<Schema, RolledItem<Item>> — The seeded generator for a recipe: `generate` is {@link rollItemRecipe} on the context's default stream, so a seed regrows the same item. Register it with `registerGenerator` to list it in the editor and to agents.
+- `rollItemRecipe` (function): function rollItemRecipe<Schema extends ParamSchema, Item>(recipe: ItemRecipe<Schema, Item>, params: ParamsOf<Schema>, rng: () => number): RolledItem<Item> — Roll one item from a recipe with an injected random source: resolve its choice steps (honouring pins), then build the item from the same stream. Throws when the steps cannot be satisfied, naming the recipe and the reason.
 
 ## @jgengine/core/item/itemIdentity
 
@@ -2263,10 +2285,8 @@
 - `EquippedComparison` (interface): interface EquippedComparison — What a HUD renders when a drop lands: per-stat deltas against the worn item and one verdict.
 - `EquippedStatDelta` (interface): interface EquippedStatDelta extends LootStatDelta — A per-stat delta from the equipped item to the candidate; positive `delta` means the candidate is larger.
 - `ItemDrop` (interface): interface ItemDrop extends LootItem — A rolled item with a stable instance id, so a stash, ledger and vendor stock can name it.
-- `RollDropOptions` (interface): interface RollDropOptions extends LootRollOptions — {@link rollDrop} options: the loot roll plus the instance id (defaults to `drop:<seed>`).
 - `compareToEquipped` (function): function compareToEquipped(candidate: ItemDrop, equipped: ItemDrop | null, options: LootComparisonOptions = {}): EquippedComparison — Compare a dropped item against what is equipped, with one delta per stat and a weighted verdict. The delta is `candidate - equipped`; `better` flips for stats the caller lists in `lowerIsBetter`, so reload time improving does not read as worse. A missing equipped item compares against zeros.
 - `itemMass` (function): function itemMass(item: Pick<LootItem, "mass">): number — Carried mass of a rolled item. Older saves may predate `mass`; those default to `1`.
-- `rollDrop` (function): function rollDrop(catalog: LootCatalog, seed: string | number, options: RollDropOptions = {}): ItemDrop — Roll one item from a seed. Same seed, catalog and options produce the same id, name, affixes, stats and mass on every run; level gates which bases and affixes are in the pool.
 
 ## @jgengine/core/loot/groundItem
 
@@ -2327,6 +2347,16 @@
 - `scoreLootStats` (function): function scoreLootStats(stats: Readonly<Record<string, number>>, options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {}): number — One stat block's weighted score: the sum of `value × weight`, negated for stats listed in `lowerIsBetter`. Pair it with {@link lootStatContributions} when a caller also needs the split.
 - `validateLootItem` (function): function validateLootItem(item: LootItem, catalog: LootCatalog): LootValidationIssue[] — Check one rolled item against its catalog: base, maker and rarity exist, every slot holds an eligible part, affixes belong to the base's pools, stats are finite and the item is named.
 
+## @jgengine/core/loot/lootGenerator
+
+- `LOOT_ITEMS_OUTPUT` (const): const LOOT_ITEMS_OUTPUT: "loot-items" — The output family every loot generator writes: the rolled items, in roll order.
+- `LootGeneratorDefaults` (interface): interface LootGeneratorDefaults — Starting values a game gives its loot generator's params.
+- `LootGeneratorDefinition` (interface): interface LootGeneratorDefinition extends GeneratorDefinition<ReturnType<typeof lootSchema>, LootItem[]> — A declared loot generator: its output is the rolled items, and it keeps the catalog it rolls from.
+- `LootGeneratorParams` (type): type LootGeneratorParams = ParamsOf<ReturnType<typeof lootSchema>> — The params every loot generator takes; an empty `rarity`, `manufacturer` or `base` is drawn from the catalog.
+- `LootGeneratorSpec` (interface): interface LootGeneratorSpec — What a game declares: an id and label for the registry, its catalog and its defaults.
+- `MAX_LOOT_ROLL` (const): const MAX_LOOT_ROLL: 256 — Most items one roll returns.
+- `defineLootGenerator` (function): function defineLootGenerator(spec: LootGeneratorSpec): LootGeneratorDefinition — Declare a seeded loot generator over a game's catalog, checked once here. Its `generate` rolls every item from the context's default stream in order through {@link rollLoot}, so the first N items of a longer roll are the same N items. Register it with `registerGenerator` to list it in the editor and to agents.
+
 ## @jgengine/core/loot/lootModifiers
 
 - `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
@@ -2382,14 +2412,14 @@
 
 ## @jgengine/core/loot/vendor
 
-- `StockVendorOptions` (interface): interface StockVendorOptions — What stocking a vendor reads: the roll catalog, a seeded rng and the pricing policy.
+- `StockVendorOptions` (interface): interface StockVendorOptions — What stocking a vendor reads: the rolled items and the pricing policy.
 - `VendorOffer` (interface): interface VendorOffer — One stocked item and the shop entry that prices it.
 - `VendorPriceRule` (interface): interface VendorPriceRule — How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier.
 - `VendorRotation` (interface): interface VendorRotation — A run-count refresh rule; the game owns how many runs between restocks.
 - `VendorRotationState` (interface): interface VendorRotationState — Where a vendor shelf stands: the run number it was last stocked on.
 - `createVendorRotation` (function): function createVendorRotation(everyRuns: number, start = 0): VendorRotation — A restock rule the game authors as "every N runs". It only answers when a refresh is due; the game calls {@link stockVendor} and then `mark`. No timer, so a paused or reloaded save keeps the same shelf until the run count moves.
 - `itemPrice` (function): function itemPrice(item: Pick<LootItem, "level" | "rarity">, rule: VendorPriceRule): { buy: number; sell: number | null } — The price of one item under a `VendorPriceRule`: `round(base + perLevel x level)` times the rarity multiplier, never below 1. Sell-back is `floor(price x sellFactor)` when the rule sets one.
-- `stockVendor` (function): function stockVendor(shop: ShopStock, options: StockVendorOptions): VendorOffer[] — Roll a vendor's shelf and add it to an existing {@link ShopStock}. Entries added by a previous call with the same `idPrefix` are removed first, so a refresh replaces the shelf instead of throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
+- `stockVendor` (function): function stockVendor(shop: ShopStock, options: StockVendorOptions): VendorOffer[] — Price a vendor's rolled shelf and add it to an existing {@link ShopStock}; item `i` gets the id `<idPrefix>:<i>`. Entries added by a previous call with the same `idPrefix` are removed first, so a refresh replaces the shelf instead of throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
 
 ## @jgengine/core/mission/compositions
 
@@ -2810,12 +2840,15 @@
 
 ## @jgengine/core/random/nameGen
 
-- `NameGenerator` (interface): interface NameGenerator { name(): string } — ⚠ undocumented · used by `createNameGenerator`: Generate procedural names from templates and word banks with an injected random source.
-- `NameGeneratorOptions` (interface): interface NameGeneratorOptions { rng: () => number; syllables: SyllableBank; minSyllables?: number; maxSyllables?: number; capitalize?: boolean } — ⚠ undocumented · used by `createNameGenerator`: Generate procedural names from templates and word banks with an injected random source.
-- `SyllableBank` (interface): interface SyllableBank { onset?: readonly string[]; nucleus: readonly string[]; coda?: readonly string[] } — ⚠ undocumented
-- `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
-- `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — ⚠ undocumented
-- `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
+- `MAX_NAMES_PER_ROLL` (const): const MAX_NAMES_PER_ROLL: 64 — Most names one roll returns.
+- `NAMES_OUTPUT` (const): const NAMES_OUTPUT: "names" — The output family every name generator writes: an ordered list of names.
+- `NameGeneratorDefaults` (interface): interface NameGeneratorDefaults — Starting values a game gives its name generator's params.
+- `NameGeneratorDefinition` (type): type NameGeneratorDefinition = GeneratorDefinition<ReturnType<typeof nameSchema>, string[]> — A declared name generator: its output is the rolled names, in order.
+- `NameGeneratorParams` (type): type NameGeneratorParams = ParamsOf<ReturnType<typeof nameSchema>> — The params every name generator takes.
+- `NameGeneratorSpec` (interface): interface NameGeneratorSpec — What a game declares: an id and label for the registry, its syllable bank and its defaults.
+- `SyllableBank` (interface): interface SyllableBank — The parts one syllable is built from: an optional onset, a nucleus and an optional coda.
+- `defineNameGenerator` (function): function defineNameGenerator(spec: NameGeneratorSpec): NameGeneratorDefinition — Declare a seeded name generator over a game's syllable bank. Its `generate` draws every name from the context's default stream in order, so the first N names of a longer roll are the same N names. Register it with `registerGenerator` to list it in the editor and to agents.
+- `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — Fill `{key}` placeholders from `vars`; a function var is called once per occurrence, and unknown placeholders are left as written.
 
 ## @jgengine/core/random/pick
 

@@ -1758,7 +1758,7 @@
 
 ## @jgengine/core/generator/GeneratorVariantGrid.draw
 
-- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with none shows its seed only.
+- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with only a text preview (names, loot, rolled items) prints its lines in the tile instead, and a family with neither shows its index only.
 - `GeneratorVariantGridProps` (interface): interface GeneratorVariantGridProps — Props for {@link GeneratorVariantGrid}.
 
 ## @jgengine/core/generator/generator
@@ -1798,6 +1798,13 @@
 - `GeneratorPreviewProps` (interface): interface GeneratorPreviewProps — What a preview draws: the generator and one of its variants.
 - `getGeneratorPreview` (function): function getGeneratorPreview(output: string): GeneratorPreview | undefined — The preview registered for an output family, or undefined when that family has none.
 - `registerGeneratorPreview` (function): function registerGeneratorPreview(output: string, preview: GeneratorPreview): void — Register the preview for a generator output family (`"parts"`, `"grass-field"`, …). Replaces an earlier one.
+
+## @jgengine/core/generator/generatorText
+
+- `GeneratorTextPreview` (type): type GeneratorTextPreview = (output: unknown) => readonly string[] — One output as a few short lines of text, most telling first.
+- `generatorVariantText` (function): function generatorVariantText(definition: GeneratorDefinition, variant: Pick<GeneratorVariant, "seed" | "params">): readonly string[] | undefined — One variant's output as text lines, or undefined when its family registers no text preview. `definition` is the untyped (registered) form, so the variant's params are parsed on the way in. Params a catalog cannot roll (a pinned base above the item level) read as one `no output:` line instead of throwing, so one bad variant does not blank the grid.
+- `getGeneratorText` (function): function getGeneratorText(output: string): GeneratorTextPreview | undefined — The text preview registered for an output family, or undefined when that family has none.
+- `registerGeneratorText` (function): function registerGeneratorText(output: string, preview: GeneratorTextPreview): void — Register the text preview for a generator output family (`"names"`, `"loot-items"`, …). Replaces an earlier one.
 
 ## @jgengine/core/generator/paramSchema
 
@@ -2488,12 +2495,17 @@
 - `FLAT_RISE` (const): const FLAT_RISE: 0.000001 — Rise per cell across filled flats, in metres; small next to any relief, large next to rounding.
 - `FlowRouting` (interface): interface FlowRouting — Flow routing of one heightfield. Arrays are owned by the router and overwritten by the next {@link FlowRouter.route}.
 
+## @jgengine/core/landform/generator/landformDocument
+
+- `EditorTerrainGenerator` (interface): interface EditorTerrainGenerator — A document's terrain generator: what grows its ground when it has no sculpt yet.
+- `LANDFORM_GENERATOR_ID` (const): const LANDFORM_GENERATOR_ID: "landform" — The plain data a document stores to have its ground grown on first load: the landform generator's id and the `meta` it grows from (`start` names one of the schema's presets, `seed` the seed). `landformStart` grows it; this module stays light so document parsing need not load the models.
+
 ## @jgengine/core/landform/generator/landformGenerator
 
 - `LANDFORM_CACHE` (const): const LANDFORM_CACHE: LandformCache — The cache {@link LANDFORM_GENERATOR} uses: memory only.
 - `LANDFORM_GENERATOR` (const): const LANDFORM_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly label: "Cells per side"; readonly group: "map"; readonly min: 32; reado… — The built-in landform generator.
 - `LANDFORM_OUTPUT` (const): const LANDFORM_OUTPUT: "landform" — The output family of landform generators.
-- `LANDFORM_SCHEMA` (const): const LANDFORM_SCHEMA: ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly label: "Cells per side"; readonly group: "map"; readonly min: 32; readonly max: 256; readonly … — The `landform` generator's params.
+- `LANDFORM_SCHEMA` (const): const LANDFORM_SCHEMA: ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly label: "Cells per side"; readonly group: "map"; readonly min: 32; readonly max: 256; readonly … — The `landform` generator's params. Its presets are the named starts (`meta.start`), each about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast, simulated at full scale and shrunk to the map.
 - `LandformCache` (interface): interface LandformCache — Grown landforms by key: a bounded in-memory cache over optional durable storage.
 - `LandformCacheOptions` (interface): interface LandformCacheOptions — Options for {@link createLandformCache}.
 - `LandformGeneratorOptions` (interface): interface LandformGeneratorOptions — Options for {@link createLandformGenerator}.
@@ -2509,9 +2521,7 @@
 
 ## @jgengine/core/landform/generator/landformStart
 
-- `LANDFORM_START_PARAMS` (const): const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<LandformGeneratorParams>>> — Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast. Simulated at full scale and shrunk to the map.
-- `landformStartTerrain` (function): function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot — The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
-- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
+- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged. The grown ground sits with its middle cell at height 0. Deterministic, and cached by the generator.
 
 ## @jgengine/core/landform/generator/landformTerrain
 
@@ -4990,23 +5000,24 @@
 - `DEFAULT_CLEARANCE_KINDS` (const): const DEFAULT_CLEARANCE_KINDS: readonly string[] — Marker/volume kinds that repel scatter and flatten terrain by default (spawns, objectives, vendors).
 - `DEFAULT_MARKER_CLEARANCE` (const): const DEFAULT_MARKER_CLEARANCE: 3.5 — Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`.
 - `ResolveScatterOptions` (interface): interface ResolveScatterOptions extends ClearanceOptions — Extra inputs for {@link resolveScatter}: manual discs plus the auto-clearance toggle/scoping.
-- `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
+- `SCATTER_GENERATOR` (const): const SCATTER_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "palette"; readonly label: "species (weighted)"; readonly itemLabel: "grass / tree id"; readonly default: readonly [{ readonly item: "grass"; readonly weight: 1; }]; readonly vary: false… — The scatter generator: a region's params and seed grown over a {@link SCATTER_PLOT_SIZE} m square by the same placement core as {@link resolveScatterRegion}, so the variant grid previews how a region's palette, density, spacing and scale read without the region's own footprint.
+- `SCATTER_OUTPUT` (const): const SCATTER_OUTPUT: "scatter-plot" — The output family of {@link SCATTER_GENERATOR}: a {@link ScatterPlot}.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `SCATTER_PLOT_SIZE` (const): const SCATTER_PLOT_SIZE: 24 — Side (m) of the square sample plot {@link SCATTER_GENERATOR} fills.
+- `SCATTER_SCHEMA` (const): const SCATTER_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "palette"; readonly label: "species (weighted)"; readonly itemLabel: "grass / tree id"; readonly default: readonly [{ readonly item: "grass"; readonly weight: 1; }]; readonly vary: false; }, { readonly type: "… — The scatter region's params: one schema the inspector, `meta` parsing, the variant grid and {@link SCATTER_GENERATOR} share. `palette` (what fills the area) leads and `density` is the single coverage slider hoisted into the shared `CoverageSection`, so a region reads as Area → Assets → Density like every other scatterable kind; the rest is kind-specific tuning. A region's footprint (its polygon) and manual `avoid` discs are its shape, not params.
 - `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
-- `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
-- `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
-- `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
+- `ScatterParams` (type): type ScatterParams = ParamsOf<typeof SCATTER_SCHEMA> — A scatter region's parsed params.
+- `ScatterPlot` (interface): interface ScatterPlot — A scatter region's params grown over a flat square sample plot centred on the origin.
+- `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint, its params and seed, and its own clearance discs.
 - `ScatterSource` (type): type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | undefined, masks: AvoidMasks) => readonly ScatterInstance[] — Fills one authored path of a kind other than `scatter` with placements (a forest stand from its growth model). It receives the clearance masks the region would honor; placements join the document's scatter, so rendering, solids, harvest and navigation read them like any other.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
-- `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
-- `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
 - `registerScatterSource` (function): function registerScatterSource(kind: string, source: ScatterSource): void — Register the {@link ScatterSource} for a path kind; idempotent, last registration wins.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): readonly ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
-- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided. The placement core {@link SCATTER_GENERATOR} grows its preview plot with.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
-- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path, or null: its XZ polygon, its `meta` parsed against {@link SCATTER_SCHEMA}, and its seed (the schema's seed field, unset reading as "").
 
 ## @jgengine/core/scatter/scatterSolids
 
@@ -5177,10 +5188,6 @@
 - `BodyTeleportHandler` (type): type BodyTeleportHandler = (id: string, placement: BodyPlacement) => boolean — Moves the sim that owns a bound body to `placement`, so its next `sync` poses the body there; returns whether the sim took it.
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 
-## @jgengine/core/scene/builtinSceneKinds
-
-- `SCATTER_SCHEMA` (const): const SCATTER_SCHEMA: ParamSchema — The scatter/foliage region schema. `palette` (what fills the area) leads the schema body and `density` is the single coverage slider hoisted into the shared `CoverageSection` (see the kind's `coverage` descriptor), so a scatter region reads as Area → Assets → Density like every other scatterable kind; the rest is kind-specific tuning.
-
 ## @jgengine/core/scene/captureCheck
 
 - `CaptureCheckInput` (interface): interface CaptureCheckInput { hpFraction: number; catchPower: number; difficulty?: number } — ⚠ undocumented
@@ -5324,7 +5331,7 @@
 
 ## @jgengine/core/scene/onDemandSceneKinds
 
-- `OnDemandSceneKindId` (type): type OnDemandSceneKindId = "city" | "plants" — A heavy built-in system a scene loads only when it uses one of its kinds or generators.
+- `OnDemandSceneKindId` (type): type OnDemandSceneKindId = "city" | "plants" | "landform" — A heavy built-in system a scene loads only when it uses one of its kinds or generators.
 - `SceneKindNeeds` (interface): interface SceneKindNeeds — What a scene asks of the registries: the kinds its objects use and the generator ids they name.
 
 ## @jgengine/core/scene/paintLayer
@@ -5829,12 +5836,6 @@
 - `TerrainSurfaceTextures` (interface): interface TerrainSurfaceTextures — Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}.
 - `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): TerrainSurfaceTextures | undefined — Bake a terrain's surfaces (shared per spec) and stack them into array textures: the ground, sand and rock roles first (generated or scanned), then one layer per distinct paint-layer scan. `detail` 1 bakes each map at its own resolution, 0.5 at half; generated layers are rebaked at the size the scans were packed at, or the smallest size any role asks for, so they stack. Undefined when nothing names a surface.
 - `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
-
-## @jgengine/core/terrain/terrainGenerator
-
-- `EditorTerrainGenerator` (interface): interface EditorTerrainGenerator — A document's terrain generator: what grows its ground when it has no sculpt yet.
-- `LANDFORM_STARTS` (const): const LANDFORM_STARTS: readonly ["glacial-valley", "dunes", "coast"] — The plain data a document stores to have its ground grown on first load; `landform/generator/landformStart` grows it.
-- `LandformStart` (type): type LandformStart = (typeof LANDFORM_STARTS)[number] — One named landform start.
 
 ## @jgengine/core/terrain/terrainGrade
 
@@ -7034,8 +7035,10 @@
 - `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
 - `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `SCATTER_COVERAGE_SPECS` (const): const SCATTER_COVERAGE_SPECS: Record<ScatterCoverageKind, ScatterCoverageSpec> — The coverage spec per scatterable kind — the single source for its unit + budget.
+- `SCATTER_GENERATOR` (const): const SCATTER_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "palette"; readonly label: "species (weighted)"; readonly itemLabel: "grass / tree id"; readonly default: readonly [{ readonly item: "grass"; readonly weight: 1; }]; readonly vary: false… — The scatter generator: a region's params and seed grown over a {@link SCATTER_PLOT_SIZE} m square by the same placement core as {@link resolveScatterRegion}, so the variant grid previews how a region's palette, density, spacing and scale read without the region's own footprint.
 - `SCATTER_INSTANCE_BUDGET` (const): const SCATTER_INSTANCE_BUDGET: 250000 — Max placements a single `scatter` patch places; the scatter resolver truncates to it, so a patch never renders more than this many placements regardless of density × area.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `SCATTER_SCHEMA` (const): const SCATTER_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "palette"; readonly label: "species (weighted)"; readonly itemLabel: "grass / tree id"; readonly default: readonly [{ readonly item: "grass"; readonly weight: 1; }]; readonly vary: false; }, { readonly type: "… — The scatter region's params: one schema the inspector, `meta` parsing, the variant grid and {@link SCATTER_GENERATOR} share. `palette` (what fills the area) leads and `density` is the single coverage slider hoisted into the shared `CoverageSection`, so a region reads as Area → Assets → Density like every other scatterable kind; the rest is kind-specific tuning. A region's footprint (its polygon) and manual `avoid` discs are its shape, not params.
 - `SHAPE_BOX` (const): const SHAPE_BOX: 0 — ⚠ undocumented
 - `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
 - `SOIL_KIND` (const): const SOIL_KIND: "soil" — The editor volume kind marking a box as a soil crack/moss patch.
@@ -7054,6 +7057,8 @@
 - `ScatterCoverageSpec` (interface): interface ScatterCoverageSpec — Per-kind coverage descriptor: the unit noun, whether density is per-m², and the placement budget.
 - `ScatterGeneratorItem` (interface): interface ScatterGeneratorItem — A scatter palette item grown by a registered generator.
 - `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
+- `ScatterParams` (type): type ScatterParams = ParamsOf<typeof SCATTER_SCHEMA> — A scatter region's parsed params.
+- `ScatterPlot` (interface): interface ScatterPlot — A scatter region's params grown over a flat square sample plot centred on the origin.
 - `ScatterPoint` (interface): interface ScatterPoint { x: number; z: number; index: number } — ⚠ undocumented
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
 - `SceneBake` (interface): interface SceneBake — A bake stored on an editor scene document, structurally compatible with `EditorBake`.
@@ -7490,8 +7495,6 @@
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — Raise the alert level (clamped to 0..1), which adds budget while it decays.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
-- `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
-- `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 - `rectRegion` (function): function rectRegion(area: Aabb, options: { distribution?: AreaDistribution; edgeThickness?: number } = {}): SampleRegion<Vec2> — An axis-aligned rectangle on the XZ plane. `"uniform"` spreads evenly (draws x then z); `"edge"` biases onto a boundary band of `edgeThickness` meters (perimeter-weighted side, then inward depth) — the two are never conflated, the caller opts in.
 - `registerBehaviorActions` (function): function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>, options: BehaviorActionOptions = {}): () => void — Register the named actions used by decision graph behavior descriptors.
@@ -7516,7 +7519,7 @@
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig | undefined; movement?: PlayerMovementConfig | undefined; physics?: PhysicsConfig | undefined; world?: WorldFeature | undefined; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
 - `resolvePoleLine` (function): function resolvePoleLine(object: SceneKindObject, params: ParsedParams, context?: SceneKindResolveContext): ResolvedPoleLine — Resolve poles + cables from a document object's points and parsed params. Poles come from the generic `placeAlongPath` sampler; between each consecutive pair, `wireCount` parallel cables are strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Each span's sag varies by up to `sagJitter` of itself, drawn from `seed` (the object id when blank). Pure data.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): readonly ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
-- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided. The placement core {@link SCATTER_GENERATOR} grows its preview plot with.
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor, roads: readonly RoadFrontage[] = []): GeneratedBuilding[] — The buildings one `building()` descriptor places, always through the one frontage placer ({@link deriveBuildingLots}): along its `along` roads; else, when the world's streets pass through the settlement, along those streets near `position`; else in two rows facing a lane through `position` (`spacing` wide). `roads` are the world's streets: no lot ever stands on their carriageway or sidewalks.
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — Resolve the current weather against a game's modifier table; throws on a kind the table does not define.
 - `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
@@ -7540,7 +7543,7 @@
 - `scatterGeneratorBase` (function): function scatterGeneratorBase(item: ScatterGeneratorItem, schema: ParamSchema): Record<string, unknown> — The base `meta` a generator item's variants grow around: preset values, then params.
 - `scatterGeneratorVariantCount` (function): function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number — How many variants a generator item bakes.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
-- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path, or null: its XZ polygon, its `meta` parsed against {@link SCATTER_SCHEMA}, and its seed (the schema's seed field, unset reading as "").
 - `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
 - `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented

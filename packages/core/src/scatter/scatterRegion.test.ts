@@ -6,14 +6,15 @@ import { flatField, noiseField } from "../terrain/terrain";
 import {
   clearanceZonesFrom,
   DEFAULT_MARKER_CLEARANCE,
-  readScatterRules,
   resolveScatter,
   resolveScatterRegion,
   scatterRegionEstimate,
   scatterRegionFromPath,
   SCATTER_PATH_KIND,
+  SCATTER_SCHEMA,
   type ScatterRegion,
 } from "./scatterRegion";
+import { parseParams } from "../generator/paramSchema";
 
 const square: readonly [number, number][] = [
   [-10, -10],
@@ -22,28 +23,14 @@ const square: readonly [number, number][] = [
   [-10, 10],
 ];
 
-function region(overrides: Partial<ScatterRegion["rules"]> = {}, id = "r1"): ScatterRegion {
+function region(overrides: Record<string, unknown> = {}, id = "r1"): ScatterRegion {
+  const { seed, ...meta } = overrides;
   return {
     id,
+    seed: typeof seed === "string" ? seed : "",
     polygon: square,
-    rules: {
-      density: 0.25,
-      minSpacing: 1,
-      seed: "",
-      minScale: 0.8,
-      maxScale: 1.2,
-      minYaw: 0,
-      maxYaw: Math.PI * 2,
-      verticalOffset: 0,
-      alignToNormal: false,
-      maxSlope: 0,
-      minHeight: Number.NEGATIVE_INFINITY,
-      maxHeight: Number.POSITIVE_INFINITY,
-      edgeFalloff: 0,
-      jitter: 1,
-      palette: [{ item: "grass", weight: 1 }],
-      ...overrides,
-    },
+    params: parseParams(SCATTER_SCHEMA, { density: 0.25, minSpacing: 1, minScale: 0.8, maxScale: 1.2, ...meta }),
+    avoid: [],
   };
 }
 
@@ -125,11 +112,14 @@ describe("scatter paths in a document", () => {
     };
   }
 
-  test("readScatterRules fills defaults and parses palette", () => {
-    const rules = readScatterRules(scatterPath({ density: 0.5, palette: [{ item: "pine", weight: 2 }] }));
-    expect(rules?.density).toBe(0.5);
-    expect(rules?.palette[0]?.item).toBe("pine");
-    expect(readScatterRules({ id: "p", kind: "road", points: [] })).toBeNull();
+  test("a scatter path parses its meta against the scatter schema", () => {
+    const parsed = scatterRegionFromPath(scatterPath({ density: 0.5, palette: [{ item: "pine", weight: 2 }], seed: "oak" }));
+    expect(parsed?.params.density).toBe(0.5);
+    expect(parsed?.params.palette[0]?.item).toBe("pine");
+    expect(parsed?.params.minSpacing).toBe(1.5);
+    expect(parsed?.seed).toBe("oak");
+    expect(scatterRegionFromPath(scatterPath({}))?.seed).toBe("");
+    expect(scatterRegionFromPath({ id: "p", kind: "road", points: [] })).toBeNull();
   });
 
   test("scatterRegionEstimate reports area and count", () => {
@@ -143,7 +133,7 @@ describe("scatter paths in a document", () => {
       version: 1 as const,
       markers: [],
       volumes: [],
-      paths: [scatterPath({ density: 0.4, item: "bush" }), { id: "road_1", kind: "road", points: [{ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 }] }],
+      paths: [scatterPath({ density: 0.4, palette: [{ item: "bush", weight: 1 }] }), { id: "road_1", kind: "road", points: [{ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 }] }],
       annotations: [],
     };
     const instances = resolveScatter(doc, flatField());
@@ -279,8 +269,8 @@ describe("scatter region clearance", () => {
   const doc = (paths: EditorPath[]) => ({ version: 1 as const, markers: [], volumes: [], paths, annotations: [] });
 
   test("a clearing region keeps other regions out of each placement's footprint", () => {
-    const boulders = field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", clearance: 3, minScale: 1, maxScale: 1, seed: "b" });
-    const palms = field("palms", { density: 0.3, minSpacing: 1, item: "palm", seed: "p" });
+    const boulders = field("boulders", { density: 0.004, minSpacing: 10, palette: [{ item: "boulder", weight: 1 }], clearance: 3, minScale: 1, maxScale: 1, seed: "b" });
+    const palms = field("palms", { density: 0.3, minSpacing: 1, palette: [{ item: "palm", weight: 1 }], seed: "p" });
     const instances = resolveScatter(doc([palms, boulders]), flatField());
     const rocks = instances.filter((i) => i.item === "boulder");
     const trees = instances.filter((i) => i.item === "palm");
@@ -289,13 +279,13 @@ describe("scatter region clearance", () => {
     for (const rock of rocks) expect(trees.some((tree) => Math.hypot(tree.x - rock.x, tree.z - rock.z) < 3)).toBe(false);
     // Document order is kept: the palms layer still comes first.
     expect(instances[0]?.item).toBe("palm");
-    const unclear = resolveScatter(doc([palms, field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", minScale: 1, maxScale: 1, seed: "b" })]), flatField());
+    const unclear = resolveScatter(doc([palms, field("boulders", { density: 0.004, minSpacing: 10, palette: [{ item: "boulder", weight: 1 }], minScale: 1, maxScale: 1, seed: "b" })]), flatField());
     expect(unclear.filter((i) => i.item === "palm").length).toBeGreaterThan(trees.length);
   });
 
   test("a region with autoAvoid off ignores clearings", () => {
-    const boulders = field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", clearance: 3, seed: "b" });
-    const free = field("free", { density: 0.3, minSpacing: 1, item: "palm", seed: "p", autoAvoid: false });
+    const boulders = field("boulders", { density: 0.004, minSpacing: 10, palette: [{ item: "boulder", weight: 1 }], clearance: 3, seed: "b" });
+    const free = field("free", { density: 0.3, minSpacing: 1, palette: [{ item: "palm", weight: 1 }], seed: "p", autoAvoid: false });
     const alone = resolveScatter(doc([free]), flatField()).length;
     const withRocks = resolveScatter(doc([free, boulders]), flatField()).filter((i) => i.item === "palm").length;
     expect(withRocks).toBe(alone);

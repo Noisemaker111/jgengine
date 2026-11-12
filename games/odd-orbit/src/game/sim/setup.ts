@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { generateBodyPlan } from "../creatures/bodyPlan";
-import { makeNamer } from "../creatures/names";
+import { alienNames } from "../creatures/names";
 import { ALIEN_KIND } from "../entities/aliens/catalog";
 import { type CareerId } from "../careers";
 import { householdStore } from "../session/store";
@@ -39,7 +39,7 @@ export function setupWorld(ctx: GameContext): void {
     });
   }
 
-  const namer = makeNamer(state.seed);
+  const names = alienNames(state.seed, MEMBER_COUNT);
   for (let i = 0; i < MEMBER_COUNT; i++) {
     const id = `alien:${i}`;
     const lifestyle: Lifestyle = i % 2 === 0 ? "yield" : "bloom";
@@ -60,7 +60,7 @@ export function setupWorld(ctx: GameContext): void {
     });
     const member: MemberState = {
       id,
-      name: namer(),
+      name: names[i]!,
       bodyPlan,
       job,
       needs: emptyNeeds(),

@@ -1,5 +1,5 @@
 /** A heavy built-in system a scene loads only when it uses one of its kinds or generators. */
-export type OnDemandSceneKindId = "city" | "plants";
+export type OnDemandSceneKindId = "city" | "plants" | "landform";
 
 /** One on-demand system: the kinds and generator ids that need it, and the import that registers them. @internal */
 export interface OnDemandSceneKind {
@@ -10,8 +10,8 @@ export interface OnDemandSceneKind {
 }
 
 /**
- * The built-in scene systems too large to ship in every game: procedural cities and the grown-plant
- * simulation. A scene that uses one loads it before drawing (`useOnDemandSceneKinds`); the editor
+ * The built-in scene systems too large to ship in every game: procedural cities, the grown-plant
+ * simulation and the landform (terrain) generator. A scene that uses one loads it before drawing (`useOnDemandSceneKinds`); the editor
  * registers them all up front (`registerAllSceneKinds`). @internal
  */
 export const ON_DEMAND_SCENE_KINDS: readonly OnDemandSceneKind[] = [
@@ -35,6 +35,15 @@ export const ON_DEMAND_SCENE_KINDS: readonly OnDemandSceneKind[] = [
       ]);
       registerForestStandKind();
       registerPlantGenerators();
+    },
+  },
+  {
+    id: "landform",
+    kinds: [],
+    generators: ["landform"],
+    load: async () => {
+      const { registerLandformGenerator } = await import("../landform/generator/landformGenerator");
+      registerLandformGenerator();
     },
   },
 ];

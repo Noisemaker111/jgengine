@@ -403,7 +403,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     const files = render("standalone", { landform: "dunes" });
     const scene: unknown = JSON.parse(fileOf(files, "src/editor.scene.json"));
     expect(scene).not.toHaveProperty("terrain");
-    expect(scene).toHaveProperty("terrainGenerator", { kind: "landform", start: "dunes", seed: "probe-game" });
+    expect(scene).toHaveProperty("terrainGenerator", { generator: "landform", params: { start: "dunes", seed: "probe-game" } });
     expect(fileOf(files, "src/editorLayers.ts")).toContain("withGeneratedTerrain(normalizeEditorLayers(");
     expect(JSON.parse(fileOf(render("standalone"), "src/editor.scene.json"))).not.toHaveProperty("terrainGenerator");
   });

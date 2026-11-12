@@ -370,6 +370,13 @@ export {
   type DurabilityState,
 } from "./item/durability";
 export {
+  ROLLED_ITEM_OUTPUT,
+  defineItemGenerator,
+  rollItemRecipe,
+  type ItemRecipe,
+  type RolledItem,
+} from "./item/itemGenerator";
+export {
   activeSetBonuses,
   applySetBonuses,
   candidateViolatesForbid,
@@ -480,6 +487,12 @@ export {
   type LootStatDelta,
   type LootValidationIssue,
 } from "./loot/lootGen";
+export {
+  LOOT_ITEMS_OUTPUT,
+  defineLootGenerator,
+  type LootGeneratorDefinition,
+  type LootGeneratorSpec,
+} from "./loot/lootGenerator";
 export { timeScaledRarity, type TimeScaledRarityOptions } from "./loot/lootModifiers";
 export {
   createLootPipeline,
@@ -632,7 +645,14 @@ export {
   type XpLevelStep,
 } from "./progression/xpCurve";
 export { type CellGrid } from "./puzzle/cellGrid";
-export { createNameGenerator } from "./random/nameGen";
+export {
+  NAMES_OUTPUT,
+  defineNameGenerator,
+  fillTemplate,
+  type NameGeneratorDefinition,
+  type NameGeneratorSpec,
+  type SyllableBank,
+} from "./random/nameGen";
 export { pickUniform, pickWeighted, shuffleWithRng } from "./random/pick";
 export { seededStreams } from "./random/rng";
 export {

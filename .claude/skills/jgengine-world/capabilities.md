@@ -1299,8 +1299,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## landform-start — start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
 
-- `LANDFORM_STARTS` (const) · `import { LANDFORM_STARTS } from "@jgengine/core/terrain/terrainGenerator"`
-- `landformStartTerrain` (function) · `import { landformStartTerrain } from "@jgengine/core/landform/generator/landformStart"`
+- `LANDFORM_GENERATOR_ID` (const) · `import { LANDFORM_GENERATOR_ID } from "@jgengine/core/landform/generator/landformDocument"`
 - `withGeneratedTerrain` (function) · `import { withGeneratedTerrain } from "@jgengine/core/landform/generator/landformStart"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
@@ -1998,6 +1997,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `scatterGeneratorBase` (function) · `import { scatterGeneratorBase } from "@jgengine/core/world"`
 - `scatterGeneratorVariantCount` (function) · `import { scatterGeneratorVariantCount } from "@jgengine/core/world"`
 - `scatterPlacementVariant` (function) · `import { scatterPlacementVariant } from "@jgengine/core/scatter/scatterGenerator"`
+
+## scatter-region-generator — grow a scatter region's params from a seed, for the editor's variant grid
+
+- `SCATTER_GENERATOR` (const) · `import { SCATTER_GENERATOR } from "@jgengine/core/world"`
 
 ## scatter-solids — scattered rocks and props block the player, NPCs and physics like any wall
 

@@ -7,6 +7,8 @@ import {
 } from "../world/geometry";
 import { pickWeighted } from "../random/pick";
 import { hashUnit } from "../random/rng";
+import { defineGenerator, generatorSeed } from "../generator/generator";
+import { defineParamSchema, parseParams, type ParamsOf } from "../generator/paramSchema";
 import { distanceToRing, pointInPolygon, polygonArea, ringBounds } from "../world/polygon";
 import { scatter } from "./scatter";
 import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
@@ -16,71 +18,37 @@ import type { TerrainNormal } from "../terrain/terrain";
 /** The editor path kind that marks a closed polyline as a foliage/scatter region. */
 export const SCATTER_PATH_KIND = "scatter";
 
-/** One species/prop in a scatter region's palette, with a relative spawn weight. */
-export interface ScatterPaletteEntry {
-  item: string;
-  weight: number;
-}
+/**
+ * The scatter region's params: one schema the inspector, `meta` parsing, the variant grid and
+ * {@link SCATTER_GENERATOR} share. `palette` (what fills the area) leads and `density` is the single
+ * coverage slider hoisted into the shared `CoverageSection`, so a region reads as Area → Assets →
+ * Density like every other scatterable kind; the rest is kind-specific tuning. A region's footprint
+ * (its polygon) and manual `avoid` discs are its shape, not params.
+ */
+export const SCATTER_SCHEMA = defineParamSchema({
+  fields: [
+    { type: "weightedList", key: "palette", label: "species (weighted)", itemLabel: "grass / tree id", default: [{ item: "grass", weight: 1 }], vary: false },
+    { type: "range", key: "density", label: "density", min: 0, max: 2, step: 0.01, default: 0.15, unit: "/m²" },
+    { type: "number", key: "minSpacing", label: "spacing", step: 0.25, default: 1.5, min: 0, explore: [0, 6] },
+    { type: "number", key: "minScale", label: "min scale", step: 0.05, default: 0.8, min: 0, explore: [0.3, 1.5] },
+    { type: "number", key: "maxScale", label: "max scale", step: 0.05, default: 1.3, min: 0, explore: [0.6, 2.5] },
+    { type: "number", key: "minYaw", label: "min yaw (rad)", step: 0.05, default: 0, vary: false },
+    { type: "number", key: "maxYaw", label: "max yaw (rad)", step: 0.05, default: Math.PI * 2, vary: false },
+    { type: "range", key: "jitter", label: "jitter (0 lattice, 1 scattered)", min: 0, max: 1, step: 0.01, default: 1 },
+    { type: "number", key: "maxSlope", label: "max slope", step: 0.05, default: 0, min: 0, vary: false },
+    { type: "number", key: "minHeight", label: "lowest ground (m)", step: 0.5, default: -1e4, vary: false },
+    { type: "number", key: "maxHeight", label: "highest ground (m)", step: 0.5, default: 1e4, vary: false },
+    { type: "number", key: "edgeFalloff", label: "edge fade", step: 0.5, default: 0, min: 0, explore: [0, 8] },
+    { type: "number", key: "verticalOffset", label: "lift (m)", step: 0.05, default: 0, vary: false },
+    { type: "bool", key: "alignToNormal", label: "align to slope", default: false },
+    { type: "bool", key: "autoAvoid", label: "auto-avoid gameplay spots", default: true, vary: false },
+    { type: "number", key: "clearance", label: "clears others (m)", step: 0.25, default: 0, min: 0, vary: false },
+    { type: "seed", key: "seed", label: "seed", default: "" },
+  ],
+});
 
-/** How a scatter region fills its polygon: density, spacing, variation, and masking rules. */
-export interface ScatterRegionRules {
-  /** Items per square meter across the region's footprint. */
-  density: number;
-  /** Minimum spacing between placements in meters; 0 allows clumping. */
-  minSpacing: number;
-  /** Seed string — same seed reproduces the same field. */
-  seed: string;
-  minScale: number;
-  maxScale: number;
-  /** Yaw range in radians applied per placement. */
-  minYaw: number;
-  maxYaw: number;
-  /** Lift every instance by this many meters off the ground. */
-  verticalOffset: number;
-  /** Orient instances to the terrain normal instead of straight up. */
-  alignToNormal: boolean;
-  /** Reject placements on ground steeper than this slope (rise/run); 0 disables. */
-  maxSlope: number;
-  minHeight: number;
-  maxHeight: number;
-  /** Thin placements out within this many meters of the region edge; 0 disables. */
-  edgeFalloff: number;
-  /** Grid jitter 0..1 — 0 is a rigid lattice, 1 fully scattered. */
-  jitter: number;
-  /** Weighted species palette; falls back to a single `grass` entry. */
-  palette: readonly ScatterPaletteEntry[];
-  /** Explicit no-scatter clearance discs this region always honors (manual exclusion). */
-  avoid: readonly AvoidZone[];
-  /** Honor document-wide clearance zones (tagged markers/paths) too; false = manual `avoid` only. */
-  autoAvoid: boolean;
-  /**
-   * Metres, times each placement's scale, that this region's placements keep clear of every other
-   * auto-avoiding region (a boulder keeps palms out of its footprint); 0 disables.
-   */
-  clearance: number;
-}
-
-/** Defaults a bare scatter region fills with: sparse grass, lightly spaced. */
-export const SCATTER_DEFAULTS: ScatterRegionRules = {
-  density: 0.15,
-  minSpacing: 1.5,
-  seed: "",
-  minScale: 0.8,
-  maxScale: 1.3,
-  minYaw: 0,
-  maxYaw: Math.PI * 2,
-  verticalOffset: 0,
-  alignToNormal: false,
-  maxSlope: 0,
-  minHeight: Number.NEGATIVE_INFINITY,
-  maxHeight: Number.POSITIVE_INFINITY,
-  edgeFalloff: 0,
-  jitter: 1,
-  palette: [{ item: "grass", weight: 1 }],
-  avoid: [],
-  autoAvoid: true,
-  clearance: 0,
-};
+/** A scatter region's parsed params. */
+export type ScatterParams = ParamsOf<typeof SCATTER_SCHEMA>;
 
 /** Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`. */
 export const DEFAULT_MARKER_CLEARANCE = 3.5;
@@ -97,11 +65,15 @@ export const DEFAULT_CLEARANCE_KINDS: readonly string[] = [
   "travel",
 ];
 
-/** A resolvable scatter region: a closed polygon footprint plus its fill rules. */
+/** A resolvable scatter region: a closed polygon footprint, its params and seed, and its own clearance discs. */
 export interface ScatterRegion {
   id: string;
+  /** The region's injected seed; placements hash `id` with it, so two regions with one seed still differ. */
+  seed: string;
   polygon: readonly Vec2[];
-  rules: ScatterRegionRules;
+  params: ScatterParams;
+  /** Explicit no-scatter clearance discs this region always honors (manual exclusion). */
+  avoid: readonly AvoidZone[];
 }
 
 /** A single placed scatter instance — grounded world position plus per-instance variation. */
@@ -127,17 +99,18 @@ export interface ScatterTerrain {
  * Deterministic placements for one scatter region: scatter its polygon footprint at `density`
  * items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements
  * outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same
- * saved region always grows the same field. Grounds each instance on `terrain` when provided.
+ * saved region always grows the same field. Grounds each instance on `terrain` when provided. The
+ * placement core {@link SCATTER_GENERATOR} grows its preview plot with.
  */
 export function resolveScatterRegion(
   region: ScatterRegion,
   terrain?: ScatterTerrain,
   avoid?: AvoidMasks,
 ): ScatterInstance[] {
-  const rules = region.rules;
+  const params = region.params;
   const bounds = region.polygon.length === 0 ? null : ringBounds(region.polygon);
-  if (bounds === null || region.polygon.length < 3 || rules.density <= 0) return [];
-  const ownDiscs = rules.avoid ?? [];
+  if (bounds === null || region.polygon.length < 3 || params.density <= 0) return [];
+  const ownDiscs = region.avoid;
   const masks: AvoidMasks = {
     discs: avoid === undefined ? ownDiscs : ownDiscs.length === 0 ? avoid.discs : [...ownDiscs, ...avoid.discs],
     corridors: avoid?.corridors ?? [],
@@ -145,10 +118,10 @@ export function resolveScatterRegion(
   const hasMasks = masks.discs.length > 0 || masks.corridors.length > 0;
   const points = scatter({
     area: bounds,
-    density: rules.density,
-    minDistance: rules.minSpacing,
-    jitter: rules.jitter,
-    seed: `${region.id}:${rules.seed}`,
+    density: params.density,
+    minDistance: params.minSpacing,
+    jitter: params.jitter,
+    seed: `${region.id}:${region.seed}`,
   });
   const instances: ScatterInstance[] = [];
   for (const point of points) {
@@ -162,40 +135,40 @@ export function resolveScatterRegion(
       if (influence > 0 && hashUnit(`${region.id}:avoid:${point.index}`) < influence) continue;
     }
 
-    if (rules.edgeFalloff > 0) {
+    if (params.edgeFalloff > 0) {
       const edge = distanceToRing(region.polygon, p[0], p[1]);
-      if (edge < rules.edgeFalloff && hashUnit(`${region.id}:edge:${point.index}`) > edge / rules.edgeFalloff) continue;
+      if (edge < params.edgeFalloff && hashUnit(`${region.id}:edge:${point.index}`) > edge / params.edgeFalloff) continue;
     }
 
-    let y = rules.verticalOffset;
+    let y = params.verticalOffset;
     let normal: TerrainNormal | undefined;
     if (terrain !== undefined) {
       const height = terrain.sampleHeight(point.x, point.z);
-      if (height < rules.minHeight || height > rules.maxHeight) continue;
+      if (height < params.minHeight || height > params.maxHeight) continue;
       // A normal costs several height samples; only rules that read it pay for it.
-      if (rules.maxSlope > 0 || rules.alignToNormal) {
+      if (params.maxSlope > 0 || params.alignToNormal) {
         const n = terrain.sampleNormal(point.x, point.z);
-        if (rules.maxSlope > 0) {
+        if (params.maxSlope > 0) {
           const slope = Math.hypot(n[0], n[2]) / Math.max(n[1], 1e-9);
-          if (slope > rules.maxSlope) continue;
+          if (slope > params.maxSlope) continue;
         }
-        if (rules.alignToNormal) normal = n;
+        if (params.alignToNormal) normal = n;
       }
-      y = height + rules.verticalOffset;
+      y = height + params.verticalOffset;
     }
 
-    const scaleRoll = hashUnit(`${region.id}:${rules.seed}:scale:${point.index}`);
-    const yawRoll = hashUnit(`${region.id}:${rules.seed}:yaw:${point.index}`);
-    const itemRoll = hashUnit(`${region.id}:${rules.seed}:item:${point.index}`);
+    const scaleRoll = hashUnit(`${region.id}:${region.seed}:scale:${point.index}`);
+    const yawRoll = hashUnit(`${region.id}:${region.seed}:yaw:${point.index}`);
+    const itemRoll = hashUnit(`${region.id}:${region.seed}:item:${point.index}`);
     instances.push({
       id: `${region.id}/${point.index}`,
       regionId: region.id,
-      item: pickWeighted(() => itemRoll, rules.palette, (entry) => entry.weight)?.item ?? rules.palette[0]?.item ?? "grass",
+      item: pickWeighted(() => itemRoll, params.palette, (entry) => entry.weight)?.item ?? params.palette[0]?.item ?? "grass",
       x: point.x,
       y,
       z: point.z,
-      rotationY: rules.minYaw + (rules.maxYaw - rules.minYaw) * yawRoll,
-      scale: rules.minScale + (rules.maxScale - rules.minScale) * scaleRoll,
+      rotationY: params.minYaw + (params.maxYaw - params.minYaw) * yawRoll,
+      scale: params.minScale + (params.maxScale - params.minScale) * scaleRoll,
       ...(normal === undefined ? {} : { normal }),
     });
     // Bounded work: a single region never emits more than the shared instance budget, matching the
@@ -206,73 +179,14 @@ export function resolveScatterRegion(
   return instances;
 }
 
-function metaNumber(meta: Record<string, unknown> | undefined, key: string, fallback: number): number {
-  const value = meta?.[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function metaString(meta: Record<string, unknown> | undefined, key: string, fallback: string): string {
-  const value = meta?.[key];
-  return typeof value === "string" ? value : fallback;
-}
-
-function metaBool(meta: Record<string, unknown> | undefined, key: string, fallback: boolean): boolean {
-  const value = meta?.[key];
-  return typeof value === "boolean" ? value : fallback;
-}
-
-/** Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`. */
-export function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] {
-  const raw = meta?.["palette"];
-  if (Array.isArray(raw)) {
-    const entries = raw
-      .filter((entry): entry is { item: unknown; weight?: unknown } => typeof entry === "object" && entry !== null)
-      .map((entry) => ({
-        item: typeof entry.item === "string" ? entry.item : "grass",
-        weight: typeof entry.weight === "number" && Number.isFinite(entry.weight) ? Math.max(0, entry.weight) : 1,
-      }))
-      .filter((entry) => entry.item.length > 0);
-    if (entries.length > 0) return entries;
-  }
-  const single = metaString(meta, "item", "");
-  if (single.length > 0) return [{ item: single, weight: 1 }];
-  return [...SCATTER_DEFAULTS.palette];
-}
-
 /** True when an editor path is a foliage/scatter region. */
 export function isScatterPath(path: ScenePathLike): boolean {
   return path.kind === SCATTER_PATH_KIND;
 }
 
-/** The path's scatter rules with defaults filled in; null for non-scatter paths. */
-export function readScatterRules(path: ScenePathLike): ScatterRegionRules | null {
-  if (!isScatterPath(path)) return null;
-  const meta = path.meta;
-  return {
-    density: Math.max(0, metaNumber(meta, "density", SCATTER_DEFAULTS.density)),
-    minSpacing: Math.max(0, metaNumber(meta, "minSpacing", SCATTER_DEFAULTS.minSpacing)),
-    seed: metaString(meta, "seed", SCATTER_DEFAULTS.seed),
-    minScale: metaNumber(meta, "minScale", SCATTER_DEFAULTS.minScale),
-    maxScale: metaNumber(meta, "maxScale", SCATTER_DEFAULTS.maxScale),
-    minYaw: metaNumber(meta, "minYaw", SCATTER_DEFAULTS.minYaw),
-    maxYaw: metaNumber(meta, "maxYaw", SCATTER_DEFAULTS.maxYaw),
-    verticalOffset: metaNumber(meta, "verticalOffset", SCATTER_DEFAULTS.verticalOffset),
-    alignToNormal: metaBool(meta, "alignToNormal", SCATTER_DEFAULTS.alignToNormal),
-    maxSlope: Math.max(0, metaNumber(meta, "maxSlope", SCATTER_DEFAULTS.maxSlope)),
-    minHeight: metaNumber(meta, "minHeight", SCATTER_DEFAULTS.minHeight),
-    maxHeight: metaNumber(meta, "maxHeight", SCATTER_DEFAULTS.maxHeight),
-    edgeFalloff: Math.max(0, metaNumber(meta, "edgeFalloff", SCATTER_DEFAULTS.edgeFalloff)),
-    jitter: metaNumber(meta, "jitter", SCATTER_DEFAULTS.jitter),
-    palette: readScatterPalette(meta),
-    avoid: readAvoidZones(meta),
-    autoAvoid: metaBool(meta, "autoAvoid", SCATTER_DEFAULTS.autoAvoid),
-    clearance: Math.max(0, metaNumber(meta, "clearance", SCATTER_DEFAULTS.clearance)),
-  };
-}
-
 /**
  * Parses a region's manual clearance discs from `meta.avoid` (array of {x,z,radius,feather?}).
- * @internal — used by `readScatterRules`; games author `avoid` through the region inspector.
+ * @internal — part of a region's shape, read by {@link scatterRegionFromPath}.
  */
 export function readAvoidZones(meta: Record<string, unknown> | undefined): AvoidZone[] {
   const raw = meta?.["avoid"];
@@ -292,24 +206,58 @@ export function readAvoidZones(meta: Record<string, unknown> | undefined): Avoid
   return zones;
 }
 
-/** Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null. */
+/**
+ * Builds a resolvable {@link ScatterRegion} from a scatter path, or null: its XZ polygon, its `meta`
+ * parsed against {@link SCATTER_SCHEMA}, and its seed (the schema's seed field, unset reading as "").
+ */
 export function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null {
-  const rules = readScatterRules(path);
-  if (rules === null || path.points.length < 3) return null;
+  if (!isScatterPath(path) || path.points.length < 3) return null;
   return {
     id: path.id,
+    seed: generatorSeed(SCATTER_SCHEMA, path.meta, ""),
     polygon: path.points.map((point) => [point.x, point.z] as Vec2),
-    rules,
+    params: parseParams(SCATTER_SCHEMA, path.meta),
+    avoid: readAvoidZones(path.meta),
   };
 }
 
 /** Estimated placement count for a scatter path — density × polygon area, for a live UI readout. */
 export function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } {
-  const rules = readScatterRules(path);
-  if (rules === null) return { area: 0, count: 0 };
+  if (!isScatterPath(path)) return { area: 0, count: 0 };
   const area = polygonArea(path.points.map((point) => [point.x, point.z] as Vec2));
-  return { area, count: Math.floor(area * rules.density) };
+  return { area, count: Math.floor(area * parseParams(SCATTER_SCHEMA, path.meta).density) };
 }
+
+/** The output family of {@link SCATTER_GENERATOR}: a {@link ScatterPlot}. */
+export const SCATTER_OUTPUT = "scatter-plot";
+
+/** Side (m) of the square sample plot {@link SCATTER_GENERATOR} fills. */
+export const SCATTER_PLOT_SIZE = 24;
+
+/** A scatter region's params grown over a flat square sample plot centred on the origin. */
+export interface ScatterPlot {
+  /** Side of the plot in metres. */
+  size: number;
+  instances: ScatterInstance[];
+}
+
+/**
+ * The scatter generator: a region's params and seed grown over a {@link SCATTER_PLOT_SIZE} m square
+ * by the same placement core as {@link resolveScatterRegion}, so the variant grid previews how a
+ * region's palette, density, spacing and scale read without the region's own footprint.
+ * @capability scatter-region-generator grow a scatter region's params from a seed, for the editor's variant grid
+ */
+export const SCATTER_GENERATOR = defineGenerator({
+  id: SCATTER_PATH_KIND,
+  label: "Foliage / scatter",
+  output: SCATTER_OUTPUT,
+  schema: SCATTER_SCHEMA,
+  generate(params, context): ScatterPlot {
+    const half = SCATTER_PLOT_SIZE / 2;
+    const polygon: Vec2[] = [[-half, -half], [half, -half], [half, half], [-half, half]];
+    return { size: SCATTER_PLOT_SIZE, instances: resolveScatterRegion({ id: "plot", seed: context.seed, polygon, params, avoid: [] }) };
+  },
+});
 
 /** Reads a gameplay object's clearance radius: explicit `meta.clearance`, else a kind default, else 0. */
 function clearanceOf(
@@ -459,7 +407,7 @@ function resolveScatterUncached(
     if (region !== null) regions.push(region);
   }
   const resolveOne = (region: ScatterRegion, extra: readonly AvoidZone[]): ScatterInstance[] => {
-    const useAuto = region.rules.autoAvoid && options.autoAvoid !== false;
+    const useAuto = region.params.autoAvoid && options.autoAvoid !== false;
     const masks: AvoidMasks = {
       discs: useAuto ? [...baseDiscs, ...auto.discs, ...extra] : baseDiscs,
       corridors: useAuto ? auto.corridors : [],
@@ -470,10 +418,10 @@ function resolveScatterUncached(
   const cleared = new Map<string, ScatterInstance[]>();
   const clearDiscs: AvoidZone[] = [];
   for (const region of regions) {
-    if (region.rules.clearance <= 0) continue;
+    if (region.params.clearance <= 0) continue;
     const placed = resolveOne(region, []);
     cleared.set(region.id, placed);
-    for (const instance of placed) clearDiscs.push({ x: instance.x, z: instance.z, radius: region.rules.clearance * instance.scale, feather: 0 });
+    for (const instance of placed) clearDiscs.push({ x: instance.x, z: instance.z, radius: region.params.clearance * instance.scale, feather: 0 });
   }
   const out: ScatterInstance[] = [];
   for (const region of regions) {
