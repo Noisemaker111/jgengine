@@ -30,6 +30,8 @@ describe("the GitHub client", () => {
       github.mergePull(1, "abc"),
       github.closePull(1, "c"),
       github.branchRuns("beta", 3),
+      github.branchHead("agent/x"),
+      github.deleteBranch("agent/x"),
     ];
     expect(seen.length).toBe(results.length);
     expect(seen.every((args) => args[0] === "api")).toBe(true);
@@ -82,5 +84,16 @@ describe("the GitHub client", () => {
     const found = api.github.listPulls({ head: "agent/x", state: "open" });
     expect(found.ok && found.value.map((pull) => pull.number)).toEqual([7]);
     expect(api.calls[0]?.path).toContain(`head=${encodeURIComponent("me:agent/x")}`);
+  });
+
+  test("a branch is read and deleted as a ref, its slashes kept, and a missing one reads as gone", () => {
+    const api = fakeGitHub({ pulls: [{ number: 8, head: "agent/x", sha: "s8" }] });
+    expect(api.github.branchHead("agent/x")).toEqual({ ok: true, value: "s8" });
+    expect(api.github.deleteBranch("agent/x")).toEqual({ ok: true, value: null });
+    expect(api.calls.at(-1)).toMatchObject({ method: "DELETE", path: "repos/me/game/git/refs/heads/agent/x" });
+    expect(api.deleted).toEqual(["agent/x"]);
+    expect(api.github.branchHead("agent/x")).toEqual({ ok: true, value: null });
+    const again = api.github.deleteBranch("agent/x");
+    expect(again.ok).toBe(false);
   });
 });

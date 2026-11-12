@@ -20,7 +20,8 @@
 // base, a file edited while verify ran - is verified again first, and the unit cache reruns only what
 // changed. GitHub merges the PR only while its head is that commit. CI on the beta push stays the
 // backstop. The last line names the merge commit; exit 1 when verify, land or the merge failed, 3 when
-// it cannot answer (no PR, no branch).
+// it cannot answer (no PR, no branch). Once merged, it deletes the PR's head branch on origin (never
+// beta, main, release/*, backup/*, rescue/* or pr-shots, nor a branch another open PR still uses).
 //
 // One run per worktree: a second lane:close started while the first is still verifying is
 // refused (exit 4) and told which run holds the worktree, instead of racing it for the same
@@ -33,7 +34,7 @@ import { dirname, join } from "node:path";
 
 import { assertCheckoutReady } from "./checkout-ready";
 import { gitHub, repoFromRemote, type GitHub } from "./github";
-import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
+import { MERGE_ATTEMPTS, deleteLandedBranch, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
 import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -356,6 +357,14 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
       const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
       const reapLine = lastLine(reaped.stdout);
       if (reapLine.length > 0) stage(`lane:close: ${reapLine}`);
+      // GitHub keeps a merged PR's head branch (its auto-delete is off), so the lane deletes its own,
+      // only now that the merge is confirmed. A failed delete is a degraded line, not a failed close.
+      if (view.ok && view.value.isCrossRepository) stage(`lane:close: kept ${view.value.headRefName}: it lives in a fork`);
+      else {
+        const cleanup = deleteLandedBranch(github, { branch: view.ok ? view.value.headRefName : branch, landedSha: head, pr });
+        if (cleanup.kind === "warn") io.err(`lane:close: degraded: ${cleanup.line}`);
+        else io.out(`lane:close: ${cleanup.line}`);
+      }
       io.out(`lane:close: merged #${pr} into beta as ${merged.sha}`);
       return EXIT_CLOSED;
     }

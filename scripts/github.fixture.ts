@@ -48,6 +48,13 @@ export interface FakeGitHub {
   /** Check runs per commit sha; a test changes them between polls. */
   checks: Record<string, FakeCheck[]>;
   comments: { number: number; body: string }[];
+  /**
+   * Branch tips on origin a test set; a branch without one is at the sha of its newest PR, so a PR's
+   * head branch exists until it is deleted.
+   */
+  branches: Map<string, string>;
+  /** Branches deleted through `DELETE git/refs/heads/<branch>`, in order. */
+  deleted: string[];
 }
 
 export function fakeGitHub(seed: {
@@ -56,6 +63,8 @@ export function fakeGitHub(seed: {
   /** Check runs per commit sha. */
   checks?: Record<string, FakeCheck[]>;
   runs?: FakeRun[];
+  /** Branch tips on origin, over the ones each PR's head implies. */
+  branches?: Record<string, string>;
   /** The number the next opened PR gets (its head sha is `sha-<number>`). */
   nextNumber?: number;
   /** A stderr for a call that should fail, e.g. a 403 or a merge GitHub refuses. */
@@ -67,6 +76,15 @@ export function fakeGitHub(seed: {
   const checks: Record<string, FakeCheck[]> = { ...seed.checks };
   const calls: FakeCall[] = [];
   const comments: { number: number; body: string }[] = [];
+  const branches = new Map(Object.entries(seed.branches ?? {}));
+  const deleted: string[] = [];
+  const branchSha = (name: string): string | undefined => {
+    if (deleted.includes(name)) return undefined;
+    const set = branches.get(name);
+    if (set !== undefined) return set;
+    const newest = [...pulls.values()].filter((row) => row.head === name).sort((a, b) => b.number - a.number)[0];
+    return newest === undefined ? undefined : (newest.sha ?? `sha-${newest.number}`);
+  };
 
   const ok = (value: unknown): GhRun => ({ status: 0, stdout: value === null ? "" : JSON.stringify(value), stderr: "" });
   const refuse = (stderr: string): GhRun => ({ status: 1, stdout: "", stderr });
@@ -177,6 +195,16 @@ export function fakeGitHub(seed: {
         })),
       });
     }
+    if (parts[0] === "git" && (parts[1] === "ref" || parts[1] === "refs") && parts[2] === "heads") {
+      const name = parts.slice(3).map(decodeURIComponent).join("/");
+      const sha = branchSha(name);
+      if (parts[1] === "ref" && call.method === "GET") return sha === undefined ? refuse("gh: Not Found (HTTP 404)") : ok({ ref: `refs/heads/${name}`, object: { sha } });
+      if (parts[1] === "refs" && call.method === "DELETE") {
+        if (sha === undefined) return refuse("gh: Reference does not exist (HTTP 422)");
+        deleted.push(name);
+        return ok(null);
+      }
+    }
     if (parts[0] === "actions" && parts[1] === "runs" && parts.length === 2) {
       const branch = params.get("branch");
       const limit = Number(params.get("per_page") ?? "30");
@@ -186,5 +214,5 @@ export function fakeGitHub(seed: {
     return refuse(`HTTP 404: the fake has no ${call.method} ${call.path}`);
   };
 
-  return { github: gitHub(gh, repo, () => {}), gh, calls, pulls, checks, comments };
+  return { github: gitHub(gh, repo, () => {}), gh, calls, pulls, checks, comments, branches, deleted };
 }
