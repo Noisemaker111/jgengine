@@ -11,7 +11,7 @@ import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { lookCredits } from "../../../art/look";
 import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";
-import { savePark } from "../../persistence";
+import { savePark, scenariosWon } from "../../persistence";
 import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
 import { session } from "../../session";
 import { park } from "../../park";
@@ -155,12 +155,13 @@ function NameField() {
 
 /** Name the park, then start a scenario or free play on the empty lot. */
 function NewParkPane({ hasSave, onFresh, onFreePlay, onScenario }: { hasSave: boolean; onFresh: () => void; onFreePlay: () => void; onScenario: (id: string) => void }) {
+  const won = scenariosWon(useGameContext());
   return <>
     <NameField />
     <Text>Scenarios open one after another: win one to unlock the next.</Text>
     <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={8}>
       {SCENARIOS.map((scenario) => {
-        const lock = scenarioLock(scenario.id);
+        const lock = scenarioLock(scenario.id, won);
         return <Button key={scenario.id} disabled={lock !== null} items="start" tooltip={lock ?? scenario.blurb} onPress={() => onScenario(scenario.id)} label={scenario.title}>
           <Text weight={800}>{lock === null ? scenario.title : `Locked · ${scenario.title}`}</Text><Text size={12} color={PENCIL}>{lock ?? scenario.goal}</Text>
         </Button>;

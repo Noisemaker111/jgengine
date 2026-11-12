@@ -11,7 +11,7 @@ import { resetRides } from "./rides";
 import { resetSession, session } from "./session";
 import { scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
 import { syncAmbience } from "./audio";
-import { savePark } from "./persistence";
+import { savePark, scenariosWon } from "./persistence";
 import { DAY_START } from "./catalog";
 import { resetDayLoop } from "./daySession";
 import { restartHints } from "./onboarding";
@@ -105,7 +105,7 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
 /** Begin a scenario from a fresh park: the world starts over and its job's mission starts the clock. */
 export function beginScenario(ctx: GameContext, id: string): boolean {
   const scenario = scenarioDef(id);
-  if (scenario === null || scenarioLock(id) !== null) return false;
+  if (scenario === null || scenarioLock(id, scenariosWon(ctx)) !== null) return false;
   resetPark(ctx, { cash: scenario.cash });
   restartHints(ctx);
   const w = park.of(ctx);

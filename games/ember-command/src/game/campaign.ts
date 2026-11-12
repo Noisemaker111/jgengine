@@ -26,6 +26,7 @@ import { hudStore } from "./hudStore";
 import { session } from "./session";
 import { GOLD, LUMBER } from "./tuning";
 import { earn } from "./treasury";
+import { saveCampaign } from "./campaignSave";
 
 /**
  * The vale campaign: five missions that teach the skirmish in order, run by the engine's mission
@@ -347,7 +348,7 @@ export interface CampaignProgress {
 }
 
 export const campaignStore = defineStore<CampaignProgress>("ember.campaign", () => ({ won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } }));
-/** The mission machine's serializable position, written with the rest of the world on a checkpoint. */
+/** The mission machine's serializable position, written to the campaign document on a checkpoint. */
 export const campaignMissionStore = defineStore<MissionRuntimeSnapshot | null>("ember.campaign.mission", null);
 
 /** Gold and lumber the won missions carry into the next battle. */
@@ -634,10 +635,10 @@ export function startCampaignMission(ctx: GameContext): boolean {
   return true;
 }
 
-/** Write the whole world (campaign track + mission machine) to the session save. */
+/** Write the campaign track, the mission machine and the kit to the live slot's campaign document. */
 export function checkpointCampaign(ctx: GameContext): void {
   campaignMissionStore.write(ctx, campaignRuntime(ctx).snapshot());
-  void ctx.game.save?.checkpoint();
+  void saveCampaign(ctx);
 }
 
 /**

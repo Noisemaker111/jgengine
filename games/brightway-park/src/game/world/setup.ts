@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { registerBuildCommands } from "../build/commands";
-import { restorePark, savePark } from "../persistence";
+import { loadParkProfile, restorePark, savePark } from "../persistence";
 import { resetPark } from "../parkReset";
 import { armMidnight } from "../midnight";
 import { session } from "../session";
@@ -31,6 +31,7 @@ export function parkReady(ctx: GameContext): Promise<void> {
  * before then keeps what it made. Midnight is re-armed from wherever the save left the clock.
  */
 async function openSavedPark(ctx: GameContext): Promise<void> {
+  await loadParkProfile(ctx);
   if (!(await restorePark(ctx))) return;
   ctx.time.pause();
   armMidnight(ctx);

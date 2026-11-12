@@ -31,9 +31,13 @@ does now.
 - **HUD.** The orders card carries the mission number, its step pips, the live objective, the
   mission clock (and a counter when the objective counts), and the objective label is mirrored by the
   engine notice feed on each beat.
-- **Save.** `persist: { mode: "manual" }`: the campaign track, the stores and the whole world are
-  checkpointed at mission start, win and loss, and restored on boot behind the field desk. The
-  battlefield is restaged fresh on load, so a save carries progress, not a half-played board.
+- **Save.** One shared save document per campaign slot (`ember-command.campaign:<slot>`, the core
+  `saveDocument`): the record card with the gold and lumber it carries, the campaign track, the mission
+  machine and Bram's kit, checkpointed at mission start, win and loss and restored on boot behind the
+  field desk. There is no whole-world save (`persist: false`): the battlefield is restaged fresh on
+  load, so a save carries progress, not a half-played board, and Continue opens the treasury at the
+  record's stores. A campaign an older build kept in its record index and whole-world save lifts into
+  the document on the first read.
 - **Field desk.** The front end is the shared game menu over the live vale, in the campaign's own
   words: Continue campaign, New campaign, Campaigns & orders (three records in the game's own save
   slots), Settings and Credits, with the same system scaled down for pause (Resume the mission, Save

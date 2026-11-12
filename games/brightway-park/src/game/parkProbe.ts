@@ -6,6 +6,7 @@ import { hintsTaught } from "./onboarding";
 import { park, researched } from "./park";
 import { SCENARIOS, scenarioLock } from "./scenarios";
 import { session } from "./session";
+import { scenariosWon } from "./persistence";
 
 /** What the proofs read from a live park. */
 export interface ParkProbe {
@@ -106,7 +107,7 @@ export function parkProbe(ctx: GameContext): ParkProbe {
     staffTotal: staff.total,
     awardsSeen: awards,
     awardsTotal: MILESTONES.length,
-    scenariosSeen: SCENARIOS.filter((scenario) => scenarioLock(scenario.id) === null).length,
+    scenariosSeen: SCENARIOS.filter((scenario) => scenarioLock(scenario.id, scenariosWon(ctx)) === null).length,
     scenariosTotal: SCENARIOS.length,
     structures: w.instances().length,
     researched: topics,

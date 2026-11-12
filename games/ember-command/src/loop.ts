@@ -2,7 +2,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { restoreCampaign } from "./game/campaign";
 import { loadHeroPicks, pendingHeroOffer } from "./game/heroActs";
-import { commandProfile, recordOfSlot, refreshCampaignSlots } from "./game/menuSave";
+import { perContext } from "@jgengine/core/runtime/perContext";
+
+import { campaignHeld, campaignSlot, openCampaignSlot, recordOfSlot } from "./game/campaignSave";
+import { commandProfile, refreshCampaignSlots } from "./game/menuSave";
 import { registerMenuCapture } from "./game/captureMenu";
 import { matchRunning, session } from "./game/session";
 import { setupSkirmish } from "./game/world/scene";
@@ -11,29 +14,37 @@ import { setupSkirmish } from "./game/world/scene";
 export function onInit(ctx: GameContext): void {
   setupSkirmish(ctx);
   registerMenuCapture(ctx);
-  void resumeCampaign(ctx);
+  booting(ctx).ready = resumeCampaign(ctx);
 }
 
 /**
- * Bring the vale campaign back from the session save. A checkpoint holds a whole mid-battle world;
- * the campaign carries its track and its stores across, so the field is restaged fresh and the
- * offered mission is re-offered rather than resumed half-played. If the player already took command
- * before the load landed (a capture boot, a fast click), keep that battle and only adopt the track.
+ * Bring the vale campaign back from the live slot's campaign document. The campaign carries its
+ * track, its mission machine and Bram's kit across; the field is restaged fresh and the offered
+ * mission is re-offered rather than resumed half-played. If the player already took command before
+ * the read landed (a capture boot, a fast click), keep that battle and only adopt the track.
  */
 async function resumeCampaign(ctx: GameContext): Promise<void> {
-  const save = ctx.game.save;
-  if (save === undefined) return;
-  if (!(await save.hasSave())) return;
-  if (!(await save.load())) return;
-  if (!session.started) setupSkirmish(ctx);
-  restoreCampaign(ctx);
-  // The saved kit is the one piece of hero state the campaign carries into this battle.
-  loadHeroPicks(ctx);
-  // The field desk reads the commander and the offered mission from the slot's record document.
-  const record = await recordOfSlot(ctx, save.slot());
+  const slot = campaignSlot(ctx);
+  // An empty slot leaves the boot field alone; only a held campaign is read into it.
+  if (await campaignHeld(ctx, slot)) {
+    await openCampaignSlot(ctx, slot);
+    if (!session.started) setupSkirmish(ctx);
+    restoreCampaign(ctx);
+    // The saved kit is the one piece of hero state the campaign carries into this battle.
+    loadHeroPicks(ctx);
+  }
+  // The field desk reads the commander and the offered mission from the slot's record.
+  const record = await recordOfSlot(ctx, slot);
   commandProfile.name = record?.name ?? "";
   await refreshCampaignSlots(ctx);
 }
+
+/** Settles once the boot read of the live campaign slot has finished. */
+export function campaignReady(ctx: GameContext): Promise<void> {
+  return booting(ctx).ready;
+}
+
+const booting = perContext(() => ({ ready: Promise.resolve() }));
 
 /** @internal No avatar — Ember Command is a commander-view RTS, so a joining player controls the army. */
 export function onNewPlayer(_ctx: GameContext): void {}
