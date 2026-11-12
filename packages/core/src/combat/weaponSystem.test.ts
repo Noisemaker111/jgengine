@@ -6,6 +6,7 @@ import { createDamageRuntime, type DamageRuntime } from "./damage/damageRuntime"
 import type { DamageTableDef } from "./damage/damageTable";
 import type { HitZoneTable } from "./hitZones";
 import type { WeaponDefinition } from "./weaponDefinition";
+import { statPoolReserve } from "./magazine";
 import { createWeaponSystem, type WeaponSystem, type WeaponSystemDeps } from "./weaponSystem";
 
 const damageTable: DamageTableDef = {
@@ -368,6 +369,34 @@ describe("reload states and ammo economy", () => {
     for (let i = 0; i < 90; i += 1) weapon.tick(1 / 60);
     expect(weapon.ammo()).toMatchObject({ loaded: 4, reserve: 2, reload: "idle" });
     expect(weapon.stats().reloadsCompleted).toBe(1);
+  });
+
+  test("an injected reserve is the one owner of the pool: reloads draw from it and see outside spends", () => {
+    const pool = { ammo_light: 6 };
+    const stats = {
+      get: (_owner: string, stat: string) => ({ current: pool[stat as "ammo_light"] }),
+      delta: (_owner: string, stat: string, amount: number) => { pool[stat as "ammo_light"] += amount; },
+    };
+    const weapon = createWeaponSystem(
+      fixture({ magazine: { capacity: 4, reloadMs: 1_000, reserve: 999 } }),
+      makeDeps({ raycast: hitscanAt(20), magazineReserve: statPoolReserve(stats, "player", "ammo_light") }),
+    );
+    weapon.setTrigger(true);
+    for (let i = 0; i < 40; i += 1) weapon.tick(1 / 60);
+    weapon.setTrigger(false);
+    expect(weapon.ammo()).toMatchObject({ loaded: 0, reserve: 6, reload: "reloading" });
+    // Another gun of the same ammo class spends from the pool mid-reload.
+    pool.ammo_light -= 3;
+    for (let i = 0; i < 90; i += 1) weapon.tick(1 / 60);
+    expect(weapon.ammo()).toMatchObject({ loaded: 3, reserve: 0, reload: "idle" });
+    expect(pool.ammo_light).toBe(0);
+    // A pickup lands in the stat and the next reload sees it.
+    pool.ammo_light += 10;
+    expect(weapon.reload()).toBe(true);
+    weapon.tick(1.1);
+    expect(weapon.ammo()).toMatchObject({ loaded: 4, reserve: 9 });
+    weapon.reset();
+    expect(weapon.ammo()).toMatchObject({ loaded: 4, reserve: 9 });
   });
 });
 

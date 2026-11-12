@@ -126,6 +126,7 @@
 - `ReceivedModifier` (interface): interface ReceivedModifier — One serializable receiver-side rule: an optional predicate, a policy, and an ordering key.
 - `ReceivedPolicy` (type): type ReceivedPolicy = | { kind: "scale"; factor: number } | { kind: "flat"; delta: number } | { kind: "cap"; max: number } | { kind: "floor"; min: number } | { kind: "convert"; toChannel: DamageChannelId; portion?: number } | { kind: "redirect"; toTarget: string; portion?: number } | { kind: "immune… — What a matched modifier does to the incoming amount. Amplification is one policy beside reduction — both are `scale` (factor `> 1` amplifies, `< 1` reduces). `cap`/`floor` clamp, `flat` adds/subtracts, `convert` moves a portion to another channel on the same target, `redirect` moves a portion to another target, and `immune` zeroes the hit outright.
 - `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
+- `ReserveStatAccess` (interface): interface ReserveStatAccess — The two calls a {@link statPoolReserve} needs from the caller's stat store: read a pool's current value and move it by a signed amount. `ctx.scene.entity.stats` satisfies it, and so does any store that can read and nudge a named number per owner.
 - `ResolvedMatchup` (interface): interface ResolvedMatchup — Fully-resolved matchup outputs (every axis populated) plus the contributions that produced them.
 - `ResolvedShot` (interface): interface ResolvedShot — A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the shooter's position, facing, and the chosen origin policy.
 - `ResolvedShotSpec` (interface): interface ResolvedShotSpec — A spec with every default filled in. Read `mode` and the branch it names, never the raw spec.
@@ -210,6 +211,7 @@
 - `VfxPresetName` (type): type VfxPresetName = keyof typeof vfxPresets — A named key into {@link vfxPresets} (`"arrow" | "fireball" | "lightning" | "web" | "slash" | "shield" | "heal" | ...`).
 - `WeaponAim` (interface): interface WeaponAim — Current aim with recoil applied.
 - `WeaponAmmo` (interface): interface WeaponAmmo — Ammo and cadence as a HUD or a test reads them.
+- `WeaponAmmoSource` (type): type WeaponAmmoSource = Magazine | MagazineReserve — Where a shot's rounds come from: a loaded magazine, or a reserve pool fired from directly.
 - `WeaponBurstDef` (interface): interface WeaponBurstDef — Shots one trigger pull commits to. A burst finishes even if the trigger is released.
 - `WeaponContact` (interface): interface WeaponContact — Where one pellet met the caller's world.
 - `WeaponCounters` (interface): interface WeaponCounters — Lifetime ammo economy and resolution counters.
@@ -225,6 +227,9 @@
 - `WeaponMagazineDef` (interface): interface WeaponMagazineDef — Loaded rounds, reload time, and where reloads draw from.
 - `WeaponProjectileDef` (interface): interface WeaponProjectileDef — A travelling pellet simulated by the runtime, resolved when it meets the caller's world.
 - `WeaponProjectileView` (interface): interface WeaponProjectileView — A pellet alive in flight, for presentation or prediction.
+- `WeaponPull` (interface): interface WeaponPull — One trigger pull, with the weapon's live numbers. Omitted `ammo` is an unlimited weapon.
+- `WeaponPullResult` (interface): interface WeaponPullResult { status: WeaponPullStatus; shot: WeaponTriggerShot | null } — ⚠ undocumented
+- `WeaponPullStatus` (type): type WeaponPullStatus = "fired" | "cooling" | "reloading" | "empty" — Why a pull resolved as it did, checked in this order: reloading, cooling, empty, fired.
 - `WeaponReloadState` (type): type WeaponReloadState = "idle" | "reloading" | "interrupted" — `idle`, `reloading`, or `interrupted` after `interruptReload()` kept the progress.
 - `WeaponRuntime` (interface): interface WeaponRuntime<TAim, THit> — A composed weapon fire controller: a {@link FireCadence} gate, an optional {@link Magazine}, the caller's raycast, and portable {@link resolveDamageHit} damage resolution wired together. The caller retains ownership of models, animations, muzzle flash, audio, input, camera, aiming, and the raycaster itself.
 - `WeaponRuntimeConfig` (interface): interface WeaponRuntimeConfig<TAim, THit> — Configuration for {@link createWeaponRuntime}. Everything time/ammo-related is plain data; the two callbacks are where the caller keeps ownership of aiming, its own raycaster/projectile query, and how a hit maps to damage. There is deliberately no default weapon, projectile, or damage table here — those are game content.
@@ -233,6 +238,10 @@
 - `WeaponSystemDeps` (interface): interface WeaponSystemDeps — Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query.
 - `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.
 - `WeaponTickResult` (interface): interface WeaponTickResult — What one {@link WeaponSystem.tick} produced. Empty arrays on a quiet tick.
+- `WeaponTriggerShot` (interface): interface WeaponTriggerShot — One shot that left the gun: the presentation seam. Listeners turn it into muzzle feel, sound, camera shake, recoil or an AI noise event, with their own numbers.
+- `WeaponTriggers` (interface): interface WeaponTriggers — Per-shooter, per-weapon trigger gates on the caller's clock: cadence, the ammo spend from a magazine or a reserve pool, and one listener seam that presents each shot. The caller keeps its own delivery (projectiles, raycasts) and damage.
+- `WeaponTriggersConfig` (interface): interface WeaponTriggersConfig { dryPull?: "free" | "cooldown" } — ⚠ undocumented · used by `createWeaponTriggers`: Build a bank of {@link WeaponTriggers}.
+- `WeaponTriggersSnapshot` (interface): interface WeaponTriggersSnapshot — Serializable cadence state for every shooter and weapon that has fired.
 - `WeaponVec3` (type): type WeaponVec3 = readonly [number, number, number] — A world-space point or direction in metres.
 - `activePhaseId` (function): function activePhaseId<TData>(state: EncounterSequenceState<TData>): string | null — The deepest active phase id — the completion cursor a HUD reads to label the current wave/phase — or null before start and once done.
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
@@ -286,6 +295,7 @@
 - `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
 - `createWeaponRuntime` (function): function createWeaponRuntime<TAim, THit>(config: WeaponRuntimeConfig<TAim, THit>): WeaponRuntime<TAim, THit> — Compose a portable weapon fire controller from the existing generic primitives — a {@link FireCadence} gate, an optional {@link Magazine}, a caller-provided raycast, and portable {@link resolveDamageHit} damage resolution. No `GameContext`, entity store, renderer, or default weapon is involved; the caller owns aiming, its raycaster, and all presentation, and the result carries full damage provenance for authority to apply and replicate.
 - `createWeaponSystem` (function): function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystemDeps): WeaponSystem — Build a weapon from one {@link WeaponDefinition}. The game supplies aim, a muzzle, one world query, the damage model and an RNG; the runtime owns fire modes, cadence, recoil, bloom, reload states, ammo accounting, projectile ballistics and the damage call. State snapshots as plain data.
+- `createWeaponTriggers` (function): function createWeaponTriggers(config: WeaponTriggersConfig = {}): WeaponTriggers — Build a bank of {@link WeaponTriggers}. Reach for it when a weapon fires from an input or item-use handler on the game clock and delivery stays with the caller; for a weapon that is plain data and ticks its own delivery, use `createWeaponSystem`.
 - `encounterProgress` (function): function encounterProgress<TData>(state: EncounterSequenceState<TData>): { completed: number; total: number; done: boolean; } — Progress across the whole tree: how many phases have completed out of the total node count, plus whether the encounter has finished. Counts injected phases.
 - `eyeHeightFromColliders` (function): function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number — Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
 - `filterOutcomeFor` (function): function filterOutcomeFor(outcome: AllocationOutcome, viewerId: string): AllocationOutcome — Project an allocation outcome for one viewer, enforcing replication authoritatively: private grants belonging to other recipients are dropped, and pools the viewer cannot claim (not eligible, or reserved for someone else) are hidden — so private rewards never leak across the wire while provenance on the viewer's own grants is preserved.
@@ -324,6 +334,7 @@
 - `shotHitOutcome` (function): function shotHitOutcome(shot: ResolvedShotSpec, distance: number, hitIndex: number): ShotHitOutcome — What a contact at `distance` does to the `hitIndex`-th target it meets, counting the first as `0`. A trace or body stops once its penetration slots are spent, so penetration is a number, not a branch.
 - `shotSpecFromStats` (function): function shotSpecFromStats(read: ShotStatReader): ShotSpec — Adapt the numeric stat keys older item data carries to a spec. This is the only place those keys are read, and delivery is decided by the keys that describe travel (`projectile.*`) alone: a splash radius or a damage number never turns a trace into a body.
 - `startEncounter` (function): function startEncounter<TData>(config: EncounterSequenceConfig<TData>, state: EncounterSequenceState<TData>, ctx: EncounterContext = {}): EncounterStep<TData> — Start a created encounter: enter the first root phase, descending to its first leaf, and return the initial enter/spawn events. A no-op (with no events) on an already-started or empty encounter. Mutates and returns `state`.
+- `statPoolReserve` (function): function statPoolReserve(stats: ReserveStatAccess, ownerId: string, statId: string): MagazineReserve — A {@link MagazineReserve} over one owner's ammo stat, so the stat stays the only owner of the count: pickups, other weapons sharing that ammo type and the reload all read and write the same pool. A missing stat reads as an empty reserve, which blocks a reload or a reserve-fed shot.
 - `statusEffectRemainingFraction` (function): function statusEffectRemainingFraction(view: StatusEffectView): number — Fraction of the countdown still remaining, clamped to `[0,1]` — the value a countdown ring fills to. Returns `0` when the duration is non-positive. Pure; safe to call every frame.
 - `threatsFromMemory` (function): function threatsFromMemory(perception: PerceptionService, observerId: string, nowMs: number, options: ThreatReadOptions = {}): ThreatReading[] — Read one member's threat list out of its perception memory — the only source of threat. Sorted by confidence, then recency, then id, and bounded by `max`, so a crowded memory cannot grow the tick.
 - `toStatusEffectView` (function): function toStatusEffectView(instance: StatusInstance, options?: StatusEffectViewOptions): StatusEffectView — Map one live {@link StatusInstance} to a serializable {@link StatusEffectView} for a HUD row. Pure: no clock, no allocation beyond the returned view. The `durationMs` option supplies the ring denominator the instance does not carry; without it the ring reads full.
@@ -681,7 +692,9 @@
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
 - `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
 - `MagazineTuning` (interface): interface MagazineTuning — Live magazine tuning; shrinking below loaded rounds rejects unless overflow is explicit.
+- `ReserveStatAccess` (interface): interface ReserveStatAccess — The two calls a {@link statPoolReserve} needs from the caller's stat store: read a pool's current value and move it by a signed amount. `ctx.scene.entity.stats` satisfies it, and so does any store that can read and nudge a named number per owner.
 - `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
+- `statPoolReserve` (function): function statPoolReserve(stats: ReserveStatAccess, ownerId: string, statId: string): MagazineReserve — A {@link MagazineReserve} over one owner's ammo stat, so the stat stays the only owner of the count: pickups, other weapons sharing that ammo type and the reload all read and write the same pool. A missing stat reads as an empty reserve, which blocks a reload or a reserve-fed shot.
 
 ## @jgengine/core/combat/projectiles
 
@@ -954,6 +967,18 @@
 - `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.
 - `WeaponTickResult` (interface): interface WeaponTickResult — What one {@link WeaponSystem.tick} produced. Empty arrays on a quiet tick.
 - `createWeaponSystem` (function): function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystemDeps): WeaponSystem — Build a weapon from one {@link WeaponDefinition}. The game supplies aim, a muzzle, one world query, the damage model and an RNG; the runtime owns fire modes, cadence, recoil, bloom, reload states, ammo accounting, projectile ballistics and the damage call. State snapshots as plain data.
+
+## @jgengine/core/combat/weaponTriggers
+
+- `WeaponAmmoSource` (type): type WeaponAmmoSource = Magazine | MagazineReserve — Where a shot's rounds come from: a loaded magazine, or a reserve pool fired from directly.
+- `WeaponPull` (interface): interface WeaponPull — One trigger pull, with the weapon's live numbers. Omitted `ammo` is an unlimited weapon.
+- `WeaponPullResult` (interface): interface WeaponPullResult { status: WeaponPullStatus; shot: WeaponTriggerShot | null } — ⚠ undocumented
+- `WeaponPullStatus` (type): type WeaponPullStatus = "fired" | "cooling" | "reloading" | "empty" — Why a pull resolved as it did, checked in this order: reloading, cooling, empty, fired.
+- `WeaponTriggerShot` (interface): interface WeaponTriggerShot — One shot that left the gun: the presentation seam. Listeners turn it into muzzle feel, sound, camera shake, recoil or an AI noise event, with their own numbers.
+- `WeaponTriggers` (interface): interface WeaponTriggers — Per-shooter, per-weapon trigger gates on the caller's clock: cadence, the ammo spend from a magazine or a reserve pool, and one listener seam that presents each shot. The caller keeps its own delivery (projectiles, raycasts) and damage.
+- `WeaponTriggersConfig` (interface): interface WeaponTriggersConfig { dryPull?: "free" | "cooldown" } — ⚠ undocumented · used by `createWeaponTriggers`: Build a bank of {@link WeaponTriggers}.
+- `WeaponTriggersSnapshot` (interface): interface WeaponTriggersSnapshot — Serializable cadence state for every shooter and weapon that has fired.
+- `createWeaponTriggers` (function): function createWeaponTriggers(config: WeaponTriggersConfig = {}): WeaponTriggers — Build a bank of {@link WeaponTriggers}. Reach for it when a weapon fires from an input or item-use handler on the game clock and delivery stays with the caller; for a weapon that is plain data and ticks its own delivery, use `createWeaponSystem`.
 
 ## @jgengine/core/stats/accumulatorMeter
 

@@ -16,7 +16,7 @@ import {
   BOSS_DROPS,
   LEGENDARY_NAMES,
   SIGNATURE_PERKS,
-  consumeRound,
+  gunMagazine,
   derivePerks,
   dropsFrom,
   gunPerks,
@@ -132,25 +132,25 @@ describe("perk rules on the triggered-rules seam", () => {
     const { ctx } = makeCtx();
     const gun = perkGun(["opening_shot"]);
     expect(perkShot(ctx, gun).forceCrit).toBe(true);
-    consumeRound(ctx, gun);
+    gunMagazine(ctx, gun).fire(gun.ammoPerShot);
     expect(perkShot(ctx, gun).forceCrit).toBe(false);
   });
 
   test("refunds clamp to the magazine: Subsistence, Bottomless and Triple Tap", () => {
     const { ctx } = makeCtx();
     const subsistence = perkGun(["subsistence"]);
-    consumeRound(ctx, subsistence);
-    consumeRound(ctx, subsistence);
+    gunMagazine(ctx, subsistence).fire(subsistence.ammoPerShot);
+    gunMagazine(ctx, subsistence).fire(subsistence.ammoPerShot);
     perkKill(ctx, subsistence, "p1", "x", false); // 25% of 12 is 3, but only 2 fit
     expect(magLoaded(ctx, subsistence)).toBe(12);
 
     const endless = perkGun(["sig_endless"]);
-    for (let shot = 0; shot < 9; shot += 1) consumeRound(ctx, endless);
+    for (let shot = 0; shot < 9; shot += 1) gunMagazine(ctx, endless).fire(endless.ammoPerShot);
     perkKill(ctx, endless, "p1", "x", false);
     expect(magLoaded(ctx, endless)).toBe(12);
 
     const tripleTap = perkGun(["triple_tap"]);
-    for (let shot = 0; shot < 4; shot += 1) consumeRound(ctx, tripleTap);
+    for (let shot = 0; shot < 4; shot += 1) gunMagazine(ctx, tripleTap).fire(tripleTap.ammoPerShot);
     perkAfterHit(ctx, tripleTap, "p1", "x", hit(true), false);
     perkAfterHit(ctx, tripleTap, "p1", "x", hit(false), false);
     perkAfterHit(ctx, tripleTap, "p1", "x", hit(true), false);
@@ -163,14 +163,14 @@ describe("perk rules on the triggered-rules seam", () => {
     const { ctx, advance } = makeCtx();
     const gun = perkGun(["kill_clip"]);
     perkKill(ctx, gun, "p1", "x", false);
-    consumeRound(ctx, gun);
+    gunMagazine(ctx, gun).fire(gun.ammoPerShot);
     advance(3200);
     expect(startReload(ctx, gun)).toBe(true);
     expect(perkDamageScale(ctx, gun)).toBe(1);
 
     const fresh = perkGun(["kill_clip"]);
     perkKill(ctx, fresh, "p1", "x", false);
-    consumeRound(ctx, fresh);
+    gunMagazine(ctx, fresh).fire(fresh.ammoPerShot);
     advance(1000);
     expect(startReload(ctx, fresh)).toBe(true);
     expect(perkDamageScale(ctx, fresh)).toBeCloseTo(1.3, 5);

@@ -237,6 +237,7 @@
     "./combat/weaponHandling",
     "./combat/weaponPresentation",
     "./combat/weaponSystem",
+    "./combat/weaponTriggers",
     "./commands/commandDispatch",
     "./commands/commandInput",
     "./commands/commandRegistry",

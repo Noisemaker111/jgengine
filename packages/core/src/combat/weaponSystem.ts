@@ -1,6 +1,6 @@
 import { devtools } from "../devtools/devtools";
 import type { DamageRuntime, DamageRuntimeHitInput, DamageRuntimeResolution } from "./damage/damageRuntime";
-import { createMagazine, type Magazine, type MagazineSnapshot } from "./magazine";
+import { createMagazine, type Magazine, type MagazineReserve, type MagazineSnapshot } from "./magazine";
 import {
   assertWeaponDefinition,
   weaponIntervalMs,
@@ -39,6 +39,12 @@ export interface WeaponSystemDeps {
   raycast?: (from: WeaponVec3, direction: WeaponVec3, maxRange: number) => WeaponContact | null;
   /** First contact along one projectile travel segment, or `null`. Required for a projectile definition. */
   sweep?: (from: WeaponVec3, to: WeaponVec3) => WeaponContact | null;
+  /**
+   * Where reloads draw from when the reserve lives outside the weapon — a shared ammo stat
+   * (`statPoolReserve`), another `ResourcePool`. Replaces `definition.magazine.reserve`, so the pool
+   * keeps one owner; ignored for a definition without a magazine.
+   */
+  magazineReserve?: MagazineReserve;
   /** Replace the definition's damage mapping for one hit; `null` keeps the hit but skips damage. */
   damageFor?: (contact: WeaponContact, hit: WeaponImpactContext) => DamageRuntimeHitInput | null;
   /** Shots one tick may catch up on (default `4`, clamp `1..16`); bounds rays and sweeps per tick. */
@@ -310,10 +316,11 @@ export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystem
   function buildMagazine(definition: WeaponDefinition): Magazine | null {
     const magazine = definition.magazine;
     if (magazine === undefined) return null;
+    const reserve = deps.magazineReserve ?? magazine.reserve;
     return createMagazine({
       capacity: magazine.capacity,
       reloadMs: magazine.reloadMs,
-      ...(magazine.reserve !== undefined ? { reserve: magazine.reserve } : {}),
+      ...(reserve !== undefined ? { reserve } : {}),
     });
   }
 

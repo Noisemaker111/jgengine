@@ -14,12 +14,11 @@ import { noteEquipped } from "./feel";
 import { AIMED_WALK_SCALE, applyWalkSpeed, canSprint, tickHandling } from "./handling";
 import { gunById, isReloading, magLoaded, rollGun, startReload, type GunFamily } from "./handroll";
 import { inventories } from "./inventories";
-import { itemUseHandlers, resetWeaponState } from "./items/use-handlers";
+import { itemUseHandlers } from "./items/use-handlers";
 import { session } from "./session";
 
 afterEach(() => {
   resetCharacterState();
-  resetWeaponState();
 });
 
 interface Rig {

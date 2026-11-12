@@ -10990,6 +10990,16 @@
       "intent": "immutably retune a bounded resource's current value or bounds"
     },
     {
+      "id": "stat-pool-reserve",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/magazine",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw a magazine's reloads, or a weapon's shots, from a shared ammo stat pool"
+    },
+    {
       "id": "static-prefab-export",
       "packages": [
         "@jgengine/assets"
@@ -12728,6 +12738,16 @@
         "kind": "devtools"
       },
       "intent": "run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime"
+    },
+    {
+      "id": "weapon-triggers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/weaponTriggers",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam"
     },
     {
       "id": "weather-dust",
