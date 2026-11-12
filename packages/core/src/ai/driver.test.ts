@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { steerToward, steerYaw, yawForward } from "../movement/steering";
 import { difficultyProfile, type DifficultyProfile } from "./difficulty";
 import {
   createDriverState,
@@ -40,14 +41,40 @@ describe("driveStep steering and speed", () => {
     expect(step.brake).toBe(0);
   });
 
-  test("steer sign follows the heading error", () => {
-    const state = createDriverState(10, 0);
-    // Target due +x while heading +z: error is +π/2, steer hard right (positive).
-    const right = driveStep(state, 0.1, pose(0, 0, 0, 5), { x: 10, z: 0 }, exact(), TUNING, noRng);
+  test("steer sign matches steerYaw/steerToward: +1 is a right turn", () => {
+    // Heading +z, screen-right is -x (`yawRight(0)`): a target due -x is a hard right turn.
+    const right = driveStep(createDriverState(-10, 0), 0.1, pose(0, 0, 0, 5), { x: -10, z: 0 }, exact(), TUNING, noRng);
     expect(right.steer).toBe(1);
-    const state2 = createDriverState(-10, 0);
-    const left = driveStep(state2, 0.1, pose(0, 0, 0, 5), { x: -10, z: 0 }, exact(), TUNING, noRng);
+    const left = driveStep(createDriverState(10, 0), 0.1, pose(0, 0, 0, 5), { x: 10, z: 0 }, exact(), TUNING, noRng);
     expect(left.steer).toBe(-1);
+    // Small errors stay proportional and agree in sign with steerToward.
+    const heading = 0.4;
+    const target = { x: 3, z: 10 };
+    const step = driveStep(createDriverState(target.x, target.z), 0.1, pose(0, 0, heading, 5), target, exact(), TUNING, noRng);
+    const seek = steerToward(heading, Math.atan2(target.x, target.z));
+    expect(Math.sign(step.steer)).toBe(Math.sign(seek));
+    expect(step.steer).toBeCloseTo(seek * 2, 10);
+  });
+
+  test("driveStep steer integrated through steerYaw closes on the target without a sign flip", () => {
+    const target = { x: 25, z: 15 };
+    const speed = 6;
+    const dt = 1 / 60;
+    let x = 0;
+    let z = 0;
+    let heading = -1.2; // pointing away to the right of the target
+    const state = createDriverState(target.x, target.z);
+    const start = Math.hypot(target.x - x, target.z - z);
+    for (let tick = 0; tick < 240; tick += 1) {
+      const step = driveStep(state, dt, pose(x, z, heading, speed), target, exact(), TUNING, noRng);
+      heading = steerYaw(heading, step.steer, 2.5, dt);
+      const [fx, fz] = yawForward(heading);
+      x += fx * speed * dt;
+      z += fz * speed * dt;
+    }
+    expect(Math.hypot(target.x - x, target.z - z)).toBeLessThan(start - 15);
+    const error = Math.atan2(target.x - x, target.z - z) - heading;
+    expect(Math.abs(Math.atan2(Math.sin(error), Math.cos(error)))).toBeLessThan(0.1);
   });
 
   test("sheds speed into a hard corner instead of full throttle", () => {
@@ -99,7 +126,7 @@ describe("steering jitter", () => {
     };
     const state = createDriverState(0, 100);
     const first = driveStep(state, 0.1, pose(0, 0, 0, 10), { x: 0, z: 100 }, profile, TUNING, rng);
-    expect(first.steer).toBeGreaterThan(0);
+    expect(first.steer).not.toBe(0);
     driveStep(state, 0.1, pose(0, 0, 0, 10), { x: 0, z: 100 }, profile, TUNING, rng);
     driveStep(state, 0.1, pose(0, 0, 0, 10), { x: 0, z: 100 }, profile, TUNING, rng);
     expect(draws).toBe(1);
@@ -165,11 +192,12 @@ describe("stuck-reverse recovery", () => {
     const wall = pose(0, 0, 0, 0); // throttling toward +x target but pinned at rest, heading +z
     let step = driveStep(state, 0.5, wall, { x: 30, z: 0 }, profile, TUNING, noRng);
     expect(step.throttle).toBeGreaterThan(0.3);
+    expect(step.steer).toBe(-1); // +x is screen-left of heading +z
     for (let i = 0; i < 3; i += 1) step = driveStep(state, 0.5, wall, { x: 30, z: 0 }, profile, TUNING, noRng);
     // 2.0s of grinding > stuckSeconds 1.5 + reaction 0 → now reversing with counter-steer.
     expect(step.brake).toBe(1);
     expect(step.throttle).toBe(0);
-    expect(step.steer).toBe(-1); // target to the right → back up steering left, nose swings right
+    expect(step.steer).toBe(1); // target to the left → back up steering right, nose swings left
     // Reverse window expires and forward driving resumes.
     for (let i = 0; i < 3; i += 1) step = driveStep(state, 0.5, pose(0, -3, 0, -2), { x: 30, z: 0 }, profile, TUNING, noRng);
     expect(step.throttle).toBeGreaterThan(0);

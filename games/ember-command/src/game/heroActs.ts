@@ -12,9 +12,9 @@ import {
   heroPickStore,
   HERO_PICKS,
   offerFor,
-  parseSavedPicks,
   pickedRanks,
   pickStats,
+  savedPicksError,
   type HeroPickDef,
   type HeroPickStat,
 } from "./heroPicks";
@@ -351,9 +351,9 @@ export function carriedHeroPicks(): readonly HeroPickDef[] {
  */
 export function restoreHeroPicks(ctx: GameContext): void {
   const saved = heroPickStore.peek(ctx);
-  const ranks = parseSavedPicks(saved ?? {});
   const runtime = heroRuntime();
-  runtime.picks.hydrate({ points: 0, ranks });
+  const loaded = runtime.picks.hydrate({ points: 0, ranks: saved ?? {} });
+  if (!loaded.ok) throw savedPicksError(loaded.issues);
   // A battle starts with the kit it carried in, not with the points an earlier battle left unspent.
   runtime.pointsAtLevel = heroLevel(ctx);
   runtime.bonusHealth = 0;

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { resetWarnOnce } from "@jgengine/core/devtools/warnOnce";
 import { createTalentTree } from "@jgengine/core/talents/talents";
 
 type Stat = "power" | "critChance";
@@ -277,6 +278,18 @@ describe("talent reset", () => {
   });
 });
 
+function captureWarnings<T>(run: () => T): { value: T; warnings: string[] } {
+  resetWarnOnce();
+  const warnings: string[] = [];
+  const original = console.warn;
+  console.warn = (message: string) => warnings.push(message);
+  try {
+    return { value: run(), warnings };
+  } finally {
+    console.warn = original;
+  }
+}
+
 describe("talent snapshot / hydrate", () => {
   test("round-trips points and ranks", () => {
     const tree = createTalentTree<Stat>({
@@ -305,15 +318,45 @@ describe("talent snapshot / hydrate", () => {
     expect(other.rank("b")).toBe(1);
   });
 
-  test("clamps an out-of-range rank and drops unknown node ids", () => {
+  test("a clean snapshot hydrates ok with no issues", () => {
+    const tree = createTalentTree<Stat>({ points: 0, nodes: [{ id: "a", maxRank: 2 }] });
+    expect(tree.hydrate({ points: 1, ranks: { a: 2 } })).toEqual({ ok: true, issues: [] });
+  });
+
+  test("keeps the valid id and reports the unknown one instead of silently dropping it", () => {
     const tree = createTalentTree<Stat>({
       points: 0,
-      nodes: [{ id: "a", maxRank: 2 }],
+      nodes: [{ id: "a", maxRank: 3, grantsAbilities: ["dash"] }],
     });
-    tree.hydrate({ points: 3, ranks: { a: 99, ghost: 5 } });
+    const { value: result, warnings } = captureWarnings(() => tree.hydrate({ points: 1, ranks: { a: 2, ghost: 1 } }));
     expect(tree.rank("a")).toBe(2);
+    expect(tree.resolved().abilities).toEqual(["dash"]);
+    expect(result).toEqual({ ok: false, issues: [{ nodeId: "ghost", rank: 1, reason: "unknown-node" }] });
+    expect(warnings.some((message) => message.includes('"ghost"'))).toBe(true);
+  });
+
+  test("clamps an out-of-range rank and reports malformed ranks", () => {
+    const tree = createTalentTree<Stat>({
+      points: 0,
+      nodes: [
+        { id: "a", maxRank: 2 },
+        { id: "b", maxRank: 2 },
+        { id: "c", maxRank: 2 },
+      ],
+    });
+    const { value: result } = captureWarnings(() => tree.hydrate({ points: 3, ranks: { a: 99, b: 1.5, c: -1, ghost: 5 } }));
+    expect(tree.rank("a")).toBe(2);
+    expect(tree.rank("b")).toBe(0);
+    expect(tree.rank("c")).toBe(0);
     expect(tree.rank("ghost")).toBe(0);
     expect(tree.pointsAvailable()).toBe(3);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toEqual([
+      { nodeId: "a", rank: 99, reason: "max-rank" },
+      { nodeId: "b", rank: 1.5, reason: "invalid-rank" },
+      { nodeId: "c", rank: -1, reason: "invalid-rank" },
+      { nodeId: "ghost", rank: 5, reason: "unknown-node" },
+    ]);
   });
 });
 

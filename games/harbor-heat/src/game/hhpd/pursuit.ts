@@ -511,10 +511,7 @@ export function createPursuit(driving: Driving): Pursuit {
         CRUISER_TUNING,
         rng,
       );
-      // `driveStep` reports steer as the signed heading error (ai/driver.ts), while the shared
-      // steering convention turns the other way (`steerYaw` decreases yaw for +steer), so a cruiser
-      // that passes it straight through steers away from the player and never closes.
-      const axis = { throttle: drive.throttle, brake: drive.brake, steer: -drive.steer, handbrake: 0 };
+      const axis = { throttle: drive.throttle, brake: drive.brake, steer: drive.steer, handbrake: 0 };
       driving.refreshClamp(ctx, cruiser.id, pose.position, dt);
       const result = tickDrivableVehicle(vehicle, dt, axis, {
         groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
