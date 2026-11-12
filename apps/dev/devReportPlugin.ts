@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import {
+  DEV_REPORT_COOKIE,
   REPORT_ENDPOINT_PATH,
   type ReportPushBody,
   type ReportRouteError,
@@ -164,6 +165,11 @@ export function devReportPlugin(options: { store?: ReportStore } = {}): {
     name: "jgengine-dev-report",
     apply: "serve",
     configureServer(server) {
+      // Pages this server serves learn the report route exists without a request that 404s elsewhere.
+      server.middlewares.use("/", (req, res, next) => {
+        if ((req.headers.accept ?? "").includes("text/html")) res.setHeader("Set-Cookie", `${DEV_REPORT_COOKIE}=1; Path=/; SameSite=Lax`);
+        next();
+      });
       server.middlewares.use(REPORT_ENDPOINT_PATH, (req, res, next) => {
         const url = new URL(req.url ?? "/", "http://127.0.0.1");
         if (req.method === "POST") {

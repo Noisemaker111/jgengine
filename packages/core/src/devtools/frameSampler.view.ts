@@ -1,7 +1,7 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { roundReport, toReportLogs, type GlReport, type PerfQuality, type PerfReport, type ReportLogs } from "@jgengine/core/devtools/report";
 import type { FrameStats, RenderSample, SystemProbeReading } from "@jgengine/core/devtools/types";
-import { REPORT_ENDPOINT_PATH } from "@jgengine/core/devtools/reportEndpoint";
+import { REPORT_ENDPOINT_PATH, servedByDevServer } from "@jgengine/core/devtools/reportEndpoint";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 /**
@@ -246,8 +246,11 @@ export async function probeReportRoute(
   game = "",
   fetchImpl: typeof fetch | null = typeof fetch === "function" ? fetch : null,
   timeoutMs = REPORT_PROBE_TIMEOUT_MS,
+  /** The page's cookies; `null` outside a browser, where only `fetchImpl` decides. */
+  cookie: string | null = typeof document === "undefined" ? null : document.cookie,
 ): Promise<boolean> {
   if (fetchImpl === null) return false;
+  if (cookie !== null && !servedByDevServer(cookie)) return false;
   try {
     const response = await fetchImpl(`${endpoint}?game=${encodeURIComponent(game)}`, {
       signal: AbortSignal.timeout(timeoutMs),

@@ -8,6 +8,18 @@ import type { PerfReport } from "./report";
  */
 export const REPORT_ENDPOINT_PATH = "/__jgengine/report";
 
+/**
+ * Cookie the dev servers set on the pages they serve, so a page asks for the report route only
+ * where it exists. A shipped game (jgengine.com's /play runner, a desktop build) never has it and
+ * makes no request, where a probe answered 404 and every load logged a console error.
+ */
+export const DEV_REPORT_COOKIE = "jg_report_route";
+
+/** Whether `cookie` (a `document.cookie` string) carries {@link DEV_REPORT_COOKIE}. */
+export function servedByDevServer(cookie: string): boolean {
+  return cookie.split(";").some((part) => part.trim() === `${DEV_REPORT_COOKIE}=1`);
+}
+
 /** Body the page POSTs: the game it measured and the record itself. */
 export interface ReportPushBody {
   gameId: string;
