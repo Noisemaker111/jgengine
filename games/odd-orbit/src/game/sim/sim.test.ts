@@ -86,11 +86,11 @@ describe("agent desire", () => {
       dt: 0,
       now: 0,
       targets: [
-        { option: "social", target: "alien:1" },
+        { option: "socialize", target: "alien:1" },
         { option: "fun", target: "arcade:1" },
       ],
     });
-    expect(frame.action.option).toBe("social");
+    expect(frame.action.option).toBe("socialize");
     expect(frame.action.target).toBe("alien:1");
   });
 });

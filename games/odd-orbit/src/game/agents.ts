@@ -1,14 +1,11 @@
-import {
-  createAgent,
-  type Agent,
-  type AgentTarget,
-} from "@jgengine/core/agents/agent";
+import { createAgent, type Agent } from "@jgengine/core/agents/agent";
 import { readMood, type Mood, type MoodTier } from "@jgengine/core/agents/mood";
 import {
   createRelationshipBook,
   type RelationshipBook,
   type RelationshipMilestone,
 } from "@jgengine/core/agents/relationships";
+import type { UtilityOption } from "@jgengine/core/ai/utilityBrain";
 import type { NeedDefinition } from "@jgengine/core/sim/needs";
 
 import { DAY_LENGTH } from "../world";
@@ -58,20 +55,49 @@ export function moodOfNeeds(needs: Readonly<Record<NeedId, number>>): Mood & { f
   return { ...mood, face: MOOD_FACE[mood.tier] ?? "•‿•" };
 }
 
-const needCurve = (need: string, invert = false) => ({
-  need,
-  curve: { kind: "linear" as const, from: 0.15, to: 0.9 },
-  ...(invert ? { invert: true } : {}),
-});
+/**
+ * When a being wants something, as need fills (0-1): it heads for the station of its emptiest need
+ * below `seek`, and below `browse` once nothing else calls; it wants company below `socialWant`; and
+ * it is fit for a paid shift once both energy and hunger are above `workReady`.
+ */
+export const DESIRE = { seek: 0.48, browse: 0.62, socialWant: 0.6, workReady: 0.58 } as const;
 
-/** What a being can choose to do; the station, companion and shift rules stay the game's. */
-export const MEMBER_OPTIONS = [
-  { id: "hunger", terms: [needCurve("hunger")] },
-  { id: "energy", terms: [needCurve("energy")] },
-  { id: "social", terms: [needCurve("social")] },
-  { id: "fun", base: 0.05, terms: [needCurve("fun")] },
-  { id: "work", base: 0.3, terms: [needCurve("energy", true), needCurve("hunger", true)] },
-  { id: "wander", base: 0.12 },
+const below = (at: number, value: number) => ({ kind: "threshold" as const, at, value });
+
+/**
+ * What a being can choose to do, scored by the shared utility brain as a ladder: every rung's appeal
+ * clears every rung below it, so a being does the highest rung the habitat offers it.
+ *
+ * 30 talk to an idle companion when bonding is its emptiest need; 20 seek the emptiest need's station
+ * below `seek`; 10 take a paid shift when fit for one; 5 talk to an idle companion when lonely; 3 seek
+ * the emptiest need's station below `browse`; 1 wander. The station, companion and shift rules that
+ * decide which of these are offered stay in `sim/ai`.
+ */
+export const MEMBER_OPTIONS: readonly UtilityOption[] = [
+  ...NEEDS.map((need) => ({
+    id: need,
+    terms: [
+      { need, curve: below(DESIRE.seek, 17), onlyWhenMostUrgent: true },
+      { need, curve: below(DESIRE.browse, 3), onlyWhenMostUrgent: true },
+    ],
+  })),
+  {
+    id: "socialize",
+    terms: [
+      { need: "social", curve: below(DESIRE.socialWant, 25), onlyWhenMostUrgent: true },
+      { need: "social", curve: below(DESIRE.socialWant, 5) },
+    ],
+  },
+  // Fit for a shift takes both meters: one alone scores 0, under wandering.
+  {
+    id: "work",
+    base: -10,
+    terms: [
+      { need: "energy", invert: true, curve: below(1 - DESIRE.workReady, 10) },
+      { need: "hunger", invert: true, curve: below(1 - DESIRE.workReady, 10) },
+    ],
+  },
+  { id: "wander", base: 1 },
 ];
 
 /** Needs as the shared meter wants them: a per-day figure over the household's own day length. */
@@ -103,12 +129,9 @@ export function memberAgent(member: MemberState, rng: () => number): Agent {
     id: member.id,
     needs: memberNeeds(member.bodyPlan, member),
     options: MEMBER_OPTIONS,
-    interrupts: [
-      { need: "hunger", at: 0.15, when: "below", option: "hunger" },
-      { need: "energy", at: 0.12, when: "below", option: "energy" },
-    ],
     mood: { tiers: MOOD_TIERS, weights: MOOD_WEIGHTS },
-    switchMargin: 0.1,
+    // The ladder's rungs are whole points apart, so the pick is the top rung with no stickiness.
+    switchMargin: 0,
     rng,
   });
   for (const need of NEEDS) {
@@ -138,37 +161,6 @@ export function bumpNeed(member: MemberState, need: NeedId, delta: number, cap =
   const target = Math.max(0, Math.min(cap, current + delta));
   agent.needs.refill(need, target - current);
   member.needs[need] = agent.needs.value(need);
-}
-
-/** Where a being's own thought points: a station for each role, a companion, work, or the habitat. */
-export function memberTargets(
-  costTo: (target: string) => number,
-  options: {
-    readonly stations: readonly { id: string; role: string; busy: boolean; pull?: number }[];
-    readonly companion: string | null;
-    readonly workStation: string | null;
-  },
-): AgentTarget[] {
-  const targets: AgentTarget[] = [];
-  for (const station of options.stations) {
-    targets.push({
-      option: station.role,
-      target: station.id,
-      cost: costTo(station.id) + (station.busy ? 25 : 0) - (station.pull ?? 0),
-      fallback: { option: "wander", target: "habitat" },
-    });
-  }
-  if (options.workStation !== null) {
-    targets.push({
-      option: "work",
-      target: options.workStation,
-      cost: costTo(options.workStation),
-      fallback: { option: "wander", target: "habitat" },
-    });
-  }
-  if (options.companion !== null) targets.push({ option: "social", target: options.companion, cost: 1 });
-  targets.push({ option: "wander", target: "habitat" });
-  return targets;
 }
 
 /** The household's relationship book, built from the saved records so no state hides in a module. */
