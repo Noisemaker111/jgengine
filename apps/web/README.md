@@ -2,7 +2,7 @@
 
 The landing page for JGengine and the front door for agents. It is drawn with the engine's own JSX runtime (`@jgengine/core/ui/jsx`), not React, and served from Cloudflare through the official Cloudflare Vite plugin.
 
-- `/` presents real game captures, engine systems, and an editable starting prompt. `/games` opens the playable projects; `/capabilities` indexes the SDK; `/editor` runs the scene editor.
+- `/` sells the engine: the pitch, a curated pick of the best-looking games (`FEATURED` in `src/components/story/Showcase.tsx`), why jgengine, and how to start. `/decisions` holds the differences, decision log, stack and counts. `/games` opens every playable project; `/capabilities` indexes the SDK; `/editor` runs the scene editor.
 - Agents get `/llms.txt` and `/llms-full.txt` from the same site constants as the human pages.
 - The games catalog and static runner live on `/games` and `/play`.
 
@@ -25,7 +25,7 @@ The dev server serves the same runner build and restores it from the content-has
 ## Design system
 
 - Colors, type and surfaces are CSS tokens at the top of [`src/styles.css`](src/styles.css), exposed to Tailwind as `bg`, `raised`, `sunken`, `line`, `fg`, `muted`, `faint`, `accent`, `accent-text` and `live`. Use those names, not raw palette classes, so both themes work.
-- [`src/home.css`](src/home.css) owns the graphite/lime editorial layout. The homepage hero uses actual game covers and links to those games; the procedural playground is a separate technical tool, not homepage proof of game quality.
+- [`src/home.css`](src/home.css) owns the editorial layout, including the homepage (`lp-*`). The homepage shows only the games whose covers read best at card size; pick them by looking at the covers, and keep the rest on `/games`. The procedural playground is a separate technical tool, not homepage proof of game quality.
 - The theme follows the system until the visitor toggles it; `?theme=light|dark` forces one for a page view (captures, shared links). Sections that sit on a live 3D canvas pin `data-theme="dark"`.
 - Game titles and descriptions come from the `games/README.md` table; covers are `public/covers/<id>.webp` (800×450, from `bun run shoot <id> --mode play`).
 - The landing's "big games from small blocks" rows are keys into the skills' generated `capabilities.md`; `src/lib/capabilityIndex.test.ts` fails if one disappears.

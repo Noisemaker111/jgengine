@@ -1,6 +1,6 @@
 import { SITE_URL } from "./site";
 
-const STATIC_PATHS = ["/", "/why", "/playground", "/games", "/docs", "/adopt", "/cookbook"];
+const STATIC_PATHS = ["/", "/why", "/decisions", "/playground", "/games", "/docs", "/adopt", "/cookbook"];
 
 /** `/sitemap.xml`: the site's fixed pages. */
 export function buildSitemap(): string {

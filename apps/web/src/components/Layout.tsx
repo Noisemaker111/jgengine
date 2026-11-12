@@ -228,6 +228,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
       { label: "Playground", to: "/playground" },
       { label: "Docs", to: "/docs" },
       { label: "Why jgengine", to: "/why" },
+      { label: "How it's built", to: "/decisions" },
       { label: "Use one system", to: "/adopt" },
     ],
   },

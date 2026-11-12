@@ -74,7 +74,7 @@ shows health, XP, saves and the minimap added to an existing game.
 ## Decisions, and why
 
 Each decision with its date, reason and numbers. The site tells them as a timeline at
-[jgengine.com/#decisions](https://jgengine.com/#decisions).
+[jgengine.com/decisions](https://jgengine.com/decisions).
 
 | Date | Decision | Why | Source |
 | --- | --- | --- | --- |
