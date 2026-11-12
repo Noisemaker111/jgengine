@@ -2,6 +2,7 @@ import type { RenderCallback, RootStore } from "@react-three/fiber";
 import type { WebGLRenderer } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { observeSharedFrames } from "@jgengine/core/render/useSharedFrame.draw";
 
 import {
   summarizeBreakdown,
@@ -160,6 +161,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const cpuChildren: number[] = [];
   let cpuDepth = 0;
   const cpuEnter = (label: string) => {
+    if (current?.calls !== undefined) current.calls[label] = (current.calls[label] ?? 0) + 1;
     cpuLabels[cpuDepth] = label;
     cpuStarts[cpuDepth] = performance.now();
     cpuChildren[cpuDepth] = 0;
@@ -175,7 +177,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     return end;
   };
   const fresh = (): FrameBreakdownRecord => ({
-    intervalMs: 0, workMs: 0, cpu: {}, gpu: timers === null ? null : {}, draws: 0, triangles: 0,
+    intervalMs: 0, workMs: 0, cpu: {}, calls: {}, gpu: timers === null ? null : {}, draws: 0, triangles: 0,
     compiles: 0, compileMs: 0, uploads: 0, uploadBytes: 0, uploadMs: 0, heapMb: null, heapDropMb: 0,
   });
 
@@ -192,13 +194,19 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     running = null;
     if (pending.length > MAX_PENDING_QUERIES) {
       const dropped = pending.shift();
-      if (dropped !== undefined) timers.gl.deleteQuery(dropped.query);
+      if (dropped !== undefined) {
+        dropped.record.gpu = null;
+        timers.gl.deleteQuery(dropped.query);
+        const left = (unresolved.get(dropped.record) ?? 1) - 1;
+        if (left <= 0) unresolved.delete(dropped.record);
+        else unresolved.set(dropped.record, left);
+      }
     }
   };
   const startTimer = (label: string) => {
     if (timers === null || current === null) return;
     const query = timers.gl.createQuery();
-    if (query === null) return;
+    if (query === null) { current.gpu = null; return; }
     timers.gl.beginQuery(timers.ext.TIME_ELAPSED_EXT, query);
     running = { query, label, record: current };
   };
@@ -220,6 +228,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       for (const entry of pending.splice(0)) {
         gl.deleteQuery(entry.query);
         entry.record.gpu = null;
+        unresolved.delete(entry.record);
       }
       return;
     }
@@ -377,6 +386,23 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const labels = new WeakMap<object, string>();
   const callbacks: Record<string, RenderCallback> = {};
   let nextLabel = 0;
+  const memberLabels = new WeakMap<object, string>();
+  if (new URLSearchParams(window.location.search).get("frameMembers") === "1") {
+    observeSharedFrames({
+      enter(task) {
+        let label = memberLabels.get(task);
+        if (label === undefined) {
+          label = `frame#${nextLabel}:sharedMember`;
+          nextLabel += 1;
+          memberLabels.set(task, label);
+        }
+        callbacks[label] = task.current;
+        cpuEnter(label);
+      },
+      leave: () => { cpuLeave(); },
+    });
+    restore.push(() => observeSharedFrames(null));
+  }
   const wrapSubscribers = () => {
     for (const subscription of store.getState().internal.subscribers) {
       const fn = subscription.ref.current;
@@ -438,11 +464,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const breakdown: FrameBreakdown = {
     summary(options = {}) {
       const programs = renderer.info.programs?.length ?? null;
+      const complete = ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record);
       // Draw costs are gathered over the whole window, so a tail of it reports frames only.
-      if (options.last !== undefined) return summarizeBreakdown(ordered().slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top });
-      return summarizeBreakdown(ordered(), { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top });
+      if (options.last !== undefined) return summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top });
+      return summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top });
     },
-    records: ordered,
+    records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
     reset() {
       records.length = 0;

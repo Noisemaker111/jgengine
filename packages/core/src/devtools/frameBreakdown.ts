@@ -16,6 +16,8 @@ export interface FrameBreakdownRecord {
   workMs: number;
   /** CPU milliseconds by system: sim phases and stages, frame callbacks, render submission, passes. */
   cpu: Record<string, number>;
+  /** Calls observed in timed scopes, not the number of items processed. */
+  calls?: Record<string, number>;
   /** GPU milliseconds by render pass (shadow, main, each post pass); null while unresolved or unsupported. */
   gpu: Record<string, number> | null;
   draws: number;
@@ -83,8 +85,12 @@ export interface FrameBreakdownSummary {
   work: Spread;
   /** GPU time per frame over the frames whose timers resolved; null where timer queries are unsupported. */
   gpu: Spread | null;
+  /** Frames with complete GPU timings, or absent in an older saved record. */
+  gpuFrames?: number;
   cpu: NamedCost[];
   passes: NamedCost[];
+  /** Calls per frame for observed scopes. Missing on older records. */
+  calls?: { name: string; avg: number; max: number }[];
   counts: {
     drawsAvg: number;
     drawsMax: number;
@@ -195,6 +201,11 @@ export function summarizeBreakdown(
   const lastHeap = records.map((record) => record.heapMb).filter((mb): mb is number => mb !== null).at(-1);
   const byCost = (a: DrawCost, b: DrawCost) => b.cpuMs - a.cpuMs || b.triangles - a.triangles;
   const n = Math.max(1, records.length);
+  const includeMembers = <T extends { name: string }>(items: T[]): T[] => {
+    const first = items.slice(0, top);
+    const seen = new Set(first.map((item) => item.name));
+    return [...first, ...items.filter((item) => item.name.includes(":sharedMember") && !seen.has(item.name)).slice(0, top)];
+  };
   const perFrame = (cost: DrawCost): DrawCost => ({ ...cost, draws: round(cost.draws / n, 1), triangles: Math.round(cost.triangles / n), cpuMs: round(cost.cpuMs / n, 3) });
   return {
     frames: records.length,
@@ -202,8 +213,13 @@ export function summarizeBreakdown(
     frame: spread(records.map((record) => record.intervalMs)),
     work: spread(records.map((record) => record.workMs)),
     gpu: resolved.length === 0 ? null : spread(gpuTotals),
-    cpu: namedCosts(records.map((record) => record.cpu), top),
+    gpuFrames: resolved.length,
+    cpu: includeMembers(namedCosts(records.map((record) => record.cpu), Number.POSITIVE_INFINITY)),
     passes: namedCosts(resolved, top),
+    calls: includeMembers([...new Set(records.flatMap((record) => Object.keys(record.calls ?? {})))].map((name) => {
+      const values = records.map((record) => record.calls?.[name] ?? 0);
+      return { name, avg: round(values.reduce((sum, value) => sum + value, 0) / n, 2), max: Math.max(...values) };
+    }).sort((a, b) => b.avg - a.avg)),
     counts: {
       drawsAvg: round(records.reduce((sum, record) => sum + record.draws, 0) / Math.max(1, records.length), 1),
       drawsMax: records.reduce((max, record) => Math.max(max, record.draws), 0),
@@ -242,13 +258,15 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
     `frame   p50 ${ms(summary.frame.p50)}  p95 ${ms(summary.frame.p95)}  p99 ${ms(summary.frame.p99)}  max ${ms(summary.frame.max)}  (${fpsAt(summary.frame.p50)} fps)`,
     `cpu     p50 ${ms(summary.work.p50)}  p95 ${ms(summary.work.p95)}   main-thread work per frame`,
     summary.gpu === null
-      ? "gpu     timer queries unsupported here"
-      : `gpu     p50 ${ms(summary.gpu.p50)}  p95 ${ms(summary.gpu.p95)}`,
-    `cost    p50 ${ms(cost)} -> ${fpsAt(cost)} fps possible; p95 ${ms(cost95)}. 60 Hz needs 16.67 ms, 144 Hz needs 6.94 ms` +
+      ? "gpu     unavailable or unresolved"
+      : `gpu     p50 ${ms(summary.gpu.p50)}  p95 ${ms(summary.gpu.p95)} (${summary.gpuFrames ?? "?"}/${summary.frames} frames complete)`,
+    summary.gpu === null ? "cost    unavailable without GPU timing" :
+      `cost    p50 ${ms(cost)} -> ${fpsAt(cost)} fps possible; p95 ${ms(cost95)}. 60 Hz needs 16.67 ms, 144 Hz needs 6.94 ms` +
       (cost95 <= 6.94 ? " (144 ok)" : ` (${ms(cost95 - 6.94)} over 144)`),
     "",
     "top cpu (avg / p95 per frame):",
     ...summary.cpu.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`),
+    ...(summary.calls === undefined || summary.calls.length === 0 ? ["scope calls: unavailable"] : ["scope calls (avg / max per frame):", ...summary.calls.map((entry) => `  ${entry.name} ${entry.avg} / ${entry.max}`)]),
     ...(summary.passes.length === 0 ? [] : ["top gpu passes (avg / p95):", ...summary.passes.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`)]),
     `draws ${summary.counts.drawsAvg} avg (${summary.counts.drawsMax} max), triangles ${summary.counts.trianglesAvg} avg, programs ${summary.counts.programs ?? "?"}, ` +
       `compiles ${summary.counts.compiles} (${summary.counts.compileMs} ms), uploads ${summary.counts.uploads} (${summary.counts.uploadMb} MB), heap ${summary.counts.heapMb ?? "?"} MB, gc ~${summary.counts.gcMb} MB`,

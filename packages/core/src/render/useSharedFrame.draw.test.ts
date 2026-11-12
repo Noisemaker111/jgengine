@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { joinFrameGroup } from "./useSharedFrame.draw";
+import { joinFrameGroup, observeSharedFrames } from "./useSharedFrame.draw";
 
 /** A frame loop like r3f's: subscribers by priority, run in order. */
 function fakeLoop() {
@@ -19,6 +19,19 @@ function fakeLoop() {
 }
 
 describe("shared frame callbacks", () => {
+  test("optional observation identifies every member and balances scopes on failure", () => {
+    const loop = fakeLoop();
+    const calls: string[] = [];
+    const a = { current: () => calls.push("a") };
+    const b = { current: () => { calls.push("b"); throw new Error("failure"); } };
+    joinFrameGroup(loop, loop.subscribe, 0, a);
+    joinFrameGroup(loop, loop.subscribe, 0, b);
+    observeSharedFrames({ enter: (task) => calls.push(task === a ? "enter a" : "enter b"), leave: () => calls.push("leave") });
+    try {
+      expect(() => loop.frame()).toThrow("failure");
+      expect(calls).toEqual(["enter a", "a", "leave", "enter b", "b", "leave"]);
+    } finally { observeSharedFrames(null); }
+  });
   test("a thousand copies at one priority are one subscriber, run in the order they joined", () => {
     const loop = fakeLoop();
     const ran: number[] = [];

@@ -1486,6 +1486,24 @@ describe("deferUnlinkedDraws", () => {
     expect(drawn.at(-1), "a pass's own quad is never left out").toEqual(["road", "pass quad"]);
   });
 
+  test("readiness work follows draws across passes, and detects a scene-walk regression", () => {
+    const { renderer, scene, camera, add } = deferringFixture();
+    add("road", true);
+    for (let index = 0; index < 100; index += 1) add(`far${index}`, true).userData["culled"] = true;
+    let reads = 0;
+    const get = renderer.properties.get;
+    renderer.properties.get = (material) => { reads += 1; return get(material); };
+    const undo = deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    renderer.render(scene, camera);
+    renderer.render(scene, camera);
+    expect(reads).toBe(2);
+    undo();
+    reads = 0;
+    firstUnlinkedDrawable(renderer, scene, camera);
+    firstUnlinkedDrawable(renderer, scene, camera);
+    expect(reads).toBeGreaterThan(200);
+  });
+
   test("draws everything when inactive, for other scenes, after undo, and once a link has stalled", () => {
     const { renderer, scene, camera, add, drawn } = deferringFixture();
     let clock = 0;

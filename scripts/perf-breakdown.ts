@@ -52,10 +52,16 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
   });
   try {
     await session.send("Debugger.enable");
-    for (const entry of summary.cpu) {
+    const names = new Map<string, string>();
+    for (const entry of [...summary.cpu, ...(summary.calls ?? [])]) {
       if (!entry.name.startsWith("frame#")) continue;
-      const located = await locateCallback(session, entry.name, urls);
-      if (located !== null) entry.name = `${entry.name} ${located}`;
+      let resolved = names.get(entry.name);
+      if (resolved === undefined) {
+        const located = await locateCallback(session, entry.name, urls);
+        resolved = located === null ? entry.name : `${entry.name} ${located}`;
+        names.set(entry.name, resolved);
+      }
+      entry.name = resolved;
     }
   } catch {
     // Unnamed callbacks still carry their frame# label; the numbers stand.
@@ -112,9 +118,9 @@ export function compareBreakdowns(before: FrameBreakdownSummary, after: FrameBre
     line("frame p99", before.frame.p99, after.frame.p99),
     line("cpu p50", before.work.p50, after.work.p50),
     line("cpu p95", before.work.p95, after.work.p95),
-    line("gpu p50", before.gpu?.p50 ?? 0, after.gpu?.p50 ?? 0),
-    line("gpu p95", before.gpu?.p95 ?? 0, after.gpu?.p95 ?? 0),
-    `  cost p50 allows ${fpsAt(cost(before, "p50"))} -> ${fpsAt(cost(after, "p50"))} fps`,
+    before.gpu === null || after.gpu === null ? "  gpu            unavailable in one or both runs" : line("gpu p50", before.gpu.p50, after.gpu.p50),
+    before.gpu === null || after.gpu === null ? "  gpu p95        unavailable in one or both runs" : line("gpu p95", before.gpu.p95, after.gpu.p95),
+    before.gpu === null || after.gpu === null ? "  cost p50       unavailable without GPU timings" : `  cost p50 allows ${fpsAt(cost(before, "p50"))} -> ${fpsAt(cost(after, "p50"))} fps`,
     line("draws", before.counts.drawsAvg, after.counts.drawsAvg, ""),
     line("triangles", before.counts.trianglesAvg, after.counts.trianglesAvg, ""),
     `  hitches       ${before.hitches.length} -> ${after.hitches.length}`,

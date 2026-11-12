@@ -1461,9 +1461,13 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
       lines.push(`${game.padEnd(20)}  ${summary}`);
       continue;
     }
-    const cost = Math.max(summary.work.p50, summary.gpu?.p50 ?? 0);
-    const over = cost - 6.94;
     const ms = (value: number) => `${value.toFixed(2)} ms`.padStart(9);
+    if (summary.gpu === null) {
+      lines.push(`${game.padEnd(20)}  ${ms(summary.frame.p50)}  ${ms(summary.frame.p95)}  GPU timing unavailable`);
+      continue;
+    }
+    const cost = Math.max(summary.work.p50, summary.gpu.p50);
+    const over = cost - 6.94;
     lines.push(`${game.padEnd(20)}  ${ms(summary.frame.p50)}  ${ms(summary.frame.p95)}  ${ms(cost)}  ${over <= 0 ? "ok" : `${over.toFixed(2)} ms over`}`);
   }
   return lines.join("\n");
