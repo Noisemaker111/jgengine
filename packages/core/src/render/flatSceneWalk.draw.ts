@@ -15,6 +15,29 @@ export interface FlatWalkRenderer {
 
 const NO_CHILDREN: THREE.Object3D[] = [];
 
+/** Scenes a {@link reuseSceneWalk} render is drawing now, with how deep the calls nest. */
+const reusing = new Map<THREE.Object3D, number>();
+
+/**
+ * Draw `render` with the walk starts of `scene`'s last flattened render, where three would otherwise
+ * walk the whole graph: for a render that already reuses that render's world matrices, a few
+ * milliseconds later in the same frame (a postfx prepass, see `renderWithCurrentMatrices`). Nothing
+ * moved, appeared or was hidden in between, so the starts still describe the graph three would walk.
+ * A matrix pass since that render (something called `updateMatrixWorld` on the scene) leaves the
+ * starts unused and three walks the scene.
+ * @internal
+ */
+export function reuseSceneWalk<T>(scene: THREE.Object3D, render: () => T): T {
+  reusing.set(scene, (reusing.get(scene) ?? 0) + 1);
+  try {
+    return render();
+  } finally {
+    const depth = (reusing.get(scene) ?? 1) - 1;
+    if (depth <= 0) reusing.delete(scene);
+    else reusing.set(scene, depth);
+  }
+}
+
 /**
  * Let three's render walk start from the scene's walk starts instead of the scene. Three walks every
  * node of the scene on each render (and once more for each shadow-casting light), doing nothing at
@@ -25,9 +48,10 @@ const NO_CHILDREN: THREE.Object3D[] = [];
  * render's shadow pass a stand-in root holds them. Three then reaches the same objects in the same
  * order with the same sort group, so every list, light and shadow map is what it was.
  *
- * Only a render whose own matrix pass ran is flattened (a prepass that reuses the beauty matrices
- * walks the scene), so the starts always reflect the graph as three walks it. A shadow-map type change
- * gets the real scene, which three walks to recompile every material.
+ * A render whose own matrix pass ran is flattened, so the starts reflect the graph as three walks it.
+ * A render without one is flattened only inside {@link reuseSceneWalk}, and only with the starts the
+ * last flattened render used; any other walks the scene. A shadow-map type change gets the real
+ * scene, which three walks to recompile every material.
  * @internal
  */
 export function installFlatSceneWalk(renderer: FlatWalkRenderer, scene: THREE.Object3D): () => void {
@@ -53,11 +77,17 @@ export function installFlatSceneWalk(renderer: FlatWalkRenderer, scene: THREE.Ob
   const flatGet = function (this: unknown, drawn: THREE.Object3D, depth: number): WalkList {
     restore();
     const list = get.call(lists, drawn, depth);
-    if (!installed || drawn !== scene || scene.matrixWorldAutoUpdate !== true) return list;
-    // Three ran the matrix pass at the start of this render (`matrixWorldAutoUpdate`): its starts are current.
+    if (!installed || drawn !== scene) return list;
     const walk = sceneWalkStarts(scene);
-    if (walk === undefined || walk.serial === consumed) return list;
-    consumed = walk.serial;
+    if (walk === undefined) return list;
+    if (scene.matrixWorldAutoUpdate === true) {
+      // Three ran the matrix pass at the start of this render: its starts are current.
+      if (walk.serial === consumed) return list;
+      consumed = walk.serial;
+    } else if (!reusing.has(scene) || walk.serial !== consumed) {
+      // No matrix pass ran, and the caller has not said the graph is the last flattened render's.
+      return list;
+    }
     if (!finishes.has(list)) {
       const finish = list.finish;
       finishes.set(list, finish);

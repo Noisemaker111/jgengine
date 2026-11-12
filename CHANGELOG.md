@@ -26,6 +26,11 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+### Changed
+
+- Postfx scene prepasses (GTAO's normal prepass, DOF's depth prepass, the stylize outline prepass) start three's walk where the beauty pass's flat walk did instead of walking the whole scene graph: Scrap Signal's normal prepass walked all 11,600 nodes of its graph for the ~150 meshes it draws, and its post chain's main-thread time drops by about a quarter. The draws, their order and the image are unchanged.
+- The cascaded-shadow material-swap hook every mesh runs before each draw (main and shadow passes) passes three's arguments on as they came instead of gathering them into an array per draw, and skips three's empty default hook.
+
 ## 0.58.0
 
 ### Migrate
