@@ -1,6 +1,6 @@
 import type { PerceptionService, PerceptionStimulus } from "@jgengine/core/sensor/perception";
 import { groundDistance, HAZARDS, inside, lineOfSight, type HazardKind, type Point } from "../world";
-import { advanceRoute, createNavigator, type Navigator } from "./navigation";
+import { advanceRoute, createNavigator, midLeap, type Navigator } from "./navigation";
 import { creatureIntent, diverVisibility, SPECIES, type Creature, type Species } from "./fauna";
 import { STRATA, type Stratum } from "./strata";
 import type { Dive } from "./state";
@@ -71,6 +71,14 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
     const intent = creatureIntent(creature, memories, id => (id === diver.id ? (diver.lamp ? 1 : ambient * 0.5) : 0));
     let next: Creature = { ...creature, cooldown: Math.max(0, creature.cooldown - dt), target: intent.targetId, reason: intent.reason };
     const onDiver = intent.targetId === diver.id;
+    const route = senses.route(creature.id);
+    if (midLeap(route)) {
+      // A print in the air over the Wells' open water lands before it decides anything else.
+      const at = advanceRoute(route, creature.at, route.goal ?? creature.at, def.run * dt, stratum);
+      const moved = at[0] !== creature.at[0] || at[2] !== creature.at[2];
+      fauna[creature.id] = { ...next, at, reason: "leaping the gap", facing: moved ? Math.atan2(at[0] - creature.at[0], at[2] - creature.at[2]) : creature.facing };
+      continue;
+    }
     if (creature.mode === "winding") {
       next.windup = Math.max(0, creature.windup - dt);
       if (next.windup === 0) {
@@ -98,9 +106,12 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
         const stop = intent.mode === "stalk" || intent.mode === "attack" ? Math.max(0, (def.strike?.reach ?? 1.5) * 0.7) : 0;
         const budget = Math.max(0, Math.min(speed * dt, groundDistance(creature.at, goal) - stop));
         const from = creature.at;
-        let at = advanceRoute(senses.route(creature.id), from, [goal[0], 0, goal[2]], budget, stratum);
+        let at = advanceRoute(route, from, [goal[0], 0, goal[2]], budget, stratum, (_link, phase) => {
+          // The diver hears a print take a leap they cannot follow; the long way round is the catwalks.
+          if (phase === "enter") hint = `${def.name} leaps the gap.`;
+        });
         // A fleeing print backed into shelving turns along the wall instead of freezing against it.
-        if (at[0] === from[0] && at[2] === from[2] && budget > 0 && intent.mode === "flee") at = sidestep(senses.route(creature.id), from, goal, budget, stratum);
+        if (at[0] === from[0] && at[2] === from[2] && budget > 0 && intent.mode === "flee") at = sidestep(route, from, goal, budget, stratum);
         if (at[0] !== from[0] || at[2] !== from[2]) next = { ...next, at, facing: Math.atan2(at[0] - from[0], at[2] - from[2]) };
       }
     }

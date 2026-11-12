@@ -1,7 +1,7 @@
 import { devtools } from "../devtools/devtools";
 import { length2 } from "../math/scalar";
 import type { Vec3 } from "../world/geometry";
-import type { NavMeshPath } from "./navMesh";
+import type { NavMeshLink, NavMeshPath, NavPathLink } from "./navMesh";
 import type { NavRebuildStats, NavRegion, NavRuntime } from "./navRuntime";
 import { createRvoCrowd, type RvoCrowd, type RvoTunables } from "../ai/rvo";
 import { spreadOffset } from "../ai/crowd";
@@ -28,6 +28,17 @@ export interface NavCrowdAgentView {
   arrived: boolean;
   /** True while the agent waits for its turn in the bounded re-plan budget. */
   waitingForPlan: boolean;
+}
+
+/** An agent starting (`enter`) or finishing (`exit`) an off-mesh link, so the game can play the door, ladder or jump. */
+export interface NavCrowdLinkEvent {
+  agent: string;
+  phase: "enter" | "exit";
+  /** The link crossed; `id` and `kind` name the authored link it came from. */
+  link: NavMeshLink;
+  /** Where the crossing leaves and lands. */
+  from: Vec3;
+  to: Vec3;
 }
 
 /** Result of telling the crowd the nav mesh changed. */
@@ -78,6 +89,10 @@ export interface NavCrowdSnapshot {
     arrived: boolean;
     polys: number[];
     waitingForPlan: boolean;
+    /** Links the remaining route crosses, the next one not yet finished, and whether it is underway. */
+    links?: NavPathLink[];
+    nextLink?: number;
+    crossing?: boolean;
   }[];
 }
 
@@ -105,6 +120,8 @@ export interface NavCrowdOptions {
   avoid?: Partial<RvoTunables>;
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
   devtoolsName?: string;
+  /** Told when an agent starts and finishes crossing an off-mesh link (a door, ladder or jump). */
+  onLink?: ((event: NavCrowdLinkEvent) => void) | undefined;
 }
 
 /**
@@ -150,6 +167,9 @@ interface CrowdAgent {
   waypoints: Vec3[];
   waypoint: number;
   polys: number[];
+  links: NavPathLink[];
+  nextLink: number;
+  crossing: boolean;
   arrived: boolean;
   waitingForPlan: boolean;
   x: number;
@@ -197,6 +217,40 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
   let unroutable = 0;
   let slowestTickMs = 0;
   const motion: MotionOut = { x: 0, z: 0, vx: 0, vz: 0 };
+  let onLink = options.onLink;
+
+  function emitLink(agent: CrowdAgent, crossing: NavPathLink, phase: "enter" | "exit"): void {
+    const from = agent.waypoints[crossing.start];
+    const to = agent.waypoints[crossing.end];
+    if (onLink === undefined || from === undefined || to === undefined) return;
+    onLink({ agent: agent.id, phase, link: crossing.link, from: [from[0], from[1], from[2]], to: [to[0], to[1], to[2]] });
+  }
+
+  /** Report links the agent has stepped onto or off since the last waypoint change. */
+  function syncLinks(agent: CrowdAgent): void {
+    while (agent.nextLink < agent.links.length) {
+      const crossing = agent.links[agent.nextLink]!;
+      if (agent.crossing) {
+        if (agent.waypoint <= crossing.end) return;
+        emitLink(agent, crossing, "exit");
+        agent.crossing = false;
+        agent.nextLink += 1;
+        continue;
+      }
+      if (agent.waypoint <= crossing.start) return;
+      agent.crossing = true;
+      emitLink(agent, crossing, "enter");
+    }
+  }
+
+  /** A route that is replaced or finished mid-crossing still closes the crossing it opened. */
+  function dropLinks(agent: CrowdAgent): void {
+    const open = agent.crossing ? agent.links[agent.nextLink] : undefined;
+    if (open !== undefined) emitLink(agent, open, "exit");
+    agent.links = [];
+    agent.nextLink = 0;
+    agent.crossing = false;
+  }
 
   let cachedBounds: [number, number, number, number] = [0, 0, 0, 0];
   let cachedRebuilds = -1;
@@ -237,6 +291,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
 
   function applyPath(agent: CrowdAgent, path: NavMeshPath | null): boolean {
     plans += 1;
+    dropLinks(agent);
     if (path === null || path.points.length === 0) {
       agent.waypoints = [];
       agent.waypoint = 0;
@@ -249,8 +304,10 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
     agent.waypoints = path.points.map((point) => [point[0], point[1], point[2]] as Vec3);
     agent.waypoint = agent.waypoints.length > 1 ? 1 : 0;
     agent.polys = [...path.polys];
+    agent.links = (path.links ?? []).map((crossing) => ({ ...crossing }));
     agent.arrived = false;
     agent.waitingForPlan = false;
+    syncLinks(agent);
     return true;
   }
 
@@ -280,6 +337,9 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
         waypoints: [],
         waypoint: 0,
         polys: [],
+        links: [],
+        nextLink: 0,
+        crossing: false,
         arrived: false,
         waitingForPlan: false,
         x: spec.position[0],
@@ -401,12 +461,14 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
             advanced = true;
           }
         }
+        if (agent.links.length > 0) syncLinks(agent);
         agent.x = x;
         agent.y = y;
         agent.z = z;
         const goalDistance = length2(agent.goal[0] + agent.offsetX - x, agent.goal[2] + agent.offsetZ - z);
         if (agent.waypoint >= agent.waypoints.length && goalDistance <= Math.max(goalRadius, waypointRadius)) {
           agent.arrived = true;
+          dropLinks(agent);
           agent.waypoints = [];
           agent.waypoint = 0;
           agent.polys = [];
@@ -479,6 +541,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
       if (patch.replanBudget !== undefined) replanBudget = Math.max(1, Math.floor(patch.replanBudget));
       if (patch.replanMs !== undefined) replanMs = Math.max(0, patch.replanMs);
       if (patch.avoid !== undefined) avoid.retune(patch.avoid);
+      if (patch.onLink !== undefined) onLink = patch.onLink;
     },
     snapshot() {
       const avoidState = avoid.snapshot();
@@ -507,6 +570,9 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
           arrived: agent.arrived,
           polys: [...agent.polys],
           waitingForPlan: agent.waitingForPlan,
+          links: agent.links.map((crossing) => ({ ...crossing, link: { ...crossing.link } })),
+          nextLink: agent.nextLink,
+          crossing: agent.crossing,
         })),
       };
     },
@@ -532,6 +598,9 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
           waypoints: saved.waypoints.map((point) => [point[0], point[1], point[2]] as Vec3),
           waypoint: saved.waypoint,
           polys: [...saved.polys],
+          links: (saved.links ?? []).map((crossing) => ({ ...crossing, link: { ...crossing.link } })),
+          nextLink: saved.nextLink ?? 0,
+          crossing: saved.crossing ?? false,
           arrived: saved.arrived,
           waitingForPlan: saved.waitingForPlan,
           x: saved.position[0],

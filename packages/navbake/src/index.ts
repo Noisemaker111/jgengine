@@ -1,4 +1,5 @@
 import type { NavMeshData } from "@jgengine/core/nav/navMesh";
+import { applyNavAreas, mergeNavGeometry, navAreaGeometry, type AuthoredNavArea } from "@jgengine/core/nav/navAuthoring";
 import { freeCompactHeightfield, freeContourSet, freeHeightfield, freePolyMesh, freePolyMeshDetail, init } from "recast-navigation";
 import { generateSoloNavMesh, type SoloNavMeshGeneratorIntermediates } from "recast-navigation/generators";
 
@@ -112,4 +113,35 @@ export function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData {
   } finally {
     navMesh.destroy();
   }
+}
+
+/** Agent dimensions, authored areas and optional scene triangles for {@link bakeAuthoredNavMesh}. */
+export interface BakeAuthoredNavMeshOptions extends Omit<BakeNavMeshOptions, "positions" | "indices"> {
+  /** The scene's `nav_area` volumes, read with `navAuthoringFromDocument`. */
+  areas: readonly AuthoredNavArea[];
+  /** Scene triangles baked alongside the areas (flat xyz triples); omit to bake the authored areas alone. */
+  positions?: readonly number[];
+  indices?: readonly number[];
+}
+
+/**
+ * Bake a nav mesh from what a scene authors: each walkable `nav_area` adds a floor, each blocked one a
+ * solid box the surface is eroded around, plus any scene triangles passed in. Blocked areas then
+ * remove the surface left on and under them and walkable areas stamp their area id, so the stored
+ * bake already honours every authored area. Requires {@link initNavBake}.
+ * @capability navmesh-bake-authored bake a nav mesh from the editor scene's authored walkable and blocked areas
+ */
+export function bakeAuthoredNavMesh(options: BakeAuthoredNavMeshOptions): NavMeshData {
+  const geometry = mergeNavGeometry({ positions: options.positions ?? [], indices: options.indices ?? [] }, navAreaGeometry(options.areas));
+  const baked = bakeNavMesh({
+    positions: geometry.positions,
+    indices: geometry.indices,
+    agentRadius: options.agentRadius,
+    agentHeight: options.agentHeight,
+    maxSlope: options.maxSlope,
+    maxClimb: options.maxClimb,
+    ...(options.cellSize === undefined ? {} : { cellSize: options.cellSize }),
+    ...(options.cellHeight === undefined ? {} : { cellHeight: options.cellHeight }),
+  });
+  return applyNavAreas(baked, options.areas, { climb: options.maxClimb });
 }

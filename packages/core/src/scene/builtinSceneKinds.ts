@@ -19,6 +19,7 @@ import { registerBuildingGenerator } from "../buildings/buildingGenerator";
 import { registerNatureGenerators } from "../nature/natureGenerators";
 import { registerSurfaceMaterialGenerator } from "../material/surfaceMaterialGenerator";
 import { registerGroundCoverKind } from "../plants/groundCover/groundCoverField";
+import { registerNavAuthoringKinds } from "../nav/navAuthoringKinds";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind } from "./sceneKinds";
 import { type ParamSchema } from "../generator/paramSchema";
@@ -96,6 +97,7 @@ export function registerBuiltinSceneKinds(): void {
   registerGroundCoverKind();
   registerPoleLineKind();
   registerDecalKind();
+  registerNavAuthoringKinds();
   registerBuildingGenerator();
   registerNatureGenerators();
   registerSurfaceMaterialGenerator();

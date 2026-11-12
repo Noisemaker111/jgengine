@@ -4,7 +4,12 @@ import type { Vec3 } from "../world/geometry";
 export interface NavMeshLink {
   from: number;
   to: number;
+  /** Path cost of crossing; defaults to the straight distance between its ends. */
   cost?: number;
+  /** Authored id the link came from, so an agent crossing it can tell the game which one. */
+  id?: string;
+  /** What the link crosses (`door`, `ladder`, `jump`, ...), so a game can animate the crossing. */
+  kind?: string;
   /** Where the link leaves `from`; defaults to that polygon's center. */
   start?: Vec3;
   /** Where the link lands in `to`; defaults to that polygon's center. */
@@ -28,10 +33,21 @@ export interface NavMeshAdjacency {
   cost: number;
 }
 
+/** One off-mesh link a route crosses: the agent leaves `points[start]` and lands on `points[end]`. */
+export interface NavPathLink {
+  link: NavMeshLink;
+  /** Index into {@link NavMeshPath.points} where the crossing begins. */
+  start: number;
+  /** Index into {@link NavMeshPath.points} where the crossing lands. */
+  end: number;
+}
+
 /** Route points and polygons selected through a navigation mesh. */
 export interface NavMeshPath {
   points: Vec3[];
   polys: number[];
+  /** Off-mesh links the route crosses, in walking order; absent when it crosses none. */
+  links?: NavPathLink[];
   /** True when the search budget ran out and the route ends at the polygon nearest the goal. */
   partial?: boolean;
 }
@@ -410,13 +426,16 @@ function search(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<Record<num
   const points: Vec3[] = [[startPoint[0], startPoint[1], startPoint[2]]];
   let segmentStart: Vec3 = points[0]!;
   let lefts: Vec3[] = [], rights: Vec3[] = [];
+  const crossings: NavPathLink[] = [];
   for (let k = 1; k < polys.length; k += 1) {
     const p = polys[k]!, prev = polys[k - 1]!;
     if (viaLink[p]! >= 0) {
       const link = mesh.links[viaLink[p]!]!;
       funnel(segmentStart, linkPoint(prep, prev, link.start), lefts, rights, points);
+      const start = points.length - 1;
       segmentStart = linkPoint(prep, p, link.end);
       if (!samePoint(points[points.length - 1]!, segmentStart)) points.push(segmentStart);
+      crossings.push({ link, start, end: points.length - 1 });
       lefts = []; rights = [];
       continue;
     }
@@ -429,7 +448,10 @@ function search(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<Record<num
     lefts.push(aIsLeft ? pa : pb); rights.push(aIsLeft ? pb : pa);
   }
   funnel(segmentStart, end, lefts, rights, points);
-  return partial ? { points, polys, partial: true } : { points, polys };
+  const route: NavMeshPath = { points, polys };
+  if (crossings.length > 0) route.links = crossings;
+  if (partial) route.partial = true;
+  return route;
 }
 
 function sharesVertex(mesh: NavMeshData, a: number, b: number): boolean {

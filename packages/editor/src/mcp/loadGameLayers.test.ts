@@ -59,6 +59,12 @@ describe("loadGameLayers", () => {
     expect(loaded.document.markers).toEqual([]);
   });
 
+  test("a game with only an editor.scene.json loads that scene, so a headless save cannot blank it", async () => {
+    const loaded = await loadGameLayers("../packages/editor/testFixtures/scene-only-game");
+    if (!loaded.ok) throw new Error(JSON.stringify(loaded.errors));
+    expect(loaded.document.markers.map((marker) => marker.id)).toEqual(["scene-only-spawn"]);
+  });
+
   test("a present editorLayers factory decodes a nonempty typed document", async () => {
     const loaded = await loadGameLayers("../packages/editor/testFixtures/module-valid-game");
     if (!loaded.ok) throw new Error(JSON.stringify(loaded.errors));

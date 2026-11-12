@@ -8,27 +8,7 @@ import {
   type NavMeshQuery,
   type NavMeshQueryOptions,
 } from "./navMesh";
-
-/** What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost. */
-export type NavLinkKind = "door" | "ladder" | "jump" | "link";
-
-/**
- * A connection the scene author places between two spots — a door through a wall, a ladder to a
- * deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake:
- * {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
- */
-export interface AuthoredNavLink {
-  /** Stable authored id; reported by `unresolvedLinks()` when an end no longer touches the mesh. */
-  id: string;
-  /** Traversal kind; prices the link when `cost` is absent. Default `"link"`. */
-  kind?: NavLinkKind;
-  /** World point the agent leaves from. */
-  from: Vec3;
-  /** World point the agent arrives at. */
-  to: Vec3;
-  /** Path cost in world units; overrides the kind's price. Non-finite or negative falls back to the kind. */
-  cost?: number;
-}
+import type { AuthoredNavLink, NavLinkKind } from "./navAuthoring";
 
 /** An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone. */
 export interface NavRegion {
@@ -146,6 +126,8 @@ export function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "m
     ...(link.cost === undefined ? {} : { cost: link.cost }),
     ...(link.start === undefined ? {} : { start: link.start }),
     ...(link.end === undefined ? {} : { end: link.end }),
+    ...(typeof link.id === "string" ? { id: link.id } : {}),
+    ...(typeof link.kind === "string" ? { kind: link.kind } : {}),
   }));
   for (const link of links) {
     if (!Number.isInteger(link.from) || !Number.isInteger(link.to)) throw new Error(`nav bake "${id}" links need polygon ids`);
@@ -195,6 +177,7 @@ function sameLinks(a: readonly NavMeshLink[], b: readonly NavMeshLink[]): boolea
     const left = a[i]!;
     const right = b[i]!;
     if (left.from !== right.from || left.to !== right.to || left.cost !== right.cost) return false;
+    if (left.id !== right.id || left.kind !== right.kind) return false;
     if (!samePoint(left.start, right.start) || !samePoint(left.end, right.end)) return false;
   }
   return true;
@@ -247,10 +230,18 @@ export function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshDat
         missing.push(link.id);
         continue;
       }
+      const cost = linkCost(link, linkCosts);
+      const kind = link.kind ?? "link";
       const pair = `${from}>${to}`;
-      if (seen.has(pair)) continue;
-      seen.add(pair);
-      out.push({ from, to, cost: linkCost(link, linkCosts), start: link.from, end: link.to });
+      if (!seen.has(pair)) {
+        seen.add(pair);
+        out.push({ from, to, cost, start: link.from, end: link.to, id: link.id, kind });
+      }
+      const back = `${to}>${from}`;
+      if (link.bidirectional === true && !seen.has(back)) {
+        seen.add(back);
+        out.push({ from: to, to: from, cost, start: link.to, end: link.from, id: link.id, kind });
+      }
     }
     resolved = out;
     unresolved = missing;

@@ -12,6 +12,7 @@ import type {
   EditorVolume,
 } from "@jgengine/core/editor/index";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
+import { NAV_AREA_KIND, NAV_LINK_KIND } from "@jgengine/core/nav/navAuthoring";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { SceneObjectAttach, SceneObjectGroup, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
 
@@ -39,7 +40,25 @@ const DEFAULT_COLORS: Record<string, string> = {
   corridor: "#38bdf8",
   route: "#e2e8f0",
   note: "#fde68a",
+  [NAV_AREA_KIND]: "#f87171",
+  [NAV_LINK_KIND]: "#a78bfa",
 };
+
+/** A walkable nav area reads green, a blocked one red, so the two modes are told apart at a glance. */
+function volumeColor(volume: EditorVolume): string {
+  if (volume.kind === NAV_AREA_KIND && volume.color === undefined) return volume.meta?.["mode"] === "walkable" ? "#4ade80" : "#f87171";
+  return colorFor(volume.kind, volume.color);
+}
+
+/** Where a nav link gizmo draws its arrowheads: at the landing end, and at the start too when it runs both ways. */
+export function navLinkArrows(path: EditorPath): { at: EditorVec3; toward: EditorVec3 }[] {
+  if (path.kind !== NAV_LINK_KIND || path.points.length < 2) return [];
+  const first = path.points[0]!;
+  const last = path.points[path.points.length - 1]!;
+  const arrows = [{ at: last, toward: path.points[path.points.length - 2]! }];
+  if (path.meta?.["bidirectional"] !== false) arrows.push({ at: first, toward: path.points[1]! });
+  return arrows;
+}
 
 const RING_SEGMENTS = 40;
 const MARKER_SEGMENTS = 8;
@@ -204,7 +223,7 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
   selected: boolean;
   hovered: boolean;
 }) {
-  const color = colorFor(volume.kind, volume.color);
+  const color = volumeColor(volume);
   const object = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(volumeWireframe(volume), 3));
@@ -259,8 +278,10 @@ const PathRibbon = memo(function PathRibbon({
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor(path.kind, path.color);
+  // A nav link's ends carry their own heights (a ladder's top is not on the ground), so it never drapes.
+  const drape = groundHeightAt !== undefined && path.kind !== NAV_LINK_KIND;
   const yAt = (point: { x: number; y: number; z: number }): number =>
-    groundHeightAt !== undefined ? groundHeightAt(point.x, point.z) : point.y;
+    drape ? groundHeightAt(point.x, point.z) : point.y;
   const object = useMemo(() => {
     if (path.points.length < 2) return null;
     const stride = !selected && !hovered && path.points.length > 80 ? 2 : 1;
@@ -317,11 +338,37 @@ const PathRibbon = memo(function PathRibbon({
     },
     [pointMeshes],
   );
+  const arrowMeshes = useMemo(() => {
+    const arrows = navLinkArrows(path);
+    if (arrows.length === 0) return [];
+    const geometry = new THREE.ConeGeometry(0.35, 0.9, 10);
+    const material = new THREE.MeshBasicMaterial({ color: emphasisColor(selected, hovered, color) });
+    return arrows.map(({ at, toward }) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      const tip = new THREE.Vector3(at.x, yAt(at) + 0.8, at.z);
+      const back = new THREE.Vector3(toward.x, yAt(toward) + 0.8, toward.z);
+      const direction = tip.clone().sub(back);
+      if (direction.lengthSq() > 1e-9) mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      mesh.position.copy(tip);
+      return mesh;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path.kind, path.points, path.meta, color, selected, hovered, groundHeightAt]);
+  useEffect(
+    () => () => {
+      const first = arrowMeshes[0];
+      if (first === undefined) return;
+      first.geometry.dispose();
+      (first.material as THREE.Material).dispose();
+    },
+    [arrowMeshes],
+  );
   if (object === null) return null;
   return (
     <SceneObjectGroup userData={{ jgEditorId: path.id }}>
       <SceneObjectAttach object={object} />
       <SceneObjectList objects={pointMeshes} />
+      <SceneObjectList objects={arrowMeshes} />
     </SceneObjectGroup>
   );
 });

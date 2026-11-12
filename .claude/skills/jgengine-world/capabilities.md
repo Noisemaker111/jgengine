@@ -1471,6 +1471,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `natureGeometry` (function) · `import { natureGeometry } from "@jgengine/core/nature/natureMesh.draw"`
 - `natureMaterial` (function) · `import { natureMaterial } from "@jgengine/core/nature/natureMesh.draw"`
 
+## nav-authoring — author nav-mesh areas and off-mesh links (doors, ladders, jumps) in the editor scene
+
+- `NAV_AREA_KIND` (const) · `import { NAV_AREA_KIND } from "@jgengine/core/world"`
+
 ## nav-crowd — move many agents across an editor-baked nav mesh with avoidance
 
 - `createNavCrowd` (function) · `import { createNavCrowd } from "@jgengine/core/world"`
@@ -1486,6 +1490,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## navmesh-bake — voxelize scene triangles into an agent-sized polygon nav mesh
 
 - `bakeNavMesh` (function) · `import { bakeNavMesh } from "@jgengine/navbake"`
+
+## navmesh-bake-authored — bake a nav mesh from the editor scene's authored walkable and blocked areas
+
+- `bakeAuthoredNavMesh` (function) · `import { bakeAuthoredNavMesh } from "@jgengine/navbake"`
 
 ## navmesh-from-scene — read the editor's baked nav mesh off a scene document
 

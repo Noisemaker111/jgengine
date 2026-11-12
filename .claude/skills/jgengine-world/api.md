@@ -3398,6 +3398,31 @@
 - `createLaneGraph` (function): function createLaneGraph(config: LaneGraphConfig): LaneGraph — Read handle over the graph resolved once at construction. The build mutates its working set; this object never changes, so a save system rebuilds it from the scene document instead of serializing it.
 - `laneGraphFromDocument` (function): function laneGraphFromDocument(doc: Pick<EditorDocument, "paths" | "markers">, options: LaneGraphDocumentOptions = {}): LaneGraph — Read a lane graph out of an authored scene document. `traffic_lane` paths are one directed lane each; `road` paths (the editor's street bake) become a lane per direction, offset onto their own side of the road; `traffic_intersection` markers carry a signal program and right-of-way in `meta`; `traffic_parking` markers place parking spots. Runtime positions come from the paths, so editing a road moves its traffic instead of leaving a duplicate lane behind.
 
+## @jgengine/core/nav/navAuthoring
+
+- `AuthoredNavArea` (interface): interface AuthoredNavArea — One authored nav area read off a `nav_area` box volume.
+- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: `NavRuntime.applyMesh` resolves each end onto the nearest walkable polygon.
+- `NAV_AREA_KIND` (const): const NAV_AREA_KIND: "nav_area" — Volume kind of an authored nav area: a box that adds walkable floor (`walkable`) or removes it (`blocked`).
+- `NAV_AREA_SCHEMA` (const): const NAV_AREA_SCHEMA: ParamSchema — Inspector and `meta` schema of a `nav_area` volume.
+- `NAV_LINK_KIND` (const): const NAV_LINK_KIND: "nav_link" — Path kind of an authored off-mesh link: its first point is where the agent leaves, its last where it lands.
+- `NAV_LINK_KINDS` (const): const NAV_LINK_KINDS: readonly NavLinkKind[] — Every link kind the runtime prices.
+- `NAV_LINK_SCHEMA` (const): const NAV_LINK_SCHEMA: ParamSchema — Inspector and `meta` schema of a `nav_link` path.
+- `NavAreaMode` (type): type NavAreaMode = "walkable" | "blocked" — What a nav area does to the walkable surface under it.
+- `NavAuthoring` (interface): interface NavAuthoring — Every nav area and link a scene authors, plus the objects that could not be read.
+- `NavAuthoringDocument` (interface): interface NavAuthoringDocument — The slice of a scene document nav authoring reads (an `EditorDocument` fits).
+- `NavAuthoringIssue` (interface): interface NavAuthoringIssue — One authored nav object the reader skipped, and why.
+- `NavAuthoringPath` (interface): interface NavAuthoringPath — The slice of an editor path a nav link reads (an `EditorPath` fits).
+- `NavAuthoringVolume` (interface): interface NavAuthoringVolume — The slice of an editor volume a nav area reads (an `EditorVolume` fits).
+- `NavBakeGeometry` (interface): interface NavBakeGeometry — Indexed triangles for a recast bake, as `bakeNavMesh` takes them.
+- `NavLinkKind` (type): type NavLinkKind = "door" | "ladder" | "jump" | "link" — What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost.
+- `applyNavAreas` (function): function applyNavAreas(mesh: NavMeshData, areas: readonly AuthoredNavArea[], options: { climb?: number } = {}): NavMeshData — Apply authored areas to a baked or built mesh: polygons standing in a blocked area (its footprint, from its bottom to `climb` over its top) are removed, and polygons on a walkable area take its area id. A polygon is judged by its centre, so an area should cover whole polygons where its price matters. Links touching a removed polygon are dropped; the rest are re-indexed.
+- `mergeNavGeometry` (function): function mergeNavGeometry(...sets: readonly { positions: readonly number[]; indices: readonly number[] }[]): NavBakeGeometry — Concatenate indexed triangle sets into one, re-basing each set's indices.
+- `navAreaAt` (function): function navAreaAt(areas: readonly AuthoredNavArea[], x: number, z: number, fallback: number | null): number | null — The area id authored at a ground point, for a builder whose walkable surface is a rule (`navTileFromGrid`'s `areaAt`): `null` inside a blocked area, the covering walkable area's id (the last one authored wins) inside a walkable one, and the builder's own answer elsewhere. Blocked beats walkable where they overlap.
+- `navAreaGeometry` (function): function navAreaGeometry(areas: readonly AuthoredNavArea[]): NavBakeGeometry — The triangles authored areas add to a bake: each walkable area is a floor quad at its `floorY` facing up, and each blocked area a closed box, so the baker erodes the walkable surface around it. Append them to the scene's own geometry with {@link mergeNavGeometry}.
+- `navAuthoringFromDocument` (function): function navAuthoringFromDocument(document: NavDocument, include: (object: NavAuthoringVolume | NavAuthoringPath) => boolean = () => true): NavAuthoring — Read every `nav_area` volume and `nav_link` path off a scene document. Objects that do not validate are skipped and reported in `issues` rather than thrown, so one bad gizmo cannot take the whole level's navigation down; `include` narrows the read (a game with several floors reads one).
+- `navLinksFromDocument` (function): function navLinksFromDocument(document: NavDocument, include?: (object: NavAuthoringVolume | NavAuthoringPath) => boolean): AuthoredNavLink[] — The authored off-mesh links of a scene document, ready for `createNavRuntime`'s `links`.
+- `validateNavAuthoring` (function): function validateNavAuthoring(document: NavDocument): NavAuthoringIssue[] — Problems that keep a scene's nav objects from being read; empty means every one is valid.
+
 ## @jgengine/core/nav/navConstrain
 
 - `NavConstrainEntity` (interface): interface NavConstrainEntity { position: EntityPosition } — ⚠ undocumented
@@ -3410,6 +3435,7 @@
 - `NavCrowd` (interface): interface NavCrowd — Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime}, walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents whose remaining route actually crossed the rebuilt region.
 - `NavCrowdAgentSpec` (interface): interface NavCrowdAgentSpec — How one crowd agent was configured when it joined.
 - `NavCrowdAgentView` (interface): interface NavCrowdAgentView — One crowd agent's live state, as a game or the devtools overlay reads it.
+- `NavCrowdLinkEvent` (interface): interface NavCrowdLinkEvent — An agent starting (`enter`) or finishing (`exit`) an off-mesh link, so the game can play the door, ladder or jump.
 - `NavCrowdOptions` (interface): interface NavCrowdOptions — Tunables for {@link createNavCrowd}, every one retunable in play.
 - `NavCrowdRevalidate` (interface): interface NavCrowdRevalidate — Result of telling the crowd the nav mesh changed.
 - `NavCrowdSnapshot` (interface): interface NavCrowdSnapshot — Serializable crowd state: agents, their routes, and the avoidance tuning they run under.
@@ -3445,14 +3471,13 @@
 - `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
 - `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
 - `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
+- `NavPathLink` (interface): interface NavPathLink — One off-mesh link a route crosses: the agent leaves `points[start]` and lands on `points[end]`.
 - `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 
 ## @jgengine/core/nav/navRuntime
 
-- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
-- `NavLinkKind` (type): type NavLinkKind = "door" | "ladder" | "jump" | "link" — What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost.
 - `NavRebuildStats` (interface): interface NavRebuildStats — How one {@link NavRuntime.applyMesh} exchange changed the mesh.
 - `NavRegion` (interface): interface NavRegion — An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone.
 - `NavRuntime` (interface): interface NavRuntime — Runtime seam over a baked {@link NavMeshData}: route, price areas, resolve authored links, rebuild in place.
@@ -6557,7 +6582,8 @@
 - `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
 - `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented · used by `withFeedbackCueSounds` (@jgengine/core/audio/feedbackCues): Merge the default feedback reactions into a game's sound catalog.
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
-- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: {@link NavRuntime.applyMesh} resolves each end onto the nearest walkable polygon.
+- `AuthoredNavArea` (interface): interface AuthoredNavArea — One authored nav area read off a `nav_area` box volume.
+- `AuthoredNavLink` (interface): interface AuthoredNavLink — A connection the scene author places between two spots — a door through a wall, a ladder to a deck, a jump across a gap. Authored as world points, not polygon ids, so it survives a re-bake: `NavRuntime.applyMesh` resolves each end onto the nearest walkable polygon.
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented · used by `AUTO_TARGET_POLICIES`: Every policy, in the order a "cycle targeting" button steps through them.
@@ -6804,13 +6830,26 @@
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NATURE_GENERATORS` (const): const NATURE_GENERATORS: readonly GeneratorDefinition[] — Every nature generator, in editor order, as the untyped registry view.
 - `NATURE_OUTPUT` (const): const NATURE_OUTPUT: "nature-mesh" — The generator output family every nature generator returns: a {@link NatureMesh}.
+- `NAV_AREA_KIND` (const): const NAV_AREA_KIND: "nav_area" — Volume kind of an authored nav area: a box that adds walkable floor (`walkable`) or removes it (`blocked`).
+- `NAV_AREA_SCHEMA` (const): const NAV_AREA_SCHEMA: ParamSchema — Inspector and `meta` schema of a `nav_area` volume.
+- `NAV_LINK_KIND` (const): const NAV_LINK_KIND: "nav_link" — Path kind of an authored off-mesh link: its first point is where the agent leaves, its last where it lands.
+- `NAV_LINK_KINDS` (const): const NAV_LINK_KINDS: readonly NavLinkKind[] — Every link kind the runtime prices.
+- `NAV_LINK_SCHEMA` (const): const NAV_LINK_SCHEMA: ParamSchema — Inspector and `meta` schema of a `nav_link` path.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NatureMesh` (interface): interface NatureMesh — Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0.
 - `NatureRgb` (type): type NatureRgb = readonly [number, number, number] — An sRGB colour, 0..1 per channel.
 - `NatureVec` (type): type NatureVec = readonly [number, number, number] — A point or direction in a nature mesh's local space.
+- `NavAreaMode` (type): type NavAreaMode = "walkable" | "blocked" — What a nav area does to the walkable surface under it.
+- `NavAuthoring` (interface): interface NavAuthoring — Every nav area and link a scene authors, plus the objects that could not be read.
+- `NavAuthoringDocument` (interface): interface NavAuthoringDocument — The slice of a scene document nav authoring reads (an `EditorDocument` fits).
+- `NavAuthoringIssue` (interface): interface NavAuthoringIssue — One authored nav object the reader skipped, and why.
+- `NavAuthoringPath` (interface): interface NavAuthoringPath — The slice of an editor path a nav link reads (an `EditorPath` fits).
+- `NavAuthoringVolume` (interface): interface NavAuthoringVolume — The slice of an editor volume a nav area reads (an `EditorVolume` fits).
+- `NavBakeGeometry` (interface): interface NavBakeGeometry — Indexed triangles for a recast bake, as `bakeNavMesh` takes them.
 - `NavCrowd` (interface): interface NavCrowd — Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime}, walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents whose remaining route actually crossed the rebuilt region.
 - `NavCrowdAgentSpec` (interface): interface NavCrowdAgentSpec — How one crowd agent was configured when it joined.
 - `NavCrowdAgentView` (interface): interface NavCrowdAgentView — One crowd agent's live state, as a game or the devtools overlay reads it.
+- `NavCrowdLinkEvent` (interface): interface NavCrowdLinkEvent — An agent starting (`enter`) or finishing (`exit`) an off-mesh link, so the game can play the door, ladder or jump.
 - `NavCrowdOptions` (interface): interface NavCrowdOptions — Tunables for {@link createNavCrowd}, every one retunable in play.
 - `NavCrowdRevalidate` (interface): interface NavCrowdRevalidate — Result of telling the crowd the nav mesh changed.
 - `NavCrowdSnapshot` (interface): interface NavCrowdSnapshot — Serializable crowd state: agents, their routes, and the avoidance tuning they run under.
@@ -6825,6 +6864,7 @@
 - `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
 - `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
 - `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
+- `NavPathLink` (interface): interface NavPathLink — One off-mesh link a route crosses: the agent leaves `points[start]` and lands on `points[end]`.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavRebuildStats` (interface): interface NavRebuildStats — How one {@link NavRuntime.applyMesh} exchange changed the mesh.
 - `NavRegion` (interface): interface NavRegion — An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone.
@@ -7188,6 +7228,7 @@
 - `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
 - `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
 - `annulusRegion` (function): function annulusRegion(center: Vec2, innerRadius: number, outerRadius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A ring (annulus) between `innerRadius` and `outerRadius`. `"area"` fills the band with even density; `"radial"` spreads uniformly in radius. Angle first, then radius.
+- `applyNavAreas` (function): function applyNavAreas(mesh: NavMeshData, areas: readonly AuthoredNavArea[], options: { climb?: number } = {}): NavMeshData — Apply authored areas to a baked or built mesh: polygons standing in a blocked area (its footprint, from its bottom to `climb` over its top) are removed, and polygons on a walkable area take its area id. A polygon is judged by its centre, so an area should cover whole polygons where its price matters. Links touching a removed polygon are dropped; the rest are re-indexed.
 - `applyRotationPolicy` (function): function applyRotationPolicy(degrees: number, policy: PlacementRotationPolicy | undefined): number — Resolve a raw drag/scroll heading through a {@link PlacementRotationPolicy} into the heading a placement should actually commit: `locked` ignores the input for its fixed heading, `snap` quantizes, `free` (or an absent policy) normalizes. Deterministic — the single interpreter preview, editor placement, and runtime spawning share instead of each re-implementing the modes.
 - `applyVehicleParts` (function): function applyVehicleParts(base: VehicleSpec, parts: readonly VehiclePart[]): VehicleSetup — Fold parts onto a base spec: every effect scales then adds onto the running value, in array order, so a setup is deterministic and a caller can reason about which part moved what. The base spec is never mutated, so the same base can seed several builds. Hand `setup.spec` to `vehicleTuning`.
 - `assignFormationSlots` (function): function assignFormationSlots(members: readonly Vec2[], slots: readonly Vec2[], options: SlotAssignmentOptions = {}): number[] — Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (minus a stickiness bonus for a member's previous slot) and assigned in order while both ends are free. Returns `assignment[member] = slot`, or `-1` for members left unmatched when there are fewer slots than members. Ties break by member then slot index, so the result is stable across runs and independent of input ordering — the property replay and lockstep multiplayer rely on. Groups are bounded, so the `O(members·slots·log)` sort is fine; this is not a per-frame whole-world pass.
@@ -7373,8 +7414,13 @@
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
 - `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
 - `mergeFootprints` (function): function mergeFootprints(a: FootprintRegion, b: FootprintRegion, id: string, budget: RegionWorkBudget = {}): MergedRegion | null — Pool compatible footprints under caller-owned `id`, retaining original capacities and identities. Returns null for invalid data, kind/tier mismatch, overlap, no cardinal contact or exhausted budget. Does not mutate inputs or grid reservations; costs, merge width and upgrade policy remain caller-owned. Capacity is the ordered JavaScript-number sum of original contributions, independent of cell area.
+- `mergeNavGeometry` (function): function mergeNavGeometry(...sets: readonly { positions: readonly number[]; indices: readonly number[] }[]): NavBakeGeometry — Concatenate indexed triangle sets into one, re-basing each set's indices.
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
+- `navAreaAt` (function): function navAreaAt(areas: readonly AuthoredNavArea[], x: number, z: number, fallback: number | null): number | null — The area id authored at a ground point, for a builder whose walkable surface is a rule (`navTileFromGrid`'s `areaAt`): `null` inside a blocked area, the covering walkable area's id (the last one authored wins) inside a walkable one, and the builder's own answer elsewhere. Blocked beats walkable where they overlap.
+- `navAreaGeometry` (function): function navAreaGeometry(areas: readonly AuthoredNavArea[]): NavBakeGeometry — The triangles authored areas add to a bake: each walkable area is a floor quad at its `floorY` facing up, and each blocked area a closed box, so the baker erodes the walkable surface around it. Append them to the scene's own geometry with {@link mergeNavGeometry}.
+- `navAuthoringFromDocument` (function): function navAuthoringFromDocument(document: NavDocument, include: (object: NavAuthoringVolume | NavAuthoringPath) => boolean = () => true): NavAuthoring — Read every `nav_area` volume and `nav_link` path off a scene document. Objects that do not validate are skipped and reported in `issues` rather than thrown, so one bad gizmo cannot take the whole level's navigation down; `include` narrows the read (a game with several floors reads one).
+- `navLinksFromDocument` (function): function navLinksFromDocument(document: NavDocument, include?: (object: NavAuthoringVolume | NavAuthoringPath) => boolean): AuthoredNavLink[] — The authored off-mesh links of a scene document, ready for `createNavRuntime`'s `links`.
 - `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
 - `navTileFromGrid` (function): function navTileFromGrid(options: NavGridTileOptions): NavMeshData — Build one nav tile by sampling the world on a grid: each cell takes the area its centre reports, runs of cells with one area merge into rectangles, and each rectangle's sides are split at its neighbours' corners so adjacent rectangles share edges. The builder for a game whose walkable ground is a rule (lots, roads, water) rather than baked triangles.
 - `nextAutoTargetPolicy` (function): function nextAutoTargetPolicy(current: AutoTargetPolicy, allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES): AutoTargetPolicy — The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end; a policy outside `allowed` steps to its first entry.
@@ -7508,6 +7554,7 @@
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
 - `untypedGenerator` (function): function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition — The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant grid): its `generate` parses params against the schema first. Registered generators are already this shape.
 - `validateAssetSpace` (function): function validateAssetSpace(raw: unknown): AssetSpaceIssue[] — Report contradictory or malformed asset-space metadata so catalog generation can reject it before it reaches a tool: non-finite headings, non-positive scales/sizes, inverted bounds, unknown anchors, and ill-formed rotation policies (a `snap` with a non-positive increment, an unknown `mode`). An empty array means valid. Validation lives here so tools consume resolved metadata instead of reinterpreting.
+- `validateNavAuthoring` (function): function validateNavAuthoring(document: NavDocument): NavAuthoringIssue[] — Problems that keep a scene's nav objects from being read; empty means every one is valid.
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `validatePlacementBounds` (function): function validatePlacementBounds(aabb: Aabb, rules: PlacementBoundsRules = {}): PlacementBoundsResult — The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game has already resolved to world bounds, such as one measured from a model's mesh or off its pivot.
 - `vehicleTuning` (function): function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning — Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent re-derives the tuning and `retune` swaps it in without costing the car its momentum.
@@ -8093,7 +8140,9 @@
 
 ## @jgengine/navbake
 
+- `BakeAuthoredNavMeshOptions` (interface): interface BakeAuthoredNavMeshOptions extends Omit<BakeNavMeshOptions, "positions" | "indices"> — Agent dimensions, authored areas and optional scene triangles for {@link bakeAuthoredNavMesh}.
 - `BakeNavMeshOptions` (interface): interface BakeNavMeshOptions — Walkable geometry and agent dimensions for {@link bakeNavMesh}.
+- `bakeAuthoredNavMesh` (function): function bakeAuthoredNavMesh(options: BakeAuthoredNavMeshOptions): NavMeshData — Bake a nav mesh from what a scene authors: each walkable `nav_area` adds a floor, each blocked one a solid box the surface is eroded around, plus any scene triangles passed in. Blocked areas then remove the surface left on and under them and walkable areas stamp their area id, so the stored bake already honours every authored area. Requires {@link initNavBake}.
 - `bakeNavMesh` (function): function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData — Voxelize indexed triangles with recast and return the walkable surface as convex polygons in the engine's serializable nav-mesh format: eroded by `agentRadius`, cut where clearance is under `agentHeight`, and split at slopes over `maxSlope` or steps over `maxClimb`. Requires {@link initNavBake}.
 - `initNavBake` (function): function initNavBake(): Promise<void> — Load the recast WebAssembly module once; await before the first {@link bakeNavMesh}.
 - `navBakeReady` (function): function navBakeReady(): boolean — Whether {@link initNavBake} has finished and {@link bakeNavMesh} can run synchronously.
