@@ -298,7 +298,9 @@ describe("extractCircuitRoute", () => {
 });
 
 describe("race circuit generator contract", () => {
-  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+  // Rounded to 0.1 mm before hashing: libm differs in the last bit between glibc releases (CI's Ubuntu 26.04
+  // rounds sin/cos/pow correctly; older glibc does not), so a raw-float hash pins a machine, not the output.
+  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value, (_key, n: unknown) => (typeof n === "number" ? Math.round(n * 1e4) / 1e4 : n))).digest("hex").slice(0, 16);
 
   test("every preset lifts a lap; same params and seed give a byte-identical race; seeds differ", () => {
     for (const preset of RACE_CIRCUIT_SCHEMA.presets ?? []) {
@@ -334,8 +336,8 @@ describe("race circuit generator contract", () => {
   // generator contract: the same streets, dials and seed lift the same lap.
   test("laps match their fingerprints from before the generator contract", () => {
     const net = grow({ ...CITY_NET, seed: "lap", connectivity: 0.85, loopiness: 0.3 }, 300, 300);
-    expect(sha(lap(net, { seed: "lap", lapLength: 1200, checkpoints: 8 }))).toBe("3d34f256ed61c714");
+    expect(sha(lap(net, { seed: "lap", lapLength: 1200, checkpoints: 8 }))).toBe("77368da2cc9793f7");
     const loop = grow({ ...CIRCUIT_NET, seed: "lap2" }, 250, 250);
-    expect(sha(lap(loop, { seed: "lap2", gridSlots: 6, sealKind: "cones", sectors: 4 }))).toBe("0aed549c85eb6ebb");
+    expect(sha(lap(loop, { seed: "lap2", gridSlots: 6, sealKind: "cones", sectors: 4 }))).toBe("6da6842679fe3588");
   });
 });

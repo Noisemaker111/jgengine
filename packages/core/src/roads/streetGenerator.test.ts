@@ -1141,7 +1141,9 @@ describe("clampTurns", () => {
 });
 
 describe("street generator contract", () => {
-  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+  // Rounded to 0.1 mm before hashing: libm differs in the last bit between glibc releases (CI's Ubuntu 26.04
+  // rounds sin/cos/pow correctly; older glibc does not), so a raw-float hash pins a machine, not the output.
+  const sha = (value: unknown): string => createHash("sha256").update(JSON.stringify(value, (_key, n: unknown) => (typeof n === "number" ? Math.round(n * 1e4) / 1e4 : n))).digest("hex").slice(0, 16);
   const NET = STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === "net")?.values ?? {};
   const CIRCUIT = STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === "circuit")?.values ?? {};
 
@@ -1169,12 +1171,12 @@ describe("street generator contract", () => {
   // generator contract: the same dials, footprint, seed and ground grow the same network.
   test("networks match their fingerprints from before the generator contract", () => {
     const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
-    expect(sha(grow({ ...BASE, seed: "path" }, 200, 150))).toBe("136726e677bd82e8");
-    expect(sha(grow(circuitDials({ seed: "path" }), 200, 150))).toBe("598417f0fb15b705");
-    expect(sha(grow(circuitDials({ seed: "c2", compactness: 0.7, elevation: 0.5 }), 260, 200))).toBe("d22aac400e37cd64");
+    expect(sha(grow({ ...BASE, seed: "path" }, 200, 150))).toBe("c6471083e5bd7b32");
+    expect(sha(grow(circuitDials({ seed: "path" }), 200, 150))).toBe("76651b2018c1fd33");
+    expect(sha(grow(circuitDials({ seed: "c2", compactness: 0.7, elevation: 0.5 }), 260, 200))).toBe("f4f21b695190a865");
     expect(
       sha(grow({ ...BASE, seed: "t", elevation: 0.4, maxGrade: 0.05, sidewalkWidth: 3 }, 240, 240, { heightAt: terrain, minElevation: -3, bridges: true, tunnels: true })),
-    ).toBe("3a6391472ec5a754");
+    ).toBe("b3ddc87e8a11ce65");
   });
 
   function circuitDials(overrides: Partial<StreetNetworkParams> & { seed: string }): StreetNetworkRules {

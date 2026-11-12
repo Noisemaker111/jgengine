@@ -33,10 +33,14 @@ function rulesOf(meta: Record<string, unknown> | undefined): CityRules {
   return resolveCityObject(cityVolume(meta, { halfExtents: { x: 4, y: 1, z: 4 } }))!.rules;
 }
 
-/** A city plan's fingerprint: sha256 of its JSON, without the parsed `rules` echo. */
+/**
+ * A city plan's fingerprint: sha256 of its JSON, without the parsed `rules` echo, numbers rounded to 0.1 mm.
+ * libm differs in the last bit between glibc releases (CI's Ubuntu 26.04 rounds sin/cos/pow correctly; older
+ * glibc does not), so a raw-float hash pins a machine, not the plan.
+ */
 function fingerprint(value: unknown): string {
   const plain = typeof value === "object" && value !== null && "rules" in value ? { ...value, rules: undefined } : value;
-  return createHash("sha256").update(JSON.stringify(plain)).digest("hex").slice(0, 16);
+  return createHash("sha256").update(JSON.stringify(plain, (_key, n: unknown) => (typeof n === "number" ? Math.round(n * 1e4) / 1e4 : n))).digest("hex").slice(0, 16);
 }
 
 describe("city params", () => {
@@ -126,22 +130,22 @@ describe("city generator contract", () => {
       meta,
     });
     const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
-    expect(print(resolveCityObject(volume({})))).toBe("d6f499e366789936");
-    expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("0865d5dd515146ba");
-    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("b264223a6c80da90");
+    expect(print(resolveCityObject(volume({})))).toBe("d7b6bc14800d4b47");
+    expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("ea3abd48fb77ed76");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("93baf12361cbab43");
     expect(
       print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
-    ).toBe("e45e34ae7ff67d21");
+    ).toBe("f3b2e4fa972cae0b");
     const zone: SceneKindObject = { id: "z", kind: "cityzone", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 60, y: 5, z: 60 }, meta: { band: "edge", mix: [{ item: "barn", weight: 1 }] } };
-    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("ce1c37e7d2488880");
+    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("7078f5d2feb52036");
     const presets: Record<string, string> = {
-      manhattan: "f7ffb704378d6370",
-      losangeles: "e420711aebedbdd7",
-      beverlyhills: "74f2e9e98ca681c9",
-      ruralohio: "34d43aad61e963ec",
-      circuit: "487979bb93774b2b",
-      rally: "92c1f92168f101e9",
-      metropolis: "46a097896422baec",
+      manhattan: "bafa5ab6d7283208",
+      losangeles: "28795b66b0ebc077",
+      beverlyhills: "9989a021701a0f14",
+      ruralohio: "d9a5389271b33f22",
+      circuit: "7c152308a32e3153",
+      rally: "05ad2ae4e5321edd",
+      metropolis: "73d98b32dd218912",
     };
     for (const preset of CITY_SCHEMA.presets ?? []) {
       expect(print(resolveCityObject(volume({ ...preset.values, seed: `p-${preset.id}` })))).toBe(presets[preset.id]!);
@@ -164,7 +168,7 @@ describe("city generator contract", () => {
         surface: "gravel", buildingRoadSetback: 1.2, buildingSpacing: 1, clusterStrength: 0.6,
       },
     };
-    expect(print(resolveCityObject(hamlet))).toBe("8bef96040c391b03");
+    expect(print(resolveCityObject(hamlet))).toBe("2a946221179b3166");
   });
 });
 
