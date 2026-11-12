@@ -458,6 +458,7 @@
 
 - `createChunkTestRuntime` (function): function createChunkTestRuntime(gameId = "chunk-game"): GameRuntime — ⚠ undocumented
 - `createTestRuntime` (function): function createTestRuntime(gameId = "test-game"): GameRuntime — ⚠ undocumented
+- `localRequest` (function): function localRequest(url: string, method = "GET"): Promise<{ status: number; json: () => unknown }> — A request to a server this test started on 127.0.0.1, over `node:http`. Never `fetch`: Bun's fetch sends 127.0.0.1 through `HTTP_PROXY`, so a run whose environment carries a proxy (the machine's, or one a proxy test left set) read a live local server as ConnectionRefused (#3080).
 
 ## @jgengine/node/webHandler
 
