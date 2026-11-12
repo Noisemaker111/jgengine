@@ -43,7 +43,7 @@ describe("gen-audit", () => {
   test("writes a sheet, metrics.json and report.md for one preset without Chrome", async () => {
     const out = mkdtempSync(join(tmpdir(), "gen-audit-"));
     try {
-      expect(await main(["--generator", "circuit", "--seeds", "1", "--no-png", "--out", out])).toBe(0);
+      expect(await main(["--generator", "circuit", "--preset", "circuit", "--seeds", "1", "--no-png", "--out", out])).toBe(0);
       expect(existsSync(join(out, "circuit-circuit.svg"))).toBe(true);
       const metrics = JSON.parse(readFileSync(join(out, "metrics.json"), "utf8")) as { runs: { metrics: Record<string, unknown>; verdicts: unknown[] }[] };
       expect(metrics.runs).toHaveLength(1);
