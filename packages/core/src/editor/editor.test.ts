@@ -871,6 +871,39 @@ describe("terrain material layers + blend commands", () => {
     expect(undone.surfaceAt(0, 0)).toBe("grass");
   });
 
+  test("paintTerrain after blendTerrain saves clean weights and undo/redo restores both channels (#1981)", () => {
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds, cellSize: 2 }) });
+    session.dispatch({ type: "setTerrainLayers", layers: [{ id: "rock", surface: "rock" }, { id: "garden", surface: "grass" }] });
+    const seed = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    session.dispatch({ type: "paintTerrain", delta: seed.fillSurfaceDelta("rock") });
+    const blend = editableTerrainFromSnapshot(session.getState().document.terrain!)
+      .blendPaintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 40, strength: 0.25, falloff: "none" });
+    session.dispatch({ type: "blendTerrain", delta: blend });
+    const paint = editableTerrainFromSnapshot(session.getState().document.terrain!)
+      .paintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 2 });
+    session.dispatch({ type: "paintTerrain", delta: paint });
+
+    const saved = importEditorDocumentJson(session.exportJson(true)).terrain!;
+    const reloaded = editableTerrainFromSnapshot(saved);
+    expect(reloaded.surfaceAt(1, 1)).toBe("grass");
+    expect(reloaded.weightsAt(1, 1)).toEqual([0, 1]);
+    expect(reloaded.weightsAt(10, 10)).toEqual([0.75, 0.25]);
+    for (const index of paint.indices) {
+      expect(saved.surfaces[index]).toBe("grass");
+      expect([saved.weights![index * 2], saved.weights![index * 2 + 1]]).toEqual([0, 1]);
+    }
+
+    session.dispatch({ type: "undo" });
+    const undone = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    expect(undone.surfaceAt(1, 1)).toBe("rock");
+    expect(undone.weightsAt(1, 1)).toEqual([0.75, 0.25]);
+    session.dispatch({ type: "redo" });
+    const redone = editableTerrainFromSnapshot(session.getState().document.terrain!);
+    expect(redone.surfaceAt(1, 1)).toBe("grass");
+    expect(redone.weightsAt(1, 1)).toEqual([0, 1]);
+  });
+
   test("layers survive export/import via migration", () => {
     const session = createEditorSession(createEmptyEditorDocument());
     const painted = editableTerrainFromSnapshot(createTerrainSnapshot({ bounds, cellSize: 2 }));

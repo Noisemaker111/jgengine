@@ -1,13 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  applySurfaceDeltaToSnapshot,
   applyWeightDeltaToSnapshot,
   beginBlendStroke,
+  beginSurfaceStroke,
   createEditableTerrain,
   createTerrainSnapshot,
   dirtyBoundsFromIndices,
   editableTerrainFromSnapshot,
   migrateTerrainSnapshot,
+  revertSurfaceDeltaFromSnapshot,
   revertWeightDeltaFromSnapshot,
   type TerrainMaterialLayer,
 } from "./terraform";
@@ -115,6 +118,84 @@ describe("weighted blend", () => {
     expect(terrain.paintDelta({ mode: "paint", center: [0, 0], radius: 1e9, surface: "grass" }).indices).toHaveLength(16 * 16);
     terrain.setLayers(layers);
     expect(terrain.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 1e9, surface: "dirt" }).indices.length).toBeGreaterThan(0);
+  });
+
+  describe("hard paint after a blend (#1981)", () => {
+    const stack: TerrainMaterialLayer[] = [
+      { id: "rock", surface: "rock" },
+      { id: "garden", surface: "grass" },
+    ];
+    function blended() {
+      const terrain = createEditableTerrain({ bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 }, cellSize: 1 });
+      terrain.setLayers(stack);
+      terrain.fillSurfaceDelta("rock");
+      terrain.blendPaintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 4, strength: 0.25, falloff: "none" });
+      return terrain;
+    }
+
+    test("the painted layer takes full weight and every other layer drops to zero", () => {
+      const terrain = blended();
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("rock");
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([0.75, 0.25]);
+      const delta = terrain.paintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 1 });
+      expect(delta.indices).toHaveLength(4);
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("grass");
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([0, 1]);
+      expect(delta.weights?.layerCount).toBe(2);
+      // Cells outside the brush keep their blend.
+      expect(terrain.weightsAt(1.5, 1.5)).toEqual([0.75, 0.25]);
+
+      terrain.revertSurfaceDelta(delta);
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([0.75, 0.25]);
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("rock");
+      terrain.applySurfaceDelta(delta);
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([0, 1]);
+    });
+
+    test("repainting the stale id still resets the blend and is recorded", () => {
+      const terrain = createEditableTerrain({ bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 }, cellSize: 1 });
+      terrain.setLayers(stack);
+      terrain.fillSurfaceDelta("rock");
+      terrain.blendPaintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 4, strength: 0.75, falloff: "none" });
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("grass");
+      const stroke = beginSurfaceStroke(terrain);
+      stroke.stamp({ mode: "paint", surface: "rock", center: [0, 0], radius: 1 });
+      const delta = stroke.delta();
+      expect(delta.indices).toHaveLength(4);
+      expect(delta.before).toEqual(delta.after);
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("rock");
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([1, 0]);
+    });
+
+    test("clearing or filling a surface outside the stack zeroes the weights so the id shows", () => {
+      const terrain = blended();
+      terrain.fillSurfaceDelta(null);
+      expect(terrain.surfaceAt(0.5, 0.5)).toBeNull();
+      expect(terrain.weightsAt(0.5, 0.5)).toEqual([0, 0]);
+      terrain.fillSurfaceDelta("snow");
+      expect(terrain.surfaceAt(0.5, 0.5)).toBe("snow");
+    });
+
+    test("the saved snapshot carries the clean weights through apply, revert and reload", () => {
+      const terrain = blended();
+      const base = terrain.snapshot();
+      const delta = editableTerrainFromSnapshot(base).paintDelta({ mode: "paint", surface: "grass", center: [0, 0], radius: 1 });
+      const painted = applySurfaceDeltaToSnapshot(base, delta);
+      const reloaded = editableTerrainFromSnapshot(JSON.parse(JSON.stringify(painted)));
+      expect(reloaded.surfaceAt(0.5, 0.5)).toBe("grass");
+      expect(reloaded.weightsAt(0.5, 0.5)).toEqual([0, 1]);
+      const reverted = editableTerrainFromSnapshot(revertSurfaceDeltaFromSnapshot(painted, delta));
+      expect(reverted.weightsAt(0.5, 0.5)).toEqual([0.75, 0.25]);
+      expect(reverted.surfaceAt(0.5, 0.5)).toBe("rock");
+    });
+
+    test("an unblended terrain stays compact", () => {
+      const terrain = createEditableTerrain({ bounds, cellSize: 2 });
+      terrain.setLayers(layers);
+      const delta = terrain.paintDelta({ mode: "paint", surface: "dirt", center: [0, 0], radius: 4 });
+      expect(delta.weights).toBeUndefined();
+      expect(terrain.snapshot().weights).toBeUndefined();
+    });
   });
 
   test("setLayers with a changed id sequence drops stale weights", () => {
