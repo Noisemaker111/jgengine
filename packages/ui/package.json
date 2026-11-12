@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/react",
-  "version": "0.56.1",
+  "version": "0.57.0",
   "description": "Engine UI layer for JGengine: GameProvider, hooks, and primitives over the engine JSX runtime, DOM and Rune.",
   "license": "Apache-2.0",
   "type": "module",
@@ -35,7 +35,7 @@
     "styles": "bun scripts/styles.ts"
   },
   "dependencies": {
-    "@jgengine/core": "^0.56.1"
+    "@jgengine/core": "^0.57.0"
   },
   "publishConfig": {
     "access": "public"
