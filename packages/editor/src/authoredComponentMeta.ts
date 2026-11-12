@@ -8,6 +8,7 @@ import {
   type TriggerSourceKind,
 } from "@jgengine/core/scene/authoredTriggers";
 import { defaultParamMeta } from "@jgengine/core/generator/paramSchema";
+import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
 
 /**
  * True when an object's meta carries an authored behavior trigger (flat on/action or a multi-list).
@@ -20,6 +21,15 @@ export function hasAuthoredTrigger(meta: Record<string, unknown> | undefined): b
   if (Array.isArray(list) && list.length > 0) return true;
   const flat = readFlatTrigger(meta);
   return flat.on !== "" && flat.action.length > 0;
+}
+
+/**
+ * True when an object's scene kind edits the trigger keys in its own inspector (a mission marker's
+ * `on`/`action`), so the generic Trigger section would only repeat them.
+ * @internal
+ */
+export function kindOwnsTrigger(kind: string): boolean {
+  return getSceneKind(kind)?.schema.fields.some((field) => field.key === TRIGGER_ACTION_KEY) ?? false;
 }
 
 /** True when the game has registered at least one trigger action for this target kind. @internal */

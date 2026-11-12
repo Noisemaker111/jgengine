@@ -50,6 +50,11 @@ export interface SceneKindDefinition<TResolved = unknown> {
   /** Accent color for the inspector panel + `+ Add` entry, as a hex string. */
   accent?: string;
   /**
+   * `meta` a freshly placed object starts with, for a kind whose objects mean nothing until a few
+   * keys are set (a mission marker's `on`/`action`). Omitted, a placed object starts with no `meta`.
+   */
+  placeMeta?: Readonly<Record<string, unknown>>;
+  /**
    * Turn one document object (its geometry + parsed params) into pure renderable data. Pure — no
    * three.js/DOM. Omitted for kinds whose renderer reads the object directly. `object` is the raw
    * marker/volume/path; `params` is `parseParams(schema, object.meta)`.
@@ -160,6 +165,16 @@ export function definePlaceableMarkerKind(options: {
 /** The registered definition for a kind, or undefined if the kind is a plain (non-studio) kind. @internal */
 export function getSceneKind(kind: string): SceneKindDefinition | undefined {
   return registry.get(kind);
+}
+
+/**
+ * The `{ meta }` a freshly placed object of `kind` starts with (a copy of its kind's `placeMeta`), or
+ * `{}` when the kind declares none — spread into an `addMarker`/`addVolume` object.
+ * @internal
+ */
+export function placeMetaFor(kind: string): { meta?: Record<string, unknown> } {
+  const meta = registry.get(kind)?.placeMeta;
+  return meta === undefined ? {} : { meta: structuredClone(meta) as Record<string, unknown> };
 }
 
 /** True when a kind has a registered studio definition (schema/inspector/renderer). @internal */

@@ -25,6 +25,7 @@ import {
   clearTriggerInstallPatch,
   defaultTriggerInstallPatch,
   hasAuthoredTrigger,
+  kindOwnsTrigger,
   hasMaterialAssignment,
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
@@ -824,7 +825,7 @@ export function InspectorPanel({
     const markerRigClips =
       markerRigAsset?.clips !== undefined && markerRigAsset.clips.length > 0 ? markerRigAsset.clips : null;
     const animation = readAnimationSettingResult(document, marker.id);
-    const hasTrigger = hasAuthoredTrigger(marker.meta);
+    const hasTrigger = hasAuthoredTrigger(marker.meta) && !kindOwnsTrigger(marker.kind);
     const hasMaterial = hasMaterialAssignment(marker.meta);
     const hasGenerator = placedGeneratorFor(marker.meta) !== undefined;
     const hasKindParams = isSceneKind(marker.kind);
@@ -998,7 +999,7 @@ export function InspectorPanel({
         : { ...current, [axis]: Math.max(0.5, value) };
       session.dispatch({ type: "setVolume", id: volume.id, patch: { halfExtents: next } }, { coalesce: `he:${linkedExtents ? "all" : axis}:${volume.id}` });
     };
-    const hasTrigger = hasAuthoredTrigger(volume.meta);
+    const hasTrigger = hasAuthoredTrigger(volume.meta) && !kindOwnsTrigger(volume.kind);
     const hasMaterial = hasMaterialAssignment(volume.meta);
     const hasKindParams = isSceneKind(volume.kind);
     const componentCards = (

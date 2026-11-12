@@ -7,6 +7,7 @@ import {
 } from "@jgengine/core/editor/index";
 
 import sceneJson from "./editor.scene.json";
+import "./editorKinds";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { TRAVEL_STATIONS } from "./game/world/sites";
 import { ZONES } from "./game/world/zones";

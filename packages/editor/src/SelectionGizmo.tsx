@@ -10,6 +10,7 @@ import {
   findEditorPath,
   findEditorVolume,
 } from "@jgengine/core/editor/index";
+import { placeMetaFor } from "@jgengine/core/scene/sceneKinds";
 import {
   TransformGizmo,
   type TransformGizmoPose,
@@ -200,6 +201,7 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
             kind: placement.kind,
             position: point,
             label: placement.kind,
+            ...placeMetaFor(placement.kind),
           },
         });
       } else if (placement.tool === "volume") {
@@ -213,6 +215,7 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
             ...(placement.shape === "box" ? { halfExtents: { x: 8, y: 4, z: 8 } } : { radius: 10 }),
             ...(placement.shape === "cylinder" ? { height: 8 } : {}),
             label: placement.kind,
+            ...placeMetaFor(placement.kind),
           },
         });
       } else {

@@ -6,7 +6,8 @@ import type { RarityStyle } from "@jgengine/core/loot/groundItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { findEditorMarker } from "@jgengine/core/editor/document";
 import { buildScrapSignalEditorLayers } from "./editorLayers";
-import { MAST_BOARD } from "./game/mast";
+import { MAST_BOARD } from "./game/mastMission";
+import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers";
 
 import { assets } from "./game/assets";
 import { audio, objectSounds } from "./game/audio/catalog";
@@ -54,6 +55,9 @@ const sceneDoc = buildScrapSignalEditorLayers();
 const boardMarker = findEditorMarker(sceneDoc, MAST_BOARD);
 if (boardMarker === undefined) throw new Error(`editor.scene.json: missing marker "${MAST_BOARD}"`);
 const mastBoardPosition = { x: boardMarker.position.x, z: boardMarker.position.z };
+// The board is an authored mission marker: its prompt reaches as far as its trigger radius.
+const mastBoardTrigger = collectAuthoredTriggers(sceneDoc).find((trigger) => trigger.sourceId === MAST_BOARD && trigger.on === "interact");
+if (mastBoardTrigger === undefined) throw new Error(`editor.scene.json: marker "${MAST_BOARD}" has no interact trigger`);
 
 const staticPrompts: readonly PositionedPrompt[] = [
   { id: "relay:dead-air", position: { x: RELAY.x, z: RELAY.z }, priority: 2,
@@ -69,7 +73,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: mastBoardPosition,
     priority: 2,
     prompt: {
-      radius: 5,
+      radius: mastBoardTrigger.radius,
       display: { kind: "keybind", actionId: "interact" },
       invoke: { name: "mast.start", input: undefined },
     },

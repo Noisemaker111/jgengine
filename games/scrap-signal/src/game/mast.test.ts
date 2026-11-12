@@ -8,15 +8,16 @@ import { pickCharacter, resetCharacterState } from "./characters";
 import { content } from "./content";
 import { lootTables } from "./entities/enemies/loot-tables";
 import {
-  MAST_WATCH_ID,
   mastRuntime,
   noteMastKill,
   registerMastWatch,
   restoreMastWatch,
   tickMastWatch,
 } from "./mast";
+import { MAST_BOARD, MAST_WATCH, MAST_WATCH_ID } from "./mastMission";
 import { authoredScene } from "./world/level";
 import { findEditorMarker } from "@jgengine/core/editor/document";
+import { MISSION_MARKER_KIND, validateMissionMarkers } from "@jgengine/core/mission/triggers";
 
 afterEach(resetCharacterState);
 
@@ -116,4 +117,16 @@ test("holding the mast pays the contract exactly once", () => {
   expect(ctx.game.economy.balance(ctx.player.userId, "cash")).toBe(cash);
   expect(ctx.game.economy.balance(ctx.player.userId, "cores")).toBe(cores);
   expect(cash).toBeGreaterThanOrEqual(450);
+});
+
+test("the watch board is an authored mission marker: interact in its radius accepts the contract", () => {
+  expect(findEditorMarker(authoredScene, MAST_BOARD)?.kind).toBe(MISSION_MARKER_KIND);
+  expect(validateMissionMarkers(authoredScene, [MAST_WATCH])).toEqual([]);
+  const ctx = boot();
+  ctx.scene.entity.setPose(ctx.player.userId, { position: [board.x + 12, ctx.world.groundHeightAt(board.x + 12, board.z), board.z] });
+  ctx.game.commands.run("mast.start", {});
+  expect(mastRuntime(ctx).state()).toBeNull();
+  ctx.scene.entity.setPose(ctx.player.userId, { position: [board.x + 2, ctx.world.groundHeightAt(board.x + 2, board.z), board.z] });
+  ctx.game.commands.run("mast.start", {});
+  expect(mastRuntime(ctx).state()?.missionId).toBe(MAST_WATCH_ID);
 });

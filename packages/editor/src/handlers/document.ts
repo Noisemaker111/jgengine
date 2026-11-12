@@ -13,7 +13,7 @@ import {
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/placement/placeAsset";
 import { generatorForObject } from "@jgengine/core/scene/assetGenerator";
-import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
+import { getSceneKind, placeMetaFor } from "@jgengine/core/scene/sceneKinds";
 import {
   generatorSeed,
   generatorVariants,
@@ -417,7 +417,7 @@ export const documentHandlers: Pick<
       ...(request.color === undefined ? {} : { color: request.color }),
       ...(request.label === undefined ? {} : { label: request.label }),
       ...(request.catalogId === undefined ? {} : { catalogId: request.catalogId }),
-      ...(request.meta === undefined ? {} : { meta: request.meta }),
+      ...(request.meta === undefined ? placeMetaFor(request.kind) : { meta: request.meta }),
     };
     // addMarker re-ids on a document-global collision, so read the created id back from the selection.
     const { applied, state } = ctx.dispatchGuarded({ type: "addMarker", marker });

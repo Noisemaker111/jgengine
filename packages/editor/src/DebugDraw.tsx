@@ -18,6 +18,7 @@ import { SceneObjectAttach, SceneObjectGroup, SceneObjectList } from "@jgengine/
 
 const DEFAULT_COLORS: Record<string, string> = {
   player_spawn: "#22d3ee",
+  mission_marker: "#fb7185",
   boss: "#f43f5e",
   mob: "#f97316",
   vendor: "#a78bfa",
