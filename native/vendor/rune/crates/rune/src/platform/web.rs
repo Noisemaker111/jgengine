@@ -493,16 +493,25 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
             // jgengine patch: a transparent window clears to alpha 0 and asks the
             // WebGPU canvas for premultiplied alpha (wgpu maps PreMultiplied to
             // GpuCanvasAlphaMode::Premultiplied); caps report only Opaque, so the
-            // default config never asks for it.
-            if transparent {
+            // default config never asks for it. WebGL2 accepts only Opaque (any other mode
+            // leaves the surface unconfigured); its canvas context keeps alpha by itself.
+            let is_gl = gpu.adapter.get_info().backend == wgpu::Backend::Gl;
+            if transparent && !is_gl {
                 config.alpha_mode = wgpu::CompositeAlphaMode::PreMultiplied;
             }
             let caps = surface.get_capabilities(&gpu.adapter);
-            let is_gl = gpu.adapter.get_info().backend == wgpu::Backend::Gl;
             config.usage |= caps.usages & wgpu::TextureUsages::COPY_SRC;
             let wanted = if srgb_blend { config.format.remove_srgb_suffix() } else { config.format.add_srgb_suffix() };
-            let format = if wanted != config.format && !is_gl {
+            // jgengine patch: WebGL2 has no view formats, so it takes the wanted format as the
+            // surface's own. Left on its sRGB default, its present pass sRGB-encodes premultiplied
+            // colour and every translucent pixel over the game comes out washed light.
+            let format = if wanted == config.format {
+                config.format
+            } else if !is_gl {
                 config.view_formats.push(wanted);
+                wanted
+            } else if caps.formats.contains(&wanted) {
+                config.format = wanted;
                 wanted
             } else {
                 config.format

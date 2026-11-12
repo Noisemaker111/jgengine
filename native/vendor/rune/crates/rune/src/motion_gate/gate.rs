@@ -1,6 +1,6 @@
 //! Running an app's cells and reporting their findings against its allowlist.
 
-use std::time::Instant;
+use crate::time::Instant;
 
 use super::check::{Finding, RULES, Recording, check, dump, sheet};
 
