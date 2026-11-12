@@ -32,6 +32,7 @@ import {
   noteLines,
   syncOntoBase,
   retryServerErrors,
+  deleteLandedBranch,
 } from "./land";
 import type { FragmentFile, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
@@ -1199,6 +1200,68 @@ test("mergeVerified merges the head it was given, and retries only while another
   );
   expect(stuck.ok).toBe(false);
   expect(calls).toBe(MERGE_ATTEMPTS);
+});
+
+test("a merged lane's head branch is deleted on origin, once its PR has merged at the commit that landed", () => {
+  const api = fakeGitHub({ repo: LAND_REPO, pulls: [{ number: 7, head: "agent/menus", sha: "head1", state: "closed", merged: true }] });
+  expect(deleteLandedBranch(api.github, { branch: "agent/menus", landedSha: "head1", pr: 7 })).toEqual({ kind: "deleted", line: "deleted origin/agent/menus" });
+  expect(api.deleted).toEqual(["agent/menus"]);
+  // A second run finds it gone and says so, without a warning.
+  expect(deleteLandedBranch(api.github, { branch: "agent/menus", landedSha: "head1", pr: 7 })).toEqual({ kind: "kept", line: "origin/agent/menus is already gone" });
+});
+
+test("bases, releases, backups, rescues and pr-shots are never deleted, and nothing asks GitHub about them", () => {
+  for (const branch of ["beta", "main", "release/1.2", "backup/beta-2026-11-01", "rescue/lost-work", "pr-shots"]) {
+    const api = fakeGitHub({ repo: LAND_REPO, branches: { [branch]: "head1" } });
+    const cleanup = deleteLandedBranch(api.github, { branch, landedSha: "head1", pr: 7 });
+    expect(cleanup).toEqual({ kind: "kept", line: `kept origin/${branch}: a branch no landing deletes` });
+    expect(api.calls).toEqual([]);
+  }
+  // Only the exact names and the prefixes are kept: a lane named after them is a lane.
+  const api = fakeGitHub({ repo: LAND_REPO, branches: { "agent/release-notes": "head1" } });
+  expect(deleteLandedBranch(api.github, { branch: "agent/release-notes", landedSha: "head1" }).kind).toBe("deleted");
+});
+
+test("a landed branch another open PR still uses, or one pushed to after it landed, stays", () => {
+  const shared = fakeGitHub({
+    repo: LAND_REPO,
+    pulls: [
+      { number: 7, head: "agent/menus", sha: "head1", state: "closed", merged: true },
+      { number: 9, head: "agent/menus", sha: "head1", base: "release/1.2" },
+    ],
+  });
+  expect(deleteLandedBranch(shared.github, { branch: "agent/menus", landedSha: "head1", pr: 7 })).toEqual({ kind: "kept", line: "kept origin/agent/menus: PR #9 still has it open" });
+  expect(shared.deleted).toEqual([]);
+
+  const moved = fakeGitHub({ repo: LAND_REPO, branches: { "agent/menus": "head2" } });
+  expect(deleteLandedBranch(moved.github, { branch: "agent/menus", landedSha: "head1", pr: 7 }).line).toBe("kept origin/agent/menus: it moved to head2 after head1 landed");
+  expect(moved.deleted).toEqual([]);
+
+  const unlisted = fakeGitHub({
+    repo: LAND_REPO,
+    branches: { "agent/menus": "head1" },
+    fail: (call) => (call.path.includes("/pulls?") ? "HTTP 403: Resource not accessible by integration" : undefined),
+  });
+  expect(deleteLandedBranch(unlisted.github, { branch: "agent/menus", landedSha: "head1" }).kind).toBe("kept");
+  expect(unlisted.deleted).toEqual([]);
+});
+
+test("a delete GitHub refuses or never answers is a warning, not an error", () => {
+  const refused = fakeGitHub({
+    repo: LAND_REPO,
+    branches: { "agent/menus": "head1" },
+    fail: (call) => (call.method === "DELETE" ? "gh: Resource not accessible by integration (HTTP 403)" : undefined),
+  });
+  expect(deleteLandedBranch(refused.github, { branch: "agent/menus", landedSha: "head1" })).toEqual({
+    kind: "warn",
+    line: "could not delete origin/agent/menus: gh: Resource not accessible by integration (HTTP 403)",
+  });
+  const offline = fakeGitHub({
+    repo: LAND_REPO,
+    branches: { "agent/menus": "head1" },
+    fail: (call) => (call.path.includes("/git/") ? "error connecting to api.github.com" : undefined),
+  });
+  expect(deleteLandedBranch(offline.github, { branch: "agent/menus", landedSha: "head1" }).kind).toBe("warn");
 });
 
 test("an attempt on an older commit contributes nothing to this commit's verdict", () => {

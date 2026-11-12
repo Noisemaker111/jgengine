@@ -61,6 +61,8 @@ interface Script {
   refusals?: (string | undefined)[];
   /** The head GitHub has for the PR, when someone pushed to it after this lane did. */
   remoteHead?: string;
+  /** What GitHub answers a delete of the merged branch with, when it refuses it. */
+  deleteRefusal?: string;
   /** Trees a passing `verify:fast --landing` receipt already covers when the run starts. */
   passed?: string[];
   /** Lock files already present when the run starts. */
@@ -104,6 +106,7 @@ function io(script: Script = {}): Fake {
   const api = fakeGitHub({
     repo: REPO,
     pulls: pr === null ? [] : [{ number: pr, head: script.branch ?? "agent/x", sha: script.remoteHead ?? "head1", draft: script.draft === true, base: script.base ?? "beta" }],
+    fail: (call) => (call.method === "DELETE" ? script.deleteRefusal : undefined),
   });
   let mergeAttempt = 0;
   const merge = api.github.mergePull.bind(api.github);
@@ -309,10 +312,34 @@ describe("lane:close end to end", () => {
     expect(fake.lines.err.join("\n")).toContain("GitHub refused to merge #2278: HTTP 403: Resource not accessible by integration; the PR stays open.");
   });
 
+  test("a merged lane deletes its head branch on origin, after the merge and before the last line", () => {
+    const fake = io();
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.api.deleted).toEqual(["agent/x"]);
+    const calls = fake.api.calls.map((call) => `${call.method} ${call.path}`);
+    expect(calls.findIndex((call) => call.startsWith("DELETE"))).toBeGreaterThan(calls.findIndex((call) => call.endsWith("/merge")));
+    expect(fake.lines.out.slice(-2)).toEqual(["lane:close: deleted origin/agent/x", "lane:close: merged #2278 into beta as merge-2278"]);
+  });
+
+  test("a delete GitHub refuses is a degraded line: the lane is still closed", () => {
+    const fake = io({ deleteRefusal: "gh: Resource not accessible by integration (HTTP 403)" });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.api.deleted).toEqual([]);
+    expect(fake.lines.err).toEqual(["lane:close: degraded: could not delete origin/agent/x: gh: Resource not accessible by integration (HTTP 403)"]);
+    expect(fake.lines.out.at(-1)).toBe("lane:close: merged #2278 into beta as merge-2278");
+  });
+
+  test("nothing is deleted when the merge is refused", () => {
+    const fake = io({ refusals: ["HTTP 403: Resource not accessible by integration"] });
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(fake.api.calls.some((call) => call.method === "DELETE")).toBe(false);
+  });
+
   test("a PR whose head moved past the verified commit is not merged: GitHub merges only the head lane:close verified", () => {
     const fake = io({ remoteHead: "pushed-by-someone-else" });
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
     expect(fake.api.pulls.get(2278)?.merged).not.toBe(true);
+    expect(fake.api.deleted).toEqual([]);
     expect(fake.lines.err.join("\n")).toContain("GitHub refused to merge #2278: HTTP 409: Head branch was modified");
   });
 

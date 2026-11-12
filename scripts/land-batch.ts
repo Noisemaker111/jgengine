@@ -19,7 +19,8 @@
 // Nothing here waits. It prints what it did and hands the CI question to a one-shot read:
 // `bun run ci:status --branch <base>` (or the run id it names). If the batch
 // tip comes back red, `--explain` walks the recorded commits in order and names the first one that
-// cannot verify on its own, which is the likely cause.
+// cannot verify on its own, which is the likely cause. Each landed branch is then deleted on origin,
+// unless another open PR still uses it or it is a kept name (beta, main, release/*, ...).
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -27,7 +28,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { landingRoot } from "./landing-code";
 import { checkoutGitHub, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
-import { duration, gitCommonDir, runAt } from "./land";
+import { duration, gitCommonDir, landedBranchKept, runAt } from "./land";
 import type { Git, Run } from "./land";
 
 const root = landingRoot(import.meta.url);
@@ -120,6 +121,8 @@ export interface BatchLanded {
   pr?: number;
   /** How many commits this branch added. */
   commits: number;
+  /** The branch's tip on origin when it merged: the commit that landed. */
+  head: string;
 }
 
 /** One branch that did not reach the base, and why, so nothing is dropped silently. */
@@ -277,7 +280,7 @@ export function landBatch(args: BatchArgs, io: BatchIo): BatchOutcome {
 
       chain = io.git(["rev-parse", "HEAD"]).stdout.trim();
       const subject = io.git(["log", "-1", "--format=%s"]).stdout.trim();
-      outcome.landed.push({ branch, commit: chain, subject, commits, ...(pr === undefined ? {} : { pr: pr.number }) });
+      outcome.landed.push({ branch, commit: chain, subject, commits, head: tip.stdout.trim(), ...(pr === undefined ? {} : { pr: pr.number }) });
       io.log(`+ ${branch} ${commits} commit(s), merged and verified (${short(chain)})`);
     }
 
@@ -328,6 +331,7 @@ export function landBatch(args: BatchArgs, io: BatchIo): BatchOutcome {
     io.log(`pushed ${outcome.landed.length} merge commit(s) to origin/${args.base}, tip ${short(chain)}: one CI run for the batch`);
     for (const line of handOffLines(chain, args.base, runOnTip(io, args.base, chain))) io.log(line);
     annotatePrs(io, outcome);
+    deleteLandedBranches(io, outcome);
     return outcome;
   } finally {
     io.git(["checkout", "--quiet", original]);
@@ -378,6 +382,32 @@ function annotatePrs(io: BatchIo, outcome: BatchOutcome): void {
       `Landed in the batch push ${short(outcome.tip ?? "")} as ${short(entry.commit)}; its commits are in ${outcome.base}.`,
     );
     if (closed.ok) io.log(`closed PR #${entry.pr}: it landed as ${short(entry.commit)}`);
+  }
+}
+
+/**
+ * A pushed batch deletes each landed branch on origin, as lane:close does after its merge: GitHub's
+ * branch auto-delete never fires for a push to the base. The delete carries a lease on the commit that
+ * landed, so a branch someone pushed to since stays; a kept name (`KEPT_BRANCH`) or a branch another
+ * open PR uses stays too. A failed delete is a line, never a failed batch.
+ */
+function deleteLandedBranches(io: BatchIo, outcome: BatchOutcome): void {
+  for (const entry of outcome.landed) {
+    const kept = landedBranchKept(io.github, entry.branch, entry.pr);
+    if (kept !== null) {
+      io.log(`kept origin/${entry.branch}: ${kept}`);
+      continue;
+    }
+    const deleted = io.git(["push", `--force-with-lease=refs/heads/${entry.branch}:${entry.head}`, "origin", "--delete", entry.branch]);
+    const said = details(deleted);
+    if (deleted.status === 0) io.log(`deleted origin/${entry.branch}`);
+    else if (/remote ref does not exist/i.test(said)) io.log(`origin/${entry.branch} is already gone`);
+    else if (/stale info/i.test(said)) io.log(`kept origin/${entry.branch}: it moved after ${short(entry.head)} landed`);
+    else {
+      // git names the refusal on a `! [rejected]`, `error:` or `fatal:` line, after a `To <remote>` line.
+      const why = said.split("\n").map((line) => line.trim()).find((line) => /rejected|denied|error|fatal/i.test(line)) ?? firstLine(said);
+      io.error(`degraded: could not delete origin/${entry.branch}: ${why}`);
+    }
   }
 }
 

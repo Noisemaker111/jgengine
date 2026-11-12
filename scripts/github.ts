@@ -93,7 +93,14 @@ export interface GitHub {
   /** Take a draft PR out of draft (GraphQL only: REST cannot), so GitHub will merge it. */
   markReady(number: number): GhResult<null>;
   branchRuns(branch: string, limit: number): GhResult<WorkflowRun[]>;
+  /** The commit `branch` points at on GitHub, or null when the branch is not there. */
+  branchHead(branch: string): GhResult<string | null>;
+  /** Delete `branch` on GitHub (`DELETE git/refs/heads/<branch>`). */
+  deleteBranch(branch: string): GhResult<null>;
 }
+
+/** GitHub's answer for a ref that is not there: 404 on a read, 422 on a delete. */
+export const BRANCH_GONE = /HTTP 404|HTTP 422|Not Found|Reference does not exist/i;
 
 /** `owner/repo` from a remote URL (github.com over https or ssh, or a proxy whose path ends in it), or `owner/repo` itself. */
 export function repoFromRemote(remote: string): string | null {
@@ -121,6 +128,11 @@ export function checkoutGitHub(cwd: string): GitHub {
   const repo = originRepo(cwd);
   if (repo === null) throw new Error(`no GitHub repository in the origin remote of ${cwd}`);
   return gitHub(ghCli(cwd), repo);
+}
+
+/** A branch name as a REST path: each segment encoded, the slashes kept. */
+function refPath(branch: string): string {
+  return branch.split("/").map(encodeURIComponent).join("/");
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -243,6 +255,15 @@ export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void =
         ok: true,
         value: Array.isArray(runs) ? runs.map((run: unknown) => ({ id: Number(record(run)["id"]), headSha: text(record(run)["head_sha"]) })) : [],
       };
+    },
+    branchHead(branch) {
+      const read = call([`repos/${repo}/git/ref/heads/${refPath(branch)}`]);
+      if (!read.ok) return BRANCH_GONE.test(read.error) ? { ok: true, value: null } : read;
+      const sha = text(record(record(read.value)["object"])["sha"]);
+      return sha.length > 0 ? { ok: true, value: sha } : { ok: false, error: `GitHub answered ${branch} without a commit sha` };
+    },
+    deleteBranch(branch) {
+      return done(call(["-X", "DELETE", `repos/${repo}/git/refs/heads/${refPath(branch)}`]));
     },
   };
 }

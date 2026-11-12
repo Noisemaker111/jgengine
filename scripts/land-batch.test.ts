@@ -173,6 +173,60 @@ slow("two good branches land as one push, and the conflicting and failing ones a
   expect(gitOk(work, ["status", "--porcelain"])).toBe("");
 });
 
+slow("a pushed batch deletes each landed branch on origin; skipped ones, one another PR uses and one pushed to since stay", () => {
+  const { bare, work } = fixtures();
+  branch(work, "agent/one", "one.txt", "one\n", "one");
+  branch(work, "agent/two", "two.txt", "two\n", "two");
+  branch(work, "agent/shared", "shared-pr.txt", "shared\n", "shared");
+  branch(work, "agent/moves", "moves.txt", "moves\n", "moves");
+  branch(work, "agent/fails", "bad.txt", "bad\n", "fails");
+  const api = fakeGitHub({ pulls: [{ number: 2410, head: "agent/shared", base: "release/1.2" }] });
+
+  // agent/moves gets a new commit on origin after the batch read it and before the deletes.
+  const log: string[] = [];
+  const io = batchIo(work, log, api);
+  const outcome = landBatch(argsFor(["agent/one", "agent/two", "agent/shared", "agent/moves", "agent/fails"]), {
+    ...io,
+    git: (args) => {
+      if (args[0] === "push" && args.includes("--delete") && args.at(-1) === "agent/one") {
+        gitOk(work, ["checkout", "-q", "agent/moves"]);
+        commit(work, "moves.txt", "moved again\n", "moved again");
+        gitOk(work, ["push", "-q", "origin", "agent/moves"]);
+        gitOk(work, ["checkout", "-q", "--detach"]);
+      }
+      return gitIn(work, args);
+    },
+  });
+
+  expect(outcome.pushed).toBe(true);
+  expect(outcome.landed.map((entry) => entry.branch)).toEqual(["agent/one", "agent/two", "agent/shared", "agent/moves"]);
+  const left = gitOk(bare, ["for-each-ref", "--format=%(refname:short)", "refs/heads"]).split("\n").sort();
+  expect(left).toEqual(["agent/fails", "agent/moves", "agent/shared", "beta"]);
+  expect(log).toContain("deleted origin/agent/one");
+  expect(log).toContain("deleted origin/agent/two");
+  expect(log).toContain("kept origin/agent/shared: PR #2410 still has it open");
+  expect(log.some((line) => line.startsWith("kept origin/agent/moves: it moved after "))).toBe(true);
+  expect(log.some((line) => line.startsWith("ERR degraded"))).toBe(false);
+});
+
+slow("a dry run deletes nothing, and a delete the remote refuses leaves the batch landed", () => {
+  const { bare, work } = fixtures();
+  branch(work, "agent/one", "one.txt", "one\n", "one");
+  landBatch(argsFor(["agent/one"], { dryRun: true }), batchIo(work));
+  expect(gitIn(bare, ["rev-parse", "--verify", "refs/heads/agent/one"]).status).toBe(0);
+
+  const log: string[] = [];
+  const io = batchIo(work, log);
+  const outcome = landBatch(argsFor(["agent/one"]), {
+    ...io,
+    git: (args) => (args[0] === "push" && args.includes("--delete") ? { status: 1, stdout: "", stderr: "remote: Permission denied\nfatal: unable to access" } : gitIn(work, args)),
+  });
+  expect(outcome.code).toBe(EXIT_BATCH_LANDED);
+  expect(outcome.pushed).toBe(true);
+  expect(log).toContain("ERR degraded: could not delete origin/agent/one: remote: Permission denied");
+  expect(gitIn(bare, ["rev-parse", "--verify", "refs/heads/agent/one"]).status).toBe(0);
+});
+
 slow("a branch that fails verify leaves the chain where it was, so the next one merges onto good work only", () => {
   const { bare, work } = fixtures();
   branch(work, "agent/good", "one.txt", "one\n", "good");
@@ -254,6 +308,8 @@ slow("an already-landed branch is named, not merged twice", () => {
   const { work } = fixtures();
   branch(work, "agent/one", "one.txt", "one\n", "one");
   landBatch(argsFor(["agent/one"]), batchIo(work));
+  // The landing deleted it on origin; pushed back, it is already in the base.
+  gitOk(work, ["push", "-q", "origin", "agent/one"]);
 
   const again = landBatch(argsFor(["agent/one"]), batchIo(work));
   expect(again.landed).toEqual([]);

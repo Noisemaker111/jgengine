@@ -44,7 +44,7 @@ import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { landingRoot } from "./landing-code";
-import { checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
+import { BRANCH_GONE, checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
 
@@ -1066,6 +1066,51 @@ export function mergeVerified(
     if (attempt < MERGE_ATTEMPTS) pause(3_000 * attempt);
   }
   return { ok: false, error: firstLine(last), baseMoved: true };
+}
+
+/**
+ * Branches no landing deletes, whatever merged from them: the bases, releases, the backup and rescue
+ * copies people keep on purpose, and the branch the PR screenshots live on.
+ */
+export const KEPT_BRANCH = /^(?:beta|main|pr-shots|(?:release|backup|rescue)\/.+)$/;
+
+/**
+ * Why a landed branch stays on origin, or null when it may go: a {@link KEPT_BRANCH}, or a branch an
+ * open PR other than `pr` (the one that just landed it) still has as its head. Not knowing the open
+ * PRs keeps it too.
+ */
+export function landedBranchKept(github: GitHub, branch: string, pr?: number): string | null {
+  if (KEPT_BRANCH.test(branch)) return "a branch no landing deletes";
+  const open = github.listPulls({ head: branch, state: "open" });
+  if (!open.ok) return `its open PRs could not be listed: ${firstLine(open.error)}`;
+  const other = open.value.find((row) => row.number !== pr);
+  return other === undefined ? null : `PR #${other.number} still has it open`;
+}
+
+/** What became of a landed lane's head branch; `warn` is a failure the landing reports and survives. */
+export interface BranchCleanup {
+  kind: "deleted" | "kept" | "warn";
+  line: string;
+}
+
+/**
+ * After GitHub merged PR `pr` at `landedSha`, delete its head `branch` on origin, so a landed lane
+ * leaves no branch behind (the repo's "delete head branches" setting is off, and a batch push would
+ * skip it anyway). The branch stays when {@link landedBranchKept} keeps it or when it has moved past
+ * the commit that landed. A failed delete is a warning, never a failed landing.
+ */
+export function deleteLandedBranch(github: GitHub, input: { branch: string; landedSha: string; pr?: number }): BranchCleanup {
+  const { branch, landedSha, pr } = input;
+  const kept = landedBranchKept(github, branch, pr);
+  if (kept !== null) return { kind: "kept", line: `kept origin/${branch}: ${kept}` };
+  const head = github.branchHead(branch);
+  if (!head.ok) return { kind: "warn", line: `could not read origin/${branch} to delete it: ${firstLine(head.error)}` };
+  if (head.value === null) return { kind: "kept", line: `origin/${branch} is already gone` };
+  if (head.value !== landedSha) return { kind: "kept", line: `kept origin/${branch}: it moved to ${head.value.slice(0, 8)} after ${landedSha.slice(0, 8)} landed` };
+  const deleted = github.deleteBranch(branch);
+  if (deleted.ok) return { kind: "deleted", line: `deleted origin/${branch}` };
+  if (BRANCH_GONE.test(deleted.error)) return { kind: "kept", line: `origin/${branch} is already gone` };
+  return { kind: "warn", line: `could not delete origin/${branch}: ${firstLine(deleted.error)}` };
 }
 
 /** Push, rebase and open or reuse the PR: the part that needs the lock, and nothing after it. */
