@@ -78,20 +78,22 @@ export function ammoStatFor(ammo: AmmoKind): string | null {
   return ammo === "none" ? null : AMMO_STAT_IDS[ammo];
 }
 
-function createHarborDamage(ctx: GameContext): DamageRuntime {
+/**
+ * The chart model. It takes no event bus: every blow lands through `landDamage`, whose effect
+ * application already announces `combat.damage` (with the pools' real remaining health, armor
+ * included). A bus here announced every hit a second time, so each shot drew two hit markers.
+ */
+function createHarborDamage(): DamageRuntime {
   return createDamageRuntime({
     table: DAMAGE_TABLE,
     zones: HIT_ZONES,
     // No crit rolls: the chart has a zero crit chance, and a shot must land the same number twice.
     rng: () => 0.5,
-    events: ctx.game.events,
-    healthOf: (target) => ctx.scene.entity.stats.get(target, "health")?.current ?? null,
-    positionOf: (target) => ctx.scene.entity.get(target)?.position,
     devtoolsName: "harbor.damage",
   });
 }
 
-const damageOf = perContext((ctx: GameContext): { runtime: DamageRuntime } => ({ runtime: createHarborDamage(ctx) }));
+const damageOf = perContext((): { runtime: DamageRuntime } => ({ runtime: createHarborDamage() }));
 
 /** The one damage model for this world. */
 export function harborDamage(ctx: GameContext): DamageRuntime {

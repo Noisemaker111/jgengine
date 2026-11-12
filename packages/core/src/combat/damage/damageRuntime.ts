@@ -254,6 +254,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
     dealt: number;
     source?: string;
     status?: string;
+    crit?: boolean;
     position?: readonly [number, number, number] | undefined;
   }): void {
     const health = healthOf?.(input.target) ?? null;
@@ -267,6 +268,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
       remaining,
       lethal: remaining !== null && remaining <= 0,
       ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.crit === true ? { crit: true } : {}),
       ...(input.position === undefined ? {} : { position: input.position }),
     };
     recent.push(event);
@@ -338,6 +340,7 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
         incoming,
         dealt: damage,
         ...(input.source !== undefined ? { source: input.source } : {}),
+        ...(zone.crit ? { crit: true } : {}),
         ...(input.position !== undefined
           ? { position: input.position }
           : positionOf === undefined ? {} : { position: positionOf(input.target) ?? undefined }),

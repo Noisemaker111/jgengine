@@ -155,6 +155,8 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
           remaining: application.remaining,
           lethal: application.lethal,
           ...(application.at === undefined ? {} : { position: application.at }),
+          ...(application.crit === true ? { crit: true } : {}),
+          ...(application.status === undefined ? {} : { status: application.status }),
         });
       },
       onLethal(instanceId, lethalCtx) {

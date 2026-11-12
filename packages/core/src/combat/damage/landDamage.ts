@@ -22,7 +22,9 @@ export interface LandedDamage {
  * Resolve one blow through a damage runtime and land it through the world's `damage` effect, so stat
  * pool absorption, spillover, death and the kill feed stay the engine's. A zero result lands nothing.
  * The target must already carry a profile (`runtime.registerTarget`); an unprofiled one throws, so a
- * hit on something nobody wired fails loudly instead of dealing its base number.
+ * hit on something nobody wired fails loudly instead of dealing its base number. The effect announces
+ * the blow as `combat.damage` (with `crit` when the zone rolled one), so the runtime used here takes no
+ * `events` bus of its own; one would announce every blow twice.
  *
  * @capability land-damage resolve a hit through a damage chart and apply it to the world as one damage effect
  */
@@ -35,7 +37,11 @@ export function landDamage(ctx: GameContext, runtime: DamageRuntime, input: Land
       from: input.source,
       to: input.target,
       effect: "damage",
-      via: item === undefined ? { amount } : { amount, item },
+      via: {
+        amount,
+        ...(item === undefined ? {} : { item }),
+        ...(resolution.zone.crit ? { crit: true } : {}),
+      },
     });
   }
   return { resolution, amount };

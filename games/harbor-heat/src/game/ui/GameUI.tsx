@@ -12,7 +12,7 @@ import { CityMinimap } from "./Chart";
 import { CityPhone } from "./CityPhone";
 import { Counters } from "./Counters";
 import { HarborMenu, SettingsPhone, useGameStarted } from "./HarborMenu";
-import { BeltHotbar, HudKeys, Objective, RadioReadout, Speedo, StatusPanel, WantedStars } from "./Hud";
+import { BeltHotbar, HitTick, HudKeys, Objective, RadioReadout, Speedo, StatusPanel, WantedStars } from "./Hud";
 import { Text, useRoom } from "./kit";
 import { SessionUI } from "./SessionUI";
 import { harborTheme, HH, registerHarborFonts } from "./theme";
@@ -42,6 +42,7 @@ function Hud() {
   const edge = wide ? 18 : 10;
   return (
     <RuneView anchor="fill">
+      <HitTick />
       <RuneView anchor="top-left" safe inset={edge} gap={8}>
         <Objective />
         {stacked && !phone ? <StatusPanel /> : null}

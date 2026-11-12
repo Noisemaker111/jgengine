@@ -14,7 +14,9 @@ import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
 import { CHARACTERS } from "../characters";
 import { activePerkBuffs } from "../combat/gunPerks";
 import { itemNameById } from "../content";
-import { lastHit, lastHurtAtMs } from "../feel";
+import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view";
+import { SCRAP_HIT_MARKER } from "../combat/impactLook";
+import { lastHurtAtMs } from "../feel";
 import { handlingView } from "../handling";
 import { gunById, isReloading, magLoaded, perkLines, type PerkLine } from "../handroll";
 import { mastReadoutStore } from "../mast";
@@ -309,15 +311,11 @@ export function SpreadReticle() {
 }
 
 const HIT_ART = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4 L9 9 M20 4 L15 9 M4 20 L9 15 M20 20 L15 15" stroke="#ffffff" stroke-width="2.6" stroke-linecap="square"/></svg>`;
-/** The hit marker: a cross that pops and fades over 220 ms, red on a kill, amber on a crit. */
+/** The hit marker over the crosshair: a cross that pops and fades, red on a kill, amber on a crit. */
 export function HitMarker() {
-  const ctx = useGameContext();
-  const age = () => gameMs(ctx) - lastHit().atMs;
-  const shown = () => { const a = age(); return a >= 0 && a <= 220; };
-  return <RuneView anchor="center" items="center" gap={30} opacity={bind(() => shown() ? 1 - Math.max(0, age() - 150) / 70 : 0)} scale={bind(() => shown() ? 1.6 - 0.6 * Math.min(1, age() / 150) : 1)}>
-    <RuneGlyph artwork={HIT_ART} size={26} color={bind(() => lastHit().kill ? "#e23c2e" : lastHit().crit ? C.amber : "#f5f0e6")} />
-    <Label color="#fb7185" hidden={bind(() => !lastHit().kill)}>Kill confirmed</Label>
-  </RuneView>;
+  return <HitMarkerCue timing={SCRAP_HIT_MARKER} artwork={HIT_ART} size={26} gap={30}
+    colors={{ hit: "#f5f0e6", crit: C.amber, kill: "#e23c2e" }}
+    labels={{ kill: <Label color="#fb7185">Kill confirmed</Label> }} />;
 }
 
 /** The red edge on a hurt: fades over 450 ms. */

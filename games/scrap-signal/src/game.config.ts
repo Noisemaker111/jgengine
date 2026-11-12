@@ -31,6 +31,7 @@ import { FerralonWorldOverlay } from "./game/world/Viewmodel";
 import { NPCS } from "./game/quests/catalog";
 import { RED_CHESTS } from "./game/world/setup";
 import { AMMO_CRATES } from "./game/items/ammoCrates";
+import { SCRAP_DECALS } from "./game/combat/impactLook";
 import {
   BLACK_MARKET_POS,
   RIGG_VENDOR_POS,
@@ -261,8 +262,9 @@ export const game = defineGame({
   // health through the wall.
     worldHealthBars: { roles: ["enemy"], occlude: true },
     // Direct-fire guns want the muzzle→impact tracer; grenades/launchers are ballistic and
-  // skip it automatically (they arc, so a straight line would be a fake beam).
-    presentationEffects: { tracers: true },
+  // skip it automatically (they arc, so a straight line would be a fake beam). Rounds mark Ferralon
+  // through the shared decal pool, and the crosshair's hit marker replaces the world-space tick.
+    presentationEffects: { tracers: true, hitMarkers: false, impacts: { decals: SCRAP_DECALS } },
     worldItem: { rarityStyle, pickupRadius: 2.8 },
   },
   scenePlacement: false,

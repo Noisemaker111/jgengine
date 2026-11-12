@@ -14,21 +14,35 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
+import { createImpactDecalPool, impactDecalKindFor, type ImpactDecalPool, type ImpactDecalsConfig } from "@jgengine/core/vfx/impactDecals";
+import { createImpactDecalLayer, type ImpactDecalLayer } from "@jgengine/core/vfx/ImpactDecals.draw";
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
   /** Damage type / effect id → class, for names the built-in weapon words do not cover. */
   classes?: Readonly<Record<string, ImpactClass>> | undefined;
-  /** Marks where direct-fire shots miss into a surface. */
+  /** Marks where shots land on a surface. */
   marks?: boolean | undefined;
+  /**
+   * The game's decal look book: which kinds of mark exist (look, tint, size, life) and which surface
+   * takes which, so a shot into a wall leaves a chip and one into the dirt a splash. Omitted, every
+   * surface a shot misses into takes {@link DEFAULT_IMPACT_DECALS}' one scorch.
+   */
+  decals?: ImpactDecalsConfig | undefined;
   /** Short time stop on the local player's heavy hits, hits taken and kills. */
   hitstop?: boolean | undefined;
   /** Killed rigged characters fall as ragdolls before they fade. */
   ragdolls?: boolean | undefined;
 }
 
-const MARK_LIFE_S = 25;
-const MARK_FADE_S = 2;
+/**
+ * The engine's decals when a game names none: one scorch on every surface a shot misses into, 25 s
+ * with a 2 s fade. Entity hits leave nothing.
+ */
+export const DEFAULT_IMPACT_DECALS: ImpactDecalsConfig = {
+  kinds: { scorch: { look: "scorch", lifeSeconds: 25, fadeSeconds: 2 } },
+  surfaces: { terrain: "scorch", wall: "scorch", object: "scorch" },
+};
 const MARK_LIMIT: Record<GraphicsQuality, number> = { low: 0, medium: 32, high: 64, ultra: 96 };
 const HITSTOP_SCALE = 0.05;
 /** One kick per blast: an explosion that damages five things still kicks the camera once. */
@@ -46,14 +60,7 @@ export function impactKick(profile: Pick<ImpactProfile, "kick" | "kickRadius">, 
 }
 
 /** What the layer has done since it mounted, for `debug_snapshot` under `render/impacts`. */
-const stats = { bursts: 0, marks: 0, missedSurface: 0, kicks: 0, hitstops: 0, surfaceMsMax: 0, surfaceMsLast: 0 };
-
-interface Mark {
-  born: number;
-  size: number;
-  position: THREE.Vector3;
-  quaternion: THREE.Quaternion;
-}
+const stats = { bursts: 0, marks: 0, entityMarks: 0, missedSurface: 0, kicks: 0, hitstops: 0, surfaceMsMax: 0, surfaceMsLast: 0 };
 
 /**
  * Tracks a short hit-stop on the game clock: the clock slows to 5% for the given real milliseconds
@@ -86,38 +93,6 @@ export function createHitstop(time: Pick<GameContext["time"], "timescale" | "set
   };
 }
 
-function markTexture(): THREE.DataTexture {
-  const size = 64;
-  const data = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const dx = (x + 0.5) / size - 0.5;
-      const dy = (y + 0.5) / size - 0.5;
-      const r = Math.hypot(dx, dy) * 2;
-      const angle = Math.atan2(dy, dx);
-      const rays = 0.82 + 0.18 * Math.sin(angle * 7 + Math.sin(angle * 3) * 2);
-      // A dark hole inside a pale chipped ring, so the mark reads on dark asphalt and pale stone alike.
-      const core = Math.max(0, 1 - r / 0.3);
-      const ring = Math.max(0, 1 - Math.abs(r - 0.5 * rays) / 0.22);
-      const edge = Math.max(0, 1 - r / rays) ** 1.4;
-      const i = (y * size + x) * 4;
-      const shade = core > 0 ? 14 : 14 + 190 * ring;
-      data[i] = shade;
-      data[i + 1] = shade * 0.96;
-      data[i + 2] = shade * 0.9;
-      data[i + 3] = Math.round(255 * Math.min(1, core + ring * 0.85 * edge + edge * 0.35));
-    }
-  }
-  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-const Z = new THREE.Vector3(0, 0, 1);
 const surfaceRay = new THREE.Raycaster();
 const boundsScratch = new THREE.Sphere();
 const alongScratch = new THREE.Vector3();
@@ -209,7 +184,8 @@ export function classFor(item: string, effect: string, classes?: Readonly<Record
   return byItem === "light" ? impactClassFor(effect) : byItem;
 }
 
-const scratch = { matrix: new THREE.Matrix4(), scale: new THREE.Vector3(), spin: new THREE.Quaternion(), normal: new THREE.Vector3() };
+/** How far below a body a hit on it looks for the ground its mark lands on, metres. */
+const ENTITY_MARK_DROP_M = 3;
 
 /** Props the impact draw reads; resolved by the UI wrapper each commit. */
 export interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions {
@@ -224,59 +200,68 @@ function markLimit(props: ImpactFeedbackDrawProps): number {
 
 /**
  * Draw-side form of {@link ImpactFeedback}: every `combat.damage` with a position throws sparks and
- * dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the
- * surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad
- * (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the
- * game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off
- * on the `low` graphics tier. Event handlers read the latest props per event; only a `ctx` swap
- * resubscribes, matching the old effect deps.
+ * dust sized by its {@link ImpactClass}, a shot that lands on a surface leaves the decal the game's
+ * look book names for it (a scorch by default), an explosion or crash near the local player kicks the
+ * camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits
+ * taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is
+ * quiet. Marks are off on the `low` graphics tier and live on the game clock. Event handlers read the
+ * latest props per event; only a `ctx` swap resubscribes, matching the old effect deps.
  * @internal
  */
 export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): EngineDraw {
-  const list: Mark[] = [];
-  const dirty = { current: false };
-  const geometry = new THREE.PlaneGeometry(1, 1);
-  const material = new THREE.MeshStandardMaterial({
-    map: markTexture(),
-    transparent: true,
-    depthWrite: false,
-    roughness: 0.95,
-    polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4,
-  });
-  // The raycast scene is the rendered root; the marks mesh parents under the scoped mount
+  // The raycast scene is the rendered root; the decal mesh parents under the scoped mount
   // parent so it keeps the postfx overlay grouping it had as a JSX child.
   let scene: THREE.Scene | null = null;
   let host: THREE.Object3D | null = null;
   let camera: THREE.Camera | null = null;
-  let mesh: THREE.InstancedMesh | null = null;
-  let meshLimit = -1;
+  let layer: ImpactDecalLayer | null = null;
+  let pool: ImpactDecalPool | null = null;
+  let layerLimit = -1;
+  let layerBook: ImpactDecalsConfig | null = null;
   let subscribedCtx: GameContext | null = null;
   let stop: ReturnType<typeof createHitstop> | null = null;
   const offHandlers: (() => void)[] = [];
   let disposeProbe: (() => void) | null = null;
 
-  const syncMesh = () => {
-    const limit = markLimit(getProps());
-    if (limit === meshLimit) return;
-    meshLimit = limit;
-    if (mesh !== null) {
-      host?.remove(mesh);
-      mesh.dispose();
-      mesh = null;
+  const bookOf = (props: ImpactFeedbackDrawProps) => props.decals ?? DEFAULT_IMPACT_DECALS;
+
+  const syncLayer = () => {
+    const props = getProps();
+    const limit = markLimit(props);
+    const book = bookOf(props);
+    if (limit === layerLimit && book === layerBook) return;
+    layerLimit = limit;
+    layerBook = book;
+    if (layer !== null) {
+      host?.remove(layer.mesh);
+      layer.dispose();
+      layer = null;
     }
+    pool = null;
     if (limit > 0 && host !== null) {
-      mesh = new THREE.InstancedMesh(geometry, material, limit);
-      mesh.count = 0;
-      mesh.frustumCulled = false;
-      mesh.receiveShadow = true;
-      host.add(mesh);
+      pool = createImpactDecalPool({ capacity: limit, kinds: book.kinds });
+      layer = createImpactDecalLayer(limit);
+      host.add(layer.mesh);
     }
+  };
+
+  /** Lay a mark of `kind` at a surface point, sized from the impact class. */
+  const lay = (ctx: GameContext, kind: string | null, cls: ImpactClass, point: readonly [number, number, number], normal: readonly [number, number, number]): boolean => {
+    const profile = IMPACT_PROFILES[cls];
+    if (kind === null || pool === null || profile.markSize <= 0) return false;
+    return pool.add({
+      kind,
+      point,
+      normal,
+      size: profile.markSize * (0.8 + Math.random() * 0.4),
+      spin: Math.random() * Math.PI * 2,
+      at: ctx.time.now(),
+    }) !== null;
   };
 
   const subscribe = (ctx: GameContext) => {
     stop = createHitstop(ctx.time);
+    pool?.clear();
     const player = ctx.player.userId;
     let lastKick = -Infinity;
     let lastRefine = -Infinity;
@@ -314,12 +299,27 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
     }));
     offHandlers.push(ctx.game.events.on("projectile.settled", (event) => {
       const props = getProps();
-      const limit = markLimit(props);
-      // A direct hit is drawn by its combat.damage; an arced shot also bursts where it landed.
-      if (event.hit && !event.ballistic) return;
+      const book = bookOf(props);
       // The weapon names the impact better than the effect ("grenade_pineapple" vs "damage").
       const cls = event.impact ?? (event.item === undefined ? impactClassFor(event.effect, props.classes) : classFor(event.item, event.effect, props.classes));
       const profile = IMPACT_PROFILES[cls];
+      if (event.hit && !event.ballistic) {
+        // A direct hit bursts through its combat.damage. A body never carries a mark (it moves), so a
+        // look book that marks bodies lays it on the ground beneath the blow instead.
+        if (pool === null || profile.markSize <= 0) return;
+        const struck = event.hits[0]?.instanceId;
+        const catalogId = struck === undefined ? undefined : ctx.scene.entity.get(struck)?.name;
+        const kind = impactDecalKindFor(book.surfaces, { targetKind: "entity", catalogId, impact: cls });
+        if (kind === null) return;
+        const ground = ctx.scene.raycast({
+          origin: event.at,
+          direction: [0, -1, 0],
+          maxDistance: ENTITY_MARK_DROP_M,
+          filter: { entities: false, objects: true, walls: true, terrain: true },
+        });
+        if (ground !== null && lay(ctx, kind, cls, ground.point, ground.normal)) stats.entityMarks += 1;
+        return;
+      }
       // An arced shot lands where it settled; look straight down there for the surface.
       const from = event.ballistic ? ([event.at[0], event.at[1] + 1, event.at[2]] as const) : event.origin;
       const dx = event.at[0] - from[0];
@@ -328,6 +328,7 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
       const length = Math.hypot(dx, dy, dz);
       let point: readonly [number, number, number] = event.at;
       let normal: readonly [number, number, number] | null = null;
+      let kind: string | null = null;
       if (length > 1e-3 && scene !== null && camera !== null) {
         const hit = ctx.scene.raycast({
           origin: from,
@@ -335,17 +336,19 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
           maxDistance: length + 0.5,
           filter: { entities: false, objects: true, walls: true, terrain: true },
         });
+        // What was struck decides the mark: the impact class, then its catalog id, then its surface kind.
+        if (hit !== null) kind = impactDecalKindFor(book.surfaces, { targetKind: hit.targetKind, catalogId: hit.catalogId, impact: cls });
         const direction = [dx / length, dy / length, dz / length] as const;
         // Only the last stretch before the physics hit is tested against drawn meshes, so a shot costs
         // a short ray through the few objects near where it landed, not the whole scene.
         let drawn: ReturnType<typeof drawnSurfaceHit> = null;
         const refineAt = performance.now();
-        if (hit !== null && limit > 0 && profile.markSize > 0 && refineAt - lastRefine >= SURFACE_GAP_MS) {
+        if (hit !== null && kind !== null && pool !== null && profile.markSize > 0 && refineAt - lastRefine >= SURFACE_GAP_MS) {
           lastRefine = refineAt;
           const back = Math.min(hit.distance, SURFACE_LOOKBACK_M);
           const start = [hit.point[0] - direction[0] * back, hit.point[1] - direction[1] * back, hit.point[2] - direction[2] * back] as const;
           const started = performance.now();
-          drawn = drawnSurfaceHit(scene, start, direction, back + 0.05, mesh, camera);
+          drawn = drawnSurfaceHit(scene, start, direction, back + 0.05, layer?.mesh ?? null, camera);
           if (drawn !== null) drawn.distance += hit.distance - back;
           const spent = performance.now() - started;
           stats.surfaceMsMax = Math.max(stats.surfaceMsMax, spent);
@@ -361,14 +364,11 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
         }
       }
       burst(cls, point);
-      if (normal === null) stats.missedSurface += 1;
-      if (limit === 0 || normal === null || profile.markSize <= 0) return;
-      const n = scratch.normal.set(normal[0], normal[1], normal[2]).normalize();
-      const quaternion = new THREE.Quaternion().setFromUnitVectors(Z, n).multiply(scratch.spin.setFromAxisAngle(Z, Math.random() * Math.PI * 2));
-      list.push({ born: performance.now() / 1000, size: profile.markSize * (0.8 + Math.random() * 0.4), position: new THREE.Vector3(point[0], point[1], point[2]).addScaledVector(n, 0.03), quaternion });
-      if (list.length > limit) list.splice(0, list.length - limit);
-      stats.marks += 1;
-      dirty.current = true;
+      if (normal === null) {
+        stats.missedSurface += 1;
+        return;
+      }
+      if (lay(ctx, kind, cls, point, normal)) stats.marks += 1;
     }));
   };
 
@@ -385,39 +385,20 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
       scene = state.rootScene ?? state.scene;
       host = state.scene;
       camera = state.camera;
-      syncMesh();
+      syncLayer();
       syncSubscription();
       disposeProbe = devtools.probes.registerSystem("render/impacts", {
-        counters: () => ({ ...stats, live: list.length }),
-        state: () => `${stats.bursts} bursts · ${list.length} marks · ${stats.kicks} kicks · ${stats.hitstops} hit-stops`,
+        counters: () => ({ ...stats, live: pool?.list().length ?? 0 }),
+        state: () => `${stats.bursts} bursts · ${pool?.list().length ?? 0} marks · ${stats.kicks} kicks · ${stats.hitstops} hit-stops`,
       });
     },
     update() {
-      syncMesh();
+      syncLayer();
       syncSubscription();
     },
     frame() {
-      const now = performance.now();
-      stop?.tick(now);
-      const instanced = mesh;
-      if (instanced === null) return;
-      const seconds = now / 1000;
-      while (list.length > 0 && seconds - list[0]!.born > MARK_LIFE_S) {
-        list.shift();
-        dirty.current = true;
-      }
-      const fading = list.length > 0 && seconds - list[0]!.born > MARK_LIFE_S - MARK_FADE_S;
-      if (!dirty.current && !fading) return;
-      for (let i = 0; i < list.length; i += 1) {
-        const mark = list[i]!;
-        const fade = Math.min(1, (MARK_LIFE_S - (seconds - mark.born)) / MARK_FADE_S);
-        scratch.scale.setScalar(mark.size * Math.max(0, fade));
-        instanced.setMatrixAt(i, scratch.matrix.compose(mark.position, mark.quaternion, scratch.scale));
-      }
-      instanced.count = list.length;
-      instanced.instanceMatrix.needsUpdate = true;
-      instanced.computeBoundingSphere();
-      dirty.current = false;
+      stop?.tick(performance.now());
+      if (layer !== null && pool !== null && subscribedCtx !== null) layer.sync(pool, subscribedCtx.time.now());
     },
     dispose() {
       for (const off of offHandlers.splice(0)) off();
@@ -425,15 +406,14 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
       stop = null;
       disposeProbe?.();
       disposeProbe = null;
-      if (mesh !== null) {
-        host?.remove(mesh);
-        mesh.dispose();
-        mesh = null;
+      if (layer !== null) {
+        host?.remove(layer.mesh);
+        layer.dispose();
+        layer = null;
       }
-      meshLimit = -1;
-      geometry.dispose();
-      material.map?.dispose();
-      material.dispose();
+      pool = null;
+      layerLimit = -1;
+      layerBook = null;
       scene = null;
       host = null;
       camera = null;
@@ -443,9 +423,10 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
 
 /**
  * The engine's default impact layer, mounted with the combat presentation: every `combat.damage`
- * with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that
- * misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the
- * camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and
+ * with a position throws sparks and dust sized by its {@link ImpactClass}, a shot that lands on a
+ * surface leaves the decal the game's `decals` look book names for it (a scorch by default), an
+ * explosion or crash near the local player kicks the camera and rumbles the pad (no kick with
+ * reduced motion), and the local player's heavy hits, hits taken and
  * kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet.
  * Marks are off on the `low` graphics tier.
  */
@@ -453,7 +434,7 @@ export function ImpactFeedback(props: ImpactFeedbackOptions) {
   const ctx = useGameContext();
   const quality = useTerrainQuality();
   const reducedMotion = useAccessibilitySettings().reducedMotion;
-  const latest = useRef<ImpactFeedbackDrawProps>({ ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, hitstop: props.hitstop });
-  latest.current = { ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, hitstop: props.hitstop };
+  const latest = useRef<ImpactFeedbackDrawProps>({ ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, decals: props.decals, hitstop: props.hitstop });
+  latest.current = { ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, decals: props.decals, hitstop: props.hitstop };
   return <EngineDrawMount create={() => impactFeedbackDraw(() => latest.current)} deps={[ctx]} />;
 }

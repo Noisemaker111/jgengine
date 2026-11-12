@@ -61,3 +61,58 @@ describe("landDamage", () => {
     expect(health(ctx, "out")).toBe(100);
   });
 });
+
+describe("landDamage announcements", () => {
+  test("a landed blow is announced once, through the effect path, carrying the crit it rolled", () => {
+    const ctx = world();
+    const runtime = createDamageRuntime({
+      table: { types: [{ id: "fire" }], defaultMultiplier: 1 },
+      zones: { zones: [{ id: "head", multiplier: 1, critChance: 1, critMultiplier: 2 }], defaultZone: "head" },
+      rng: () => 0.5,
+    });
+    runtime.registerTarget("near", { resistance: "flesh" });
+    const seen: { crit?: boolean; amount: number; type: string }[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    landDamage(ctx, runtime, { source: "hero", target: "near", type: "fire", base: 10 });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({ type: "damage", amount: 20, crit: true });
+  });
+
+  test("a plain hit carries no crit flag", () => {
+    const ctx = world();
+    const runtime = chart();
+    runtime.registerTarget("near", { resistance: "flesh" });
+    const seen: { crit?: boolean }[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    landDamage(ctx, runtime, { source: "hero", target: "near", type: "fire", base: 10 });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.crit).toBeUndefined();
+  });
+
+  test("an effect that names a status announces it as a status tick", () => {
+    const ctx = world();
+    const seen: { status?: string }[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    ctx.scene.entity.effect({ from: "hero", to: "near", effect: "damage", via: { amount: 3, status: "burn" } });
+    expect(seen).toEqual([expect.objectContaining({ status: "burn", amount: 3 })]);
+  });
+});
+
+describe("damage runtime announcements", () => {
+  test("a runtime with a bus announces a rolled crit on the hit", () => {
+    const events: { crit?: boolean }[] = [];
+    const runtime = createDamageRuntime({
+      table: { types: [{ id: "fire" }], defaultMultiplier: 1 },
+      zones: {
+        zones: [{ id: "head", multiplier: 1, critChance: 1, critMultiplier: 2 }, { id: "body", multiplier: 1, critChance: 0 }],
+        defaultZone: "body",
+      },
+      rng: () => 0.5,
+      events: { on: () => () => {}, subscribe: () => () => {}, emit: (_name: string, payload: unknown) => void events.push(payload as { crit?: boolean }) } as never,
+    });
+    runtime.registerTarget("t", { resistance: "flesh" });
+    runtime.hit({ target: "t", type: "fire", base: 5, zone: "head" });
+    runtime.hit({ target: "t", type: "fire", base: 5, zone: "body" });
+    expect(events.map((event) => event.crit)).toEqual([true, undefined]);
+  });
+});

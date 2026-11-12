@@ -11,12 +11,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { startFromMuzzle } from "@jgengine/core/hud/WorldHud.draw";
-
-/** Whether `source` is the local player or what they currently drive. Exported for tests. @internal */
-export function isLocalSource(ctx: GameContext, source: string | undefined): boolean {
-  if (source === undefined) return false;
-  return source === ctx.player.userId || source === ctx.player.possession.active(ctx.player.userId);
-}
+import { hitMarkerKindOf, isLocalSource, type HitMarkerKind } from "@jgengine/core/combat/hitMarker";
 
 function drawTexture(draw: (g: CanvasRenderingContext2D, size: number) => void): THREE.Texture {
   const size = 64;
@@ -82,7 +77,7 @@ interface Slot {
 }
 
 /** Counts behind the `render/shotFeedback` devtools probe. */
-const stats = { markers: 0, kills: 0, flashes: 0 };
+const stats = { markers: 0, crits: 0, kills: 0, flashes: 0 };
 
 let probeRegistered = false;
 function ensureShotFeedbackProbe(): void {
@@ -90,12 +85,18 @@ function ensureShotFeedbackProbe(): void {
   probeRegistered = true;
   devtools.probes.registerSystem("render/shotFeedback", {
     counters: () => ({ ...stats }),
-    state: () => `${stats.markers} hit markers · ${stats.kills} kills · ${stats.flashes} muzzle flashes`,
+    state: () => `${stats.markers} hit markers · ${stats.crits} crits · ${stats.kills} kills · ${stats.flashes} muzzle flashes`,
   });
 }
 
-const HIT_COLOR = new THREE.Color("#ffffff");
-const KILL_COLOR = new THREE.Color("#ff3b3b");
+/** White for a hit, amber for a crit, red for a kill; crits and kills stay up longer and draw larger. */
+const MARKER_COLOR: Readonly<Record<HitMarkerKind, THREE.Color>> = {
+  hit: new THREE.Color("#ffffff"),
+  crit: new THREE.Color("#ffc23b"),
+  kill: new THREE.Color("#ff3b3b"),
+};
+const MARKER_LIFE: Readonly<Record<HitMarkerKind, number>> = { hit: 1, crit: 1.25, kill: 1.6 };
+const MARKER_SIZE: Readonly<Record<HitMarkerKind, number>> = { hit: 0.05, crit: 0.06, kill: 0.075 };
 /** How long a local shot's impact point stays the place a following damage event marks. */
 const SHOT_POINT_MS = 250;
 
@@ -125,9 +126,9 @@ export interface HitMarkersDrawProps {
 
 /**
  * Draw-side form of {@link HitMarkers}: hit markers flash over the spot the local player's attack
- * hit (white for a hit, larger and red for a kill), drawn on top of everything at a fixed screen
- * size. Works with cursor aim and crosshair aim alike because it marks the hit, not the screen
- * centre. Subscribes to the current `ctx`'s events; a context swap resubscribes like the old
+ * hit (white for a hit, amber for a crit, larger and red for a kill; `combat/hitMarker` decides
+ * which), drawn on top of everything at a fixed screen size. Works with cursor aim and crosshair
+ * aim alike because it marks the hit, not the screen centre. Subscribes to the current `ctx`'s events; a context swap resubscribes like the old
  * effect deps.
  * @internal
  */
@@ -148,7 +149,8 @@ export function hitMarkersDraw(getProps: () => HitMarkersDrawProps): EngineDraw 
       lastShot = { at: new THREE.Vector3(event.at[0], event.at[1], event.at[2]), time: performance.now() };
     }));
     offHandlers.push(ctx.game.events.on("combat.damage", (event: DamageAppliedEvent) => {
-      if (event.status !== undefined || event.amount <= 0 || !isLocalSource(ctx, event.source)) return;
+      const kind = hitMarkerKindOf(event, (id) => isLocalSource(ctx, id));
+      if (kind === null) return;
       const slot = nextSlot(slots, cursor);
       const now = performance.now();
       const lifeMs = getProps().lifeMs ?? 180;
@@ -161,14 +163,15 @@ export function hitMarkersDraw(getProps: () => HitMarkersDrawProps): EngineDraw 
         slot.sprite.position.set(target.position[0], target.position[1] + 1, target.position[2]);
       }
       slot.born = now;
-      slot.life = event.lethal ? lifeMs * 1.6 : lifeMs;
-      slot.size = event.lethal ? 0.075 : 0.05;
-      slot.material.color.copy(event.lethal ? KILL_COLOR : HIT_COLOR);
+      slot.life = lifeMs * MARKER_LIFE[kind];
+      slot.size = MARKER_SIZE[kind];
+      slot.material.color.copy(MARKER_COLOR[kind]);
       slot.material.opacity = 1;
       slot.sprite.scale.set(slot.size * 1.35, slot.size * 1.35, 1);
       slot.sprite.visible = true;
       stats.markers += 1;
-      if (event.lethal) stats.kills += 1;
+      if (kind === "kill") stats.kills += 1;
+      if (kind === "crit") stats.crits += 1;
     }));
   };
 
@@ -225,7 +228,7 @@ export function hitMarkersDraw(getProps: () => HitMarkersDrawProps): EngineDraw 
 
 /**
  * Hit markers: when the local player's attack damages something, a tick flashes over the spot that was
- * hit (white for a hit, larger and red for a kill), drawn on top of everything at a fixed screen size.
+ * hit (white for a hit, amber for a crit, larger and red for a kill), drawn on top of everything at a fixed screen size.
  * @internal
  */
 export function HitMarkers({ lifeMs = 180 }: { lifeMs?: number }) {

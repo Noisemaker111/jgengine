@@ -220,6 +220,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
 
+## hit-marker-cue — Rune HUD hit marker that pops and fades over the crosshair, distinct for crits and kills
+
+- `HitMarkerCue` (function) · `import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view"`
+
+## hit-marker-kind — decide whether a damage event earns a hit, crit or kill marker for the local player
+
+- `hitMarkerKindOf` (function) · `import { hitMarkerKindOf } from "@jgengine/core/combat/hitMarker"`
+
+## hit-markers — hit, crit and kill markers from damage events, with volley folding, pop and fade
+
+- `createHitMarkers` (function) · `import { createHitMarkers } from "@jgengine/core/combat/hitMarker"`
+
 ## hit-zone — resolve a hit zone into one damage multiplier, crit by zone with an injected RNG
 
 - `resolveHitZone` (function) · `import { resolveHitZone } from "@jgengine/core/combat"`
@@ -416,6 +428,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-damage-direction — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
 - `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/core/combat/damage/damageDirection.view"`
+
+## use-hit-markers — UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model
+
+- `useHitMarkers` (function) · `import { useHitMarkers } from "@jgengine/core/combat/HitMarkerCue.view"`
 
 ## vfx-preset-resolve — turn a named attack flavor into concrete vfx kind/color/duration with per-field overrides
 

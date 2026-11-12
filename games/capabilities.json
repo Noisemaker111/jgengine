@@ -4873,6 +4873,36 @@
       "intent": "Hill-type muscle-tendon unit with tendon elasticity and activation dynamics (Geyer 2003)"
     },
     {
+      "id": "hit-marker-cue",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/HitMarkerCue.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Rune HUD hit marker that pops and fades over the crosshair, distinct for crits and kills"
+    },
+    {
+      "id": "hit-marker-kind",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/hitMarker",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "decide whether a damage event earns a hit, crit or kill marker for the local player"
+    },
+    {
+      "id": "hit-markers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/hitMarker",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "hit, crit and kill markers from damage events, with volley folding, pop and fade"
+    },
+    {
       "id": "hit-zone",
       "packages": [
         "@jgengine/core"
@@ -5462,6 +5492,36 @@
       "gameFacing": false,
       "probe": null,
       "intent": "reject damage during a per-target invulnerability window installed by transitions"
+    },
+    {
+      "id": "impact-decal-draw",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/vfx/ImpactDecals.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "one-draw mesh for an impact decal pool: normal-aligned quads over a shared atlas, faded by vertex alpha"
+    },
+    {
+      "id": "impact-decal-kind",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/vfx/impactDecals",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "choose the decal a shot leaves from the impact class, the catalog id and the surface it struck"
+    },
+    {
+      "id": "impact-decals",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/vfx/impactDecals",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "bounded pool of bullet holes, scorches and splashes with surface normal, kind, fade and oldest-first eviction"
     },
     {
       "id": "impact-feel",
@@ -12178,6 +12238,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "UI binding that returns a fog-of-war field's live cells"
+    },
+    {
+      "id": "use-hit-markers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/HitMarkerCue.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model"
     },
     {
       "id": "use-hold-vs-toggle",

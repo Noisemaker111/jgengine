@@ -127,6 +127,18 @@ describe("harbor-heat damage table", () => {
     expect(ctx.scene.entity.stats.get(HERO, "health")?.current).toBe(100);
   });
 
+  test("a landed shot is announced once, so the HUD draws one hit marker per blow", () => {
+    const ctx = boot();
+    ctx.scene.entity.spawn("ganger_dock", { id: "marked", position: [0, 0, 0], role: "npc" });
+    const seen: { target: string; lethal: boolean }[] = [];
+    ctx.game.events.on("combat.damage", (event) => seen.push(event));
+    landWeaponHit(ctx, { from: HERO, to: "marked", weaponId: "pistol_vice" });
+    expect(seen).toHaveLength(1);
+    for (let shot = 0; shot < 3; shot += 1) landWeaponHit(ctx, { from: HERO, to: "marked", weaponId: "pistol_vice" });
+    expect(seen).toHaveLength(4);
+    expect(seen.map((event) => event.lethal)).toEqual([false, false, false, true]);
+  });
+
   test("an explosion resolves each body in the radius through the same chart", () => {
     const ctx = boot();
     const ground = ctx.world.groundHeightAt(0, 0);

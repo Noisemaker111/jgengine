@@ -6059,6 +6059,13 @@
 - `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
 
+## @jgengine/core/vfx/ImpactDecals.draw
+
+- `DecalBuffers` (interface): interface DecalBuffers — The vertex arrays one decal mesh writes into: four vertices per mark.
+- `ImpactDecalLayer` (interface): interface ImpactDecalLayer — One mesh that draws a whole decal pool.
+- `createDecalBuffers` (function): function createDecalBuffers(capacity: number): DecalBuffers — Vertex arrays sized for `capacity` marks.
+- `createImpactDecalLayer` (function): function createImpactDecalLayer(capacity: number): ImpactDecalLayer — The draw side of {@link ImpactDecalPool}: every live mark is a quad in one merged geometry over a shared atlas, so any number of decals of any kinds is one draw call. Marks sit off the surface along their normal (the pool's offset) and the material pushes them forward in depth too, so they never z-fight the surface; transparent with no depth write, so the newest mark draws over older ones. The geometry is rewritten only when the pool changes or while a mark is fading.
+
 ## @jgengine/core/vfx/ParticleField.draw
 
 - `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
@@ -6091,6 +6098,24 @@
 - `FeedbackRoute` (interface): interface FeedbackRoute<TSignal extends string, TTarget extends string> — One wire from a sim signal to a named output.
 - `createFeedbackMixer` (function): function createFeedbackMixer<TSignal extends string, TTarget extends string>(initial: FeedbackMixerConfig<TSignal, TTarget>): FeedbackMixer<TSignal, TTarget> — Creates a {@link FeedbackMixer}: the one place a game declares how sim telemetry drives presentation — rpm to engine pitch, tire saturation to squeal and rumble, speed to FOV, landing speed to a thud — instead of hand-writing that glue per vehicle, aircraft or weapon. Deterministic, allocation-free per update.
 - `sampleFeedbackCurve` (function): function sampleFeedbackCurve(curve: FeedbackCurve | undefined, x: number): number — Sample a {@link FeedbackCurve}; an empty curve is the identity.
+
+## @jgengine/core/vfx/impactDecals
+
+- `DECAL_LOOKS` (const): const DECAL_LOOKS: readonly DecalLook[] — Every look, in the order the decal draw lays them out in its atlas.
+- `DecalLook` (type): type DecalLook = "scorch" | "hole" | "dent" | "splash" | "chip" | "crack" — The marks the decal draw has artwork for. A game picks one per kind and tints it, so "bullet hole in concrete" and "bullet hole in sheet metal" are the same look in two colours. - `scorch`: a dark core inside a pale chipped ring; reads on dark asphalt and pale stone alike. - `hole`: a small dark puncture with a thin crushed rim. - `dent`: a bright scuffed crater, for metal. - `splash`: an irregular blob with droplets, for dirt, mud, oil or paint. - `chip`: a ragged pale flake pattern, for stone, plaster and concrete. - `crack`: radial cracks from a pinpoint, for glass and ice.
+- `DecalSurfaceHit` (interface): interface DecalSurfaceHit — What a shot struck, for {@link impactDecalKindFor}.
+- `DecalSurfaceKind` (type): type DecalSurfaceKind = "terrain" | "wall" | "object" | "entity" — What a shot can land on, as the scene raycast names it.
+- `DecalVec3` (type): type DecalVec3 = readonly [number, number, number] — Impact decals as data: a bounded pool of marks left where shots and blasts land (a bullet hole in a wall, a scorch on the road, a splash of oil under a robot). The pool holds position, surface normal, kind, size and age; it evicts the oldest mark when full and fades each one out over the last seconds of its kind's life. It has no rendering: `ImpactDecals.draw` writes the live pool into one mesh, so any number of decals is a single draw.
+- `ImpactDecal` (interface): interface ImpactDecal — One live mark. `position` already sits off the surface along `normal`.
+- `ImpactDecalInput` (interface): interface ImpactDecalInput — A mark to lay.
+- `ImpactDecalKind` (interface): interface ImpactDecalKind — One kind of mark: which artwork, what colour, how big and how long it stays.
+- `ImpactDecalPool` (interface): interface ImpactDecalPool { readonly capacity: number; add(input: ImpactDecalInput): ImpactDecal | null; prune(now: number): number; list(): readonly ImpactDecal[]; opacity(decal: ImpactDecal, now: number): number; fading(now: number): boolean; resize(capacity: numb… — ⚠ undocumented · used by `createImpactDecalPool`: A bounded pool of impact decals.
+- `ImpactDecalPoolOptions` (interface): interface ImpactDecalPoolOptions { capacity: number; kinds: Readonly<Record<string, ImpactDecalKind>>; surfaceOffset?: number; layerOffset?: number; layers?: number } — ⚠ undocumented · used by `createImpactDecalPool`: A bounded pool of impact decals.
+- `ImpactDecalSurfaces` (interface): interface ImpactDecalSurfaces — Which kind of mark each surface takes. `null` (or a missing entry) leaves no mark there. - `impacts` wins first: an impact class (`"explosive"`) that always leaves its own mark. - `catalog` next: a placed object's or entity's catalog id (`"bandit_barrel"`, `"car_compact"`). - then the surface kind itself. An `entity` mark is laid on the ground under the body that was hit, never on the moving body.
+- `ImpactDecalsConfig` (interface): interface ImpactDecalsConfig — A game's decal look book: its kinds, and which surface takes which.
+- `createImpactDecalPool` (function): function createImpactDecalPool(options: ImpactDecalPoolOptions): ImpactDecalPool — A bounded pool of impact decals. Adding past the capacity evicts the oldest mark, each mark lives its kind's `lifeSeconds` and fades over the last `fadeSeconds`, and each sits a few millimetres off its surface (plus a cycling layer step) so it neither z-fights the surface nor the mark beneath it.
+- `decalCorners` (function): function decalCorners(decal: Pick<ImpactDecal, "position" | "normal" | "size" | "spin">, out: Float32Array | number[], offset = 0): void — The four corners of a mark's square, in the plane through its position facing along its normal, rotated by its spin: written as x,y,z triples into `out` from `offset` in the order bottom-left, bottom-right, top-right, top-left (counter-clockwise seen from the front).
+- `impactDecalKindFor` (function): function impactDecalKindFor(surfaces: ImpactDecalSurfaces, hit: DecalSurfaceHit): string | null — The kind of mark a hit leaves, or `null` for none: the impact class's rule, then the catalog id's, then the surface kind's. An explicit `null` at an earlier step stops there (a vendor that never marks, even though its surface kind would).
 
 ## @jgengine/core/vfx/particleBudget
 

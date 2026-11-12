@@ -1176,6 +1176,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `addHumanoidSockets` (function) · `import { addHumanoidSockets } from "@jgengine/core/anim/humanoidActionClips.draw"`
 
+## impact-decal-draw — one-draw mesh for an impact decal pool: normal-aligned quads over a shared atlas, faded by vertex alpha
+
+- `createImpactDecalLayer` (function) · `import { createImpactDecalLayer } from "@jgengine/core/vfx/ImpactDecals.draw"`
+
+## impact-decal-kind — choose the decal a shot leaves from the impact class, the catalog id and the surface it struck
+
+- `impactDecalKindFor` (function) · `import { impactDecalKindFor } from "@jgengine/core/vfx/impactDecals"`
+
+## impact-decals — bounded pool of bullet holes, scorches and splashes with surface normal, kind, fade and oldest-first eviction
+
+- `createImpactDecalPool` (function) · `import { createImpactDecalPool } from "@jgengine/core/vfx/impactDecals"`
+
 ## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
 
 - `createInputBuffer` (function) · `import { createInputBuffer } from "@jgengine/core/input/inputBuffer"`

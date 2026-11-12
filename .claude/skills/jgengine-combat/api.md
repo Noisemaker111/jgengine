@@ -347,9 +347,16 @@
 - `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
 - `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
 
+## @jgengine/core/combat/HitMarkerCue.view
+
+- `HitMarkerCue` (function): function HitMarkerCue({ timing, artwork, size, colors, labels, anchor = "center", gap = 0 }: HitMarkerCueProps): JSX.Element — A hit marker on the HUD: when the local player's blow lands, a tick pops over the crosshair and fades, in the colour of the strongest blow of the volley (hit, crit or kill). It reads the model through bound leaves, so the HUD does not re-render per frame.
+- `HitMarkerCueProps` (interface): interface HitMarkerCueProps — Props for {@link HitMarkerCue}. Every look and number is the game's.
+- `useHitMarkers` (function): function useHitMarkers(timing: HitMarkerTiming): HitMarkers — The hit-marker model for the current world, listening to `combat.damage` for the local player's confirmed hits on the game clock. The model is rebuilt when the world (or the timing object) changes; keep `timing` a module constant.
+
 ## @jgengine/core/combat/ImpactFeedback.draw
 
-- `ImpactFeedback` (function): function ImpactFeedback(props: ImpactFeedbackOptions): JSX.Element — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
+- `DEFAULT_IMPACT_DECALS` (const): const DEFAULT_IMPACT_DECALS: ImpactDecalsConfig — The engine's decals when a game names none: one scorch on every surface a shot misses into, 25 s with a 2 s fade. Entity hits leave nothing.
+- `ImpactFeedback` (function): function ImpactFeedback(props: ImpactFeedbackOptions): JSX.Element — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a shot that lands on a surface leaves the decal the game's `decals` look book names for it (a scorch by default), an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
 - `ImpactFeedbackDrawProps` (interface): interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions — Props the impact draw reads; resolved by the UI wrapper each commit.
 - `ImpactFeedbackOptions` (interface): interface ImpactFeedbackOptions — What {@link ImpactFeedback} reacts with; every field defaults on.
 
@@ -559,7 +566,7 @@
 - `LandDamageInput` (interface): interface LandDamageInput extends DamageRuntimeHitInput — One blow to land: a {@link DamageRuntime} hit plus who struck it and what the kill feed credits.
 - `LandedDamage` (interface): interface LandedDamage — What one landed blow did: the runtime's full resolution and the amount the world received.
 - `landAreaDamage` (function): function landAreaDamage(ctx: GameContext, runtime: DamageRuntime, input: LandAreaDamageInput, prepare: (instanceId: string) => boolean = (instanceId) => runtime.target(instanceId) !== null): LandedDamage[] — Land an area payload: select bodies with the shared area query (radius, falloff, the world's `canReceive("damage")` gate), then land each share through {@link landDamage}. `prepare` runs per selected body before its hit and returns false to skip one (an unprofiled kind), which is where a game registers a profile lazily.
-- `landDamage` (function): function landDamage(ctx: GameContext, runtime: DamageRuntime, input: LandDamageInput): LandedDamage — Resolve one blow through a damage runtime and land it through the world's `damage` effect, so stat pool absorption, spillover, death and the kill feed stay the engine's. A zero result lands nothing. The target must already carry a profile (`runtime.registerTarget`); an unprofiled one throws, so a hit on something nobody wired fails loudly instead of dealing its base number.
+- `landDamage` (function): function landDamage(ctx: GameContext, runtime: DamageRuntime, input: LandDamageInput): LandedDamage — Resolve one blow through a damage runtime and land it through the world's `damage` effect, so stat pool absorption, spillover, death and the kill feed stay the engine's. A zero result lands nothing. The target must already carry a profile (`runtime.registerTarget`); an unprofiled one throws, so a hit on something nobody wired fails loudly instead of dealing its base number. The effect announces the blow as `combat.damage` (with `crit` when the zone rolled one), so the runtime used here takes no `events` bus of its own; one would announce every blow twice.
 
 ## @jgengine/core/combat/damage/receivedDamage
 
@@ -646,7 +653,7 @@
 - `EffectResult` (interface): interface EffectResult { instanceId: string; effect: string; applied: AppliedPoolDelta[]; lethal: boolean; slain?: SlainIdentity } — ⚠ undocumented
 - `EffectSystem` (interface): interface EffectSystem { canReceive(instanceId: string, effect: string, magnitude?: number): string | null; preview(input: SingleTargetEffectInput): number; applyEffect(input: EffectInput): EffectResult[] } — ⚠ undocumented · used by `createEffectSystem`: Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal co…
 - `EffectSystemDeps` (interface): interface EffectSystemDeps { resolveReceive(instanceId: string): ReceiveMap | null | undefined; statPools?: StatPoolAccess; resolveStats?(instanceId: string): Record<string, StatPool> | undefined; getStat(itemId: string, stat: string): number | null; spatial: CombatS… — ⚠ undocumented · used by `createEffectSystem`: Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal co…
-- `EffectVia` (interface): interface EffectVia { item?: string; amount?: number } — ⚠ undocumented
+- `EffectVia` (interface): interface EffectVia { item?: string; amount?: number; crit?: boolean; status?: string } — ⚠ undocumented
 - `LethalContext` (interface): interface LethalContext { from: string; via?: EffectVia | undefined; effect: string } — ⚠ undocumented
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceiveRule` (interface): interface ReceiveRule { order: string[]; modifiers?: Record<string, number> } — ⚠ undocumented
@@ -654,6 +661,16 @@
 - `SlainIdentity` (interface): interface SlainIdentity — Identity of an entity slain by a lethal effect, captured before the death system despawns it. Serializable and genre-agnostic: `catalogId` is the slain entity's spawn kind/name (the same value the `entity.died` event carries), `name` an optional human-readable label for kill feeds, and `userId` the owning player when the slain unit was player-controlled. The slain entity's instance id is already {@link EffectResult.instanceId}.
 - `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal context.
 - `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
+
+## @jgengine/core/combat/hitMarker
+
+- `HitMarkerFrame` (interface): interface HitMarkerFrame — The marker on screen right now.
+- `HitMarkerKind` (type): type HitMarkerKind = "hit" | "crit" | "kill" — A confirmed hit, as a shooter's hit marker shows it: a plain hit, a critical hit, or a kill. Ranked: a kill outranks a crit, which outranks a hit.
+- `HitMarkerTiming` (interface): interface HitMarkerTiming — How a marker moves: every number a game tunes. Times are milliseconds on the caller's clock.
+- `HitMarkers` (interface): interface HitMarkers { push(kind: HitMarkerKind, nowMs: number, position?: readonly [number, number, number]): void; observe(event: DamageAppliedEvent, nowMs: number): HitMarkerKind | null; listen(events: Pick<GameEvents, "on">, now: () => number): () => void; … — ⚠ undocumented · used by `createHitMarkers`: The hit-marker cue as data: which damage announcements are confirmed hits, the strongest kind a volley reached, and the marker's pop, hold a…
+- `createHitMarkers` (function): function createHitMarkers(timing: HitMarkerTiming, isMine: (instanceId: string) => boolean): HitMarkers — The hit-marker cue as data: which damage announcements are confirmed hits, the strongest kind a volley reached, and the marker's pop, hold and fade over time. The view draws the frame; this holds no rendering, so the rules are testable without a screen.
+- `hitMarkerKindOf` (function): function hitMarkerKindOf(event: Pick<DamageAppliedEvent, "target" | "source" | "amount" | "lethal" | "status" | "crit">, isMine: (instanceId: string) => boolean): HitMarkerKind | null — The marker a `combat.damage` announcement earns, or `null` for none. Only a direct blow the local player (or what they drive) dealt to something else counts: status ticks, zero or negative amounts, blows from anyone else and the player hurting themself are not confirmed hits. A lethal blow is a `kill`; a blow announced with `crit: true` is a `crit`.
+- `isLocalSource` (function): function isLocalSource(ctx: Pick<GameContext, "player">, source: string | undefined): boolean — Whether `source` is the local player or what they currently drive.
 
 ## @jgengine/core/combat/hitReaction
 

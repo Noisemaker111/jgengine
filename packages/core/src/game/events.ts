@@ -49,6 +49,11 @@ export interface DamageAppliedEvent {
   /** The status that ticked, when the damage came from a carried status rather than a direct hit. */
   status?: string;
   /**
+   * True when the blow rolled a critical hit (a damage runtime's hit zone, or `via.crit` on the
+   * effect path). Omitted on a plain hit, so a hit marker or cue reads `crit === true`.
+   */
+  crit?: boolean;
+  /**
    * Where the blow landed, for spatial feedback (a panned cue, a decal, a floating number that
    * belongs on the body rather than on screen). Omitted by an emitter that knows no position, so a
    * listener must fall back to a centred, unattenuated reaction.
