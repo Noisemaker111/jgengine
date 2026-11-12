@@ -341,6 +341,7 @@ ctx.scene.entity.bind("racers").sync(
   dt,
 );
 ```
+The next `sync` puts a bound body back where its sim has it, so a teleport (`teleportPlayer`, the agent bridge's `teleport`) of a bound body goes through `bind(key).onTeleport((id, { position, rotationY }) => boolean)`: move the sim there and return true. With no handler, or one that returns false, the teleport answers `{ ok: false, error }` and nothing moves (drift-foundry's `placeKart` is the pattern).
 
 ### Authored behavior triggers (volumes / markers)
 

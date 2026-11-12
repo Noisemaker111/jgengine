@@ -54,6 +54,13 @@ export function onInit(ctx: GameContext): void {
   const input = createDriveInput();
   driveInputStore.write(ctx, input);
   registerCaptureCommands(ctx);
+  // The run session drives the kart and the racers bind poses it every tick, so a teleport moves the session's kart.
+  ctx.scene.entity.bind("racers").onTeleport((id, placement) => {
+    const current = runSessionStore.peek(ctx);
+    if (id !== ctx.player.userId || current === undefined) return false;
+    current.placeKart(placement.position, placement.rotationY ?? current.snapshot().pose.heading);
+    return true;
+  });
 }
 
 export function onNewPlayer(ctx: GameContext): void {

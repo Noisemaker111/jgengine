@@ -270,7 +270,7 @@ export function installAgentBridge(options: {
           return { ok: false, error: "teleport needs { x, z, y?, yaw? } as finite numbers" };
         }
         const moved = teleportPlayer(ctx, ctx.player.userId, { x, z, ...(y === undefined ? {} : { y }), ...(yaw === undefined ? {} : { yaw }) });
-        return moved === null ? { ok: false, error: "no local player entity yet" } : { ok: true, entity: moved };
+        return moved;
       }
       case "sim_advance": {
         const seconds = request["seconds"];

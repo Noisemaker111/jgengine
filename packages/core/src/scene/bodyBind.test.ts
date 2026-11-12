@@ -91,4 +91,24 @@ describe("createBodyBind", () => {
     expect(entity?.role).toBe("prop");
     expect(entity?.meta).toEqual({ tag: "b" });
   });
+
+  it("hands a teleport of a bound body to the sim's handler, and refuses one with no handler or an unbound id", () => {
+    const store = createEntityStore();
+    const bind = createBodyBind(depsOverStore(store));
+    bind.sync([{ id: "kart-1", kind: "kart_player", position: [0, 0, 0] }]);
+
+    expect(bind.teleport("kart-1", { position: [9, 0, 9] })).toBe(false);
+
+    const asked: Array<{ id: string; position: readonly number[]; rotationY?: number }> = [];
+    bind.onTeleport((id, placement) => {
+      asked.push({ id, ...placement });
+      return id === "kart-1";
+    });
+    expect(bind.teleport("kart-1", { position: [9, 0, 9], rotationY: 1 })).toBe(true);
+    expect(bind.teleport("rival-1", { position: [9, 0, 9] })).toBe(false);
+    expect(asked).toEqual([{ id: "kart-1", position: [9, 0, 9], rotationY: 1 }]);
+
+    bind.onTeleport(null);
+    expect(bind.teleport("kart-1", { position: [9, 0, 9] })).toBe(false);
+  });
 });
