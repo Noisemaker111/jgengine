@@ -132,6 +132,13 @@ const shrub = (species: string, age: number, params: Record<string, unknown> = {
 });
 
 /**
+ * A forest's trees grow as a fully stocked stand (Hart–Becking spacing index 0.25): shaded from the
+ * side by their neighbours, they self-prune their lower limbs into a clear bole, so no foliage hangs
+ * at eye level under the canopy (#2735). Lone trees on the plains grow in the open and keep them.
+ */
+const FOREST = { stand: 0.25 };
+
+/**
  * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
  * Every plant is grown by the engine's plant simulation: sugar maple and white pine (dead trees are
  * maple snags left standing 8 years), highbush blueberry bushes, coconut and cabbage palms, Hawaiian
@@ -140,12 +147,16 @@ const shrub = (species: string, age: number, params: Record<string, unknown> = {
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
   palm: tree("cocos-nucifera", 9),
-  tree: tree("acer-saccharum", 25),
-  tree2: tree("acer-saccharum", 34, { leafTint: "#d2e6c0" }),
-  tree3: tree("acer-saccharum", 28, { leafTint: "#eef8c4" }),
-  pine: tree("pinus-strobus", 30),
-  pine2: tree("pinus-strobus", 22, { leafTint: "#c4d8c8" }),
-  redwood: tree("pinus-strobus", 110),
+  tree: tree("acer-saccharum", 25, FOREST),
+  tree2: tree("acer-saccharum", 34, { ...FOREST, leafTint: "#d2e6c0" }),
+  tree3: tree("acer-saccharum", 28, { ...FOREST, leafTint: "#eef8c4" }),
+  pine: tree("pinus-strobus", 30, FOREST),
+  pine2: tree("pinus-strobus", 22, { ...FOREST, leafTint: "#c4d8c8" }),
+  redwood: tree("pinus-strobus", 110, FOREST),
+  // The plains' and the herbivore island's lone maples, open-grown.
+  meadowtree: tree("acer-saccharum", 25),
+  meadowtree2: tree("acer-saccharum", 34, { leafTint: "#d2e6c0" }),
+  meadowtree3: tree("acer-saccharum", 28, { leafTint: "#eef8c4" }),
   deadtree: tree("acer-saccharum", 40, { deadYears: 8 }),
   rock: grown("nature.rock", "rock", { size: 2.2, erosion: 0.2, smooth: true, crag: 0.9 }),
   boulder: grown("nature.rock", "boulder", { size: 4.6, erosion: 0.2, smooth: true, crag: 0.8 }),

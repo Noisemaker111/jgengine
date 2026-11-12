@@ -12,6 +12,7 @@ import type {
   EditorVolume,
 } from "@jgengine/core/editor/index";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
+import { volumeHalfSize } from "@jgengine/core/world/sceneShapes";
 import { NAV_AREA_KIND, NAV_LINK_KIND } from "@jgengine/core/nav/navAuthoring";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { SceneObjectAttach, SceneObjectGroup, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -96,13 +97,18 @@ function ringPoint(radius: number, offset: number, axis: "y" | "x" | "z", t: num
   return [c, s, offset];
 }
 
-function volumeWireframe(volume: EditorVolume): Float32Array {
+/**
+ * Line-segment vertices of a volume's gizmo, relative to `volume.center`. Every shape is drawn centred
+ * on `center`, the bounds runtime containment, nav areas and water read ({@link volumeHalfSize}); the
+ * box and cylinder once drew from `center.y` upward, half a height above the volume the game used.
+ */
+export function volumeWireframe(volume: EditorVolume): Float32Array {
   const out: number[] = [];
+  const half = volumeHalfSize(volume);
   if (volume.shape === "box") {
-    const he = volume.halfExtents ?? { x: volume.radius ?? 5, y: volume.height ?? 4, z: volume.radius ?? 5 };
-    const xs = [-he.x, he.x];
-    const ys = [0, he.y * 2];
-    const zs = [-he.z, he.z];
+    const xs = [-half.x, half.x];
+    const ys = [-half.y, half.y];
+    const zs = [-half.z, half.z];
     for (const y of ys) {
       out.push(xs[0]!, y, zs[0]!, xs[1]!, y, zs[0]!);
       out.push(xs[1]!, y, zs[0]!, xs[1]!, y, zs[1]!);
@@ -112,14 +118,14 @@ function volumeWireframe(volume: EditorVolume): Float32Array {
     for (const x of xs) for (const z of zs) out.push(x, ys[0]!, z, x, ys[1]!, z);
     return new Float32Array(out);
   }
-  const radius = Math.max(0.5, volume.radius ?? 5);
+  const radius = Math.max(0.5, half.x);
   if (volume.shape === "cylinder") {
-    const height = Math.max(0.5, volume.height ?? 4);
-    pushRing(out, radius, 0.1, "y");
-    pushRing(out, radius, height, "y");
+    const top = Math.max(0.25, half.y);
+    pushRing(out, radius, -top, "y");
+    pushRing(out, radius, top, "y");
     for (let i = 0; i < 4; i += 1) {
       const t = (i / 4) * Math.PI * 2;
-      out.push(Math.cos(t) * radius, 0.1, Math.sin(t) * radius, Math.cos(t) * radius, height, Math.sin(t) * radius);
+      out.push(Math.cos(t) * radius, -top, Math.sin(t) * radius, Math.cos(t) * radius, top, Math.sin(t) * radius);
     }
     return new Float32Array(out);
   }

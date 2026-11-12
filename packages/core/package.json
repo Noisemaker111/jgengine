@@ -62,7 +62,7 @@
   "scripts": {
     "build": "bun ../../scripts/build-engine.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test --preload ../../scripts/three-preload.ts src"
+    "test": "bun test --preload ../../scripts/three-preload.ts --preload ../../scripts/test-globals-preload.ts src"
   },
   "peerDependencies": {
     "@jgengine/ui": "^0.58.0",

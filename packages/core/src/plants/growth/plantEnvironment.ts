@@ -29,6 +29,9 @@ export interface PlantEnvironment {
   sideLight?: number;
 }
 
+/** Closest spacing index a stand is grown at; closer than this a stand self-thins (Hart–Becking). */
+export const MIN_STAND_SPACING_INDEX = 0.15;
+
 /**
  * Share of an overcast sky's light that reaches a randomly oriented leaf from more than 45° off the
  * zenith: with sky radiance ∝ 1 + 2 cos θ (Moon & Spencer 1942, the CIE standard overcast sky) it is

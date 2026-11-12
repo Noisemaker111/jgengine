@@ -1713,6 +1713,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `PLANT_LIBRARY` (const) · `import { PLANT_LIBRARY } from "@jgengine/core/plants/species/data/plantLibrary"`
 - `createPlantGrownGenerator` (function) · `import { createPlantGrownGenerator } from "@jgengine/core/plants/grown/plantGrown"`
 - `createWorkerPlantGrower` (function) · `import { createWorkerPlantGrower } from "@jgengine/core/plants/grown/plantGrowPool"`
+- `plantSiteOf` (function) · `import { plantSiteOf } from "@jgengine/core/plants/grown/plantGrown"`
 - `plantStructureKey` (function) · `import { plantStructureKey } from "@jgengine/core/plants/grown/plantGrown"`
 - `plantStyleOf` (function) · `import { plantStyleOf } from "@jgengine/core/plants/grown/plantGrown"`
 

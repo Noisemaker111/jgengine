@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
-import { createEmptyEditorDocument, type EditorMarker } from "@jgengine/core/editor/index";
+import { createEmptyEditorDocument, type EditorMarker, type EditorVolume } from "@jgengine/core/editor/index";
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
-import { EditorLayerOverlays } from "./DebugDraw";
+import { pointInVolume } from "@jgengine/core/scene/authoredTriggers";
+import { volumeCenterOnGround } from "@jgengine/core/world/sceneShapes";
+import { EditorLayerOverlays, volumeWireframe } from "./DebugDraw";
 
 const mountedDraws: MountedTestDraws[] = [];
 
@@ -79,5 +81,52 @@ describe("model-backed marker glyphs", () => {
     expect(spheres[1]!.material.wireframe).toBe(false);
     expect(spheres[1]!.material.depthWrite).toBe(false);
     expect(spheres[1]!.material.opacity).toBe(0.28);
+  });
+});
+
+describe("volume gizmo", () => {
+  const span = (volume: EditorVolume) => {
+    const lines = volumeWireframe(volume);
+    let low = Infinity;
+    let high = -Infinity;
+    for (let i = 1; i < lines.length; i += 3) {
+      low = Math.min(low, lines[i]!);
+      high = Math.max(high, lines[i]!);
+    }
+    return { low: volume.center.y + low, high: volume.center.y + high, lines };
+  };
+
+  test("a box is drawn centred on center.y, the bounds the runtime contains points in (#3191)", () => {
+    const box: EditorVolume = { id: "b", kind: "nav_area", shape: "box", center: { x: 4, y: 3, z: -2 }, halfExtents: { x: 2, y: 1.5, z: 1 } };
+    const { low, high, lines } = span(box);
+    expect([low, high]).toEqual([1.5, 4.5]);
+    for (let i = 0; i < lines.length; i += 3) {
+      const corner = { x: box.center.x + lines[i]!, y: box.center.y + lines[i + 1]!, z: box.center.z + lines[i + 2]! };
+      expect(pointInVolume(box, corner), `corner ${JSON.stringify(corner)}`).toBe(true);
+    }
+    expect(pointInVolume(box, { x: 4, y: high + 0.01, z: -2 })).toBe(false);
+    expect(pointInVolume(box, { x: 4, y: low - 0.01, z: -2 })).toBe(false);
+  });
+
+  test("a cylinder is drawn centred too, its height defaulting to its diameter as containment does", () => {
+    expect(span({ id: "c", kind: "zone", shape: "cylinder", center: { x: 0, y: 10, z: 0 }, radius: 3, height: 8 })).toMatchObject({ low: 6, high: 14 });
+    expect(span({ id: "c", kind: "zone", shape: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 3 })).toMatchObject({ low: -3, high: 3 });
+  });
+
+  test("a box missing halfExtents draws the size containment assumes", () => {
+    const box: EditorVolume = { id: "b", kind: "zone", shape: "box", center: { x: 0, y: 0, z: 0 } };
+    expect(span(box)).toMatchObject({ low: -5, high: 5 });
+    expect(pointInVolume(box, { x: 0, y: 4.9, z: 0 })).toBe(true);
+  });
+
+  test("a volume placed on the ground stands on it: its bottom face is at the ground", () => {
+    const ground = { x: 1, y: 2, z: 3 };
+    const box = { shape: "box", halfExtents: { x: 8, y: 4, z: 8 } } as const;
+    const boxCenter = volumeCenterOnGround(box, ground);
+    expect(boxCenter).toEqual({ x: 1, y: 6, z: 3 });
+    expect(span({ id: "b", kind: "zone", center: boxCenter, ...box }).low).toBe(2);
+    const cylinder = { shape: "cylinder", radius: 10, height: 8 } as const;
+    expect(span({ id: "c", kind: "zone", center: volumeCenterOnGround(cylinder, ground), ...cylinder }).low).toBe(2);
+    expect(volumeCenterOnGround({ shape: "sphere", radius: 10 }, ground)).toEqual(ground);
   });
 });

@@ -544,6 +544,7 @@
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */ hov… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 - `navLinkArrows` (function): function navLinkArrows(path: EditorPath): { at: EditorVec3; toward: EditorVec3 }[] — Where a nav link gizmo draws its arrowheads: at the landing end, and at the start too when it runs both ways.
+- `volumeWireframe` (function): function volumeWireframe(volume: EditorVolume): Float32Array — Line-segment vertices of a volume's gizmo, relative to `volume.center`. Every shape is drawn centred on `center`, the bounds runtime containment, nav areas and water read ({@link volumeHalfSize}); the box and cylinder once drew from `center.y` upward, half a height above the volume the game used.
 
 ## @jgengine/editor/EditorApp
 

@@ -56,7 +56,7 @@ function runSuiteTest(game: string): { ok: boolean; score: GameSuiteScore | null
   const scratch = mkdtempSync(join(tmpdir(), "jg-suite-"));
   const out = join(scratch, "run.json");
   try {
-    const run = Bun.spawnSync(["bun", "test", "--preload", "../../scripts/three-preload.ts", SUITE_TEST], {
+    const run = Bun.spawnSync(["bun", "test", "--preload", "../../scripts/three-preload.ts", "--preload", "../../scripts/test-globals-preload.ts", SUITE_TEST], {
       cwd: dir,
       stdout: "pipe",
       stderr: "pipe",

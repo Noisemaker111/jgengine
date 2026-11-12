@@ -2,9 +2,15 @@ import { expect, test } from "bun:test";
 import { nextFrame } from "./nextFrame.draw";
 import { runSliced, type SlicedJob } from "./slicedWork";
 
+/** Put `requestAnimationFrame` back exactly: absent under bun stays absent, never an own key holding undefined (#3194). */
+function restoreFrame(previous: PropertyDescriptor | undefined): void {
+  if (previous === undefined) Reflect.deleteProperty(globalThis, "requestAnimationFrame");
+  else Object.defineProperty(globalThis, "requestAnimationFrame", previous);
+}
+
 test("paces a job to one slice per animation frame", async () => {
   const frames: (() => void)[] = [];
-  const original = globalThis.requestAnimationFrame;
+  const original = Object.getOwnPropertyDescriptor(globalThis, "requestAnimationFrame");
   globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => frames.push(() => callback(0));
   try {
     let clock = 0;
@@ -29,12 +35,12 @@ test("paces a job to one slice per animation frame", async () => {
     expect(await run.done).toBe(45);
     expect(slices).toEqual([9, 18, 27, 30]);
   } finally {
-    globalThis.requestAnimationFrame = original;
+    restoreFrame(original);
   }
 });
 
 test("yields without a browser frame loop", async () => {
-  const original = globalThis.requestAnimationFrame;
+  const original = Object.getOwnPropertyDescriptor(globalThis, "requestAnimationFrame");
   Reflect.deleteProperty(globalThis, "requestAnimationFrame");
   try {
     let yielded = false;
@@ -43,6 +49,6 @@ test("yields without a browser frame loop", async () => {
     await pending;
     expect(yielded).toBe(true);
   } finally {
-    if (original !== undefined) globalThis.requestAnimationFrame = original;
+    restoreFrame(original);
   }
 });

@@ -32644,15 +32644,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -32906,15 +32906,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -33138,15 +33138,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -33360,15 +33360,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -33592,15 +33592,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -33804,15 +33804,15 @@
         "maxScale": 1.5,
         "palette": [
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           },
           {
-            "item": "tree2",
+            "item": "meadowtree2",
             "weight": 1
           },
           {
-            "item": "tree3",
+            "item": "meadowtree3",
             "weight": 1
           }
         ]
@@ -36059,7 +36059,7 @@
             "weight": 1
           },
           {
-            "item": "tree",
+            "item": "meadowtree",
             "weight": 1
           }
         ]

@@ -11,7 +11,7 @@ import { defineParamSchema, type ParamsOf } from "../../generator/paramSchema";
 import { runSliced, type SlicedJob } from "../../run/slicedWork";
 import { registerPlaceableGeneratorOutput } from "../../scene/assetGenerator";
 import { createIndexedDbPlantCacheStorage, createPlantCache, type CachedPlantStructure, type PlantCache } from "../cache/plantCache";
-import { OPEN_TEMPERATE_SITE } from "../growth/plantEnvironment";
+import { MIN_STAND_SPACING_INDEX, OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../growth/plantEnvironment";
 import { createPlantGrowth, PLANT_SIM_VERSION } from "../growth/plantGrowth";
 import { buildPlantMesh, DEFAULT_PLANT_STYLE, PLANT_MESH_LODS, plantMeshLod, type PlantMesh, type PlantStyle } from "../mesh/plantMesh";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
@@ -48,6 +48,10 @@ export const PLANT_GROWN_SCHEMA = defineParamSchema({
     { type: "range", key: "day", label: "day of year", group: "plant", min: 1, max: 365, step: 1, default: 200, vary: false },
     { type: "range", key: "deadYears", label: "dead for", group: "plant", min: 0, max: 60, step: 1, default: 0, unit: "years", vary: false },
     { type: "range", key: "light", label: "open sky", group: "site", min: 0.05, max: 1, step: 0.01, default: 1, vary: false },
+    // 0 grows the plant open-grown. Above 0 it grows in an even-aged stand of its own copies this
+    // many × its height apart (the Hart–Becking spacing index; 0.2–0.25 is a fully stocked forest),
+    // so neighbours shade its sides and it self-prunes its lower limbs into a clear bole.
+    { type: "range", key: "stand", label: "stand spacing", group: "site", min: 0, max: 1, step: 0.01, default: 0, unit: "× height", vary: false },
     {
       type: "select",
       key: "foliage",
@@ -111,7 +115,18 @@ export function plantStyleOf(params: PlantGrownParams): PlantStyle {
 function growRequest(params: PlantGrownParams, context: GeneratorContext): PlantGrowRequest {
   const species = plantSpeciesById(params.species) ?? PLANT_LIBRARY.find((known) => known.id === params.species) ?? ACER_SACCHARUM;
   const age = Math.max(1, Math.min(species.limits.maxAgeYears, Math.round(params.age)));
-  return { species, env: { ...OPEN_TEMPERATE_SITE, light: params.light }, seed: context.seed, age, day: Math.round(params.day), deadYears: Math.max(0, Math.round(params.deadYears)) };
+  return { species, env: plantSiteOf(params), seed: context.seed, age, day: Math.round(params.day), deadYears: Math.max(0, Math.round(params.deadYears)) };
+}
+
+/**
+ * The site a grown plant's params describe: the open temperate site under its `light`, and an
+ * even-aged stand around it when `stand` is above 0. At 0 it is open-grown, as an isolated tree is.
+ * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
+ */
+export function plantSiteOf(params: Pick<PlantGrownParams, "light" | "stand">): PlantEnvironment {
+  const env: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, light: params.light };
+  if (params.stand > 0) env.stand = { spacingIndex: Math.max(MIN_STAND_SPACING_INDEX, params.stand) };
+  return env;
 }
 
 /**

@@ -4,7 +4,7 @@ import { createPeerHost, decodePeerSignal, encodePeerSignal } from "./peer";
 test.each(["remote", "answer", "local", "description"])(
   "failed peer acceptance disposes only its connection at the %s boundary",
   async stage => {
-    const original = globalThis.RTCPeerConnection;
+    const original = Object.getOwnPropertyDescriptor(globalThis, "RTCPeerConnection");
     let failing = false;
     const peers: ObservedPeer[] = [];
     class ObservedPeer {
@@ -41,7 +41,8 @@ test.each(["remote", "answer", "local", "description"])(
       expect(peers.map(peer => peer.closeCalls)).toEqual([1, 1, 1]);
     } finally {
       host.close();
-      globalThis.RTCPeerConnection = original;
+      if (original === undefined) Reflect.deleteProperty(globalThis, "RTCPeerConnection");
+      else Object.defineProperty(globalThis, "RTCPeerConnection", original);
     }
   },
 );

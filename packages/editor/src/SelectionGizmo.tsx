@@ -11,6 +11,7 @@ import {
   findEditorVolume,
 } from "@jgengine/core/editor/index";
 import { placeMetaFor } from "@jgengine/core/scene/sceneKinds";
+import { volumeCenterOnGround } from "@jgengine/core/world/sceneShapes";
 import {
   TransformGizmo,
   type TransformGizmoPose,
@@ -205,15 +206,18 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
           },
         });
       } else if (placement.tool === "volume") {
+        const size = {
+          shape: placement.shape,
+          ...(placement.shape === "box" ? { halfExtents: { x: 8, y: 4, z: 8 } } : { radius: 10 }),
+          ...(placement.shape === "cylinder" ? { height: 8 } : {}),
+        };
         session().dispatch({
           type: "addVolume",
           volume: {
             id: newPlacementId(placement.kind),
             kind: placement.kind,
-            shape: placement.shape,
-            center: point,
-            ...(placement.shape === "box" ? { halfExtents: { x: 8, y: 4, z: 8 } } : { radius: 10 }),
-            ...(placement.shape === "cylinder" ? { height: 8 } : {}),
+            ...size,
+            center: volumeCenterOnGround(size, point),
             label: placement.kind,
             ...placeMetaFor(placement.kind),
           },

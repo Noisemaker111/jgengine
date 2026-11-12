@@ -5,7 +5,7 @@
  * watches membership and dispatches to handlers.
  */
 
-import type { SceneDocumentLike, SceneMarkerLike, SceneVolumeLike } from "../world/sceneShapes";
+import { volumeHalfSize, type SceneDocumentLike, type SceneMarkerLike, type SceneVolumeLike } from "../world/sceneShapes";
 import { parseParams, type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 
 /** Event edge that can fire an authored trigger. */
@@ -267,9 +267,8 @@ export function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTr
 }
 
 /**
- * True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults
- * to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume
- * radius covers the full vertical span — here y is tested for sphere and box too.
+ * True when `point` is inside an editor volume (sphere / cylinder / box), whose bounds are centred on
+ * `center` ({@link volumeHalfSize}). Cylinder height defaults to its diameter when omitted.
  */
 export function pointInVolume(
   volume: SceneVolumeLike,
@@ -278,19 +277,10 @@ export function pointInVolume(
   const dx = point.x - volume.center.x;
   const dy = point.y - volume.center.y;
   const dz = point.z - volume.center.z;
-  if (volume.shape === "box") {
-    const hx = volume.halfExtents?.x ?? 5;
-    const hy = volume.halfExtents?.y ?? 5;
-    const hz = volume.halfExtents?.z ?? 5;
-    return Math.abs(dx) <= hx && Math.abs(dy) <= hy && Math.abs(dz) <= hz;
-  }
-  const radius = volume.radius ?? 5;
-  if (volume.shape === "cylinder") {
-    const height = volume.height ?? radius * 2;
-    if (Math.hypot(dx, dz) > radius) return false;
-    return Math.abs(dy) <= height / 2;
-  }
-  return Math.hypot(dx, dy, dz) <= radius;
+  const half = volumeHalfSize(volume);
+  if (volume.shape === "box") return Math.abs(dx) <= half.x && Math.abs(dy) <= half.y && Math.abs(dz) <= half.z;
+  if (volume.shape === "cylinder") return Math.hypot(dx, dz) <= half.x && Math.abs(dy) <= half.y;
+  return Math.hypot(dx, dy, dz) <= half.x;
 }
 
 /** True when `point` is within `radius` of a marker's position (sphere for enter/exit/interact). @internal */

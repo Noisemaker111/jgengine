@@ -10,6 +10,12 @@ import { advanceSimulation, registerSimStepper } from "@jgengine/core/sim/simSte
 
 import { applySetting, applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, simAdvanceReport, waitForEditorHost } from "./agentBridge.draw";
 
+/** Put `window` back exactly: absent stays absent, never an own key holding undefined (#3194). */
+function restoreWindow(previous: PropertyDescriptor | undefined): void {
+  if (previous === undefined) Reflect.deleteProperty(globalThis, "window");
+  else Object.defineProperty(globalThis, "window", previous);
+}
+
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
     let polls = 0;
@@ -49,7 +55,7 @@ describe("playerPoseReport", () => {
 describe("canvas_cover", () => {
   test("holds while on and lifts on off or dispose, so a drive can measure a covered frame", () => {
     const globals = globalThis as typeof globalThis & { window?: unknown };
-    const previousWindow = globals.window;
+    const previousWindow = Object.getOwnPropertyDescriptor(globals, "window");
     globals.window = {};
     try {
       const dispose = installAgentBridge({
@@ -68,7 +74,7 @@ describe("canvas_cover", () => {
       dispose();
       expect(canvasCover.covered(), "disposing the shell must lift its cover").toBe(false);
     } finally {
-      globals.window = previousWindow;
+      restoreWindow(previousWindow);
     }
   });
 });
@@ -76,7 +82,7 @@ describe("canvas_cover", () => {
 describe("capture_run", () => {
   test("runs the game's capture.play or a named state in order, so a shipped build reaches the measured scene", () => {
     const globals = globalThis as typeof globalThis & { window?: unknown };
-    const previousWindow = globals.window;
+    const previousWindow = Object.getOwnPropertyDescriptor(globals, "window");
     globals.window = {};
     const calls: [string, unknown][] = [];
     const ctx = {
@@ -113,7 +119,7 @@ describe("capture_run", () => {
       expect(agent.handle({ method: "capture_run", state: "broken", skipUnregistered: true }), "a dev-only helper is skipped and named").toEqual({ ok: true, ran: [{ name: "missing", status: "unregistered" }] });
       dispose();
     } finally {
-      globals.window = previousWindow;
+      restoreWindow(previousWindow);
     }
   });
 });
