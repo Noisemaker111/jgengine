@@ -4,6 +4,7 @@ import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { captureArmed, readCaptureQuery, setCaptureStatus } from "./captureReady";
 import { installGameAssets } from "./gameAssets";
+import { loadAfterAssets } from "./loadAfterAssets";
 import { previewLoaders, type PreviewComponent } from "./registries";
 
 export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) {
@@ -18,8 +19,8 @@ export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: str
       );
       return;
     }
-    void Promise.all([loader(), installGameAssets(gameId)])
-      .then(([module]) => {
+    void loadAfterAssets(() => installGameAssets(gameId), loader)
+      .then((module) => {
         if (stateKey === "") {
           setComponent(() => module.default);
           return;
