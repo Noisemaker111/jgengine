@@ -46,6 +46,7 @@ import {
 } from "./captureReady";
 import { EditorModeApp } from "./EditorModeApp";
 import { installGameAssets } from "./gameAssets";
+import { loadAfterAssets } from "./loadAfterAssets";
 import { useEditorSummon, useRuntimeError } from "./hooks";
 import {
   discoverGameTunables,
@@ -92,8 +93,8 @@ export function DevApp({ gameId }: { gameId: string }) {
       setLoadError(`Unknown game "${gameId}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
       return;
     }
-    void Promise.all([load(), installGameAssets(gameId)])
-      .then(async ([loaded]) => {
+    void loadAfterAssets(() => installGameAssets(gameId), load)
+      .then(async (loaded) => {
         await loadGameStyle(gameId);
         await discoverGameTunables(gameId, loaded.game.name);
         if (MODE === "poster" || MODE === "editor") {
