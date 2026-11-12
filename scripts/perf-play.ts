@@ -650,6 +650,16 @@ const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   if (globalThis.__jgPerfDraws !== undefined) return;
   const state = { frames: [], pending: 0, counting: false };
   const wrapped = new WeakSet();
+  const wrap = (owner, method) => {
+    const original = owner[method];
+    if (typeof original !== "function" || wrapped.has(original)) return;
+    const counted = function (...args) {
+      if (state.counting) state.pending += 1;
+      return original.apply(this, args);
+    };
+    wrapped.add(counted);
+    owner[method] = counted;
+  };
   const drawMethods = [
     "drawArrays",
     "drawElements",
@@ -660,15 +670,24 @@ const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   for (const name of ["WebGLRenderingContext", "WebGL2RenderingContext"]) {
     const proto = globalThis[name]?.prototype;
     if (proto === undefined) continue;
-    for (const method of drawMethods) {
-      const original = proto[method];
-      if (typeof original !== "function" || wrapped.has(original)) continue;
-      wrapped.add(original);
-      proto[method] = function (...args) {
-        if (state.counting) state.pending += 1;
-        return original.apply(this, args);
-      };
-    }
+    for (const method of drawMethods) wrap(proto, method);
+    const getExtension = proto.getExtension;
+    if (typeof getExtension !== "function" || wrapped.has(getExtension)) continue;
+    const countedExtension = function (...args) {
+      const extension = getExtension.apply(this, args);
+      if (extension !== null) {
+        for (const method of [
+          "drawArraysInstancedANGLE", "drawElementsInstancedANGLE",
+          "multiDrawArraysWEBGL", "multiDrawElementsWEBGL",
+          "multiDrawArraysInstancedWEBGL", "multiDrawElementsInstancedWEBGL",
+          "drawArraysInstancedBaseInstanceWEBGL", "drawElementsInstancedBaseVertexBaseInstanceWEBGL",
+          "multiDrawArraysInstancedBaseInstanceWEBGL", "multiDrawElementsInstancedBaseVertexBaseInstanceWEBGL",
+        ]) wrap(extension, method);
+      }
+      return extension;
+    };
+    wrapped.add(countedExtension);
+    proto.getExtension = countedExtension;
   }
   const tick = () => {
     if (state.counting) state.frames.push(state.pending);
