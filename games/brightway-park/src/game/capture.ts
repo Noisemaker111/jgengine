@@ -160,10 +160,9 @@ export function registerCaptureCommands(ctx: GameContext): void {
   // The menu states a capture host reaches: keep the park, stand at the gate.
   ctx.game.commands.define("menu.saveDoc", {
     apply(state) {
-      void captureParkThumb().then(() => {
-        savePark(state);
-        refreshParkSlot();
-      });
+      void captureParkThumb()
+        .then(() => savePark(state))
+        .then(() => refreshParkSlot(state));
       return state;
     },
   });

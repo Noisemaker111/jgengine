@@ -11,6 +11,8 @@ import { DAY_LENGTH } from "../src/game/catalog";
 import { resetPark } from "../src/game/parkReset";
 import { park } from "../src/game/park";
 import { refreshParkSlot } from "../src/game/parkSlot";
+import { savePark } from "../src/game/persistence";
+import { parkReady } from "../src/game/world/setup";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { FIRST_SCENARIO } from "../src/game/scenarios";
 import { resetSession, session } from "../src/game/session";
@@ -29,7 +31,7 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
     removeItem: (key: string) => { memory.delete(key); },
     setItem: (key: string, value: string) => { memory.set(key, value); },
   } });
-  try { return renderFixture(state, width, height); }
+  try { return await renderFixture(state, width, height); }
   finally {
     parkFocus.id = null; parkFocus.panel = null;
     resetSession();
@@ -38,14 +40,15 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
   }
 }
 
-function renderFixture(state: NativeFixture, width: number, height: number) {
+async function renderFixture(state: NativeFixture, width: number, height: number) {
   resetSession();
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   const ctx = runner.ctx, run = (name: string, input: Record<string, unknown> = {}) => runner.ui.invoke(name, input);
   const w = park.of(ctx);
   parkFocus.id = state === "new" || state === "saves" || state === "settings" || state === "credits" ? state : state === "pause-settings" ? "settings" : state === "help" ? "help" : null;
   parkFocus.panel = state === "books" ? "books" : state === "research" ? "research" : null;
-  if (state === "saves") { run("park.start"); run("park.save"); session.started = false; setGamePhase(ctx, "menu"); refreshParkSlot(); }
+  await parkReady(ctx);
+  if (state === "saves") { run("park.start"); await savePark(ctx); session.started = false; setGamePhase(ctx, "menu"); await refreshParkSlot(ctx); }
   if (state === "hud" || state === "research") { run("park.scenario", { id: FIRST_SCENARIO }); run("park.start"); runner.step(0.4); }
   if (state === "paused" || state === "pause-settings" || state === "help" || state === "won" || state === "bankrupt" || state === "ribbon") run("park.start");
   if (state === "inspector" || state === "guest" || state === "books") {

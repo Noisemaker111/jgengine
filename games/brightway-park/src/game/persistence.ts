@@ -5,23 +5,35 @@ import type { ClockSnapshot } from "@jgengine/core/time/simClock";
 import type { RideSystemSnapshot } from "@jgengine/core/sim/rides";
 import type { WorldModelState } from "@jgengine/core/worldModel/worldModel";
 import { rngStateOf, restoreRng } from "@jgengine/core/random/rng";
+import { defaultKeyValueStorage } from "@jgengine/core/game/keyValueStore";
+import { perContext } from "@jgengine/core/runtime/perContext";
+import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 
 import { syncAgentStates } from "./agents";
 import { findBuildable } from "./objects/catalog";
 import { GUEST_KINDS } from "./entities/guests/catalog";
 import { LOT, park, sizeOf } from "./park";
 import { spawnAll } from "./parkScene";
+import { resetPark } from "./parkReset";
 import { restoreRides, rideSnapshot } from "./rides";
 import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffState } from "./session";
 import { restoreStaff } from "./staff";
 import { guestFlowState, restoreGuestFlow } from "./sim/guests";
 import { parkProfile } from "./parkProfile";
 
-export const SAVE_KEY = "brightway-park.save.v1";
+/** The park's save document namespace. Brightway keeps one park, the `park` slot. */
+export const SAVE_KEY = "brightway-park.save";
+export const PARK_SLOT = "park";
+/** The backend key the park's document is written to. */
+export const PARK_ENTRY = `${SAVE_KEY}:${PARK_SLOT}`;
+/** Where the park was written before the shared document; read once and rewritten as a document. */
+export const LEGACY_SAVE_KEY = "brightway-park.save.v1";
 
 /**
  * Where each store the park writes is kept. The engine's own save is off (`save: "none"`): the park
- * writes one document to browser storage, and the world store goes into it whole.
+ * writes one shared save document to browser storage, and the world store goes into its `park`
+ * section whole.
  */
 export const STORE_POLICY: Readonly<Record<string, { kept: "park-save" | "session"; reason: string }>> = {
   // `park.store.key`; spelled out because this module loads inside park.ts's own import graph.
@@ -30,10 +42,12 @@ export const STORE_POLICY: Readonly<Record<string, { kept: "park-save" | "sessio
 };
 
 /**
- * A park save. Version 4 is the world-model park: every number the park keeps lives in `world`; the
- * rest is what walks (guests, janitors), the ride cycles, the clock and the random stream. Older
- * saves held a hand-rolled ledger and placement map and are not read: a park from before v4 starts
- * fresh, and the old save is archived the next time this one is written.
+ * A park save: the `park` section of the park's save document. Version 4 is the world-model park:
+ * every number the park keeps lives in `world`; the rest is what walks (guests, janitors), the ride
+ * cycles, the clock and the random stream. The section keeps the shape an older build wrote at
+ * {@link LEGACY_SAVE_KEY}, so those bytes lift into the document as-is. Saves from before v4 held a
+ * hand-rolled ledger and placement map and are not read: such a park starts fresh, and the old save
+ * is archived the next time this one is written.
  */
 export interface ParkSave {
   version: 4;
@@ -147,8 +161,18 @@ function readSeed(value: unknown): number | null | undefined {
 
 /** Validate before touching the live scene. Unreadable saves stay intact; a pre-v4 park is unreadable. */
 export function decodeSave(raw: string): ParkSave | null {
+  let parsed: unknown;
   try {
-    const s: unknown = JSON.parse(raw);
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  return readParkSave(parsed);
+}
+
+/** A stored `park` section, checked field by field; `null` for anything this build cannot open. */
+export function readParkSave(s: unknown): ParkSave | null {
+  try {
     if (!record(s) || s["version"] !== 4) return null;
     const world = s["world"];
     if (!validWorld(world)) return null;
@@ -223,17 +247,87 @@ function savedLine(ctx: GameContext, prefix: string): string {
   return `${prefix} - day ${w.num("park.day")}, $${Math.round(w.num("park.cash")).toLocaleString()}`;
 }
 
-export function savePark(ctx: GameContext): void {
-  if (!session.started || typeof localStorage === "undefined") return;
+const UNAVAILABLE = "Save unavailable - browser storage is full or disabled";
+
+/** The park's one slot, as a section of the shared save document. Restoring empties the live park first. */
+function parkSystem(ctx: GameContext): GameSaveSystem<ParkSave> {
+  return {
+    name: "park",
+    snapshot: () => snapshotPark(ctx),
+    restore(next) {
+      const save = readParkSave(next);
+      if (save === null) throw new Error("brightway-park: the saved park is unreadable");
+      resetPark(ctx, { layout: "blank" });
+      applySave(ctx, save);
+    },
+  };
+}
+
+interface ParkRecord {
+  readonly backend: SaveBackend;
+  readonly save: GameSave;
+  /** Bytes the boot read found but could not open; archived before the first write replaces them. */
+  unreadable: boolean;
+}
+
+/** A park save over a backend: one document, slot `park`, lifting a park an older build wrote at its own key. */
+function createParkSave(ctx: GameContext, backend: SaveBackend): GameSave {
+  return createGameSave({
+    backend,
+    game: "brightway-park",
+    key: SAVE_KEY,
+    slot: PARK_SLOT,
+    systems: [parkSystem(ctx)],
+    clock: () => ctx.time.now(),
+    playtime: () => ctx.time.now(),
+    legacy: {
+      keys: () => [LEGACY_SAVE_KEY],
+      lift(stored) {
+        const save = decodeSave(stored[LEGACY_SAVE_KEY] ?? "");
+        if (save === null) throw new Error("brightway-park: the park an older build saved is unreadable");
+        return { park: save };
+      },
+    },
+    devtoolsName: "brightway.save",
+  });
+}
+
+const records = perContext((ctx: GameContext): ParkRecord => {
+  const backend = localSaveBackend(undefined, { errorMode: "throw" });
+  return { backend, save: createParkSave(ctx, backend), unreadable: false };
+});
+
+/** This context's park document, for the menu card and a digest. */
+export function parkSave(ctx: GameContext): GameSave {
+  return records(ctx).save;
+}
+
+/** Browser storage is where the park lives; a host without it (headless, private mode) plays unsaved. */
+const storageReady = (): boolean => defaultKeyValueStorage() !== null;
+
+/**
+ * Write the live park into its document. The park is captured when this is called; the status line
+ * follows once the write settles. Bytes the boot read could not open are archived first.
+ */
+export async function savePark(ctx: GameContext): Promise<void> {
+  if (!session.started || !storageReady()) return;
+  const record = records(ctx);
   try {
-    const previous = localStorage.getItem(SAVE_KEY);
-    if (previous && !decodeSave(previous)) archiveSave();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(snapshotPark(ctx)));
-    session.hasSave = true;
-    session.saveStatus = savedLine(ctx, "Saved");
+    if (record.unreadable) {
+      await archiveSave(ctx);
+      record.unreadable = false;
+    }
+    await record.save.save();
   } catch {
-    session.saveStatus = "Save unavailable - browser storage is full or disabled";
+    session.saveStatus = UNAVAILABLE;
+    return;
   }
+  if (record.save.status() === "error") {
+    session.saveStatus = UNAVAILABLE;
+    return;
+  }
+  session.hasSave = true;
+  session.saveStatus = savedLine(ctx, "Saved");
 }
 
 /** Put a decoded save into a park that `resetPark(ctx, { layout: "blank" })` just emptied. */
@@ -255,29 +349,42 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
   session.saveStatus = savedLine(ctx, "Saved park");
 }
 
-/** Load the park's save; false (and a fresh park for the caller to seed) when there is none or it is unreadable. */
-export function restorePark(ctx: GameContext): boolean {
-  if (typeof localStorage === "undefined") return false;
-  let raw: string | null;
+/** The bytes the park slot holds, document first, else what an older build left; `null` for none. */
+async function heldBytes(record: ParkRecord): Promise<string | null> {
+  return (await record.backend.read(PARK_ENTRY)) ?? (await record.backend.read(LEGACY_SAVE_KEY));
+}
+
+/**
+ * Load the park's save into the live park; false when there is none, it is unreadable (kept, and
+ * archived before the next write), or a park was started while it was being read.
+ */
+export async function restorePark(ctx: GameContext): Promise<boolean> {
+  if (!storageReady()) return false;
+  const record = records(ctx);
   try {
-    raw = localStorage.getItem(SAVE_KEY);
+    const document = await record.save.peek(PARK_SLOT);
+    if (session.started) return false;
+    if (document === null || readParkSave(document.systems["park"]) === null) {
+      if ((await heldBytes(record)) === null) return false;
+      record.unreadable = true;
+      session.saveStatus = "The saved park is from an older build or unreadable - starting a new park; the old save is kept as a backup";
+      return false;
+    }
+    await record.save.load();
+    return true;
   } catch {
     return false;
   }
-  if (!raw) return false;
-  const s = decodeSave(raw);
-  if (s === null) {
-    session.saveStatus = "The saved park is from an older build or unreadable - starting a new park; the old save is kept as a backup";
-    return false;
-  }
-  applySave(ctx, s);
-  return true;
 }
 
-/** Explicit fresh-park action archives the previous save before replacing it. */
-export function archiveSave(): void {
-  if (typeof localStorage === "undefined") return;
-  const previous = localStorage.getItem(SAVE_KEY);
-  if (previous) localStorage.setItem(`${SAVE_KEY}.backup.${Date.now()}`, previous);
-  localStorage.removeItem(SAVE_KEY);
+/**
+ * Explicit fresh-park action archives the previous save before replacing it: its bytes are kept at
+ * a `backup-<ms>` slot of the same namespace, and the park slot (old-format key included) is emptied.
+ */
+export async function archiveSave(ctx: GameContext): Promise<void> {
+  if (!storageReady()) return;
+  const record = records(ctx);
+  const previous = await heldBytes(record);
+  if (previous !== null) await record.backend.write(`${SAVE_KEY}:backup-${Date.now()}`, previous);
+  await record.save.deleteSlot(PARK_SLOT);
 }
