@@ -657,13 +657,14 @@ const OCTAHEDRON = {
 
 /**
  * Rounded clumps over an even grid of the crown: every occupied cell of `cell` metres becomes one
- * clump at the mean of its leaves, sized by how full it is and coloured by their mean colour. The
- * cell grows until the clumps fit the budget, so a clump never stands for a whole limb.
+ * clump at the mean of its leaves, sized by how full it is but never wider than its leaves spread, and
+ * coloured by their mean colour. The cell grows until the clumps fit the budget, so a clump never
+ * stands for a whole limb, and a cell holding a few stray leaves draws a clump the size of those leaves.
  */
 function addClumps(build: FoliageBuild, baseCell: number, sphereLevel: number): void {
   const { writer } = build;
   const shape = sphereLevel < 0 ? OCTAHEDRON : icosphere(sphereLevel);
-  const { slots, cell, sums, members, meanMembers } = groupLeaves(build, baseCell, shape.faces.length);
+  const { slots, cell, sums, members, meanMembers, reach } = groupLeaves(build, baseCell, shape.faces.length);
   const vertexColor = new Float64Array(3);
   for (let slot = 0; slot < slots; slot += 1) {
     const n = Math.max(1, members[slot] ?? 1);
@@ -671,7 +672,7 @@ function addClumps(build: FoliageBuild, baseCell: number, sphereLevel: number): 
     const cy = (sums[slot * 6 + 1] ?? 0) / n;
     const cz = (sums[slot * 6 + 2] ?? 0) / n;
     const fill = Math.min(1.2, Math.sqrt(n / Math.max(1, meanMembers)));
-    const radius = cell * (0.38 + 0.32 * fill);
+    const radius = Math.min(cell * (0.38 + 0.32 * fill), reach[slot] ?? 0);
     const base = writer.vertexCount;
     for (let v = 0; v < shape.vertices.length; v += 1) {
       const vertex = shape.vertices[v];
@@ -698,7 +699,19 @@ interface LeafGroups {
   sums: Float64Array;
   members: Uint32Array;
   meanMembers: number;
+  /**
+   * Per slot: radius of the leaves the group stands for, metres: the spread of its rows about their
+   * mean plus one drawn leaf. A group never draws wider than this, so a cell holding a few stray
+   * leaves draws a small group rather than one as wide as the cell.
+   */
+  reach: Float64Array;
 }
+
+/**
+ * Radius of a ball holding points spread evenly through it, per unit of their RMS distance from its
+ * centre: points evenly through a ball of radius R lie √(3/5)·R from its centre, root-mean-square.
+ */
+const BALL_RADIUS_PER_RMS = 1 / Math.sqrt(3 / 5);
 
 /**
  * Leaf rows grouped over an even grid of the crown: every occupied cell of `baseCell` metres is one
@@ -708,8 +721,8 @@ interface LeafGroups {
 function groupLeaves(build: FoliageBuild, baseCell: number, perGroup: number): LeafGroups {
   const { structure } = build;
   const most = Math.max(1, Math.floor(build.budget / perGroup));
-  const { position } = structure.leaves;
-  const rows = structure.leaves.size.length;
+  const { position, size } = structure.leaves;
+  const rows = size.length;
   const slotOf = new Int32Array(rows);
   let cell = baseCell;
   let slots = 0;
@@ -733,17 +746,34 @@ function groupLeaves(build: FoliageBuild, baseCell: number, perGroup: number): L
   }
   const sums = new Float64Array(slots * 6);
   const members = new Uint32Array(slots);
+  const leafSum = new Float64Array(slots);
   for (let row = 0; row < rows; row += 1) {
     const slot = slotOf[row] ?? 0;
     members[slot] = (members[slot] ?? 0) + 1;
+    leafSum[slot] = (leafSum[slot] ?? 0) + (size[row] ?? 0);
     for (let k = 0; k < 3; k += 1) {
       sums[slot * 6 + k] = (sums[slot * 6 + k] ?? 0) + (position[row * 3 + k] ?? 0);
       sums[slot * 6 + 3 + k] = (sums[slot * 6 + 3 + k] ?? 0) + (build.rowColors[row * 3 + k] ?? 0);
     }
   }
+  // Spread of each group's rows about their mean, summed in a second pass for precision.
+  const squared = new Float64Array(slots);
+  for (let row = 0; row < rows; row += 1) {
+    const slot = slotOf[row] ?? 0;
+    const n = members[slot] ?? 1;
+    let d = 0;
+    for (let k = 0; k < 3; k += 1) d += ((position[row * 3 + k] ?? 0) - (sums[slot * 6 + k] ?? 0) / n) ** 2;
+    squared[slot] = (squared[slot] ?? 0) + d;
+  }
+  const reach = new Float64Array(slots);
   let meanMembers = 0;
-  for (let slot = 0; slot < slots; slot += 1) meanMembers += (members[slot] ?? 0) / slots;
-  return { slots, cell, sums, members, meanMembers };
+  for (let slot = 0; slot < slots; slot += 1) {
+    const n = Math.max(1, members[slot] ?? 1);
+    meanMembers += n / slots;
+    const leaf = ((leafSum[slot] ?? 0) / n) * build.style.leafScale;
+    reach[slot] = BALL_RADIUS_PER_RMS * Math.sqrt((squared[slot] ?? 0) / n) + leaf;
+  }
+  return { slots, cell, sums, members, meanMembers, reach };
 }
 
 /**
@@ -754,7 +784,7 @@ function groupLeaves(build: FoliageBuild, baseCell: number, perGroup: number): L
 function addClusterCards(build: FoliageBuild, baseCell: number, level: boolean): void {
   const { writer, structure } = build;
   const cardsPerGroup = level ? 3 : 2;
-  const { slots, cell, sums, members, meanMembers } = groupLeaves(build, baseCell, cardsPerGroup * 2);
+  const { slots, cell, sums, members, meanMembers, reach } = groupLeaves(build, baseCell, cardsPerGroup * 2);
   const { heightM, crownBaseM } = structure.stats;
   const midY = (heightM + crownBaseM) / 2;
   const u0 = cellU(PLANT_LEAF_ATLAS_CELLS.cluster);
@@ -768,7 +798,7 @@ function addClusterCards(build: FoliageBuild, baseCell: number, level: boolean):
     const cz = (sums[slot * 6 + 2] ?? 0) / n;
     const fill = Math.min(1.2, Math.sqrt(n / Math.max(1, meanMembers)));
     // The atlas cluster fills about two thirds of its cell, so a card is wider than its group.
-    const half = cell * (0.55 + 0.35 * fill);
+    const half = Math.min(cell * (0.55 + 0.35 * fill), 1.5 * (reach[slot] ?? 0));
     const yaw = hash01(build.seed ^ 0x2f6b, slot) * Math.PI;
     for (let card = 0; card < cardsPerGroup; card += 1) {
       // Upright cards cross at right angles; the third lies tilted towards the sky.

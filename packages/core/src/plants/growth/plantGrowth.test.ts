@@ -189,6 +189,31 @@ describe("plant growth", () => {
     expect(run.crownRatioAt100).toBeGreaterThan(crownRatio(stand.structure()) + 0.2);
   }, 120_000);
 
+  test("no leaf or limb of an open-grown maple ends below the ground at any age to 140 years (#2735)", () => {
+    const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, "tree~v0");
+    for (let age = 10; age <= 140; age += 10) {
+      plant.step(10);
+      const { leaves, segments } = plant.structure(200);
+      let lowest = Number.POSITIVE_INFINITY;
+      for (let row = 0; row < leaves.size.length; row += 1) lowest = Math.min(lowest, leaves.position[row * 3 + 1] ?? 0);
+      for (let i = 0; i < segments.order.length; i += 1) lowest = Math.min(lowest, segments.end[i * 3 + 1] ?? 0);
+      expect(lowest, `${age} y`).toBeGreaterThanOrEqual(0);
+    }
+  }, 60_000);
+
+  test("a maple grown in a closed stand self-prunes a clear bole: no foliage below 2 m at 25 years (#2735)", () => {
+    // In the open the same tree keeps its lowest limbs: they get about a fifth of open sky from the
+    // side, well above a shade-tolerant maple's compensation point, as open-grown maples do.
+    const plant = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, "tree~v0");
+    plant.step(25);
+    const { leaves, stats } = plant.structure(200);
+    let lowest = Number.POSITIVE_INFINITY;
+    for (let row = 0; row < leaves.size.length; row += 1) lowest = Math.min(lowest, leaves.position[row * 3 + 1] ?? 0);
+    expect(leaves.size.length).toBeGreaterThan(0);
+    expect(lowest).toBeGreaterThan(2);
+    expect(stats.crownBaseM).toBeGreaterThan(0.2 * stats.heightM);
+  });
+
   test("retune changes the site from the next year on", () => {
     const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED);
     plant.step(20);
