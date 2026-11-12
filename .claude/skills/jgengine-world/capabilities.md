@@ -1033,6 +1033,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `untypedGenerator` (function) · `import { untypedGenerator } from "@jgengine/core/world"`
 - `variantIndexAt` (function) · `import { variantIndexAt } from "@jgengine/core/generator/generator"`
 
+## generator-metrics — measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them
+
+- `analyzeCircuit` (function) · `import { analyzeCircuit } from "@jgengine/core/roads/circuitMetrics"`
+- `cityMetrics` (function) · `import { cityMetrics } from "@jgengine/core/city/cityMetrics"`
+- `judgeBands` (function) · `import { judgeBands } from "@jgengine/core/generator/referenceBands"`
+- `simulateLap` (function) · `import { simulateLap } from "@jgengine/core/roads/lapSim"`
+- `streetNetworkMetrics` (function) · `import { streetNetworkMetrics } from "@jgengine/core/roads/streetMetrics"`
+
 ## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
 
 - `installGestureResume` (function) · `import { installGestureResume } from "@jgengine/core/audio/gestureResume.view"`

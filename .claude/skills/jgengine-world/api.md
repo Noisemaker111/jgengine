@@ -1315,6 +1315,14 @@
 - `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — The `city` kind's resolve: run {@link CITY_GENERATOR} for one placed volume, with its footprint, frame, the ground sampler and its sibling `cityzone` volumes as the input, and its id as the seed when `meta.seed` is empty. Returns null without a usable footprint.
 
+## @jgengine/core/city/cityMetrics
+
+- `CityBuildingSample` (interface): interface CityBuildingSample — One building as the city metric reads it, in district-local XZ (district centre at the origin).
+- `CityMetrics` (interface): interface CityMetrics { areaHa: number; buildings: number; buildingsPerHa: number; coverage: number; far: number; pavementShare: number; roadKmPerKm2: number; landInBlocksShare: number; blockKinds: Record<string, number>; openBlockShare: number; floorsP50: numbe… — ⚠ undocumented · used by `cityMetrics`: Measure a district (see the module comment).
+- `CityMetricsInput` (interface): interface CityMetricsInput { readonly halfX: number; readonly halfZ: number; readonly streets: readonly {readonly points: readonly PlanPoint[]; readonly width: number; readonly sidewalk?: boolean}[]; readonly sidewalkWidth?: number; readonly blocks: readonly {readonl… — ⚠ undocumented · used by `cityMetrics`: Measure a district (see the module comment).
+- `cityMetrics` (function): function cityMetrics(input: CityMetricsInput, options: { readonly cell?: number; readonly minClassSize?: number } = {}): CityMetrics — Measure a district (see the module comment). `minClassSize` (default 10) gates the per-class template minimum.
+- `cityMetricsInput` (function): function cityMetricsInput(city: ResolvedCity): CityMetricsInput — Read a resolved `city` volume into {@link CityMetricsInput}: positions back into district-local XZ, grounded wall pieces as footprints, floor area per wall piece (its height over the lot's storey height, at least one floor), and a template key from the lot's wall/roof piece shapes in order.
+
 ## @jgengine/core/city/cityStats
 
 - `CityMassingStats` (interface): interface CityMassingStats — Density and render-cost measures of one district.
@@ -1869,6 +1877,22 @@
 - `presetBackedMeta` (function): function presetBackedMeta(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined): Readonly<Record<string, unknown>> | undefined — A `meta` bag with its {@link ParamSchema.presetKey} preset filled in under it: the preset's values, then the meta's own keys on top. The meta unchanged when the schema has no preset key or the meta names no known preset.
 - `sampleCurve` (function): function sampleCurve(points: readonly CurvePoint[], x: number): number — The value of a curve at `x` (0..1), linear between control points and flat past the ends.
 - `sampleGradient` (function): function sampleGradient(stops: readonly GradientStop[], t: number): string — The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops.
+
+## @jgengine/core/generator/referenceBands
+
+- `BandJudgement` (interface): interface BandJudgement { band: ReferenceBand; value: number | undefined; verdict: BandVerdict } — ⚠ undocumented · used by `judgeBands`: Judge one metrics object against bands: in range, below, above, or missing (absent or NaN).
+- `BandVerdict` (type): type BandVerdict = "in" | "low" | "high" | "missing" — ⚠ undocumented
+- `GENERATOR_PRESET_PROFILES` (const): const GENERATOR_PRESET_PROFILES: Readonly<Record<string, Readonly<Record<string, string>>>> — Generator → preset id → profile id. A preset missing here is judged by the generator's `*` entry.
+- `GENERATOR_REFERENCE_CITATIONS` (const): const GENERATOR_REFERENCE_CITATIONS: readonly ReferenceCitation[] — ⚠ undocumented
+- `GENERATOR_REFERENCE_PROFILES` (const): const GENERATOR_REFERENCE_PROFILES: readonly ReferenceProfile[] — ⚠ undocumented
+- `ReferenceBand` (interface): interface ReferenceBand — One acceptable range for one metric. Either bound may be open.
+- `ReferenceCitation` (interface): interface ReferenceCitation — Reference bands for judging procedural street, city and race-circuit output: what real places measure (`reference`, with a citation) and what the engine's generators are held to (`target`, from the 2026-11 generator quality audit). Plain data plus one judge function; the metric names are the keys of `StreetNetworkMetrics`, `CityMetrics` and `CircuitMetrics`, dotted for nested fields.
+- `ReferenceGenerator` (type): type ReferenceGenerator = "streets" | "city" | "circuit" — The generator families the bands cover.
+- `ReferenceProfile` (interface): interface ReferenceProfile { readonly id: string; readonly generator: ReferenceGenerator; readonly label: string; readonly bands: readonly ReferenceBand[] } — ⚠ undocumented · used by `referenceProfileFor`: The profile a generator's preset is judged against.
+- `formatBand` (function): function formatBand(band: ReferenceBand): string — `"10–25"`, `"≥ 5"`, `"≤ 0.05"` for a band's range.
+- `judgeBands` (function): function judgeBands(metrics: unknown, bands: readonly ReferenceBand[]): BandJudgement[] — Judge one metrics object against bands: in range, below, above, or missing (absent or NaN).
+- `metricValue` (function): function metricValue(metrics: unknown, path: string): number | undefined — Read a dotted metric path off a metrics object; `undefined` when absent or not a number.
+- `referenceProfileFor` (function): function referenceProfileFor(generator: ReferenceGenerator, preset: string): ReferenceProfile | undefined — The profile a generator's preset is judged against.
 
 ## @jgengine/core/granular/granularExperiments
 
@@ -2955,6 +2979,13 @@
 - `Eigenvalue` (interface): interface Eigenvalue — One eigenvalue `re + i·im`, 1/s for a linearised plant.
 - `matrixEigenvalues` (function): function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] — Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not modified. Sorted by real part, then imaginary part, descending.
 - `solveLinearSystem` (function): function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void — Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with partial pivoting. A singular pivot leaves that unknown at `0`.
+
+## @jgengine/core/math/stats
+
+- `coefficientOfVariation` (function): function coefficientOfVariation(values: readonly number[]): number — Population coefficient of variation (standard deviation over mean); `NaN` when empty or the mean is 0.
+- `mean` (function): function mean(values: readonly number[]): number — Arithmetic mean of the finite entries; `NaN` when there are none.
+- `quantile` (function): function quantile(values: readonly number[], q: number): number — Quantile `q` (0..1) of the finite entries, linearly interpolated between order statistics; `NaN` when empty.
+- `spearman` (function): function spearman(x: readonly number[], y: readonly number[]): number — Spearman rank correlation of paired samples (pairs with a non-finite side are dropped): +1 when `y` rises with `x`, −1 when it falls, `NaN` with fewer than two pairs or no spread.
 
 ## @jgengine/core/math/xyz
 
@@ -4867,6 +4898,19 @@
 - `startLineOffset` (function): function startLineOffset(straightLength: number, slots: number): number — Arc distance from the start of a straight to the start/finish line: far enough in that the whole grid stands on the straight behind it, and short of the braking zone at its end.
 - `timedSectors` (function): function timedSectors(time: readonly number[], lapTime: number, at: readonly number[], total: number, startIndex: number, breaks: readonly number[], count: number): number[] — Timing-sector starts as lap fractions (from the start line, `[0, …]`): each boundary sits near an equal share of the lap TIME, snapped to the nearest `breaks` sample (just past a significant corner) when one is close enough in time. `time` is elapsed seconds per sample from sample 0.
 
+## @jgengine/core/roads/circuitMetrics
+
+- `CircuitAnalysis` (interface): interface CircuitAnalysis — Everything a metric or a drawing needs about one lap.
+- `CircuitCornerKind` (type): type CircuitCornerKind = "hairpin" | "right-angle" | "tight" | "medium" | "sweeper" | "kink" — ⚠ undocumented
+- `CircuitMetrics` (interface): interface CircuitMetrics { lengthM: number; lengthErrorPct: number; corners: number; cornersPerKm: number; cornerKinds: Record<CircuitCornerKind, number>; rightAngleShare: number; chicanes: number; radiusP10: number; radiusP50: number; radiusP90: number; tightestRa… — ⚠ undocumented · used by `circuitMetrics`: The {@link CircuitMetrics} of one closed lap (see {@link analyzeCircuit} for the full breakdown).
+- `CircuitMetricsInput` (interface): interface CircuitMetricsInput — The lap a circuit metric reads. Only `centerline` is required.
+- `CircuitMetricsOptions` (interface): interface CircuitMetricsOptions { readonly sampleStep?: number; readonly curvatureWindow?: number; readonly straightRadius?: number; readonly straightTolerance?: number; readonly minStraight?: number; readonly cornerMinAngleDeg?: number; readonly mergeGap?: number; readon… — ⚠ undocumented · used by `analyzeCircuit`: Analyze one closed lap: curvature, corners, straights, a lap simulation and the metrics.
+- `DetectedCorner` (interface): interface DetectedCorner — One corner found on the resampled lap. Indices are into {@link CircuitAnalysis.samples}.
+- `DetectedStraight` (interface): interface DetectedStraight — One straight: a stretch a straight line can be driven inside the road.
+- `OvertakingSpot` (interface): interface OvertakingSpot — One overtaking spot: a heavy braking zone at the end of a long straight.
+- `analyzeCircuit` (function): function analyzeCircuit(input: CircuitMetricsInput, options: CircuitMetricsOptions = {}): CircuitAnalysis — Analyze one closed lap: curvature, corners, straights, a lap simulation and the metrics.
+- `circuitMetrics` (function): function circuitMetrics(input: CircuitMetricsInput, options: CircuitMetricsOptions = {}): CircuitMetrics — The {@link CircuitMetrics} of one closed lap (see {@link analyzeCircuit} for the full breakdown).
+
 ## @jgengine/core/roads/circuitSim
 
 - `LapBrakingZone` (interface): interface LapBrakingZone — One stretch where the car brakes: where it starts and ends, and the speeds either side.
@@ -4925,6 +4969,13 @@
 - `courseSlotSpans` (function): function courseSlotSpans(slots: readonly CourseSlot[]): CourseSpanSpec[] — The spans a layout's hazard and zone slots become: tag = slot kind, `data.role` = the slot's role.
 - `courseStopLoss` (function): function courseStopLoss(vehicle: CourseVehicle = {}): number — Seconds a kart cruising at three quarters of top speed loses to a full stop and the restart after it.
 - `measureCourse` (function): function measureCourse(layout: CourseLayout, course: RouteCourse = buildCourseLayout(layout)): CourseMeasure — Measure a layout. Turn and climb figures need a piece-laid main line.
+
+## @jgengine/core/roads/lapSim
+
+- `BrakingZone` (interface): interface BrakingZone — One maximal run of braking, as point indices into the lap.
+- `LapSimOptions` (interface): interface LapSimOptions { readonly mu?: number; readonly gravity?: number; readonly topSpeed?: number; readonly accel?: number; readonly brake?: number } — ⚠ undocumented · used by `simulateLap`: Simulate one flying lap of a closed loop.
+- `LapSimResult` (interface): interface LapSimResult { time: number; length: number; avgSpeed: number; minSpeed: number; maxSpeed: number; fullThrottleShare: number; speeds: number[]; brakingZones: BrakingZone[] } — ⚠ undocumented · used by `simulateLap`: Simulate one flying lap of a closed loop.
+- `simulateLap` (function): function simulateLap(points: readonly PlanPoint[], radii: readonly number[], options: LapSimOptions = {}): LapSimResult — Simulate one flying lap of a closed loop. `radii[i]` is the radius of curvature (m) at `points[i]`; `Infinity` (or any radius whose cornering limit exceeds top speed) is a straight.
 
 ## @jgengine/core/roads/liveRoadSurface
 
@@ -5083,6 +5134,23 @@
 ## @jgengine/core/roads/streetGeometryPreview.view
 
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
+
+## @jgengine/core/roads/streetMetrics
+
+- `BlockMetrics` (interface): interface BlockMetrics — Face-of-graph block size distribution.
+- `ElevatedStreet` (interface): interface ElevatedStreet — One street as the elevation metric reads it: centerline, per-point road heights and bridge/tunnel spans.
+- `MetricBounds` (type): type MetricBounds = { readonly halfX: number; readonly halfZ: number } | { readonly minX: number; readonly maxX: number; readonly minZ: number; readonly maxZ: number } — District bounds: a centered `halfX` × `halfZ` box or explicit extents.
+- `MetricGraphEdge` (interface): interface MetricGraphEdge — One graph edge: endpoint node ids and its centerline polyline from `a` to `b`.
+- `MetricGraphNode` (interface): interface MetricGraphNode — One graph node in plan view.
+- `MetricStreetGraph` (interface): interface MetricStreetGraph — The graph a street metric reads; a `StreetNetwork` is one.
+- `PlanPoint` (type): type PlanPoint = readonly [number, number] — A plan-view point, `[x, z]`.
+- `RoadElevationMetrics` (interface): interface RoadElevationMetrics { maxGrade: number; junctionStepMax: number; roadVsGroundMean: number; roadVsGroundMax: number; reliefM: number } — ⚠ undocumented · used by `roadElevationMetrics`: Road-surface elevation quality: grades, steps where streets meet, and how far the road surface sits from the ground it should follow.
+- `StreetMetricsOptions` (interface): interface StreetMetricsOptions { readonly bounds: MetricBounds; readonly rimMargin?: number; readonly arterialLevels?: readonly string[]; readonly detourSources?: number; readonly detourMinDistance?: number; readonly straightThroughDeg?: number } — ⚠ undocumented · used by `streetNetworkMetrics`: Measure a street graph inside its district bounds.
+- `StreetNetworkMetrics` (interface): interface StreetNetworkMetrics { areaKm2: number; roadKm: number; roadKmPerKm2: number; intersections: number; intersectionsPerKm2: number; degree: {deadEndInterior: number; deadEndRim: number; threeWay: number; fourWay: number; fivePlus: number}; deadEndShare: number; d… — ⚠ undocumented · used by `streetNetworkMetrics`: Measure a street graph inside its district bounds.
+- `boundsBox` (function): function boundsBox(bounds: MetricBounds): { minX: number; maxX: number; minZ: number; maxZ: number } — ⚠ undocumented
+- `polylineLength` (function): function polylineLength(points: readonly PlanPoint[], closed = false): number — Length of an open polyline (closed adds the closing segment).
+- `roadElevationMetrics` (function): function roadElevationMetrics(streets: readonly ElevatedStreet[], options: { readonly heightAt?: (x: number, z: number) => number; readonly gradeBaseline?: number; readonly junctionTolerance?: number } = {}): RoadElevationMetrics — Road-surface elevation quality: grades, steps where streets meet, and how far the road surface sits from the ground it should follow. Streets without `heights` are skipped.
+- `streetNetworkMetrics` (function): function streetNetworkMetrics(graph: MetricStreetGraph, options: StreetMetricsOptions): StreetNetworkMetrics — Measure a street graph inside its district bounds. See the module comment for each figure.
 
 ## @jgengine/core/roads/streetNetworkFromPaths
 

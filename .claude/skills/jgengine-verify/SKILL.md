@@ -29,6 +29,7 @@ Classify each claim before capturing anything. A screenshot where a deterministi
 | behavior over time | probe deltas plus a recorded clip | the one sequence the claim names |
 | UI logic, not pixels | `createHeadlessRunner(...).ui.invoke("intent", input)`, assert state off `ctx` | do not capture |
 | reaching a wave, boss phase or lap | `bun run simulate <game> <script>` | do not capture |
+| procedural street, city or race-circuit output quality | `bun run gen-audit` metrics against its cited bands, per-preset metric tests | read the contact sheets it writes; no game screenshot needed |
 | a player can do a game suite entry | a headless `proofs/sim/*.proof.ts` (`defineProof`), run by the game's `bun test`; `jgengine suite <game>` | never: a drive or shot does not count toward the suite |
 
 ## Drive the game
