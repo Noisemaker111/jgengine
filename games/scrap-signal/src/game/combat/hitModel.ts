@@ -34,8 +34,13 @@ export const DAMAGE_TABLE: DamageTableDef = {
 /** The flux debuff: a pure marker status. While carried, every non-flux channel is doubled. */
 export const FLUX_STATUS: StatusDef = { id: "flux", stack: { kind: "refresh" }, durationMs: 8000 };
 
-/** The proc/crit stream — one stream for every gun, so a replay of the same shots crits the same. */
-const combatRng = seededRng("scrap-combat-procs");
+/**
+ * The world's proc/crit stream — one stream for every gun in a world, so a replay of the same shots
+ * crits the same. Per world, never module-wide: a module stream carried every earlier world's rolls
+ * (another test file in the same process, a second session on one host) into this one's crits, and
+ * the Overdrive balance bot cleared a different number of runs depending on what ran before (#3080).
+ */
+export const combatRngOf = perContext(() => seededRng("scrap-combat-procs"));
 
 /** Flux doubles every channel except itself; it is the one received modifier the chart cannot carry. */
 export const FLUX_DAMAGE_MULT = 2;
@@ -70,7 +75,7 @@ const combatOf = perContext((ctx: GameContext): Combat => {
     table: DAMAGE_TABLE,
     zones: zonesFor(null),
     statuses: [FLUX_STATUS],
-    rng: combatRng,
+    rng: combatRngOf(ctx),
     devtoolsName: "scrap.damage",
   });
   // Bodies appear and disappear through many paths (authored spawns, the front, respawns, a restored

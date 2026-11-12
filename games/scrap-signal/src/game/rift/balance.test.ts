@@ -214,14 +214,23 @@ describe("Overdrive pacing, played by the balance bot", () => {
     expect(at("legendary", 1).golds).toBeGreaterThanOrEqual(4);
   });
 
-  // The bot stands still and its crit rolls share the game's live random stream, so these hold the
-  // ladder's shape with room for a run going either way, not exact counts.
+  // Every stream a run rolls is its own world's (aim, crits, procs, the front), so a cell is the
+  // same in any process; these still hold the ladder's shape, not exact counts, so a tuning change
+  // that moves one run does not fail them.
   test("gear is the key to the middle of the ladder", () => {
     expect(at("green", 8).clears).toBe(0);
     expect(at("legendary", 8).clears).toBeGreaterThanOrEqual(3);
     expect(at("legendary", 8).clears).toBeGreaterThanOrEqual(at("purple", 8).clears);
     expect(at("purple", 5).clears + at("blue", 5).clears).toBeGreaterThan(at("green", 5).clears);
   });
+
+  // #3080: the crit stream was one per process, so a cell depended on every shot fired before it,
+  // in this file or another in the same test process, and T20 legendary cleared 2 in one shard.
+  test("a run is its own: another world's fight before it never changes the result", () => {
+    const first = runTier(20, KITS.legendary, 0);
+    runTier(8, KITS.green, 3);
+    expect(runTier(20, KITS.legendary, 0)).toEqual(first);
+  }, 120_000);
 
   test("the back half of the ladder holds against the best kit", () => {
     const clears = (tiers: readonly number[]) => tiers.reduce((sum, tier) => sum + at("legendary", tier).clears, 0);

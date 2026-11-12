@@ -1,4 +1,5 @@
 import { seededRng } from "@jgengine/core/random/rng";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { buyGear, spend } from "./cash";
@@ -59,7 +60,8 @@ export function upgradeCost(count: number): number {
 const PICKUP_RADIUS = 2.8;
 /** The crash chest's pistol: a plain budget maker, so the first gun is honest and the next one is better. */
 const STARTER_MAKER = "Chuckwerk";
-const chestRng = seededRng("scrap-red-chests");
+/** The world's chest and vendor roll stream; per world, so one world's chests never shift another's. */
+const chestRngOf = perContext(() => seededRng("scrap-red-chests"));
 
 interface AimPayload {
   aim?: { yaw: number; pitch: number };
@@ -211,7 +213,7 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
   const object = ctx.scene.object.get(instanceId);
   const at = object?.position ?? ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
   if (crash) {
-    const pistol = rollGun(chestRng, 1, { family: "pistol", rarity: "common", maker: STARTER_MAKER });
+    const pistol = rollGun(chestRngOf(ctx), 1, { family: "pistol", rarity: "common", maker: STARTER_MAKER });
     ctx.scene.worldItem.spawn({
       itemId: pistol.id,
       position: chestDropSpot(ctx, at, 0, 1),
@@ -224,7 +226,7 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
   const chestLevel = Math.max(playerLevel(ctx), zoneLevelAt(at[0], at[2]));
   const rolls = 2;
   for (let roll = 0; roll < rolls; roll += 1) {
-    const gun = rollGun(chestRng, chestLevel, { luck: 4, maxRarity: rarityCapFor(playerLevel(ctx)) });
+    const gun = rollGun(chestRngOf(ctx), chestLevel, { luck: 4, maxRarity: rarityCapFor(playerLevel(ctx)) });
     ctx.scene.worldItem.spawn({
       itemId: gun.id,
       position: chestDropSpot(ctx, at, roll, rolls),
@@ -383,7 +385,7 @@ export function registerCommands(ctx: GameContext): void {
         state.game.notices.push({ text: "Not enough cash.", tone: "deny" });
         return;
       }
-      const gun = rollGun(chestRng, playerLevel(state), { luck: 6, maxRarity: rarityCapFor(playerLevel(state)) });
+      const gun = rollGun(chestRngOf(state), playerLevel(state), { luck: 6, maxRarity: rarityCapFor(playerLevel(state)) });
       const playerEntity = state.scene.entity.get(userId);
       const at = playerEntity?.position ?? [0, 0, 0];
       state.scene.worldItem.spawn({

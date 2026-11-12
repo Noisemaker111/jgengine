@@ -10,7 +10,7 @@ import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";
 
 import { createGameServerHost, type GameServerHost } from "./host";
 import { memoryPersistence } from "./persistence";
-import { createTestRuntime } from "./testFixtures";
+import { createTestRuntime, localRequest } from "./testFixtures";
 import { createGameWsServer, type GameWsServer } from "./wsServer";
 
 function channel<T>() {
@@ -196,8 +196,8 @@ test("mounts on an existing http server at a path", async () => {
     const joined = await backend.transport.joinServer({ gameId: "test-game" });
     expect(joined.isNew).toBe(true);
 
-    const health = await fetch(`http://127.0.0.1:${port}/healthz`);
-    expect(await health.json()).toEqual({ ok: true });
+    const health = await localRequest(`http://127.0.0.1:${port}/healthz`);
+    expect(health.json()).toEqual({ ok: true });
   } finally {
     backend.close();
     await wsServer.close();

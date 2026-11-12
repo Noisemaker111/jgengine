@@ -56,7 +56,8 @@ import {
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
 import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./game/world/setup";
 
-const dropRng = seededRng("scrap-gun-drops");
+/** The world's loot-drop stream; per world, so one world's drops never shift another's. */
+const dropRngOf = perContext(() => seededRng("scrap-gun-drops"));
 const RESPAWN_SWEEP_SECONDS = 25;
 const STATION_DISCOVER_RADIUS = 8;
 
@@ -68,6 +69,7 @@ function deathAnchor(ctx: GameContext, event: EntityDiedEvent): readonly [number
 }
 
 function dropGunAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [number, number, number], guaranteed = 0): void {
+  const dropRng = dropRngOf(ctx);
   const def = enemyById(event.catalogId);
   if (def === undefined) return;
   // An Overdrive fighter drops at the run's loot level and luck, and its Foreman always pays out.
@@ -95,6 +97,7 @@ function dropGunAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [n
 }
 
 function dropAmmoAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [number, number, number]): void {
+  const dropRng = dropRngOf(ctx);
   const def = enemyById(event.catalogId);
   if (def === undefined) return;
   const packs = ammoRollsFor(def, dropRng(), ammoStarved(ctx));
@@ -110,6 +113,7 @@ function dropAmmoAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [
 }
 
 function grantCores(ctx: GameContext, event: EntityDiedEvent): void {
+  const dropRng = dropRngOf(ctx);
   const def = enemyById(event.catalogId);
   if (def === undefined) return;
   let amount = 0;

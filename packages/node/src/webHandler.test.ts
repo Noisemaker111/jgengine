@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 
+import { localRequest } from "./testFixtures";
 import { toNodeHandler } from "./webHandler";
 
 test("toNodeHandler bridges a fetch-standard handler onto a node server", async () => {
@@ -16,13 +17,13 @@ test("toNodeHandler bridges a fetch-standard handler onto a node server", async 
   if (address === null || typeof address === "string") throw new Error("expected a port");
   const base = `http://127.0.0.1:${address.port}`;
 
-  const response = await fetch(`${base}/api/servers?gameId=demo`);
+  const response = await localRequest(`${base}/api/servers?gameId=demo`);
   expect(response.status).toBe(201);
-  expect(await response.json()).toEqual({ path: "/api/servers", gameId: "demo" });
+  expect(response.json()).toEqual({ path: "/api/servers", gameId: "demo" });
 
-  const failed = await fetch(`${base}/boom`);
+  const failed = await localRequest(`${base}/boom`);
   expect(failed.status).toBe(500);
-  expect(await failed.json()).toEqual({ error: "boom" });
+  expect(failed.json()).toEqual({ error: "boom" });
 
   await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
 });
