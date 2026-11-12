@@ -496,12 +496,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMissionRuntime` (function) · `import { createMissionRuntime } from "@jgengine/core/gameplay"`
 
-## mission-triggers — start, advance and fail a mission from authored scene markers
+## mission-triggers — place mission triggers from the editor palette
 
+- `MISSION_MARKER_KIND` (const) · `import { MISSION_MARKER_KIND } from "@jgengine/core/gameplay"`
 - `MISSION_TRIGGER_ACTIONS` (const) · `import { MISSION_TRIGGER_ACTIONS } from "@jgengine/core/gameplay"`
 - `createMissionTriggerBridge` (function) · `import { createMissionTriggerBridge } from "@jgengine/core/gameplay"`
+- `missionMarkerSchema` (function) · `import { missionMarkerSchema } from "@jgengine/core/gameplay"`
 - `missionMarkers` (function) · `import { missionMarkers } from "@jgengine/core/gameplay"`
+- `missionTriggerActions` (function) · `import { missionTriggerActions } from "@jgengine/core/gameplay"`
+- `registerMissionMarkerKind` (function) · `import { registerMissionMarkerKind } from "@jgengine/core/gameplay"`
 - `registerMissionTriggerActions` (function) · `import { registerMissionTriggerActions } from "@jgengine/core/gameplay"`
+- `validateMissionMarkers` (function) · `import { validateMissionMarkers } from "@jgengine/core/gameplay"`
 
 ## mission-validation — tell whether an objective kind completes from a counter alone
 

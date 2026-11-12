@@ -3,13 +3,19 @@
   "markers": [
     {
       "id": "signal_mast_board",
-      "kind": "poi",
+      "kind": "mission_marker",
       "position": {
         "x": -516,
         "y": 0,
         "z": 597
       },
-      "label": "Mast watch board"
+      "label": "Mast watch board",
+      "meta": {
+        "on": "interact",
+        "action": "mission_start",
+        "mission": "mast_watch",
+        "triggerRadius": 5
+      }
     },
     {
       "id": "signal_mast_rustflat",

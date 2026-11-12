@@ -79,6 +79,7 @@ export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironment
           },
         }),
     ...(env.fog === undefined ? {} : { fog: { ...env.fog } }),
+    ...(env.volumetricClouds === undefined ? {} : { volumetricClouds: { ...env.volumetricClouds } }),
   };
 }
 

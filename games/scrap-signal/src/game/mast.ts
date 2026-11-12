@@ -2,12 +2,11 @@ import { findEditorMarker } from "@jgengine/core/editor/document";
 import {
   applyMissionRewards,
   createMissionRuntime,
-  type MissionDef,
   type MissionEvent,
   type MissionRuntimeSnapshot,
   type MissionWorldEvent,
 } from "@jgengine/core/mission/mission";
-import { missionMarkers } from "@jgengine/core/mission/triggers";
+import { createMissionTriggerBridge, missionMarkers } from "@jgengine/core/mission/triggers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
@@ -16,59 +15,8 @@ import { earn } from "./cash";
 import { reservePhase } from "./handroll";
 import { grantXp } from "./progression/curves";
 import { authoredScene } from "./world/level";
-
-/** Authored sites the contract reads: the board the player accepts at and the mast it defends. */
-export const MAST_BOARD = "signal_mast_board";
-export const MAST_SITE = "signal_mast_rustflat";
-export const MAST_WATCH_ID = "mast_watch";
-export const MAST_HOLD_SECONDS = 60;
-const GUARD_SECONDS = 45;
-const START_RADIUS = 5;
-
-export const MAST_WATCH: MissionDef = {
-  id: MAST_WATCH_ID,
-  title: "Mast Watch",
-  description: "Rustflat's signal mast is dark and something is nesting in the dish.",
-  start: "reach_mast",
-  objectives: [
-    {
-      id: "reach_mast",
-      kind: "reach",
-      actor: "player",
-      marker: MAST_SITE,
-      radius: 6,
-      label: "Reach the signal mast west of the crash site",
-      next: "clear_guard",
-    },
-    {
-      id: "clear_guard",
-      kind: "kill",
-      count: 2,
-      match: { kind: "kill", target: "ripper_pup", tags: ["pistol"] },
-      label: "Drop 2 mast guards with a sidearm",
-      timeout: GUARD_SECONDS,
-      onTimeout: "mast_cold",
-      failOn: [{ kind: "fact", fact: "chassis", is: "down", to: "mast_lost", message: "Your chassis went down at the mast." }],
-      next: "hold_mast",
-    },
-    {
-      id: "hold_mast",
-      kind: "survive",
-      duration: MAST_HOLD_SECONDS,
-      label: "Hold the mast for 60s",
-      failOn: [
-        { kind: "left-area", actor: "player", marker: MAST_SITE, radius: 16, to: "mast_lost", message: "You left the mast ring and the uplink dropped." },
-        { kind: "fact", fact: "chassis", is: "down", to: "mast_lost", message: "Your chassis went down at the mast." },
-      ],
-      next: "done",
-    },
-  ],
-  fail: [
-    { id: "mast_cold", message: "The mast went cold: its guards were still standing when the window closed." },
-    { id: "mast_lost", message: "The uplink dropped before the carrier locked." },
-  ],
-  rewards: { economy: { cash: 450, cores: 2 } },
-};
+import { MAST_SITE, MAST_WATCH } from "./mastMission";
+import "../editorKinds";
 
 /** Plain read-model the HUD renders — a copy of the runtime's pooled view, never the view itself. */
 export interface MastReadout {
@@ -99,6 +47,20 @@ const runtimes = perContext((ctx: GameContext) =>
     missions: [MAST_WATCH],
     markers: groundedMarkers(ctx),
     devtoolsName: "scrap-signal mast",
+  }),
+);
+
+/** The scene's authored mission markers (the watch board), lifted to the live ground like the objective markers. */
+const boards = perContext((ctx: GameContext) =>
+  createMissionTriggerBridge({
+    runtime: runtimes(ctx),
+    document: {
+      ...authoredScene,
+      markers: authoredScene.markers.map((marker) => ({
+        ...marker,
+        position: { ...marker.position, y: ctx.world.groundHeightAt(marker.position.x, marker.position.z) },
+      })),
+    },
   }),
 );
 
@@ -236,10 +198,10 @@ export function registerMastWatch(ctx: GameContext): void {
     apply(state: GameContext) {
       if (mastRuntime(state).state()?.status === "active") return;
       const position = state.scene.entity.get(state.player.userId)?.position;
-      const board = sitePosition(MAST_BOARD);
-      if (position === undefined || board === null) return;
-      if (Math.hypot(position[0] - board.x, position[2] - board.z) > START_RADIUS) return;
-      mastRuntime(state).start(MAST_WATCH_ID);
+      if (position === undefined) return;
+      // The board is an authored mission marker (interact → start mast_watch, its own radius).
+      boards(state).step({ actors: [{ id: state.player.userId, position }], interact: [state.player.userId] });
+      if (mastRuntime(state).state()?.status !== "active") return;
       state.scene.entity.floatText({ instanceId: state.player.userId, text: "MAST WATCH ACCEPTED", kind: "pickup" });
       commit(state);
       void state.game.save?.checkpoint();

@@ -42,3 +42,23 @@ test("environment RPC rejects atomically and preserves custom palette, fog, remo
     host.dispose();
   }
 });
+
+test("environment RPC authors, rejects and undoes the volumetric cloud layer", () => {
+  const host = createEditorHost({ gameId: "environment-clouds-probe", layers: undefined });
+  try {
+    const sync = getDocumentLiveSync()!;
+    const bad = host.api.handle({ method: "dispatch", command: { type: "setEnvironment", environment: { volumetricClouds: { coverage: 2 } } } });
+    expect(bad.ok).toBe(false);
+    expect(bad.error).toContain("$.environment.volumetricClouds.coverage");
+    const clouds = { coverage: 0.4, density: 1.4, height: 420, thickness: 260 };
+    expect(host.api.handle({ method: "dispatch", command: { type: "setEnvironment", environment: { volumetricClouds: clouds } } }).ok).toBe(true);
+    const json = (host.api.handle({ method: "export_document" }).result as { json: string }).json;
+    expect(importEditorDocumentJson(json).environment?.volumetricClouds).toEqual(clouds);
+    expect(host.api.handle({ method: "dispatch", command: { type: "setEnvironment", environment: { preset: "day" } } }).ok).toBe(true);
+    expect(sync.getDocument().environment).not.toHaveProperty("volumetricClouds");
+    expect(host.api.handle({ method: "undo" }).ok).toBe(true);
+    expect(sync.getDocument().environment?.volumetricClouds).toEqual(clouds);
+  } finally {
+    host.dispose();
+  }
+});

@@ -46,7 +46,8 @@ export const world = environment({
       },
     },
   }),
-  // ARK keeps a long blue day; dawn and dusk are short. High cumulus drift over it and fill in with the weather.
+  // ARK keeps a long blue day; dawn and dusk are short. The high cumulus deck that drifts over it and
+  // fills in with the weather is authored in editor.scene.json's environment (Lighting panel).
   sky: sky({
     preset: "day",
     timeOfDay: true,
@@ -54,7 +55,6 @@ export const world = environment({
     cloudiness: 0,
     hazeStrength: 0.25,
     gradientExponent: 0.5,
-    volumetricClouds: { height: 420, thickness: 260, scale: 620, coverage: 0.4, density: 1.4, speed: 5, fade: 4200, seed: "the-island" },
     ...(authored.sky ?? {}),
   }),
   // The sea runs to the horizon; the shelf's clear turquoise shallows fall away to deep blue.

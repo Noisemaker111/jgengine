@@ -5,6 +5,7 @@ import { authoredHiddenNodes } from "./modelNodeVisibility";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import { validateParams, type ParamField, type ParamSchema } from "../generator/paramSchema";
 import { GRASS_STYLE_SCHEMA, type GrassStyleSettings } from "../grass/grassStyle";
+import { VOLUMETRIC_CLOUDS_SCHEMA, type VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../hud/hudDocument";
 import { migrateTerrainSnapshot } from "../terrain/terraform";
 import {
@@ -82,6 +83,7 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.grading === undefined ? {} : { grading: cloneGrading(environment.grading) }),
     ...(environment.probes === undefined ? {} : { probes: cloneLightProbes(environment.probes) }),
     ...(environment.grassStyle === undefined ? {} : { grassStyle: { ...environment.grassStyle } }),
+    ...(environment.volumetricClouds === undefined ? {} : { volumetricClouds: { ...environment.volumetricClouds } }),
   };
 }
 
@@ -1286,6 +1288,11 @@ function decodeEnvironment(
     if (grassStyle === undefined) failed = true;
     else env.grassStyle = grassStyle;
   }
+  if (value["volumetricClouds"] !== undefined) {
+    const clouds = decodeVolumetricClouds(value["volumetricClouds"], `${path}.volumetricClouds`, errors);
+    if (clouds === undefined) failed = true;
+    else env.volumetricClouds = clouds;
+  }
   if (failed) return undefined;
   return env;
 }
@@ -1304,6 +1311,22 @@ function decodeGrassStyle(value: unknown, path: string, errors: EditorDocumentDi
   if (unknown.length > 0 || issues.length > 0) return undefined;
   // type-escape: validated above against GRASS_STYLE_SCHEMA, whose fields are GrassStyleSettings' keys.
   return { ...value } as GrassStyleSettings;
+}
+
+/** Validates the authored cloud layer against its schema: known keys only, values in range. */
+function decodeVolumetricClouds(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): VolumetricCloudsConfig | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  const known = new Set<string>(VOLUMETRIC_CLOUDS_SCHEMA.fields.map((field) => field.key));
+  const unknown = Object.keys(value).filter((key) => !known.has(key));
+  const issues = validateParams(VOLUMETRIC_CLOUDS_SCHEMA, value);
+  for (const key of unknown) errors.push({ path: `${path}.${key}`, message: `not a volumetric cloud setting (${[...known].join(", ")})` });
+  for (const issue of issues) errors.push({ path: `${path}.${issue.key}`, message: issue.message });
+  if (unknown.length > 0 || issues.length > 0) return undefined;
+  // type-escape: validated above against VOLUMETRIC_CLOUDS_SCHEMA, whose fields are VolumetricCloudsConfig's keys.
+  return { ...value } as VolumetricCloudsConfig;
 }
 
 /**

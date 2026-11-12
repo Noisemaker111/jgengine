@@ -555,10 +555,18 @@ export {
 } from "./mission/mission";
 export { evaluateObjective } from "./mission/objectives";
 export {
+  MISSION_MARKER_KIND,
   MISSION_TRIGGER_ACTIONS,
+  MISSION_TRIGGER_ACTION_IDS,
   createMissionTriggerBridge,
+  missionMarkerSchema,
   missionMarkers,
+  missionTriggerActions,
+  registerMissionMarkerKind,
   registerMissionTriggerActions,
+  validateMissionMarkers,
+  type MissionMarkerIssue,
+  type MissionTriggerActionId,
   type MissionTriggerBridge,
 } from "./mission/triggers";
 export {

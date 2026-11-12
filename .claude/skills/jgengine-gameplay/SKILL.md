@@ -90,9 +90,12 @@ objectives the machine walks, with named fail states, per-objective timers, cond
 rewards. `escortMission`, `chaseMission` and `defendMission` (`mission/compositions`) are compositions
 of the same `reach`/`interact`/`survive`/`pursue`/`kill`/`collect` kinds, not archetypes: an escort is
 a `reach` with an `actor-died` guard, a defend is a `survive` with a survivor floor, a chase is a
-`pursue` with an escape guard. Start, advance and fail missions from authored scene markers with
-`registerMissionTriggerActions` and `createMissionTriggerBridge` (`mission/triggers`); positional
-objectives read `missionMarkers(document)`. Rewards route through the quest appliers and the loot
+`pursue` with an escape guard. Start, advance and fail missions from authored scene markers:
+`registerMissionMarkerKind(missions)` (`mission/triggers`, from the game's `editorKinds.ts`) makes
+`mission_marker` a placeable editor kind whose inspector picks `on`, the action and the catalog's
+mission/objective/fail-state ids; `createMissionTriggerBridge` runs it and `validateMissionMarkers`
+checks the scene against the catalog (Scrap Signal's watch board). Positional objectives read
+`missionMarkers(document)`. Rewards route through the quest appliers and the loot
 registry (`applyMissionRewards`). `validateMissionCatalog` is the content gate and it fails a mission
 whose success path is counters alone — `createMissionRuntime` runs it at construction, so a
 counter-only mission throws instead of shipping.
