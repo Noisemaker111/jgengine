@@ -244,7 +244,7 @@ describe("the field desk reads the machine", () => {
     expect(card?.remaining).toBeNull();
   });
 
-  test("campaign progress is written into the world snapshot, so a save carries it", () => {
+  test("campaign progress rides the world state, so a hydrated world carries it", () => {
     const first = boot();
     campaignStore.write(first, { won: [CAMPAIGN[0]!.mission.id], mode: "campaign", stores: { gold: 120, lumber: 40 } });
     const snapshot = first.state();

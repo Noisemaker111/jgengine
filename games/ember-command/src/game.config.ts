@@ -51,10 +51,10 @@ export const game = defineGame({
   audio: { sounds: EMBER_SOUNDS },
   server: { mode: "single" },
   save: "none",
-  // Offline whole-world save, written only at campaign beats (mission start, win, loss) so a battle
-  // is never captured mid-fight: the campaign track, the carried stores and the entity world persist
-  // to localStorage, and `loop.ts` restores the track on boot behind the field desk.
-  persist: { mode: "manual" },
+  // No whole-world save: every load restages the field fresh, so a battle's world is never kept.
+  // What a campaign carries (its record and stores, the track, the mission machine and the kit) is
+  // the campaign slot's shared save document (`game/campaignSave.ts`), written at campaign beats.
+  persist: false,
   content,
   systems,
   loop: { onInit, onNewPlayer, onTick },

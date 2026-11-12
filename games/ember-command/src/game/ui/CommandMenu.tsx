@@ -13,6 +13,7 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "../assets";
 import { campaignOrdinal, markStoresRestored, type CampaignReadout } from "../campaign";
+import { campaignSlot } from "../campaignSave";
 import { hudStore } from "../hudStore";
 import { preferences, type CommanderPreferences } from "../preferences";
 import { CAMPAIGN_SLOTS, campaignLabel, campaignSlots, commandProfile, loadCampaignRecord, newCampaignRecord, refreshCampaignSlots, saveCampaignRecord } from "../menuSave";
@@ -259,7 +260,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
   const [active, setActive] = useState<string | null>(menuFocus.id ?? (phase === "paused" ? null : ended ? "report" : "continue"));
   const phone = width < 760;
   const recent = campaignSlots.mostRecent();
-  const openSlot = ctx.game.save?.slot() ?? CAMPAIGN_SLOTS[0];
+  const openSlot = campaignSlot(ctx);
   const campaignSlotOpen = (CAMPAIGN_SLOTS as readonly string[]).includes(openSlot);
   const openName = campaignSlotOpen ? campaignLabel(openSlot) : "the campaign record";
   const newSlot = slots.find((slot) => slot.empty)?.id ?? CAMPAIGN_SLOTS[0];
