@@ -5,6 +5,9 @@ import { buildRouteCourse, MAIN_ROUTE, type RouteCourseSpec } from "@jgengine/co
 
 const HALF = Math.PI / 2;
 
+/** A span that starts 20 m before a stadium lap's seam and wraps past it. */
+const lap0 = (): number => 200 + 60 * Math.PI - 20;
+
 /** 100 m north, a left hairpin, 100 m back south: a switchback whose legs sit 40 m apart. */
 const SWITCHBACK: RouteCourseSpec = {
   start: { x: 0, z: 0, heading: 0 },
@@ -172,6 +175,83 @@ describe("route course", () => {
     ]);
     expect(profiles[1]!.points[0]).toEqual(profiles[0]!.points[profiles[0]!.points.length - 1]!);
     expect(profiles[0]!.retaining).toEqual({ wallHeight: 2 });
+  });
+
+  test("a closed lap wraps: progress runs once round and the clamp has no end walls", () => {
+    // A stadium: two 100 m straights joined by two 180° turns of radius 30.
+    const lap = buildRouteCourse({
+      start: { x: 0, z: 0, heading: 0 },
+      halfWidth: 7,
+      closed: true,
+      pieces: [
+        { kind: "straight", length: 100 },
+        { kind: "turn", angle: Math.PI, radius: 30 },
+        { kind: "straight", length: 100 },
+        { kind: "turn", angle: Math.PI, radius: 30, tag: "last-bend" },
+      ],
+    });
+    expect(lap.closed).toBe(true);
+    expect(lap.length).toBeCloseTo(200 + 60 * Math.PI, 0);
+    expect(lap.pointAt(MAIN_ROUTE, lap.length + 10).z).toBeCloseTo(10, 5);
+    // Just behind the start line is the end of the lap, not a wall.
+    const behind = lap.locate(0, -3);
+    expect(behind.inside).toBe(true);
+    expect(behind.progress).toBeGreaterThan(lap.length - 5);
+    expect(lap.clamp(0, -3, behind)).toMatchObject({ x: 0, z: -3 });
+    // Two laps of the racing line with hints: progress rises, wraps once per lap, never jumps legs.
+    const line = lap.line({ step: 1 });
+    expect(Math.hypot(line[line.length - 1]![0] - line[0]![0], line[line.length - 1]![1] - line[0]![1])).toBeLessThan(2);
+    let fix = lap.locate(line[1]![0], line[1]![1]);
+    let wraps = 0;
+    let last = fix.progress;
+    for (const [x, z] of [...line.slice(2), ...line, ...line.slice(0, 2)]) {
+      fix = lap.clamp(x, z, fix).fix;
+      if (fix.progress < last - lap.length / 2) wraps += 1;
+      else expect(fix.progress).toBeGreaterThanOrEqual(last - 1e-6);
+      last = fix.progress;
+    }
+    expect(wraps).toBe(2);
+    expect(lap.spansAt(lap.locate(0, -3), 0, "last-bend")).toHaveLength(1);
+    expect(lap.edges(5).filter((post) => post.side === "left").length).toBe(Math.round(lap.length / 5));
+  });
+
+  test("a closed lap's checkpoint ring starts after the finish line and races laps", () => {
+    const lap = buildRouteCourse({
+      start: { x: 0, z: 0, heading: 0 },
+      halfWidth: 7,
+      closed: true,
+      pieces: [
+        { kind: "straight", length: 100 },
+        { kind: "turn", angle: Math.PI, radius: 30 },
+        { kind: "straight", length: 100 },
+        { kind: "turn", angle: Math.PI, radius: 30 },
+      ],
+      spans: [{ id: "seam", tag: "pit", from: lap0(), to: 20 }],
+    });
+    expect(lap.spansAt(lap.locate(0, 10), 0, "pit")).toHaveLength(1);
+    expect(lap.spansAt(lap.locate(0, 50), 0, "pit")).toHaveLength(0);
+    const ring = lap.checkpoints({ at: [20, 150, 250, 330], finish: 50 });
+    expect(ring.checkpoints.map((cp) => cp.id)).toEqual(["cp-150", "cp-250", "cp-330", "cp-20", "finish"]);
+    const race = createRaceState({ track: raceTrack({ ...ring, laps: 2 }), win: everyoneFinishes() });
+    race.addRacer("kart");
+    const line = lap.line({ step: 2 });
+    // Start just past the finish line and drive two and a bit laps.
+    const from = line.findIndex(([, z]) => z > 52 && z < 56);
+    const drive = [...line.slice(from), ...line, ...line, ...line.slice(0, from)];
+    drive.forEach(([x, z], index) => race.update(index, { kart: [x, 0, z] }));
+    expect(race.finished).toBe(true);
+  });
+
+  test("a centreline main line and a chord branch need no pieces", () => {
+    const points: [number, number][] = [];
+    for (let i = 0; i < 72; i += 1) points.push([Math.sin((i / 72) * Math.PI * 2) * 80, Math.cos((i / 72) * Math.PI * 2) * 80 - 80]);
+    const ring = buildRouteCourse({ halfWidth: 6, centerline: { points, halfWidths: points.map((_, i) => (i < 36 ? 6 : 8)) }, closed: true, branches: [{ id: "cut", from: 100, to: 300 }] });
+    expect(ring.length).toBeCloseTo(2 * Math.PI * 80, -1);
+    expect(ring.locate(0, -3).halfWidth).toBeGreaterThan(5.9);
+    const cut = ring.routes.find((route) => route.id === "cut")!;
+    // The chord across the ring is shorter than the arc it skips.
+    expect(cut.length).toBeLessThan(200);
+    expect(() => buildRouteCourse({ halfWidth: 6, pieces: [{ kind: "straight", length: 100 }], start: { x: 0, z: 0, heading: 0 }, closed: true })).toThrow(/closed/);
   });
 
   test("an impossible layout fails loudly", () => {

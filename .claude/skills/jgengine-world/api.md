@@ -4805,6 +4805,63 @@
 - `roadRibbonsDraw` (function): function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw — Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Each layer is one merged draw however many roads share the look, so a city of streets costs a handful of draws. Because the sub-paths already stop at the junction boundary, every layer naturally ends there â€” no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
 - `roadsDraw` (function): function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
 
+## @jgengine/core/roads/circuitCourse
+
+- `CIRCUIT_CORNER_TAG` (const): const CIRCUIT_CORNER_TAG: "corner" — Span tags {@link courseFromCircuit} hangs on the lap.
+- `CIRCUIT_SECTOR_TAG` (const): const CIRCUIT_SECTOR_TAG: "sector" — ⚠ undocumented
+- `CircuitCourse` (interface): interface CircuitCourse — A circuit as a closed course, with where its gates fall on it.
+- `CircuitCourseOptions` (interface): interface CircuitCourseOptions — Options for {@link courseFromCircuit}.
+- `courseFromCircuit` (function): function courseFromCircuit(route: CircuitRoute, options: CircuitCourseOptions = {}): CircuitCourse — Turn a lifted lap into a closed {@link RouteCourse} that starts at the circuit's start line. `course.checkpoints({ at: gates.slice(0, -1), finish: 0 })` hands straight to `raceTrack({ checkpoints, laps })`.
+
+## @jgengine/core/roads/courseGenerator
+
+- `COURSE_GENERATOR` (const): const COURSE_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: "course"; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 300; readonly max… — The course generator: a designed, seeded race course with shortcuts, hazard spacing, drop set-pieces and fillable slots, inside a footprint. Its output previews in the editor's variant grid and backs the `course` scene kind.
+- `COURSE_OUTPUT` (const): const COURSE_OUTPUT: "course" — The course generator's output family: a {@link CourseLayout}.
+- `COURSE_RUN_OUT` (const): const COURSE_RUN_OUT: 30 — Metres of road laid past the finish line, so a kart crossing it at speed has somewhere to go.
+- `COURSE_SCHEMA` (const): const COURSE_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: "course"; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 300; readonly max: 2000; readonly step: … — The course generator's schema. `meta.theme` names a preset whose values back every dial the meta leaves unset: `causeway` (hairpin switchbacks, timed bursts), `maze` (narrow right angles, lane belts), `climb` (ramps and hairpins up a long rise), `pit` (drops into a low, glazed section) and `sprint` (fast sweepers and a jump).
+- `CourseParams` (type): type CourseParams = ParamsOf<typeof COURSE_SCHEMA> — Parsed course params.
+- `generateCourse` (function): function generateCourse(params: CourseParams, context: Pick<GeneratorContext, "random">): CourseLayout — Generate one course layout from parsed params and a seed. Pure and deterministic.
+
+## @jgengine/core/roads/courseKind
+
+- `COURSE_KIND` (const): const COURSE_KIND: "course" — The scene kind id.
+- `COURSE_KIND_SCHEMA` (const): const COURSE_KIND_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: "course"; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 300; readonly max: 2000; readonly s… — The `course` kind's inspector: the generator's dials, and whether the kind draws a plain road itself.
+- `CourseBranchData` (interface): interface CourseBranchData — One authored branch as the scene stores it: main-line metres, course-local `via`.
+- `CoursePieceData` (type): type CoursePieceData = | { straight: number; rise?: number; halfWidth?: number; tag?: string } | { turn: number; radius: number; rise?: number; halfWidth?: number; tag?: string } — One authored piece as the scene stores it: degrees, left positive.
+- `CoursePose` (interface): interface CoursePose — Where a course marker stands: its start pose in world space.
+- `courseLayoutFromMeta` (function): function courseLayoutFromMeta(meta: Readonly<Record<string, unknown>> | undefined, pose: CoursePose, fallbackSeed: string): CourseLayout — A course `meta` bag at a start pose, as a world-space {@link CourseLayout}: the authored course when `meta.pieces` is set, else the generator's from its dials and seed (`fallbackSeed` when the meta has none), with `meta.pins` applied either way.
+- `courseLocalToWorld` (function): function courseLocalToWorld(pose: CoursePose, point: CourseVec2): CourseVec2 — A course-local `[x, z]` (x left of the heading, z ahead) in world space.
+- `coursePiecesFromData` (function): function coursePiecesFromData(raw: unknown): CoursePiece[] | null — An authored piece list from `meta.pieces`, or null when there is none (the course is generated).
+- `coursePiecesToData` (function): function coursePiecesToData(pieces: readonly CoursePiece[]): CoursePieceData[] — Pieces as the scene stores them: the inverse of {@link coursePiecesFromData}.
+- `coursePoseOf` (function): function coursePoseOf(object: Pick<SceneKindObject, "position" | "center" | "rotationY">): CoursePose | null — The pose a course marker stands at.
+- `resolveCourseObject` (function): function resolveCourseObject(object: SceneKindObject): CourseLayout | null — The `course` kind's resolve: the marker's course as a world-space layout, or null without a position.
+
+## @jgengine/core/roads/courseLayout
+
+- `COURSE_CORNER_TAGS` (const): const COURSE_CORNER_TAGS: readonly ["sweeper", "right-angle", "hairpin", "chicane", "detour"] — Corner-piece tags the generator writes, which {@link measureCourse} counts.
+- `COURSE_SLOT_KINDS` (const): const COURSE_SLOT_KINDS: readonly CourseSlotKind[] — Every slot kind, in the order a layout lists them.
+- `COURSE_SLOT_ROLES` (const): const COURSE_SLOT_ROLES: { readonly hazard: readonly ["timed", "lane", "surface"]; readonly gate: readonly ["jump", "block"]; readonly drop: readonly ["opening", "line", "reward"]; readonly zone: readonly ["section"]; readonly dressing: readonly ["corner", "straight", "finish"]; } — The roles the generator writes, per kind. A game may author any role string of its own; these are the ones the playability check understands. - hazard `timed`: across the whole road on a cycle (beat it in the gap); `lane`: part of the width, always on (take the free lane); `surface`: the whole width, always on, only slows (drive through). - gate `jump`: a barricade cleared by jumping; `block`: one that must be smashed or avoided. - drop `opening`: packed on the opening straight; `line`: along the racing line; `reward`: on the long way round a shortcut. - zone `section`; dressing `corner` (outside a big corner), `straight`, `finish`.
+- `CourseCornerKind` (type): type CourseCornerKind = (typeof COURSE_CORNER_TAGS)[number] — A corner family the generator lays.
+- `CourseDriveOptions` (interface): interface CourseDriveOptions — Options for {@link courseDriveTime}.
+- `CourseHazardCheck` (interface): interface CourseHazardCheck — One hazard and how a driver beats it.
+- `CourseLayout` (interface): interface CourseLayout — A course and its slots: everything a game needs to lay the road and fill it.
+- `CourseMeasure` (interface): interface CourseMeasure — What a layout measures as: the numbers the generator's dials move.
+- `CoursePin` (interface): interface CoursePin extends Partial<Omit<CourseSlot, "id">> — An authored change to a generated layout's slots: a pin whose `id` names a slot overrides that slot's fields, its `data` merged over the slot's (or deletes it with `remove`); any other pin adds a slot of its own (it then needs `kind`, `role` and `at`). Pinned slots carry `pinned: true`.
+- `CoursePlayability` (interface): interface CoursePlayability — What {@link checkCoursePlayability} found.
+- `CoursePlayabilityOptions` (interface): interface CoursePlayabilityOptions — Options for {@link checkCoursePlayability}.
+- `CourseShortcutTrade` (interface): interface CourseShortcutTrade — One shortcut's trade, in sim seconds.
+- `CourseSlot` (interface): interface CourseSlot — One place on a course a game fills with content.
+- `CourseSlotKind` (type): type CourseSlotKind = "hazard" | "gate" | "drop" | "zone" | "dressing" — What a slot holds.
+- `CourseVehicle` (interface): interface CourseVehicle — A point-mass kart for {@link courseDriveTime}: grip in corners, acceleration, braking, top speed.
+- `applyCoursePins` (function): function applyCoursePins(layout: CourseLayout, pins: readonly CoursePin[]): CourseLayout — Apply authored pins over a layout's slots.
+- `buildCourseLayout` (function): function buildCourseLayout(layout: CourseLayout): RouteCourse — Build a layout's course with its hazard and zone slots as spans.
+- `checkCoursePlayability` (function): function checkCoursePlayability(layout: CourseLayout, options: CoursePlayabilityOptions = {}): CoursePlayability — Check a layout can be raced: it builds; no two stretches of road run into each other; corners clear their width and slopes stay drivable; start, finish and every slot sit on their routes; every hazard can be beaten (a window in its cycle, a free lane, or it only slows) and none stands over a barricade or another timed hazard; and every shortcut saves sim time but carries a risk that can cost more than it saves.
+- `courseDriveTime` (function): function courseDriveTime(course: RouteCourse, options: CourseDriveOptions): number — Seconds a point-mass kart takes from `from` (standing) to `to` along the course's centreline, through the branches in `take`: corner speed from the line's curvature, accelerating and braking at the vehicle's limits. A sim for comparing lines and courses, not a lap-time prediction.
+- `courseSlotRisk` (function): function courseSlotRisk(slot: CourseSlot, options: { vehicle?: CourseVehicle; gatePenalty?: number } = {}): number — Worst-case seconds a slot can cost a kart: a barricade it cannot clear is a stop, `gatePenalty` seconds of wrangling and a restart; a timed hazard caught at the start of its window is the whole window and a stop; a surface hazard is its length at half speed. Lane hazards cost nothing to a kart in the free lane.
+- `courseSlotSpans` (function): function courseSlotSpans(slots: readonly CourseSlot[]): CourseSpanSpec[] — The spans a layout's hazard and zone slots become: tag = slot kind, `data.role` = the slot's role.
+- `courseStopLoss` (function): function courseStopLoss(vehicle: CourseVehicle = {}): number — Seconds a kart cruising at three quarters of top speed loses to a full stop and the restart after it.
+- `measureCourse` (function): function measureCourse(layout: CourseLayout, course: RouteCourse = buildCourseLayout(layout)): CourseMeasure — Measure a layout. Turn and climb figures need a piece-laid main line.
+
 ## @jgengine/core/roads/liveRoadSurface
 
 - `SurfaceSwappableRoadSource` (interface): interface SurfaceSwappableRoadSource extends LiveRoadSource — A {@link LiveRoadSource} whose carriageway surface can be swapped at runtime.
@@ -4866,6 +4923,7 @@
 ## @jgengine/core/roads/routeCourse
 
 - `CourseBranchSpec` (interface): interface CourseBranchSpec — An alternate path that leaves the main line at `from` and rejoins it at `to` (main-line metres).
+- `CourseCenterline` (interface): interface CourseCenterline — A main line given as a polyline instead of pieces: a lap lifted from streets, an editor path.
 - `CourseCheckpointOptions` (interface): interface CourseCheckpointOptions — Where {@link RouteCourse.checkpoints} puts the trigger boxes.
 - `CourseEdgePoint` (interface): interface CourseEdgePoint extends CoursePoint — One sampled wall post along a route edge.
 - `CourseFix` (interface): interface CourseFix — Where a point sits on the course.
@@ -4880,7 +4938,7 @@
 - `CourseVec2` (type): type CourseVec2 = readonly [number, number] — An `[x, z]` world point.
 - `MAIN_ROUTE` (const): const MAIN_ROUTE: "main" — Route id of the main line.
 - `RouteCourse` (interface): interface RouteCourse — A built course: geometry queries, the wall clamp, spans, racing lines and race checkpoints.
-- `RouteCourseSpec` (interface): interface RouteCourseSpec — Everything {@link buildRouteCourse} lays out: where the main line starts, its pieces, branches and spans.
+- `RouteCourseSpec` (interface): interface RouteCourseSpec — Everything {@link buildRouteCourse} lays out: the main line (pieces from a start pose, or a centreline), whether it closes into a lap, its branches and spans.
 - `buildRouteCourse` (function): function buildRouteCourse(spec: RouteCourseSpec): RouteCourse — Build a {@link RouteCourse} from its pieces, branches and spans. Throws on a turn tighter than its half-width, a branch outside the main line, or overlapping branches.
 
 ## @jgengine/core/roads/streetGenerator
@@ -5347,7 +5405,7 @@
 
 ## @jgengine/core/scene/onDemandSceneKinds
 
-- `OnDemandSceneKindId` (type): type OnDemandSceneKindId = "city" | "plants" | "landform" — A heavy built-in system a scene loads only when it uses one of its kinds or generators.
+- `OnDemandSceneKindId` (type): type OnDemandSceneKindId = "city" | "plants" | "landform" | "course" — A heavy built-in system a scene loads only when it uses one of its kinds or generators.
 - `SceneKindNeeds` (interface): interface SceneKindNeeds — What a scene asks of the registries: the kinds its objects use and the generator ids they name.
 
 ## @jgengine/core/scene/paintLayer

@@ -1406,7 +1406,7 @@
 ## @jgengine/core/ui/icons/gameIcons.view
 
 - `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
-- `GameIcon` (const): const GameIcon: NamedExoticComponent<{ name: "arrow" | "poison" | "lightning" | "sword" | "shield" | "key" | "wood" | "stone" | "menu" | "chest" | "map" | "jump" | "fire" | "dagger" | "axe" | "hammer" | "bow" | "staff" | "wand" | "spear" | "crossbow" | "gun" | "bomb" | "helmet" | "chestplate" | "boo… — ⚠ undocumented
+- `GameIcon` (const): const GameIcon: NamedExoticComponent<{ name: "arrow" | "poison" | "lightning" | "sword" | "shield" | "key" | "wood" | "stone" | "menu" | "chest" | "map" | "jump" | "sprint" | "fire" | "dagger" | "axe" | "hammer" | "bow" | "staff" | "wand" | "spear" | "crossbow" | "gun" | "bomb" | "helmet" | "chestpl… — ⚠ undocumented
 - `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented · used by `iconForAction`: Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
 - `iconForAction` (function): function iconForAction(action: string): GameIconName | null — Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
 - `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented

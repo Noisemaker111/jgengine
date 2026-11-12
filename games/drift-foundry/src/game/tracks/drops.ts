@@ -8,7 +8,7 @@ import type { TrackPickupDef } from "./types";
  * four late drops move, and where a track hides them (on the long way round, down a shortcut) is
  * the sweep's real choice.
  */
-const OPENING: readonly { partId: PartIconId; lane: number }[] = [
+export const OPENING_DROPS: readonly { partId: PartIconId; lane: number }[] = [
   { partId: "salvage_v6", lane: 0 },
   { partId: "hood_plate", lane: -1.5 },
   { partId: "truck_engine", lane: 1.5 },
@@ -19,17 +19,15 @@ const OPENING: readonly { partId: PartIconId; lane: number }[] = [
   { partId: "coil_springs", lane: 0 },
 ];
 
-const LATE: readonly PartIconId[] = ["ev_conversion", "scrap_frame", "roll_cage", "armor_plating"];
+export const LATE_DROPS: readonly PartIconId[] = ["ev_conversion", "scrap_frame", "roll_cage", "armor_plating"];
 
 /** The opening eight at the given run metres, then the four late drops where the track puts them. */
 export function trackDrops(opening: readonly number[], late: readonly { at: number; lane?: number; route?: string }[]): readonly TrackPickupDef[] {
-  if (opening.length !== OPENING.length) throw new Error(`tracks: the opening needs ${OPENING.length} drop marks`);
-  if (late.length !== LATE.length) throw new Error(`tracks: the late run needs ${LATE.length} drop marks`);
+  if (opening.length !== OPENING_DROPS.length) throw new Error(`tracks: the opening needs ${OPENING_DROPS.length} drop marks`);
+  if (late.length !== LATE_DROPS.length) throw new Error(`tracks: the late run needs ${LATE_DROPS.length} drop marks`);
   return [
-    ...OPENING.map((entry, index) => ({ partId: entry.partId, lane: entry.lane, at: opening[index]! })),
-    ...LATE.map((partId, index) => ({ partId, at: late[index]!.at, lane: late[index]!.lane ?? 0, ...(late[index]!.route === undefined ? {} : { route: late[index]!.route }) })),
+    ...OPENING_DROPS.map((entry, index) => ({ partId: entry.partId, lane: entry.lane, at: opening[index]! })),
+    ...LATE_DROPS.map((partId, index) => ({ partId, at: late[index]!.at, lane: late[index]!.lane ?? 0, ...(late[index]!.route === undefined ? {} : { route: late[index]!.route }) })),
   ];
 }
 
-/** The usual opening marks: 12 m apart from 10 m, springs at 96 m. */
-export const STANDARD_OPENING: readonly number[] = [10, 22, 34, 46, 58, 70, 83, 96];

@@ -5,8 +5,10 @@ import type { PartIconId } from "../parts/catalog";
 import type { TrackZone } from "../zones/catalog";
 
 /**
- * One yard track as authored data. The course itself is the engine's route course
- * (`@jgengine/core/roads/routeCourse`): a start, turtle pieces, branches and tagged spans. Everything
+ * One yard track as the run reads it. The course itself is the engine's route course
+ * (`@jgengine/core/roads/routeCourse`): a start, turtle pieces, branches and tagged spans. Every
+ * track but Row Six is a `course` marker in editor.scene.json joined with its theme file (see
+ * `course.ts`); Row Six is written out here in TS, on the corridor's own constants. Everything
  * the run reads off a track - gates, drops, hazards, zones - is placed in *run metres*: metres along
  * the main line from the start line, so the start line is 0 and the gate is `exitAt`. A branch's run
  * metres are the main-line metres it stands in for, so a shortcut's gate sits "at" the main-line
@@ -126,31 +128,3 @@ export interface TrackDef {
 }
 
 export const straight = (length: number, extra: Omit<Extract<CoursePiece, { kind: "straight" }>, "kind" | "length"> = {}): CoursePiece => ({ kind: "straight", length, ...extra });
-
-/** Positive degrees turn toward the left normal (see routeCourse). */
-export const turn = (degrees: number, radius: number, extra: Omit<Extract<CoursePiece, { kind: "turn" }>, "kind" | "angle" | "radius"> = {}): CoursePiece => ({
-  kind: "turn",
-  angle: (degrees * Math.PI) / 180,
-  radius,
-  ...extra,
-});
-
-/**
- * A bulge off the straight line and back: out `degrees`, a straight, back through twice the angle, a
- * straight, and square again. `side` +1 bulges left. The chord across it is the natural shortcut.
- */
-export function detour(side: 1 | -1, degrees: number, radius: number, leg: number, tag?: string): readonly CoursePiece[] {
-  const extra = tag === undefined ? {} : { tag };
-  return [
-    turn(side * degrees, radius, extra),
-    straight(leg, extra),
-    turn(-2 * side * degrees, radius, extra),
-    straight(leg, extra),
-    turn(side * degrees, radius, extra),
-  ];
-}
-
-/** Main-line metres a list of pieces covers. */
-export function piecesLength(pieces: readonly CoursePiece[]): number {
-  return pieces.reduce((sum, piece) => sum + (piece.kind === "straight" ? piece.length : Math.abs(piece.angle) * piece.radius), 0);
-}

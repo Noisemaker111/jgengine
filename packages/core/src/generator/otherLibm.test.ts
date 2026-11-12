@@ -6,6 +6,7 @@ import { ROCK_FRACTURE_GENERATOR } from "../fracture/rockFractureGenerator";
 import { GRASS_GENERATOR } from "../grass/grassKind";
 import { DRIFTWOOD_GENERATOR, ROCK_GENERATOR } from "../nature/natureGenerators";
 import { roundedFingerprint, withOtherLibm } from "../random/testFixtures/otherLibm";
+import { COURSE_GENERATOR } from "../roads/courseGenerator";
 import { RACE_CIRCUIT_GENERATOR } from "../roads/raceCircuit";
 import { STREET_NETWORK_GENERATOR } from "../roads/streetGenerator";
 import { SCATTER_GENERATOR } from "../scatter/scatterRegion";
@@ -32,6 +33,7 @@ describe("seeded generators do not depend on the platform's libm", () => {
   const generators: GeneratorDefinition[] = [
     STREET_NETWORK_GENERATOR,
     RACE_CIRCUIT_GENERATOR,
+    COURSE_GENERATOR,
     SCATTER_GENERATOR,
     GRASS_GENERATOR,
     BUILDING_GENERATOR,
@@ -44,6 +46,12 @@ describe("seeded generators do not depend on the platform's libm", () => {
       for (const [, meta] of presetBags(definition)) expectLibmIndependent(() => runGenerator(definition, meta));
     }, 60_000);
   }
+
+  test("course: a tight footprint over several seeds", () => {
+    for (let index = 0; index < 6; index += 1) {
+      expectLibmIndependent(() => runGenerator(COURSE_GENERATOR, { seed: `tight-${index}`, width: 270, depth: 720, hairpins: 0.5, laneShare: 0.25, timedShare: 0.5 }));
+    }
+  }, 60_000);
 
   const volume = (meta: Record<string, unknown>, rotationY = 0): SceneKindObject => ({
     id: "libm-city",

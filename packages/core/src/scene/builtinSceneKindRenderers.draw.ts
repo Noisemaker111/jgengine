@@ -50,6 +50,10 @@ const ON_DEMAND_DRAW: Readonly<Record<OnDemandSceneKindId, () => Promise<void>>>
     const { registerPlantDraw } = await import("@jgengine/core/plants/grown/plantGrown.draw");
     registerPlantDraw();
   },
+  course: async () => {
+    const { registerCourseDraw } = await import("@jgengine/core/roads/coursePreview.draw");
+    registerCourseDraw();
+  },
   landform: async () => {
     const { registerLandformPreview } = await import("@jgengine/core/landform/generator/landformPreview.draw");
     registerLandformPreview();

@@ -1,3 +1,4 @@
+import { courseDriveTime } from "@jgengine/core/roads/courseLayout";
 import {
   buildRouteCourse,
   MAIN_ROUTE,
@@ -6,7 +7,6 @@ import {
   type CoursePoint,
   type CourseSpan,
   type CourseSpanSpec,
-  type CourseVec2,
   type RouteCourse,
 } from "@jgengine/core/roads/routeCourse";
 
@@ -14,8 +14,10 @@ import type { PickupDef } from "../run/pickups";
 import type { RouteGate } from "../route/gates";
 import { zoneAt, type TrackZone } from "../zones/catalog";
 import { CONVEYOR_MAZE } from "./conveyorMaze";
+import { courseLayout, sceneCourse, trackDefFromCourse, type TrackTheme } from "./course";
 import { FLOODED_QUARRY } from "./floodedQuarry";
 import { RAIL_YARD } from "./railYard";
+import { REROUTE } from "./reroute";
 import { ROW_SIX } from "./rowSix";
 import { SLAG_RIVER } from "./slagRiver";
 import { SMELTER_CLIMB } from "./smelterClimb";
@@ -61,21 +63,15 @@ export interface Track {
   zoneAt(run: number): TrackZone;
 }
 
-function chordVia(provisional: RouteCourse, from: number, to: number): readonly CourseVec2[] {
-  const a = provisional.pointAt(MAIN_ROUTE, from);
-  const b = provisional.pointAt(MAIN_ROUTE, to);
-  return [1 / 3, 2 / 3].map((t) => [a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t] as const);
-}
-
 /** Lay a track's course and place its gates, drops and hazards on it. */
 export function buildTrack(def: TrackDef): Track {
   const base = { start: def.start, halfWidth: def.halfWidth, pieces: def.pieces };
-  const provisional = buildRouteCourse(base);
+  // A branch without control points runs the chord between its junctions.
   const branches: CourseBranchSpec[] = def.branches.map((branch) => ({
     id: branch.id,
     from: branch.from + def.origin,
     to: branch.to + def.origin,
-    via: branch.via ?? chordVia(provisional, branch.from + def.origin, branch.to + def.origin),
+    ...(branch.via === undefined ? {} : { via: branch.via }),
     halfWidth: branch.halfWidth,
     tag: "branch",
   }));
@@ -165,7 +161,42 @@ export function buildTrack(def: TrackDef): Track {
 /** Where every kart's grid is measured from: the start line is run metre 0, the spawn 4 m past it. */
 export const SPAWN_RUN = 4;
 
-export const TRACK_DEFS: readonly TrackDef[] = [ROW_SIX, SLAG_RIVER, RAIL_YARD, SMELTER_CLIMB, CONVEYOR_MAZE, FLOODED_QUARRY];
+/** A track whose course is a `course` marker in editor.scene.json, with its theme from its own file. */
+function sceneTrack(theme: TrackTheme): TrackDef {
+  return trackDefFromCourse(theme, courseLayout(sceneCourse(theme.id)));
+}
+
+/**
+ * The day a daily course is laid for, as `YYYY-MM-DD` (UTC): the Reroute's seed turns over at
+ * midnight UTC, the same day for every player.
+ */
+export function dayKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/** Escape time the line multiplier judges a generated course against: its sim time at a kart's pace. */
+const GENERATED_PAR_SCALE = 1.45;
+
+/**
+ * The Reroute as laid on `day`: the scene's generated course with that day's seed, its par from its
+ * own drive time.
+ */
+export function rerouteTrackDef(day: string): TrackDef {
+  const marker = sceneCourse(REROUTE.id);
+  const layout = courseLayout(marker, `${String(marker.meta?.["seed"] ?? REROUTE.id)}-${day}`);
+  const def = trackDefFromCourse(REROUTE, layout);
+  const course = buildRouteCourse({ start: def.start, halfWidth: def.halfWidth, pieces: def.pieces });
+  return { ...def, par: Math.round(courseDriveTime(course, { from: layout.startLine, to: layout.finish }) * GENERATED_PAR_SCALE) };
+}
+
+/** Today's Reroute, laid once when the yard loads so the terrain, the dressing and the run agree. */
+export const REROUTE_DAY = dayKey(new Date());
+
+export const TRACK_DEFS: readonly TrackDef[] = [
+  ROW_SIX,
+  ...[SLAG_RIVER, RAIL_YARD, SMELTER_CLIMB, CONVEYOR_MAZE, FLOODED_QUARRY].map(sceneTrack),
+  rerouteTrackDef(REROUTE_DAY),
+];
 
 export const TRACKS: readonly Track[] = TRACK_DEFS.map(buildTrack);
 

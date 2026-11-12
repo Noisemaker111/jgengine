@@ -574,6 +574,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createTimerSet` (function) · `import { createTimerSet } from "@jgengine/core/world"`
 
+## course-generator — generate a designed race course with shortcuts, hazard spacing, set-pieces and fillable slots
+
+- `COURSE_GENERATOR` (const) · `import { COURSE_GENERATOR } from "@jgengine/core/roads/courseGenerator"`
+
+## course-kind — editor-placeable race course in the scene: generated from seed and dials with pinned set-pieces, or fully authored
+
+- `resolveCourseObject` (function) · `import { resolveCourseObject } from "@jgengine/core/roads/courseKind"`
+
 ## course-metrics — measure a vehicle on driven tests — understeer gradient, skidpad g, slalom speed
 
 - `measureCourse` (function) · `import { measureCourse } from "@jgengine/core/physics/handlingProbe"`
@@ -1970,6 +1978,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 
 - `buildRouteCourse` (function) · `import { buildRouteCourse } from "@jgengine/core/roads/routeCourse"`
+- `courseFromCircuit` (function) · `import { courseFromCircuit } from "@jgengine/core/roads/circuitCourse"`
 
 ## rts-attack-clock — decide when an RTS AI launches growing attack waves, with a max-wait fallback
 
