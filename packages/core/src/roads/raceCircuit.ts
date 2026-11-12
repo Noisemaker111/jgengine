@@ -11,27 +11,55 @@
  * instance), ordered {@link CircuitGate}s that hand straight to `raceTrack({ checkpoints })`,
  * start/finish, a staggered grid, corner analysis, kerbs, and timing sectors.
  *
- * Works on either topology family the generator produces. On a `net` (a city) it searches the graph
- * for the cycle that best matches the requested lap length and arterial bias. On a `circuit` (the
- * generator's closed-loop mode) the loop edges ARE the cycle, so the same call returns the whole lap
- * — one API, both slider extremes, no second code path.
+ * Works on either topology family the generator produces. On a `net` (a city) the lap search
+ * (`raceLapSearch`) routes candidates along through-streets and boulevards, scores them like a track
+ * designer (long straights into heavy braking, corner variety, flow, no trombones), and shapes the
+ * winner into a racing line that uses the junction plazas. Callers can pin `via` anchors the lap
+ * passes in order, a `start` hint, or ask for a point-to-point `sprint`
+ * ({@link CircuitRouteConstraints}); {@link extractStreetRaces} lifts several named races out of one
+ * city. On a `circuit` (the generator's closed-loop mode) the loop edges ARE the cycle.
  *
  * Volume-local XZ coords throughout, matching {@link StreetNetwork}; the caller rotates/translates
  * into world space. Deterministic: same network + rules ⇒ identical route, with bounded search work.
  *
  * @capability race-circuit lift a closed, sealed-off race lap out of an existing city street network
+ * @capability street-races several named street laps and point-to-point sprints through a city, pinned to via junctions
  */
-import { pickWeighted } from "../random/pick";
-import { seededRng } from "../random/rng";
 import { defineGenerator, type GeneratorContext } from "../generator/generator";
 import { defineParamSchema, type ParamField, type ParamsOf } from "../generator/paramSchema";
+import {
+  METRIC_CHORD,
+  OVERTAKE_STRAIGHT,
+  SLOW_CORNER_RADIUS,
+  angleDelta,
+  arcProfile,
+  buildLapGraph,
+  chicaneGates,
+  cornerTurn,
+  edgeLength,
+  lapCandidates,
+  lapScore,
+  outlineOf,
+  planar,
+  quantizedScore,
+  radiusProfile,
+  resolveAnchor,
+  shapeRacingLine,
+  simulateLap,
+  straightRuns,
+  summarizeOutline,
+  type LapAnchor,
+  type LapCornerSummary,
+  type LapGraph,
+  type LapOutline,
+  type LapScoreRules,
+  type LapSummary,
+  type PlannedChicane,
+} from "./raceLapSearch";
 import { STREET_NETWORK_GENERATOR, STREET_NETWORK_SCHEMA, type StreetEdge, type StreetLevel, type StreetNetwork, type StreetNetworkInput, type StreetVec2 } from "./streetGenerator";
 
 /** Road hierarchy rank — higher is wider/more arterial. Shared with the fabric's ordering. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
-
-/** Sharpest turn a lap takes at a junction (radians). Beyond this it doubles back on itself. */
-const MAX_LAP_TURN = (120 * Math.PI) / 180;
 
 /**
  * Worst self-approach of a closed lap, as `gap − required` over every non-adjacent pair of points;
@@ -39,9 +67,9 @@ const MAX_LAP_TURN = (120 * Math.PI) / 180;
  * generator holds the same invariant for its own circuits — an extracted lap needs it too, or a
  * junction fold hands back a "lap" that drives through itself.
  */
-function selfClearance(points: readonly StreetVec2[], widths: readonly number[]): number {
+function selfClearance(points: readonly StreetVec2[], widths: readonly number[], closed = true): number {
   const n = points.length;
-  const { at, total } = arcLengths(points);
+  const { at, total } = arcProfile(points, closed);
   let worst = Infinity;
   for (let i = 0; i < n; i += 1) {
     const a = points[i]!;
@@ -50,9 +78,9 @@ function selfClearance(points: readonly StreetVec2[], widths: readonly number[])
       // Adjacency is measured along the lap, not in indices: two points a whole corner apart may
       // still be one short edge apart by index, and that pair is not an overlap.
       const along = at[j]! - at[i]!;
-      if (Math.min(along, total - along) < required * 2.5) continue;
+      if ((closed ? Math.min(along, total - along) : along) < required * 2.5) continue;
       const b = points[j]!;
-      const gap = Math.hypot(a[0] - b[0], a[1] - b[1]) - required;
+      const gap = planar(a[0] - b[0], a[1] - b[1]) - required;
       if (gap < worst) worst = gap;
     }
   }
@@ -65,11 +93,11 @@ export type CircuitSealKind = "barrier" | "cones" | "fence";
 /**
  * The lap dials the route search answers to (defaults: a ~2.4 km arterial street lap with 12 gates,
  * 3 laps and barriered side streets).
- * - `lapLength` — target lap length (m); the search keeps the cycle closest to it.
- * - `arterialBias` — 0 races any street; 1 keeps the lap on avenues and boulevards only.
- * - `minCornerRadius` — radius (m) the corner-rounding pass works the racing line toward. Bounded by
- *   `cornerCut` and the road width (the line never leaves the street), so the achieved figure is
- *   reported back as {@link CircuitRoute.tightestRadius} rather than enforced.
+ * - `lapLength` — target lap (or sprint) length (m); length error is the heaviest term of the lap score.
+ * - `arterialBias` — 0 races any street; 1 routes and scores the lap toward avenues and boulevards.
+ * - `minCornerRadius` — radius (m) a turn must be tighter than (×4, at least 40 m) to count as a
+ *   corner, and on a `circuit` loop the radius the corner-rounding pass works toward. The achieved
+ *   figure is reported back as {@link CircuitRoute.tightestRadius}.
  * - `checkpoints` / `laps` — ordered gates around the lap, and laps the race runs.
  * - `gateHeight` — height (m) of a checkpoint gate volume.
  * - `gridSlots` — starting grid slots behind the line (0 = no grid).
@@ -77,8 +105,11 @@ export type CircuitSealKind = "barrier" | "cones" | "fence";
  * - `sectors` — timing sectors the lap splits into.
  * - `sampleStep` — arc-length spacing (m) the lap is resampled to: city streets are sampled for a road
  *   ribbon, far too coarsely for a racing surface, corner analysis or kerbs.
- * - `cornerCut` — how far the racing line may leave the street centerline while rounding a junction,
- *   as a fraction of the local half-width; 0 keeps the hard kink, ~0.5 uses the full lane either side.
+ * - `cornerCut` — how far the racing line may stray from the NEAREST street centerline, as a fraction
+ *   of the local half-width: it straightens wobbly streets into straights and, through a junction,
+ *   uses the plaza where two carriageways overlap. 0 keeps the street centerline and its hard kinks.
+ * - `chicanes` — drop barrier chicanes on the lap's secondary straights (the main straight stays clean
+ *   for the overtake); off, every straight runs flat out.
  */
 const CIRCUIT_ROUTE_FIELDS = [
   { type: "range", key: "lapLength", label: "lap length", group: "race", min: 80, max: 12000, step: 10, default: 2400, unit: "m", explore: [400, 6000] },
@@ -92,6 +123,7 @@ const CIRCUIT_ROUTE_FIELDS = [
   { type: "range", key: "sectors", label: "timing sectors", group: "race", min: 1, max: 8, step: 1, default: 3 },
   { type: "range", key: "sampleStep", label: "sample step", group: "race", min: 0.5, max: 10, step: 0.5, default: 2.5, unit: "m", vary: false },
   { type: "range", key: "cornerCut", label: "corner cut", group: "race", min: 0, max: 0.9, step: 0.01, default: 0.42 },
+  { type: "bool", key: "chicanes", label: "barrier chicanes", group: "race", default: true },
 ] as const satisfies readonly ParamField[];
 
 /**
@@ -119,6 +151,34 @@ export interface CircuitSeal {
   /** Graph node the seal stands at. */
   node: number;
 }
+
+/**
+ * One barrier run dropped onto the racing surface for the event (a chicane apex): a line of blocks
+ * across the road, perpendicular to `heading`, spanning `width` from one road edge.
+ */
+export interface CircuitBarrier {
+  x: number;
+  z: number;
+  /** Yaw of travel down the road at the barrier; the run stands across it. */
+  heading: number;
+  /** Length of the run across the road, meters. */
+  width: number;
+  kind: CircuitSealKind;
+}
+
+/**
+ * A barrier chicane on a long straight: two runs from opposite road edges a few car lengths apart,
+ * forcing a flick across the road. Event-scoped like the seals — only stood up while the race runs.
+ */
+export interface CircuitChicane {
+  /** `centerline` index nearest the first barrier, and the second. */
+  entry: number;
+  exit: number;
+  barriers: readonly [CircuitBarrier, CircuitBarrier];
+}
+
+/** A closed lap, or a point-to-point sprint from one end of the city to another. */
+export type StreetRaceKind = "lap" | "sprint";
 
 /** One analyzed corner: where the lap turns, how hard, and which way. */
 export interface CircuitCorner {
@@ -179,9 +239,20 @@ export interface CircuitKerb {
   corner: number;
 }
 
-/** A closed race lap lifted out of a street network, with everything a race needs hung off it. */
+/**
+ * A race lifted out of a street network, with everything a race needs hung off it: a closed lap, or
+ * (when {@link CircuitRoute.closed} is false) a point-to-point sprint.
+ *
+ * Seals and chicane barriers are EVENT-SCOPED data: a renderer stands them up only while the race
+ * runs (see `raceEvents`), so the city drives as an open world the rest of the time.
+ */
 export interface CircuitRoute {
-  /** Closed lap centerline in volume-local XZ. Implicitly closed: the last point joins the first. */
+  /** `true` for a lap; `false` for a sprint, whose centerline runs start area → finish. */
+  closed: boolean;
+  /**
+   * The driven line in volume-local XZ: the street centerlines the race runs on, shaped into a racing
+   * line inside the asphalt. A lap is implicitly closed (the last point joins the first).
+   */
   centerline: StreetVec2[];
   /** Road width at each centerline point, inherited from the streets the lap follows. */
   widths: number[];
@@ -191,13 +262,16 @@ export interface CircuitRoute {
   length: number;
   /** Graph edge ids the lap runs on — style exactly these streets as track surface. */
   edges: number[];
-  /** Graph node ids the lap visits in order (no repeat of the closing node). */
+  /** Graph node ids the lap visits in order (no repeat of the closing node; a sprint lists both ends). */
   nodes: number[];
   /** Every street leaving the lap that is not part of it, closed off. */
   seals: CircuitSeal[];
+  /** Barrier chicanes on the secondary straights. */
+  chicanes: CircuitChicane[];
   corners: CircuitCorner[];
   /** Ordered gates, finish line last — ready for `raceTrack({ checkpoints, laps })`. */
   checkpoints: CircuitGate[];
+  /** Laps the race runs; always 1 for a sprint. */
   laps: number;
   start: CircuitStart;
   grid: CircuitGridSlot[];
@@ -219,16 +293,6 @@ interface Adjacency {
   links: Map<number, { edge: number; other: number }[]>;
   edgeById: Map<number, StreetEdge>;
   nodeAt: Map<number, { x: number; z: number }>;
-}
-
-function edgeLength(points: readonly StreetVec2[]): number {
-  let total = 0;
-  for (let i = 0; i + 1 < points.length; i += 1) {
-    const a = points[i]!;
-    const b = points[i + 1]!;
-    total += Math.hypot(b[0] - a[0], b[1] - a[1]);
-  }
-  return total;
 }
 
 function buildAdjacency(network: StreetNetwork): Adjacency {
@@ -257,13 +321,6 @@ function departureHeading(edge: StreetEdge, node: number): number {
   const from = forward ? points[0]! : points[points.length - 1]!;
   const to = forward ? points[1]! : points[points.length - 2]!;
   return Math.atan2(to[0] - from[0], to[1] - from[1]);
-}
-
-function angleDelta(a: number, b: number): number {
-  let d = b - a;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return d;
 }
 
 /**
@@ -300,36 +357,40 @@ function assembleCenterline(
 }
 
 /**
- * Resample a closed lap to a fixed arc-length step, interpolating width and height. City street
- * polylines are emitted at whatever resolution the road ribbon needed (often 15 m between vertices);
- * a racing surface, corner analysis, and kerbs all need a dense, evenly spaced line.
+ * Resample a lap (or, `closed` false, a sprint) to a fixed arc-length step, interpolating width and
+ * height. City street polylines are emitted at whatever resolution the road ribbon needed (often 15 m
+ * between vertices); a racing surface, corner analysis, and kerbs all need a dense, evenly spaced line.
  */
-function resampleClosed(
+function resampleLine(
   points: readonly StreetVec2[],
   widths: readonly number[],
   heights: readonly number[] | null,
   step: number,
+  closed = true,
 ): { points: StreetVec2[]; widths: number[]; heights: number[] | null } {
   const n = points.length;
-  // Cumulative arc length at the START of each of the n closed segments, so the wrap-around segment
-  // from the last vertex back to the first is sampled like any other.
-  const starts = new Array<number>(n + 1).fill(0);
-  for (let i = 0; i < n; i += 1) {
+  const segments = closed ? n : n - 1;
+  // Cumulative arc length at the START of each segment, so a lap's wrap-around segment from the last
+  // vertex back to the first is sampled like any other.
+  const starts = new Array<number>(segments + 1).fill(0);
+  for (let i = 0; i < segments; i += 1) {
     const a = points[i]!;
     const b = points[(i + 1) % n]!;
-    starts[i + 1] = starts[i]! + Math.hypot(b[0] - a[0], b[1] - a[1]);
+    starts[i + 1] = starts[i]! + planar(b[0] - a[0], b[1] - a[1]);
   }
-  const total = starts[n]!;
+  const total = starts[segments]!;
   if (total < 1e-6) return { points: [...points], widths: [...widths], heights: heights === null ? null : [...heights] };
-  const count = Math.max(12, Math.min(4000, Math.round(total / step)));
-  const spacing = total / count;
+  const intervals = Math.max(12, Math.min(4000, Math.round(total / step)));
+  // A sprint keeps both ends: one more sample than intervals.
+  const count = closed ? intervals : intervals + 1;
+  const spacing = total / intervals;
   const out: StreetVec2[] = [];
   const outWidths: number[] = [];
   const outHeights: number[] | null = heights === null ? null : [];
   let segment = 0;
   for (let i = 0; i < count; i += 1) {
     const distance = i * spacing;
-    while (segment + 1 < n && starts[segment + 1]! <= distance) segment += 1;
+    while (segment + 1 < segments && starts[segment + 1]! <= distance) segment += 1;
     const spanStart = starts[segment]!;
     const spanLength = starts[segment + 1]! - spanStart;
     const t = spanLength < 1e-9 ? 0 : Math.max(0, Math.min(1, (distance - spanStart) / spanLength));
@@ -367,7 +428,7 @@ function roundCorners(
   const budget = widths.map((width) => Math.max(0, width * 0.5 * cut));
   const span = Math.max(minRadius * 0.5, polylineLength(points, true) / n * 3);
   for (let pass = 0; pass < 24; pass += 1) {
-    const radii = curvatureProfile(working, span);
+    const radii = radiusProfile(working, span, true);
     let moved = 0;
     for (let i = 0; i < n; i += 1) {
       if (radii[i]! >= minRadius) continue;
@@ -382,13 +443,13 @@ function roundCorners(
       const base = origin[i]!;
       const driftX = x - base[0];
       const driftZ = z - base[1];
-      const drift = Math.hypot(driftX, driftZ);
+      const drift = planar(driftX, driftZ);
       const limit = budget[i]!;
       if (drift > limit && drift > 1e-9) {
         x = base[0] + (driftX / drift) * limit;
         z = base[1] + (driftZ / drift) * limit;
       }
-      moved += Math.hypot(x - here[0], z - here[1]);
+      moved += planar(x - here[0], z - here[1]);
       here[0] = x;
       here[1] = z;
     }
@@ -403,39 +464,9 @@ function polylineLength(points: readonly StreetVec2[], closed: boolean): number 
   for (let i = 0; i < last; i += 1) {
     const a = points[i]!;
     const b = points[(i + 1) % points.length]!;
-    total += Math.hypot(b[0] - a[0], b[1] - a[1]);
+    total += planar(b[0] - a[0], b[1] - a[1]);
   }
   return total;
-}
-
-/** Radius of the circle through three points; Infinity when they are collinear. */
-function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
-  const abx = b[0] - a[0];
-  const abz = b[1] - a[1];
-  const cbx = b[0] - c[0];
-  const cbz = b[1] - c[1];
-  const cross = abx * cbz - abz * cbx;
-  if (Math.abs(cross) < 1e-9) return Infinity;
-  const ab = Math.hypot(abx, abz);
-  const bc = Math.hypot(cbx, cbz);
-  const ca = Math.hypot(c[0] - a[0], c[1] - a[1]);
-  return (ab * bc * ca) / (2 * Math.abs(cross));
-}
-
-/** Per-point radius of curvature over a closed polyline, measured across a ~`span` meter chord. */
-function curvatureProfile(points: readonly StreetVec2[], span: number): number[] {
-  const n = points.length;
-  const radii = new Array<number>(n).fill(Infinity);
-  if (n < 5) return radii;
-  const perPoint = polylineLength(points, true) / n;
-  const step = Math.max(1, Math.round(span / Math.max(0.5, perPoint)));
-  for (let i = 0; i < n; i += 1) {
-    const prev = points[(i - step + n * 2) % n]!;
-    const here = points[i]!;
-    const next = points[(i + step) % n]!;
-    radii[i] = circumRadius(prev, here, next);
-  }
-  return radii;
 }
 
 /**
@@ -453,10 +484,12 @@ function analyzeCorners(
   const n = points.length;
   const corners: CircuitCorner[] = [];
   if (n < 8) return corners;
+  // Average CURVATURE, not radius: one near-straight sample (an S-bend's inflection, a collinear
+  // triple) has a huge radius that would otherwise swamp a real corner beside it.
   const smoothed = radii.map((_, i) => {
     let sum = 0;
-    for (let k = -2; k <= 2; k += 1) sum += radii[(i + k + n * 3) % n]!;
-    return sum / 5;
+    for (let k = -2; k <= 2; k += 1) sum += 1 / radii[(i + k + n * 3) % n]!;
+    return sum > 0 ? 5 / sum : Infinity;
   });
   const tight = smoothed.map((r) => r < threshold);
   // Bridge tiny straights so one flowing corner is not split by a sample of relief.
@@ -517,22 +550,9 @@ function analyzeCorners(
   return corners;
 }
 
-/** Cumulative arc length at each point of a closed polyline, plus the total. */
-function arcLengths(points: readonly StreetVec2[]): { at: number[]; total: number } {
-  const at = new Array<number>(points.length).fill(0);
-  let total = 0;
-  for (let i = 0; i < points.length; i += 1) {
-    at[i] = total;
-    const a = points[i]!;
-    const b = points[(i + 1) % points.length]!;
-    total += Math.hypot(b[0] - a[0], b[1] - a[1]);
-  }
-  return { at, total };
-}
-
-/** Index whose arc length is closest to `distance` around the lap. */
-function indexAtDistance(at: readonly number[], total: number, distance: number): number {
-  const target = ((distance % total) + total) % total;
+/** Index whose arc length is closest to `distance` around the lap (clamped to the ends of a sprint). */
+function indexAtDistance(at: readonly number[], total: number, distance: number, closed = true): number {
+  const target = closed ? ((distance % total) + total) % total : Math.max(0, Math.min(total, distance));
   let lo = 0;
   let hi = at.length - 1;
   while (lo < hi) {
@@ -543,10 +563,11 @@ function indexAtDistance(at: readonly number[], total: number, distance: number)
   return lo;
 }
 
-function headingAt(points: readonly StreetVec2[], index: number): number {
+function headingAt(points: readonly StreetVec2[], index: number, closed = true): number {
   const n = points.length;
-  const a = points[index]!;
-  const b = points[(index + 1) % n]!;
+  const from = !closed && index === n - 1 ? index - 1 : index;
+  const a = points[from]!;
+  const b = points[closed ? (from + 1) % n : from + 1]!;
   return Math.atan2(b[0] - a[0], b[1] - a[1]);
 }
 
@@ -580,129 +601,76 @@ function findStartIndex(radii: readonly number[], at: readonly number[], total: 
   return indexAtDistance(at, total, at[bestStart]! + bestLength * 0.66);
 }
 
+/** Radius (m, at {@link METRIC_CHORD}) the whole grid must sit straighter than. */
+const GRID_STRAIGHT_RADIUS = 150;
+
+/**
+ * Start/finish placement that keeps the whole grid on a straight: among the straight runs long enough
+ * to hold `gridLength` behind the line (plus room before the first corner), take the point nearest the
+ * `preferred` arc distance, or two-thirds along the longest run. Null when no straight holds the grid.
+ */
+function placeStart(radii: readonly number[], at: readonly number[], total: number, closed: boolean, gridLength: number, preferred: number | null): number | null {
+  const runs = straightRunsAbove(radii, at, total, closed, GRID_STRAIGHT_RADIUS);
+  let best: number | null = null;
+  let bestKey = Infinity;
+  for (const run of runs) {
+    const lo = run.start + gridLength + 4;
+    const hi = run.start + run.length - 12;
+    if (hi < lo) continue;
+    let point: number;
+    let key: number;
+    if (preferred === null) {
+      point = Math.max(lo, Math.min(hi, run.start + run.length * 0.66));
+      key = -run.length;
+    } else {
+      // The feasible point nearest the preferred distance, around the lap for a closed one.
+      const candidates = closed ? [preferred - total, preferred, preferred + total] : [preferred];
+      point = lo;
+      key = Infinity;
+      for (const want of candidates) {
+        const clamped = Math.max(lo, Math.min(hi, want));
+        const off = Math.abs(clamped - want);
+        if (off < key) {
+          key = off;
+          point = clamped;
+        }
+      }
+    }
+    if (key < bestKey - 1e-6) {
+      bestKey = key;
+      best = point;
+    }
+  }
+  return best === null ? null : indexAtDistance(at, total, best, closed);
+}
+
+/** Runs (arc start, length) where the radius stays at or above `minRadius`. */
+function straightRunsAbove(radii: readonly number[], at: readonly number[], total: number, closed: boolean, minRadius: number): { start: number; length: number }[] {
+  const n = radii.length;
+  const runs: { start: number; length: number }[] = [];
+  const ok = radii.map((r) => r >= minRadius);
+  const origin = closed ? ok.findIndex((v) => !v) : 0;
+  if (origin < 0) return [{ start: 0, length: total }];
+  let run = -1;
+  for (let k = 0; k <= n; k += 1) {
+    const i = origin + k;
+    const here = k < n && ok[i % n]!;
+    if (here && run < 0) run = i;
+    if (!here && run >= 0) {
+      const a = at[run % n]!;
+      const b = !closed && i >= n ? total : at[(i - 1) % n]!;
+      runs.push({ start: a, length: b >= a ? b - a : total - a + b });
+      run = -1;
+    }
+  }
+  return runs;
+}
+
 interface Candidate {
   nodes: number[];
   edges: number[];
   length: number;
   arterial: number;
-}
-
-/**
- * Randomized cycle search over the street graph. Each attempt walks node to node without revisiting,
- * biased toward arterial roads and toward carrying straight on, and closes the loop once the walk is
- * long enough to reach the target and an edge back to the start exists. Bounded attempts and bounded
- * walk length keep the work fixed however large the network.
- */
-function searchCycle(adjacency: Adjacency, rules: CircuitRouteParams, seed: string): Candidate | null {
-  const rng = seededRng(`raceCircuit:${seed}`);
-  // Only nodes with two or more ways out can sit on a cycle; peel the trees off first.
-  const degree = new Map<number, number>();
-  for (const [node, links] of adjacency.links) degree.set(node, links.length);
-  let peeled = true;
-  while (peeled) {
-    peeled = false;
-    for (const [node, count] of degree) {
-      if (count > 1 || count === 0) continue;
-      degree.set(node, 0);
-      for (const link of adjacency.links.get(node) ?? []) {
-        const other = degree.get(link.other);
-        if (other !== undefined && other > 0) degree.set(link.other, other - 1);
-      }
-      peeled = true;
-    }
-  }
-  const cyclic = [...degree.entries()].filter(([, count]) => count >= 2).map(([node]) => node);
-  if (cyclic.length < 3) return null;
-
-  const arterialOf = (edge: StreetEdge): number => (LEVEL_RANK[edge.level] >= LEVEL_RANK.avenue ? 1 : 0);
-  const maxSteps = Math.min(400, Math.max(24, Math.ceil((rules.lapLength / 40) * 4)));
-  const attempts = 240;
-  let best: Candidate | null = null;
-  let bestScore = -Infinity;
-
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const startNode = cyclic[Math.floor(rng() * cyclic.length)]!;
-    const nodes: number[] = [startNode];
-    const edges: number[] = [];
-    const visited = new Set<number>([startNode]);
-    let length = 0;
-    let arterial = 0;
-    let heading: number | null = null;
-    let closed = false;
-
-    for (let step = 0; step < maxSteps; step += 1) {
-      const current = nodes[nodes.length - 1]!;
-      const links = (adjacency.links.get(current) ?? []).filter((link) => {
-        if (degree.get(link.other) === 0) return false;
-        if (edges.length > 0 && link.edge === edges[edges.length - 1]) return false;
-        return true;
-      });
-      if (links.length === 0) break;
-      // Close as soon as the lap is long enough and the start is one edge away.
-      if (length >= rules.lapLength * 0.7 && nodes.length >= 3) {
-        const home = links.find((link) => link.other === startNode);
-        if (home !== undefined) {
-          const edge = adjacency.edgeById.get(home.edge)!;
-          edges.push(home.edge);
-          length += edgeLength(edge.points);
-          arterial += arterialOf(edge) * edgeLength(edge.points);
-          closed = true;
-          break;
-        }
-      }
-      const fresh = links.filter((link) => !visited.has(link.other));
-      // A lap that doubles back down the street it arrived on is not raceable; drop reversals
-      // unless the walk would otherwise have nowhere to go.
-      const forward = fresh.filter((link) => {
-        if (heading === null) return true;
-        const edge = adjacency.edgeById.get(link.edge)!;
-        return Math.abs(angleDelta(heading, departureHeading(edge, current))) <= MAX_LAP_TURN;
-      });
-      const options = forward.length > 0 ? forward : fresh;
-      if (options.length === 0) break;
-      const candidates = options.map((link) => {
-        const edge = adjacency.edgeById.get(link.edge)!;
-        const rank = LEVEL_RANK[edge.level] / LEVEL_RANK.boulevard;
-        let weight = 0.15 + rank * rules.arterialBias * 2.5;
-        if (heading !== null) {
-          // Prefer carrying straight on: a lap that zig-zags every junction drives like a maze.
-          const turn = Math.abs(angleDelta(heading, departureHeading(edge, current)));
-          weight *= 1.25 - (turn / Math.PI) * 0.85;
-        }
-        // Once long enough, pull back toward the start so the walk can actually close.
-        if (length > rules.lapLength * 0.55) {
-          const home = adjacency.nodeAt.get(startNode)!;
-          const here = adjacency.nodeAt.get(current)!;
-          const there = adjacency.nodeAt.get(link.other)!;
-          const closer = Math.hypot(home.x - there.x, home.z - there.z) < Math.hypot(home.x - here.x, home.z - here.z);
-          weight *= closer ? 2.4 : 0.5;
-        }
-        return { link, weight: Math.max(0.01, weight) };
-      });
-      const link = (pickWeighted(rng, candidates, (c) => c.weight) ?? candidates[candidates.length - 1]!).link;
-      const edge = adjacency.edgeById.get(link.edge)!;
-      const span = edgeLength(edge.points);
-      nodes.push(link.other);
-      edges.push(link.edge);
-      visited.add(link.other);
-      length += span;
-      arterial += arterialOf(edge) * span;
-      heading = departureHeading(edge, link.other) + Math.PI;
-    }
-
-    if (!closed || length <= 0) continue;
-    const arterialShare = arterial / length;
-    const lengthError = Math.abs(length - rules.lapLength) / rules.lapLength;
-    const score = arterialShare * rules.arterialBias * 1.5 - lengthError * 2 + Math.min(nodes.length, 24) * 0.01;
-    if (score <= bestScore) continue;
-    const assembled = assembleCenterline(nodes, edges, adjacency);
-    if (assembled.centerline.length < 8) continue;
-    if (selfClearance(assembled.centerline, assembled.widths) < 0) continue;
-    bestScore = score;
-    best = { nodes, edges, length, arterial: arterialShare };
-  }
-
-  return best;
 }
 
 /** Order the generator's own `loop` edges into a traversal — the circuit-mode fast path. */
@@ -823,7 +791,7 @@ export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = 
         const next = points[(at + 1) % n]!;
         const dx = next[0] - prev[0];
         const dz = next[1] - prev[1];
-        const len = Math.hypot(dx, dz);
+        const len = planar(dx, dz);
         if (len < 1e-6) continue;
         const half = (route.widths[at] ?? 8) * 0.5;
         run.push([here[0] + (dz / len) * half * side, here[1] - (dx / len) * half * side]);
@@ -835,44 +803,296 @@ export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = 
 }
 
 /**
- * Lift a closed, sealed-off race lap out of an existing street network. Returns `null` when the
- * network has no drivable cycle (a pure tree of dead-end streets), so callers can fall back or warn
- * rather than render a broken race.
- *
- * On a `circuit`-mode network the generated loop is used directly. On a `net` (a city) the graph is
- * searched for the cycle closest to `lapLength` that respects `arterialBias` and `minCornerRadius`,
- * seeded by the calling generator's seed. This is the lap stage of {@link RACE_CIRCUIT_GENERATOR}; a
- * generator that already grew its streets (the `city` kind) runs it on them with its own context.
+ * Where and how a street race runs, beyond the lap dials. Every anchor is a graph node id or a
+ * volume-local point (snapped to the nearest junction on a street cycle) — so laps over authored
+ * streets (`streetNetworkFromPaths`) can name junctions by position.
+ * - `kind` — `"lap"` (default) or a point-to-point `"sprint"`.
+ * - `via` — anchors the race must pass, in order.
+ * - `start` — where the race starts: a lap is routed through it and its start line (with the whole
+ *   grid on a straight) goes as near it as the straights allow; a sprint starts there.
+ * - `finish` — a sprint's end (default: wherever a route of about `lapLength` lands).
+ * - `landmarks` — points the score rewards passing within 40 m of.
+ * - `avoidEdges` — edges of other races the score steers away from, so a city's laps differ.
  */
-export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): CircuitRoute | null {
-  const adjacency = buildAdjacency(network);
-  const candidate =
-    network.mode === "circuit"
-      ? loopCandidate(network) ?? searchCycle(adjacency, resolved, context.seed)
-      : searchCycle(adjacency, resolved, context.seed) ?? loopCandidate(network);
-  if (candidate === null) return null;
+export interface CircuitRouteConstraints {
+  kind?: StreetRaceKind;
+  via?: readonly (number | StreetVec2)[];
+  start?: number | StreetVec2;
+  finish?: number | StreetVec2;
+  landmarks?: readonly StreetVec2[];
+  avoidEdges?: readonly number[];
+}
 
-  const assembled = assembleCenterline(candidate.nodes, candidate.edges, adjacency);
-  if (assembled.centerline.length < 4) return null;
-  // Resample to a racing-surface resolution, then round the junction kinks the city streets carry
-  // into a line a car can actually take — still the same asphalt, just driven properly.
-  const dense = resampleClosed(assembled.centerline, assembled.widths, assembled.heights, resolved.sampleStep);
-  const centerline = roundCorners(dense.points, dense.widths, resolved.minCornerRadius, resolved.cornerCut);
-  const widths = dense.widths;
-  const heights = dense.heights;
+/** Spacing (m) the search shapes finalists at; the winner is resampled to `sampleStep` afterwards. */
+const SHAPE_STEP = 3;
+/** Finalists the search shapes into racing lines and re-scores. */
+const FINALISTS = 4;
+
+/** A finalist shaped into its racing line, with its chicane barriers placed on the street. */
+interface ShapedRoute {
+  line: StreetVec2[];
+  widths: number[];
+  heights: number[] | null;
+  barriers: { x: number; z: number; heading: number; width: number }[];
+}
+
+function shapeOutline(outline: LapOutline, planned: readonly PlannedChicane[], resolved: CircuitRouteParams, closed: boolean): ShapedRoute {
+  const dense = resampleLine(outline.points, outline.widths, outline.heights, Math.max(resolved.sampleStep, SHAPE_STEP), closed);
+  const n = dense.points.length;
+  const { total } = arcProfile(dense.points, closed);
+  const spacing = total / (closed ? n : n - 1);
+  const { gates, barriers } = chicaneGates(planned, dense.widths, spacing, n);
+  const line = shapeRacingLine(dense.points, dense.widths, closed, resolved.cornerCut, gates);
+  const placed = barriers.map((barrier) => {
+    const here = dense.points[barrier.index]!;
+    const heading = headingAt(dense.points, barrier.index, closed);
+    const width = dense.widths[barrier.index] ?? 9;
+    // Right of travel is (cos h, -sin h) for heading atan2(dx, dz); the run fills from its road edge
+    // to the gap, centred `side × gap / 2` off the street centerline.
+    const offset = barrier.side * barrier.gap * 0.5;
+    return { x: here[0] + Math.cos(heading) * offset, z: here[1] - Math.sin(heading) * offset, heading, width: width - barrier.gap };
+  });
+  return { line, widths: dense.widths, heights: dense.heights, barriers: placed };
+}
+
+/** Corners of a shaped line with their honest total turn, read just outside each tight span. */
+function lineCorners(line: readonly StreetVec2[], closed: boolean, resolved: CircuitRouteParams): { corners: CircuitCorner[]; radii: number[]; at: number[]; total: number } {
+  const { at, total } = arcProfile(line, closed);
+  const radii = radiusProfile(line, Math.max(6, resolved.minCornerRadius), closed);
+  const cornerThreshold = Math.max(resolved.minCornerRadius * 4, 40);
+  const spacing = total / line.length;
+  const raw = splitEsses(line, radii, analyzeCorners(line, radii, cornerThreshold, Math.max(8, resolved.minCornerRadius), spacing), closed);
+  const n = line.length;
+  const corners = raw.map((corner, k) => {
+    // The tight span is only the middle of a turn a racing line spreads wide: read the turn up to
+    // CORNER_READ outside it, never past halfway to a neighbouring corner.
+    const prev = raw[(k - 1 + raw.length) % raw.length]!;
+    const next = raw[(k + 1) % raw.length]!;
+    const gap = (from: number, to: number): number => (closed ? (((at[to]! - at[from]!) % total) + total) % total : Math.abs(at[to]! - at[from]!));
+    const limitBefore = raw.length > 1 && (closed || k > 0) ? Math.min(CORNER_READ, gap(prev.exit, corner.entry) * 0.5) : CORNER_READ;
+    const limitAfter = raw.length > 1 && (closed || k < raw.length - 1) ? Math.min(CORNER_READ, gap(corner.exit, next.entry) * 0.5) : CORNER_READ;
+    const turn = cornerTurn(line, at, total, corner.entry, corner.exit, closed, limitBefore, limitAfter);
+    // Which way it turns is read at the apex, where curvature is strongest: an S's near-zero net turn
+    // (or a hairpin's ±180°) would flip sign on float noise.
+    const a = line[closed ? (corner.apex - 1 + n) % n : Math.max(0, corner.apex - 1)]!;
+    const b = line[corner.apex]!;
+    const c = line[closed ? (corner.apex + 1) % n : Math.min(n - 1, corner.apex + 1)]!;
+    const bend = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    return { ...corner, angle: Math.abs(turn), direction: (bend <= 0 ? 1 : -1) as -1 | 1 };
+  });
+  return { corners, radii, at, total };
+}
+
+/** Smallest turn (radians) each half of an S must make to count as two corners. */
+const ESS_MIN_TURN = (5 * Math.PI) / 180;
+
+/**
+ * Split a tight span that turns one way then the other (a chicane, an S) into its two corners at
+ * the inflection: unsigned radius sees one corner there, a driver sees a left and a right.
+ */
+function splitEsses(line: readonly StreetVec2[], radii: readonly number[], corners: CircuitCorner[], closed: boolean): CircuitCorner[] {
+  const n = line.length;
+  const turnAt = (i: number): number => {
+    const a = line[closed ? (i - 1 + n) % n : Math.max(0, i - 1)]!;
+    const b = line[i]!;
+    const c = line[closed ? (i + 1) % n : Math.min(n - 1, i + 1)]!;
+    return angleDelta(Math.atan2(b[0] - a[0], b[1] - a[1]), Math.atan2(c[0] - b[0], c[1] - b[1]));
+  };
+  const out: CircuitCorner[] = [];
+  for (const corner of corners) {
+    const span: number[] = [];
+    for (let i = corner.entry, guard = 0; guard <= n; guard += 1) {
+      span.push(i);
+      if (i === corner.exit) break;
+      i = closed ? (i + 1) % n : i + 1;
+    }
+    // Running turn: the split is where it peaks, the far side of the first half.
+    let running = 0;
+    let peak = 0;
+    let at = -1;
+    for (let k = 0; k < span.length; k += 1) {
+      running += turnAt(span[k]!);
+      if (Math.abs(running) > Math.abs(peak) + 1e-9) {
+        peak = running;
+        at = k;
+      }
+    }
+    const rest = running - peak;
+    if (at <= 0 || at >= span.length - 1 || Math.abs(peak) < ESS_MIN_TURN || Math.abs(rest) < ESS_MIN_TURN || Math.sign(rest) === Math.sign(peak)) {
+      out.push(corner);
+      continue;
+    }
+    for (const part of [span.slice(0, at + 1), span.slice(at + 1)]) {
+      let apex = part[0]!;
+      for (const i of part) if (radii[i]! < radii[apex]!) apex = i;
+      out.push({ ...corner, entry: part[0]!, exit: part[part.length - 1]!, apex, radius: radii[apex]! });
+    }
+  }
+  return out;
+}
+
+/** Furthest (m) a corner's turn is read outside its tight span. */
+const CORNER_READ = 60;
+
+/** The lap summary read off a shaped racing line — what the finalists are judged on. */
+function shapedSummary(shaped: ShapedRoute, closed: boolean, base: LapSummary, resolved: CircuitRouteParams): LapSummary {
+  const line = shaped.line;
+  const { corners, at, total } = lineCorners(line, closed, resolved);
+  const metric = radiusProfile(line, METRIC_CHORD, closed);
+  const runs = straightRuns(metric, at, total, closed, true);
+  let overtakes = 0;
+  for (const run of runs) {
+    if (run.length < OVERTAKE_STRAIGHT) continue;
+    // Heavy braking: a slow corner within 80 m of the straight's end.
+    const end = run.start + run.length;
+    for (let d = 0; d <= 80; d += SHAPE_STEP) {
+      if (!closed && end + d > total) break;
+      if (metric[indexAtDistance(at, total, end + d, closed)]! < SLOW_CORNER_RADIUS) {
+        overtakes += 1;
+        break;
+      }
+    }
+  }
+  const sim = simulateLap(line, metric, closed);
+  const summary: LapCornerSummary[] = corners.map((corner) => ({ angle: corner.angle, direction: corner.direction, at: at[corner.apex]!, radius: corner.radius }));
+  return { ...base, length: total, straights: runs.map((run) => run.length), corners: summary, overtakes, brakingZones: sim.brakingZones };
+}
+
+interface LiftedRoute {
+  nodes: number[];
+  edges: number[];
+  arterial: number;
+  shaped: ShapedRoute;
+}
+
+/**
+ * The street-race search: generate candidates, score every one off its outline, shape the best few
+ * into racing lines and keep the one that scores best as driven.
+ */
+function liftStreetRace(graph: LapGraph, resolved: CircuitRouteParams, constraints: CircuitRouteConstraints, seed: string, closed: boolean): LiftedRoute | null {
+  const anchors: LapAnchor[] = [];
+  if (constraints.start !== undefined) anchors.push(resolveAnchor(graph, constraints.start));
+  for (const via of constraints.via ?? []) anchors.push(resolveAnchor(graph, via));
+  const finish = !closed && constraints.finish !== undefined ? resolveAnchor(graph, constraints.finish) : null;
+  const startOnly = constraints.start !== undefined && (constraints.via ?? []).length === 0;
+  const candidates = lapCandidates(graph, { closed, lapLength: resolved.lapLength, arterialBias: resolved.arterialBias, anchors, startOnly, finish, seed });
+  const rules: LapScoreRules = {
+    lapLength: resolved.lapLength,
+    arterialBias: resolved.arterialBias,
+    chicanes: resolved.chicanes,
+    ...(constraints.landmarks === undefined ? {} : { landmarks: constraints.landmarks }),
+    ...(constraints.avoidEdges === undefined ? {} : { avoidEdges: new Set(constraints.avoidEdges) }),
+  };
+  const scored: { outline: LapOutline; summary: LapSummary; chicanes: PlannedChicane[]; key: number; order: number }[] = [];
+  candidates.forEach((links, order) => {
+    const outline = outlineOf(graph, links, closed);
+    if (outline.points.length < 4) return;
+    const { summary, chicanes } = summarizeOutline(outline, closed, rules);
+    scored.push({ outline, summary, chicanes, key: quantizedScore(lapScore(summary, rules)), order });
+  });
+  scored.sort((a, b) => b.key - a.key || a.order - b.order);
+  let best: LiftedRoute | null = null;
+  let bestKey = -Infinity;
+  let shapedCount = 0;
+  for (const entry of scored) {
+    if (shapedCount >= FINALISTS) break;
+    // A fold where two stretches of the lap share asphalt is not raceable.
+    if (selfClearance(entry.outline.points, entry.outline.widths, closed) < 0) continue;
+    shapedCount += 1;
+    const shaped = shapeOutline(entry.outline, entry.chicanes, resolved, closed);
+    const key = quantizedScore(lapScore(shapedSummary(shaped, closed, entry.summary, resolved), rules));
+    if (key > bestKey) {
+      bestKey = key;
+      best = { nodes: entry.outline.nodes, edges: entry.outline.edges, arterial: entry.outline.arterialShare, shaped };
+    }
+  }
+  return best;
+}
+
+/**
+ * Lift a sealed-off street race out of an existing street network: a closed lap by default, or a
+ * point-to-point sprint, optionally pinned through `via` anchors in order from a `start` hint
+ * ({@link CircuitRouteConstraints}). Returns `null` when no route fits (a pure tree of dead-end
+ * streets, or anchors the streets cannot link without crossing themselves), so callers can fall back
+ * or warn rather than render a broken race.
+ *
+ * On a `circuit`-mode network with no constraints the generated loop is used directly. Otherwise the
+ * lap search runs, seeded by the calling generator's seed. This is the lap stage of
+ * {@link RACE_CIRCUIT_GENERATOR}; a generator that already grew its streets (the `city` kind) runs it on
+ * them with its own context.
+ */
+export function extractCircuitRoute(
+  network: StreetNetwork,
+  resolved: CircuitRouteParams,
+  context: Pick<GeneratorContext, "seed">,
+  constraints: CircuitRouteConstraints = {},
+): CircuitRoute | null {
+  const adjacency = buildAdjacency(network);
+  const closed = constraints.kind !== "sprint";
+  const constrained = constraints.via !== undefined || constraints.start !== undefined || !closed;
+  let nodes: number[];
+  let edges: number[];
+  let arterialShare: number;
+  let centerline: StreetVec2[];
+  let widths: number[];
+  let heights: number[] | null;
+  let barriers: ShapedRoute["barriers"] = [];
+  const loop = network.mode === "circuit" && !constrained ? loopCandidate(network) : null;
+  const lifted = loop === null ? liftStreetRace(buildLapGraph(network), resolved, constraints, context.seed, closed) : null;
+  if (lifted !== null) {
+    nodes = lifted.nodes;
+    edges = lifted.edges;
+    arterialShare = lifted.arterial;
+    const dense = resampleLine(lifted.shaped.line, lifted.shaped.widths, lifted.shaped.heights, resolved.sampleStep, closed);
+    centerline = dense.points;
+    widths = dense.widths;
+    heights = dense.heights;
+    barriers = lifted.shaped.barriers;
+  } else {
+    const candidate = loop ?? (constrained ? null : loopCandidate(network));
+    if (candidate === null) return null;
+    const assembled = assembleCenterline(candidate.nodes, candidate.edges, adjacency);
+    if (assembled.centerline.length < 4) return null;
+    // Resample to a racing-surface resolution, then round the junction kinks into a line a car can
+    // actually take — still the same asphalt, just driven properly.
+    const dense = resampleLine(assembled.centerline, assembled.widths, assembled.heights, resolved.sampleStep);
+    nodes = candidate.nodes;
+    edges = candidate.edges;
+    arterialShare = candidate.arterial;
+    centerline = roundCorners(dense.points, dense.widths, resolved.minCornerRadius, resolved.cornerCut);
+    widths = dense.widths;
+    heights = dense.heights;
+  }
   if (centerline.length < 8) return null;
-  const { at, total } = arcLengths(centerline);
-  const radii = curvatureProfile(centerline, Math.max(6, resolved.minCornerRadius));
+  const { corners, radii, at, total } = lineCorners(centerline, closed, resolved);
   let tightestRadius = Infinity;
   for (const radius of radii) if (radius < tightestRadius) tightestRadius = radius;
   const cornerThreshold = Math.max(resolved.minCornerRadius * 4, 40);
-  const spacing = total / centerline.length;
-  const corners = analyzeCorners(centerline, radii, cornerThreshold, Math.max(8, resolved.minCornerRadius), spacing);
   const straightRadius = Math.max(cornerThreshold * 3, 200);
 
-  const startIndex = findStartIndex(radii, at, total, straightRadius);
+  // The whole grid stands on a straight: never in a corner.
+  const rows = Math.ceil(resolved.gridSlots / 2);
+  const gridLength = rows > 0 ? 8 + (rows - 1) * 9 + 4 : 0;
+  let preferred: number | null = closed ? null : 0;
+  if (constraints.start !== undefined) {
+    const hint = typeof constraints.start === "number" ? adjacency.nodeAt.get(constraints.start) : { x: constraints.start[0], z: constraints.start[1] };
+    if (hint !== undefined) {
+      let nearest = 0;
+      let nearestD = Infinity;
+      centerline.forEach((p, i) => {
+        const d = (p[0] - hint.x) ** 2 + (p[1] - hint.z) ** 2;
+        if (d < nearestD) {
+          nearestD = d;
+          nearest = i;
+        }
+      });
+      preferred = at[nearest]!;
+    }
+  }
+  const metric = radiusProfile(centerline, METRIC_CHORD, closed);
+  const startIndex = placeStart(metric, at, total, closed, gridLength, preferred) ?? (closed ? findStartIndex(radii, at, total, straightRadius) : indexAtDistance(at, total, gridLength + 4, false));
   const startPoint = centerline[startIndex]!;
-  const startHeading = headingAt(centerline, startIndex);
+  const startHeading = headingAt(centerline, startIndex, closed);
   const startWidth = widths[startIndex] ?? 10;
   const across = startHeading + Math.PI / 2;
   const start: CircuitStart = {
@@ -892,9 +1112,9 @@ export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRou
     const row = Math.floor(slot / 2);
     const column = slot % 2 === 0 ? -1 : 1;
     const back = 8 + row * 9;
-    const index = indexAtDistance(at, total, at[startIndex]! - back);
+    const index = indexAtDistance(at, total, at[startIndex]! - back, closed);
     const point = centerline[index]!;
-    const heading = headingAt(centerline, index);
+    const heading = headingAt(centerline, index, closed);
     const lateral = heading + Math.PI / 2;
     const offset = (widths[index] ?? startWidth) * 0.22 * column;
     grid.push({
@@ -904,14 +1124,17 @@ export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRou
     });
   }
 
-  // Gates are evenly spaced around the lap with the finish line LAST, so `raceTrack` treats the
-  // start/finish crossing as the lap boundary. The finish IS the start line: placing it by distance
-  // (start + spacing * count, wrapped by `total`) lands within an ulp of `at[startIndex]`, so libm's
-  // last bit picked the sample before or after the line and moved the finish by a whole step.
+  // Gates are evenly spaced with the finish line LAST, so `raceTrack` treats the start/finish
+  // crossing as the lap boundary; a sprint's gates run from the start line to the far end. A lap's
+  // finish IS the start line: placing it by distance (start + spacing * count, wrapped by `total`)
+  // lands within an ulp of `at[startIndex]`, so libm's last bit picked the sample before or after the
+  // line and moved the finish by a whole step.
   const checkpoints: CircuitGate[] = [];
-  const gateSpacing = total / resolved.checkpoints;
+  const raceDistance = closed ? total : total - at[startIndex]!;
+  const gateSpacing = raceDistance / resolved.checkpoints;
   for (let gate = 1; gate <= resolved.checkpoints; gate += 1) {
-    const index = gate === resolved.checkpoints ? startIndex : indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate);
+    const finish = gate === resolved.checkpoints;
+    const index = finish ? (closed ? startIndex : centerline.length - 1) : indexAtDistance(at, total, at[startIndex]! + gateSpacing * gate, closed);
     const point = centerline[index]!;
     const height = heights?.[index] ?? 0;
     const halfWidth = (widths[index] ?? startWidth) * 0.5 + 1.5;
@@ -925,23 +1148,83 @@ export function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRou
   const sectors: number[] = [];
   for (let sector = 0; sector < resolved.sectors; sector += 1) sectors.push(sector / resolved.sectors);
 
+  const chicanes: CircuitChicane[] = [];
+  for (let k = 0; k + 1 < barriers.length; k += 2) {
+    const nearest = (b: { x: number; z: number }): number => {
+      let best = 0;
+      let bestD = Infinity;
+      centerline.forEach((p, i) => {
+        const d = (p[0] - b.x) ** 2 + (p[1] - b.z) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      return best;
+    };
+    const first = barriers[k]!;
+    const second = barriers[k + 1]!;
+    chicanes.push({
+      entry: nearest(first),
+      exit: nearest(second),
+      barriers: [
+        { ...first, kind: resolved.sealKind },
+        { ...second, kind: resolved.sealKind },
+      ],
+    });
+  }
+
   return {
+    closed,
     centerline,
     widths,
     ...(heights === null ? {} : { heights }),
     length: total,
-    edges: candidate.edges,
-    nodes: candidate.nodes,
-    seals: buildSeals(candidate.nodes, candidate.edges, adjacency, resolved.sealKind),
+    edges,
+    nodes,
+    seals: buildSeals(nodes, edges, adjacency, resolved.sealKind),
+    chicanes,
     corners,
     checkpoints,
-    laps: resolved.laps,
+    laps: closed ? resolved.laps : 1,
     start,
     grid,
     sectors,
-    arterialShare: candidate.arterial,
+    arterialShare,
     tightestRadius,
   };
+}
+
+/** One named race a city hosts: a lap or sprint, its anchors, and any lap dials it overrides. */
+export interface StreetRaceSpec extends CircuitRouteConstraints {
+  /** Stable id: seeds the race's own search and names it in the result. */
+  id: string;
+  label?: string;
+  /** Lap dials this race overrides on top of the shared defaults. */
+  params?: Partial<CircuitRouteParams>;
+}
+
+/** One lifted race: its id, label, and the route (null when the streets hold no fitting route). */
+export interface StreetRace {
+  id: string;
+  label: string;
+  route: CircuitRoute | null;
+}
+
+/**
+ * Lift several named races out of one street network — a city's race calendar. Each race is searched
+ * with its own seed (`<seed>:<id>`), and races without anchors are steered away from the streets the
+ * earlier ones already use, so a city's laps differ instead of all picking the same best loop.
+ */
+export function extractStreetRaces(network: StreetNetwork, specs: readonly StreetRaceSpec[], defaults: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): StreetRace[] {
+  const used = new Set<number>();
+  return specs.map((spec) => {
+    const { id, label, params, ...constraints } = spec;
+    const avoid = [...(constraints.avoidEdges ?? []), ...used];
+    const route = extractCircuitRoute(network, { ...defaults, ...params }, { seed: `${context.seed}:${id}` }, { ...constraints, avoidEdges: avoid });
+    for (const edge of route?.edges ?? []) used.add(edge);
+    return { id, label: label ?? id, route };
+  });
 }
 
 /** The race circuit generator's output family: a {@link RaceCircuit}. */

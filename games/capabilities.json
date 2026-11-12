@@ -11284,6 +11284,36 @@
       "intent": "seed-driven procedural streets and race circuits from one slider-driven engine"
     },
     {
+      "id": "street-network-from-paths",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/streetNetworkFromPaths",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "turn authored road polylines into a street network the race lap search and city tools read"
+    },
+    {
+      "id": "street-race-events",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/raceEvents",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "stand a street race's seals and chicane barriers up only while the race runs"
+    },
+    {
+      "id": "street-races",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/raceCircuit",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "several named street laps and point-to-point sprints through a city, pinned to via junctions"
+    },
+    {
       "id": "studio-stage",
       "packages": [
         "@jgengine/core"

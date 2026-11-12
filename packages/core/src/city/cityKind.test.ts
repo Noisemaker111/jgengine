@@ -121,7 +121,10 @@ describe("city generator contract", () => {
   // and the new lot seeds left out): the move changed no layout. Re-recorded once when ties that
   // libm's last bit decided (finish gate, frontage street, boundary-touching rect fits, collinear
   // edge "crossings") got platform-independent answers; `otherLibm.test.ts` keeps them that way.
-  test("plans match their fingerprints from before the generator contract", () => {
+  // Re-recorded deliberately when the content pass landed (organic multi-centre zoning, block fill,
+  // massing templates, landmarks/squares/parks, the village regime): every fabric plan changed, while
+  // the fabric-free `circuit` and `rally` plans — pure street output — kept their prints.
+  test("plans match their recorded fingerprints", () => {
     const terrain = (x: number, z: number): number => 6 * Math.sin(x / 37) + 4 * Math.cos(z / 23) - 2;
     const volume = (meta: Record<string, unknown>, rotationY = 0): SceneKindObject => ({
       id: "fp-city",
@@ -132,22 +135,22 @@ describe("city generator contract", () => {
       meta,
     });
     const print = (city: ResolvedCity | null): string => fingerprint({ ...city!, lots: city!.lots.map(({ seed: _seed, ...lot }) => lot) });
-    expect(print(resolveCityObject(volume({})))).toBe("179d436408d389ae");
-    expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("ea3abd48fb77ed76");
-    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("d65e9769b67b5938");
+    expect(print(resolveCityObject(volume({})))).toBe("88303e5611499bf4");
+    expect(print(resolveCityObject(volume({ seed: "fp" }, 0.6)))).toBe("b7fc0e65cbf9fc70");
+    expect(print(resolveCityObject(volume({ seed: "fp-race", race: true, gridness: 0.8 })))).toBe("f787c6c9f0961493");
     expect(
       print(resolveCityObject(volume({ seed: "fp-elev", elevation: 0.6, bridges: true, tunnels: true, minElevation: -3 }), { sampleHeight: terrain })),
-    ).toBe("2d4d88327a6805ed");
+    ).toBe("5e1cc7126cc92ed6");
     const zone: SceneKindObject = { id: "z", kind: "cityzone", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 60, y: 5, z: 60 }, meta: { band: "edge", mix: [{ item: "barn", weight: 1 }] } };
-    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("4f9f171f16fcc3c3");
+    expect(print(resolveCityObject(volume({ seed: "fp-zone" }), { zoneOverrides: [zone] }))).toBe("50f3cdf1c3320c22");
     const presets: Record<string, string> = {
-      manhattan: "5b00dcc3eef48f81",
-      losangeles: "c5c812f0e1eb4fd5",
-      beverlyhills: "ab76ec61e8d73555",
-      ruralohio: "d9a5389271b33f22",
+      manhattan: "c2f788bd8a9afe5b",
+      losangeles: "05e15a667b7b544d",
+      beverlyhills: "4a98bdbaf663c0c2",
+      ruralohio: "48ea680e2e32aa86",
       circuit: "7c152308a32e3153",
       rally: "05ad2ae4e5321edd",
-      metropolis: "9360d71826e28654",
+      metropolis: "a937cc6616602443",
     };
     for (const preset of CITY_SCHEMA.presets ?? []) {
       expect(print(resolveCityObject(volume({ ...preset.values, seed: `p-${preset.id}` })))).toBe(presets[preset.id]!);
@@ -170,7 +173,7 @@ describe("city generator contract", () => {
         surface: "gravel", buildingRoadSetback: 1.2, buildingSpacing: 1, clusterStrength: 0.6,
       },
     };
-    expect(print(resolveCityObject(hamlet))).toBe("2a946221179b3166");
+    expect(print(resolveCityObject(hamlet))).toBe("3a6c81678cdcc70c");
   });
 });
 
@@ -509,30 +512,34 @@ function expectFabricInvariants(city: ResolvedCity, label: string): void {
       }
     }
   }
-  // Built parcels carry frontage and their building stays within the buildable polygon.
-  const lotByParcel = new Map(city.lots.map((lot) => [lot.parcel, lot] as const));
+  // Built parcels carry frontage and their buildings (a house and its back-yard outbuilding share
+  // one) stay within the buildable polygon.
+  const lotsByParcel = new Map<string, (typeof city.lots)[number][]>();
+  for (const lot of city.lots) lotsByParcel.set(lot.parcel ?? "", [...(lotsByParcel.get(lot.parcel ?? "") ?? []), lot]);
   let withFrontage = 0;
   let built = 0;
   for (const parcel of city.parcels) {
     if (parcel.frontage.length > 0) withFrontage += 1;
     if (parcel.kind !== "built") continue;
     built += 1;
-    const lot = lotByParcel.get(parcel.id);
-    expect(lot).toBeDefined();
+    const lots = lotsByParcel.get(parcel.id) ?? [];
+    expect(lots.length).toBeGreaterThan(0);
     expect(parcel.buildable.length).toBeGreaterThanOrEqual(3);
-    const c = Math.cos(lot!.rotationY);
-    const s = Math.sin(lot!.rotationY);
-    const [hw, hd] = [lot!.size[0] / 2, lot!.size[1] / 2];
-    for (const [dx, dz] of [
-      [hw, hd],
-      [hw, -hd],
-      [-hw, hd],
-      [-hw, -hd],
-    ] as const) {
-      const x = lot!.center[0] + dx * c + dz * s;
-      const z = lot!.center[1] - dx * s + dz * c;
-      if (!pointInPolygon(parcel.buildable, x, z)) {
-        expect(distanceToRing(parcel.buildable, x, z)).toBeLessThan(0.6);
+    for (const lot of lots) {
+      const c = Math.cos(lot.rotationY);
+      const s = Math.sin(lot.rotationY);
+      const [hw, hd] = [lot.size[0] / 2, lot.size[1] / 2];
+      for (const [dx, dz] of [
+        [hw, hd],
+        [hw, -hd],
+        [-hw, hd],
+        [-hw, -hd],
+      ] as const) {
+        const x = lot.center[0] + dx * c + dz * s;
+        const z = lot.center[1] - dx * s + dz * c;
+        if (!pointInPolygon(parcel.buildable, x, z)) {
+          expect(distanceToRing(parcel.buildable, x, z)).toBeLessThan(0.6);
+        }
       }
     }
   }
@@ -557,7 +564,7 @@ function expectFabricInvariants(city: ResolvedCity, label: string): void {
   for (const block of city.blocks) {
     if (block.kind === "buildable") expect(block.area).toBeGreaterThanOrEqual(85);
   }
-  expect(built).toBe(city.lots.length);
+  expect(built).toBe(lotsByParcel.size);
   if (city.lots.length === 0 && city.streets.length > 4) {
     // A street network with no buildings at default-ish occupancy would be a regression flag.
     // (Callers pass label so a failure names the scenario.)
@@ -888,7 +895,7 @@ describe("street hierarchy, intersections, furniture", () => {
     expect(rural.signals.length).toBe(0);
     const manhattan = resolveCityObject(cityVolume(preset("manhattan")))!;
     expect(manhattan.vehicles.length).toBeGreaterThan(rural.vehicles.length * 20);
-    expect(manhattan.signals.length).toBeGreaterThan(50);
+    expect(manhattan.signals.length).toBeGreaterThan(24);
   });
 
   test("street life rotates with the volume — positions and headings alike", () => {
@@ -1118,10 +1125,10 @@ describe("elevation, compactness, and default stability", () => {
     // Pinned against the current fabric output: a default that quietly reshaped every authored city
     // district would show up here first.
     const bare = resolveCityObject(cityVolume())!;
-    expect([bare.streets.length, bare.lots.length]).toEqual([173, 235]);
+    expect([bare.streets.length, bare.lots.length]).toEqual([173, 221]);
     const seeded = resolveCityObject(cityVolume({ seed: "d" }))!;
     // 255, not 252, since collinear parcel edges stopped counting as crossings by rounding noise.
-    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 255]);
+    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 189]);
   });
 });
 

@@ -21,7 +21,9 @@
  * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots, parked vehicles,
  * junction signals and sign posts) resolves as bounded, seeded data hooked to the network. Turn `race` on and the district also hands back a
  * {@link ResolvedRace}: a closed lap lifted out of its OWN streets with every side street leaving it
- * sealed off — the Monaco / open-world street-race model, not a separate track. Child `cityzone` volumes override the band/mix
+ * sealed off (barriers stood only while `startStreetRaceEvent(<volume id>)` holds) — the Monaco /
+ * open-world street-race model, not a separate track. `extractStreetRaces` on {@link ResolvedCity.network}
+ * lifts more named laps and sprints. Child `cityzone` volumes override the band/mix
  * locally, so hand-placed intent wins over the profile. Named presets (Manhattan, Los Angeles,
  * Beverly Hills, rural Ohio…) ship as plain slider bundles on the schema. Pure config + resolver
  * here; the instanced renderer lives in the `shell`. Everything is deterministic per seed and
@@ -40,10 +42,11 @@ import {
   landmarkFloors,
   pickClass,
   pickLandmarkClass,
+  pickLotTemplate,
   pickSpecies,
   rollClassPlacement,
+  STREETWALL_CLASSES,
   zoneBand,
-  zoneMetric,
   type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
@@ -61,6 +64,8 @@ import {
   type CircuitSealKind,
 } from "../roads/raceCircuit";
 import { furnitureSpots, parkingSpots } from "../roads/streets";
+import { clearanceZonesFrom } from "../scatter/scatterRegion";
+import type { SceneDocumentLike } from "../world/sceneShapes";
 import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "../scatter/scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "../world/features";
 import type { WorldSolid } from "../world/worldSolids";
@@ -71,6 +76,8 @@ import {
   type StreetLevel,
   type StreetNetwork,
   type StreetNetworkParams,
+  type StreetEdge,
+  type StreetNode,
   type Street,
 } from "../roads/streetGenerator";
 import {
@@ -80,12 +87,18 @@ import {
   cutParcel,
   extractGraphBlocks,
   isSliverBlock,
+  parkPaths,
   pointsInPolygon,
   RingWalker,
+  type GraphBlockEdge,
+  type GraphBlockNode,
+  type GraphBlockRings,
   type CityBlockKind,
 } from "./cityBlocks";
-import { fitRectInPolygon, rayDistanceToRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonsOverlap, insetRingUniform, rectsSeparated, ringBounds } from "../world/polygon";
+import { fitRectInPolygon, rayDistanceToRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonsOverlap, insetRingUniform, rectsSeparated, ringBounds, ringSelfIntersects } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
+import { CHARACTER_CLASS_BIAS, CHARACTER_FILL, cityDistrictField, districtCharacter, type CityDistrictField, type CityDistrictKind } from "./cityDistricts";
+import { VILLAGE_MAX_CELLS, villageGreen, villageLanes } from "./cityVillage";
 
 /** The editor volume kind marking a box as a procedural city district. */
 export const CITY_KIND = "city";
@@ -166,7 +179,7 @@ export const CITY_SCHEMA = defineParamSchema({
     { type: "range", key: "coreExtent", label: "core extent", group: "zoning", min: 0.05, max: 0.9, step: 0.01, default: 0.35 },
     { type: "range", key: "midExtent", label: "mid extent", group: "zoning", min: 0.1, max: 0.95, step: 0.01, default: 0.7 },
     { type: "weightedList", key: "coreMix", label: "core mix", group: "zoning", itemLabel: "class", default: [{ item: "tower", weight: 3 }, { item: "slab", weight: 1 }, { item: "shop", weight: 1 }] },
-    { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: [{ item: "slab", weight: 2 }, { item: "rowhouse", weight: 2 }, { item: "shop", weight: 1 }] },
+    { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: [{ item: "slab", weight: 2 }, { item: "rowhouse", weight: 2 }, { item: "shop", weight: 1 }, { item: "warehouse", weight: 0.6 }] },
     { type: "weightedList", key: "edgeMix", label: "edge mix", group: "zoning", itemLabel: "class", default: [{ item: "house", weight: 3 }, { item: "rowhouse", weight: 1 }] },
     { type: "range", key: "lotScale", label: "lot scale", group: "zoning", min: 0.5, max: 2.5, step: 0.05, default: 1 },
     { type: "range", key: "landmarks", label: "landmarks", group: "zoning", min: 0, max: 0.5, step: 0.01, default: 0 },
@@ -207,17 +220,20 @@ export const CITY_SCHEMA = defineParamSchema({
       values: {
         gridness: 1,
         curviness: 0,
-        branching: 0.05,
-        blockSize: 32,
-        blockAspect: 2.4,
-        openSpace: 0.05,
-        roadsideOccupancy: 0.97,
-        blockDensity: 0.85,
+        branching: 0,
+        connectivity: 1,
+        deadEnds: 0,
+        blockSize: 80,
+        blockAspect: 3.2,
+        openSpace: 0.03,
+        roadsideOccupancy: 0.98,
+        blockDensity: 0.95,
         buildingRoadSetback: 0.55,
         buildingSpacing: 0.55,
         clusterStrength: 0.25,
         streetWidth: 9,
-        boulevards: 0.5,
+        sidewalkWidth: 2.6,
+        boulevards: 0.15,
         gravelLanes: false,
         profile: "core-out",
         coreExtent: 0.6,
@@ -227,16 +243,18 @@ export const CITY_SCHEMA = defineParamSchema({
           { item: "slab", weight: 1 },
         ],
         midMix: [
-          { item: "tower", weight: 2 },
+          { item: "tower", weight: 3 },
           { item: "slab", weight: 2 },
         ],
         edgeMix: [
           { item: "slab", weight: 3 },
-          { item: "rowhouse", weight: 2 },
+          { item: "tower", weight: 1 },
+          { item: "rowhouse", weight: 1 },
         ],
         lotScale: 1,
+        landmarks: 0.06,
         floorsMin: 5,
-        floorsMax: 55,
+        floorsMax: 60,
         treeDensity: 0.3,
         treeMix: [{ item: "broadleaf", weight: 1 }],
         lightDensity: 0.8,
@@ -260,10 +278,10 @@ export const CITY_SCHEMA = defineParamSchema({
         blockSize: 62,
         blockAspect: 1.2,
         openSpace: 0.08,
-        roadsideOccupancy: 0.9,
+        roadsideOccupancy: 0.96,
         blockDensity: 0.55,
-        buildingRoadSetback: 3,
-        buildingSpacing: 1.8,
+        buildingRoadSetback: 2,
+        buildingSpacing: 1.2,
         clusterStrength: 0.5,
         streetWidth: 8,
         boulevards: 0.45,
@@ -280,12 +298,15 @@ export const CITY_SCHEMA = defineParamSchema({
           { item: "shop", weight: 2 },
           { item: "house", weight: 3 },
           { item: "slab", weight: 1 },
+          { item: "warehouse", weight: 0.8 },
         ],
         edgeMix: [
           { item: "house", weight: 5 },
           { item: "shop", weight: 1 },
+          { item: "warehouse", weight: 0.6 },
         ],
-        lotScale: 1.1,
+        lotScale: 1.25,
+        landmarks: 0.05,
         floorsMin: 1,
         floorsMax: 18,
         treeDensity: 0.55,
@@ -315,10 +336,10 @@ export const CITY_SCHEMA = defineParamSchema({
         blockSize: 90,
         blockAspect: 1,
         openSpace: 0.07,
-        roadsideOccupancy: 0.85,
+        roadsideOccupancy: 0.93,
         blockDensity: 0.3,
         buildingRoadSetback: 4.5,
-        buildingSpacing: 2.2,
+        buildingSpacing: 1.6,
         clusterStrength: 0.35,
         streetWidth: 6.5,
         boulevards: 0,
@@ -338,7 +359,8 @@ export const CITY_SCHEMA = defineParamSchema({
           { item: "mansion", weight: 2 },
           { item: "house", weight: 2 },
         ],
-        lotScale: 1.5,
+        lotScale: 1.4,
+        landmarks: 0.04,
         floorsMin: 1,
         floorsMax: 3,
         treeDensity: 0.9,
@@ -395,6 +417,7 @@ export const CITY_SCHEMA = defineParamSchema({
           { item: "silo", weight: 1 },
         ],
         lotScale: 1.4,
+        landmarks: 0.1,
         floorsMin: 1,
         floorsMax: 2,
         treeDensity: 0.35,
@@ -495,12 +518,12 @@ export const CITY_SCHEMA = defineParamSchema({
       values: {
         gridness: 0.85,
         curviness: 0.15,
-        branching: 0.4,
-        blockSize: 48,
+        branching: 0.25,
+        blockSize: 64,
         blockAspect: 1.3,
         openSpace: 0.12,
         roadsideOccupancy: 0.92,
-        blockDensity: 0.7,
+        blockDensity: 0.85,
         buildingRoadSetback: 1.5,
         buildingSpacing: 1.2,
         clusterStrength: 0.45,
@@ -508,9 +531,10 @@ export const CITY_SCHEMA = defineParamSchema({
         boulevards: 0.4,
         profile: "core-out",
         coreExtent: 0.45,
-        midExtent: 0.75,
+        midExtent: 0.85,
+        landmarks: 0.05,
         floorsMin: 1,
-        floorsMax: 34,
+        floorsMax: 40,
         treeDensity: 0.55,
         lightDensity: 0.6,
         parkedCars: 0.85,
@@ -608,6 +632,8 @@ export interface CityLot {
   anchor: RoadPoint;
   /** Deterministic massing pieces in lot-local space (see {@link CityLotPiece}). */
   pieces: readonly CityLotPiece[];
+  /** The class's massing template the pieces follow (`podium`, `mansard`, `dutch`…), or the landmark class. */
+  template: string;
   /** Id of the parcel this building stands on. */
   parcel?: string;
   /** Set when the building is a civic landmark filling its whole block; `class` is then the ordinary class used for styling. */
@@ -625,6 +651,10 @@ export interface CityBlock {
   curb: readonly RoadPoint[];
   /** Land area in m². */
   area: number;
+  /** Zone band the block falls in (after overrides). */
+  band: CityZoneBand;
+  /** The district character the block reads as — what biased its class mix and how fully it filled. */
+  district: CityDistrictKind;
 }
 
 /** One street-frontage edge of a parcel. */
@@ -686,6 +716,8 @@ export interface CityPark {
   polygon?: readonly RoadPoint[];
   /** Crop-row polylines for `field` parks, clipped around farm lots. */
   rows?: readonly (readonly RoadPoint[])[];
+  /** Footpath centerlines across greens, meadows and courtyards (about 2.4 m wide), world XZ. */
+  paths?: readonly (readonly RoadPoint[])[];
 }
 
 /** One placed tree: world XZ, species, and seeded scale/color jitter. */
@@ -764,6 +796,22 @@ export interface CityRaceSeal {
   kind: CircuitSealKind;
 }
 
+/** One barrier run of a chicane: world XZ, the yaw of travel it stands across, and its run length. */
+export interface CityRaceBarrier {
+  x: number;
+  z: number;
+  heading: number;
+  width: number;
+  kind: CircuitSealKind;
+}
+
+/** A barrier chicane on one of the lap's secondary straights (`entry`/`exit` index the centerline). */
+export interface CityRaceChicane {
+  entry: number;
+  exit: number;
+  barriers: readonly CityRaceBarrier[];
+}
+
 /** One kerb strip hugging a corner's road edge, as a world-space polyline to stripe. */
 export interface CityRaceKerb {
   points: readonly RoadPoint[];
@@ -812,7 +860,12 @@ export interface ResolvedRace {
   length: number;
   /** Ids of the district streets the lap runs on — style exactly these as track surface. */
   streets: readonly string[];
+  /**
+   * Side streets closed off, and the chicanes' barriers: EVENT-SCOPED — the renderer stands them up
+   * only while `startStreetRaceEvent(<city volume id>)` holds (`roads/raceEvents`).
+   */
   seals: readonly CityRaceSeal[];
+  chicanes: readonly CityRaceChicane[];
   corners: readonly CircuitCorner[];
   kerbs: readonly CityRaceKerb[];
   /** Ordered gates, finish last — ready for `raceTrack({ checkpoints, laps })`. */
@@ -916,6 +969,29 @@ export function citySolids(
 /** Extended resolve context: sibling `cityzone` volumes that override the band/mix locally. */
 export interface CityResolveContext extends SceneKindResolveContext {
   zoneOverrides?: readonly SceneKindObject[];
+  /**
+   * Gameplay spots to keep clear, world XZ discs. Omitted, they come from `objects`: every marker or
+   * volume with `meta.clearance` or a default clearance kind (spawns, objectives) — the same discs
+   * scatter avoids and terrain flattens ({@link clearanceZonesFrom}).
+   */
+  clearings?: readonly { x: number; z: number; radius: number }[];
+}
+
+/**
+ * The clearance discs of a document's objects, as {@link clearanceZonesFrom} reads them — what a
+ * city keeps building-free so it never sits on a spawn, a mine or an objective.
+ * @capability city-district keep a district's buildings off clearance-tagged gameplay spots
+ */
+export function cityClearings(objects: readonly SceneKindObject[]): { x: number; z: number; radius: number }[] {
+  const markers: { id: string; kind: string; position: { x: number; y: number; z: number }; meta?: Record<string, unknown> }[] = [];
+  const volumes: { id: string; kind: string; center: { x: number; y: number; z: number }; radius?: number; meta?: Record<string, unknown> }[] = [];
+  for (const object of objects) {
+    if (object.position !== undefined) markers.push({ id: object.id, kind: object.kind, position: object.position, ...(object.meta === undefined ? {} : { meta: object.meta }) });
+    else if (object.center !== undefined && object.kind !== CITY_KIND && object.kind !== CITY_ZONE_KIND) {
+      volumes.push({ id: object.id, kind: object.kind, center: object.center, ...(object.radius === undefined ? {} : { radius: object.radius }), ...(object.meta === undefined ? {} : { meta: object.meta }) });
+    }
+  }
+  return clearanceZonesFrom({ markers, volumes, paths: [] } as unknown as SceneDocumentLike).map((zone) => ({ x: zone.x, z: zone.z, radius: zone.radius }));
 }
 
 /** Bounded-work caps so a huge volume can never generate unbounded content. */
@@ -1106,6 +1182,7 @@ interface LocalPark {
   jitter: number;
   polygon?: Vec2[];
   rows?: [number, number][][];
+  paths?: Vec2[][];
 }
 
 interface LocalBlock {
@@ -1114,6 +1191,8 @@ interface LocalBlock {
   polygon: Vec2[];
   curb: Vec2[];
   area: number;
+  band: CityZoneBand;
+  district: CityDistrictKind;
 }
 
 interface LocalParcel {
@@ -1128,55 +1207,149 @@ interface LocalParcel {
   kind: CityParcel["kind"];
 }
 
+interface LocalLot {
+  id: string;
+  center: [number, number];
+  size: [number, number];
+  rotationY: number;
+  floors: number;
+  jitter: number;
+  cls: CityLotClass;
+  zone: CityZoneBand;
+  anchor: [number, number];
+  pieces: readonly CityLotPiece[];
+  template: string;
+  parcel: string;
+  landmark?: CityLandmarkClass;
+}
+
 interface FabricResult {
   blocks: LocalBlock[];
   parcels: LocalParcel[];
   parks: LocalPark[];
-  lots: {
-    id: string;
-    center: [number, number];
-    size: [number, number];
-    rotationY: number;
-    floors: number;
-    jitter: number;
-    cls: CityLotClass;
-    zone: CityZoneBand;
-    anchor: [number, number];
-    pieces: readonly CityLotPiece[];
-    parcel: string;
-    landmark?: CityLandmarkClass;
-  }[];
+  lots: LocalLot[];
   placed: LotIndex;
   hedges: { center: [number, number]; size: [number, number]; rotationY: number }[];
   driveways: { points: [number, number][]; width: number; surface: CityDriveway["surface"] }[];
 }
 
 /** Ordinary lot class each landmark is styled as (palette and window rules). */
-const LANDMARK_STYLE_CLASS: Record<CityLandmarkClass, CityLotClass> = { hall: "slab", arena: "slab", market: "shop", campus: "slab" };
+const LANDMARK_STYLE_CLASS: Record<CityLandmarkClass, CityLotClass> = {
+  hall: "slab",
+  arena: "slab",
+  market: "shop",
+  campus: "slab",
+  skyscraper: "tower",
+  church: "house",
+};
+
+/** A gameplay spot the fabric keeps clear (district-local XZ). */
+interface KeepOut {
+  x: number;
+  z: number;
+  radius: number;
+}
+
+/** Everything the block-first fabric reads besides the rules. */
+interface FabricContext {
+  rules: CityRules;
+  streams: (stream: string) => () => number;
+  streets: LocalStreet[];
+  graph: Pick<StreetNetwork, "nodes" | "edges">;
+  surfaceFor: (level: StreetLevel) => CityStreet["surface"];
+  index: StreetIndex;
+  slopeAt: ((x: number, z: number) => number) | null;
+  heightAt: ((x: number, z: number) => number) | null;
+  overrideAt: ((x: number, z: number) => { band: CityZoneBand; mix: WeightedParamEntry[] | null } | null) | null;
+  junctions: readonly { x: number; z: number }[];
+  field: CityDistrictField;
+  halfX: number;
+  halfZ: number;
+  /** Gameplay spots no building, tree or parked car may cover. */
+  keepOut: readonly KeepOut[];
+  /** A village's green: parcels never cut into it. */
+  green: Vec2[] | null;
+  /** A village's junction: frontage clusters around it, thinning toward the lane ends. */
+  hub: Vec2 | null;
+}
 
 /**
  * Stamp one civic landmark over a whole buildable block: the largest rect that fits the setback
  * land, facing the nearest street, massed by its landmark class. Returns false (leaving the block
  * to ordinary parcels) when the block is too small, too steep or too low.
  */
-function placeLandmark(
-  rules: CityRules,
-  rng: () => number,
-  result: FabricResult,
+function placeLandmark(ctx: FabricContext, result: FabricResult, land: Vec2[], bi: number, blockId: number, band: CityZoneBand, landmark: CityLandmarkClass): boolean {
+  const { rules } = ctx;
+  const rng = ctx.streams(`landmark-lot:${bi}`);
+  const found = landmarkSite(ctx, land);
+  if (found === null) return false;
+  const { site, fit, rotationY, near, depth } = found;
+  const candidate: PlacedLot = { x: fit.cx, z: fit.cz, hw: fit.w / 2, hd: fit.d / 2, angle: rotationY };
+  if (result.placed.overlapsAny(candidate, 0.8)) return false;
+  result.placed.add(candidate);
+  // The signature tower out-tops whatever the zone mix grows; every other landmark rolls its own range.
+  const floors =
+    landmark === "skyscraper"
+      ? Math.max(20, Math.min(90, Math.round(rules.floorsMax * (1.15 + rng() * 0.25))))
+      : landmarkFloors(landmark, rng, Math.max(rules.floorsMax, 3));
+  const parcelId = `parcel:${bi}:landmark`;
+  result.parcels.push({
+    id: parcelId,
+    block: blockId,
+    polygon: land,
+    buildable: site,
+    frontage: [],
+    area: polygonArea(land),
+    depth,
+    isCorner: false,
+    kind: "built",
+  });
+  result.lots.push({
+    id: `lot:${bi}:${result.lots.length}`,
+    center: [fit.cx, fit.cz],
+    size: [fit.w, fit.d],
+    rotationY,
+    floors,
+    jitter: rng(),
+    cls: LANDMARK_STYLE_CLASS[landmark],
+    zone: band,
+    anchor: [near.x, near.z],
+    pieces: buildLandmarkPieces(landmark, fit.w, fit.d, floors, rules.floorHeight, rng),
+    template: landmark,
+    parcel: parcelId,
+    landmark,
+  });
+  return true;
+}
+
+/**
+ * Where a landmark would stand on a block: the largest rect in its setback land facing the nearest
+ * street, or null when the block is too small, too steep or too low to hold one.
+ */
+function landmarkSite(
+  ctx: FabricContext,
   land: Vec2[],
-  bi: number,
-  blockId: number,
-  band: CityZoneBand,
-  index: StreetIndex,
-  streetCount: number,
-  slopeAt: ((x: number, z: number) => number) | null,
-  heightAt: ((x: number, z: number) => number) | null,
-): boolean {
+): { site: Vec2[]; fit: { cx: number; cz: number; w: number; d: number }; rotationY: number; near: { x: number; z: number }; depth: number } | null {
+  const { rules } = ctx;
   const site = insetRingUniform(land, Math.max(1, rules.buildingRoadSetback));
-  if (site.length < 3) return false;
+  if (site.length < 3) return null;
   const [cx, cz] = polygonCentroid(site);
-  const near = index.nearest(cx, cz, streetCount);
-  if (near === null) return false;
+  // The street it faces: nearest to the centroid, or — on a block too big for the index's reach —
+  // nearest to any corner of the site.
+  let near = ctx.index.nearest(cx, cz, ctx.streets.length);
+  if (near === null) {
+    let bestD = Infinity;
+    for (const [px, pz] of site) {
+      const probe = ctx.index.nearest(px, pz, ctx.streets.length);
+      if (probe === null) continue;
+      const d = Math.hypot(probe.x - cx, probe.z - cz);
+      if (d < bestD - 1e-9) {
+        bestD = d;
+        near = probe;
+      }
+    }
+  }
+  if (near === null) return null;
   const ox = near.x - cx;
   const oz = near.z - cz;
   const ol = Math.hypot(ox, oz) || 1;
@@ -1196,65 +1369,247 @@ function placeLandmark(
     maxB = Math.max(maxB, b);
   }
   const fit = fitRectInPolygon(site, cx, cz, maxA - minA, maxB - minB, rotationY, 0.3);
-  if (fit === null || fit.w < 14 || fit.d < 12) return false;
-  if (slopeAt !== null && slopeAt(fit.cx, fit.cz) > rules.maxSlope) return false;
-  if (heightAt !== null && heightAt(fit.cx, fit.cz) < rules.minElevation) return false;
-  const candidate: PlacedLot = { x: fit.cx, z: fit.cz, hw: fit.w / 2, hd: fit.d / 2, angle: rotationY };
-  if (result.placed.overlapsAny(candidate, 0.8)) return false;
-  result.placed.add(candidate);
-  const landmark = pickLandmarkClass(band, rng());
-  const floors = landmarkFloors(landmark, rng);
-  const parcelId = `parcel:${bi}:landmark`;
-  result.parcels.push({
-    id: parcelId,
-    block: blockId,
-    polygon: land,
-    buildable: site,
-    frontage: [],
-    area: polygonArea(land),
-    depth: maxB - minB,
-    isCorner: false,
-    kind: "built",
-  });
-  result.lots.push({
-    id: `lot:${bi}:${result.lots.length}`,
-    center: [fit.cx, fit.cz],
-    size: [fit.w, fit.d],
-    rotationY,
-    floors,
-    jitter: rng(),
-    cls: LANDMARK_STYLE_CLASS[landmark],
-    zone: band,
-    anchor: [near.x, near.z],
-    pieces: buildLandmarkPieces(landmark, fit.w, fit.d, floors, rules.floorHeight, rng),
-    parcel: parcelId,
-    landmark,
-  });
+  if (fit === null || fit.w < 14 || fit.d < 12) return null;
+  // A cul-de-sac lane poking into the block keeps its pavement: the footprint stays clear of it.
+  if (!rectClearOfStreets(ctx.index, fit, rotationY)) return null;
+  if (ctx.slopeAt !== null && ctx.slopeAt(fit.cx, fit.cz) > rules.maxSlope) return null;
+  if (ctx.heightAt !== null && ctx.heightAt(fit.cx, fit.cz) < rules.minElevation) return null;
+  return { site, fit, rotationY, near, depth: maxB - minB };
+}
+
+/** Whether a block-scale footprint keeps clear of every street, sampled every ~4 m across it. */
+function rectClearOfStreets(index: StreetIndex, fit: { cx: number; cz: number; w: number; d: number }, rotationY: number): boolean {
+  const ca = Math.cos(rotationY);
+  const sa = Math.sin(rotationY);
+  const nx = Math.max(2, Math.ceil(fit.w / 4));
+  const nz = Math.max(2, Math.ceil(fit.d / 4));
+  for (let i = 0; i <= nx; i += 1) {
+    for (let j = 0; j <= nz; j += 1) {
+      const dx = (i / nx - 0.5) * fit.w;
+      const dz = (j / nz - 0.5) * fit.d;
+      if (index.clearance(fit.cx + dx * ca + dz * sa, fit.cz - dx * sa + dz * ca, 0.6) < 0) return false;
+    }
+  }
   return true;
 }
 
+/** {@link polygonsOverlap} behind a bounding-box reject: parcel clash tests run per frontage step. */
+function parcelsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink: number): boolean {
+  const ba = ringBounds(a);
+  const bb = ringBounds(b);
+  if (ba.maxX < bb.minX || bb.maxX < ba.minX || ba.maxZ < bb.minZ || bb.maxZ < ba.minZ) return false;
+  return polygonsOverlap(a, b, shrink);
+}
+
+/** The same closed ring, rotated to start at its sharpest corner (smallest interior angle; index breaks ties). */
+function ringFromSharpestCorner(ring: Vec2[]): Vec2[] {
+  const walker = new RingWalker(ring);
+  let best = 0;
+  let bestAngle = Infinity;
+  for (let i = 0; i < ring.length; i += 1) {
+    const angle = walker.interiorAngle(i);
+    if (angle < bestAngle - 1e-9) {
+      bestAngle = angle;
+      best = i;
+    }
+  }
+  return best === 0 ? ring : [...ring.slice(best), ...ring.slice(0, best)];
+}
+
+/** What the pre-pass learns about one traced block before any of them is used. */
+interface BlockInfo {
+  bi: number;
+  rings: GraphBlockRings;
+  rng: () => number;
+  parkJitter: number;
+  land: Vec2[];
+  area: number;
+  centroid: Vec2;
+  band: CityZoneBand;
+  character: CityDistrictKind;
+  sliver: boolean;
+  extent: number;
+}
+
+/** How a selected block is used before frontage subdivision. */
+type BlockUse = { kind: "open"; type: CityPark["type"] } | { kind: "landmark"; landmark: CityLandmarkClass };
+
 /**
- * The block-first fabric: extract closed block polygons from the street graph, classify each
- * block (park/plaza/field/buffer/buildable), subdivide buildable block frontage into polygonal
- * parcels, and derive every building from its parcel's buildable polygon. A curved street bounds
- * a curved block; a diagonal one yields diagonal parcels — placement never guesses from the
- * nearest road again.
+ * Choose, deliberately rather than by per-block dice, which blocks become the district's squares,
+ * parks and landmarks: a square (or green) at every centre, the signature buildings next to them, the
+ * remaining landmarks on the biggest well-spaced blocks, then open space spread by farthest-point
+ * sampling over the blocks that suit it.
  */
-function buildFabric(
-  rules: CityRules,
-  streams: (stream: string) => () => number,
-  streets: LocalStreet[],
-  graph: Pick<StreetNetwork, "nodes" | "edges">,
-  surfaceFor: (level: StreetLevel) => CityStreet["surface"],
-  index: StreetIndex,
-  hx: number,
-  hz: number,
-  slopeAt: ((x: number, z: number) => number) | null,
-  heightAt: ((x: number, z: number) => number) | null,
-  overrideAt: ((x: number, z: number) => { band: CityZoneBand; mix: WeightedParamEntry[] | null } | null) | null,
-  junctions: readonly { x: number; z: number }[],
-): FabricResult {
+function selectBlockUses(ctx: FabricContext, infos: readonly BlockInfo[]): Map<number, BlockUse> {
+  const { rules, field } = ctx;
+  const uses = new Map<number, BlockUse>();
+  const eligible = infos.filter((info) => !info.sliver);
+  if (eligible.length === 0) return uses;
+  const free = (info: BlockInfo): boolean => !uses.has(info.bi);
+  const dist = (a: Vec2, b: readonly [number, number]): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const nearestFree = (point: readonly [number, number], accept: (info: BlockInfo) => boolean = () => true): BlockInfo | null => {
+    let best: BlockInfo | null = null;
+    let bestD = Infinity;
+    for (const info of eligible) {
+      if (!free(info) || !accept(info)) continue;
+      const d = dist(info.centroid, point);
+      if (d < bestD - 1e-9) {
+        bestD = d;
+        best = info;
+      }
+    }
+    return best;
+  };
+  const anchors: Vec2[] = [];
+  const has = (mix: readonly WeightedParamEntry[], cls: CityLotClass): boolean => mix.some((entry) => entry.item === cls && entry.weight > 0);
+  // Squares at the centres — a paved plaza in a commercial core, a green where the blocks run large —
+  // drawn first from the open-space budget, one per centre while it lasts.
+  const openBudget = Math.round(rules.openSpace * eligible.length);
+  if (eligible.length >= 6) {
+    for (const centre of field.centres.slice(0, openBudget)) {
+      const info = nearestFree([centre.x, centre.z]);
+      if (info === null) continue;
+      const commercial = has(rules.coreMix, "tower") || has(rules.coreMix, "slab") || has(rules.coreMix, "shop");
+      uses.set(info.bi, { kind: "open", type: info.band === "core" && commercial && info.extent <= 80 ? "plaza" : "green" });
+      anchors.push(info.centroid);
+    }
+  }
+  const squares = uses.size;
+  if (rules.landmarks > 0) {
+    const target = Math.max(1, Math.round(rules.landmarks * eligible.length));
+    let placed = 0;
+    const fitMemo = new Map<number, boolean>();
+    const fits = (info: BlockInfo): boolean => {
+      let known = fitMemo.get(info.bi);
+      if (known === undefined) {
+        known = landmarkSite(ctx, info.land) !== null;
+        fitMemo.set(info.bi, known);
+      }
+      return known;
+    };
+    const take = (info: BlockInfo | null, landmark: CityLandmarkClass): void => {
+      if (info === null || placed >= target) return;
+      uses.set(info.bi, { kind: "landmark", landmark });
+      anchors.push(info.centroid);
+      placed += 1;
+    };
+    const tall = has(rules.coreMix, "tower") && rules.floorsMax >= 20;
+    field.centres.forEach((centre, i) => {
+      if (centre.primary) take(nearestFree([centre.x, centre.z], fits), tall ? "skyscraper" : rules.floorsMax <= 3 ? "church" : "hall");
+      else take(nearestFree([centre.x, centre.z], fits), i % 2 === 1 ? "church" : "market");
+    });
+    const spacing = Math.max(2.2 * rules.blockSize, 70);
+    const byArea = eligible.filter(free).sort((a, b) => b.area - a.area || a.bi - b.bi);
+    for (const info of byArea) {
+      if (placed >= target) break;
+      if (!free(info)) continue;
+      if (anchors.some((anchor) => dist(info.centroid, anchor) < spacing) || !fits(info)) continue;
+      take(info, pickLandmarkClass(info.band, ctx.streams(`landmark:${info.bi}`)()));
+    }
+  }
+  const openTarget = Math.max(0, openBudget - squares);
+  if (openTarget > 0) {
+    const meanArea = eligible.reduce((sum, info) => sum + info.area, 0) / eligible.length;
+    const bandSuit: Record<CityZoneBand, number> = rules.fields ? { edge: 1, mid: 0.7, core: 0.15 } : { mid: 1, edge: 0.85, core: 0.45 };
+    const opens: Vec2[] = uses.size === 0 ? [] : eligible.filter((info) => uses.get(info.bi)?.kind === "open").map((info) => info.centroid);
+    for (let n = 0; n < openTarget; n += 1) {
+      let best: BlockInfo | null = null;
+      let bestScore = -Infinity;
+      for (const info of eligible) {
+        if (!free(info)) continue;
+        const suit = bandSuit[info.band] * Math.min(1.6, Math.max(0.5, Math.sqrt(info.area / Math.max(1, meanArea))));
+        const spread = opens.length === 0 ? 1 : Math.min(4, Math.min(...opens.map((o) => dist(info.centroid, o))) / Math.max(1, rules.blockSize));
+        const score = suit * (1 + spread);
+        if (score > bestScore + 1e-9) {
+          bestScore = score;
+          best = info;
+        }
+      }
+      if (best === null) break;
+      uses.set(best.bi, { kind: "open", type: rules.fields ? "field" : best.band === "edge" ? "meadow" : "green" });
+      opens.push(best.centroid);
+    }
+  }
+  return uses;
+}
+
+/** Whether ground near a block centroid drops below the build floor — a block on the water's edge. */
+function frontsWater(ctx: FabricContext, centroid: Vec2, area: number): boolean {
+  if (ctx.heightAt === null) return false;
+  const reach = Math.min(70, Math.max(20, Math.sqrt(area) / 2 + 12));
+  for (let k = 0; k < 8; k += 1) {
+    const a = (k / 8) * Math.PI * 2;
+    const x = centroid[0] + Math.cos(a) * reach;
+    const z = centroid[1] + Math.sin(a) * reach;
+    if (Math.abs(x) > ctx.halfX || Math.abs(z) > ctx.halfZ) continue;
+    if (ctx.heightAt(x, z) < ctx.rules.minElevation) return true;
+  }
+  return false;
+}
+
+/**
+ * Close the district's outer blocks along its rim when the street graph leaves them open: every
+ * street end dangling on the footprint edge is joined round the rim (with the four corners) by
+ * zero-width, sidewalk-free boundary edges, so frontage along those streets still bounds a block.
+ * A network that already frames its footprint has no dangling rim ends and gets nothing.
+ */
+function rimClosure(nodes: readonly StreetNode[], edges: readonly StreetEdge[], hx: number, hz: number): { nodes: GraphBlockNode[]; edges: GraphBlockEdge[] } {
+  const degree = new Array<number>(nodes.length).fill(0);
+  for (const edge of edges) {
+    degree[edge.a] = (degree[edge.a] ?? 0) + 1;
+    degree[edge.b] = (degree[edge.b] ?? 0) + 1;
+  }
+  const perimeter = 4 * (hx + hz);
+  // Arc-length station counter-clockwise round the rim from the (-hx, -hz) corner.
+  const station = (x: number, z: number): number => {
+    if (Math.abs(z + hz) < 1.5) return x + hx;
+    if (Math.abs(x - hx) < 1.5) return 2 * hx + (z + hz);
+    if (Math.abs(z - hz) < 1.5) return 2 * hx + 2 * hz + (hx - x);
+    return 4 * hx + 2 * hz + (hz - z);
+  };
+  const onRim = (x: number, z: number): boolean => Math.abs(Math.abs(x) - hx) < 1.5 || Math.abs(Math.abs(z) - hz) < 1.5;
+  const stops: { id: number; s: number; x: number; z: number }[] = [];
+  nodes.forEach((node, id) => {
+    if (degree[id] === 1 && onRim(node.x, node.z)) stops.push({ id, s: station(node.x, node.z), x: node.x, z: node.z });
+  });
+  if (stops.length < 2) return { nodes: [], edges: [] };
+  const outNodes: GraphBlockNode[] = [];
+  const corners: readonly (readonly [number, number])[] = [
+    [-hx, -hz],
+    [hx, -hz],
+    [hx, hz],
+    [-hx, hz],
+  ];
+  for (const [x, z] of corners) {
+    const id = nodes.length + outNodes.length;
+    outNodes.push({ x, z });
+    stops.push({ id, s: station(x, z) % perimeter, x, z });
+  }
+  stops.sort((a, b) => a.s - b.s || a.id - b.id);
+  const outEdges: GraphBlockEdge[] = [];
+  for (let i = 0; i < stops.length; i += 1) {
+    const a = stops[i]!;
+    const b = stops[(i + 1) % stops.length]!;
+    if (a.id === b.id || Math.hypot(a.x - b.x, a.z - b.z) < 0.05) continue;
+    outEdges.push({ a: a.id, b: b.id, points: [[a.x, a.z], [b.x, b.z]], width: 0, level: "lane", sidewalk: false });
+  }
+  return { nodes: outNodes, edges: outEdges };
+}
+
+/**
+ * The block-first fabric: extract closed block polygons from the street graph, read each block's
+ * band and district character off the organic zoning field, choose the district's squares, parks
+ * and landmarks deliberately, subdivide every other buildable block's frontage into polygonal
+ * parcels filled as its character demands (wall-to-wall streetwalls downtown, perimeter blocks
+ * round a courtyard in the old town, detached houses in their yards out in the suburbs), then fill
+ * or green the block interior. A curved street bounds a curved block; a diagonal one yields diagonal
+ * parcels — placement never guesses from the nearest road again.
+ */
+function buildFabric(ctx: FabricContext): FabricResult {
+  const { rules, streams, streets, index, slopeAt, heightAt, overrideAt, junctions, field } = ctx;
   const result: FabricResult = { blocks: [], parcels: [], parks: [], lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
+  // Gameplay spots are pre-claimed footprints: every lot, landmark, pad, tree and car avoids them.
+  for (const spot of ctx.keepOut) result.placed.add({ x: spot.x, z: spot.z, hw: spot.radius, hd: spot.radius, angle: 0 });
   const bandMix: Record<CityZoneBand, WeightedParamEntry[]> = { core: rules.coreMix, mid: rules.midMix, edge: rules.edgeMix };
   const junctionBoost = (x: number, z: number): number => {
     let best = Infinity;
@@ -1264,27 +1619,25 @@ function buildFabric(
     }
     return best === Infinity ? 0 : Math.max(0, 1 - best / (rules.blockSize * 0.6));
   };
-  const commercialCore = rules.coreMix.some(
-    (entry) => (entry.item === "tower" || entry.item === "slab" || entry.item === "shop") && entry.weight > 0,
-  );
   // Blocks are traced from the exact street graph, so curved and filleted streets still close
   // their faces (proximity welding of centerlines collapses on them).
-  const fabric = extractGraphBlocks(
-    graph.nodes,
-    graph.edges.map((edge) => {
-      const surface = surfaceFor(edge.level);
-      return { a: edge.a, b: edge.b, points: edge.points, width: edge.width, level: edge.level, sidewalk: rules.sidewalks && surface === "asphalt" };
-    }),
-    { sidewalkBase: rules.sidewalkWidth, curbMargin: 0.35 },
-  );
+  const graphEdges: GraphBlockEdge[] = ctx.graph.edges.map((edge) => {
+    const surface = ctx.surfaceFor(edge.level);
+    return { a: edge.a, b: edge.b, points: edge.points, width: edge.width, level: edge.level, sidewalk: rules.sidewalks && surface === "asphalt" };
+  });
+  const rim = rimClosure(ctx.graph.nodes, ctx.graph.edges, ctx.halfX, ctx.halfZ);
+  const fabric = extractGraphBlocks([...ctx.graph.nodes, ...rim.nodes], [...graphEdges, ...rim.edges], { sidewalkBase: rules.sidewalkWidth, curbMargin: 0.35 });
   const bandAt = (x: number, z: number, roll: number): { band: CityZoneBand; mix: WeightedParamEntry[] } => {
     const override = overrideAt === null ? null : overrideAt(x, z);
-    const band = override !== null ? override.band : zoneBand(zoneMetric(x, z, hx, hz), rules.profile, rules.coreExtent, rules.midExtent, roll);
+    const band = override !== null ? override.band : zoneBand(field.metric(x, z), rules.profile, rules.coreExtent, rules.midExtent, roll);
     const mix = override !== null && override.mix !== null && override.mix.length > 0 ? override.mix : bandMix[band];
     return { band, mix };
   };
+  const characterAt = (x: number, z: number, band: CityZoneBand, mix: readonly WeightedParamEntry[], waterfront: boolean): CityDistrictKind =>
+    districtCharacter({ band, primaryCentre: field.centres[field.centreAt(x, z)]?.primary ?? true, industry: field.industry(x, z), waterfront, mix });
   const parkFromRing = (id: string, type: CityPark["type"], ring: Vec2[], jitter: number): LocalPark => {
     const bounds = ringBounds(ring);
+    const paths = type === "green" || type === "meadow" || type === "courtyard" ? parkPaths(ring) : [];
     return {
       id,
       center: [(bounds.minX + bounds.maxX) / 2, (bounds.minZ + bounds.maxZ) / 2],
@@ -1292,66 +1645,99 @@ function buildFabric(
       type,
       jitter,
       polygon: ring,
+      ...(paths.length === 0 ? {} : { paths }),
     };
   };
 
+  // --- pre-pass: band, character and shape of every traced block ---
+  const infos: BlockInfo[] = [];
+  const scraps: { bi: number; rings: GraphBlockRings; parkJitter: number }[] = [];
   for (let bi = 0; bi < fabric.blocks.length; bi += 1) {
     const rings = fabric.blocks[bi]!;
     const rng = streams(`block:${bi}`);
     const bandRoll = rng();
-    const openRoll = rng();
     const parkJitter = rng();
     const land = rings.land;
-    const blockId = result.blocks.length;
     if (land.length < 3) {
+      scraps.push({ bi, rings, parkJitter });
+      continue;
+    }
+    const area = polygonArea(land);
+    const centroid = polygonCentroid(land);
+    const { band, mix } = bandAt(centroid[0], centroid[1], bandRoll);
+    const bounds = ringBounds(land);
+    infos.push({
+      bi,
+      rings,
+      rng,
+      parkJitter,
+      land,
+      area,
+      centroid,
+      band,
+      character: characterAt(centroid[0], centroid[1], band, mix, frontsWater(ctx, centroid, area)),
+      sliver: isSliverBlock(land, Math.max(90, rules.blockSize * rules.blockSize * 0.028), Math.max(5.5, rules.streetWidth * 0.75)),
+      extent: Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ),
+    });
+  }
+  const uses = selectBlockUses(ctx, infos);
+  const order = [...scraps.map((s) => ({ bi: s.bi, scrap: s, info: null as BlockInfo | null })), ...infos.map((info) => ({ bi: info.bi, scrap: null, info }))].sort((a, b) => a.bi - b.bi);
+
+  for (const entry of order) {
+    const bi = entry.bi;
+    if (entry.scrap !== null) {
       // The inset consumed the face: whatever pavement-free scrap remains is a landscaped buffer.
+      const { rings, parkJitter } = entry.scrap;
       if (rings.curb.length >= 3 && polygonArea(rings.curb) > 30) {
-        result.blocks.push({ id: `block:${bi}`, kind: "buffer", polygon: rings.curb, curb: rings.curb, area: polygonArea(rings.curb) });
+        const [sx, sz] = polygonCentroid(rings.curb);
+        const scrapBand = bandAt(sx, sz, parkJitter).band;
+        result.blocks.push({ id: `block:${bi}`, kind: "buffer", polygon: rings.curb, curb: rings.curb, area: polygonArea(rings.curb), band: scrapBand, district: scrapBand === "core" ? "cbd" : scrapBand === "mid" ? "residential" : "suburb" });
         result.parks.push(parkFromRing(`park:${bi}`, "buffer", rings.curb, parkJitter));
       }
       continue;
     }
-    const area = polygonArea(land);
-    const [bcx, bcz] = polygonCentroid(land);
-    const { band } = bandAt(bcx, bcz, bandRoll);
-    const sliver = isSliverBlock(land, Math.max(90, rules.blockSize * rules.blockSize * 0.028), Math.max(5.5, rules.streetWidth * 0.75));
-    if (sliver) {
-      result.blocks.push({ id: `block:${bi}`, kind: "buffer", polygon: land, curb: rings.curb, area });
+    const info = entry.info!;
+    const { rings, rng, land, area, band, character, parkJitter } = info;
+    const blockId = result.blocks.length;
+    if (info.sliver) {
+      result.blocks.push({ id: `block:${bi}`, kind: "buffer", polygon: land, curb: rings.curb, area, band, district: character });
       result.parks.push(parkFromRing(`park:${bi}`, "buffer", land, parkJitter));
       continue;
     }
+    const use = uses.get(bi);
     let fieldBlock = false;
-    if (openRoll < rules.openSpace) {
-      // Intentional open-space block. Pocket plazas only in a commercial core, and only pocket-sized.
-      const bounds = ringBounds(land);
-      const pocket = band === "core" && commercialCore && Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) <= 52;
-      const type: CityPark["type"] = rules.fields && !pocket ? "field" : pocket ? "plaza" : band === "edge" ? "meadow" : "green";
-      result.blocks.push({ id: `block:${bi}`, kind: type === "plaza" ? "plaza" : type === "field" ? "field" : "park", polygon: land, curb: rings.curb, area });
+    if (use?.kind === "open") {
+      const type = use.type;
+      result.blocks.push({ id: `block:${bi}`, kind: type === "plaza" ? "plaza" : type === "field" ? "field" : "park", polygon: land, curb: rings.curb, area, band, district: character });
       result.parks.push(parkFromRing(`park:${bi}`, type, land, parkJitter));
       // Farm fields never displace homesteads — the farmhouse standing in its own field IS the
       // look, so field blocks still subdivide their road frontage; other park types stay clear.
       if (type !== "field") continue;
       fieldBlock = true;
     } else {
-      result.blocks.push({ id: `block:${bi}`, kind: "buildable", polygon: land, curb: rings.curb, area });
-      // Civic landmarks take a whole block. Their own stream keeps every other roll unchanged, so a
-      // city with `landmarks: 0` grows exactly as before.
-      if (rules.landmarks > 0 && result.lots.length < MAX_LOTS && streams(`landmark:${bi}`)() < rules.landmarks) {
-        if (placeLandmark(rules, streams(`landmark-lot:${bi}`), result, land, bi, blockId, band, index, streets.length, slopeAt, heightAt)) continue;
-      }
+      result.blocks.push({ id: `block:${bi}`, kind: "buildable", polygon: land, curb: rings.curb, area, band, district: character });
+      if (use?.kind === "landmark" && result.lots.length < MAX_LOTS && placeLandmark(ctx, result, land, bi, blockId, band, use.landmark)) continue;
     }
 
     // --- parcel subdivision along the block's frontage ring ---
-    const walker = new RingWalker(land);
+    // A village clusters its frontage: its terraces and shops close up into a continuous street front.
+    const fill = Math.min(1, Math.max(rules.blockDensity * CHARACTER_FILL[character], ctx.hub === null ? 0 : 0.7));
+    const bias = CHARACTER_CLASS_BIAS[character];
+    // Walk the frontage from the block's sharpest corner, so the first parcel is a true corner lot
+    // and the walk closes back onto that corner instead of splitting it at a random station.
+    const front = ringFromSharpestCorner(land);
+    const walker = new RingWalker(front);
     const halfW = Math.max(3, polygonMeanWidth(land) / 2);
     const wave = makeWander(rng, 0.5, rules.blockSize * 2.6);
     const blockParcels: LocalParcel[] = [];
-    let cursor = rng() * 4;
+    let cursor = rng() * (fill >= 0.55 ? 0.5 : 4);
     const endStation = walker.total - 2;
+    // No parcel runs deeper than a building lot does, even off a block's short end.
+    const depthLimit = Math.max(12, rules.blockSize * 0.55);
     let prevClass: CityLotClass | null = null;
     let maxDepthUsed = 0;
     let guard = 0;
-    while (cursor < endStation && blockParcels.length < 64 && result.lots.length < MAX_LOTS && guard < 220) {
+    while (cursor < endStation && blockParcels.length < 64 && result.lots.length < MAX_LOTS && guard < 400) {
       guard += 1;
       const pBandRoll = rng();
       const classRoll = rng();
@@ -1371,13 +1757,12 @@ function buildFabric(
       }
       const probe: Vec2 = [mid0.p[0] + mid0.normal[0] * 5, mid0.p[1] + mid0.normal[1] * 5];
       const { band: pBand, mix } = bandAt(probe[0], probe[1], pBandRoll);
-      let cls = pickClass(mix, classRoll);
+      let cls = pickClass(mix, classRoll, bias);
       // Sticky class runs: with clustering, a house is followed by more houses — rows form.
-      if (prevClass !== null && stickRoll < 0.45 + rules.clusterStrength * 0.4 && mix.some((entry) => entry.item === prevClass && entry.weight > 0)) {
+      if (prevClass !== null && stickRoll < 0.45 + rules.clusterStrength * 0.4 && mix.some((e) => e.item === prevClass && e.weight > 0)) {
         cls = prevClass;
       }
-      const stretchCommercial =
-        rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse");
+      const dense = fill >= 0.55 && STREETWALL_CLASSES.has(cls);
       const placement = rollClassPlacement(
         cls,
         lotRng,
@@ -1385,22 +1770,41 @@ function buildFabric(
         rules.floorsMin,
         rules.floorsMax,
         rules.buildingRoadSetback,
-        rules.buildingSpacing,
-        stretchCommercial ? 1 + rules.blockDensity * 0.35 : 1,
+        rules.buildingSpacing * (ctx.green !== null ? 0.6 : 1),
+        dense && ctx.hub === null ? 1 + fill * 0.35 : 1,
+        field.intensity(probe[0], probe[1]),
       );
       const frontW = placement.width + placement.gap;
       if (cursor + frontW > walker.total - 0.5) break;
-      // Parcel depth: setback + class depth + rear yard, deepened toward the block spine by
-      // `blockDensity` (dense districts consume their block; loose ones keep green cores). The
-      // hard cap is a per-station ray cast — parcels from opposite frontages meet halfway.
+      // Parcel depth: setback + class depth + rear yard, deepened toward the block spine by the
+      // block fill (a CBD consumes its block, a suburb keeps its gardens). The hard cap is a
+      // per-station ray cast — parcels from opposite frontages meet halfway.
       const rayOrigin: Vec2 = [mid0.p[0] + mid0.normal[0] * 0.2, mid0.p[1] + mid0.normal[1] * 0.2];
       const across = rayDistanceToRing(land, rayOrigin, mid0.normal);
       const depthCap = Number.isFinite(across) ? Math.max(3, across * 0.5 - 0.3) : halfW;
-      const depth = Math.min(depthCap, placement.setback + placement.depth + 2 + rules.blockDensity * Math.max(0, depthCap - placement.depth - placement.setback - 2));
+      const baseDepth = placement.setback + placement.depth + 2;
+      const reach = dense ? fill * fill : rules.blockDensity;
+      const depth = Math.min(depthCap, Math.max(baseDepth, depthLimit), baseDepth + reach * Math.max(0, depthCap - baseDepth));
       const s0 = cursor;
-      const s1 = cursor + frontW;
+      // A dense street wall never leaves a sliver at the end of its walk: the last parcel takes it.
+      let s1 = dense && walker.total - 0.4 - (cursor + frontW) < frontW * 0.5 ? walker.total - 0.4 : cursor + frontW;
+      // A parcel never wraps a block corner (an L-shaped scrap no building fits): it ends at the
+      // corner, and an arc too short to build on before one is skipped.
+      const corner = walker.verticesBetween(s0, s1).find((vi) => {
+        const angle = walker.interiorAngle(vi);
+        return angle < 2.53 || angle > Math.PI * 2 - 2.53;
+      });
+      if (corner !== undefined) {
+        const station = walker.cum[corner]!;
+        if (station - s0 < Math.max(4, frontW * 0.45)) {
+          cursor = station + 0.05;
+          prevClass = null;
+          continue;
+        }
+        s1 = station - 0.05;
+      }
       let usedDepth = depth;
-      let poly = cutParcel(walker, land, { s0, s1, depth });
+      let poly = cutParcel(walker, front, { s0, s1, depth });
       const midS = walker.at((s0 + s1) / 2);
       if (poly !== null && fabric.deadEnds.length > 0) {
         // Cul-de-sac lanes were pruned from the face graph; carve their corridors out of parcels.
@@ -1412,10 +1816,10 @@ function buildFabric(
       }
       if (poly !== null) {
         // Never overlap a neighbor parcel: retry shallower once, then give the arc up as yard.
-        let clash = blockParcels.some((other) => polygonsOverlap(poly!, other.polygon, 0.18));
+        let clash = blockParcels.some((other) => parcelsOverlap(poly!, other.polygon, 0.18));
         if (clash) {
-          const shallow = cutParcel(walker, land, { s0, s1, depth: depth * 0.55 });
-          if (shallow !== null && !blockParcels.some((other) => polygonsOverlap(shallow, other.polygon, 0.18))) {
+          const shallow = cutParcel(walker, front, { s0, s1, depth: depth * 0.55 });
+          if (shallow !== null && !blockParcels.some((other) => parcelsOverlap(shallow, other.polygon, 0.18))) {
             poly = shallow;
             usedDepth = depth * 0.55;
             clash = false;
@@ -1423,8 +1827,13 @@ function buildFabric(
         }
         if (clash) poly = null;
       }
+      // A village keeps its green: no parcel is cut into it.
+      if (poly !== null && ctx.green !== null && parcelsOverlap(poly, ctx.green, 0.1)) poly = null;
+      // A cut that folded over itself at a tight corner is no parcel.
+      if (poly !== null && ringSelfIntersects(poly)) poly = null;
       if (poly === null) {
-        cursor += frontW * 0.6;
+        // Slide on in short steps: a corner square or a carved lane frees up within a few metres.
+        cursor += Math.min(frontW * 0.6, 2.5);
         prevClass = null;
         continue;
       }
@@ -1446,8 +1855,7 @@ function buildFabric(
       }
       const frontProbe: Vec2 = [midS.p[0] - midS.normal[0] * 2, midS.p[1] - midS.normal[1] * 2];
       const nearestStreet = index.nearest(frontProbe[0], frontProbe[1], streets.length);
-      const frontage: LocalParcel["frontage"] =
-        nearestStreet === null ? [] : [{ street: nearestStreet.street, a: A, b: B, tangent }];
+      const frontage: LocalParcel["frontage"] = nearestStreet === null ? [] : [{ street: nearestStreet.street, a: A, b: B, tangent }];
       const parcelId = `parcel:${bi}:${blockParcels.length}`;
       const parcel: LocalParcel = {
         id: parcelId,
@@ -1460,37 +1868,38 @@ function buildFabric(
         isCorner,
         kind: "vacant",
       };
+      const sideGap = dense ? (cls === "shop" || cls === "rowhouse" ? 0.06 : 0.12) : Math.max(0.3, placement.gap / 2);
+      const frontSetback = Math.max(0.05, placement.setback * (dense ? 0.35 : 1));
+      const buildable = buildablePolygon(poly, A, B, frontSetback, sideGap, dense ? 0.6 : 1.2, usedDepth);
+      // A scrap the class could never stand on (a carved cul-de-sac corridor, a notch) is not a
+      // parcel: slide on a few metres instead of burning a whole frontage on a yard.
+      if (polygonArea(buildable) < placement.width * placement.depth * 0.3 || polygonArea(poly) < placement.width * placement.depth * 0.6) {
+        cursor += Math.min(frontW * 0.6, 2.5);
+        prevClass = null;
+        continue;
+      }
       // Local occupancy: the district dial, drifted by the smooth wave and boosted near
       // junctions so intersections read as centers of development.
       const local =
         rules.roadsideOccupancy * (1 - rules.clusterStrength * 0.3) +
         rules.clusterStrength * (wave(cursor) + 0.5) * 0.22 +
-        rules.clusterStrength * junctionBoost(midS.p[0], midS.p[1]) * 0.6;
+        rules.clusterStrength * junctionBoost(midS.p[0], midS.p[1]) * 0.6 +
+        (dense ? fill * 0.25 : 0) +
+        (ctx.hub === null ? 0 : 0.2 + 0.4 * Math.max(0, 1 - Math.hypot(midS.p[0] - ctx.hub[0], midS.p[1] - ctx.hub[1]) / (0.9 * Math.max(ctx.halfX, ctx.halfZ))));
       if (occupancyRoll > local) {
         blockParcels.push(parcel);
-        cursor += frontW;
+        cursor = s1;
         prevClass = null;
         continue;
       }
-      const commercial = cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse";
-      const dense = rules.blockDensity > 0.75 && commercial;
-      const sideGap = Math.max(dense ? (cls === "shop" || cls === "rowhouse" ? 0.08 : 0.15) : 0.3, (placement.gap / 2) * (dense ? 0.45 : 1));
-      const frontSetback = Math.max(0.05, placement.setback * (dense ? 0.35 : 1));
-      const buildable = buildablePolygon(poly, A, B, frontSetback, sideGap, 1.2, usedDepth);
       parcel.buildable = buildable;
       let placedLot = false;
       if (buildable.length >= 3) {
         const outDir: Vec2 = [-midS.normal[0], -midS.normal[1]];
         const rotationY = Math.atan2(outDir[0], outDir[1]);
-        const maxW = Math.max(
-          3,
-          Math.min(
-            dense ? Math.max(placement.width, frontW * 0.9) : placement.width,
-            frontW - Math.max(0.15, placement.gap * (dense ? 0.35 : 1)),
-          ),
-        );
-        const availDepth = usedDepth - frontSetback - 1.2;
-        const maxD = Math.max(3, Math.min(dense ? Math.max(placement.depth, availDepth * 0.85) : placement.depth, availDepth));
+        const maxW = Math.max(3, dense ? s1 - s0 - sideGap * 2 : Math.min(placement.width, frontW - Math.max(0.15, placement.gap)));
+        const availDepth = usedDepth - frontSetback - (dense ? 0.6 : 1.2);
+        const maxD = Math.max(3, Math.min(availDepth, dense ? Math.max(placement.depth, availDepth * (0.7 + 0.3 * fill)) : placement.depth));
         const cx0 = midS.p[0] + midS.normal[0] * (frontSetback + maxD / 2);
         const cz0 = midS.p[1] + midS.normal[1] * (frontSetback + maxD / 2);
         const fit = fitRectInPolygon(buildable, cx0, cz0, maxW, maxD, rotationY, 0.45);
@@ -1520,9 +1929,10 @@ function buildFabric(
             }
           }
           const candidate: PlacedLot = { x: fit.cx, z: fit.cz, hw, hd, angle: rotationY };
-          if (ok && !result.placed.overlapsAny(candidate, 0.8)) {
+          if (ok && !result.placed.overlapsAny(candidate, dense ? 0.2 : 0.8)) {
             result.placed.add(candidate);
-            const pieces = buildLotPieces(cls, fit.w, fit.d, placement.floors, rules.floorHeight, lotRng);
+            const template = pickLotTemplate(cls, fit.w, fit.d, placement.floors, lotRng(), dense ? fill : 0);
+            const pieces = buildLotPieces(cls, fit.w, fit.d, placement.floors, rules.floorHeight, lotRng, template);
             const anchor: [number, number] = nearestStreet === null ? [frontProbe[0], frontProbe[1]] : [nearestStreet.x, nearestStreet.z];
             result.lots.push({
               id: `lot:${bi}:${result.lots.length}`,
@@ -1535,11 +1945,41 @@ function buildFabric(
               zone: pBand,
               anchor,
               pieces,
+              template,
               parcel: parcelId,
             });
             parcel.kind = "built";
             placedLot = true;
-            if (rules.driveways && (cls === "house" || cls === "mansion" || cls === "farmhouse" || cls === "barn" || cls === "silo")) {
+            // Farmsteads and village plots keep an outbuilding in the back yard: a barn behind the
+            // farmhouse, a shed or byre behind a cottage.
+            if ((cls === "farmhouse" || (ctx.hub !== null && cls !== "barn" && cls !== "silo")) && result.lots.length < MAX_LOTS) {
+              const rear = usedDepth - frontSetback - fit.d - 1.2;
+              const shedD = Math.min(cls === "farmhouse" ? 11 : 5, rear - 1.5);
+              if (shedD >= 3.5) {
+                const shedW = Math.min(fit.w * (cls === "farmhouse" ? 1 : 0.75), cls === "farmhouse" ? 15 : 6.5);
+                const back = fit.d / 2 + 1.5 + shedD / 2;
+                const shed = fitRectInPolygon(buildable, fit.cx + midS.normal[0] * back, fit.cz + midS.normal[1] * back, shedW, shedD, rotationY, 0.75);
+                if (shed !== null && !result.placed.overlapsAny({ x: shed.cx, z: shed.cz, hw: shed.w / 2, hd: shed.d / 2, angle: rotationY }, 0.8)) {
+                  result.placed.add({ x: shed.cx, z: shed.cz, hw: shed.w / 2, hd: shed.d / 2, angle: rotationY });
+                  const shedTemplate = pickLotTemplate("barn", shed.w, shed.d, 1, lotRng());
+                  result.lots.push({
+                    id: `lot:${bi}:${result.lots.length}`,
+                    center: [shed.cx, shed.cz],
+                    size: [shed.w, shed.d],
+                    rotationY,
+                    floors: 1,
+                    jitter: lotRng(),
+                    cls: "barn",
+                    zone: pBand,
+                    anchor,
+                    pieces: buildLotPieces("barn", shed.w, shed.d, 1, rules.floorHeight, lotRng, shedTemplate),
+                    template: shedTemplate,
+                    parcel: parcelId,
+                  });
+                }
+              }
+            }
+            if (rules.driveways && (cls === "house" || cls === "mansion" || cls === "farmhouse" || cls === "barn" || cls === "silo" || cls === "warehouse")) {
               const dirX = fit.cx - anchor[0];
               const dirZ = fit.cz - anchor[1];
               const len = Math.hypot(dirX, dirZ) || 1;
@@ -1548,9 +1988,8 @@ function buildFabric(
               const streetWidth = nearestStreet === null ? rules.streetWidth : streets[nearestStreet.street]!.width;
               const start: [number, number] = [anchor[0] + ux * (streetWidth / 2 - 0.4), anchor[1] + uz * (streetWidth / 2 - 0.4)];
               const end: [number, number] = [fit.cx - ux * (hd - 1), fit.cz - uz * (hd - 1)];
-              const surface: CityDriveway["surface"] =
-                cls === "farmhouse" || cls === "barn" || cls === "silo" || rules.gravelLanes ? "gravel" : "pavement";
-              result.driveways.push({ points: [start, end], width: cls === "mansion" ? 3.2 : 2.6, surface });
+              const surface: CityDriveway["surface"] = cls === "farmhouse" || cls === "barn" || cls === "silo" || rules.gravelLanes ? "gravel" : "pavement";
+              result.driveways.push({ points: [start, end], width: cls === "mansion" ? 3.2 : cls === "warehouse" ? 5 : 2.6, surface });
             }
             if (rules.hedges && cls === "mansion") {
               // Perimeter hedge with a gated gap centered on the driveway mouth (street face).
@@ -1579,7 +2018,7 @@ function buildFabric(
       blockParcels.push(parcel);
       if (placedLot) maxDepthUsed = Math.max(maxDepthUsed, usedDepth);
       // A pushed parcel owns its whole frontage arc — the cursor never re-enters it.
-      cursor += frontW;
+      cursor = s1;
       prevClass = placedLot ? cls : null;
     }
     result.parcels.push(...blockParcels);
@@ -1590,17 +2029,102 @@ function buildFabric(
       result.parks.push(parkFromRing(`park:${bi}`, band === "edge" ? "meadow" : "green", land, parkJitter));
       continue;
     }
-    // Block interior left behind the deepest parcels: classify it (courtyard downtown, green
-    // elsewhere) when it is big enough to read as a place rather than back yards.
+    // Block interior left behind the deepest parcels: a rear building where the district works its
+    // land hard (CBD back lots, industrial yards, old-town rear wings), otherwise a courtyard or
+    // green that reads as a place rather than back yards.
     if (maxDepthUsed > 0) {
       const core = insetRingUniform(land, maxDepthUsed + 0.5);
       if (core.length >= 3 && polygonArea(core) > 120) {
+        // The interior is only a parcel of its own where no frontage parcel (built or not) reaches it.
+        const infill =
+          (character === "cbd" || character === "industrial" || character === "waterfront" || character === "oldtown") &&
+          fill >= 0.5 &&
+          !blockParcels.some((other) => parcelsOverlap(other.polygon, core, 0.18));
+        if (infill && result.lots.length < MAX_LOTS && placeInfill(ctx, result, core, bi, blockId, band, character, land)) continue;
         const type: CityPark["type"] = band === "core" ? "courtyard" : band === "mid" ? (parkJitter < 0.55 ? "courtyard" : "green") : "meadow";
         result.parks.push(parkFromRing(`court:${bi}`, type, core, parkJitter));
       }
     }
   }
   return result;
+}
+
+/**
+ * A rear building inside a block's leftover interior: a back-lot slab downtown and on the
+ * waterfront, a shed in an industrial estate, a rear wing in the old town — set back from the
+ * frontage parcels, aligned with the block's longest side. Returns false when nothing fits.
+ */
+function placeInfill(
+  ctx: FabricContext,
+  result: FabricResult,
+  core: Vec2[],
+  bi: number,
+  blockId: number,
+  band: CityZoneBand,
+  character: CityDistrictKind,
+  land: Vec2[],
+): boolean {
+  const { rules } = ctx;
+  const site = insetRingUniform(core, 2.5);
+  if (site.length < 3 || polygonArea(site) < 300) return false;
+  // Align with the block's longest edge so the rear building runs parallel to its streets.
+  let ex = 1;
+  let ez = 0;
+  let longest = -1;
+  for (let i = 0; i < land.length; i += 1) {
+    const a = land[i]!;
+    const b = land[(i + 1) % land.length]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (len > longest + 1e-9) {
+      longest = len;
+      ex = (b[0] - a[0]) / (len || 1);
+      ez = (b[1] - a[1]) / (len || 1);
+    }
+  }
+  const rotationY = Math.atan2(-ez, ex);
+  const [cx, cz] = polygonCentroid(site);
+  let minA = Infinity;
+  let maxA = -Infinity;
+  let minB = Infinity;
+  let maxB = -Infinity;
+  for (const [px, pz] of site) {
+    const a = (px - cx) * ex + (pz - cz) * ez;
+    const b = -(px - cx) * ez + (pz - cz) * ex;
+    minA = Math.min(minA, a);
+    maxA = Math.max(maxA, a);
+    minB = Math.min(minB, b);
+    maxB = Math.max(maxB, b);
+  }
+  const fit = fitRectInPolygon(site, cx, cz, (maxA - minA) * 0.92, (maxB - minB) * 0.92, rotationY, 0.3);
+  if (fit === null || fit.w < 8 || fit.d < 8 || !rectClearOfStreets(ctx.index, fit, rotationY)) return false;
+  if (ctx.slopeAt !== null && ctx.slopeAt(fit.cx, fit.cz) > rules.maxSlope) return false;
+  if (ctx.heightAt !== null && ctx.heightAt(fit.cx, fit.cz) < rules.minElevation) return false;
+  const candidate: PlacedLot = { x: fit.cx, z: fit.cz, hw: fit.w / 2, hd: fit.d / 2, angle: rotationY };
+  if (result.placed.overlapsAny(candidate, 1.5)) return false;
+  const near = ctx.index.nearest(fit.cx, fit.cz, ctx.streets.length);
+  if (near === null) return false;
+  result.placed.add(candidate);
+  const cls: CityLotClass = character === "industrial" ? "warehouse" : character === "oldtown" ? "rowhouse" : "slab";
+  const rng = ctx.streams(`infill:${bi}`);
+  const placement = rollClassPlacement(cls, rng, 1, rules.floorsMin, rules.floorsMax, 0, 0, 1, ctx.field.intensity(fit.cx, fit.cz) * 0.8);
+  const template = pickLotTemplate(cls, fit.w, fit.d, placement.floors, rng());
+  const parcelId = `parcel:${bi}:interior`;
+  result.parcels.push({ id: parcelId, block: blockId, polygon: core, buildable: site, frontage: [], area: polygonArea(core), depth: maxB - minB, isCorner: false, kind: "built" });
+  result.lots.push({
+    id: `lot:${bi}:${result.lots.length}`,
+    center: [fit.cx, fit.cz],
+    size: [fit.w, fit.d],
+    rotationY,
+    floors: placement.floors,
+    jitter: rng(),
+    cls,
+    zone: band,
+    anchor: [near.x, near.z],
+    pieces: buildLotPieces(cls, fit.w, fit.d, placement.floors, rules.floorHeight, rng, template),
+    template,
+    parcel: parcelId,
+  });
+  return true;
 }
 
 /** Crop rows for field parks, clipped to the park's road-derived polygon and around placed lots. */
@@ -1688,6 +2212,14 @@ function raceToWorld(
           return { x, z, heading: heading(seal.heading), width: seal.width, kind: seal.kind };
         })
       : [],
+    chicanes: route.chicanes.map((chicane) => ({
+      entry: chicane.entry,
+      exit: chicane.exit,
+      barriers: chicane.barriers.map((barrier) => {
+        const [x, z] = toWorld(barrier.x, barrier.z);
+        return { x, z, heading: heading(barrier.heading), width: barrier.width, kind: barrier.kind };
+      }),
+    })),
     corners: route.corners.map((corner) => ({ ...corner })),
     kerbs: circuitKerbs(route)
       .slice(0, MAX_RACE_KERBS)
@@ -1748,6 +2280,12 @@ export interface CityInput {
   sampleHeight?: ((x: number, z: number) => number) | undefined;
   /** Sibling `cityzone` volumes: lots inside one adopt its band and mix. */
   zoneOverrides?: readonly SceneKindObject[] | undefined;
+  /**
+   * Gameplay spots (world XZ discs) the district keeps clear — spawns, mines, objectives. No
+   * building, tree or parked vehicle covers one. {@link resolveCityObject} derives them from the
+   * document's clearance-tagged markers and volumes.
+   */
+  keepOut?: readonly { x: number; z: number; radius: number }[] | undefined;
 }
 
 /** The default district footprint half-extent (m) when the input names none. */
@@ -1785,10 +2323,18 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
     vehicles: [],
     signals: [],
   };
-  if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) return empty;
+  // A footprint only a few blocks across is a hamlet: one or two lanes, not a street lattice.
+  const village = rules.fabric && (4 * hx * hz) / Math.max(1, rules.blockSize * rules.blockSize) < VILLAGE_MAX_CELLS;
+  const minHalf = village ? Math.max(8, rules.streetWidth * 2) : rules.blockSize * 0.75;
+  if (hx < minHalf || hz < minHalf) return empty;
   const cos = Math.cos(rotationY);
   const sin = Math.sin(rotationY);
   const toWorld = (x: number, z: number): RoadPoint => [center.x + x * cos + z * sin, center.z - x * sin + z * cos];
+  const toLocal = (wx: number, wz: number): Vec2 => {
+    const dx = wx - center.x;
+    const dz = wz - center.z;
+    return [dx * cos - dz * sin, dx * sin + dz * cos];
+  };
 
   const sampleHeight = input.sampleHeight;
   const heightAt =
@@ -1864,7 +2410,10 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
     tunnelClearance: CITY_TUNNEL_CLEARANCE,
     seed: context.seed,
   };
-  const network = STREET_NETWORK_GENERATOR.generate(streetParams, { ...context, input: { heightAt: heightAt ?? undefined } });
+  const villagePlan = village
+    ? villageLanes({ halfX: hx, halfZ: hz, width: rules.streetWidth, curviness: rules.curviness, branching: rules.branching, rng: streams("village") })
+    : null;
+  const network = villagePlan?.network ?? STREET_NETWORK_GENERATOR.generate(streetParams, { ...context, input: { heightAt: heightAt ?? undefined } });
   // Resolve each generated street's surface + sidewalk from its hierarchy level.
   const surfaceFor = (level: StreetLevel): CityStreet["surface"] =>
     rules.surface === "gravel" || (level === "lane" && rules.gravelLanes) ? "gravel" : "asphalt";
@@ -1915,9 +2464,43 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
   // Fabric (block/parcel/building subdivision) is optional: a bare road or race track leaves it off,
   // so a circuit never carries forced-on plots — parcels and buildings appear only when you want it.
   const emptyFabric: FabricResult = { blocks: [], parcels: [], parks: [], lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
+  const field = cityDistrictField({ halfX: hx, halfZ: hz, blockSize: rules.blockSize, profile: rules.profile, coreExtent: rules.coreExtent, midExtent: rules.midExtent, rng: streams, primary: villagePlan?.hub });
+  const keepOut = (input.keepOut ?? []).map((spot) => {
+    const [x, z] = toLocal(spot.x, spot.z);
+    return { x, z, radius: spot.radius };
+  });
+  const green = villagePlan === null ? null : villageGreen(villagePlan, { halfX: hx, halfZ: hz, width: rules.streetWidth, rng: streams("green") });
   const lotResult = rules.fabric
-    ? buildFabric(rules, streams, local, network, surfaceFor, index, hx, hz, slopeAt, heightAt, overrideAt, intersections)
+    ? buildFabric({
+        rules,
+        streams,
+        streets: local,
+        graph: network,
+        surfaceFor,
+        index,
+        slopeAt,
+        heightAt,
+        overrideAt,
+        junctions: intersections,
+        field,
+        halfX: hx,
+        halfZ: hz,
+        keepOut,
+        green,
+        hub: villagePlan?.hub ?? null,
+      })
     : emptyFabric;
+  if (green !== null) {
+    const bounds = ringBounds(green);
+    lotResult.parks.push({
+      id: "park:green",
+      center: [(bounds.minX + bounds.maxX) / 2, (bounds.minZ + bounds.maxZ) / 2],
+      size: [bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ],
+      type: "green",
+      jitter: streams("green-park")(),
+      polygon: green,
+    });
+  }
   const parks = lotResult.parks;
   if (rules.fabric) buildFieldRows(parks, lotResult.placed, streams);
 
@@ -2171,6 +2754,8 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
       polygon: block.polygon.map(([x, z]) => toWorld(x, z)),
       curb: block.curb.map(([x, z]) => toWorld(x, z)),
       area: block.area,
+      band: block.band,
+      district: block.district,
     })),
     parcels: lotResult.parcels.map((parcel) => ({
       id: parcel.id,
@@ -2203,6 +2788,7 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
       zone: lot.zone,
       anchor: toWorld(lot.anchor[0], lot.anchor[1]),
       pieces: lot.pieces,
+      template: lot.template,
       parcel: lot.parcel,
       ...(lot.landmark === undefined ? {} : { landmark: lot.landmark }),
     })),
@@ -2216,6 +2802,7 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
       jitter: park.jitter,
       ...(park.polygon === undefined ? {} : { polygon: park.polygon.map(([x, z]) => toWorld(x, z)) }),
       ...(park.rows === undefined ? {} : { rows: park.rows.map((row) => row.map(([x, z]) => toWorld(x, z))) }),
+      ...(park.paths === undefined ? {} : { paths: park.paths.map((path) => path.map(([x, z]) => toWorld(x, z))) }),
     })),
     trees: trees.map((tree) => {
       const [x, z] = toWorld(tree.x, tree.z);
@@ -2280,6 +2867,7 @@ export const CITY_GENERATOR = defineGenerator({
 export function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null {
   const center = object.center ?? object.position;
   if (center === undefined) return null;
+  const keepOut = context?.clearings ?? (context?.objects === undefined ? [] : cityClearings(context.objects));
   const input: CityInput = {
     center,
     halfX: axisValue(object.halfExtents?.x) ?? object.radius ?? 0,
@@ -2287,6 +2875,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     rotationY: object.rotationY ?? 0,
     sampleHeight: context?.sampleHeight,
     zoneOverrides: context?.zoneOverrides ?? context?.objects,
+    ...(keepOut.length === 0 ? {} : { keepOut }),
   };
   return runGenerator(CITY_GENERATOR, object.meta, { fallbackSeed: object.id, input });
 }

@@ -6,25 +6,16 @@ import {
   buildLotPieces,
   landmarkFloors,
   pickClass,
+  pickLotTemplate,
   pickSpecies,
   rollClassPlacement,
   zoneBand,
-  zoneMetric,
   CITY_LANDMARK_CLASSES,
   CITY_LOT_CLASSES,
+  CITY_LOT_TEMPLATES,
   type CityLotClass,
+  type CityLotPiece,
 } from "./cityContent";
-
-describe("zoneMetric", () => {
-  test("is 0 at the center and 1 at the rim, shaped to the rectangle", () => {
-    expect(zoneMetric(0, 0, 200, 100)).toBe(0);
-    expect(zoneMetric(200, 0, 200, 100)).toBe(1);
-    expect(zoneMetric(0, 100, 200, 100)).toBe(1);
-    // Chebyshev: halfway out along the short axis reads the same as halfway along the long axis.
-    expect(zoneMetric(100, 0, 200, 100)).toBeCloseTo(0.5);
-    expect(zoneMetric(0, 50, 200, 100)).toBeCloseTo(0.5);
-  });
-});
 
 describe("zoneBand", () => {
   test("core-out maps center → core, rim → edge", () => {
@@ -83,11 +74,96 @@ describe("rollClassPlacement", () => {
     }
   });
 
+  test("development intensity raises floor counts through the class range", () => {
+    const mean = (intensity: number): number => {
+      let sum = 0;
+      for (let i = 0; i < 40; i += 1) sum += rollClassPlacement("tower", seededStreams(`int:${i}`)("roll"), 1, 1, 80, 1, 1, 1, intensity).floors;
+      return sum / 40;
+    };
+    expect(mean(0.9)).toBeGreaterThan(mean(0.5) + 10);
+    expect(mean(0.5)).toBeGreaterThan(mean(0.1) + 3);
+  });
+
   test("lotScale scales the footprint", () => {
     const small = rollClassPlacement("house", seededStreams("s")("roll"), 0.5, 1, 60);
     const large = rollClassPlacement("house", seededStreams("s")("roll"), 2.5, 1, 60);
     expect(large.width).toBeCloseTo(small.width * 5);
     expect(large.depth).toBeCloseTo(small.depth * 5);
+  });
+});
+
+describe("pickClass bias", () => {
+  test("a character bias reweights the mix but never adds a class the mix lacks", () => {
+    const mix = [
+      { item: "house", weight: 3 },
+      { item: "warehouse", weight: 1 },
+    ];
+    let sheds = 0;
+    for (let i = 0; i < 100; i += 1) if (pickClass(mix, (i + 0.5) / 100, { warehouse: 10 }) === "warehouse") sheds += 1;
+    expect(sheds).toBeGreaterThan(60);
+    for (let i = 0; i < 100; i += 1) expect(pickClass(mix, (i + 0.5) / 100, { tower: 50 })).not.toBe("tower");
+    // A bias that zeroes the whole mix falls back to the plain weights.
+    expect(["house", "warehouse"]).toContain(pickClass(mix, 0.5, { house: 0, warehouse: 0 }));
+  });
+});
+
+/** Structural signature of a massing: the multiset of wall/roof piece shapes. */
+function structure(pieces: readonly CityLotPiece[]): string {
+  return pieces
+    .filter((piece) => piece.role === "wall" || piece.role === "roof" || (piece.role === "accent" && piece.grounded))
+    .filter((piece) => piece.shape !== "box" || piece.size[1] > 0.5)
+    .map((piece) => `${piece.shape}:${piece.role}`)
+    .sort()
+    .join("|");
+}
+
+describe("lot templates", () => {
+  test("every class composes from at least five named templates with distinct structure", () => {
+    for (const cls of CITY_LOT_CLASSES) {
+      const ids = CITY_LOT_TEMPLATES[cls];
+      expect(ids.length).toBeGreaterThanOrEqual(5);
+      const shapes = new Set<string>();
+      for (const id of ids) {
+        const pieces = buildLotPieces(cls, 26, 22, cls === "tower" ? 30 : 4, 3, seededStreams(`tpl:${cls}:${id}`)("pieces"), id);
+        expect(pieces.length).toBeGreaterThan(0);
+        expect(pieces.some((piece) => piece.grounded)).toBe(true);
+        shapes.add(structure(pieces));
+      }
+      expect(shapes.size).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  test("roofs vary: gables, hips, flats and domes all appear across the classes", () => {
+    const roofShapes = new Set<string>();
+    for (const cls of CITY_LOT_CLASSES) {
+      for (const id of CITY_LOT_TEMPLATES[cls]) {
+        for (const piece of buildLotPieces(cls, 20, 16, 12, 3, seededStreams(`roof:${cls}:${id}`)("pieces"), id)) {
+          if (piece.role === "roof") roofShapes.add(piece.shape);
+        }
+      }
+    }
+    for (const shape of ["gable", "hip", "box", "dome"]) expect(roofShapes.has(shape)).toBe(true);
+    // Houses alone carry at least three roof forms.
+    const houseRoofs = new Set<string>();
+    for (const id of CITY_LOT_TEMPLATES.house) {
+      for (const piece of buildLotPieces("house", 12, 11, 2, 3, seededStreams(`house:${id}`)("pieces"), id)) if (piece.role === "roof" && piece.size[1] > 0.5) houseRoofs.add(piece.shape);
+    }
+    expect(houseRoofs.size).toBeGreaterThanOrEqual(2);
+  });
+
+  test("template picks respect what a lot can hold and spread across the pool", () => {
+    // A short tower never gets a spire; a narrow one never twins.
+    for (let i = 0; i < 50; i += 1) {
+      expect(pickLotTemplate("tower", 30, 26, 9, i / 50)).not.toBe("spire");
+      expect(pickLotTemplate("tower", 14, 26, 40, i / 50)).not.toBe("twin");
+    }
+    const seen = new Set<string>();
+    for (let i = 0; i < 50; i += 1) seen.add(pickLotTemplate("house", 12, 11, 2, (i + 0.5) / 50));
+    expect(seen.size).toBe(CITY_LOT_TEMPLATES.house.length);
+    // A solidly filled block makes open-courtyard templates rare.
+    let open = 0;
+    for (let i = 0; i < 200; i += 1) if (pickLotTemplate("slab", 24, 20, 8, (i + 0.5) / 200, 1) === "court") open += 1;
+    expect(open).toBeLessThan(8);
   });
 });
 
@@ -146,6 +222,14 @@ describe("buildLandmarkPieces", () => {
     const campus = buildLandmarkPieces("campus", 80, 70, 5, 4, rngFor("campus"));
     // Four courtyard wings ⇒ at least four grounded wall boxes.
     expect(campus.filter((p) => p.role === "wall" && p.grounded).length).toBeGreaterThanOrEqual(4);
+    // The signature tower rises from a podium to a hipped lantern crown and a mast.
+    const tower = buildLandmarkPieces("skyscraper", 60, 50, 60, 3.2, rngFor("skyscraper"));
+    expect(Math.max(...tower.map((p) => p.offset[1] + p.size[1]))).toBeGreaterThan(190);
+    expect(tower.some((p) => p.shape === "hip")).toBe(true);
+    // A church: a gabled nave and a bell tower under a tall hip spire.
+    const church = buildLandmarkPieces("church", 50, 60, 3, 4, rngFor("church"));
+    expect(church.some((p) => p.shape === "gable")).toBe(true);
+    expect(church.some((p) => p.shape === "hip" && p.size[1] > 5)).toBe(true);
   });
 });
 
@@ -173,7 +257,7 @@ describe("buildLotPieces", () => {
   });
 
   test("tall towers step: higher tiers have smaller footprints", () => {
-    const pieces = buildLotPieces("tower", 20, 18, 24, 3, rngFor("tiers"));
+    const pieces = buildLotPieces("tower", 20, 18, 24, 3, rngFor("tiers"), "setback");
     // Primary shaft only (attached streetwall wings sit off-center and are not part of the step).
     const walls = pieces
       .filter((piece) => piece.role === "wall" && Math.abs(piece.offset[0]) < 0.01 && Math.abs(piece.offset[2]) < 0.01)
@@ -186,11 +270,13 @@ describe("buildLotPieces", () => {
   });
 
   test("houses and farm classes carry pitched roofs; silos are cylinders with domes", () => {
-    const house = buildLotPieces("house", 11, 9, 2, 3, rngFor("roofs"));
-    expect(house.some((piece) => piece.shape === "gable")).toBe(true);
-    const barn = buildLotPieces("barn", 14, 11, 1, 3, rngFor("barn"));
+    for (const id of ["gable", "hip", "lplan", "garage", "bungalow"]) {
+      const house = buildLotPieces("house", 11, 9, 2, 3, rngFor(`roofs:${id}`), id);
+      expect(house.some((piece) => piece.shape === "gable" || piece.shape === "hip")).toBe(true);
+    }
+    const barn = buildLotPieces("barn", 14, 11, 1, 3, rngFor("barn"), "gambrel");
     expect(barn.filter((piece) => piece.shape === "gable").length).toBeGreaterThanOrEqual(2);
-    const silo = buildLotPieces("silo", 5.5, 5.5, 1, 3, rngFor("silo"));
+    const silo = buildLotPieces("silo", 5.5, 5.5, 1, 3, rngFor("silo"), "single");
     expect(silo.some((piece) => piece.shape === "cylinder")).toBe(true);
     expect(silo.some((piece) => piece.shape === "dome")).toBe(true);
   });

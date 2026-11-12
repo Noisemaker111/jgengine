@@ -1245,6 +1245,7 @@
 - `cutParcel` (function): function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: ParcelCut): Vec2[] | null — Cut one polygonal parcel out of a block land ring: the frontage arc between two stations, extruded inward along the station normals, clipped back to the block. Returns null when the strip collapses (over-tight corner, sliver arc).
 - `extractGraphBlocks` (function): function extractGraphBlocks(nodes: readonly GraphBlockNode[], edges: readonly GraphBlockEdge[], params: { sidewalkBase: number; curbMargin: number }): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricLevel; street?: number | undefined }[] } — Extract closed blocks from an EXACT street graph — the `nodes`/`edges` a street network already carries — instead of re-deriving topology from welded polylines. Half-edges are ordered by true departure angle at each node, dangling chains are pruned first (returned as `deadEnds` for corridor carving), interior faces are traced through the rotation system, and each face is inset to its land ring by the bordering edges' half-widths (+ curb + sidewalk). Robust against wandered and arc-filleted centerlines, which defeat proximity welding. Pure bounded geometry.
 - `isSliverBlock` (function): function isSliverBlock(land: readonly Vec2[], minArea: number, minWidth: number): boolean — Deterministic sliver verdict shared by classification and tests.
+- `parkPaths` (function): function parkPaths(ring: readonly Vec2[], inset = 1.6): Vec2[][] — Footpaths across a park: straight walks from up to four well-spread convex corners of its ring to an inner hub, plus a loop around the hub on parks big enough to stroll. Polylines in the ring's own frame, every one kept inside the ring; [] for a park too small or too thin to cross.
 - `pointsInPolygon` (function): function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () => number, margin = 1.5): Vec2[] — Sample deterministic points inside a polygon by seeded rejection over its bounds.
 - `sidewalkWidthFor` (function): function sidewalkWidthFor(level: FabricLevel, base: number): number — Sidewalk band width by street hierarchy (base = the district's street-level width).
 
@@ -1252,15 +1253,26 @@
 
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
+- `CITY_LOT_TEMPLATES` (const): const CITY_LOT_TEMPLATES: Readonly<Record<CityLotClass, readonly string[]>> — The named massing templates each class composes from, in pick order.
 - `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
-- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
-- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
+- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" | "skyscraper" | "church" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same piece shapes at a much larger footprint (~30–90 m).
+- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" | "warehouse" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
 - `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
-- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
+- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "hip" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape. A `gable` and a `hip` both keep their ridge along the piece's local x; the hip's ridge is half the piece length, its ends sloping down to the eaves.
 - `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
-- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the zone metric maps to bands.
+
+## @jgengine/core/city/cityDistricts
+
+- `CHARACTER_CLASS_BIAS` (const): const CHARACTER_CLASS_BIAS: Readonly<Record<CityDistrictKind, Partial<Record<CityLotClass, number>>>> — How a character reweights its band's class mix (classes the mix lacks stay absent).
+- `CHARACTER_FILL` (const): const CHARACTER_FILL: Readonly<Record<CityDistrictKind, number>> — How fully a character's blocks fill, as a multiplier on the district's `blockDensity`: a CBD consumes its blocks wall to wall, a suburb keeps its yards.
+- `CityCentre` (interface): interface CityCentre — One development centre in district-local XZ. The first is always the primary (CBD) centre.
+- `CityDistrictField` (interface): interface CityDistrictField — The organic zoning field of one district (district-local XZ in metres).
+- `CityDistrictKind` (type): type CityDistrictKind = "cbd" | "oldtown" | "residential" | "industrial" | "waterfront" | "suburb" | "rural" — A block's district character: what kind of place it reads as.
+- `cityDistrictField` (function): function cityDistrictField(options: { halfX: number; halfZ: number; blockSize: number; profile: CityZoneProfile; /** The band extents ({@link zoneBand}'s): intensity spans each band's range so a core always runs hot. */ coreExtent: number; midExtent: number; rng: (stream: string) => () => number; /*… — Grow a district's zoning field. Footprints a few blocks across get only the primary centre; larger ones add secondary centres (one per ~40 block cells, up to three) spread around it.
+- `districtCharacter` (function): function districtCharacter(options: { band: CityZoneBand; primaryCentre: boolean; industry: number; waterfront: boolean; mix: readonly { item: string; weight: number }[]; }): CityDistrictKind — Name a block's character from its band, the centre that dominates it, the industry field, whether it fronts water, and which classes its mix can grow at all.
 
 ## @jgengine/core/city/cityKind
 
@@ -1283,6 +1295,8 @@
 - `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
 - `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
+- `CityRaceBarrier` (interface): interface CityRaceBarrier — One barrier run of a chicane: world XZ, the yaw of travel it stands across, and its run length.
+- `CityRaceChicane` (interface): interface CityRaceChicane — A barrier chicane on one of the lap's secondary straights (`entry`/`exit` index the centerline).
 - `CityRaceGridSlot` (interface): interface CityRaceGridSlot — One staggered spawn behind the start line.
 - `CityRaceKerb` (interface): interface CityRaceKerb — One kerb strip hugging a corner's road edge, as a world-space polyline to stripe.
 - `CityRaceSeal` (interface): interface CityRaceSeal — One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and the width the barrier run spans.
@@ -1297,8 +1311,21 @@
 - `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+- `cityClearings` (function): function cityClearings(objects: readonly SceneKindObject[]): { x: number; z: number; radius: number }[] — The clearance discs of a document's objects, as {@link clearanceZonesFrom} reads them — what a city keeps building-free so it never sits on a spawn, a mine or an objective.
 - `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — The `city` kind's resolve: run {@link CITY_GENERATOR} for one placed volume, with its footprint, frame, the ground sampler and its sibling `cityzone` volumes as the input, and its id as the seed when `meta.seed` is empty. Returns null without a usable footprint.
+
+## @jgengine/core/city/cityStats
+
+- `CityMassingStats` (interface): interface CityMassingStats — Density and render-cost measures of one district.
+- `cityMassingStats` (function): function cityMassingStats(city: ResolvedCity): CityMassingStats — Measure a resolved district's density and massing. Pure; the same plan always gives the same numbers.
+
+## @jgengine/core/city/cityVillage
+
+- `VILLAGE_MAX_CELLS` (const): const VILLAGE_MAX_CELLS: 8 — Footprints with fewer block cells than this grow as a village (1–2 lanes) instead of a street net.
+- `VillagePlan` (interface): interface VillagePlan — A village's lanes plus where its green belongs.
+- `villageGreen` (function): function villageGreen(plan: VillagePlan, options: { halfX: number; halfZ: number; width: number; rng: () => number }): Vec2[] — The village green: an octagon tucked into the corner between the main street and the side lane (or beside the main street at its middle when there is no side lane), sized to the hamlet and kept inside the footprint. Parcels are never cut into it.
+- `villageLanes` (function): function villageLanes(options: { halfX: number; halfZ: number; width: number; curviness: number; branching: number; rng: () => number }): VillagePlan — Lay out a village: `halfX`/`halfZ` the footprint, `width` the lane width, `curviness` how much the main street meanders, `branching` whether the side lane crosses through instead of teeing off.
 
 ## @jgengine/core/cutscene/cutscene.view
 
@@ -4875,12 +4902,15 @@
 ## @jgengine/core/roads/raceCircuit
 
 - `CIRCUIT_ROUTE_SCHEMA` (const): const CIRCUIT_ROUTE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "lapLength"; readonly label: "lap length"; readonly group: "race"; readonly min: 80; readonly max: 12000; readonly step: 10; readonly default: 2400; readonly unit: "m"; readonly explore: readonly [400, 6000]; }… — The lap stage's own params, for a generator that lifts a lap out of streets it already grew (the `city` kind parses its race dials through this).
+- `CircuitBarrier` (interface): interface CircuitBarrier — One barrier run dropped onto the racing surface for the event (a chicane apex): a line of blocks across the road, perpendicular to `heading`, spanning `width` from one road edge.
+- `CircuitChicane` (interface): interface CircuitChicane — A barrier chicane on a long straight: two runs from opposite road edges a few car lengths apart, forcing a flick across the road. Event-scoped like the seals — only stood up while the race runs.
 - `CircuitCorner` (interface): interface CircuitCorner — One analyzed corner: where the lap turns, how hard, and which way.
 - `CircuitGate` (interface): interface CircuitGate — One checkpoint trigger volume, shaped to hand straight to `raceTrack({ checkpoints })`.
 - `CircuitGridSlot` (interface): interface CircuitGridSlot — One grid slot: a staggered spawn behind the start line.
 - `CircuitKerb` (interface): interface CircuitKerb — One kerb strip on the outside or inside of a corner, as an offset polyline to stripe.
 - `CircuitKerbOptions` (interface): interface CircuitKerbOptions — Kerb strips on the outside and inside of every real corner.
-- `CircuitRoute` (interface): interface CircuitRoute — A closed race lap lifted out of a street network, with everything a race needs hung off it.
+- `CircuitRoute` (interface): interface CircuitRoute — A race lifted out of a street network, with everything a race needs hung off it: a closed lap, or (when {@link CircuitRoute.closed} is false) a point-to-point sprint.
+- `CircuitRouteConstraints` (interface): interface CircuitRouteConstraints — Where and how a street race runs, beyond the lap dials. Every anchor is a graph node id or a volume-local point (snapped to the nearest junction on a street cycle) — so laps over authored streets (`streetNetworkFromPaths`) can name junctions by position. - `kind` — `"lap"` (default) or a point-to-point `"sprint"`. - `via` — anchors the race must pass, in order. - `start` — where the race starts: a lap is routed through it and its start line (with the whole grid on a straight) goes as near it as the straights allow; a sprint starts there. - `finish` — a sprint's end (default: wherever a route of about `lapLength` lands). - `landmarks` — points the score rewards passing within 40 m of. - `avoidEdges` — edges of other races the score steers away from, so a city's laps differ.
 - `CircuitRouteParams` (type): type CircuitRouteParams = ParamsOf<typeof CIRCUIT_ROUTE_SCHEMA> — Parsed lap params.
 - `CircuitSeal` (interface): interface CircuitSeal — One street closed off where it leaves the lap — the thing that turns public roads into an instanced event. Stands just off the junction, spanning the sealed street's full width.
 - `CircuitSealKind` (type): type CircuitSealKind = "barrier" | "cones" | "fence" — How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing.
@@ -4889,8 +4919,57 @@
 - `RACE_CIRCUIT_OUTPUT` (const): const RACE_CIRCUIT_OUTPUT: "race-circuit" — The race circuit generator's output family: a {@link RaceCircuit}.
 - `RACE_CIRCUIT_SCHEMA` (const): const RACE_CIRCUIT_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "gridness"; readonly label: "grid-ness"; readonly group: "layout"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.9; }, { readonly type: "range"; readonly key: "loopiness"; readonly l… — The race circuit's params: the street generator's dials and footprint, then the lap dials.
 - `RaceCircuit` (interface): interface RaceCircuit — One generated race: the streets it was lifted from, and the lap (null when they hold no drivable cycle).
+- `StreetRace` (interface): interface StreetRace — One lifted race: its id, label, and the route (null when the streets hold no fitting route).
+- `StreetRaceKind` (type): type StreetRaceKind = "lap" | "sprint" — A closed lap, or a point-to-point sprint from one end of the city to another.
+- `StreetRaceSpec` (interface): interface StreetRaceSpec extends CircuitRouteConstraints — One named race a city hosts: a lap or sprint, its anchors, and any lap dials it overrides.
 - `circuitKerbs` (function): function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] — Red/white kerb strips hugging both road edges through each corner. Returns the polylines and stripe pitch as data; the renderer owns the mesh and the colors.
-- `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): CircuitRoute | null — Lift a closed, sealed-off race lap out of an existing street network. Returns `null` when the network has no drivable cycle (a pure tree of dead-end streets), so callers can fall back or warn rather than render a broken race.
+- `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, resolved: CircuitRouteParams, context: Pick<GeneratorContext, "seed">, constraints: CircuitRouteConstraints = {}): CircuitRoute | null — Lift a sealed-off street race out of an existing street network: a closed lap by default, or a point-to-point sprint, optionally pinned through `via` anchors in order from a `start` hint ({@link CircuitRouteConstraints}). Returns `null` when no route fits (a pure tree of dead-end streets, or anchors the streets cannot link without crossing themselves), so callers can fall back or warn rather than render a broken race.
+- `extractStreetRaces` (function): function extractStreetRaces(network: StreetNetwork, specs: readonly StreetRaceSpec[], defaults: CircuitRouteParams, context: Pick<GeneratorContext, "seed">): StreetRace[] — Lift several named races out of one street network — a city's race calendar. Each race is searched with its own seed (`<seed>:<id>`), and races without anchors are steered away from the streets the earlier ones already use, so a city's laps differ instead of all picking the same best loop.
+
+## @jgengine/core/roads/raceEvents
+
+- `activeStreetRaceEvents` (function): function activeStreetRaceEvents(): string[] — Every running race key, sorted.
+- `endStreetRaceEvent` (function): function endStreetRaceEvent(key: string): void — Take the race's barriers down again: the event is over and the streets reopen. Idempotent.
+- `startStreetRaceEvent` (function): function startStreetRaceEvent(key: string): void — Stand the barriers of the race keyed `key` up: the event has started. Idempotent.
+- `streetRaceEventActive` (function): function streetRaceEventActive(key: string): boolean — Whether the race keyed `key` is running (its barriers stand).
+- `subscribeStreetRaceEvents` (function): function subscribeStreetRaceEvents(listener: () => void): () => void — Call `listener` whenever a race event starts or ends; returns the unsubscribe.
+
+## @jgengine/core/roads/raceLapSearch
+
+- `LapAnchor` (type): type LapAnchor = { node: number } | { edge: number } — Where a race must pass: a junction (node index), or the middle of a street (edge index into {@link LapGraph.edges}) which the route then drives end to end.
+- `LapCornerSummary` (interface): interface LapCornerSummary — A corner as the scorer sees it: absolute turn (radians), direction, and arc position (m).
+- `LapGraph` (interface): interface LapGraph — The street graph as directed links (each edge both ways), dense node indices and per-link headings, built once per search. Link `2k` runs edge `k` from `a` to `b`, link `2k + 1` back.
+- `LapOutline` (interface): interface LapOutline — Assembled street-centerline outline of a candidate, at the network's own sampling.
+- `LapScoreRules` (interface): interface LapScoreRules { lapLength: number; arterialBias: number; landmarks?: readonly StreetVec2[]; landmarkReach?: number; avoidEdges?: ReadonlySet<number>; chicanes: boolean } — ⚠ undocumented · used by `lapScore`: How good a lap is to race, higher is better.
+- `LapSearchRequest` (interface): interface LapSearchRequest { closed: boolean; lapLength: number; arterialBias: number; anchors: LapAnchor[]; startOnly?: boolean; finish: LapAnchor | null; seed: string; attempts?: number } — ⚠ undocumented · used by `lapCandidates`: Generate distinct candidate routes.
+- `LapSummary` (interface): interface LapSummary — Everything the lap score reads: measured off the graph outline or off a shaped racing line.
+- `LineGate` (interface): interface LineGate — A lateral window the line must pass through at one sample (offset along the street's left normal).
+- `MAX_LAP_TURN` (const): const MAX_LAP_TURN: number — Sharpest turn a lap takes at a junction (radians). Beyond this it doubles back on itself.
+- `METRIC_CHORD` (const): const METRIC_CHORD: 10 — Chord span (m) the line metrics measure curvature across.
+- `OVERTAKE_STRAIGHT` (const): const OVERTAKE_STRAIGHT: 250 — A straight at least this long, ending in a slow corner, is an overtaking spot (m).
+- `PlannedChicane` (interface): interface PlannedChicane — One planned barrier chicane: arc distance (m, along the street centerline) of its first barrier.
+- `SLOW_CORNER_RADIUS` (const): const SLOW_CORNER_RADIUS: 40 — Radius (m) under which the line counts as a slow corner for overtaking and braking.
+- `STRAIGHT_RADIUS` (const): const STRAIGHT_RADIUS: 250 — Radius (m) over which the line counts as straight.
+- `angleDelta` (function): function angleDelta(a: number, b: number): number — ⚠ undocumented
+- `arcProfile` (function): function arcProfile(points: readonly StreetVec2[], closed: boolean): { at: number[]; total: number } — Arc length at each point and the total (closed: including the closing span).
+- `buildLapGraph` (function): function buildLapGraph(network: StreetNetwork): LapGraph — ⚠ undocumented
+- `chicaneGates` (function): function chicaneGates(chicanes: readonly PlannedChicane[], widths: readonly number[], spacing: number, count: number): { gates: LineGate[]; barriers: { index: number; side: -1 | 1; gap: number }[] } — Lateral gates for planned chicanes on the evenly sampled street centerline: at each barrier the line must pass through the gap the barrier leaves on the open side.
+- `circumRadius` (function): function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number — Radius of the circle through three points; Infinity when they are collinear.
+- `cornerClass` (function): function cornerClass(corner: Pick<LapCornerSummary, "angle" | "radius">): "hairpin" | "square" | "tight" | "medium" | "sweeper" | "kink" — Corner class the variety score counts.
+- `cornerTurn` (function): function cornerTurn(points: readonly StreetVec2[], at: readonly number[], total: number, entry: number, exit: number, closed: boolean, reachBefore: number, reachAfter: number): number — Heading change (radians, signed) across a corner, read just outside its tight span.
+- `edgeLength` (function): function edgeLength(points: readonly StreetVec2[]): number — ⚠ undocumented
+- `lapCandidates` (function): function lapCandidates(graph: LapGraph, request: LapSearchRequest): number[][] — Generate distinct candidate routes. Free laps chain legs round a random polygon of waypoints sized (adaptively) for the target length; anchored laps and sprints route through their anchors in order, with detour waypoints added — only when the anchors alone fall short of the target — to grow the route toward it.
+- `lapScore` (function): function lapScore(summary: LapSummary, rules: LapScoreRules): number — How good a lap is to race, higher is better. Reads the same {@link LapSummary} whether it came off the graph outline (cheap, for every candidate) or off the shaped racing line (for the finalists).
+- `outlineOf` (function): function outlineOf(graph: LapGraph, links: readonly number[], closed: boolean): LapOutline — ⚠ undocumented
+- `planar` (function): function planar(a: number, b: number): number — Length of (a, b): `sqrt` is correctly rounded on every libm, `Math.hypot` is not (and is slower).
+- `quantizedScore` (function): function quantizedScore(score: number): number — Score quantised for comparison, so 1-ULP float noise never flips which lap wins.
+- `radiusProfile` (function): function radiusProfile(points: readonly StreetVec2[], span: number, closed: boolean): number[] — Per-point radius over a ~`span` meter chord; an open line reads Infinity where the chord runs off an end.
+- `resolveAnchor` (function): function resolveAnchor(graph: LapGraph, anchor: number | StreetVec2): LapAnchor — Resolve a via/start/finish anchor. A node id is that junction. A point snaps to the nearest street junction when one is within {@link ANCHOR_NODE_REACH} (or no farther than the nearest street); otherwise to the street it lies on, so a checkpoint authored mid-block pins that block.
+- `shapeRacingLine` (function): function shapeRacingLine(base: readonly StreetVec2[], widths: readonly number[], closed: boolean, cut: number, gates: readonly LineGate[] = []): StreetVec2[] — The minimum-curvature line inside the asphalt. `base` is the street centerline sampled evenly; every point may move up to `cut × halfWidth` from the NEAREST street segment around it (so inside a junction it can use the plaza where two carriageways overlap), and `gates` pin lateral windows (the gaps a chicane's barriers leave). Smoothed coarse-to-fine with a bending-energy stencil, so wobbly streets become straights and corners take the widest arc the street allows.
+- `simulateLap` (function): function simulateLap(points: readonly StreetVec2[], radii: readonly number[], closed: boolean): { speeds: number[]; time: number; brakingZones: number } — Point-mass lap simulation: corner speed v ≤ √(μgR), then forward (traction) and backward (braking) passes. Returns speeds per point and the heavy braking zones (≥ 50 km/h shed).
+- `squareShare` (function): function squareShare(corners: readonly Pick<LapCornerSummary, "angle" | "radius">[]): number — Share of corners that are plain right angles.
+- `straightRuns` (function): function straightRuns(radii: readonly number[], at: readonly number[], total: number, closed: boolean, bridge = false): { start: number; length: number }[] — Straight runs (arc start, length; m) of the line — radius over {@link STRAIGHT_RADIUS} at a {@link METRIC_CHORD} chord — in lap order.
+- `summarizeOutline` (function): function summarizeOutline(outline: LapOutline, closed: boolean, rules: LapScoreRules): { summary: LapSummary; chicanes: PlannedChicane[] } — The lap as the designer reads it off the street outline, before any line is shaped: corners from the simplified outline (close turns merged into hairpins or straightened into esses), straights between them, and the barrier chicanes the secondary straights will get.
 
 ## @jgengine/core/roads/roads
 
@@ -4967,6 +5046,13 @@
 ## @jgengine/core/roads/streetGeometryPreview.view
 
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
+
+## @jgengine/core/roads/streetNetworkFromPaths
+
+- `StreetNetworkFromPaths` (interface): interface StreetNetworkFromPaths extends StreetNetwork — The adapted network, plus which street each input path became.
+- `StreetNetworkFromPathsOptions` (interface): interface StreetNetworkFromPathsOptions — Options for {@link streetNetworkFromPaths}.
+- `StreetPath` (interface): interface StreetPath — One authored road: a centerline polyline with its carriageway width and hierarchy level.
+- `streetNetworkFromPaths` (function): function streetNetworkFromPaths(paths: readonly StreetPath[], options: StreetNetworkFromPathsOptions = {}): StreetNetworkFromPaths — Build a street network from authored road polylines. Roads join wherever they cross, wherever one ends within `snap` of another, and wherever two ends meet; every other path vertex stays a shape point inside an edge.
 
 ## @jgengine/core/roads/streetNetworkPreview.draw
 
@@ -6744,10 +6830,10 @@
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
 - `CityInput` (interface): interface CityInput — Where a district stands and what it reads from around it: the city generator's world input. A placed `city` volume hands in its footprint, frame, the terrain and its sibling `cityzone` volumes ({@link resolveCityObject}); without an input (the variant grid) a district grows 400 m square at the origin.
 - `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
-- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
+- `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" | "skyscraper" | "church" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same piece shapes at a much larger footprint (~30–90 m).
 - `CityLight` (interface): interface CityLight — One street light: curb position plus the yaw its arm faces (over the road).
 - `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
-- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
+- `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" | "warehouse" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
 - `CityParams` (type): type CityParams = ParamsOf<typeof CITY_SCHEMA> — Parsed `city` params.
 - `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
@@ -6755,14 +6841,14 @@
 - `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
 - `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
-- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
+- `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "hip" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape. A `gable` and a `hip` both keep their ridge along the piece's local x; the hip's ridge is half the piece length, its ends sloping down to the eaves.
 - `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
 - `CityRules` (type): type CityRules = Omit<CityParams, "style"> & { style: BuildingStyle } — The params a city grows from: the parsed schema values with the floor range ordered and the style narrowed to a known palette.
 - `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
 - `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
 - `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
-- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+- `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the zone metric maps to bands.
 - `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
 - `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
