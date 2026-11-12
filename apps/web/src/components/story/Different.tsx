@@ -231,7 +231,7 @@ export function OpenNumbers() {
       <div className="band-inner">
         <p className="eyebrow">Built in the open</p>
         <h2 id="open-numbers-heading" className="story-h2">
-          Every commit is public. So is every number on this page.
+          Every commit is public. So is every number here.
         </h2>
         <dl className="open-grid">
           {BUILT_IN_THE_OPEN.map((item) => (

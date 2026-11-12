@@ -662,3 +662,321 @@
   font-size: 0.85rem;
   color: var(--jg-faint);
 }
+
+/* ---------- Landing (/) ---------- */
+
+.btn-quiet {
+  border: 1px solid transparent;
+  color: var(--jg-muted);
+}
+.btn-quiet:hover {
+  color: var(--jg-fg);
+  background: color-mix(in oklab, var(--jg-fg) 6%, transparent);
+}
+
+.lp-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.lp-hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 60% at 78% 45%, color-mix(in oklab, var(--jg-accent) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 0% 0%, color-mix(in oklab, var(--jg-axis-z) 7%, transparent), transparent 70%);
+}
+.lp-hero-inner {
+  display: grid;
+  gap: 2.75rem;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 3.5rem 1rem 4rem;
+}
+.lp-hero-copy {
+  min-width: 0;
+}
+.lp-h1 {
+  margin-top: 1.25rem;
+  font-family: var(--font-display);
+  font-stretch: 116%;
+  font-weight: 850;
+  font-size: clamp(2.5rem, 1.5rem + 3.4vw, 3.9rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--jg-fg);
+  text-wrap: balance;
+}
+.lp-h1 em {
+  font-style: normal;
+  color: var(--jg-accent-text);
+}
+.lp-sub {
+  margin-top: 1.4rem;
+  max-width: 34rem;
+  font-size: 1.12rem;
+  line-height: 1.6;
+  color: var(--jg-muted);
+  text-wrap: pretty;
+}
+.lp-sub q {
+  color: var(--jg-fg);
+  font-weight: 500;
+}
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+.lp-command {
+  margin-top: 1.25rem;
+}
+.lp-hero-shot {
+  display: block;
+  min-width: 0;
+  align-self: center;
+}
+.lp-hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid var(--jg-line-strong);
+  box-shadow: 0 30px 60px -32px rgb(0 0 0 / 0.5);
+  transition: transform 0.35s var(--ease-out-expo);
+}
+.lp-hero-shot:hover img {
+  transform: translateY(-3px);
+}
+.lp-hero-caption {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.8rem 0.55rem 0.55rem;
+  border-radius: 0.55rem;
+  background: rgb(6 8 10 / 0.74);
+  backdrop-filter: blur(10px);
+  color: #c9d1da;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+.lp-hero-caption strong {
+  color: #fff;
+  margin-right: 0.35rem;
+}
+.lp-play-dot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--jg-accent);
+  color: var(--jg-on-accent);
+  font-size: 0.7rem;
+  padding-left: 2px;
+}
+@media (min-width: 640px) {
+  .lp-hero-inner {
+    padding: 4.5rem 1.5rem 5rem;
+  }
+  .lp-hero-caption {
+    left: 1rem;
+    right: auto;
+    bottom: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .lp-hero-inner {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 3.5rem;
+    padding: 5.5rem 1.5rem 6rem;
+    min-height: min(44rem, calc(100svh - 3.5rem));
+  }
+}
+
+.lp-head {
+  max-width: 44rem;
+  margin-bottom: 2.5rem;
+}
+.lp-head .band-lede {
+  margin-top: 1.1rem;
+}
+.lp-more {
+  margin-top: 2rem;
+}
+
+.lp-game-grid {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .lp-game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .lp-game-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+.lp-game {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+.lp-game-shot {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #06080a;
+}
+.lp-game-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.lp-game:hover .lp-game-shot img {
+  transform: scale(1.04);
+}
+.lp-game-play {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: var(--jg-accent);
+  color: var(--jg-on-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s var(--ease-out-expo);
+}
+.lp-game:hover .lp-game-play,
+.lp-game:focus-visible .lp-game-play {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .lp-game-play {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lp-game-text {
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem 1.15rem 1.2rem;
+}
+.lp-game-genre {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--jg-faint);
+}
+.lp-game-title {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--jg-fg);
+}
+.lp-game-pitch {
+  color: var(--jg-muted);
+  font-size: 0.95rem;
+}
+
+.lp-reasons {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .lp-reasons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+.lp-reason {
+  padding: 1.5rem;
+  border: 1px solid var(--jg-line);
+  border-radius: 0.9rem;
+  background: var(--jg-raised);
+  box-shadow: var(--jg-shadow);
+}
+.lp-reason-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.55rem;
+  background: color-mix(in oklab, var(--jg-accent) 14%, transparent);
+  color: var(--jg-accent-text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.lp-reason h3 {
+  margin-top: 1rem;
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: var(--jg-fg);
+}
+.lp-reason p {
+  margin-top: 0.5rem;
+  color: var(--jg-muted);
+  line-height: 1.6;
+}
+
+.lp-start {
+  display: grid;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .lp-start {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 2.5rem;
+  }
+}
+.lp-start-col {
+  min-width: 0;
+}
+.lp-start-col h3 {
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: var(--jg-fg);
+}
+.lp-start-note {
+  margin-top: 1rem;
+  color: var(--jg-muted);
+  line-height: 1.6;
+}

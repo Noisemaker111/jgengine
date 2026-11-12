@@ -36,6 +36,7 @@ export interface SiteRoute {
 export const PAGE_ROUTES: readonly SiteRoute[] = [
   { path: "/", source: "src/routes/index.tsx", load: () => import("../routes/index") },
   { path: "/why", source: "src/routes/why.tsx", load: () => import("../routes/why") },
+  { path: "/decisions", source: "src/routes/decisions.tsx", load: () => import("../routes/decisions") },
   { path: "/playground", source: "src/routes/playground.tsx", load: () => import("../routes/playground") },
   { path: "/games", source: "src/routes/games.index.tsx", load: () => import("../routes/games.index") },
   { path: "/games/$id", source: "src/routes/games.$id.tsx", load: () => import("../routes/games.$id") },
