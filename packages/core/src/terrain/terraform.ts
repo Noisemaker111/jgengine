@@ -110,12 +110,19 @@ export type TerraformDeltaRecorder = (index: number, before: number, after: numb
 /**
  * A compact record of the surface-material cells a paint stroke touched: parallel
  * `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint
- * undo history small.
+ * undo history small. A cell is listed when its surface id or its blend weights changed, so
+ * `before` may equal `after` for a cell whose stale blend a hard paint overwrote.
  */
 export interface SurfaceDelta {
   indices: readonly number[];
   before: readonly (string | null)[];
   after: readonly (string | null)[];
+  /**
+   * The blend-weight slots the hard paint reset alongside the ids: on a blended terrain each
+   * touched cell becomes weight 1 on the painted layer and 0 on every other. Absent when the
+   * terrain has no weight buffer, so unblended paint deltas stay as compact as before.
+   */
+  weights?: WeightDelta;
 }
 
 /** Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id. */
@@ -162,17 +169,25 @@ export interface EditableTerrain extends TerrainField {
   applyDelta(delta: TerraformDelta): void;
   /** Restore a delta's `before` offsets (undo). */
   revertDelta(delta: TerraformDelta): void;
-  /** Paint a surface brush while reporting every changed cell to `record` — surface strokes record deltas through. */
-  paintRecording(edit: TerraformEdit, record: SurfaceDeltaRecorder): number;
-  /** Paint a surface brush and return the compact delta it produced. */
+  /**
+   * Paint a surface brush while reporting every changed cell to `record` and every blend-weight
+   * slot it reset to `recordWeight` — surface strokes record deltas through.
+   */
+  paintRecording(edit: TerraformEdit, record: SurfaceDeltaRecorder, recordWeight?: WeightDeltaRecorder): number;
+  /**
+   * Hard-paint a surface brush and return the compact delta it produced. Every hard write (paint,
+   * fill, clear, auto-paint) sets the cell's surface id and, once the terrain is blended, makes the
+   * painted layer weight 1 and every other layer 0 so the painted surface dominates; clearing, or
+   * painting a surface outside {@link layers}, zeroes the cell's weights so the id shows through.
+   */
   paintDelta(edit: TerraformEdit): SurfaceDelta;
   /** Fill every cell with one surface (or `null` to clear) and return the compact delta. */
   fillSurfaceDelta(surface: string | null): SurfaceDelta;
   /** Paint a surface into every cell matching a height/slope rule and return the compact delta. */
   autoPaintDelta(rule: TerrainSurfaceRule): SurfaceDelta;
-  /** Re-apply a surface delta's `after` ids (redo). */
+  /** Re-apply a surface delta's `after` ids and weights (redo). */
   applySurfaceDelta(delta: SurfaceDelta): void;
-  /** Restore a surface delta's `before` ids (undo). */
+  /** Restore a surface delta's `before` ids and weights (undo). */
   revertSurfaceDelta(delta: SurfaceDelta): void;
   /** The current material layer stack (lower index paints under higher). */
   readonly layers: readonly TerrainMaterialLayer[];
@@ -416,12 +431,46 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return bounds.minZ + ((gz + 0.5) / rows) * spanZ;
   }
 
-  function writeSurface(index: number, surface: string | null, record: SurfaceDeltaRecorder | null): boolean {
+  /**
+   * The hard-paint weight policy: on a blended terrain, a cell written to `surface` becomes weight 1
+   * on that layer and 0 on every other (all 0 when `surface` is null or not a layer, so the id shows
+   * through {@link surfaceAt}). An unblended terrain keeps its lazy buffer absent.
+   */
+  function writeCellWeights(cell: number, surface: string | null, record: WeightDeltaRecorder | null): boolean {
+    if (weights === null || layers.length === 0) return false;
+    const L = layers.length;
+    const base = cell * L;
+    const target = surface === null ? -1 : layers.findIndex((entry) => entry.surface === surface);
+    let changed = false;
+    for (let l = 0; l < L; l += 1) {
+      const prev = weights[base + l]!;
+      const next = l === target ? 1 : 0;
+      if (prev === next) continue;
+      weights[base + l] = next;
+      record?.(base + l, prev, next);
+      changed = true;
+    }
+    return changed;
+  }
+
+  function writeSurface(
+    index: number,
+    surface: string | null,
+    record: SurfaceDeltaRecorder | null,
+    recordWeight: WeightDeltaRecorder | null,
+  ): boolean {
     const before = surfaces[index] ?? null;
-    if (before === surface) return false;
+    const weightsChanged = writeCellWeights(index, surface, recordWeight);
+    if (before === surface && !weightsChanged) return false;
     surfaces[index] = surface;
     record?.(index, before, surface);
     return true;
+  }
+
+  function applyWeightSlots(delta: WeightDelta, values: readonly number[]): void {
+    if (delta.layerCount !== layers.length || delta.indices.length === 0) return;
+    const buffer = ensureWeights();
+    for (let i = 0; i < delta.indices.length; i += 1) buffer[delta.indices[i]!] = values[i]!;
   }
 
   /**
@@ -455,13 +504,17 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     }
   }
 
-  function paintSurface(edit: TerraformEdit, record: SurfaceDeltaRecorder | null): number {
+  function paintSurface(
+    edit: TerraformEdit,
+    record: SurfaceDeltaRecorder | null,
+    recordWeight: WeightDeltaRecorder | null,
+  ): number {
     const surface = edit.surface ?? null;
     let painted = 0;
     // Binary inclusion by raw distance (includes dist == radius), independent of falloff shaping.
     forEachBrushCell(edit, (index, _weight, _wx, _wz, dist) => {
       if (dist > edit.radius) return;
-      if (writeSurface(index, surface, record)) painted += 1;
+      if (writeSurface(index, surface, record, recordWeight)) painted += 1;
     });
     return painted;
   }
@@ -477,7 +530,11 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return [nx / length, ny / length, nz / length] as const;
   }
 
-  function autoPaint(rule: TerrainSurfaceRule, record: SurfaceDeltaRecorder | null): number {
+  function autoPaint(
+    rule: TerrainSurfaceRule,
+    record: SurfaceDeltaRecorder | null,
+    recordWeight: WeightDeltaRecorder | null,
+  ): number {
     let painted = 0;
     for (let gz = 0; gz < rows; gz += 1) {
       for (let gx = 0; gx < cols; gx += 1) {
@@ -492,16 +549,20 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
           if (rule.minSlope !== undefined && slope < rule.minSlope) continue;
           if (rule.maxSlope !== undefined && slope > rule.maxSlope) continue;
         }
-        if (writeSurface(gz * cols + gx, rule.surface, record)) painted += 1;
+        if (writeSurface(gz * cols + gx, rule.surface, record, recordWeight)) painted += 1;
       }
     }
     return painted;
   }
 
-  function fillSurface(surface: string | null, record: SurfaceDeltaRecorder | null): number {
+  function fillSurface(
+    surface: string | null,
+    record: SurfaceDeltaRecorder | null,
+    recordWeight: WeightDeltaRecorder | null,
+  ): number {
     let painted = 0;
     for (let index = 0; index < surfaces.length; index += 1) {
-      if (writeSurface(index, surface, record)) painted += 1;
+      if (writeSurface(index, surface, record, recordWeight)) painted += 1;
     }
     return painted;
   }
@@ -598,16 +659,32 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return editHeight(edit, record);
   }
 
-  function surfaceDeltaFrom(run: (record: SurfaceDeltaRecorder) => void): SurfaceDelta {
+  function surfaceDeltaFrom(run: (record: SurfaceDeltaRecorder, recordWeight: WeightDeltaRecorder) => void): SurfaceDelta {
     const indices: number[] = [];
     const before: (string | null)[] = [];
     const after: (string | null)[] = [];
-    run((index, prev, next) => {
-      indices.push(index);
-      before.push(prev);
-      after.push(next);
-    });
-    return { indices, before, after };
+    const weightIndices: number[] = [];
+    const weightBefore: number[] = [];
+    const weightAfter: number[] = [];
+    run(
+      (index, prev, next) => {
+        indices.push(index);
+        before.push(prev);
+        after.push(next);
+      },
+      (index, prev, next) => {
+        weightIndices.push(index);
+        weightBefore.push(prev);
+        weightAfter.push(next);
+      },
+    );
+    if (weightIndices.length === 0) return { indices, before, after };
+    return {
+      indices,
+      before,
+      after,
+      weights: { layerCount: layers.length, indices: weightIndices, before: weightBefore, after: weightAfter },
+    };
   }
 
   const field: EditableTerrain = {
@@ -626,7 +703,7 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
     ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
     apply(edit) {
-      return edit.mode === "paint" ? paintSurface(edit, null) : runHeightEdit(edit, null);
+      return edit.mode === "paint" ? paintSurface(edit, null, null) : runHeightEdit(edit, null);
     },
     applyRecording(edit, record) {
       return runHeightEdit(edit, record);
@@ -650,23 +727,25 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
       for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.before[i]!;
       if (delta.indices.length > 0) revision += 1;
     },
-    paintRecording(edit, record) {
-      return paintSurface(edit, record);
+    paintRecording(edit, record, recordWeight) {
+      return paintSurface(edit, record, recordWeight ?? null);
     },
     paintDelta(edit) {
-      return surfaceDeltaFrom((record) => paintSurface(edit, record));
+      return surfaceDeltaFrom((record, recordWeight) => paintSurface(edit, record, recordWeight));
     },
     fillSurfaceDelta(surface) {
-      return surfaceDeltaFrom((record) => fillSurface(surface, record));
+      return surfaceDeltaFrom((record, recordWeight) => fillSurface(surface, record, recordWeight));
     },
     autoPaintDelta(rule) {
-      return surfaceDeltaFrom((record) => autoPaint(rule, record));
+      return surfaceDeltaFrom((record, recordWeight) => autoPaint(rule, record, recordWeight));
     },
     applySurfaceDelta(delta) {
       for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.after[i] ?? null;
+      if (delta.weights !== undefined) applyWeightSlots(delta.weights, delta.weights.after);
     },
     revertSurfaceDelta(delta) {
       for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.before[i] ?? null;
+      if (delta.weights !== undefined) applyWeightSlots(delta.weights, delta.weights.before);
     },
     get layers() {
       return layers;
@@ -722,14 +801,10 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
       return { layerCount: layers.length, indices, before, after };
     },
     applyWeightDelta(delta) {
-      if (delta.layerCount !== layers.length) return;
-      const buffer = ensureWeights();
-      for (let i = 0; i < delta.indices.length; i += 1) buffer[delta.indices[i]!] = delta.after[i]!;
+      applyWeightSlots(delta, delta.after);
     },
     revertWeightDelta(delta) {
-      if (delta.layerCount !== layers.length) return;
-      const buffer = ensureWeights();
-      for (let i = 0; i < delta.indices.length; i += 1) buffer[delta.indices[i]!] = delta.before[i]!;
+      applyWeightSlots(delta, delta.before);
     },
     weightsAt,
     heightOffsetAt,
@@ -799,23 +874,32 @@ interface StrokeChanges<T> {
 function createStroke<T>(
   recordStamp: (edit: TerraformEdit, record: (index: number, before: T, after: T) => void) => number,
 ) {
+  const tracker = createChangeTracker<T>();
+  return {
+    stamp: (edit: TerraformEdit): number => recordStamp(edit, tracker.record),
+    changes: (): StrokeChanges<T> => tracker.changes(),
+    isEmpty: tracker.isEmpty,
+  };
+}
+
+/** The first-`before`/latest-`after` maps behind {@link createStroke}, fed by any recorder. */
+function createChangeTracker<T>() {
   const first = new Map<number, T>();
   const latest = new Map<number, T>();
   return {
-    stamp(edit: TerraformEdit): number {
-      return recordStamp(edit, (index, before, after) => {
-        if (!first.has(index)) first.set(index, before);
-        latest.set(index, after);
-      });
+    record(index: number, before: T, after: T): void {
+      if (!first.has(index)) first.set(index, before);
+      latest.set(index, after);
     },
-    changes(): StrokeChanges<T> {
+    /** Net changed entries; `keep` retains one whose latest equals its first (a cell whose weights changed). */
+    changes(keep?: (index: number) => boolean): StrokeChanges<T> {
       const indices: number[] = [];
       const before: T[] = [];
       const after: T[] = [];
       for (const [index, next] of latest) {
         // Every latest key was set in `first` on the same callback, so this is always present.
         const prev = first.get(index) as T;
-        if (next === prev) continue;
+        if (next === prev && keep?.(index) !== true) continue;
         indices.push(index);
         before.push(prev);
         after.push(next);
@@ -848,28 +932,41 @@ export interface SurfaceStroke {
   isEmpty(): boolean;
 }
 
-/** Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta. */
-export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke {
-  const stroke = createStroke<string | null>((edit, record) => terrain.paintRecording(edit, record));
+/**
+ * Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta
+ * carrying both the surface ids and the blend weights the hard paint reset.
+ */
+export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording" | "layers">): SurfaceStroke {
+  const cells = createChangeTracker<string | null>();
+  const slots = createChangeTracker<number>();
   return {
-    stamp: stroke.stamp,
-    delta: () => stroke.changes(),
-    isEmpty: stroke.isEmpty,
+    stamp: (edit) => terrain.paintRecording(edit, cells.record, slots.record),
+    delta() {
+      const weights = slots.changes();
+      if (weights.indices.length === 0) return cells.changes();
+      // layerCount is read at delta() time, guarding replay after the layer stack changed shape.
+      const layerCount = terrain.layers.length;
+      const weighted = new Set(weights.indices.map((slot) => Math.floor(slot / layerCount)));
+      return { ...cells.changes((cell) => weighted.has(cell)), weights: { layerCount, ...weights } };
+    },
+    isEmpty: cells.isEmpty,
   };
 }
 
-/** Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write). */
+/** Returns a new snapshot with a surface delta's `after` ids and weights applied (copy-on-write). */
 export function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
   const surfaces = snapshot.surfaces.slice();
   for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.after[i] ?? null;
-  return { ...snapshot, surfaces };
+  const painted = { ...snapshot, surfaces };
+  return delta.weights === undefined ? painted : applyWeightDeltaToSnapshot(painted, delta.weights);
 }
 
-/** Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo). */
+/** Returns a new snapshot with a surface delta's `before` ids and weights restored (copy-on-write undo). */
 export function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
   const surfaces = snapshot.surfaces.slice();
   for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.before[i] ?? null;
-  return { ...snapshot, surfaces };
+  const reverted = { ...snapshot, surfaces };
+  return delta.weights === undefined ? reverted : revertWeightDeltaFromSnapshot(reverted, delta.weights);
 }
 
 /** The distinct non-null surface ids painted in a snapshot, in first-seen order. */
