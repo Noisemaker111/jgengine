@@ -87,9 +87,16 @@ function playtimeLabel(seconds: number): string {
 
 /** Capture the field the record leaves. The shared request waits for the canvas itself. */
 export async function captureCampaignThumb(): Promise<string | null> {
-  const shot = await requestSceneThumbnail({ width: 320, height: 180 });
-  return shot.ok ? shot.thumbnail : null;
+  // The thumbnail is read off the next rendered frame. A paused battle may not render one for a while
+  // (and a slow software renderer may take seconds), so the record never waits more than a moment
+  // for it: "Return to title" used to sit behind the busy curtain until a frame happened to come.
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), THUMB_WAIT_MS));
+  const shot = await Promise.race([requestSceneThumbnail({ width: 320, height: 180 }), timeout]);
+  return shot !== null && shot.ok ? shot.thumbnail : null;
 }
+
+/** Longest a campaign save waits for its thumbnail frame. */
+export const THUMB_WAIT_MS = 1200;
 
 /** Write the campaign record as it stands: the name, the offered mission and the stores it carries. */
 export async function saveCampaignRecord(ctx: GameContext, name?: string): Promise<void> {
