@@ -42,13 +42,13 @@ function shownBubbles(now: number): SpeechBubble[] {
   return live.filter((bubble) => bubble.kind === "voice" || pings.includes(bubble.id));
 }
 
-function Bubble({ bubble }: { bubble: SpeechBubble }) {
+function Bubble({ bubble, stack }: { bubble: SpeechBubble; stack: number }) {
   const ctx = useGameContext();
   const voice = bubble.kind === "voice";
   const age = () => ctx.time.now() - bubble.born;
   const opacity = bind(() => Math.max(0, Math.min(1, age() / 0.12, (BUBBLE_RULE.seconds - age()) / 0.4)));
   return <RuneWorldAnchor entity={bubble.at} offset={[0, LIFT[bubble.kind], 0]}>
-    <RuneView x={-24} y={-34} opacity={opacity} padding={voice ? [5, 10, 6, 10] : [3, 8, 4, 8]} radius={12} maxWidth={voice ? 230 : 180}
+    <RuneView x={-24} y={-34 - stack * 34} opacity={opacity} padding={voice ? [5, 10, 6, 10] : [3, 8, 4, 8]} radius={12} maxWidth={voice ? 230 : 180}
       fill={voice ? "#fff8ea" : "#3a8aff"} border={{ width: 2, color: voice ? "#2a2a34" : "#0f2a5a" }} shadow={{ y: 2, blur: 4, color: "#00000060" }}>
       <Text size={voice ? 14 : 12} weight={800} color={voice ? "#2a2a34" : "#ffffff"}>{bubble.text}</Text>
     </RuneView>
@@ -60,7 +60,10 @@ export function SpeechBubbles() {
   const ids = useGameStore((c) => shownBubbles(c.time.now()).map((bubble) => bubble.id).join(","));
   const ctx = useGameContext();
   if (ids === "") return null;
-  return <>{shownBubbles(ctx.time.now()).map((bubble) => <Bubble key={bubble.id} bubble={bubble} />)}</>;
+  const shown = shownBubbles(ctx.time.now());
+  // Two pings close together stack upward instead of printing over each other.
+  const stackOf = (bubble: SpeechBubble, index: number) => bubble.kind !== "ping" ? 0 : shown.slice(0, index).filter((other) => other.kind === "ping").length;
+  return <>{shown.map((bubble, index) => <Bubble key={bubble.id} bubble={bubble} stack={stackOf(bubble, index)} />)}</>;
 }
 
 /** The town's landmarks named on painted signs over their roofs: the diner, the school, the library. */
