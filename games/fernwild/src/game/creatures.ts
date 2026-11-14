@@ -16,6 +16,7 @@ import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
+import { createCarrierField, type CarrierField, type CarrierState } from "@jgengine/core/movement/carrier";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 
@@ -33,6 +34,7 @@ import { drainSurvivorStamina, heldItem, nearestHarvestable, patchSurvivor, stri
 import { depositInto, homeBox, powerStations } from "./base";
 import { climateAt } from "./climate";
 import { biteProfile, loadShare, TAME_GATHER } from "./data/tameWork";
+import { backDeck } from "./data/robotBodies";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
 import { SWIM_DEPTH, SWIM_SLOW, SWIMMERS } from "./data/swim";
 import { SEA_LEVEL } from "../world";
@@ -172,6 +174,8 @@ interface World {
   harvestIn: number;
   /** Tames frozen by the Hivemind's signal, until when (game seconds). */
   puppeted: Map<string, number>;
+  /** Uploaded platform bots (the Hoover): their backs carry whoever stands on them. */
+  carriers: CarrierField;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -230,6 +234,8 @@ const worldOf = perContext((ctx: GameContext): World => {
   const authored = herds();
   // After movement, as riding seats its rider: a lifted creature hangs under its flyer wherever it flew.
   ctx.sim.addStage({ id: "airlift", phase: "afterMovement", run: () => holdLifted(ctx) });
+  // After movement too: whoever stands on a walking platform's back rides along with it.
+  ctx.sim.addStage({ id: "carriers", phase: "afterMovement", run: () => worldOf(ctx).carriers.step(ctx) });
   return {
     creatures: new Map(),
     driver: createCreatureDriver({
@@ -271,6 +277,7 @@ const worldOf = perContext((ctx: GameContext): World => {
     sweep: 0,
     harvestIn: 0,
     puppeted: new Map(),
+    carriers: createCarrierField({ solidsLayer: "fernwild:carriers" }),
   };
 });
 
@@ -815,6 +822,7 @@ function kill(ctx: GameContext, creature: Creature): void {
   if (ridingOf(ctx).riderOf(creature.id) !== null) ridingOf(ctx).dismount(ctx.player.userId);
   creature.dead = true;
   creature.rot = CARCASS_SECONDS;
+  world.carriers.remove(creature.id);
   world.taming.forget(creature.id);
   world.driver.forget(creature.id);
   if (creature.tamed) {
@@ -957,6 +965,34 @@ function makeTame(ctx: GameContext, creature: Creature): void {
   if (home !== null) world.driver.setHome(creature.id, home);
   if (creature.region !== "") world.director.notifyRemoved(creature.region, creature.species);
   creature.region = "";
+  mountDeck(world, creature);
+}
+
+/** An uploaded platform bot gets a deck on its back; a wild one, or a dead one, has none. */
+function mountDeck(world: World, creature: Creature): void {
+  const deck = botProfile(creature.species)?.platform === true ? backDeck(creature.species) : null;
+  if (deck !== null && creature.tamed && !creature.dead) world.carriers.add(creature.id, deck);
+  else world.carriers.remove(creature.id);
+}
+
+/** E on an uploaded platform bot's card: climb onto the middle of its back. */
+export function boardCarrier(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  const creature = viewed(ctx);
+  if (creature === null || !world.carriers.has(creature.id)) return;
+  const deck = backDeck(creature.species);
+  const self = ctx.scene.entity.get(creature.id);
+  if (deck === null || self === null) return;
+  closeCreature(ctx);
+  ctx.scene.entity.setPose(ctx.player.userId, { position: [self.position[0], self.position[1] + deck.height + 0.05, self.position[2]], rotationY: self.rotationY });
+  ctx.game.notices.push({ text: `Aboard the ${defOf(creature).label}: it carries you as it walks. Step off its edge to get down.`, tone: "success" });
+}
+
+/** Whether the technician stands on a platform bot's back right now, and which. */
+export function aboard(ctx: GameContext): string | null {
+  const world = worldOf(ctx);
+  for (const creature of world.creatures.values()) if (world.carriers.has(creature.id) && world.carriers.carries(ctx, creature.id, ctx.player.userId)) return creature.id;
+  return null;
 }
 
 /** A bred baby: hatched or born beside `at`, the survivor's from the first moment. Returns its id. */
@@ -1487,6 +1523,7 @@ function revertToWild(ctx: GameContext, world: World, creature: Creature): void 
   creature.saddled = false;
   creature.growth = null;
   creature.mating = false;
+  world.carriers.remove(creature.id);
   world.taming.track(creature.id, creature.species, creature.level);
 }
 
@@ -2104,6 +2141,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     scrapped: creature.scrapped,
     courier: botProfile(creature.species)?.courier === true,
     harvester: TAME_GATHER[creature.species] !== undefined,
+    platform: creature.tamed && world.carriers.has(creature.id),
     harvesting: creature.harvesting,
     puppeted: isPuppeted(ctx, creature.id),
     helper: botProfile(creature.species)?.patches !== undefined ? "Following you, it patches you up" : botProfile(creature.species)?.powers !== undefined ? "On Guard Zone, it powers stations near it" : botProfile(creature.species)?.sentry !== undefined ? "On Guard Zone, it pings hostiles near its post" : botProfile(creature.species)?.cloak === true ? "Ridden, wild bots cannot see you" : null,
@@ -2315,6 +2353,7 @@ interface CreaturesSave {
   tamingSpeed: number;
   storm?: boolean;
   stormsEnded?: boolean;
+  carriers?: CarrierState;
 }
 
 export function creaturesSave(ctx: GameContext) {
@@ -2334,6 +2373,7 @@ export function creaturesSave(ctx: GameContext) {
         tamingSpeed: world.tamingSpeed,
         storm: world.storm,
         stormsEnded: world.stormsEnded,
+        carriers: world.carriers.snapshot(),
       };
     },
     hydrate: (data: CreaturesSave) => {
@@ -2359,6 +2399,9 @@ export function creaturesSave(ctx: GameContext) {
       world.director.hydrate(data.director);
       ridingOf(ctx).restore(data.riding);
       world.tamingSpeed = data.tamingSpeed;
+      world.carriers = createCarrierField({ solidsLayer: "fernwild:carriers" });
+      for (const creature of world.creatures.values()) mountDeck(world, creature);
+      if (data.carriers !== undefined) world.carriers.restore(data.carriers);
       world.storm = data.storm ?? false;
       world.stormsEnded = data.stormsEnded ?? false;
     },
@@ -2388,6 +2431,7 @@ export function resetCreatures(ctx: GameContext): void {
   world.stormForced = null;
   world.pinged.clear();
   world.puppeted.clear();
+  world.carriers = createCarrierField({ solidsLayer: "fernwild:carriers" });
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */

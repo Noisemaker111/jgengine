@@ -1448,6 +1448,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sweepMovingBounds` (function) · `import { sweepMovingBounds } from "@jgengine/core/physics/ballisticSweep"`
 
+## moving-carrier — a moving body with a deck that carries standing actors and attached props, and a solid to stand on
+
+- `createCarrierField` (function) · `import { createCarrierField } from "@jgengine/core/movement/carrier"`
+
 ## moving-sphere-sweep — detect contact with spheres crossing a projectile segment between simulation poses
 
 - `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`

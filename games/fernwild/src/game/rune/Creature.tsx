@@ -208,6 +208,12 @@ export function CreaturePanel(): ReactNode {
           <Button picked={card.harvesting} command={{ name: "toggleHarvest" }}>{card.harvesting ? "Harvest: on" : "Harvest: off"}</Button>
         </Row>
       ) : null}
+      {card.platform ? (
+        <Row gap={6}>
+          <Small color={INK} grow={1} shrink text="A walking base: climb onto its back and it carries you wherever it goes." />
+          <Button command={{ name: "boardCarrier" }}>Climb aboard</Button>
+        </Row>
+      ) : null}
       {card.tamed && card.courier ? (
         <Row gap={6}>
           <Small color={INK} grow={1} shrink text="Courier: load it, and it flies the cargo to your nearest storage box." />

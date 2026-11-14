@@ -129,6 +129,8 @@ export interface BotProfile {
   patches?: number;
   /** Uploaded on Guard Zone, it powers every fuelled station within `radius`: they never burn out. */
   powers?: { radius: number };
+  /** Uploaded, its back is a deck: the technician and smaller bots can climb aboard and ride as it walks. */
+  platform?: true;
   /** Where it may go: land (default), amphibious (swims rivers and shallows too) or water only. */
   terrain?: CreatureTerrain;
   /** What it is, in a line, for the dossier. */
@@ -155,7 +157,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),
   lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot. It never leaves the water.", { terrain: "water" }),
-  hoover: P("retaliator", ["attacker"], "A huge passive vacuum leviathan. Leave it be and it leaves you be."),
+  hoover: P("retaliator", ["attacker"], "A huge passive vacuum leviathan. Leave it be and it leaves you be. Uploaded, its back is a walking base: climb aboard and ride.", { platform: true }),
   scrapper: P("aggressive", ["machines", "biggest"], "Apex hunter that tears other robots apart for parts and grows stronger with every one.", { scraps: { perKill: 0.1, max: 2 } }),
   // The wider machine ecosystem.
   ripsaw: P("aggressive", ["biggest", "loudest"], "Chainsaw-jawed biped that runs down anything that moves."),

@@ -755,6 +755,7 @@
     "./movement/avatarGait",
     "./movement/avoidance",
     "./movement/cameraRig",
+    "./movement/carrier",
     "./movement/characterController",
     "./movement/dash",
     "./movement/formation",

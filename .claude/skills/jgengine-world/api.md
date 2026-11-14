@@ -59,6 +59,7 @@
 - `CreatureFocus` (type): type CreatureFocus = (targetId: string) => number — A wild creature's targeting preference: a bonus added to the confidence of each remembered target, so with several in mind the one it prefers (the loudest, the most hurt, another creature...) leads the temperament's decision instead of simply the freshest. Return 0 for no preference.
 - `CreatureMind` (type): type CreatureMind = | { kind: "wild"; temperament: TemperamentConfig; focus?: CreatureFocus; lightOf?: (targetId: string) => number } | { kind: "tamed"; intent: CompanionIntent } | { kind: "still" } — What drives a creature this tick: its own temperament (wild), its owner's standing order (tamed, from `scene/companion`), or nothing at all (knocked out, ridden, dead).
 - `CreatureStep` (interface): interface CreatureStep — What the creature decided and did this tick, for a HUD line, an animation or a debug overlay.
+- `CreatureTerrain` (type): type CreatureTerrain = "land" | "amphibious" | "water" — Where a creature may move: on land only, on land and in water, or in water only.
 - `createCreatureDriver` (function): function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver — Drive wild and tamed creatures each tick: temperament for wild ones, follow and stay for tames, bites within body reach, veering around obstacles.
 
 ## @jgengine/core/ai/crowd
@@ -2937,6 +2938,15 @@
 ## @jgengine/core/movement/cameraRig
 
 - `CAMERA_PITCH_LIMIT` (const): const CAMERA_PITCH_LIMIT: 1.45 — ⚠ undocumented
+
+## @jgengine/core/movement/carrier
+
+- `CarrierAttachment` (interface): interface CarrierAttachment — Something fixed to a carrier: kept at a local offset and turn as the carrier moves.
+- `CarrierDeck` (interface): interface CarrierDeck — A deck on top of a moving body (a walking whale, a barge, a lift): its half-size in the carrier's own frame (+X right, +Z forward), and the height of its top above the carrier's origin.
+- `CarrierField` (interface): interface CarrierField { add(carrierId: string, deck: CarrierDeck): void; remove(carrierId: string): void; has(carrierId: string): boolean; attach(carrierId: string, entityId: string, local: readonly [number, number, number], yaw?: number): void; detach(entityId:… — ⚠ undocumented · used by `createCarrierField`: Bodies that carry others: a deck on a moving entity that what stands on it rides along with (position and turn), things fixed to it that kee…
+- `CarrierFieldConfig` (interface): interface CarrierFieldConfig { solidsLayer?: string; candidates?: (ctx: GameContext, carrierId: string, reach: number) => Iterable<string> } — ⚠ undocumented · used by `createCarrierField`: Bodies that carry others: a deck on a moving entity that what stands on it rides along with (position and turn), things fixed to it that kee…
+- `CarrierState` (interface): interface CarrierState — Serializable carrier state: decks, attachments and each carrier's last pose.
+- `createCarrierField` (function): function createCarrierField(config: CarrierFieldConfig = {}): CarrierField — Bodies that carry others: a deck on a moving entity that what stands on it rides along with (position and turn), things fixed to it that keep their place, and a moving solid so walkers stand on the deck rather than fall through. Run `step` after movement each tick.
 
 ## @jgengine/core/movement/characterController
 

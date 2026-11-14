@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { burrowed, creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { aboard, burrowed, creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
@@ -249,4 +249,30 @@ test("Lampjaws spawn and stay in deep water off the beaches; Arcwires spawn in t
   const eels = g.ctx.scene.entity.list().filter((entity) => entity.name === "arcwire" && Math.hypot(entity.position[0] - river.position.x, entity.position[2] - river.position.z) < 30);
   expect(eels.length).toBeGreaterThan(0);
   expect(eels.some((eel) => g.ctx.world.groundHeightAt(eel.position[0], eel.position[2]) < -0.3)).toBe(true);
+});
+
+test("an uploaded Hoover is a walking base: climb aboard and it carries you as it moves and turns", () => {
+  const g = quiet();
+  const hoover = summon(g, "hoover", { tamed: true, distance: 12 });
+  // Open its card from close by, then climb aboard from it.
+  const at = g.ctx.scene.entity.get(hoover)!.position;
+  g.ui.tryInvoke("cheat", { teleport: [at[0] + 5.5, at[2], -Math.PI / 2] });
+  tick(g, 0.1);
+  expect(creaturesView(g.ctx).aimed?.id).toBe(hoover);
+  expect(creaturesView(g.ctx).aimed?.platform).toBe(true);
+  g.ui.tryInvoke("creatureUse", {});
+  g.ui.tryInvoke("boardCarrier", {});
+  tick(g, 0.5);
+  expect(aboard(g.ctx)).toBe(hoover);
+  const me = g.ctx.scene.entity.get(g.userId)!.position;
+  expect(me[1]).toBeGreaterThan(at[1] + 3);
+  // The Hoover walks off 6 m and turns; its rider comes along, still on its back.
+  const from = g.ctx.scene.entity.get(hoover)!.position;
+  for (let i = 1; i <= 30; i += 1) {
+    g.ctx.scene.entity.setPose(hoover, { position: [from[0], from[1], from[2] + (6 * i) / 30], rotationY: (0.5 * i) / 30 });
+    tick(g, 0.05);
+  }
+  const rider = g.ctx.scene.entity.get(g.userId)!.position;
+  expect(rider[2] - me[2]).toBeGreaterThan(4);
+  expect(aboard(g.ctx)).toBe(hoover);
 });

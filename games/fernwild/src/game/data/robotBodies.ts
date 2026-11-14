@@ -1,4 +1,4 @@
-import type { BodyFeatures, BodyPlan, MachineStyle } from "../../engine-local/creatureBody/bodyPlan";
+import { bodyGlbModel, type BodyFeatures, type BodyPlan, type MachineStyle } from "../../engine-local/creatureBody/bodyPlan";
 import { BOTS, TEMPERAMENT_GLOW } from "./bots";
 
 /**
@@ -180,6 +180,38 @@ export const ROBOT_BODIES: Readonly<Record<string, RobotBody>> = {
   hivemind_beta: hivemind("#2a1838"),
   hivemind_alpha: hivemind("#3a0f16"),
 };
+
+/**
+ * The deck on a species' back, in metres at its drawn size: the hull's top and half-extents (treads
+ * included), from the body plan scaled the way the engine scales the model to `height`.
+ */
+export function backDeck(species: string): { halfX: number; halfZ: number; height: number } | null {
+  const robot = ROBOT_BODIES[species];
+  if (robot === undefined) return null;
+  const model = bodyGlbModel(robot.plan);
+  const restY: number[] = [];
+  let top = -Infinity;
+  let bottom = Infinity;
+  model.nodes.forEach((node, index) => {
+    restY[index] = (node.parent >= 0 ? restY[node.parent]! : 0) + node.translation[1];
+    for (const primitive of node.primitives) {
+      for (let i = 1; i < primitive.positions.length; i += 3) {
+        const y = primitive.positions[i]! + restY[index]!;
+        top = Math.max(top, y);
+        bottom = Math.min(bottom, y);
+      }
+    }
+  });
+  const scale = robot.height / (top - bottom);
+  const { torso, legs } = robot.plan;
+  const centre = (legs.pairs === 0 ? torso.height * 0.5 : legs.length + torso.height * 0.3) - bottom;
+  const treads = robot.plan.machine?.treads ?? 0;
+  return {
+    halfX: (torso.width / 2 + (treads > 0 ? Math.max(torso.width * 0.22, treads * 0.55) * 0.5 : 0)) * scale,
+    halfZ: (torso.length / 2) * scale * 0.9,
+    height: (centre + torso.height * 0.5) * scale,
+  };
+}
 
 /** A tiny scavenger drone and a circling sentry for the ambient sky (ambientFauna.ts). */
 export const AMBIENT_BODIES = {

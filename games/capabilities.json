@@ -7579,6 +7579,16 @@
       "intent": "detect contact with boxes crossing a projectile segment between simulation poses"
     },
     {
+      "id": "moving-carrier",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/carrier",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a moving body with a deck that carries standing actors and attached props, and a solid to stand on"
+    },
+    {
       "id": "moving-sphere-sweep",
       "packages": [
         "@jgengine/core"
