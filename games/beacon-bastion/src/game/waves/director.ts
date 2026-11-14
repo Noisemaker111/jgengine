@@ -27,6 +27,9 @@ export const FLIGHT_HEIGHT = 2.4;
 /** "Installing Update...": the first wave that has one, how far in it lands, and how long it takes. */
 export const UPDATE_RULE = { fromWave: 3, atShare: 0.45, seconds: 4 } as const;
 
+/** Each wave after the first fields tech this much sturdier (a share of its catalog health), so a fully promoted crew still feels the late waves. */
+export const WAVE_HEALTH_RAMP = 0.05;
+
 /** How far from the street a drone's parcel may land on a plot. */
 const PARCEL_REACH = 9;
 
@@ -113,7 +116,8 @@ export function spawnRaider(ctx: GameContext, unit: string, route: string, from?
   const lift = def.flying === true ? FLIGHT_HEIGHT : 0;
   const position: [number, number, number] = [path.position[0], path.position[1] + lift, path.position[2]];
   ctx.scene.entity.spawn(unit, { id: instanceId, position, role: "npc" });
-  const health = Math.round(def.health * difficulty.health);
+  const ramp = 1 + WAVE_HEALTH_RAMP * Math.max(0, session.encounter.view().wave - 1);
+  const health = Math.round(def.health * difficulty.health * ramp);
   ctx.scene.entity.stats.set(instanceId, "health", { max: health, current: health });
   const runtime: CreepRuntime = {
     instanceId,

@@ -6,8 +6,8 @@ import { creepDef } from "../entities/enemies/catalog";
  * worth more than a wave-1 phone. `maxScale` keeps a deep run from printing cash.
  */
 export const BOUNTY_RULE = {
-  perWave: 0.25,
-  maxScale: 4,
+  perWave: 0.2,
+  maxScale: 3,
 } as const;
 
 /** The wave's multiplier on every unit's weight, times any perk the player carries. */

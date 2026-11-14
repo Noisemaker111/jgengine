@@ -1343,7 +1343,7 @@
           "meta": {
             "cost": 50,
             "range": 7.5,
-            "damage": 9,
+            "damage": 11,
             "fireRateHz": 1.5,
             "splashRadius": 1.6
           }
@@ -1354,7 +1354,7 @@
           "meta": {
             "cost": 65,
             "range": 7,
-            "damage": 4,
+            "damage": 5,
             "fireRateHz": 1.3,
             "splashRadius": 0
           }
@@ -1365,7 +1365,7 @@
           "meta": {
             "cost": 60,
             "range": 8,
-            "damage": 11,
+            "damage": 13,
             "fireRateHz": 1.4,
             "splashRadius": 0
           }
@@ -1376,7 +1376,7 @@
           "meta": {
             "cost": 70,
             "range": 6,
-            "damage": 7,
+            "damage": 9,
             "fireRateHz": 1.1,
             "splashRadius": 0
           }
@@ -1387,7 +1387,7 @@
           "meta": {
             "cost": 100,
             "range": 7,
-            "damage": 20,
+            "damage": 24,
             "fireRateHz": 0.8,
             "splashRadius": 0
           }
@@ -1398,7 +1398,7 @@
           "meta": {
             "cost": 90,
             "range": 6.5,
-            "damage": 8,
+            "damage": 10,
             "fireRateHz": 1,
             "splashRadius": 0
           }
@@ -1420,7 +1420,7 @@
           "meta": {
             "cost": 95,
             "range": 6.5,
-            "damage": 28,
+            "damage": 32,
             "fireRateHz": 0.6,
             "splashRadius": 2.2
           }
@@ -1431,7 +1431,7 @@
           "meta": {
             "cost": 85,
             "range": 7.5,
-            "damage": 12,
+            "damage": 14,
             "fireRateHz": 1.1,
             "splashRadius": 0
           }
@@ -1442,7 +1442,7 @@
           "meta": {
             "cost": 75,
             "range": 5,
-            "damage": 6,
+            "damage": 7,
             "fireRateHz": 1,
             "splashRadius": 0
           }
@@ -1453,7 +1453,7 @@
           "meta": {
             "cost": 80,
             "range": 7,
-            "damage": 6,
+            "damage": 7,
             "fireRateHz": 1.2,
             "splashRadius": 0
           }
@@ -1475,7 +1475,7 @@
           "meta": {
             "cost": 120,
             "range": 7,
-            "damage": 9,
+            "damage": 11,
             "fireRateHz": 1,
             "splashRadius": 0
           }
@@ -1486,7 +1486,7 @@
           "meta": {
             "cost": 130,
             "range": 7.5,
-            "damage": 24,
+            "damage": 28,
             "fireRateHz": 0.6,
             "splashRadius": 0
           }

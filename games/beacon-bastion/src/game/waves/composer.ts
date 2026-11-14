@@ -94,7 +94,7 @@ export function composeRank(wave: number): number {
 /** How much a pattern's counts grow by the wave's rank. */
 function scaleCount(count: number, rank: number): number {
   if (count <= 0) return 0;
-  return Math.max(1, Math.round(count * (1 + rank * 0.45)));
+  return Math.max(1, Math.round(count * (1.25 + rank * 0.45)));
 }
 
 /** The miniboss a composed wave brings back, or null on an ordinary wave. */

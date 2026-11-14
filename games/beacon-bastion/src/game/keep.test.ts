@@ -8,8 +8,9 @@ import { upgradeStepAction } from "@jgengine/core/worldModel/upgradePaths";
 import { firepower, keep, sellAction, towerLevel, towerOptions, towersStanding } from "./keep";
 import { advanceKeep, beaconRunner } from "./testing";
 
-const archer = TOWER_CATALOG.tower_archer!;
-const cannon = TOWER_CATALOG.tower_cannon!;
+const barista = TOWER_CATALOG.worker_barista!;
+const farmer = TOWER_CATALOG.worker_farmer!;
+const cannon = TOWER_CATALOG.worker_construction!;
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -18,90 +19,91 @@ const rank = (kind: string, step: number) => upgradeStepAction(kind, null, step)
 const level = (id: string) => towerLevel(world(), id);
 
 beforeEach(() => {
-  runner = beaconRunner("Beacon keep");
+  runner = beaconRunner("Town world");
 });
 
-describe("the keep is one declaration the engine runs", () => {
-  test("build, wait, stand, refuse an upgrade for gold, upgrade, leak, sell", () => {
-    // A cannon takes its build time: paid and reserved at once, standing only once the order finishes.
-    expect(run("beacon.place", { kind: "tower_cannon", slot: "plot-2" })).toMatchObject({ status: "applied" });
+describe("the town is one declaration the engine runs", () => {
+  test("hire, wait, stand, refuse a promotion for cash, promote, leak, let go", () => {
+    // A construction worker takes their clock-in time: paid and reserved at once, working only once the order finishes.
+    expect(run("beacon.place", { kind: "worker_construction", slot: "plot-2" })).toMatchObject({ status: "applied" });
     expect(world().num("keep.gold")).toBe(STARTING_GOLD - cannon.cost);
-    expect(world().occupant("plot-2")).toBe("tower_cannon-1");
-    expect(world().orders("build")[0]).toMatchObject({ label: cannon.label, target: "tower_cannon-1" });
-    expect(runner.ctx.scene.entity.get("tower_cannon-1")).toBeNull();
-    advanceKeep(runner, 2);
+    expect(world().occupant("plot-2")).toBe("worker_construction-1");
+    expect(world().orders("build")[0]).toMatchObject({ label: cannon.label, target: "worker_construction-1" });
+    expect(runner.ctx.scene.entity.get("worker_construction-1")).toBeNull();
+    advanceKeep(runner, 1.5);
     expect(world().orders("build")[0]?.progress).toBeCloseTo(0.5);
-    expect(run("beacon.act", { action: rank("tower_cannon", 1), target: "tower_cannon-1" })).toMatchObject({ status: "rejected", reason: "busy" });
-    advanceKeep(runner, 2.25);
-    expect(world().instance("tower_cannon-1")?.ready).toBe(true);
-    expect(runner.ctx.scene.entity.get("tower_cannon-1")).not.toBeNull();
+    expect(run("beacon.act", { action: rank("worker_construction", 1), target: "worker_construction-1" })).toMatchObject({ status: "rejected", reason: "busy" });
+    advanceKeep(runner, 1.75);
+    expect(world().instance("worker_construction-1")?.ready).toBe(true);
+    expect(runner.ctx.scene.entity.get("worker_construction-1")).not.toBeNull();
     expect(towersStanding(world())).toBe(1);
 
-    // An archer is instant; then the purse is too thin to upgrade and the refusal says by how much.
-    run("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+    // A barista is instant; then the till is too thin to promote and the refusal says by how much.
+    run("beacon.place", { kind: "worker_barista", slot: "plot-1" });
     advanceKeep(runner, 0.25);
-    expect(world().num("keep.gold")).toBe(STARTING_GOLD - cannon.cost - archer.cost);
-    expect(run("beacon.act", { action: rank("tower_archer", 1), target: "tower_archer-2" })).toEqual({
+    expect(world().num("keep.gold")).toBe(STARTING_GOLD - cannon.cost - barista.cost);
+    expect(run("beacon.act", { action: rank("worker_barista", 1), target: "worker_barista-2" })).toEqual({
       status: "rejected",
       reason: "cost",
-      message: "Rank II needs 28 more gold",
+      message: "Shift Lead needs 33 more gold",
     });
-    expect(level("tower_archer-2")).toBe(1);
+    expect(level("worker_barista-2")).toBe(1);
 
-    // Kill bounties ripple into the purse; then the upgrade lands and the tower's numbers rise.
+    // Scrap pay ripples into the till; then the promotion lands and the worker's numbers rise.
     keep.emit(runner.ctx, { kind: "bounty", scale: 40 });
     expect(world().num("keep.bounty_earned")).toBe(40);
-    expect(run("beacon.act", { action: rank("tower_archer", 1), target: "tower_archer-2" })).toMatchObject({ status: "applied" });
-    expect(level("tower_archer-2")).toBe(2);
-    expect(world().num("tower_archer-2.damage")).toBe(archer.damage * 1.5);
-    expect(world().num("keep.gold")).toBe(50 - 38);
-    expect(firepower(world())).toBe(cannon.damage + archer.damage * 1.5);
-    expect(world().costOf(rank("tower_archer", 2), "tower_archer-2")).toEqual({ "keep.gold": -Math.round(archer.cost * 0.75 * 2) });
+    expect(run("beacon.act", { action: rank("worker_barista", 1), target: "worker_barista-2" })).toMatchObject({ status: "applied" });
+    expect(level("worker_barista-2")).toBe(2);
+    expect(world().num("worker_barista-2.damage")).toBe(barista.damage * 1.5);
+    expect(world().num("keep.gold")).toBe(45 - 38);
+    expect(firepower(world())).toBe(cannon.damage + barista.damage * 1.5);
+    expect(world().costOf(rank("worker_barista", 2), "worker_barista-2")).toEqual({ "keep.gold": -Math.round(barista.cost * 0.75 * 2) });
 
-    // A leak is a ripple on the keep's walls.
+    // A leak is a ripple on the town's attention span.
     keep.emit(runner.ctx, { kind: "leak", scale: 2 });
     expect(world().num("keep.lives")).toBe(STARTING_LIVES - 2);
-    expect(world().log().at(-1)?.text).toBe("Raiders broke through to the keep.");
+    expect(world().log().at(-1)?.text).toBe("Tech got through and the town lost focus.");
 
-    // Selling pays back a share of the build and the upgrade, frees the plot and despawns the tower.
+    // Letting a worker go pays back a share of the hire and the promotion, frees the plot and despawns them.
     const before = world().num("keep.gold");
-    expect(run("beacon.act", { action: sellAction("tower_archer"), target: "tower_archer-2" })).toMatchObject({ status: "applied" });
-    expect(world().num("keep.gold")).toBe(before + Math.round((archer.cost + 38) * 0.7));
+    expect(run("beacon.act", { action: sellAction("worker_barista"), target: "worker_barista-2" })).toMatchObject({ status: "applied" });
+    expect(world().num("keep.gold")).toBe(before + Math.round((barista.cost + 38) * 0.7));
     expect(world().occupant("plot-1")).toBeNull();
     advanceKeep(runner, 0.25);
-    expect(runner.ctx.scene.entity.get("tower_archer-2")).toBeNull();
+    expect(runner.ctx.scene.entity.get("worker_barista-2")).toBeNull();
   });
 
-  test("two shared ranks, then one of two paths: taking one closes the other", () => {
-    run("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+  test("two shared promotions, then one of two careers: taking one closes the other", () => {
+    run("beacon.place", { kind: "worker_farmer", slot: "plot-1" });
     world().set("keep.gold", 10_000);
-    run("beacon.act", { action: rank("tower_archer", 1), target: "tower_archer-1" });
-    run("beacon.act", { action: rank("tower_archer", 2), target: "tower_archer-1" });
-    expect(level("tower_archer-1")).toBe(3);
-    expect(towerOptions(world(), "tower_archer-1", "tower_archer").map((option) => option.branch)).toEqual(["longbow", "volley"]);
+    run("beacon.act", { action: rank("worker_farmer", 1), target: "worker_farmer-1" });
+    run("beacon.act", { action: rank("worker_farmer", 2), target: "worker_farmer-1" });
+    expect(level("worker_farmer-1")).toBe(3);
+    expect(towerOptions(world(), "worker_farmer-1", "worker_farmer").map((option) => option.branch)).toEqual(["scarecrow", "harvest"]);
 
-    expect(run("beacon.act", { action: upgradeStepAction("tower_archer", "longbow", 1), target: "tower_archer-1" })).toMatchObject({ status: "applied" });
-    expect(world().num("tower_archer-1.pen")).toBe(20);
-    expect(run("beacon.act", { action: upgradeStepAction("tower_archer", "volley", 1), target: "tower_archer-1" })).toMatchObject({ status: "rejected" });
-    expect(towerOptions(world(), "tower_archer-1", "tower_archer").map((option) => option.label)).toEqual(["Headhunters"]);
+    expect(run("beacon.act", { action: upgradeStepAction("worker_farmer", "scarecrow", 1), target: "worker_farmer-1" })).toMatchObject({ status: "applied" });
+    expect(world().num("worker_farmer-1.pen")).toBe(20);
+    expect(run("beacon.act", { action: upgradeStepAction("worker_farmer", "harvest", 1), target: "worker_farmer-1" })).toMatchObject({ status: "rejected" });
+    expect(towerOptions(world(), "worker_farmer-1", "worker_farmer").map((option) => option.label)).toEqual(["Pest Control"]);
 
-    run("beacon.act", { action: upgradeStepAction("tower_archer", "longbow", 2), target: "tower_archer-1" });
-    expect(level("tower_archer-1")).toBe(5);
-    expect(world().num("tower_archer-1.crit_every")).toBe(4);
-    expect(world().num("tower_archer-1.crit_mult")).toBe(3);
-    expect(towerOptions(world(), "tower_archer-1", "tower_archer")).toEqual([]);
+    run("beacon.act", { action: upgradeStepAction("worker_farmer", "scarecrow", 2), target: "worker_farmer-1" });
+    expect(level("worker_farmer-1")).toBe(5);
+    expect(world().num("worker_farmer-1.crit_every")).toBe(4);
+    expect(world().num("worker_farmer-1.crit_mult")).toBe(3);
+    expect(world().num("worker_farmer-1.air_mult")).toBe(farmer.damage > 0 ? 1 : 0);
+    expect(towerOptions(world(), "worker_farmer-1", "worker_farmer")).toEqual([]);
   });
 
-  test("cancelling a build still rising pays all of it back", () => {
-    run("beacon.place", { kind: "tower_cannon", slot: "plot-3" });
+  test("cancelling a hire still clocking in pays all of it back", () => {
+    run("beacon.place", { kind: "worker_construction", slot: "plot-3" });
     advanceKeep(runner, 1);
-    expect(run("beacon.remove", { id: "tower_cannon-1" })).toMatchObject({ status: "applied" });
+    expect(run("beacon.remove", { id: "worker_construction-1" })).toMatchObject({ status: "applied" });
     expect(world().num("keep.gold")).toBe(STARTING_GOLD);
     advanceKeep(runner, 5);
-    expect(runner.ctx.scene.entity.get("tower_cannon-1")).toBeNull();
+    expect(runner.ctx.scene.entity.get("worker_construction-1")).toBeNull();
   });
 
-  test("the keep's walls falling ends the run once", () => {
+  test("the town losing all focus ends the run once", () => {
     keep.emit(runner.ctx, { kind: "leak", scale: STARTING_LIVES });
     expect(world().fact("keep.fallen")).toBe(true);
     expect(world().fact("keep.banked")).toBe(true);

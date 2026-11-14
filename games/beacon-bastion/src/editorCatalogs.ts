@@ -9,7 +9,7 @@ export const TOWER_SCHEMA: ParamSchema = {
     { key: "cost", type: "number", default: 50, min: 0, max: 500, step: 5, label: "Cost" },
     { key: "range", type: "range", default: 7, min: 1, max: 20, step: 0.5, label: "Range", unit: "m" },
     { key: "damage", type: "number", default: 8, min: 0, max: 200, step: 1, label: "Damage" },
-    { key: "fireRateHz", type: "range", default: 1, min: 0.1, max: 10, step: 0.1, label: "Fire rate", unit: "Hz" },
+    { key: "fireRateHz", type: "range", default: 1, min: 0, max: 10, step: 0.1, label: "Work rate", unit: "Hz" },
     { key: "splashRadius", type: "range", default: 0, min: 0, max: 8, step: 0.1, label: "Splash", unit: "m" },
   ],
 };
