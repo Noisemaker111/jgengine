@@ -9,6 +9,7 @@ import { strike } from "./combat/strike";
 import { isDistracted, tickTowers } from "./combat/towerAI";
 import { BLACKOUT } from "./combat/abilities";
 import { CREEP_CATALOG } from "./entities/enemies/catalog";
+import { TOWER_CATALOG } from "./entities/towers/catalog";
 import { keep } from "./keep";
 import { session } from "./session";
 import { advanceKeep, beaconRunner } from "./testing";
@@ -185,6 +186,15 @@ describe("distraction: technology fights back without shooting", () => {
     sendNotification(runner.ctx, session.creeps.get(phone)!);
     expect(isDistracted(far)).toBe(true);
     expect(isDistracted(near)).toBe(false);
+  });
+
+  test("a distracted worker says so in a speech bubble, and the gadget's ping hangs over the gadget", () => {
+    const worker = standTower("worker_barista", 0);
+    const phone = raiderAt("tech_phone", 0);
+    sendNotification(runner.ctx, session.creeps.get(phone)!);
+    expect(session.bubbles.some((bubble) => bubble.at === worker && bubble.kind === "voice")).toBe(true);
+    expect(session.bubbles.some((bubble) => bubble.at === phone && bubble.kind === "ping")).toBe(true);
+    expect(TOWER_CATALOG.worker_barista!.voice.distracted).toContain(session.bubbles.find((bubble) => bubble.at === worker)!.text);
   });
 
   test("Do Not Disturb snaps every worker out of their phone", () => {
