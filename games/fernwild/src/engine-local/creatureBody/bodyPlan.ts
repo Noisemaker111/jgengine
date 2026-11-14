@@ -57,6 +57,16 @@ export interface MachineStyle {
   joints?: boolean;
   /** How metallic the hull reads, 0 to 1. Default 0.55. */
   metal?: number;
+  /** Tank treads down both flanks, this tall: the legs hide inside and it rolls on them. */
+  treads?: number;
+  /** An intake grille of this many slats across the front of the hull. */
+  grille?: number;
+  /** A glass canopy on the top front of the hull, as if something once rode inside. */
+  cockpit?: boolean;
+  /** Hazard striping across the front bumper, in the accent colour on the dark trim. */
+  hazard?: boolean;
+  /** Rows of status lights down the front face (a server rack), in the eye glow. */
+  lights?: number;
 }
 
 /** What sets a species apart. Every length is metres. */
@@ -97,7 +107,7 @@ export interface BodyFeatures {
 
 type V3 = [number, number, number];
 
-const MAT = { body: 0, belly: 1, accent: 2, eye: 3 } as const;
+const MAT = { body: 0, belly: 1, accent: 2, eye: 3, glass: 4 } as const;
 
 class Part {
   positions: number[] = [];
@@ -330,6 +340,53 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
     }
   }
 
+  // Machine anatomy on the hull: treads, grille, canopy, hazard bumper, status lights.
+  if (m !== undefined && plan.serpent === undefined) {
+    const front = torso.length / 2;
+    if (m.treads !== undefined) {
+      const tall = m.treads;
+      const width = Math.max(torso.width * 0.22, tall * 0.55);
+      const y = -centreY + tall / 2;
+      const long = torso.length * 0.95;
+      for (const side of [-1, 1]) {
+        const x = side * (torso.width / 2 + width / 2);
+        rig.part(body, MAT.belly).box([x, y, 0], [width / 2, tall / 2, long / 2]);
+        // Road wheels show through the tread's flank, and the track's top run is a lighter band.
+        for (let i = 0; i < 4; i += 1) {
+          const z = (i / 3 - 0.5) * long * 0.8;
+          rig.part(body, MAT.accent).tube([x - side * width * 0.52, y, z], [x + side * width * 0.52, y, z], tall * 0.34, tall * 0.34, 10);
+        }
+        rig.part(body, MAT.body).box([x, y + tall / 2, 0], [width / 2 + 0.01, tall * 0.06, long / 2 + 0.01]);
+      }
+    }
+    if (m.grille !== undefined && m.grille > 0) {
+      const slats = m.grille;
+      for (let i = 0; i < slats; i += 1) {
+        const y = torso.height * (0.3 - (i / Math.max(1, slats - 1)) * 0.5);
+        rig.part(body, MAT.belly).box([0, y, front + 0.01], [torso.width * 0.3, torso.height * 0.022, torso.length * 0.012]);
+      }
+    }
+    if (m.cockpit === true) rig.part(body, MAT.glass).ellipsoid([0, torso.height * 0.5, front * 0.35], [torso.width * 0.26, torso.height * 0.2, torso.length * 0.16], 12, 6);
+    if (m.hazard === true) {
+      const bars = 6;
+      for (let i = 0; i < bars; i += 1) {
+        const x = ((i + 0.5) / bars - 0.5) * torso.width * 0.9;
+        rig.part(body, i % 2 === 0 ? MAT.accent : MAT.belly).box([x, -torso.height * 0.36, front + 0.02], [torso.width * 0.9 / bars / 2, torso.height * 0.07, torso.length * 0.02]);
+      }
+    }
+    if (m.lights !== undefined) {
+      for (let row = 0; row < m.lights; row += 1) {
+        const y = torso.height * (0.38 - (row / Math.max(1, m.lights - 1)) * 0.7);
+        for (let col = 0; col < 5; col += 1) {
+          const x = (col / 4 - 0.5) * torso.width * 0.7;
+          rig.part(body, (row + col) % 3 === 0 ? MAT.eye : MAT.belly).box([x, y, front + 0.015], [torso.width * 0.05, torso.height * 0.02, torso.length * 0.01]);
+        }
+      }
+    }
+    // Panel seams: two dark bands round a boxy hull break the slab into plates.
+    if (boxy) for (const z of [-0.18, 0.18]) rig.part(body, MAT.belly).box([0, torso.height * 0.04, z * torso.length], [torso.width / 2 + 0.008, torso.height * 0.465, torso.length * 0.008]);
+  }
+
   // Neck and head.
   const front: V3 = [0, torso.height * (plan.neck === undefined ? 0.05 : 0.22), torso.length * 0.42];
   let headParent = body;
@@ -451,6 +508,7 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
             { name: "belly", color: plan.colors.belly ?? "#3a3d42", metalness: 0.7, roughness: 0.4 },
             { name: "accent", color: plan.colors.accent ?? plan.colors.body, metalness: 0.35, roughness: 0.55 },
             { name: "eye", color: m.glow, emissive: m.glow, roughness: 0.2 },
+            { name: "glass", color: "#7fd3e8", emissive: "#12343c", metalness: 0.1, roughness: 0.05 },
           ],
     clips,
   };
