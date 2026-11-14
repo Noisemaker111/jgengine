@@ -1228,6 +1228,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     }
     if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
     if (record !== null) rideShoulder(ctx, creature, record.command);
+    else burrow(ctx, creature, step.mode);
   }
 
   const here = owner?.position ?? null;
@@ -1287,6 +1288,27 @@ function rideShoulder(ctx: GameContext, creature: Creature, command: CompanionCo
   const yaw = me.rotationY;
   const right = 0.28;
   ctx.scene.entity.setPose(creature.id, { position: [me.position[0] - Math.cos(yaw) * right, me.position[1] + 1.55, me.position[2] + Math.sin(yaw) * right], rotationY: yaw });
+}
+
+/** How deep a burrowing bot sinks, as a share of its body radius. */
+const BURROW_DEPTH = 0.8;
+
+/** A wild burrower (Thermite Beetle) with nothing to fight sinks until only its shell shows; it surfaces to fight or flee. */
+function burrow(ctx: GameContext, creature: Creature, mode: string): void {
+  if (botProfile(creature.species)?.burrows !== true || creature.tamed) return;
+  const self = ctx.scene.entity.get(creature.id);
+  if (self === null) return;
+  const ground = ctx.world.groundHeightAt(self.position[0], self.position[2]);
+  // Knocked out, held or ridden ("still"), it lies on the surface where you can reach it.
+  const calm = mode === "idle" || mode === "wander" || mode === "guard";
+  const y = calm ? ground - defOf(creature).radius * BURROW_DEPTH : ground;
+  if (Math.abs(self.position[1] - y) > 0.01) ctx.scene.entity.setPose(creature.id, { position: [self.position[0], y, self.position[2]] });
+}
+
+/** Whether a burrowing bot is under the ground now. */
+export function burrowed(ctx: GameContext, id: string): boolean {
+  const self = ctx.scene.entity.get(id);
+  return self !== null && self.position[1] < ctx.world.groundHeightAt(self.position[0], self.position[2]) - 0.2;
 }
 
 /** Whether a shoulder bot is riding the technician's shoulder now. */

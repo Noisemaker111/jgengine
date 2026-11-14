@@ -122,6 +122,8 @@ export interface BotProfile {
   shoulder?: true;
   /** Wild, it is about only at night: by day it perches still. */
   nocturnal?: true;
+  /** Wild and with nothing to fight, it sinks into the ground with only its shell showing; it bursts out to fight. */
+  burrows?: true;
   /** Uploaded and following you, it patches you up: this much health every sentry sweep (4 s) within 6 m. */
   patches?: number;
   /** Uploaded on Guard Zone, it powers every fuelled station within `radius`: they never burn out. */
@@ -145,7 +147,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   arcwire: P("aggressive", ["loudest"], "River eel whose bite arcs through everything nearby, twice as hard through water. Uploaded on Guard Zone, it powers your stations.", { trick: { kind: "chain", radius: 6, share: 0.5 }, powers: { radius: 12 } }),
   klepto: P("aggressive", ["richest"], "Glitchy teleporter. Grabs one stack from your bag and blinks away to its nest.", { trick: { kind: "steal", blink: 30 } }),
   rootkit: P("ambush", ["loudest"], "Robots disguised as trees. Chop near one and the forest stands up.", { dormantUntilChop: { radius: 10 } }),
-  thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore. Uploaded, it mines faster than any pick."),
+  thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore: only its shell shows until you cross its ground. Uploaded, it mines faster than any pick.", { burrows: true }),
   homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),

@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { burrowed, creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { survivorView } from "./survivor";
 
@@ -212,3 +212,18 @@ test("a wild Watchwing perches still by day and takes to the night", () => {
   expect(moves(3600 * 0.95)).toBeGreaterThan(1);
 });
 
+
+test("a wild Thermite Beetle lies burrowed with only its shell showing, and bursts out when you cross its ground", () => {
+  const g = quiet();
+  const beetle = summon(g, "thermite", { distance: 30 });
+  tick(g, 2);
+  expect(burrowed(g.ctx, beetle)).toBe(true);
+  const at = g.ctx.scene.entity.get(beetle)!.position;
+  g.ui.tryInvoke("cheat", { teleport: [at[0] + 3, at[2], 0] });
+  let up = false;
+  for (let i = 0; i < 60 && !up; i += 1) {
+    tick(g, 0.1);
+    up = !burrowed(g.ctx, beetle);
+  }
+  expect(up).toBe(true);
+});
