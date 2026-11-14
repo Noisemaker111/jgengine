@@ -39,6 +39,18 @@ are what the build does now.
   (P, 15 sugar) paints a trail up to 60 m from the selected ants or the nest. Red ants run up to 40%
   faster on scent and harvest 30% faster at a scented node. Scent halves every 90 s, six times faster
   in rain, and the sprinkler's jet washes it out where it lands.
+  Black raiders can smell red trails too and run them at half the bonus, so a trail is also a road
+  into your base. When a red ant dies it bursts alarm scent: red ants within 9 m bite 25% harder for 5 s.
+- **Caste and chamber depth.** Spitter acid slows its target (×0.65 for 2.5 s); a Nursery warms the
+  brood (eggs hatch 25% faster); each Granary ferments +1 sugar a second; Scouts on a scent trail keep
+  their full sight at night.
+- **Readable tells.** The sprinkler hisses and dribbles for 4 s before it sprays; the mower lane flashes
+  red on the ground and the minimap for 9 s before the deck rolls; black ants run out of the lane on
+  their own side when they hear it; the beam goes out of focus 3.5 s in every 15 and drags faster as
+  the kid grows impatient (up to double over four minutes). Dust, acid and soil puffs mark deaths, hits
+  and fallen chambers; dig sites fill as chambers are dug.
+- **Field coach.** One-time tips name the next verb when it matters (forage, scent, barracks, brood room,
+  first black ant, nightfall, the beam, the skirmish goal).
 - **The yard.** Sprinkler on the hose's end: 18 s of spray every 46 s, a sweeping jet that slows
   (×0.45) and batters (6/s). Lawnmower: a 9 s warning, then a deck that kills any ant in its lane every
   150 s. Rain every 210 s for 38 s (everyone ×0.8). Night from 165 to 230 s of each 240 s day (sight

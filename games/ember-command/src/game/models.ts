@@ -33,7 +33,7 @@ export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(asset
   daisy: plant("Flower_3_Group", 10, undefined, 0.35),
   bloom: plant("Flower_4_Group", 9, undefined, 0.35),
   toadstool: plant("Mushroom_Common", 4.2, undefined, 0),
-  bracket: plant("Mushroom_Laetiporus", 3, undefined, 0),
+  bracket: plant("Mushroom_Laetiporus", 2.2, undefined, 0),
   pebble: { model: `${NATURE}/Pebble_Round_2`, style: { targetHeight: 1.8 } },
   boulder: { model: `${NATURE}/Pebble_Round_4`, style: { targetHeight: 2.8 } },
   slate: { model: `${NATURE}/Pebble_Square_3`, style: { targetHeight: 1.2 } },

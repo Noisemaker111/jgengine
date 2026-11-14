@@ -158,18 +158,15 @@ Genres: strategy. 0/17 proven · 17 missing.
 
 ## Handoff
 
-- Done (committed): full LAWN ORDER re-theme of ember-command — castes (worker, scout, soldier,
-  spitter, tank beetle, Marshal Mandible; black raider/major, paper wasp), chambers (barracks, fungus
-  garden, nursery, granary, acid mound), sugar/leaf economy with crumbs/popsicle/leaf nodes, pheromone
-  trails (`pheromone.ts`, P verb), yard hazards (`hazards.ts`: sprinkler, mower, rain, night, beam),
-  backyard scene kinds (`world/yardKinds.draw.tsx`), procedural bug/chamber meshes
-  (`world/bugMeshes.ts`, `renderEntity.tsx`), hazard/trail/shade/bridge draws, scene re-authored via the
-  editor CLI, five new missions, garden-journal Rune HUD + glyphs, README/art-direction/CREDITS.
-  `bun run test games/ember-command` 194/194 pass; check-types clean; `bun run gen` passed.
-- Shared fixes: `games/shared/viteJgUiWasm.ts` strips Vite's `?import` query (jg-ui bundle 404'd);
-  `scripts/browser-lib.ts` gives software capture Chrome WebGPU on SwiftShader (Rune needs WebGPU).
-- Not done: no screenshot yet (render slot starved by other agents; the guard killed shoot at 420 s);
-  `verify:fast` started but was stopped before it finished.
-- Next: `bun run verify:fast`; `JG_BROKER=0 bun run shoot ember-command --mode play --inspect` (retry
-  when a render slot frees), inspect the shot and fix visual defects (ant scale vs camera, bridge
-  height, scatter density over the hose/lane); then report.
+- Done (committed): the LAWN ORDER redesign (castes, chambers, sugar/leaf, popsicle, pheromone trails,
+  sprinkler/mower/rain/night/beam, backyard studios, procedural bodies, five missions, garden-journal
+  HUD) plus depth rounds: alarm scent, sprinkler tell, black ants dodge the mower and run red trails,
+  scout trail vision, field coach, spitter acid, Nursery/Granary bonuses, impatient beam, beam-lure tip,
+  dust/acid/soil puffs, dig sites, lawn minimap, crossing and brood guards, cupped leaf canopies.
+- Shared fixes: jg-ui bundle served under Vite's `?import`; capture Chrome gets WebGPU on SwiftShader;
+  Rune's first-frame marks use the page clock on wasm, and the jg-ui wasm was rebuilt (the old bundle
+  panicked on `std::time::Instant`). Grass fingerprint fixture rewritten (the lawn look moved).
+- Verify: game tests green; `verify:fast` earlier failed only on the grass fingerprint (now rewritten);
+  rerun pending. Screenshots: `shots/ember-command-play-half-low-draft.png` (draft, software GL).
+- Next: rerun `bun run verify:fast`; more shots (keep-enemy view, mission 5 beam); tune plant density
+  and the canopy look from the shots.

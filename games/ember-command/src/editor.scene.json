@@ -1485,18 +1485,18 @@
         "palette": [
           {
             "item": "sprig",
-            "weight": 3
+            "weight": 5
           },
           {
             "item": "clover",
-            "weight": 2
+            "weight": 3
           },
           {
             "item": "pebble",
             "weight": 1
           },
           {
-            "item": "bracket",
+            "item": "toadstool",
             "weight": 1
           }
         ]
