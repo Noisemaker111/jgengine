@@ -47,11 +47,17 @@ describe("staged capture states", () => {
     expect((keep.of(runner.ctx).fact("keep.wave_started") === true)).toBe(true);
   });
 
-  test("boss stands the Warden on the field in its second phase", () => {
+  test("boss stands the server rack on the street in its second phase", () => {
     stageRun(runner.ctx, "boss");
     expect(session.boss).not.toBeNull();
     expect(session.boss?.unitId).toBe("tech_server");
     expect(session.boss?.stance).toBe("enraged");
+  });
+
+  test("finale stands the Data Center on the street on mains power", () => {
+    stageRun(runner.ctx, "finale");
+    expect(session.boss?.unitId).toBe("boss_datacenter");
+    expect(session.creeps.get(session.boss!.instanceId)!.power).toBeGreaterThan(0);
   });
 
   test("result plays the defense out to its own ending", () => {

@@ -77,6 +77,7 @@ export const game = defineGame({
     // States a lane can jump to instead of playing there (all compose `run.stage`, dev-only):
     //   mid-wave  a staffed street with a wave of tech mid-route and workers distracted
     //   boss      the server rack on the street, driven through its second phase by real damage
+    //   finale    the Data Center rolling in on mains power, with its escort, on a staffed street
     //   result    a day played to its own ending, with the end-of-day card up
     //   breached  wave 1 rolled into an empty town, the street clear and the Coffee Break sign up
     states: {
@@ -88,6 +89,7 @@ export const game = defineGame({
       pause: ["run.begin", "run.pause"],
       "mid-wave": ["run.begin", { name: "run.stage", input: { mode: "midwave" } }],
       boss: ["run.begin", { name: "run.stage", input: { mode: "boss" } }],
+      finale: ["run.begin", { name: "run.stage", input: { mode: "finale" } }],
       result: ["run.begin", { name: "run.stage", input: { mode: "result" } }],
       // The first wave rolled into an empty town: focus lost, the street clear, the wave's pay in.
       breached: ["run.begin", { name: "run.stage", input: { mode: "breached" } }],

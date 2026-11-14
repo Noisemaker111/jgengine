@@ -7,7 +7,7 @@ import { sendWave, tickWaves } from "./waves/director";
 import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
 
 /** What a staged defense should look like when the capture takes it. */
-export type StageMode = "midwave" | "boss" | "result" | "breached";
+export type StageMode = "midwave" | "boss" | "finale" | "result" | "breached";
 
 /** One simulation step for a staged run - 30 Hz, the same cadence the frame loop asks for. */
 const STEP = 1 / 30;
@@ -78,6 +78,18 @@ function stageMidwave(ctx: GameContext): void {
   advance(ctx, 13);
 }
 
+/** The finale on a staffed street: the Data Center rolling in on mains power with its escort. */
+function stageFinale(ctx: GameContext): void {
+  hireCrew(ctx);
+  session.encounter.openWave(TOTAL_WAVES - 1, session.pressure);
+  keep.of(ctx).set("keep.wave_started", true);
+  keep.of(ctx).set("keep.wave_ready", false);
+  keep.of(ctx).set("keep.wave", session.encounter.view().wave);
+  keep.of(ctx).set("keep.lives", 9999);
+  advance(ctx, 20);
+  keep.of(ctx).set("keep.lives", 14);
+}
+
 /** Release each wave only once the street is clear, so the run is a defense and not a wave rush. */
 function playOutDefense(ctx: GameContext): void {
   for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
@@ -102,6 +114,10 @@ function stageBreach(ctx: GameContext): void {
 export function stageRun(ctx: GameContext, mode: StageMode): void {
   if (mode === "breached") {
     stageBreach(ctx);
+    return;
+  }
+  if (mode === "finale") {
+    stageFinale(ctx);
     return;
   }
   if (mode === "boss") {

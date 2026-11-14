@@ -9,7 +9,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { abilityDef } from "../combat/abilities";
-import { creepTraits } from "../entities/enemies/catalog";
+import { creepDef, creepTraits } from "../entities/enemies/catalog";
 import { TOWER_IDS, towerDef } from "../entities/towers/catalog";
 import { editorLayers } from "../../editorLayers";
 import { buildPrompt } from "../build/prompt";
@@ -81,6 +81,15 @@ function CoffeeBreak() {
 export function WaveBoard() {
   const ctx = useGameContext(), phone = usePhone();
   const boss = useGameStore(() => bossLine(session.boss));
+  const bossPowered = useGameStore(() => {
+    const creep = session.boss === null ? undefined : session.creeps.get(session.boss.instanceId);
+    return creep?.power !== null && creep?.power !== undefined && creep.power > 0;
+  });
+  const bossPower = () => {
+    const creep = session.boss === null ? undefined : session.creeps.get(session.boss.instanceId);
+    const max = creep === undefined ? undefined : creepDef(creep.catalogId).power?.max;
+    return creep?.power === null || creep?.power === undefined || max === undefined ? 0 : Math.max(0, creep.power / max);
+  };
   const status = () => waveStatusLine({
     started: keep.of(ctx).fact("keep.wave_started") === true,
     releasing: keep.of(ctx).fact("keep.wave_ready") !== true && !session.encounter.view().done,
@@ -97,7 +106,13 @@ export function WaveBoard() {
     <Row fill="#3a6aff" radius={10} padding={[2, 10, 2, 10]} gap={5} opacity={bind(() => (distracted() > 0 ? 1 : 0))} label="Distracted workers">
       <Glyph name="phone" size={13} color="#ffffff" /><Text size={12} color="#ffffff" text={bind(() => `${distracted()} on their phone${distracted() === 1 ? "" : "s"}`)} />
     </Row>
-    {boss === null ? null : <Row fill="#b01f52" border={{ width: 2, color: "#ffe08a" }} radius={10} padding={[3, 10, 3, 10]} gap={6}><Glyph name="plug" size={14} /><Text size={13}>{boss}</Text></Row>}
+    {boss === null ? null : <RuneView items="center" gap={3}>
+      <Row fill="#b01f52" border={{ width: 2, color: "#ffe08a" }} radius={10} padding={[3, 10, 3, 10]} gap={6}><Glyph name="plug" size={14} /><Text size={13}>{boss}</Text></Row>
+      {bossPowered ? <RuneView width={phone ? 150 : 220} gap={2} label="Mains power" tooltip="Electricians standing near it drain its power; until it is cut it takes only 30% damage">
+        <Row justify="between" gap={6}><Tag size={10} color="#ffe08a">MAINS POWER</Tag><Text size={11} text={bind(() => `${Math.round(bossPower() * 100)}%`)} /></Row>
+        <RuneView height={8} width={{ fraction: 1 }} fill="#1b2420" radius={4}><RuneView height={8} radius={4} fill="#3ab0ff" width={bind(() => ({ fraction: bossPower() }))} /></RuneView>
+      </RuneView> : null}
+    </RuneView>}
   </RuneView>;
 }
 
