@@ -14,7 +14,8 @@ const MIME: Record<string, string> = {
 const wasmDir = fileURLToPath(new URL("../../native/wasm/jg-ui", import.meta.url));
 
 function resolveFile(urlPath: string): string | null {
-  const rel = decodeURIComponent(urlPath).replace(/^\/+/, "");
+  // Vite asks for a dynamically imported file with `?import` (and a cache-busting `?t=`): the query is not part of the path.
+  const rel = decodeURIComponent(urlPath.split("?")[0] ?? "").replace(/^\/+/, "");
   const file = normalize(join(wasmDir, rel));
   if (!file.startsWith(wasmDir + sep) && file !== wasmDir) return null;
   return existsSync(file) && statSync(file).isFile() ? file : null;

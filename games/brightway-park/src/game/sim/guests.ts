@@ -49,6 +49,8 @@ const MIN_NERVE = 2;
 const FLEE_SPEED = 1.7;
 /** The share of nerve the rest of a group loses when one of them flees screaming. */
 const PANIC_SHARE = 0.35;
+/** Nerve a ride costs its rider per point of Fright. */
+export const NERVE_PER_FRIGHT = 1.6;
 const STALL_SERVICE = 2.2;
 const BROWSE_SECONDS = 3;
 const TARGET_PATIENCE = 25;
@@ -283,8 +285,8 @@ function queuePenalty(ctx: GameContext, guest: GuestState): number {
 }
 
 /**
- * The ride sim's own events: a boarding wrings the ride's scare yield out of the rider (more in a
- * chain) into the world, an alighting fills the visitor's fright from the ride's ratings and adds a
+ * The ride sim's own events: a boarding costs the rider nerve for the ride's Fright and wrings its
+ * scare yield (more in a chain) into the world, an alighting fills the visitor's fright from the ride's ratings and adds a
  * link to their chain, and a jam is the world's `breakdown` ripple - the crowd sniggers and the
  * gremlin is sent. The repair itself is the world's crew order, not the sim's.
  */
@@ -295,10 +297,10 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       const obj = parkObject(ctx, rideId);
       if (guest === undefined || obj === undefined) return;
       const price = ridePrice(park.of(ctx), obj.kind);
+      // The ride's Fright is what it costs the rider's nerve; its yield, more in a chain, is what the haunt wrings out.
+      guest.courage = Math.max(0, guest.courage - (rideView(rideId)?.ratings.excitement ?? 0) * NERVE_PER_FRIGHT);
       if (price > 0) {
-        const spent = Math.min(guest.courage, price);
-        guest.courage -= spent;
-        const harvest = Math.round(spent * chainMultiplier(liveChain(guest, ctx.time.now())) * 10) / 10;
+        const harvest = Math.round(price * chainMultiplier(liveChain(guest, ctx.time.now())) * 10) / 10;
         park.emit(ctx, { kind: "pay_ride", scale: harvest });
       }
       guest.phase = "riding";

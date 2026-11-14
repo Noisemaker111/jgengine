@@ -1,9 +1,10 @@
 /**
- * The first 30 minutes of a new game at 1x, headless: a steady player who starts the first scenario,
- * opens the gate once a ride runs, hires a mechanic, and every half minute builds the next ride or
- * shop it can afford while keeping a cash reserve, and keeps the lab busy when the till allows.
- * Prices stay at their defaults. Prints the till, takings and running costs minute by minute, the
- * cash per minute and how the scenario stands.
+ * The first 30 minutes of a new game at 1x, headless: a steady haunter who starts the first scenario,
+ * unchains the gate once a ride runs, binds a gremlin, and every half minute builds the next ride,
+ * stall or scare prop it can afford while keeping an ectoplasm reserve, and keeps the séance table
+ * busy when the vault allows. Yields stay at their defaults; props go wherever there is room (no
+ * gauntlet planning yet). Prints the vault, harvest and running costs minute by minute, and how the
+ * scenario stands: screams, rumor and ghosts.
  *
  *   bun scripts/balance.ts [minutes=30]
  */
@@ -28,7 +29,7 @@ const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
 runner.ui.invoke("park.scenario", { id: FIRST_SCENARIO });
 runner.ui.invoke("park.start");
 const w = park.of(runner.ctx);
-const buildable = BUILD_IDS.filter((id) => BUILDABLES[id]!.category === "ride" || BUILDABLES[id]!.category === "stall");
+const buildable = BUILD_IDS.filter((id) => BUILDABLES[id]!.category === "ride" || BUILDABLES[id]!.category === "stall" || BUILDABLES[id]!.category === "prop");
 let built = 0;
 let spentOnBuilds = 0;
 const RESERVE = Number(process.env.RESERVE ?? 1500);
@@ -74,7 +75,7 @@ let peakGuests = 0;
 let lastRevenue = w.num("park.revenue_today");
 let lastSpent = w.num("park.spent_today");
 let lastAdmits = w.num("park.guests_today");
-console.log("min  cash   d.cash  takings/min  running/min admits guests rating rides built");
+console.log("min  ecto   d.ecto  harvest/min  running/min admits living rumor rides built screams ghosts");
 for (let m = 1; m <= minutes; m += 1) {
   let takingsThisMinute = 0;
   let spentThisMinute = 0;
@@ -93,13 +94,13 @@ for (let m = 1; m <= minutes; m += 1) {
   takings += takingsThisMinute;
   peakGuests = Math.max(peakGuests, w.num("park.guests"));
   const cash = w.num("park.cash");
-  console.log(`${String(m).padStart(3)} ${String(Math.round(cash)).padStart(6)} ${String(Math.round(cash - lastCash)).padStart(7)} ${String(Math.round(takingsThisMinute)).padStart(11)} ${String(Math.round(spentThisMinute)).padStart(11)} ${String(admitsThisMinute).padStart(6)} ${String(session.guests.size).padStart(7)} ${String(Math.round(w.num("park.rating"))).padStart(6)} ${String(w.num("n.ride_carousel") >= 0 ? Object.values(w.instances()).filter((i) => BUILDABLES[i.kind]?.ride).length : 0).padStart(5)} ${String(built).padStart(5)}`);
+  console.log(`${String(m).padStart(3)} ${String(Math.round(cash)).padStart(6)} ${String(Math.round(cash - lastCash)).padStart(7)} ${String(Math.round(takingsThisMinute)).padStart(11)} ${String(Math.round(spentThisMinute)).padStart(11)} ${String(admitsThisMinute).padStart(6)} ${String(session.guests.size).padStart(7)} ${String(Math.round(w.num("park.rating"))).padStart(6)} ${String(w.num("n.ride_carousel") >= 0 ? Object.values(w.instances()).filter((i) => BUILDABLES[i.kind]?.ride).length : 0).padStart(5)} ${String(built).padStart(5)} ${String(w.num("park.screams")).padStart(7)} ${String(w.num("park.ghosts")).padStart(6)}`);
   lastCash = cash;
 }
 const end = w.num("park.cash");
-console.log(`\nstart $${Math.round(start)}  end $${Math.round(end)}  built ${built} ($${spentOnBuilds})`);
-console.log(`till change per minute: $${Math.round((end - start) / minutes)}`);
-console.log(`operating cash per minute (till change + build spend): $${Math.round((end - start + spentOnBuilds) / minutes)}`);
-console.log(`takings per minute: $${Math.round(takings / minutes)}`);
+console.log(`\nstart ${Math.round(start)}  end ${Math.round(end)}  built ${built} (${spentOnBuilds} ecto)`);
+console.log(`vault change per minute: ${Math.round((end - start) / minutes)} ecto`);
+console.log(`operating ectoplasm per minute (vault change + build spend): ${Math.round((end - start + spentOnBuilds) / minutes)}`);
+console.log(`harvest per minute: ${Math.round(takings / minutes)} ecto`);
 const result = w.fact("scenario.result");
-console.log(`scenario: ${result === "" ? "running" : String(result)}; most guests in the park ${peakGuests}; best rating ${Math.round(w.num("park.peak"))}; loan owed $${w.num("park.loan_owed")}`);
+console.log(`scenario: ${result === "" ? "running" : String(result)}; most living in the park ${peakGuests}; best rumor ${Math.round(w.num("park.peak"))}; screams ${w.num("park.screams")}; ghosts ${w.num("park.ghosts")}; owed to the Ferryman ${w.num("park.loan_owed")}`);

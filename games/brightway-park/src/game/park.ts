@@ -342,7 +342,7 @@ for (const id of BUILD_IDS) {
 }
 
 /** Ectoplasm a scream wrings out on its own, on top of everything that frightened them. */
-export const SCREAM_ECTO = 6;
+export const SCREAM_ECTO = 8;
 
 /** What every scrap of ectoplasm from the living adds to: the vault, the night's harvest and the scenario's. */
 const takings = { "park.cash": 1, "park.revenue_today": 1, "park.scenario_revenue": 1 };

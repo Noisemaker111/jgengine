@@ -602,6 +602,7 @@ genre-homage line rather than crediting a named individual creator.
 | --- | --- | --- |
 | **[Vice Isle](games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
 | **[Ironhold](games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
+| **[Hauntworks](games/brightway-park)** | `brightway-park` | Sick Puppies' **Ghost Master** (2003) — haunting the living as the goal — on a park-tycoon base. Original code, rules, art and content: chained scares, ghost residents with wants, hunters and the exorcist are its own. Its library models (Quaternius, KayKit) are credited in their sections above. |
 
 ## First-party generated assets
 

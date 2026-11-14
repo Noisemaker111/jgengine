@@ -30,12 +30,12 @@ export interface VisitorKind {
 }
 
 export const VISITORS: readonly VisitorKind[] = [
-  { id: "visitor_teen", label: "Dared Teen", courage: [24, 44], curiosity: 1, thrill: 7.5, group: [2, 4], rumor: 0, weight: 4 },
-  { id: "visitor_couple", label: "Couple on a Date", courage: [28, 50], curiosity: 0.8, thrill: 5.5, group: [2, 2], rumor: 0, weight: 3 },
-  { id: "visitor_family", label: "Brave Family", courage: [20, 34], curiosity: 0.7, thrill: 3.5, group: [3, 4], rumor: 0, weight: 3 },
-  { id: "visitor_skeptic", label: "Skeptic", courage: [46, 66], curiosity: 0.9, thrill: 6, group: [1, 1], rumor: 40, weight: 1.2, skeptic: true },
-  { id: "visitor_hunter", label: "Ghost Hunter", courage: [42, 62], curiosity: 1, thrill: 6, group: [1, 2], rumor: 150, weight: 1, films: 1 },
-  { id: "visitor_tvcrew", label: "Paranormal TV Crew", courage: [38, 58], curiosity: 0.9, thrill: 5, group: [2, 3], rumor: 320, weight: 0.7, films: 2 },
+  { id: "visitor_teen", label: "Dared Teen", courage: [12, 24], curiosity: 1, thrill: 7.5, group: [2, 4], rumor: 0, weight: 4 },
+  { id: "visitor_couple", label: "Couple on a Date", courage: [14, 28], curiosity: 0.8, thrill: 5.5, group: [2, 2], rumor: 0, weight: 3 },
+  { id: "visitor_family", label: "Brave Family", courage: [10, 18], curiosity: 0.7, thrill: 3.5, group: [3, 4], rumor: 0, weight: 3 },
+  { id: "visitor_skeptic", label: "Skeptic", courage: [24, 36], curiosity: 0.9, thrill: 6, group: [1, 1], rumor: 40, weight: 1.2, skeptic: true },
+  { id: "visitor_hunter", label: "Ghost Hunter", courage: [22, 34], curiosity: 1, thrill: 6, group: [1, 2], rumor: 150, weight: 1, films: 1 },
+  { id: "visitor_tvcrew", label: "Paranormal TV Crew", courage: [20, 32], curiosity: 0.9, thrill: 5, group: [2, 3], rumor: 320, weight: 0.7, films: 2 },
 ];
 
 /** Every visitor kind's entity id: what the scene spawns and the save decoder accepts. */

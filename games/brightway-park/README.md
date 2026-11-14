@@ -21,13 +21,15 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   while the park is empty (stalls restock, the exorcist may call, the night's harvest is filed). A night
   is 150 seconds; a moon is eight nights (20 minutes at 1x); a season is eight moons. The player lays a
   path, builds and connects a ride, and unchains the gate (it refuses with no ride running).
-- **Nerve and ectoplasm.** Every visitor arrives with nerve (courage). A ride's scare yield is the
-  nerve a rider spends to board, and it is harvested as ectoplasm; scare props jolt anyone who walks
-  into their reach for their fright in nerve. Scares that land within 18 seconds of each other chain:
-  each link adds a quarter to the next scare's multiplier, up to x2.5, so a path laid out as a gauntlet
-  earns far more than the same pieces scattered. A visitor whose nerve runs out flees screaming: the
-  scream is worth 6 ectoplasm and spreads the rumor, and the rest of their group loses 35% of their own
-  nerve. Scare a group out at the gate and they never reach the best rides.
+- **Nerve and ectoplasm.** Every visitor arrives with 10 to 36 nerve, by kind. A ride costs its rider
+  1.6 nerve per point of Fright and yields its scare yield (a knob the player turns; the living refuse
+  a ride turned up past what its Fright is worth) as ectoplasm; scare props jolt anyone who walks into
+  their reach for their fright in nerve, harvested the same way. Scares that land within 18 seconds of
+  each other chain: each link adds a quarter to the next scare's multiplier, up to x2.5, so a path laid
+  out as a gauntlet earns far more than the same pieces scattered. A visitor whose nerve runs out flees
+  screaming: the scream is worth 8 ectoplasm and spreads the rumor, and the rest of their group loses
+  35% of their own nerve. Scare a group out at the gate and they never reach the best rides. The
+  authored starter haunt sends about six of the living home screaming a night.
 - **The living.** Six kinds arrive in groups: dared teens, couples on a date, brave families, skeptics
   (immune to any prop below fright 5), ghost hunters (from rumor 150) and paranormal TV crews (from
   rumor 320). Each kind has its own nerve range, curiosity and taste in Thrill.

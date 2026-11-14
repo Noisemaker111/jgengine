@@ -4,44 +4,56 @@ import openPark from "./to-open-park.flow";
 import { lotScreen } from "./lotScreen";
 
 /**
- * The first breakdown, from the empty lot: the open-park proof, then the carousel runs until it
- * wears out and breaks on its own. It stays down, the hint says to hire a mechanic and rings Staff,
- * the player hires one by clicking, and the mechanic goes straight to the ride and fixes it.
+ * The first jam, from the empty lot: the open-park proof, a scare that brings the Victorian Child,
+ * then the carousel runs until it wears out and seizes up on its own. It stays down, the hint says to
+ * bind a gremlin and rings Spooks, the player binds one by clicking, and the gremlin goes straight to
+ * the ride and un-jams it.
  */
 export default defineFlow(game, {
   browser: true,
   async run(f) {
     await openPark.run(f);
-    // Close the books, then take the hint's lab step: the Ice Cream Cart from the Lab panel.
+    // Close the ledger, then take the hint's scare step: a Jack-in-the-Coffin beside the path.
     await f.press("KeyL");
-    await f.click("Lab");
-    await f.click("Ice Cream Cart");
-    await f.click("Lab");
-    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: with research running, the next step is a mechanic" });
+    await f.click("Scares");
+    await f.click("Jack-in-the-Coffin");
+    const nook = await lotScreen(f, -4, 36);
+    await f.clickAt(nook.x, nook.y);
+    await f.see("Jack-in-the-Coffin built", { timeoutMs: 5000, note: "scare: a toy-coffin jolts the path beside the carousel" });
+    await f.press("KeyX");
+    // The séance step: the Grave-Dirt Sundaes from the Séance panel.
+    await f.click("Séance");
+    await f.click("Grave-Dirt Sundaes");
+    await f.click("Séance");
+    // The carousel and the coffin are all the Victorian Child wants: she moves in, and the next step is a gremlin.
+    await f.timeScale(4);
+    await f.waitForPage("globalThis.__brightway.read().ghosts === 1", { timeoutMs: 30000, note: "ghost: the Victorian Child moves in" });
+    await f.timeScale(1);
+    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: with a ghost at home, the next step is a gremlin" });
     await f.timeScale(8);
     await f.waitFor((p) => p.breakdowns > 0, { timeoutMs: 120000, note: "breakdown: the carousel wears out and breaks on its own" });
     await f.timeScale(1);
-    await f.see(/hire a mechanic/i, { timeoutMs: 5000, note: "breakdown: the park says the ride needs a mechanic" });
-    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: the next step is hiring a mechanic" });
-    await f.expectPage("['category:staff', 'item:staff_mechanic', 'hud:build'].includes(globalThis.__brightway.read().pointed)", "hint: the hint rings the way to the Staff palette");
-    await f.shot("brightway-first-breakdown");
+    await f.see(/bind a Gremlin Tinker/i, { timeoutMs: 5000, note: "jam: the haunt says the ride needs a gremlin" });
+    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: the next step is binding a gremlin" });
+    await f.expectPage("['category:staff', 'item:staff_mechanic', 'hud:build'].includes(globalThis.__brightway.read().pointed)", "hint: the hint rings the way to the Spooks palette");
+    await f.shot("hauntworks-first-jam");
     // With no mechanic, nothing fixes it: still down after a while.
     await f.timeScale(4);
     await f.wait(5000);
     await f.timeScale(1);
     await f.expect((p) => p.breakdowns > 0, "breakdown: the ride is still waiting");
-    await f.expectPage("document.body.innerText.includes('ride down') || document.body.innerText.includes('rides down')", "breakdown: the status card counts the ride as down");
+    await f.expectPage("window.__jgNativeUi.text().includes('ride jammed') || window.__jgNativeUi.text().includes('rides jammed')", "jam: the status card counts the ride as jammed");
 
-    await f.click("Staff");
-    await f.click("Mechanic");
+    await f.click("Spooks");
+    await f.click("Gremlin Tinker");
     const grass = await lotScreen(f, -12, 36);
     await f.clickAt(grass.x, grass.y);
-    await f.see("Mechanic built", { timeoutMs: 5000, note: "fix: a mechanic is hired by clicking the palette and the lot" });
-    await f.waitForPage("globalThis.__brightway.read().hint === null", { timeoutMs: 3000, note: "hint: the mechanic step is done" });
+    await f.see("Gremlin Tinker built", { timeoutMs: 5000, note: "fix: a gremlin is bound by clicking the palette and the lot" });
+    await f.waitForPage("globalThis.__brightway.read().hint === null", { timeoutMs: 3000, note: "hint: the gremlin step is done" });
     await f.timeScale(4);
-    await f.see(/running again/i, { timeoutMs: 60000, note: "fix: the new mechanic goes straight to the broken ride and it runs again" });
+    await f.see(/running again/i, { timeoutMs: 60000, note: "fix: the new gremlin goes straight to the jammed ride and it runs again" });
     await f.timeScale(1);
-    await f.expectPage("!document.body.innerText.includes('ride down')", "fix: no ride is down any more");
-    await f.shot("brightway-mechanic-fixed");
+    await f.expectPage("!window.__jgNativeUi.text().includes('ride jammed')", "fix: no ride is jammed any more");
+    await f.shot("hauntworks-gremlin-fixed");
   },
 });

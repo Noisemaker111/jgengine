@@ -48,8 +48,8 @@ describe("guest generation is reproducible (#1581)", () => {
   test("generated needs stay inside their authored ranges", () => {
     for (const guest of seedInto("park-seed-3")) {
       // A seeded crowd is teens, couples and families: nerve between the family's floor and the couple's ceiling.
-      expect(guest.courage).toBeGreaterThanOrEqual(20_000);
-      expect(guest.courage).toBeLessThanOrEqual(50_000);
+      expect(guest.courage).toBeGreaterThanOrEqual(10_000);
+      expect(guest.courage).toBeLessThanOrEqual(28_000);
       for (const [need, value] of Object.entries(guest.needs)) {
         expect(value).toBeGreaterThanOrEqual(0);
         expect(value).toBeLessThanOrEqual(100_000);
