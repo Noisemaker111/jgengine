@@ -13,13 +13,13 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
-import { editorLayers, physics, world } from "./world";
+import { BURROW, editorLayers, physics, world } from "./world";
 import { houseAssets } from "./game/assets";
 import { canSprint, captureProbe, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { Clockwork, LootLayer, RoomBuild, RoomLights, ThreatLayer, WayMarks } from "./game/houseArt";
 import { itemMesh } from "./game/itemArt";
-import { defOf, ITEMS, isItemKind, kindOf, type ItemKind } from "./game/loot";
+import { defOf, ITEMS, isItemKind, kindOf, SETS, type ItemKind, type SetId } from "./game/loot";
 import { GameUI } from "./game/ui/GameUI";
 import { audio } from "./game/audio";
 
@@ -72,6 +72,21 @@ function Held({ kind, at, turn, scale }: { kind: ItemKind; at: [number, number, 
   }} deps={[kind]} />;
 }
 
+/** Every set the burrow has banked, as its centrepiece on the trophy shelf. */
+function Trophies() {
+  const sets = useStore(viewStore, v => v.home.upgrades.trophies > 0 ? v.home.sets.join(",") : "");
+  const shelf = BURROW.props.find(p => p.label === "trophy-shelf");
+  if (sets === "" || shelf === undefined) return null;
+  return <>{sets.split(",").map((id, i) => {
+    const piece = SETS[id as SetId]?.pieces[0];
+    return piece === undefined ? null : <EngineDrawMount key={id} create={() => {
+      const mesh = itemMesh(piece);
+      mesh.position.set(shelf.center.x - 2.2 + i * 1.1, shelf.center.y + 0.25, shelf.center.z);
+      mesh.scale.setScalar(0.45);
+      return { mount(state: EngineFrameState) { state.scene.add(mesh); }, dispose(state: EngineFrameState) { state.scene.remove(mesh); disposeObjectTree(mesh); } };
+    }} deps={[id, i]} />;
+  })}</>;
+}
 function RunLayers() {
   const run = useStore(viewStore, v => v.mode === "run" || v.mode === "saving" ? v.run : null);
   return run === null ? null : <><LootLayer run={run} /><WayMarks run={run} /><Clockwork run={run} /></>;
@@ -84,7 +99,7 @@ function WorldOverlay() {
   return <>
     <SceneCaptureBinding />
     <Build templateId={templateId} levels={templateId === "burrow" ? view.levels : "{}"} />
-    {templateId === "burrow" ? null : <><RunLayers /><ThreatLayer templateId={templateId} /></>}
+    {templateId === "burrow" ? <Trophies /> : <><RunLayers /><ThreatLayer templateId={templateId} /></>}
     <Hands />
   </>;
 }

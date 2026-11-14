@@ -14,6 +14,7 @@ export type ItemKind =
   | "crumb" | "sugar-cube" | "cheese-cube" | "raisin" | "cereal-ring" | "cookie-shard" | "peanut" | "gummy-bear"
   | "watch-battery" | "spring" | "paperclip" | "rubber-band" | "screw" | "toy-gear" | "safety-pin" | "thread-spool" | "tissue"
   | "button" | "marble" | "coin" | "bead" | "earring" | "tiny-key" | "dice" | "brick" | "crayon" | "stamp" | "sequin" | "spider-silk"
+  | "cat-bell" | "pearl" | "toy-soldier"
   | "thimble" | "needle" | "napkin" | "grapple" | "button-shield" | "candle" | "slingshot"
   | "bottle-cap";
 export type Category = "food" | "part" | "curio" | "gear" | "cap";
@@ -34,6 +35,8 @@ export interface ItemKindDef {
   minDepth?: number;
   /** Pick weight among its category. */
   weight?: number;
+  /** Makes noise while carried: every step carries further. */
+  noisy?: number;
 }
 
 export const ITEMS: Record<ItemKind, ItemKindDef> = {
@@ -67,6 +70,9 @@ export const ITEMS: Record<ItemKind, ItemKindDef> = {
   crayon: { name: "Crayon stub", category: "curio", w: 2, h: 1, mass: 0.8, value: 11, color: "#7a3fb0", flavor: "Wax for candles, colour for the walls.", set: "toy-box", zones: ["kidroom"], weight: 2 },
   stamp: { name: "Postage stamp", category: "curio", w: 1, h: 1, mass: 0.1, value: 25, color: "#c0473b", flavor: "A tiny painting of a queen. Rolls up like a rug.", set: "treasure-hoard", zones: ["living", "attic"], minDepth: 1, weight: 1 },
   sequin: { name: "Sequin", category: "curio", w: 1, h: 1, mass: 0.1, value: 9, color: "#ffd86b", flavor: "A coin-sized mirror. Catches every light in the room.", weight: 2 },
+  "cat-bell": { name: "Cat's bell", category: "curio", w: 1, h: 1, mass: 0.6, value: 58, color: "#e8c547", flavor: "Lifted off the cat's own collar. Worth a fortune, and it jingles with every step.", noisy: 1.4, zones: ["living", "kitchen"], minDepth: 2, weight: 0.6 },
+  pearl: { name: "Pearl", category: "curio", w: 1, h: 1, mass: 0.4, value: 80, color: "#f4eee4", flavor: "Rolled off a broken necklace years ago. The rarest thing in the house.", zones: ["attic", "kidroom"], minDepth: 3, weight: 0.35 },
+  "toy-soldier": { name: "Toy soldier", category: "curio", w: 1, h: 2, mass: 1.2, value: 22, color: "#3f6b45", flavor: "A plastic guard frozen mid-salute. The Littles stand him at the burrow door.", zones: ["kidroom", "attic"], minDepth: 2, weight: 1.2 },
   "spider-silk": { name: "Spider silk", category: "curio", w: 1, h: 1, mass: 0.1, value: 34, color: "#eef2f5", flavor: "Stronger than thread. Taken from a spider that won’t need it.", weight: 0 },
 
   thimble: { name: "Thimble helmet", category: "gear", w: 1, h: 1, mass: 1.1, value: 30, color: "#c0c4c6", flavor: "Wear it on your head. Halves every bump and bite.", set: "sewing-basket", gear: "helmet", minDepth: 1, weight: 1 },

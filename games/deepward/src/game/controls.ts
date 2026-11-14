@@ -774,6 +774,8 @@ export function tickControls(ctx: GameContext, dt: number): void {
   // Sound: footsteps by pace, rummaging, a two-handed load thumping along.
   let noise = speed < 0.3 ? 0 : speed > 5.6 ? 18 : sneaking ? 3 : 9;
   if (noise > 0 && twoHanded(v.run)) noise *= 1.3;
+  // A cat's bell in the pack jingles with every step.
+  if (noise > 0) for (const item of v.run.pack) noise *= defOf(item).noisy ?? 1;
   if (v.run.channel !== null) noise = Math.max(noise, v.run.channel.kind === "disarm" && !little.trapSense ? 12 : v.run.channel.kind === "search" || v.run.channel.kind === "toybox" ? 6 : 2);
   noise *= little.noise * NIGHTS[nightOf(v.run.seed)].noise;
   const lit = lightsOn(v.run, plan), torch = hasGear(v.run, "torch");

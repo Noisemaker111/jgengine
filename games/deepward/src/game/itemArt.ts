@@ -48,6 +48,9 @@ export function itemMesh(kind: ItemKind): Group {
     case "crayon": part(g, new CylinderGeometry(0.3, 0.3, 1.6, 10), mat(c, { rough: 0.5 }), [0, 0.3, 0], [0, 0, Math.PI / 2]); part(g, new ConeGeometry(0.3, 0.5, 10), mat(c, { rough: 0.5 }), [-1.05, 0.3, 0], [0, 0, Math.PI / 2]); break;
     case "stamp": part(g, new BoxGeometry(1, 0.04, 1.2), mat(c, { rough: 0.8 }), [0, 0.03, 0]); part(g, new BoxGeometry(0.7, 0.05, 0.9), mat("#f2e6c8"), [0, 0.04, 0]); break;
     case "sequin": part(g, new CylinderGeometry(0.5, 0.5, 0.04, 20), mat(c, { rough: 0.05, metal: 1, glow: 0.4 }), [0, 0.05, 0]); break;
+    case "cat-bell": part(g, new SphereGeometry(0.55, 14, 10), mat(c, METAL), [0, 0.55, 0]); part(g, new BoxGeometry(0.7, 0.08, 0.12), mat("#222"), [0, 0.45, 0.5]); part(g, new TorusGeometry(0.18, 0.05, 6, 12), mat(c, METAL), [0, 1.12, 0]); break;
+    case "pearl": part(g, new SphereGeometry(0.45, 20, 14), mat(c, { rough: 0.08, metal: 0.2, glow: 0.15 }), [0, 0.45, 0]); break;
+    case "toy-soldier": part(g, new CylinderGeometry(0.4, 0.45, 0.2, 12), mat("#3f6b45"), [0, 0.1, 0]); part(g, new BoxGeometry(0.5, 1.1, 0.35), mat(c), [0, 0.75, 0]); part(g, new SphereGeometry(0.22, 10, 8), mat("#f1c9a5"), [0, 1.45, 0]); part(g, new CylinderGeometry(0.2, 0.22, 0.35, 10), mat("#222"), [0, 1.72, 0]); break;
     case "spider-silk": part(g, new SphereGeometry(0.45, 10, 8), mat(c, { rough: 1, glow: 0.2 }), [0, 0.4, 0], [0, 0, 0], [1, 0.7, 1]); break;
     case "thimble": part(g, new CylinderGeometry(0.55, 0.7, 1.2, 18, 1, true), mat(c, METAL), [0, 0.6, 0]); part(g, new SphereGeometry(0.55, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(c, METAL), [0, 1.2, 0]); break;
     case "needle": part(g, new CylinderGeometry(0.06, 0.02, 3.2, 8), mat(c, METAL), [0, 0.12, 0], [0, 0, Math.PI / 2]); part(g, new TorusGeometry(0.1, 0.03, 6, 10), mat(c, METAL), [1.62, 0.12, 0]); break;

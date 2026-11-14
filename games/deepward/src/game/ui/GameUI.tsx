@@ -153,7 +153,7 @@ function StashSheet({ command, close }: { command: Command; close: () => void })
     <Row gap={6}>{(["all", "gear", "food", "part", "curio"] as const).map(f => <Button key={f} fill={filter === f ? GOLD : "#bfa684"} onPress={() => setFilter(f)}>{f === "all" ? "All" : f === "part" ? "Parts" : f === "curio" ? "Curios" : f[0]!.toUpperCase() + f.slice(1)}</Button>)}</Row>
     {shown.length === 0 ? <Text color={MUTED}>Empty shelves. Bring something home from the house.</Text> : shown.map(item => { const def = defOf(item), packed = home.bring.includes(item.id);
       return <Section key={item.id}>
-        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{item.name}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
+        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{item.name}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.noisy ? " · jingles" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
         <Text>{def.flavor}</Text>
         <Row gap={6}>{def.gear !== undefined ? <Button onPress={() => command("bring", { uid: item.id, on: !packed })}>{packed ? "Packed / unpack" : "Pack for the run"}</Button> : null}<Button onPress={() => command("trade", { id: item.id })}>{`Trade · ${tradeValue(item)} caps`}</Button></Row>
       </Section>; })}
