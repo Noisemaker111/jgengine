@@ -4,17 +4,17 @@ import { MONTH_DAYS, monthLabel } from "./books";
 import { DAY_LENGTH } from "./catalog";
 
 /**
- * The park's scenarios as content: each is a `survive` mission that completes the moment every
- * target holds and fails when its months run out (or the crowd walks out). They unlock in order:
- * winning one opens the next. `park.ts` declares each one as a job on the park's world, so the
- * world's own mission runtime runs it and saves it with the park.
+ * The haunt's season as content: each scenario is a `survive` mission that completes the moment
+ * every target holds and fails when its moons run out (or the living lose interest). They unlock in
+ * order, ending in the Full Moon Festival: winning one opens the next. `park.ts` declares each one
+ * as a job on the park's world, so the world's own mission runtime runs it and saves it.
  */
 
 export interface ScenarioTarget {
   /** The world fact the target reads. */
   fact: string;
   atLeast: number;
-  /** How the HUD names it: "guests in the park". */
+  /** How the HUD names it: "of the living driven out screaming". */
   label: string;
 }
 
@@ -24,9 +24,9 @@ export interface ScenarioDef {
   blurb: string;
   /** What must be true by the deadline. */
   goal: string;
-  /** Money the park opens with. */
+  /** Ectoplasm the haunt wakes with. */
   cash: number;
-  /** Park months the scenario runs, from 1 March, Year 1. */
+  /** Moons the scenario runs, from the first night of the Harvest Moon. */
   months: number;
   targets: readonly ScenarioTarget[];
   /** The scenario a park must win before this one opens; none for the first. */
@@ -50,7 +50,7 @@ export const scenarioSeconds = (months: number): number => months * MONTH_DAYS *
 
 function scenario(spec: ScenarioSpec): ScenarioDef {
   const deadline = monthLabel(spec.months - 1);
-  const goal = `${spec.targets.map((t) => `${t.atLeast.toLocaleString()} ${t.label}`).join(" and ")} by the end of ${deadline}`;
+  const goal = `${spec.targets.map((t) => `${t.atLeast.toLocaleString()} ${t.label}`).join(", ")} by the end of ${deadline}`;
   return {
     id: spec.id,
     title: spec.title,
@@ -65,8 +65,8 @@ function scenario(spec: ScenarioSpec): ScenarioDef {
       title: spec.title,
       description: `${goal}.`,
       fail: [
-        { id: "walkout", message: "The crowd turned miserable and stopped coming." },
-        { id: "short", message: `The end of ${deadline} came and the park was short of its target.` },
+        { id: "walkout", message: "The living got bored of a haunt that couldn't scare them, and stopped coming." },
+        { id: "short", message: `The end of ${deadline} came and the haunt was short of its target.` },
       ],
       objectives: [
         {
@@ -76,7 +76,7 @@ function scenario(spec: ScenarioSpec): ScenarioDef {
           until: spec.targets.map((t) => ({ fact: t.fact, atLeast: t.atLeast })),
           timeout: scenarioSeconds(spec.months),
           onTimeout: "short",
-          failOn: [{ kind: "fact", fact: "park.mood", atMost: 15, to: "walkout", message: "Guest mood collapsed below 15%." }],
+          failOn: [{ kind: "fact", fact: "park.mood", atMost: 15, to: "walkout", message: "The living's mood collapsed below 15%." }],
         },
       ],
       rewards: { economy: { cash: spec.reward } },
@@ -86,53 +86,56 @@ function scenario(spec: ScenarioSpec): ScenarioDef {
 
 export const SCENARIOS: readonly ScenarioDef[] = [
   scenario({
-    id: "brightway_beginnings",
-    title: "Brightway Beginnings",
-    blurb: "An empty lot by the sea, a loan from the bank and one spring to prove the park can draw a crowd.",
+    id: "first_chill",
+    title: "The First Chill",
+    blurb: "A derelict pier, a debt to the Ferryman and three moons to send the living home screaming and lure your first ghost.",
     cash: 10_000,
     months: 3,
     targets: [
-      { fact: "park.guests", atLeast: 120, label: "guests in the park" },
-      { fact: "park.rating", atLeast: 400, label: "stars" },
+      { fact: "park.screams", atLeast: 60, label: "of the living driven out screaming" },
+      { fact: "park.rating", atLeast: 300, label: "rumor" },
+      { fact: "park.ghosts", atLeast: 1, label: "ghost in residence" },
     ],
     reward: 5_000,
   }),
   scenario({
-    id: "star_attraction",
-    title: "Star Attraction",
-    blurb: "One whole season to build the coast's favourite day out.",
+    id: "talk_of_the_coast",
+    title: "Talk of the Coast",
+    blurb: "Eight moons to become the place every dare on the coast ends at, while the hunters sharpen their cameras.",
     cash: 10_000,
     months: 8,
     targets: [
-      { fact: "park.rating", atLeast: 650, label: "stars" },
-      { fact: "park.guests", atLeast: 250, label: "guests in the park" },
+      { fact: "park.screams", atLeast: 450, label: "screaming exits" },
+      { fact: "park.rating", atLeast: 600, label: "rumor" },
+      { fact: "park.ghosts", atLeast: 3, label: "ghosts in residence" },
     ],
-    after: "brightway_beginnings",
+    after: "first_chill",
     reward: 10_000,
   }),
   scenario({
-    id: "full_house",
-    title: "Full House",
-    blurb: "Two seasons to fill every path: the biggest crowd Brightway has ever seen.",
+    id: "full_moon_festival",
+    title: "Full Moon Festival",
+    blurb: "Two seasons of nights to make the park a paradise for the dead. On the last full moon every ghost on the coast comes to the festival - if they have a home to come to.",
     cash: 10_000,
     months: 16,
     targets: [
-      { fact: "park.guests", atLeast: 380, label: "guests in the park" },
-      { fact: "park.rating", atLeast: 850, label: "stars" },
+      { fact: "park.screams", atLeast: 1_500, label: "screaming exits" },
+      { fact: "park.rating", atLeast: 850, label: "rumor" },
+      { fact: "park.ghosts", atLeast: 6, label: "ghosts in residence" },
     ],
-    after: "star_attraction",
+    after: "talk_of_the_coast",
     reward: 20_000,
   }),
 ];
 
 /** The first scenario: a new game starts here. */
-export const FIRST_SCENARIO = "brightway_beginnings";
+export const FIRST_SCENARIO = "first_chill";
 
 export function scenarioDef(id: string): ScenarioDef | null {
   return SCENARIOS.find((entry) => entry.id === id) ?? null;
 }
 
-const WON_KEY = "brightway-park.scenarios-won";
+const WON_KEY = "hauntworks.scenarios-won";
 
 /** The scenarios this browser has won, kept apart from any one park's save. */
 export function scenariosWon(): readonly string[] {

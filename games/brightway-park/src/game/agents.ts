@@ -162,7 +162,7 @@ export function guestTargets(
     const distance = Math.hypot(obj.x - at[0], obj.z - at[2]);
     if (def.stall !== undefined) {
       const price = stallPrice(w, obj.kind);
-      if (stockOf(w, obj) <= 0 || guest.money < price) continue;
+      if (stockOf(w, obj) <= 0 || guest.courage < price) continue;
       targets.push({
         option: def.stall.need,
         target: obj.id,
@@ -173,7 +173,7 @@ export function guestTargets(
     }
     if (def.ride === undefined) continue;
     const price = ridePrice(w, obj.kind);
-    if (guest.money < price) continue;
+    if (guest.courage < price) continue;
     const view = rideView(obj.id);
     if (view === null) continue;
     const appeal = rideAppeal(view.ratings, taste);

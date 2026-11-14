@@ -28,7 +28,7 @@ export function setupWorld(ctx: GameContext): void {
   }
   ctx.time.pause();
   if (typeof localStorage !== "undefined") {
-    try { ctx.game.store.set("park.reduced-motion",localStorage.getItem("brightway-park.reduced-motion")==="true"); } catch { /* Browser storage may be disabled. */ }
+    try { ctx.game.store.set("park.reduced-motion",localStorage.getItem("hauntworks.reduced-motion")==="true"); } catch { /* Browser storage may be disabled. */ }
   }
   if (typeof window !== "undefined") {
     const abort = new AbortController();

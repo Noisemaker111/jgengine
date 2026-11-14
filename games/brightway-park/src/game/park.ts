@@ -17,25 +17,30 @@ import { FLAT_LAND, LAND_FACT } from "./build/terrain";
 import { BUILDABLES, BUILD_IDS, buildableDef, THEME_CAP, type BuildableDef } from "./objects/catalog";
 import { SCENARIOS } from "./scenarios";
 import { BOOK_LINES, CAMPAIGNS } from "./books";
+import { ecto } from "./ecto";
+import { GHOSTS, ghostFact } from "./ghostCatalog";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
 import { retuneRideUpkeep, rideRunActions, rideRunFacts } from "./rideRefits";
 
 /**
- * Brightway Park is one declaration. Every ride, stall, path and post is a kind on the park lot;
- * the till, the crowd's mood, the rating, the loan and the scenario are facts; repairs, servicing,
- * restocking, prices and the loan are actions; upkeep and litter are flows; a breakdown and a guest
- * paying are ripples. The engine runs it (`brightway.place`, `brightway.act`, `brightway.remove`)
- * and keeps it in one store, `brightway.world`, that the park save writes whole.
+ * Hauntworks is one declaration. Every ride, stall, scare prop, path and spook's post is a kind on
+ * the park lot; the ectoplasm, the crowd's mood, the rumor, the screams, the ghost residents, the
+ * hunters' evidence, the Ferryman's debt and the scenario are facts; repairs, servicing, restocking,
+ * scare yields and the debt are actions; upkeep, litter and the ghosts' nightly seep are flows; a
+ * jam, a scare and a scream are ripples. The engine runs it (`brightway.place`, `brightway.act`,
+ * `brightway.remove`; the ids predate the haunt) and keeps it in one store, `brightway.world`, that
+ * the save writes whole.
  *
- * What stays game code: guests and janitors walking (agents), the ride cycles and lines (the shared
- * ride sim), the coaster circuit, and the rating's blend of mood, crowd and litter.
+ * What stays game code: the living and the spooks walking (agents), the ride cycles and lines (the
+ * shared ride sim), the coaster circuit, the props' jolts and chains (`scares.ts`), who moves in
+ * (`ghosts.ts`), the exorcist (`threats.ts`), and the rumor's blend of mood, screams and litter.
  */
 
 export { LOT, sizeOf };
 
 /**
- * The bank: the park opens owing `start`, may borrow up to `max` in steps of `step`, and pays
- * `monthlyRate` interest on what it owes when each month closes.
+ * The Ferryman's debt: the haunt opens owing `start` ectoplasm, may borrow up to `max` in steps of
+ * `step`, and pays `monthlyRate` on what it owes when each moon closes.
  */
 export const LOAN = { start: 10_000, max: 25_000, step: 1_000, monthlyRate: 0.04 } as const;
 
@@ -124,7 +129,7 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
       label: `Repair ${def.label}`,
       on: def.id,
       when: { "n.staff_mechanic": { atLeast: 1 } },
-      refuse: "Hire a mechanic from Staff to fix it",
+      refuse: "Bind a Gremlin Tinker from Spooks to un-jam it",
       whenTarget: { broken: true },
       cost: { "park.cash": -ride.breakdown.repairCost, [monthLine("repairs")]: ride.breakdown.repairCost },
       world: { "park.spent_today": ride.breakdown.repairCost },
@@ -132,18 +137,18 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
       queue: "crew",
       effect: { broken: false },
       emit: "repaired",
-      note: "The mechanic has the {target} running again.",
+      note: "The gremlin has the {target} running again.",
     },
     [`service_${def.id}`]: {
-      label: `Service ${def.label}`,
+      label: `Tinker with ${def.label}`,
       on: def.id,
       whenTarget: { broken: false },
       cost: { "park.cash": -ride.breakdown.serviceCost },
       world: { "park.spent_today": ride.breakdown.serviceCost, [monthLine("repairs")]: ride.breakdown.serviceCost },
-      note: "Serviced the {target}: its wear is cleared.",
+      note: "Tinkered with the {target}: its wear is cleared.",
     },
-    [`price_up_${def.id}`]: { label: `Raise the ${def.label} ticket`, world: { [`price.${def.id}`]: 1 } },
-    [`price_down_${def.id}`]: { label: `Lower the ${def.label} ticket`, world: { [`price.${def.id}`]: -1 } },
+    [`price_up_${def.id}`]: { label: `Turn up the ${def.label}`, world: { [`price.${def.id}`]: 1 } },
+    [`price_down_${def.id}`]: { label: `Turn down the ${def.label}`, world: { [`price.${def.id}`]: -1 } },
     ...rideRunActions(def),
   };
 }
@@ -151,8 +156,8 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
 function stallActions(def: BuildableDef): Record<string, WorldActionDecl> {
   const stall = def.stall!;
   return {
-    [`price_up_${def.id}`]: { label: `Raise the ${def.label} price`, world: { [`price.${def.id}`]: 1 } },
-    [`price_down_${def.id}`]: { label: `Lower the ${def.label} price`, world: { [`price.${def.id}`]: -1 } },
+    [`price_up_${def.id}`]: { label: `Raise the ${def.label}'s toll`, world: { [`price.${def.id}`]: 1 } },
+    [`price_down_${def.id}`]: { label: `Lower the ${def.label}'s toll`, world: { [`price.${def.id}`]: -1 } },
     // Scaled by what sold since the last restock: an untouched stall restocks for nothing.
     [`restock_${def.id}`]: {
       label: `Restock ${def.label}`,
@@ -167,79 +172,84 @@ function stallActions(def: BuildableDef): Record<string, WorldActionDecl> {
 
 const kinds: Record<string, WorldKindDecl> = {};
 const actions: Record<string, WorldActionDecl> = {
-  // The gate is the player's: shut on a new lot, opened once a ride runs. Guests come only through it.
+  // The gate is the proprietor's: chained on a new lot, unchained once a ride runs. The living come only through it.
   open_gate: {
-    label: "Open the gate",
+    label: "Unchain the gate",
     when: { "park.gate": false, "park.rides_open": { atLeast: 1 } },
-    refuse: "Open a ride first: build one and connect it to the paths",
+    refuse: "Get a ride running first: build one and connect it to the paths",
     world: { "park.gate": true },
-    note: "The gate is open: the first guests are on their way",
+    note: "The gate creaks open: come dusk, the living will wander in",
   },
   close_gate: {
-    label: "Close the gate",
+    label: "Chain the gate",
     when: { "park.gate": true },
-    refuse: "The gate is already shut",
+    refuse: "The gate is already chained",
     world: { "park.gate": false },
-    note: "The gate is shut: no new guests until it opens again",
+    note: "The gate is chained: no more of the living until it opens again",
   },
-  ticket_up: { label: "Raise the entry ticket", world: { "park.ticket": 1 } },
-  ticket_down: { label: "Lower the entry ticket", world: { "park.ticket": -1 } },
+  ticket_up: { label: "Raise the gate toll", world: { "park.ticket": 1 } },
+  ticket_down: { label: "Lower the gate toll", world: { "park.ticket": -1 } },
   take_loan: {
-    label: `Borrow $${LOAN.step.toLocaleString()}`,
+    label: `Borrow ${ecto(LOAN.step)}`,
     when: { "park.loan_owed": { atMost: LOAN.max - LOAN.step } },
-    refuse: `The bank won't lend more than $${LOAN.max.toLocaleString()}`,
+    refuse: `The Ferryman won't lend more than ${ecto(LOAN.max)}`,
     world: { "park.cash": LOAN.step, "park.loan_owed": LOAN.step, [monthLine("loan")]: LOAN.step },
-    note: `Borrowed $${LOAN.step.toLocaleString()} from the bank`,
+    note: `Borrowed ${ecto(LOAN.step)} from the Ferryman`,
   },
   repay_loan: {
-    label: `Repay $${LOAN.step.toLocaleString()}`,
+    label: `Repay ${ecto(LOAN.step)}`,
     when: { "park.loan_owed": { atLeast: LOAN.step } },
-    refuse: "The park owes the bank nothing",
+    refuse: "The haunt owes the Ferryman nothing",
     cost: { "park.cash": -LOAN.step },
     world: { "park.loan_owed": -LOAN.step, [monthLine("loan")]: -LOAN.step },
-    note: `Paid $${LOAN.step.toLocaleString()} back to the bank`,
+    note: `Paid ${ecto(LOAN.step)} back to the Ferryman`,
   },
 };
 
 /**
- * How many seconds of park time a topic's listed `seconds` take in the lab: the 34 topics come to
- * about 15,500 s, thirteen park months, so the lab paces a season rather than an afternoon.
+ * How many seconds of park time a séance's listed `seconds` take at the table: the topics come to
+ * about sixteen thousand seconds, a little over a season of moons, so the table paces the season
+ * rather than an evening.
  */
 export const RESEARCH_PACE = 5;
 
+/** How a séance reads in the queue and on its button. */
+export const researchLabel = (label: string): string => `Channel ${label}`;
+
 /**
- * The lab: each topic is an action that costs its fee up front, waits its time in the `lab` queue
- * and sets `research.<kind>`; the topic before it in its family must be done first.
+ * The séance table: each topic is an action that costs its ectoplasm up front, waits its time in
+ * the `lab` queue and sets `research.<kind>`; the topic before it in its family must be done first.
+ * A ghost who moves in can whisper one of them for free (`ghosts.ts`).
  */
 function researchAction(def: BuildableDef): WorldActionDecl {
   const research = def.research!;
   const after = research.after;
   return {
-    label: `Research ${def.label}`,
+    label: researchLabel(def.label),
     when: { [researched(def.id)]: false, ...(after === undefined || BUILDABLES[after]?.research === undefined ? {} : { [researched(after)]: true }) },
-    refuse: after === undefined ? `${def.label} is already researched` : `Research the ${BUILDABLES[after]!.label} first`,
+    refuse: after === undefined ? `The ${def.label} is already channelled` : `Channel the ${BUILDABLES[after]!.label} first`,
     cost: { "park.cash": -research.cost, [monthLine("research")]: research.cost },
     takes: research.seconds * RESEARCH_PACE,
     queue: "lab",
     world: { [researched(def.id)]: true, "park.spent_today": research.cost },
-    note: `Research complete: the ${def.label} can now be built`,
+    note: `The séance is over: the ${def.label} can now be built`,
   };
 }
 
 /**
- * Marketing: a campaign is paid up front and runs its days in the `ads` queue; while it runs its
+ * Rumor-mongering: a campaign is paid up front and runs its days in the `ads` queue; while it runs its
  * `ads.<id>` is 1 and it brings more guests to the gate (`marketingBoost`). One of each at a time.
  */
 for (const campaign of CAMPAIGNS) {
   actions[campaign.id] = {
     label: campaign.label,
     when: { [campaignFact(campaign.id)]: { atMost: 0 } },
-    refuse: `The ${campaign.label.toLowerCase()} campaign is already running`,
+    refuse: `${campaign.label} is already going round`,
     cost: { "park.cash": -campaign.cost, [monthLine("marketing")]: campaign.cost, [campaignFact(campaign.id)]: 1 },
     takes: campaign.days * DAY_LENGTH,
     queue: "ads",
     world: { [campaignFact(campaign.id)]: -1 },
-    note: `The ${campaign.label.toLowerCase()} campaign has finished`,
+    note: `${campaign.label}: that rumor has died down`,
   };
 }
 
@@ -275,6 +285,7 @@ const totals: Record<string, WorldTotalDecl> = {
   "park.rides": { of: "ride" },
   "park.rides_open": { of: "ride", where: { broken: false, closed: false } },
   "park.stalls": { of: "stall" },
+  "park.props": { of: "prop" },
   // What refits and closures add to the rides' upkeep (negative saves), per day.
   "park.upkeep_delta": { of: "ride", sum: "upkeep_delta" },
 };
@@ -289,8 +300,19 @@ const flows: Record<string, WorldFlowDecl> = {
   bill_rides_delta: { to: "park.spent_today", from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
   book_rides_delta: { to: monthLine("upkeep"), from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
 };
+// Every ghost in residence seeps its ectoplasm through the night.
+for (const ghost of GHOSTS) {
+  flows[`seep_${ghost.id}`] = { to: "park.cash", from: ghostFact(ghost.id), rate: ghost.yield / DAY_LENGTH };
+  flows[`seep_book_${ghost.id}`] = { to: monthLine("ghosts"), from: ghostFact(ghost.id), rate: ghost.yield / DAY_LENGTH };
+}
 // The ground's height levels, a digit a cell; and which version of the path rules the park was laid under.
 const prices: Record<string, WorldFactsDecl[string]> = { [LAND_FACT]: FLAT_LAND, "park.netv": 0 };
+// Each ghost: whether it haunts the park (0 or 1), when it moved in, and until when an exorcist's blessing keeps it out.
+for (const ghost of GHOSTS) {
+  prices[ghostFact(ghost.id)] = { value: 0, min: 0, max: 1 };
+  prices[`${ghostFact(ghost.id)}.since`] = 0;
+  prices[`${ghostFact(ghost.id)}.banished_until`] = 0;
+}
 
 for (const id of BUILD_IDS) {
   const def = BUILDABLES[id]!;
@@ -319,7 +341,10 @@ for (const id of BUILD_IDS) {
   }
 }
 
-/** What every payment from a guest adds to: the till, the day's takings and the scenario's. */
+/** Ectoplasm a scream wrings out on its own, on top of everything that frightened them. */
+export const SCREAM_ECTO = 6;
+
+/** What every scrap of ectoplasm from the living adds to: the vault, the night's harvest and the scenario's. */
 const takings = { "park.cash": 1, "park.revenue_today": 1, "park.scenario_revenue": 1 };
 
 const jobs = Object.fromEntries(
@@ -331,7 +356,7 @@ export const park = defineGameSpec({
   world: {
     factions: {
       park: {
-        label: "Brightway Park",
+        label: "Hauntworks",
         facts: {
           cash: STARTING_CASH,
           // The crowd's mood, as the guest agents average it.
@@ -339,8 +364,18 @@ export const park = defineGameSpec({
           // What the crowd is saying right now: a breakdown sours it, it settles back on its own.
           buzz: calm(0, 0.5, { min: -40, max: 40 }),
           rating: 0,
-          // The best rating the park has reached: each award is paid once, the first time it is crossed.
+          // The best rumor the park has reached: each award is paid once, the first time it is crossed.
           peak: 0,
+          // The living driven out screaming: ever, and since noon.
+          screams: 0,
+          screams_today: 0,
+          // Ghosts in residence, as `ghosts.ts` counts them.
+          ghosts: 0,
+          // What hunters and TV crews have carried out on film: at 100 an exorcist comes at noon.
+          evidence: { value: 0, min: 0, max: 100 },
+          exorcisms: 0,
+          // The longest chain of scares any visitor has suffered tonight.
+          best_chain: 0,
           litter: { value: 0, min: 0, max: 100 },
           // Share of the crowd (0-1) whose latest thought is a complaint; the rating reads it.
           complaints: 0,
@@ -384,7 +419,15 @@ export const park = defineGameSpec({
       pay_ride: { world: { ...takings, [monthLine("rides")]: 1 } },
       pay_shop: { world: { ...takings, [monthLine("shops")]: 1 } },
       leave: { world: { "park.guests": -1 } },
-      breakdown: { world: { "park.buzz": -15, "park.breakdowns": 1 }, note: "A ride broke down - the crowd groans", hook: "dispatch_crew" },
+      // Ectoplasm wrung from a jolt by a scare prop, scaled by the amount.
+      pay_scare: { world: { ...takings, [monthLine("scares")]: 1 } },
+      // A visitor out of nerve, fleeing screaming: the rumor spreads and the scream itself is worth a little.
+      scream: { world: { "park.screams": 1, "park.screams_today": 1, "park.buzz": 1.5, "park.cash": SCREAM_ECTO, "park.revenue_today": SCREAM_ECTO, "park.scenario_revenue": SCREAM_ECTO, [monthLine("screams")]: SCREAM_ECTO } },
+      // A hunter walking out calmly with footage, scaled by how much: it goes on the record.
+      footage: { world: { "park.evidence": 1 } },
+      // The exorcist's fee and the crowd's chill, scaled by the ectoplasm it costs.
+      exorcism: { world: { "park.cash": -1, "park.spent_today": 1, [monthLine("exorcism")]: 1 } },
+      breakdown: { world: { "park.buzz": -15, "park.breakdowns": 1 }, note: "A ride seized up - the living snigger", hook: "dispatch_crew" },
       repaired: { world: { "park.buzz": 6 } },
       // The month's interest on the loan, scaled by what it comes to.
       interest: {
@@ -406,8 +449,8 @@ export const park = defineGameSpec({
   },
   onReady: (ctx, instance) => spawnObject(ctx, instance),
   onRemoved: (ctx, gone) => despawnObject(ctx, gone.id, Number(gone.refund["park.cash"] ?? 0)),
-  // Once the park has gone under, nothing more is built, run or sold.
-  accepting: (ctx) => (park.of(ctx).fact("park.game_over") === true ? "The park has closed for good" : null),
+  // Once the haunt has faded, nothing more is built, run or sold.
+  accepting: (ctx) => (park.of(ctx).fact("park.game_over") === true ? "The haunt has faded for good" : null),
   onLanded: (ctx, action, target) => landed(ctx, action, target),
   onReward: (ctx, rewards) => {
     const cash = rewards.economy?.["cash"] ?? 0;

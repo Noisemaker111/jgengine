@@ -72,7 +72,7 @@ const AS_BUILT: RideScales = { capacity: 1, service: 1, wear: 1 };
 /** One placed ride as the shared sim's data. */
 export function rideDefinition(obj: ParkObject, circuit: CoasterCircuit, theme = 0, scales: RideScales = AS_BUILT): RideDefinition {
   const ride = obj.def.ride;
-  if (ride === undefined) throw new Error(`brightway-park: "${obj.kind}" is not a ride`);
+  if (ride === undefined) throw new Error(`hauntworks: "${obj.kind}" is not a ride`);
   // A coaster's lap is the track's own length at the track's own pace, so laying rail changes the ride.
   const rideSeconds = obj.kind === "ride_coaster" && circuit.closed ? Math.max(4, circuit.lapSeconds) : ride.rideSeconds;
   return {

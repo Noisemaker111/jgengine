@@ -16,6 +16,7 @@ import { beginScenario, endScenario, replayScenario } from "../parkReset";
 import { tileAt, cellCentre, canShape, isLandTool, LAND_COST, LAND_TOOLS, levelAt, lineCells, rectCells, shapeLand } from "./terrain";
 import { recordStep, undoStep } from "./undo";
 import { accessOf, connectCost, connectPark, relinkPark } from "./links";
+import { ecto } from "../ecto";
 
 /** Why a ride or shop is shut, or null when guests can reach it. */
 function accessReason(ctx: GameContext, id: string): string | null {
@@ -70,7 +71,7 @@ function layLine(ctx: GameContext, kind: string, from: readonly [number, number]
     return;
   }
   recordStep({ type: "place", ids, cost });
-  ctx.game.notices.push({ text: `${ids.length} × ${BUILDABLES[kind]!.label} laid · -$${cost}`, tone: "success" });
+  ctx.game.notices.push({ text: `${ids.length} × ${BUILDABLES[kind]!.label} laid · -${ecto(cost)}`, tone: "success" });
   ctx.game.audio.play("place");
   savePark(ctx);
 }
@@ -94,7 +95,7 @@ function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readon
   const cost = cells.length * LAND_COST;
   recordStep({ type: "land", cells, cost });
   relinkPark(ctx);
-  ctx.game.notices.push({ text: `${step > 0 ? "Raised" : "Lowered"} ${cells.length} cell${cells.length === 1 ? "" : "s"} · -$${cost}`, tone: "success" });
+  ctx.game.notices.push({ text: `${step > 0 ? "Raised" : "Lowered"} ${cells.length} cell${cells.length === 1 ? "" : "s"} · -${ecto(cost)}`, tone: "success" });
   ctx.game.audio.play("place");
   savePark(ctx);
 }
@@ -161,7 +162,7 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
   const shut = placed === undefined ? null : accessReason(ctx, placed.id);
   // A new ride or shop that is still shut opens its window, where "Connect it" waits.
   if (placed !== undefined && shut !== null && (def.ride !== undefined || def.stall !== undefined)) session.selectedObject = placed.id;
-  ctx.game.notices.push({ text: `${def.label} built · -$${def.cost}${shut === null ? "" : ` · ${shut}`}`, tone: "success" });
+  ctx.game.notices.push({ text: `${def.label} built · -${ecto(def.cost)}${shut === null ? "" : ` · ${shut}`}`, tone: "success" });
   if (kind === "track_piece" || kind === "ride_coaster") announceCircuit(ctx);
   const at = placed?.position;
   ctx.game.audio.play("place", at === null || at === undefined ? undefined : [at[0], 0, at[1]]);
@@ -340,7 +341,7 @@ export function registerBuildCommands(ctx: GameContext): void {
       const w = park.of(state);
       const cost = connectCost(state, id);
       if (cost > w.num("park.cash")) {
-        state.game.notices.push({ text: `Connecting it costs $${cost} - not enough cash`, tone: "deny" });
+        state.game.notices.push({ text: `Connecting it costs ${ecto(cost)} - not enough ectoplasm`, tone: "deny" });
         return;
       }
       const before = w.num("park.cash");
@@ -348,7 +349,7 @@ export function registerBuildCommands(ctx: GameContext): void {
       const shut = accessReason(state, id);
       if (ids.length > 0) recordStep({ type: "place", ids, cost: before - w.num("park.cash") });
       state.game.notices.push(shut === null
-        ? { text: `Connected · ${ids.length} pieces laid · -$${Math.round(before - w.num("park.cash"))}`, tone: "success" }
+        ? { text: `Connected · ${ids.length} pieces laid · -${ecto(before - w.num("park.cash"))}`, tone: "success" }
         : { text: `Couldn't connect it: ${shut}`, tone: "deny" });
       savePark(state);
       bump(state);

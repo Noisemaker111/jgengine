@@ -1,14 +1,17 @@
 import { buildableDef } from "../objects/catalog";
+import { visitorKind } from "../entities/guests/catalog";
 import type { CoasterCircuit } from "../coaster/circuit";
 
-/** Derived from existing saved guest kinds: no new save fields or random draws. */
+/** A visitor kind's name and the Thrill it enjoys most, from its card. */
 export function guestRidePreference(kind: string): { label: string; thrill: number } {
-  if (kind === "guest_a" || kind === "guest_b") return { label: "Family", thrill: 3.5 };
-  if (kind === "guest_d" || kind === "guest_e") return { label: "Thrill seeker", thrill: 8 };
-  return { label: "Explorer", thrill: 5.5 };
+  const card = visitorKind(kind);
+  return { label: card.label, thrill: card.thrill };
 }
 
-/** The force a guest feels: a coaster's is what its circuit actually does, a flat ride's is its own. */
+/** The visitor kinds a ride's fit is shown for: the timid, the middling and the bold. */
+export const FIT_KINDS: readonly string[] = ["visitor_family", "visitor_couple", "visitor_teen"];
+
+/** The shake a rider feels: a coaster's is what its circuit actually does, a flat ride's is its own Thrill. */
 export function rideThrill(catalogId: string, circuit: CoasterCircuit): number {
   const def = buildableDef(catalogId);
   if (catalogId === "ride_coaster") return circuit.intensity;
@@ -20,6 +23,6 @@ export function rideFit(kind: string, catalogId: string, circuit: CoasterCircuit
 }
 
 export function rideHappiness(kind: string, catalogId: string, circuit: CoasterCircuit): number {
-  // A frightening or boring ride can lose happiness; a fitting ride earns return visits.
+  // A ride far too wild or far too tame for a visitor's nerve can sour them; a fitting one is the night out they came for.
   return 12 * rideFit(kind, catalogId, circuit) - 4;
 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
-import { DAY_LENGTH } from "./catalog";
+import { DAY_LENGTH, DAY_START } from "./catalog";
 import { BUILDABLES } from "./objects/catalog";
 import { CAMPAIGNS, MONTH_DAYS } from "./books";
 import { cellFor, LOAN, marketingBoost, park, parkMetrics, reliability, repairAction } from "./park";
@@ -45,13 +45,13 @@ function openPark() {
 }
 
 describe("a new park", () => {
-  test("a scenario started mid-way through another park starts its calendar again: 09:00, day one, one midnight a day", () => {
+  test("a scenario started mid-way through another park starts its calendar again: late afternoon, night one, one noon a day", () => {
     const { runner, w } = openPark();
     for (let day = 0; day < 4; day += 1) closeDay(runner.ctx);
     runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 4 + DAY_LENGTH * 0.6 });
     expect(w.num("park.day")).toBe(5);
-    expect(runner.ctx.game.commands.run("park.scenario", { id: "brightway_beginnings" }).status).toBe("applied");
-    expect(runner.ctx.time.now()).toBeCloseTo(DAY_LENGTH * (9 / 24));
+    expect(runner.ctx.game.commands.run("park.scenario", { id: "first_chill" }).status).toBe("applied");
+    expect(runner.ctx.time.now()).toBeCloseTo(DAY_START);
     expect(w.num("park.day")).toBe(1);
     step(runner, DAY_LENGTH);
     expect(w.num("park.day")).toBe(2);
@@ -156,14 +156,14 @@ describe("Brightway Park as one declaration", () => {
     expect(w.num("park.peak")).toBeGreaterThanOrEqual(w.num("park.rating"));
   }, 30_000);
 
-  test("a broken ride stays down until the park hires a mechanic, who goes straight to it", () => {
+  test("a jammed ride stays down until the haunt binds a gremlin, who goes straight to it", () => {
     const { runner, w } = openPark();
     const ride = w.instances("ride_carousel")[0]?.id ?? "";
     const repairSeconds = BUILDABLES.ride_carousel?.ride?.breakdown.repairSeconds ?? 0;
     forceBreakdown(runner.ctx, ride);
     expect(w.orders("crew")).toHaveLength(0);
-    expect(w.canAct(repairAction("ride_carousel"), ride)?.message).toContain("mechanic");
-    expect(runner.ctx.game.notices.list().some((notice) => notice.text.includes("hire a mechanic"))).toBe(true);
+    expect(w.canAct(repairAction("ride_carousel"), ride)?.message).toContain("Gremlin Tinker");
+    expect(runner.ctx.game.notices.list().some((notice) => notice.text.includes("bind a Gremlin Tinker"))).toBe(true);
     step(runner, repairSeconds + 5);
     expect(w.fact(`${ride}.broken`)).toBe(true);
 

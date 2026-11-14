@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="320" viewBox="0 0 1024 320">
+<defs>
+<filter id="glow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="plank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2140"/><stop offset="1" stop-color="#120d22"/></linearGradient>
+</defs>
+<path d="M14 40 L1004 22 L1012 290 L20 302 Z" fill="url(#plank)" stroke="#5b4a8f" stroke-width="10"/>
+<path d="M40 70 L990 56 M44 270 L990 262" stroke="#3a2f5c" stroke-width="4" stroke-dasharray="40 14"/>
+<g filter="url(#glow)">
+<circle cx="150" cy="150" r="70" fill="#f3ead2" opacity="0.92"/>
+<circle cx="182" cy="134" r="62" fill="#1d1733"/>
+<path d="M118 214 q10 -40 34 -46 q24 6 34 46 q-11 -10 -17 0 q-6 -10 -17 0 q-6 -10 -17 0 q-6 -10 -17 0 z" fill="#9ff5d8" opacity="0.85"/>
+<circle cx="141" cy="190" r="4" fill="#120d22"/><circle cx="163" cy="190" r="4" fill="#120d22"/>
+<text x="610" y="168" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="bold" font-size="104" letter-spacing="6" fill="#9ff5d8">HAUNTWORKS</text>
+</g>
+<text x="610" y="236" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="36" letter-spacing="10" fill="#ffc46b">the living welcome · est. 1889</text>
+</svg>

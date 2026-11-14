@@ -1,6 +1,6 @@
-# brightway-park plan
+# Hauntworks plan
 
-Brief: a seaside theme-park tycoon with the loop of RollerCoaster Tycoon: start on an empty lot, build a park guests want to visit, and keep it running for hours.
+Brief: HAUNTWORKS. You are the ghost proprietor of a derelict seaside amusement park. The living keep coming to visit; your goal is reversed from a normal tycoon: scare the living out and turn the park into a paradise for ghosts.
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 ## Suite score
@@ -49,40 +49,75 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 
 ## Direction
 
-- Genre and references: a park tycoon after RollerCoaster Tycoon 2 (guests with opinions, scenarios with deadlines), Parkitect (upkeep and restocking that bite) and Planet Coaster (awards worth pausing for). Inspired by, not a 1:1 remake: own numbers, own rides.
-- Breadth: building (paths, rides, shops, scenery, land), guests with needs and thoughts, ride wear and repairs, four staff roles, a research lab, monthly books with a loan and marketing, rating awards, three chained scenarios. Out: a piece-by-piece coaster editor, guest pathfinding along every path, multiplayer.
-- Look and camera: stylized low-poly seaside lot, an RTS camera over a grid, mouse and keyboard first, touch through the build palette.
-- Length: 4 to 9 hours at 1x to win the three scenarios, then free play. A sitting is one park month (20 minutes at 1x).
+- Genre and references: a reversed park tycoon. The machinery of a park builder (paths, rides, stalls,
+  staff, wear, a lab, monthly books, scenarios) turned inside out: the goal is to scare the living out,
+  not keep them happy. Touchstones: *Ghost Master* (haunting the living as the objective), *Luigi's
+  Mansion* (readable stylized ghosts with personalities), *Theme Hospital* (dry humour over a
+  management sim). Not a remake of anything: own loop, own numbers, own rides.
+- Breadth: two populations (the living, with nerve, curiosity and groups; ghost residents, each with
+  wants), two currencies (ectoplasm and rumor), haunted rides rated Fright / Thrill / Dread, scare
+  props that chain, gloom that adds dread, ghost hunters and TV crews whose footage brings an exorcist,
+  a season of nights ending in the Full Moon Festival. Out: a piece-by-piece haunted-house editor,
+  pathfinding along every path, multiplayer, hunters and the exorcist as walking bodies (notices and
+  numbers for now).
+- Look and camera: a moonlit derelict pier in teal and violet, glowing lanterns and translucent ghosts,
+  readable stylized silhouettes; an RTS camera over a grid, mouse and keyboard first, touch through the
+  build palette. Day and night matter: the living come at dusk and leave at dawn.
+- Length: 4 to 9 hours at 1x to win the three scenarios, then free play. A sitting is one moon (20
+  minutes at 1x).
 - Onboarding: hint cards in the first scenario that ring the control and point at the spot.
-- Done: from an empty lot, open a park, keep its rides running through breakdowns, and win Brightway Beginnings (120 guests and 400 stars by the end of May).
-- Player promise: the player repeatedly spends scarce money on what the crowd is asking for, so they feel the park grow because of their choices.
-- Pillars: every problem comes from something the player built; every fix is something they buy or change; the crowd says what it wants.
-- Anti-pillars: no park that runs itself, no starting half-built, no money that never binds.
-- Falsifier: a player who builds one ride and waits should see the rating stall, rides break and guests complain, not a scenario won.
+- Done: from an empty lot, build a ride and a gauntlet of scares, drive the living out screaming, move
+  the first ghost in, and win The First Chill (60 screaming exits, 300 rumor and a ghost by the end of
+  the third moon).
+- Player promise: the player lays out a haunt where every scare is a choice about pacing - chain them
+  for ectoplasm, but break a group's nerve too early and they never reach the best rides - and watches
+  the dead move in because of what they built.
+- Pillars: scares are a path you compose, not a number you buy; every ghost tells you what it wants;
+  the living's nerve is the resource, and spending it badly costs you.
+- Anti-pillars: no cheap prop farm at the gate that wins on its own; no ghosts that arrive regardless;
+  no threat that comes from nowhere (hunters are visible and can be scared off or watched).
+- Falsifier: a player who rings the gate with props and builds no rides should see the living flee at
+  the first corner with little ectoplasm and no ghosts, not a scenario won.
 
 ## Design brief
 
-- Core loop: build or adjust one thing (a path, a ride and its entrance, a shop, a hire, a price), watch the guests react in their thoughts, mood and spending, then fix what they complain about.
-- Session loop: one park month (eight 150-second days, 20 minutes at 1x): run the lab, grow the crowd and the rating, and close the month in the black when the books are filed.
-- Long loop: three scenarios with deadlines (3, 8 and 16 months), each won unlocking the next; the lab opens 34 rides, shops and theme pieces in family chains over about thirteen months; six rating awards pay for bigger rides; the loan, wages and marketing decide how fast the park can grow.
-- Second 0: an empty lot inside the fence, a shut gate behind a two-cell plaza, $10,000 in the till and $10,000 owed to the bank, four starter rides, four shops and plain scenery on the palette, no guests. The money buys about one ride, two shops and a hire, so the first verb is choosing what to build, and the shut gate means nobody comes until the player has built something worth visiting.
-- Onboarding: hint cards in the first scenario say the next step, ring the control that does it and put an arrow over the spot on the lot: path, ride, connect, gate, lab, mechanic.
-- Pace: something new every 4 minutes in the first hour (the first four lab topics take one to two and a half minutes); later topics take 4 to 20 minutes and the awards and scenarios carry the gaps.
-- Longest cycle: 20 minutes, one park month at 1x, closed by the monthly books.
+- Core loop: place one thing (a ride, a prop in a chain, a piece of gloom, a spook, a toll), watch the
+  living's nerve fall along the path and their screams, then retune: spread the scares out, turn a ride
+  up or down, give a ghost the thing it is missing.
+- Session loop: one moon (eight 150-second nights, 20 minutes at 1x): run the séance table, move a
+  ghost or two in, keep the hunters' evidence under 100, and close the moon's ledger with ectoplasm to
+  spare.
+- Long loop: three scenarios with deadlines (3, 8 and 16 moons), each won unlocking the next, ending in
+  the Full Moon Festival (all six ghosts at home); the séance table opens 34 rides, props, stalls and
+  gloom pieces in family chains over about a season, and each ghost whispers one for free; six rumor
+  awards pay for bigger rides; the Ferryman's debt, upkeep and rumor-mongering decide how fast it grows.
+- Second 0: an empty lot inside the iron fence, a chained gate behind a two-cell plaza, 10,000
+  ectoplasm and 10,000 owed to the Ferryman, five starter rides, five starter scare props, four stalls
+  and plain gloom on the palette, no living. The vault buys about one ride, a few props and a spook, so
+  the first verb is choosing what to build, and the chained gate means nobody comes until there is
+  something to be scared by.
+- Onboarding: hint cards in the first scenario say the next step, ring the control that does it and put
+  an arrow over the spot on the lot: path, ride, connect, gate, a scare, the séance table, a ghost, a
+  gremlin.
+- Pace: something new every 3 minutes in the first hour (the first séances take one to two and a half
+  minutes, and the Victorian Child can move in inside two); later séances take 4 to 20 minutes and the
+  ghosts, the hunters and the scenarios carry the gaps.
+- Longest cycle: 20 minutes, one moon at 1x, closed by the moon's ledger.
 - Minutes to see everything: 540
 
 ### First 10 minutes
 
-- 0:00 an empty lot and a shut gate; the hint card teaches laying a path in from the gate
-- 0:15 the path is down; the hint teaches placing the carousel and Connect it for its entrance and exit
-- 0:30 the carousel runs; the hint teaches opening the gate, and the first guests start walking in
-- 0:45 the hint teaches the lab: start the Ice Cream Cart, a one-minute topic
-- 1:00 the hint teaches hiring a mechanic before the first breakdown
-- 1:30 the Ice Cream Cart research lands, the first unlock; hungry guests teach building food and drink beside the path
-- 2:30 the Topiary unlocks; scenery near a ride teaches charm and appeal
-- 4:30 the Spinning Teacups unlock; a second ride teaches spending against the till
-- 7:00 the Dodgems unlock; worn rides break down and teach the mechanic's worth
-- 9:00 litter on the paths teaches hiring a handyman; the Books teach where the money went before the month closes at 20:00
+- 0:00 an empty lot at late afternoon and a chained gate; the hint card teaches laying a cobbled path in from the gate
+- 0:15 the path is down; the hint teaches placing the Upside-Down Carousel and Connect it for its entrance and exit
+- 0:30 the carousel runs; the hint teaches unchaining the gate, and dusk falls: the first of the living wander in
+- 0:45 the hint teaches scares: a Jack-in-the-Coffin beside the path jolts the first group and starts a chain
+- 1:00 the hint teaches the séance table: start the Grave-Dirt Sundaes, a one-minute topic
+- 1:30 the hint teaches the Ghost register: the Victorian Child wants the carousel and the coffin, both already standing; she moves in and whispers the Séance Teacups
+- 2:00 the first visitor runs out of nerve and flees screaming; the rumor climbs and a skeptic shrugs off a cheap trick
+- 2:30 the hint teaches binding a Gremlin Tinker before the first jam; the Sundaes land, the first channelled unlock
+- 4:30 the Bumper Coffins come through the séance table; a second ride teaches spending against the vault and spacing scares into a gauntlet
+- 7:00 dawn: the living go home, the night's screams and harvest show on the banner; the Drowned Sailor needs fog and the pier
+- 9:00 litter teaches the Ghoul Groundskeeper; the rumor reaches 150 and the first ghost hunter comes through the gate filming
 
 ### Start state
 
@@ -94,12 +129,15 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 | cash | 10000 |
 | taught | 0 |
 | unlocks | 0 |
-| ridesSeen | 4 |
+| ridesSeen | 5 |
 | shopsSeen | 4 |
-| scenerySeen | 10 |
+| propsSeen | 5 |
+| scenerySeen | 12 |
 | staffSeen | 4 |
 | awardsSeen | 0 |
 | scenariosSeen | 1 |
+| ghosts | 0 |
+| screams | 0 |
 
 ### Content budget
 
@@ -107,8 +145,10 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 | --- | --- |
 | rides | 28 |
 | shops | 10 |
-| scenery | 14 |
+| props | 8 |
+| scenery | 16 |
 | staff | 4 |
+| ghosts | 6 |
 | awards | 6 |
 | scenarios | 3 |
 
@@ -119,33 +159,44 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 | building | structures |
 | research | researched |
 | staff | staffHired |
-| guests | visitors |
+| the living | visitors |
+| scares | screams |
+| ghost residents | ghosts |
+| hunters and the exorcist | evidence |
 | ride wear | breakdowns |
-| bank | loanOwed |
+| the Ferryman's debt | loanOwed |
 
 ## Features
 
-- empty lot start — closed gate, starting cash and a loan, no guests until the park opens
-- guest arrivals — trickle that ramps with rating and marketing
-- research tree — rides, shops and scenery unlocked over game months
-- guest needs — hunger, thirst, toilet, nausea, energy, happiness, money drive choices and complaints
-- ride reliability — breakdowns that need a hired mechanic
-- staff — hiring, wages, patrol areas
-- pricing — gate ticket and ride and shop prices change demand
-- litter and vandalism — handymen, bins and security
-- monthly finances — month report, loan interest, bankruptcy
-- scenarios — objectives with deadlines, win and lose, unlock chain
-- calendar and speed — months and years, 1x to 8x
-- onboarding — hints in the first scenario that point at things
+- empty lot start — chained gate, starting ectoplasm and a debt, no living until the gate opens
+- dusk-to-dawn nights — `src/game/catalog.ts` (`clockLabel`, `OPEN_FRACTION`/`CLOSE_FRACTION`) on the engine clock; the day closes at noon
+- the living in groups — `src/game/entities/guests/catalog.ts` (six kinds: nerve, curiosity, group size, skeptics, filming crews) on `@jgengine/core/agents/agent`
+- nerve and ectoplasm — rides' scare yield and props' fright spend nerve; the world's `pay_*` and `scream` ripples (`park.ts`)
+- scare chains — `src/game/scares.ts` [game-local; see Gaps]
+- haunted rides rated Fright / Thrill / Dread — `@jgengine/core/sim/rides` (excitement / intensity / nausea read in the haunt's words)
+- gloom — atmosphere pieces lift nearby rides' dread (`rethemeRides` in `park.ts`)
+- ghost residents — `src/game/ghostCatalog.ts` (data) and `src/game/ghosts.ts` (runtime) [game-local; see Gaps]
+- ghost hunters, TV crews and the exorcist — `src/game/threats.ts` [partial: no walking exorcist]
+- ride wear and jams — a Gremlin Tinker un-jams them (`@jgengine/core/worldModel` crew queue)
+- spooks with patrol areas — groundskeeper, tinker, barker, gargoyle (`src/game/staff.ts`)
+- séance table — `@jgengine/core/worldModel` actions in the `lab` queue
+- the moon's ledger — the Ferryman's interest, a dry vault fades the haunt
+- scenarios — `@jgengine/core/mission/mission`, ending in the Full Moon Festival
+- onboarding — `@jgengine/core/onboarding`, hints that point at things
 
 ## Gaps
 
-- A piece-by-piece coaster builder (slopes, turns, loops, lifts) with a test run.
-- Guests that walk the paths rather than straight to the door.
-- Scenario goals past the third, like 800 guests and a 600 rating by year 2.
-- The economy: a steady player's park loses money and closes in its second month (`bun scripts/balance.ts 60`
-  is the measure). Guests stay about a minute and a half and spend little inside; the first scenario cannot
-  be won yet.
+- Scare chains (`src/game/scares.ts`): proximity jolts with a cooldown and a per-visitor chain
+  multiplier are one-adopter today; the seam is a `packages/core/src/sim/` "area effect on agents with a
+  cooldown and a combo" part. The second adopter (a tower-defence aura, a trap) moves it upstream.
+- Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
+  for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
+  worldModel/` wants over kind counts). One adopter so far.
+- Hunters and the exorcist have no bodies: the exorcist should walk in at noon to the ghost it banishes.
+- The economy is untuned: chained scares are new, and the balance bot (`bun scripts/balance.ts 60`)
+  still plays the old tycoon strategy. It should lay a gauntlet and house a ghost.
+- Day-night lighting: the look is a fixed moonlit mood; the sky does not follow the clock (the engine's
+  `sky/dayNightCycle` could drive the mood's key light from `park.open`).
 - `packages/core/src/onboarding/`: steps are checked only on a game-time tick, so a game built with the
   clock paused checks them itself (`parkHintsWhilePaused` in `src/game/onboarding.ts`). The engine should
   check steps on world changes while paused.
@@ -153,11 +204,11 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 ## Milestones
 
 1. [x] Design brief.
-2. [x] Empty lot start, closed gate, arrival ramp, slower rating; the open-park proof plays from the empty lot.
-3. [x] Monthly books, monthly loan interest and bankruptcy, marketing campaigns.
-4. [x] Repairs need a mechanic; reliability shown; research rescaled to months; bins cut litter.
-5. [x] Calendar months, long scenarios with an unlock chain, 8x speed.
-6. [x] Onboarding hints that point at the gate, the ride, the gate button and the staff button.
-7. [x] The brief in the checked shape; the from-zero proof plays the first 10 minutes; the lab's first four topics are short and the hints teach the lab, so the first unlock lands inside two minutes.
-8. [x] Hint cards on the engine's onboarding system, with Hide hints.
-9. [ ] An economy a steady player can grow: the balance bot wins the first scenario.
+2. [x] Empty lot start, chained gate, arrival ramp; the open-park proof plays from the empty lot.
+3. [x] The moon's ledger, the Ferryman's interest and a fading haunt, rumor campaigns.
+4. [x] Jams need a gremlin; reliability shown; the séance table paced to moons; barrels cut litter.
+5. [x] Moons and seasons, long scenarios with an unlock chain, 8x speed.
+6. [x] Onboarding hints that point at the gate, the ride, the gate button and the spooks.
+7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
+8. [ ] An ectoplasm economy a steady haunter can grow: the balance bot lays a gauntlet, houses a ghost and wins The First Chill.
+9. [ ] Hunters, TV crews and the exorcist walk the park as bodies; the Full Moon Festival ends in its own celebration.

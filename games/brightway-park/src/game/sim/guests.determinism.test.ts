@@ -16,7 +16,7 @@ function contextWithSeed(seed: string): GameContext {
 /** The generated fields - ids are a session counter, not randomness. */
 function shape() {
   return [...session.guests.values()].map((guest) => ({
-    money: Math.round(guest.money * 1000),
+    courage: Math.round(guest.courage * 1000),
     litterTimer: Math.round(guest.litterTimer * 1000),
     needs: Object.fromEntries(
       Object.entries(guest.agent.needs.values).map(([need, value]) => [need, Math.round(value * 1000)]),
@@ -47,8 +47,9 @@ describe("guest generation is reproducible (#1581)", () => {
 
   test("generated needs stay inside their authored ranges", () => {
     for (const guest of seedInto("park-seed-3")) {
-      expect(guest.money).toBeGreaterThanOrEqual(20_000);
-      expect(guest.money).toBeLessThanOrEqual(60_000);
+      // A seeded crowd is teens, couples and families: nerve between the family's floor and the couple's ceiling.
+      expect(guest.courage).toBeGreaterThanOrEqual(20_000);
+      expect(guest.courage).toBeLessThanOrEqual(50_000);
       for (const [need, value] of Object.entries(guest.needs)) {
         expect(value).toBeGreaterThanOrEqual(0);
         expect(value).toBeLessThanOrEqual(100_000);

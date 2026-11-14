@@ -14,19 +14,21 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { useRef } from "@jgengine/core/ui/jsx";
 
 const FOOD = "quaternius-low-poly-food-pack";
+const FANTASY = "quaternius-fantasy-props";
 
-/** Counter wares per stall kind: pack model, longest side in metres, and where on the 3 m counter it sits. */
+/** Counter wares per stall kind: library model, longest side in metres, and where on the 3 m counter it sits. */
 const WARES: Readonly<Record<string, readonly { model: string; size: number; x: number }[]>> = {
-  stall_food: [{ model: "Burger", size: 0.55, x: -0.9 }, { model: "Fries", size: 0.5, x: 0 }, { model: "Hotdog", size: 0.6, x: 0.9 }],
-  stall_pizza: [{ model: "Pizza", size: 0.75, x: -0.7 }, { model: "Pizza_Slice", size: 0.5, x: 0.7 }],
-  stall_icecream: [{ model: "IceCream_Cone", size: 0.55, x: -0.8 }, { model: "IceCream_Cone2", size: 0.55, x: 0 }, { model: "IceCream_Cone", size: 0.55, x: 0.8 }],
-  stall_drink: [{ model: "Soda", size: 0.55, x: -0.8 }, { model: "Soda", size: 0.55, x: 0 }, { model: "Soda", size: 0.55, x: 0.8 }],
-  stall_coffee: [{ model: "Cupcake", size: 0.4, x: -0.6 }, { model: "Croissant", size: 0.5, x: 0.6 }],
+  stall_food: [{ model: `${FOOD}/Popsicle_Strawberry`, size: 0.5, x: -0.9 }, { model: `${FOOD}/Cupcake`, size: 0.45, x: 0 }, { model: `${FOOD}/Popsicle_Multiple`, size: 0.55, x: 0.9 }],
+  stall_pizza: [{ model: `${FOOD}/Apple`, size: 0.4, x: -0.8 }, { model: `${FOOD}/Apple`, size: 0.4, x: 0 }, { model: `${FOOD}/Apple_Green`, size: 0.4, x: 0.8 }],
+  stall_icecream: [{ model: `${FOOD}/IceCream_3`, size: 0.55, x: -0.8 }, { model: `${FOOD}/IceCream_Cone2`, size: 0.55, x: 0 }, { model: `${FOOD}/IceCream_4`, size: 0.55, x: 0.8 }],
+  stall_drink: [{ model: `${FANTASY}/Potion_1`, size: 0.5, x: -0.8 }, { model: `${FANTASY}/Potion_2`, size: 0.55, x: 0 }, { model: `${FANTASY}/Potion_4`, size: 0.5, x: 0.8 }],
+  stall_coffee: [{ model: `${FANTASY}/Mug`, size: 0.4, x: -0.6 }, { model: `${FOOD}/Donut2`, size: 0.45, x: 0.6 }],
+  stall_souvenir: [{ model: `${FANTASY}/Book_Stack_1`, size: 0.5, x: -0.7 }, { model: `${FANTASY}/Chalice`, size: 0.45, x: 0.7 }],
 };
 
 const gltfLoader = new GLTFLoader();
 
-/** Food-pack props on the counter of a stall, in the stall's own frame. */
+/** Library wares on the counter of a stall, in the stall's own frame. */
 export function stallWaresDraw(ctx: GameContext, object: ParkObject): EngineDraw | null {
   const wares = WARES[object.kind];
   if (wares === undefined) return null;
@@ -37,7 +39,7 @@ export function stallWaresDraw(ctx: GameContext, object: ParkObject): EngineDraw
   group.raycast = () => {};
   const draws: { draw: EngineDraw; holder: THREE.Group; state: EngineFrameState | null }[] = [];
   for (const ware of wares) {
-    const ref = assets.resolve(`${FOOD}/${ware.model}`);
+    const ref = assets.resolve(ware.model);
     if (ref === null || ref.dims === undefined) continue;
     const { dims } = ref;
     const height = (dims.maxY ?? 1) - (dims.minY ?? 0);

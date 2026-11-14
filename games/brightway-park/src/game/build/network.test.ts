@@ -47,8 +47,9 @@ const newest = (w: ReturnType<typeof openPark>["w"], kind: string) => w.instance
 describe("paths, entrances and exits", () => {
   test("the starter park opens joined up: every ride has an entrance and an exit on the paths", () => {
     const { runner, w } = openPark();
-    expect(w.instances("ride_entrance").length).toBe(2);
-    expect(w.instances("ride_exit").length).toBe(2);
+    // The carousel, the coaster and the Ghost Train.
+    expect(w.instances("ride_entrance").length).toBe(3);
+    expect(w.instances("ride_exit").length).toBe(3);
     for (const instance of w.instances()) {
       const def = BUILDABLES[instance.kind]!;
       if (def.ride === undefined && def.stall === undefined) continue;

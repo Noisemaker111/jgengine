@@ -18,6 +18,9 @@ import { BLUE_RIBBON } from "./milestones";
 import { park, parkMetrics } from "./park";
 import { BUILDABLES } from "./objects/catalog";
 import { breakRide, syncRidePark } from "./rides";
+import { tickScares } from "./scares";
+import { armMidnight } from "./midnight";
+import { residentCount, tickGhosts } from "./ghosts";
 
 /** What a staged park should look like when the capture takes it. */
 export type StageMode = "full";
@@ -49,9 +52,12 @@ export function stepPark(ctx: GameContext, dt: number): void {
   spawnGuests(ctx, dt, metrics.totalAppeal);
   tickStaff(ctx, dt);
   tickGuests(ctx, dt, metrics.tracks);
+  // The props jolt whoever walks into reach; the ghosts look the park over and move in or out.
+  tickScares(ctx);
+  tickGhosts(ctx, dt);
   tickRating(ctx, dt, metrics);
-  // The blue ribbon is free play's own goal; a scenario is a world job with its own win and fail.
-  if (w.fact("scenario.id") === "" && w.fact("park.won") !== true && metrics.rides >= BLUE_RIBBON.rides && w.num("park.rating") >= BLUE_RIBBON.rating &&
+  // A ghost paradise is free play's own goal; a scenario is a world job with its own win and fail.
+  if (w.fact("scenario.id") === "" && w.fact("park.won") !== true && metrics.rides >= BLUE_RIBBON.rides && w.num("park.rating") >= BLUE_RIBBON.rating && residentCount(w) >= BLUE_RIBBON.ghosts &&
       w.num("park.mood") >= BLUE_RIBBON.mood && w.num("park.litter") <= BLUE_RIBBON.litter &&
       w.num("park.day") > 1 && w.num("park.revenue_yesterday") >= w.num("park.upkeep_yesterday")) {
     w.set("park.won", true);
@@ -64,16 +70,16 @@ export function stepPark(ctx: GameContext, dt: number): void {
 }
 
 /**
- * Dev-only staging for the state that needs a played day: a park at capacity, gates open, the
- * authored starter rides running lines and guests standing in them. Play reaches this by opening
- * the gates and waiting most of a day; `shoot --state full-park` jumps here instead.
+ * Dev-only staging for the state that needs a played night: a park at capacity, the gate open, the
+ * authored starter rides running lines and the living standing in them. Play reaches this by
+ * opening the gate and waiting into the night; `shoot --state full-park` jumps here instead.
  */
 export function stagePark(ctx: GameContext, mode: StageMode): void {
   void mode;
-  // Past the open fraction so the gates, the spawner and the HUD all read "open", not "closed for
-  // the night" over a full park.
-  advance(ctx, DAY_LENGTH * 0.27);
   resetPark(ctx, { layout: "starter", guests: guestCap(park.of(ctx).num("park.rating")) });
+  // Deep in the night, so the gate, the spawner and the HUD all read "night", not "the living are home" over a full park.
+  ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_LENGTH * 0.42 });
+  armMidnight(ctx);
   session.started = true;
   // Let the seeded crowd spread out, board and line up; queues only exist once guests reach a ride.
   advance(ctx, 30);
@@ -97,7 +103,7 @@ export function forceBreakdown(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** What the drive reads back (`globalThis.__brightway.read()`): the world's numbers, the rides and the crew. */
+/** What the drive reads back (`globalThis.__brightway.read()`): the world's numbers, the rides, the crew and the ghosts. */
 export function parkReadout(ctx: GameContext): Record<string, unknown> {
   const w = park.of(ctx);
   const metrics = parkMetrics(w);
@@ -106,6 +112,9 @@ export function parkReadout(ctx: GameContext): Record<string, unknown> {
     started: session.started,
     cash: Math.round(w.num("park.cash")),
     revenueToday: Math.round(w.num("park.revenue_today")),
+    screams: w.num("park.screams"),
+    ghosts: residentCount(w),
+    evidence: Math.round(w.num("park.evidence")),
     rating: Math.round(w.num("park.rating") * 10) / 10,
     mood: Math.round(w.num("park.mood") * 10) / 10,
     buzz: Math.round(w.num("park.buzz") * 10) / 10,

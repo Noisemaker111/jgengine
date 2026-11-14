@@ -7,9 +7,10 @@ const num = (save: ParkSave, key: string): number => {
   return typeof value === "number" ? value : 0;
 };
 import { parkProfile } from "./parkProfile";
+import { ecto } from "./ecto";
 
 export { captureParkThumb, parkProfile } from "./parkProfile";
-/** Brightway keeps one park; the card is that document. */
+/** Hauntworks keeps one haunt; the card is that document. */
 export const parkSlots = createSaveSlots({
   capacity: 1,
   slots: [{ id: "park", empty: true, meta: {} }],
@@ -33,12 +34,12 @@ export function refreshParkSlot(): void {
   parkProfile.thumbnail = save.thumbnail ?? parkProfile.thumbnail;
   const playtime = typeof save.playtime === "number" ? save.playtime : 0;
   parkSlots.write("park", {
-    name: save.parkName ?? "Brightway Park",
+    name: save.parkName ?? "Hauntworks",
     savedAt: Date.now(),
     meta: {
       day: num(save, "park.day"),
       guests: Math.round(num(save, "park.guests_today")),
-      cash: `$${Math.round(num(save, "park.cash")).toLocaleString()}`,
+      cash: ecto(num(save, "park.cash")),
       playtime: formatSavePlaytime(playtime),
       ...(typeof save.thumbnail === "string" && save.thumbnail.length > 0 ? { thumbnail: save.thumbnail } : {}),
     },

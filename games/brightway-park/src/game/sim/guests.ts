@@ -3,8 +3,10 @@ import type { RideTickSink } from "@jgengine/core/sim/rides";
 
 import { guestCap } from "../catalog";
 import type { BuildableDef, StaffRole } from "../objects/catalog";
-import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
-import { nextGuestId, session, type GuestState } from "../session";
+import { GUEST_KINDS, GUEST_WALK_SPEED, groupSize, pickVisitorKind, startingCourage, visitorKind, type VisitorKind } from "../entities/guests/catalog";
+import { nextGroupId, nextGuestId, session, type GuestState } from "../session";
+import { chainMultiplier, landScare, liveChain } from "../scares";
+import { leaveWithFootage } from "../threats";
 import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
   agentOf,
@@ -27,16 +29,26 @@ import { groundAt } from "../build/terrain";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /**
- * The walking crowd. Guests are agents with bodies (game code), but everything they do to the park
- * goes through the world: a guest through the gate is the `admit` ripple, any money handed over is
- * `pay`, a stall's sale is that stall's `sold` fact, leaving is `leave`, and a ride breaking is the
- * `breakdown` ripple. They read the world back the same way: the ticket, whether the park is open,
+ * The living. Visitors are agents with bodies (game code), but everything they do to the park goes
+ * through the world: a visitor through the gate is the `admit` ripple and the gate's toll is
+ * `pay_gate`, the nerve a ride wrings out of a rider is `pay_ride`, a stall's sale is that stall's
+ * `sold` fact, fleeing screaming is `scream`, leaving is `leave`, and a ride jamming is the
+ * `breakdown` ripple. They read the world back the same way: the toll, whether the night is on,
  * its litter and what the crowd is saying (`park.buzz`).
+ *
+ * Nerve (`courage`) is what every scare spends. A visitor whose nerve runs out flees screaming,
+ * which spreads the rumor and shakes the rest of their group; one who makes it to dawn, or gets
+ * bored, walks out calmly - and if they were filming, the footage goes on the record.
  */
 
 const ARRIVE_DISTANCE = 2.2;
 const MAX_VISITS = 14;
-const MIN_SPEND = 2;
+/** Below this much nerve a visitor can take no more: they flee screaming. */
+const MIN_NERVE = 2;
+/** How much faster a visitor runs when fleeing screaming. */
+const FLEE_SPEED = 1.7;
+/** The share of nerve the rest of a group loses when one of them flees screaming. */
+const PANIC_SHARE = 0.35;
 const STALL_SERVICE = 2.2;
 const BROWSE_SECONDS = 3;
 const TARGET_PATIENCE = 25;
@@ -52,14 +64,14 @@ const VANDAL_MOOD = 30;
 const VANDAL_LITTER = 0.05;
 const NO_COVER: ReadonlySet<StaffRole> = new Set();
 
-/** The needs a guest says out loud when they run low, and what it says. */
+/** The needs a visitor says out loud when they run low, and what it says. */
 const NEED_THOUGHTS: readonly { need: string; below: number; id: ThoughtId; text: string }[] = [
-  { need: "toilet", below: 0.22, id: "toilet", text: "I really need the toilet" },
-  { need: "nausea", below: 0.4, id: "sick", text: "I feel sick" },
-  { need: "hunger", below: 0.25, id: "hungry", text: "I'm hungry" },
-  { need: "thirst", below: 0.25, id: "thirsty", text: "I'm thirsty" },
-  { need: "info", below: 0.3, id: "lost", text: "I'm lost!" },
-  { need: "energy", below: 0.2, id: "tired", text: "I'm tired" },
+  { need: "toilet", below: 0.22, id: "toilet", text: "I really need the outhouse. Even that one" },
+  { need: "nausea", below: 0.4, id: "sick", text: "My hands won't stop shaking" },
+  { need: "hunger", below: 0.25, id: "hungry", text: "I'm starving" },
+  { need: "thirst", below: 0.25, id: "thirsty", text: "I'm so thirsty" },
+  { need: "info", below: 0.3, id: "lost", text: "Which way is out? I'm lost!" },
+  { need: "energy", below: 0.2, id: "tired", text: "I'm exhausted" },
 ];
 
 /** A guest checks how it feels and says the most pressing thing. */
@@ -70,8 +82,8 @@ function feel(guest: GuestState, agent: ReturnType<typeof agentOf>, litter: numb
       return;
     }
   }
-  if (litter > 40) think(guest, "dirty", "This park is really dirty", now);
-  else if (cover.has("entertainer")) think(guest, "entertained", "That entertainer is funny!", now);
+  if (litter > 40) think(guest, "dirty", "Even the ghosts should pick up litter", now);
+  else if (cover.has("entertainer")) think(guest, "entertained", "That barker has no feet. Love it!", now);
 }
 
 /** How much of the crowd's buzz each guest feels: a breakdown's -15 is about -9 mood each. */
@@ -96,13 +108,14 @@ function distance2(ax: number, az: number, bx: number, bz: number): number {
   return Math.hypot(ax - bx, az - bz);
 }
 
-function makeGuest(ctx: GameContext, id: string, start: readonly [number, number, number]): GuestState {
-  const kind = guestKindFor(id);
+function makeGuest(ctx: GameContext, id: string, start: readonly [number, number, number], card: VisitorKind, group: string): GuestState {
+  const kind = card.id;
   const agent = createGuestAgent(id, kind, ctx.rng);
   const guest: GuestState = {
     id,
     kind,
-    money: 20 + ctx.rng() * 40,
+    courage: startingCourage(card, ctx.rng()),
+    group,
     visits: 0,
     phase: "seeking",
     targetId: null,
@@ -116,19 +129,28 @@ function makeGuest(ctx: GameContext, id: string, start: readonly [number, number
   return guest;
 }
 
-function spawnGuest(ctx: GameContext): void {
-  const id = nextGuestId();
-  const jitter = (ctx.rng() - 0.5) * 10;
-  makeGuest(ctx, id, [jitter, 0, 56]);
-  // Through the turnstile, then the entry ticket: both are ripples the world declares.
-  park.emit(ctx, { kind: "admit" });
-  park.emit(ctx, { kind: "pay_gate", scale: park.of(ctx).num("park.ticket") });
+/** One group through the gate together: same kind, side by side. Returns how many came. */
+function spawnGroup(ctx: GameContext, room: number): number {
+  const w = park.of(ctx);
+  const card = pickVisitorKind(w.num("park.rating"), ctx.rng());
+  const size = Math.max(1, Math.min(room, groupSize(card, ctx.rng())));
+  const group = nextGroupId();
+  const centre = (ctx.rng() - 0.5) * 10;
+  for (let i = 0; i < size; i += 1) {
+    makeGuest(ctx, nextGuestId(), [centre + (i - (size - 1) / 2) * 1.1, 0, 56 + (ctx.rng() - 0.5)], card, group);
+    // Through the creaking gate, then its toll: both are ripples the world declares.
+    park.emit(ctx, { kind: "admit" });
+    park.emit(ctx, { kind: "pay_gate", scale: w.num("park.ticket") });
+  }
+  if (card.films !== undefined) ctx.game.notices.push({ text: `${card.label === "Ghost Hunter" ? "Ghost hunters" : "A paranormal TV crew"} just came through the gate. Scare them out before they leave with footage`, tone: "warn" });
+  return size;
 }
 
 export function seedGuests(ctx: GameContext, count: number): void {
   for (let i = 0; i < count; i += 1) {
     const id = nextGuestId();
-    makeGuest(ctx, id, [(ctx.rng() - 0.5) * 80, 0, (ctx.rng() - 0.5) * 80]);
+    const card = visitorKind(GUEST_KINDS[Math.floor(ctx.rng() * 3)]!);
+    makeGuest(ctx, id, [(ctx.rng() - 0.5) * 80, 0, (ctx.rng() - 0.5) * 80], card, nextGroupId());
   }
   // A seeded crowd is already inside: it counts on site, not through today's gate.
   park.of(ctx).change({ "park.guests": count });
@@ -143,9 +165,8 @@ export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): 
   session.spawnAcc += rate * dt;
   let budget = 4;
   while (session.spawnAcc >= 1 && session.guests.size < cap && budget > 0) {
-    session.spawnAcc -= 1;
     budget -= 1;
-    spawnGuest(ctx);
+    session.spawnAcc -= spawnGroup(ctx, cap - session.guests.size);
   }
 }
 
@@ -165,13 +186,13 @@ function finishInteraction(ctx: GameContext, guest: GuestState): void {
     const w = park.of(ctx);
     const price = stall === undefined ? 0 : stallPrice(w, obj.kind);
     if (stall !== undefined && price > fairPrice(w, obj, 0)) {
-      // Wanted it, wouldn't pay that: the park hears about it and the guest sulks a little.
+      // Wanted it, wouldn't spend that much nerve on it: the park hears about it and the visitor sulks a little.
       park.emit(ctx, { kind: "refused_price" });
       agent.moodSources.setSource("price", -6);
-      think(guest, "too_expensive", `I'm not paying $${price} for the ${obj.def.label}`, ctx.time.now());
-    } else if (stall !== undefined && stockOf(w, obj) > 0 && guest.money >= price) {
-      if (price > 0 && price <= stall.value * 0.8) think(guest, "good_value", `The ${obj.def.label} is good value`, ctx.time.now());
-      guest.money -= price;
+      think(guest, "too_expensive", `The ${obj.def.label} wants ${price} nerve? No chance`, ctx.time.now());
+    } else if (stall !== undefined && stockOf(w, obj) > 0 && guest.courage >= price) {
+      if (price > 0 && price <= stall.value * 0.8) think(guest, "good_value", `The ${obj.def.label} was worth the nerve`, ctx.time.now());
+      guest.courage -= price;
       w.change({ [`${obj.id}.sold`]: 1, [`${obj.id}.sold_total`]: 1 });
       if (price > 0) park.emit(ctx, { kind: "pay_shop", scale: price });
       agent.needs.refill(stall.need, stall.fill);
@@ -183,13 +204,32 @@ function finishInteraction(ctx: GameContext, guest: GuestState): void {
   dropTarget(guest);
 }
 
-function shouldLeave(ctx: GameContext, guest: GuestState): boolean {
+/** Why a visitor heads for the gate now, or null to stay. */
+function leaveReason(ctx: GameContext, guest: GuestState): "dawn" | "fled" | "bored" | "done" | null {
   const agent = agentOf(guest, ctx.rng);
-  return park.of(ctx).fact("park.open") !== true || guest.money < MIN_SPEND || agent.mood().score < 18 || guest.visits >= MAX_VISITS;
+  if (guest.courage < MIN_NERVE) return "fled";
+  if (park.of(ctx).fact("park.open") !== true) return "dawn";
+  if (agent.mood().score < 18) return "bored";
+  if (guest.visits >= Math.round(MAX_VISITS * visitorKind(guest.kind).curiosity)) return "done";
+  return null;
 }
 
-function moveGuest(ctx: GameContext, guest: GuestState, target: readonly [number, number, number], dt: number, radius = ARRIVE_DISTANCE): boolean {
-  const next = ctx.scene.entity.moveToward(guest.id, target, { speed: GUEST_WALK_SPEED, dt, stopDistance: 0 });
+/** A visitor out of nerve: a scream that spreads the rumor, a group that loses its own nerve, a dropped camera. */
+function flee(ctx: GameContext, guest: GuestState, now: number): void {
+  park.emit(ctx, { kind: "scream" });
+  think(guest, "fled", guest.footage ? "AAAAH! Forget the camera, RUN!" : "AAAAAAH! I'm getting out of here!", now);
+  leaveWithFootage(ctx, guest, true);
+  ctx.game.audio.play("scream", ctx.scene.entity.get(guest.id)?.position);
+  if (guest.group === undefined) return;
+  for (const friend of session.guests.values()) {
+    if (friend === guest || friend.group !== guest.group || friend.phase === "leaving") continue;
+    friend.courage *= 1 - PANIC_SHARE;
+    think(friend, "panic", "They ran! Wait - wait for me!", now);
+  }
+}
+
+function moveGuest(ctx: GameContext, guest: GuestState, target: readonly [number, number, number], dt: number, radius = ARRIVE_DISTANCE, speed = GUEST_WALK_SPEED): boolean {
+  const next = ctx.scene.entity.moveToward(guest.id, target, { speed, dt, stopDistance: 0 });
   if (next === null) return false;
   // Feet on the ground, whatever level the land is at.
   const feet: [number, number, number] = [next[0], groundAt(park.of(ctx), next[0], next[2]), next[2]];
@@ -243,9 +283,10 @@ function queuePenalty(ctx: GameContext, guest: GuestState): number {
 }
 
 /**
- * The ride sim's own events: a boarding pays the ride's ticket into the world, an alighting fills the
- * guest's fun from the ride's ratings, and a breakdown is the world's `breakdown` ripple - the crowd
- * groans and the crew is sent. The repair itself is the world's crew order, not the sim's.
+ * The ride sim's own events: a boarding wrings the ride's scare yield out of the rider (more in a
+ * chain) into the world, an alighting fills the visitor's fright from the ride's ratings and adds a
+ * link to their chain, and a jam is the world's `breakdown` ripple - the crowd sniggers and the
+ * gremlin is sent. The repair itself is the world's crew order, not the sim's.
  */
 function makeRideSink(ctx: GameContext): RideTickSink {
   return {
@@ -255,8 +296,10 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       if (guest === undefined || obj === undefined) return;
       const price = ridePrice(park.of(ctx), obj.kind);
       if (price > 0) {
-        guest.money = Math.max(0, guest.money - price);
-        park.emit(ctx, { kind: "pay_ride", scale: price });
+        const spent = Math.min(guest.courage, price);
+        guest.courage -= spent;
+        const harvest = Math.round(spent * chainMultiplier(liveChain(guest, ctx.time.now())) * 10) / 10;
+        park.emit(ctx, { kind: "pay_ride", scale: harvest });
       }
       guest.phase = "riding";
       guest.busy = 0;
@@ -269,12 +312,15 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       if (guest === undefined || obj === undefined) return;
       const agent = agentOf(guest, ctx.rng);
       agent.needs.refill("fun", rideFun(guest.kind, obj));
-      // A wild ride unsettles the stomach in proportion to its nausea rating.
-      const nausea = rideView(rideId)?.ratings.nausea ?? 0;
+      // Dread rattles a rider's composure in proportion to the ride's rating.
+      const ratings = rideView(rideId)?.ratings;
+      const nausea = ratings?.nausea ?? 0;
       if (nausea > 0) agent.needs.refill("nausea", -nausea * 6);
       const fun = rideFun(guest.kind, obj);
-      if (agent.needs.fraction("nausea") < 0.4) think(guest, "sick", `The ${obj.def.label} made me feel sick`, ctx.time.now());
-      else if (fun >= 6) think(guest, "great_ride", `The ${obj.def.label} was great!`, ctx.time.now());
+      // The ride is a link in their chain of scares, and a hunter aboard films it.
+      landScare(ctx, guest, ratings?.excitement ?? 0, null, false);
+      if (agent.needs.fraction("nausea") < 0.4) think(guest, "sick", `The ${obj.def.label} has rattled me to the bone`, ctx.time.now());
+      else if (fun >= 6) think(guest, "great_ride", (guest.combo ?? 0) >= 3 ? `The ${obj.def.label}! That's ${guest.combo} scares in a row!` : `The ${obj.def.label} was terrifying. Again!`, ctx.time.now());
       guest.visits += 1;
       guest.phase = "seeking";
       guest.targetId = null;
@@ -319,7 +365,7 @@ function holdPlaceInLine(ctx: GameContext, guest: GuestState, obj: ParkObject, d
   leaveRide(obj.id, guest.id);
   dropTarget(guest);
   agentOf(guest, ctx.rng).moodSources.setSource("queue", -14);
-  if (view.phase === "broken") think(guest, "broken", `The ${obj.def.label} has broken down`, ctx.time.now());
+  if (view.phase === "broken") think(guest, "broken", `The ${obj.def.label} has seized up. Typical`, ctx.time.now());
   else think(guest, "queue_long", `The queue for the ${obj.def.label} is too long`, ctx.time.now());
 }
 
@@ -327,11 +373,11 @@ function arriveAtRide(ctx: GameContext, guest: GuestState, obj: ParkObject): voi
   const w = park.of(ctx);
   const price = ridePrice(w, obj.kind);
   const excitement = rideView(obj.id)?.ratings.excitement ?? 0;
-  if (price > fairPrice(w, obj, excitement) || guest.money < price) {
-    if (guest.money >= price) park.emit(ctx, { kind: "refused_price" });
+  if (price > fairPrice(w, obj, excitement) || guest.courage < price) {
+    if (guest.courage >= price) park.emit(ctx, { kind: "refused_price" });
     agentOf(guest, ctx.rng).moodSources.setSource("price", -6);
-    if (guest.money >= price) think(guest, "too_expensive", `I'm not paying $${price} for the ${obj.def.label}`, ctx.time.now());
-    else think(guest, "no_money", `I can't afford the ${obj.def.label}`, ctx.time.now());
+    if (guest.courage >= price) think(guest, "too_expensive", `The ${obj.def.label} is turned up too far. Not worth it`, ctx.time.now());
+    else think(guest, "no_money", `I haven't got the nerve for the ${obj.def.label}`, ctx.time.now());
     dropTarget(guest);
     return;
   }
@@ -397,7 +443,7 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
 
     if (guest.phase === "leaving") {
       agent.update({ dt, now });
-      const arrived = moveGuest(ctx, guest, [0, 0, 58], dt);
+      const arrived = moveGuest(ctx, guest, [0, 0, 58], dt, ARRIVE_DISTANCE, guest.courage < MIN_NERVE ? GUEST_WALK_SPEED * FLEE_SPEED : GUEST_WALK_SPEED);
       if (arrived || now > guest.targetUntil) despawnGuest(ctx, guest);
       continue;
     }
@@ -411,10 +457,15 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
     const frame = agent.update({ dt, now, targets: guestTargets(ctx, guest, tracks, position) });
 
     if (guest.targetId === null) {
-      if (shouldLeave(ctx, guest)) {
-        if (guest.money < MIN_SPEND) think(guest, "no_money", "I've spent all my money", now);
-        else if (agent.mood().score >= 60) think(guest, "lovely_park", "What a lovely park!", now);
-        else if (agent.mood().score < 18) think(guest, "tired", "I want to go home", now);
+      const reason = leaveReason(ctx, guest);
+      if (reason !== null) {
+        if (reason === "fled") flee(ctx, guest, now);
+        else {
+          if (reason === "dawn") think(guest, "lovely_park", "The sky's going grey. We survived the night!", now);
+          else if (agent.mood().score >= 60) think(guest, "lovely_park", "Best haunt on the coast. Coming back with everyone", now);
+          else if (reason === "bored") think(guest, "tired", "This place is lame. Not even scary", now);
+          leaveWithFootage(ctx, guest, false);
+        }
         guest.phase = "leaving";
         guest.target = null;
         guest.targetUntil = now + LEAVE_PATIENCE;

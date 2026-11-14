@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { BRIGHTWAY_SOUNDS } from "./audio";
+import { HAUNT_SOUNDS } from "./audio";
 
 const SRC_ROOT = join(import.meta.dir, "..");
 
@@ -28,12 +28,12 @@ function idsMatching(pattern: RegExp): Map<string, string[]> {
   return found;
 }
 
-describe("brightway-park audio cues", () => {
+describe("hauntworks audio cues", () => {
   test("every audio.play id in the source exists in the sounds record", () => {
     const played = idsMatching(/audio\.play\(\s*"([^"]+)"/g);
     expect(played.size).toBeGreaterThan(0);
     for (const [id, files] of played) {
-      expect({ id, known: Object.hasOwn(BRIGHTWAY_SOUNDS, id), files }).toEqual({ id, known: true, files });
+      expect({ id, known: Object.hasOwn(HAUNT_SOUNDS, id), files }).toEqual({ id, known: true, files });
     }
   });
 
@@ -41,12 +41,12 @@ describe("brightway-park audio cues", () => {
     const looped = idsMatching(/audio\.loop\(\s*"[^"]+"\s*,\s*"([^"]+)"/g);
     expect(looped.size).toBeGreaterThan(0);
     for (const id of looped.keys()) {
-      expect(Object.hasOwn(BRIGHTWAY_SOUNDS, id)).toBe(true);
+      expect(Object.hasOwn(HAUNT_SOUNDS, id)).toBe(true);
     }
   });
 
   test("every sound record entry is keyed by its own id and is a synth patch", () => {
-    for (const [key, def] of Object.entries(BRIGHTWAY_SOUNDS)) {
+    for (const [key, def] of Object.entries(HAUNT_SOUNDS)) {
       expect(def.id).toBe(key);
       expect(def.synth).toBeDefined();
       expect(def.url).toBeUndefined();
@@ -55,7 +55,7 @@ describe("brightway-park audio cues", () => {
   });
 
   test("one-shot cues stay short and moderate in gain", () => {
-    for (const [key, def] of Object.entries(BRIGHTWAY_SOUNDS)) {
+    for (const [key, def] of Object.entries(HAUNT_SOUNDS)) {
       if (def.loop === true) continue;
       const voices = def.synth!.voices;
       const end = Math.max(...voices.map((v) => (v.delay ?? 0) + v.duration));

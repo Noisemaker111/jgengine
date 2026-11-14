@@ -1,7 +1,7 @@
 import type { GuestState } from "../session";
 
 /**
- * What a guest is thinking, in words a player reads: each thought is an id the park counts and a
+ * What a visitor is thinking, in words a player reads: each thought is an id the park counts and a
  * line the guest window shows. A guest keeps its last few; the park tallies the fresh ones into the
  * dashboard's "guests are saying" list and the rating's complaint share.
  */
@@ -20,7 +20,12 @@ export type ThoughtId =
   | "great_ride"
   | "good_value"
   | "entertained"
-  | "lovely_park";
+  | "lovely_park"
+  | "scared"
+  | "cheap_trick"
+  | "fled"
+  | "filming"
+  | "panic";
 
 export interface Thought {
   id: ThoughtId;
@@ -41,25 +46,30 @@ export const COMPLAINTS: ReadonlySet<ThoughtId> = new Set<ThoughtId>([
   "tired",
   "dirty",
   "broken",
-  "no_money",
+  "cheap_trick",
 ]);
 
 export const THOUGHT_LABEL: Record<ThoughtId, string> = {
-  too_expensive: "Too expensive",
+  too_expensive: "Too scary to go in",
   queue_long: "Queue too long",
-  lost: "Lost",
+  lost: "Lost in the dark",
   hungry: "Hungry",
   thirsty: "Thirsty",
-  toilet: "Needs the toilet",
-  sick: "Feeling sick",
+  toilet: "Needs the outhouse",
+  sick: "Shaken up",
   tired: "Tired",
-  dirty: "Park is dirty",
-  broken: "Ride broken down",
-  no_money: "Out of money",
-  great_ride: "Loved a ride",
-  good_value: "Good value",
-  entertained: "Enjoyed the entertainer",
-  lovely_park: "Lovely park",
+  dirty: "Litter everywhere",
+  broken: "Ride jammed",
+  no_money: "Out of nerve",
+  great_ride: "Loved a fright",
+  good_value: "Worth the nerve",
+  entertained: "Enjoyed the barker",
+  lovely_park: "Best haunt ever",
+  scared: "Jumped out of their skin",
+  cheap_trick: "Cheap trick",
+  fled: "Fled screaming",
+  filming: "Filming everything",
+  panic: "Their friends ran",
 };
 
 /** How long a thought counts toward the park's tally. */

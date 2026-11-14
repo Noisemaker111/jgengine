@@ -14,7 +14,8 @@ export const world: WorldFeature = environment({
     bounds: { w: 220, d: 220 },
     height: 0,
     material: "grass",
-    colors: { low: "#79a383", high: "#a9c6a0", waterline: "#77b8c8" },
+    // Moonlit turf: blue-green low ground, a paler crest, black-teal water at the line.
+    colors: { low: "#2f4440", high: "#4a5a54", waterline: "#1f4a58" },
     segments: 80,
     detail: {
       strength: 1,
@@ -23,8 +24,8 @@ export const world: WorldFeature = environment({
       material: libraryTerrainMaterial("foliage/grass-macro"),
     },
   }),
-  // Colours, sun and haze come from the game's `mood`.
-  sky: sky({ preset: "day" }),
+  // Colours, moon and haze come from the game's night `mood`.
+  sky: sky({ preset: "night" }),
 });
 
 export const physics: PhysicsConfig = { gravity: -20 };

@@ -47,7 +47,7 @@ function withGuest(edit: (state: GuestState) => void): (base: string) => string 
     const state: GuestState = {
       id: "guest#1",
       kind: GUEST_KINDS[0]!,
-      money: 40,
+      courage: 40,
       visits: 0,
       phase: "seeking",
       targetId: null,

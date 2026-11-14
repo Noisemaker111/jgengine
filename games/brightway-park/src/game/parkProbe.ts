@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { MILESTONES } from "./milestones";
+import { GHOSTS } from "./ghostCatalog";
 import { BUILDABLES, type BuildCategory } from "./objects/catalog";
 import { hintsTaught } from "./onboarding";
 import { park, researched } from "./park";
@@ -44,8 +45,18 @@ export interface ParkProbe {
   day: number;
   /** 1 while the gate is open to guests. */
   gateOpen: number;
-  /** Rides broken down right now, waiting for a mechanic. */
+  /** Rides jammed right now, waiting for a gremlin. */
   ridesDown: number;
+  /** Scare props open to the player and how many there are. */
+  propsSeen: number;
+  propsTotal: number;
+  /** The living driven out screaming, ever. */
+  screams: number;
+  /** Ghosts in residence, and every ghost that might come. */
+  ghosts: number;
+  ghostsTotal: number;
+  /** Hunters' footage on the record (100 brings the exorcist). */
+  evidence: number;
 }
 
 /** Open to the player (no lab topic, or its topic done) and how many there are, for one build category. */
@@ -81,7 +92,8 @@ export function parkProbe(ctx: GameContext): ParkProbe {
   const shops = kindCount(ctx, "stall");
   const scenery = kindCount(ctx, "scenery");
   const staff = kindCount(ctx, "staff");
-  const topics = rides.researched + shops.researched + scenery.researched + staff.researched;
+  const props = kindCount(ctx, "prop");
+  const topics = rides.researched + shops.researched + scenery.researched + staff.researched + props.researched;
   const peak = w.num("park.peak");
   const awards = MILESTONES.filter((milestone) => peak >= milestone.rating).length;
   let staffHired = 0;
@@ -117,5 +129,11 @@ export function parkProbe(ctx: GameContext): ParkProbe {
     day: w.num("park.day"),
     gateOpen: w.fact("park.gate") === true ? 1 : 0,
     ridesDown: w.instances().filter((entry) => w.fact(`${entry.id}.broken`) === true).length,
+    propsSeen: props.seen,
+    propsTotal: props.total,
+    screams: w.num("park.screams"),
+    ghosts: w.num("park.ghosts"),
+    ghostsTotal: GHOSTS.length,
+    evidence: w.num("park.evidence"),
   };
 }

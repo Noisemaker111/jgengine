@@ -8,14 +8,20 @@ import type { Live } from "@jgengine/core/ui/liveValue";
 
 import { hintRing, useHintTarget } from "./hintRing";
 
-/** Brightway's fair-day palette, recut from the park sign: cream ticket stock, teal sign plates, gold rims, coral awnings. */
-export const INK = "#21424a", PAPER = "#fff4da", CREAM = "#fff1cf", SAND = "#f2dfb2", TEAL = "#24535b", DEEP = "#1c3940";
-export const GOLD = "#edbc5c", CORAL = "#ef7059", GOOD = "#2f8f68", BAD = "#c4462f", WARN = "#c98a22", PENCIL = "#587779", RING = "#ff5a3c";
+/**
+ * Hauntworks' moonlit palette, taken from the gate sign at midnight: bone lettering on night-violet
+ * boards, spectral-teal glow for what is good, lantern amber for rims and the things to press,
+ * rose for the warnings.
+ */
+export const INK = "#ece4d0", PAPER = "#1b1730", CREAM = "#f3ead2", SAND = "#2b2545", TEAL = "#5fd4b8", DEEP = "#100d1e";
+export const GOLD = "#ffc46b", CORAL = "#e0607a", GOOD = "#7ce8bf", BAD = "#ff7a7a", WARN = "#ffb35c", PENCIL = "#a39cc2", RING = "#9ff5d8";
+/** The dim behind a modal board, and the floating bar behind the clock and the placing chip. */
+export const SHADE = "#07051088", BAR = "#1b1730e6";
 export const FULL = { fraction: 1 } as const;
-export const DISPLAY = "Lilita One", BODY = "Nunito";
+export const DISPLAY = "IM Fell English SC", BODY = "Nunito";
 
 export const parkTheme = {
-  colors: { ink: INK, paper: PAPER, cream: CREAM, sand: SAND, teal: TEAL, deep: DEEP, gold: GOLD, coral: CORAL, good: GOOD, bad: BAD, warn: WARN, pencil: PENCIL, track: "#e3d3ab" },
+  colors: { ink: INK, paper: PAPER, cream: CREAM, sand: SAND, teal: TEAL, deep: DEEP, gold: GOLD, coral: CORAL, good: GOOD, bad: BAD, warn: WARN, pencil: PENCIL, track: "#332c52" },
   text: {
     body: { family: BODY, size: 14, color: INK },
     label: { family: BODY, size: 11, weight: 800, tracking: 1.1, color: PENCIL },
@@ -24,12 +30,12 @@ export const parkTheme = {
     title: { family: DISPLAY, size: 64, color: CREAM },
   },
   variants: {
-    card: { padding: 14, gap: 8, fill: PAPER, radius: 14, border: { width: 2, color: GOLD }, shadow: { y: 3, blur: 10, color: "#14323855" } },
-    board: { padding: 20, gap: 12, fill: "#1c3940f2", radius: 18, border: { width: 3, color: GOLD } },
-    ticket: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: CREAM, radius: 10, border: { width: 2, color: INK }, hover: "#21424a14", press: "#21424a2a", justify: "center", items: "center" },
-    primary: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: GOLD, radius: 10, border: { width: 2, color: INK }, hover: "#ffffff30", press: "#21424a2a", justify: "center", items: "center" },
-    ghost: { minHeight: 34, padding: [6, 10, 6, 10], gap: 2, radius: 10, hover: "#21424a14", press: "#21424a2a", justify: "center", items: "center" },
-    danger: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: "#f6d2c6", radius: 10, border: { width: 2, color: BAD }, hover: "#ffffff30", press: "#21424a2a", justify: "center", items: "center" },
+    card: { padding: 14, gap: 8, fill: PAPER, radius: 14, border: { width: 2, color: "#5b4a8f" }, shadow: { y: 4, blur: 16, color: "#5fd4b833" } },
+    board: { padding: 20, gap: 12, fill: "#0e0b1cf2", radius: 18, border: { width: 3, color: TEAL } },
+    ticket: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: SAND, radius: 10, border: { width: 2, color: "#5b4a8f" }, hover: "#9ff5d81a", press: "#9ff5d833", justify: "center", items: "center" },
+    primary: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: "#2f6f66", radius: 10, border: { width: 2, color: RING }, hover: "#9ff5d830", press: "#0000002a", justify: "center", items: "center" },
+    ghost: { minHeight: 34, padding: [6, 10, 6, 10], gap: 2, radius: 10, hover: "#9ff5d81a", press: "#9ff5d833", justify: "center", items: "center" },
+    danger: { minHeight: 38, padding: [7, 12, 7, 12], gap: 2, fill: "#4a1f2c", radius: 10, border: { width: 2, color: BAD }, hover: "#ffffff20", press: "#0000002a", justify: "center", items: "center" },
   },
   motion: { duration: 180, distance: 10, bounce: 0.1 },
 } satisfies RuneTheme;
@@ -45,7 +51,7 @@ export function Card(props: RuneViewProps) { return <RuneView variant="card" {..
 
 export type Tone = "ticket" | "primary" | "ghost" | "danger";
 /**
- * A fair ticket: the park's one button. `pressed` lights it gold; `hint` names it for the first
+ * A ticket stub: the haunt's one button. `pressed` lights it gold; `hint` names it for the first
  * scenario's ring, which a bound border draws without re-rendering the HUD.
  */
 export function Button({ tone = "ticket", pressed, hint, onPress, glyph, tooltip, children, ...props }: Omit<RuneViewProps, "tooltip"> & { tone?: Tone; pressed?: boolean; hint?: string; onPress?: () => void; glyph?: ReactNode; tooltip?: string | undefined }) {
@@ -67,7 +73,7 @@ export function Rows({ rows }: { rows: readonly (readonly [string, string])[] })
 export function Meter({ label, read, max, readout, color }: { label: Live<string>; read: () => number; max: () => number; readout: (value: number) => string; color: Live<string> }) {
   return <RuneView gap={3} grow={1}>
     <Row justify="between"><Tag text={label} /><RuneLabel value={bind(read)} format={readout} size={12} weight={800} color={INK} /></Row>
-    <RuneView height={7} width={FULL} fill="#e3d3ab" radius={4} clip><RuneView height={7} radius={4} fill={color} width={bind(() => ({ fraction: Math.max(0, Math.min(1, read() / Math.max(1e-6, max()))) }))} /></RuneView>
+    <RuneView height={7} width={FULL} fill="#332c52" radius={4} clip><RuneView height={7} radius={4} fill={color} width={bind(() => ({ fraction: Math.max(0, Math.min(1, read() / Math.max(1e-6, max()))) }))} /></RuneView>
   </RuneView>;
 }
 

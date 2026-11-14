@@ -153,7 +153,7 @@ function CoasterTrain({ object, circuit }: { object: ParkObject; circuit: Return
   </SceneObjectGroup>;
 }
 const GATE_URL = new URL("../../../public/art/models/deco_gate.glb", import.meta.url).href;
-const SIGN_URL = new URL("../../../public/art/brightway-sign.svg", import.meta.url).href;
+const SIGN_URL = new URL("../../../public/art/hauntworks-sign.svg", import.meta.url).href;
 
 /** The entrance gate model and its backlit sign, loaded together as one draw. */
 function entranceDraw(): EngineDraw {
@@ -205,8 +205,9 @@ function fenceDraw(): EngineDraw {
   const railGeometry = new BoxGeometry(0.12, 0.1, 120);
   const sideGeometry = new BoxGeometry(120, 0.1, 0.12);
   const halfGeometry = new BoxGeometry(50, 0.1, 0.12);
-  const postMaterial = new MeshStandardMaterial({ color: "#fff1cf" });
-  const railMaterial = new MeshStandardMaterial({ color: "#ad7960" });
+  // Wrought iron round the old park: black posts with a cold sheen, rails rusted to plum.
+  const postMaterial = new MeshStandardMaterial({ color: "#2b2838", metalness: 0.6, roughness: 0.45 });
+  const railMaterial = new MeshStandardMaterial({ color: "#3d2c3a", metalness: 0.4, roughness: 0.6 });
   const points: [number, number][] = [];
   for (let i = -60; i <= 60; i += 8) { points.push([-60, i], [60, i], [i, -60]); if (Math.abs(i) > 8) points.push([i, 60]); }
   return {
@@ -552,7 +553,7 @@ function selectionRingDraw(x: number, z: number, radius: number): EngineDraw {
   group.position.set(x, 0.23, z);
   group.rotation.x = -Math.PI / 2;
   const geometry = new RingGeometry(radius, radius + 0.18, 48);
-  const material = new MeshBasicMaterial({ color: "#edbc5c" });
+  const material = new MeshBasicMaterial({ color: "#9ff5d8" });
   return {
     mount(state: EngineFrameState) {
       state.scene.add(group);
@@ -569,7 +570,7 @@ function selectionRingDraw(x: number, z: number, radius: number): EngineDraw {
   };
 }
 
-export function BrightwayParkWorldOverlay() {
+export function HauntworksWorldOverlay() {
   return (
     <>
       {import.meta.env.DEV && <ScreenProbe />}
@@ -578,6 +579,67 @@ export function BrightwayParkWorldOverlay() {
       <OverlayBodies />
     </>
   );
+}
+
+/**
+ * A scare prop's reach, drawn on the ground as a faint spectral ring that pulses when the prop is
+ * ready and dims while it recharges; a fog cauldron also breathes slow wisps of sea fog. The ring is
+ * the reach `tickScares` uses, so a player can lay a gauntlet ring to ring.
+ */
+function scareAuraDraw(object: ParkObject, groundY: number, ready: () => boolean, reduced: boolean): EngineDraw {
+  const scare = object.def.scare!;
+  const group = new Group();
+  group.position.set(object.x, groundY + 0.12, object.z);
+  group.raycast = () => {};
+  const ringGeometry = new RingGeometry(scare.radius - 0.16, scare.radius, 56);
+  const ringMaterial = new MeshBasicMaterial({ color: "#5fd4b8", transparent: true, opacity: 0.35, depthWrite: false });
+  const ring = new Mesh(ringGeometry, ringMaterial);
+  ring.rotation.x = -Math.PI / 2;
+  ring.raycast = () => {};
+  group.add(ring);
+  const wisps: Mesh[] = [];
+  const wispGeometry = new CircleGeometry(1.4, 18);
+  const wispMaterial = new MeshBasicMaterial({ color: "#b8f0e4", transparent: true, opacity: 0.16, depthWrite: false });
+  if (scare.fog === true) {
+    for (let i = 0; i < 7; i += 1) {
+      const wisp = new Mesh(wispGeometry, wispMaterial);
+      wisp.rotation.x = -Math.PI / 2;
+      wisp.raycast = () => {};
+      wisps.push(wisp);
+      group.add(wisp);
+    }
+  }
+  let t = 0;
+  return {
+    mount(state: EngineFrameState) { state.scene.add(group); },
+    frame(_state: EngineFrameState, dt: number) {
+      t += reduced ? 0 : dt;
+      const live = ready();
+      ringMaterial.opacity = live ? 0.28 + Math.sin(t * 3) * 0.1 : 0.08;
+      wisps.forEach((wisp, i) => {
+        const a = i / wisps.length * Math.PI * 2 + t * 0.15;
+        const r = (scare.radius * 0.7) * (0.4 + ((i * 37) % 10) / 14);
+        wisp.position.set(Math.cos(a) * r, 0.4 + ((t * 0.3 + i * 0.4) % 2.2), Math.sin(a) * r);
+        wisp.scale.setScalar(1 + ((t * 0.3 + i * 0.4) % 2.2) * 0.6);
+      });
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      ringGeometry.dispose();
+      ringMaterial.dispose();
+      wispGeometry.dispose();
+      wispMaterial.dispose();
+    },
+  };
+}
+
+function ScareAura({ object }: { object: ParkObject }) {
+  const ctx = useGameContext();
+  const reduced = useGameStore(c => Boolean(c.game.store.get("park.reduced-motion")));
+  const ready = useMemo(() => () => ctx.time.now() >= (session.propReady.get(object.id) ?? 0), [ctx, object.id]);
+  const groundY = groundAt(park.of(ctx), object.x, object.z);
+  return <EngineDrawMount create={() => scareAuraDraw(object, groundY, ready, reduced)} deps={[object.id, object.x, object.z, groundY, ready, reduced]} />;
 }
 
 function OverlayBodies() {
@@ -591,6 +653,7 @@ function OverlayBodies() {
     {objects.filter(o => MOTION[o.kind]).map(o => <RideMotion key={o.id} object={o} />)}
     {objects.filter(o => o.kind.startsWith("stall_")).map(o => <StallWares key={o.id} object={o} />)}
     {objects.filter(o => o.kind === "ride_coaster").map(o => <CoasterTrain key={o.id} object={o} circuit={circuit} />)}
+    {objects.filter(o => o.def.scare !== undefined).map(o => <ScareAura key={o.id} object={o} />)}
     {obj?.def.staff && <PatrolRing x={obj.x} z={obj.z} radius={patrolRadius(park.of(ctx), obj.id)} />}
     {obj && <EngineDrawMount create={() => selectionRingDraw(obj.x, obj.z, Math.max(2, obj.def.footprint * 0.65))} deps={[obj.x, obj.z, obj.def.footprint]} />}
   </>;

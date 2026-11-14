@@ -1,5 +1,6 @@
-// Original Brightway Park geometry. Run from brightway-park with `bun run author-models`.
-// No external artwork or source models are used in these meshes. The model kit lives in scripts/models/.
+// Original Hauntworks geometry. Run from games/brightway-park with `bun run author-models`.
+// No external artwork or source models are used in these meshes. The model kit lives in scripts/models/;
+// `material` in core.mjs grades every colour into the haunt's moonlit palette.
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,7 @@ import * as R from './models/transport.mjs';
 import * as C from './models/coasters.mjs';
 import * as S from './models/shops.mjs';
 import * as Gate from './models/gate.mjs';
+import * as Haunt from './models/haunt.mjs';
 
 // GLTFExporter uses this browser interface to package buffers, without images.
 globalThis.FileReader = class {
@@ -49,15 +51,16 @@ add('track_loop', C.trackLoop(), 4); add('track_lift', C.trackLift(), 4); add('t
 add('stall_food', S.stallFood(), 4); add('stall_drink', S.stallDrink(), 4); add('stall_souvenir', S.stallSouvenir(), 4);
 add('stall_pizza', S.stallPizza(), 4); add('stall_icecream', S.stallIcecream(), 4); add('stall_coffee', S.stallCoffee(), 4); add('stall_balloon', S.stallBalloon(), 4);
 add('fac_toilet', S.facToilet(), 4); add('fac_info', S.facInfo(), 4); add('fac_firstaid', S.facFirstaid(), 4);
-// scenery
-add('deco_fountain', L.fountain(), 8); add('deco_topiary', L.topiary(), 4); add('deco_tree', L.treeModel(), 4); add('deco_flowerbed', L.flowers(), 4); add('deco_lamp', L.lamp(), 4);
-add('deco_gate', Gate.gate(), 16); add('deco_statue', S.statue(), 4); add('deco_hedge', S.hedge(), 4); add('deco_arch', S.arch(), 4); add('deco_flagpole', S.flagpole(), 4);
+// gloom
+add('deco_fountain', L.fountain(), 8); add('deco_topiary', L.topiary(), 4); add('deco_gravestone', Haunt.gravestone(), 4); add('deco_lamp', Haunt.gasLantern(), 4);
+add('deco_gate', Gate.gate(), 16); add('deco_statue', S.statue(), 4); add('deco_fence', Haunt.ironFence(), 4); add('deco_arch', S.arch(), 4); add('deco_flagpole', S.flagpole(), 4);
+// scare props (the cauldron, shelf, vase and candelabra come from the asset library)
+add('prop_portrait', Haunt.portrait(), 4); add('prop_coldspot', Haunt.coldSpot(), 4); add('prop_coffin', Haunt.jackCoffin(), 4); add('prop_flicker', Haunt.flickerLamp(), 4);
 // paths
 add('path_walk', L.path(), 4); add('path_queue', S.pathQueue(), 4); add('ride_entrance', S.rideEntrance(), 4); add('ride_exit', S.rideExit(), 4);
 // people
 add('staff_janitor', L.janitor(), 4); add('staff_handyman', S.staffHandyman(), 2); add('staff_mechanic', S.staffMechanic(), 2);
 add('staff_entertainer', S.staffEntertainer(), 2); add('staff_security', S.staffSecurity(), 2);
-for (let i = 0; i < 5; i++) add(`guest_${'abcde'[i]}`, L.guest([P.coral, P.blue, P.gold, P.mint, P.pink][i], i), 2);
 // The coaster train is its own model: the ride's own cycle drives it around the authored circuit.
 models.coaster_train = L.coasterTrain();
 
@@ -65,7 +68,7 @@ models.coaster_train = L.coasterTrain();
 const exporter = new GLTFExporter(); let bytes = 0; const sizes = {}, baked = {};
 for (const [name, g] of Object.entries(models)) {
   g.name = name; const b = bake(g); baked[name] = b;
-  const buffer = await exporter.parseAsync(b, { binary: true, copyright: 'Original geometry authored for Brightway Park, 2026' });
+  const buffer = await exporter.parseAsync(b, { binary: true, copyright: 'Original geometry authored for Hauntworks, 2026' });
   await writeFile(new URL(`${name}.glb`, out), Buffer.from(buffer)); bytes += buffer.byteLength; sizes[name] = buffer.byteLength;
 }
 await writeFile(new URL('motion.json', out), JSON.stringify(motion, null, 2) + '\n');

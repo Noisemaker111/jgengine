@@ -21,7 +21,7 @@ afterEach(() => {
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
 
-test("the first scenario's hints follow the player: path, ride, connect, gate, the lab, then a mechanic", () => {
+test("the first scenario's hints follow the player: path, ride, connect, gate, a scare, the séance, a ghost, then a gremlin", () => {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   const run = (name: string, input: Record<string, unknown> = {}) => runner.ctx.game.commands.run(name, input);
   const w = park.of(runner.ctx);
@@ -48,16 +48,23 @@ test("the first scenario's hints follow the player: path, ride, connect, gate, t
   run("build.connect", { id: ride });
   expect(hint()?.id).toBe("gate");
   run("brightway.act", { action: "open_gate" });
+  expect(hint()?.id).toBe("scare");
+  // The coffin is a scare and a ghost child's toy: with the carousel, she will come.
+  expect(run("brightway.place", { kind: "prop_coffin", cell: cellFor("prop_coffin", 4, 30) }).status).toBe("applied");
   expect(hint()?.id).toBe("research");
   run("brightway.act", { action: "research_stall_icecream" });
+  expect(hint()?.id).toBe("ghosts");
+  runner.step(1);
+  for (let t = 0; t < 16; t += 1) runner.step(1);
+  expect(w.num("park.ghosts")).toBe(1);
   expect(hint()?.id).toBe("mechanic");
-  expect(hintsTaught(runner.ctx)).toBe(5);
+  expect(hintsTaught(runner.ctx)).toBe(7);
 
   forceBreakdown(runner.ctx, ride);
   expect(hint()?.id).toBe("mechanic");
   expect(run("brightway.place", { kind: "staff_mechanic", cell: cellFor("staff_mechanic", -12, 36) }).status).toBe("applied");
   expect(hint()).toBeNull();
-  expect(hintsTaught(runner.ctx)).toBe(6);
+  expect(hintsTaught(runner.ctx)).toBe(8);
 
   // Starting the scenario again teaches from the first step.
   run("park.scenario", { id: FIRST_SCENARIO });

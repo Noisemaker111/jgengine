@@ -3,6 +3,7 @@ import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 import { BUILDABLES } from "../objects/catalog";
 import { setLevel } from "./terrain";
 import { session } from "../session";
+import { ecto } from "../ecto";
 
 /**
  * The builder's undo: the last few things the player did to the lot, newest last. Undoing a build
@@ -53,7 +54,7 @@ export function undoStep(
     if (gone.length === 0) return null;
     // The world's demolish paid part back; the undo makes it whole.
     w.change({ "park.cash": step.cost - (w.num("park.cash") - before) });
-    return `Undone: build · $${step.cost.toLocaleString()} back`;
+    return `Undone: build · ${ecto(step.cost)} back`;
   }
   if (step.type === "remove") {
     if (w.num("park.cash") < step.refund) return null;
@@ -64,6 +65,6 @@ export function undoStep(
   }
   for (const cell of step.cells) setLevel(w, cell.col, cell.row, cell.level);
   w.change({ "park.cash": step.cost });
-  return `Undone: land · $${step.cost} back`;
+  return `Undone: land · ${ecto(step.cost)} back`;
 }
 

@@ -65,7 +65,7 @@ describe("brightway-park guest agents", () => {
     expect(liveAgent(onlyGuest().id)?.action().option).toBe("hunger");
   });
 
-  test("an empty stall and a broke guest are not offered the stall at all", () => {
+  test("an empty stall and a visitor out of nerve are not offered the stall at all", () => {
     const ctx = context();
     seedGuests(ctx, 1);
     const guest = onlyGuest();
@@ -79,7 +79,7 @@ describe("brightway-park guest agents", () => {
 
     w.change({ [`${stall}.sold`]: -1000 });
     expect(guestTargets(ctx, guest, 0, [0, 0, 0]).some((target) => target.target === stall)).toBe(true);
-    guest.money = 2;
+    guest.courage = 2;
     expect(guestTargets(ctx, guest, 0, [0, 0, 0]).some((target) => target.target === stall)).toBe(false);
   });
 

@@ -3,9 +3,10 @@ import type { Thought, ThoughtTally } from "./sim/thoughts";
 import type { UndoStep } from "./build/undo";
 
 /**
- * What the park keeps outside its world: the walking guests and janitors (agents with bodies), what
- * the player has picked in the UI, and the save banner. Money, rating, mood, structures, the loan
- * and the scenario are facts in the `brightway.world` store (`park.ts`).
+ * What the haunt keeps outside its world: the walking living and the spooks on patrol (agents with
+ * bodies), what the player has picked in the UI, and the save banner. Ectoplasm, rumor, mood,
+ * structures, ghosts, the Ferryman's debt and the scenario are facts in the `brightway.world` store
+ * (`park.ts`).
  */
 
 /**
@@ -19,7 +20,8 @@ export type GuestPhase = (typeof GUEST_PHASES)[number];
 export interface GuestState {
   id: string;
   kind: string;
-  money: number;
+  /** Nerve left: every scare spends some, and at the bottom the visitor flees screaming. */
+  courage: number;
   visits: number;
   phase: GuestPhase;
   targetId: string | null;
@@ -33,6 +35,13 @@ export interface GuestState {
   thoughts?: Thought[];
   /** Game-second it next checks how it feels. */
   nextThink?: number;
+  /** The group it came through the gate with: when one flees screaming the rest lose their nerve. */
+  group?: string;
+  /** Scares in a row without a long breather, and when the last one landed: the chain's multiplier. */
+  combo?: number;
+  lastScareAt?: number;
+  /** What a hunter or TV crew has filmed so far; it goes on the record only if they leave calmly. */
+  footage?: number;
 }
 
 /** One staffed post's janitor: an agent walking the beat its post authored. */
@@ -59,6 +68,15 @@ export interface Session {
   thoughts: ThoughtTally;
   spawnAcc: number;
   guestSeq: number;
+  groupSeq: number;
+  /** When each scare prop is ready to jolt again (game seconds), by structure id. */
+  propReady: Map<string, number>;
+  /** Seconds each ghost has found everything it wants, toward moving in. */
+  ghostPending: Map<string, number>;
+  /** Seconds each resident has gone without what it wants, toward leaving. */
+  ghostRestless: Map<string, number>;
+  /** Where each resident haunts (x, z). */
+  ghostHaunts: Map<string, [number, number]>;
   started: boolean;
   hasSave: boolean;
   saveStatus: string;
@@ -77,9 +95,14 @@ function freshSession(): Session {
     thoughts: { top: [], complaintShare: 0 },
     spawnAcc: 0,
     guestSeq: 0,
+    groupSeq: 0,
+    propReady: new Map(),
+    ghostPending: new Map(),
+    ghostRestless: new Map(),
+    ghostHaunts: new Map(),
     started: false,
     hasSave: false,
-    saveStatus: "Saved on builds, ticket changes, pause and day close",
+    saveStatus: "Saved on builds, toll changes, pause and each noon",
   };
 }
 
@@ -92,4 +115,9 @@ export function resetSession(): void {
 export function nextGuestId(): string {
   session.guestSeq += 1;
   return `guest#${session.guestSeq}`;
+}
+
+export function nextGroupId(): string {
+  session.groupSeq += 1;
+  return `group#${session.groupSeq}`;
 }

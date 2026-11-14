@@ -6,7 +6,7 @@ import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 
 import { session } from "../../session";
-import { Button, GOLD, INK, PENCIL, Row, Tag, Text } from "../look";
+import { Button, GOLD, INK, PENCIL, Row, SAND, Tag, Text } from "../look";
 
 /**
  * The park's settings: Reduce motion, then the engine's sound, graphics and control rows composed as
@@ -42,7 +42,7 @@ function Setting({ row }: { row: SettingsRow }) {
   return <RuneView gap={4}>
     <Row justify="between"><Text grow={1} shrink>{row.label}</Text><Text weight={800} color={INK} text={row.kind === "slider" ? bind(() => row.format?.(value()) ?? value().toFixed(2)) : shown} /></Row>
     {row.kind !== "slider" ? <Button label={row.label} minHeight={32} onPress={() => adjust(1)}>{`${shown} ›`}</Button>
-      : <RuneAction label={row.label} height={30} fill="#e3d3ab" radius={8} padding={[11, 0, 11, 0]} border={{ width: 2, color: INK }} onAdjust={adjust} onDrag={(d) => {
+      : <RuneAction label={row.label} height={30} fill={SAND} radius={8} padding={[11, 0, 11, 0]} border={{ width: 2, color: INK }} onAdjust={adjust} onDrag={(d) => {
         if (d.cancelled) { fraction.current = (Number(row.value) - min) / Math.max(1e-6, max - min); return; }
         fraction.current = Math.max(0, Math.min(1, d.x / Math.max(1, d.width)));
         if (d.phase === "up") { const step = row.step ?? 1; row.set(Math.min(max, Math.max(min, min + Math.round((value() - min) / step) * step))); }

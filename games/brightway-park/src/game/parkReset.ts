@@ -16,6 +16,7 @@ import { DAY_START } from "./catalog";
 import { resetDayLoop } from "./daySession";
 import { restartHints } from "./onboarding";
 import { armMidnight } from "./midnight";
+import { resetGhosts } from "./ghosts";
 
 const TRACK_PATH_ID = "coaster-track";
 
@@ -27,7 +28,7 @@ export interface SeedPlacement {
 
 function markerCatalogId(meta: Record<string, unknown> | undefined): string {
   const id = meta?.["catalogId"];
-  if (typeof id !== "string") throw new Error("brightway-park: scene marker missing meta.catalogId");
+  if (typeof id !== "string") throw new Error("hauntworks: scene marker missing meta.catalogId");
   return id;
 }
 
@@ -83,11 +84,12 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
   for (const guest of session.guests.values()) ctx.scene.entity.despawn(guest.id);
   for (const staff of session.staff.values()) ctx.scene.entity.despawn(staff.id);
   ctx.scene.entity.selection.clear();
+  resetGhosts(ctx);
   resetSession();
   resetRides();
   resetGuestAgents();
   const w = freshWorld(ctx, options.cash);
-  // A fresh park's calendar starts again: 09:00 on 1 March, day one, the next midnight from there.
+  // A fresh haunt's calendar starts again: late afternoon on the first night of the Harvest Moon.
   ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_START });
   resetDayLoop(ctx);
   armMidnight(ctx);

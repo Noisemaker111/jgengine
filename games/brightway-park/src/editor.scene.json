@@ -9,7 +9,7 @@
         "y": 0,
         "z": 8
       },
-      "label": "Carousel",
+      "label": "Upside-Down Carousel",
       "meta": {
         "catalogId": "ride_carousel"
       }
@@ -22,7 +22,7 @@
         "y": 0,
         "z": 4
       },
-      "label": "Coaster Station",
+      "label": "Bone Coaster Station",
       "meta": {
         "catalogId": "ride_coaster"
       }
@@ -35,7 +35,7 @@
         "y": 0,
         "z": 28
       },
-      "label": "Burger Stall",
+      "label": "Cursed Candy Floss",
       "meta": {
         "catalogId": "stall_food"
       }
@@ -48,7 +48,7 @@
         "y": 0,
         "z": 28
       },
-      "label": "Burger Stall",
+      "label": "Cursed Candy Floss",
       "meta": {
         "catalogId": "stall_food"
       }
@@ -825,7 +825,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -840,7 +840,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -855,7 +855,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -870,7 +870,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -885,7 +885,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -900,7 +900,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -915,7 +915,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -930,7 +930,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -945,7 +945,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -960,7 +960,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -975,7 +975,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -990,7 +990,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1005,7 +1005,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1020,7 +1020,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1035,7 +1035,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1050,7 +1050,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1065,7 +1065,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1080,7 +1080,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1095,7 +1095,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1110,7 +1110,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1125,7 +1125,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1140,7 +1140,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1155,7 +1155,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1170,7 +1170,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1185,7 +1185,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1200,7 +1200,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1215,7 +1215,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1230,7 +1230,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1245,7 +1245,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1260,7 +1260,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1275,7 +1275,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1290,7 +1290,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "assetId": "quaternius-stylized-nature/Mushroom_Laetiporus",
         "scale": 1.1
       }
     },
@@ -1305,7 +1305,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1320,7 +1320,7 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
       }
     },
@@ -1335,7 +1335,7 @@
       "rotationY": 0,
       "label": "Hedge",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "assetId": "quaternius-stylized-nature/Mushroom_Common",
         "scale": 1.5
       }
     },
@@ -1350,8 +1350,164 @@
       "rotationY": 0,
       "label": "Flowerbed",
       "meta": {
-        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "assetId": "quaternius-stylized-nature/Grass_Wispy_Tall",
         "scale": 1.1
+      }
+    },
+    {
+      "id": "haunt_prop_coffin_1",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 20
+      },
+      "label": "Jack-in-the-Coffin",
+      "meta": {
+        "catalogId": "prop_coffin"
+      }
+    },
+    {
+      "id": "haunt_prop_portrait_1",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 36
+      },
+      "label": "Moving Portrait",
+      "meta": {
+        "catalogId": "prop_portrait"
+      }
+    },
+    {
+      "id": "haunt_prop_coldspot_1",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 44
+      },
+      "label": "Cold Spot",
+      "meta": {
+        "catalogId": "prop_coldspot"
+      }
+    },
+    {
+      "id": "haunt_prop_fogger_1",
+      "kind": "prop",
+      "position": {
+        "x": -16,
+        "y": 0,
+        "z": 16
+      },
+      "label": "Fog Cauldron",
+      "meta": {
+        "catalogId": "prop_fogger"
+      }
+    },
+    {
+      "id": "haunt_gravestone_1",
+      "kind": "prop",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": 16
+      },
+      "label": "Gravestone",
+      "meta": {
+        "catalogId": "deco_gravestone"
+      }
+    },
+    {
+      "id": "haunt_gravestone_2",
+      "kind": "prop",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": 20
+      },
+      "label": "Gravestone",
+      "meta": {
+        "catalogId": "deco_gravestone"
+      }
+    },
+    {
+      "id": "haunt_gravestone_3",
+      "kind": "prop",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 16
+      },
+      "label": "Gravestone",
+      "meta": {
+        "catalogId": "deco_gravestone"
+      }
+    },
+    {
+      "id": "haunt_pumpkins_1",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Pumpkin Lanterns",
+      "meta": {
+        "catalogId": "deco_pumpkins"
+      }
+    },
+    {
+      "id": "haunt_pumpkins_2",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Pumpkin Lanterns",
+      "meta": {
+        "catalogId": "deco_pumpkins"
+      }
+    },
+    {
+      "id": "haunt_lamp_1",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 44
+      },
+      "label": "Gas Lantern",
+      "meta": {
+        "catalogId": "deco_lamp"
+      }
+    },
+    {
+      "id": "haunt_lamp_2",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 36
+      },
+      "label": "Gas Lantern",
+      "meta": {
+        "catalogId": "deco_lamp"
+      }
+    },
+    {
+      "id": "haunt_ghost_train_1",
+      "kind": "prop",
+      "position": {
+        "x": -24,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Ghost Train",
+      "meta": {
+        "catalogId": "ride_haunted"
       }
     }
   ],

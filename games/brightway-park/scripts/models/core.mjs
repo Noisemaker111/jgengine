@@ -1,5 +1,8 @@
-// Shared geometry kit for the Brightway Park model generator.
+// Shared geometry kit for the Hauntworks model generator.
 // Everything is native three.js geometry; no images, no external meshes.
+// The kit is written in the old fair's daylight palette (P); `material` grades every colour into the
+// haunt's moonlit one (NIGHT, or a generic violet-dark grade for one-off colours), and lights the
+// two glow colours - lantern amber and spectral teal - from within.
 import * as T from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 export { T };
@@ -11,7 +14,33 @@ export const P = {
   stone: '#cfc7b6', grey: '#8d969a', asphalt: '#4a5054', tyre: '#262a2c', chrome: '#d4dde0',
   water: '#3d93bd', waterEdge: '#9fd8e6', foam: '#eef8f8', rock: '#8a8378', hedge: '#3d7550', sand: '#e6d3a6',
   darkwood: '#7a5240', glass: '#5fa3b8', glow: '#ffd977', orange: '#e8913a', yellow: '#f2d04b',
+  // The haunt's own: the second glow, and bone, iron and moss for the new pieces.
+  spirit: '#9ff5d8', bone: '#d8cfba', iron: '#2b2838', moss: '#3d5a46',
 };
+
+/** The daylight palette, recut for the haunt at night: rotted wood, tarnished brass, rose, violet, teal. */
+const NIGHT = {
+  '#fff1cf': '#b1a895', '#ef7059': '#8c2f4a', '#247f83': '#2a7d74', '#edbc5c': '#a68a4a', '#24444c': '#17131f', '#ad7960': '#4d3b33',
+  '#4c8866': '#2f4038', '#a1cbb0': '#5f8f84', '#77b8c8': '#3d5a78', '#d77c9d': '#6e4a86',
+  '#fbf7ee': '#a9a39a', '#d64538': '#6e1f2e', '#3f9a5a': '#2f5a48', '#22314d': '#171a33', '#4b3866': '#3e2d5c', '#2e2340': '#22182f',
+  '#cfc7b6': '#6e6a7a', '#8d969a': '#5a5f66', '#4a5054': '#2e3236', '#262a2c': '#16181a', '#d4dde0': '#8f9aa0',
+  '#3d93bd': '#16424f', '#9fd8e6': '#3f8c8a', '#eef8f8': '#9fd0c8', '#8a8378': '#4f4b48', '#3d7550': '#25352c', '#e6d3a6': '#6b6050',
+  '#7a5240': '#3a2a24', '#5fa3b8': '#2f6f7a', '#e8913a': '#a85a22', '#f2d04b': '#b89a3a',
+  '#ffd977': '#ffb347', '#9ff5d8': '#9ff5d8', '#d8cfba': '#d8cfba', '#2b2838': '#2b2838', '#3d5a46': '#3d5a46',
+};
+/** Colours that light themselves: lantern amber and spectral teal. */
+const GLOWS = new Set(['#ffb347', '#9ff5d8']);
+const VIOLET = new T.Color('#3a2a5e');
+
+/** A colour as the haunt paints it: its NIGHT recut, or the colour darkened, drained and drawn toward violet. */
+export function night(color) {
+  const key = String(color).toLowerCase();
+  if (NIGHT[key] !== undefined) return NIGHT[key];
+  const c = new T.Color(key), hsl = {};
+  c.getHSL(hsl);
+  c.setHSL(hsl.h, hsl.s * .62, hsl.l * .58).lerp(VIOLET, .22);
+  return `#${c.getHexString()}`;
+}
 export const Y = new T.Vector3(0, 1, 0);
 export const V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
 export const smooth = s => s * s * (3 - 2 * s);
@@ -21,9 +50,12 @@ export const loopShift = th => -(1 - Math.cos(th)) / 2 * (th / Math.PI - 1);
 // ---- materials ----------------------------------------------------------
 const materials = new Map();
 export function material(color, metal = 0, double = false) {
-  const key = `${color}:${metal}:${double}`;
+  const graded = night(color);
+  const key = `${graded}:${metal}:${double}`;
+  const glow = GLOWS.has(graded);
   if (!materials.has(key)) materials.set(key, new T.MeshStandardMaterial({
-    color, roughness: metal ? .38 : .72, metalness: metal, side: double ? T.DoubleSide : T.FrontSide,
+    color: graded, roughness: metal ? .38 : .72, metalness: metal, side: double ? T.DoubleSide : T.FrontSide,
+    ...(glow ? { emissive: graded, emissiveIntensity: 1 } : {}),
   }));
   return materials.get(key);
 }
@@ -107,11 +139,12 @@ export function deckRound(g, r = 3.6, h = .3, seg = 28) {
 export function deckRect(g, w, d, h = .3, x = 0, z = 0, top = P.cream) {
   box(g, [w, h - .06, d], P.wood, [x, (h - .06) / 2, z]); box(g, [w - .16, .08, d - .16], top, [x, h - .04, z]);
 }
+// Bulbs burn lantern amber and spectral teal in turn.
 export function bulbs(g, r, y, count = 24, cx = 0, cz = 0, size = .085) {
-  for (let i = 0; i < count; i++) { const a = i / count * Math.PI * 2; ball(g, size, i % 2 ? P.gold : P.cream, [cx + Math.cos(a) * r, y, cz + Math.sin(a) * r], 0); }
+  for (let i = 0; i < count; i++) { const a = i / count * Math.PI * 2; ball(g, size, i % 2 ? P.glow : P.spirit, [cx + Math.cos(a) * r, y, cz + Math.sin(a) * r], 0); }
 }
 export function bulbLine(g, a, b, n, size = .07) {
-  const av = vec(a), bv = vec(b); for (let i = 0; i <= n; i++) ball(g, size, i % 2 ? P.gold : P.cream, av.clone().lerp(bv, i / n).toArray(), 0);
+  const av = vec(a), bv = vec(b); for (let i = 0; i <= n; i++) ball(g, size, i % 2 ? P.glow : P.spirit, av.clone().lerp(bv, i / n).toArray(), 0);
 }
 export function pennant(g, x, y, z, color, pole = 2.1, dir = 1) {
   beam(g, [x, y - pole + .8, z], [x, y + .8, z], .045, P.cream);

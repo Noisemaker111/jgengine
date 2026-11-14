@@ -3,6 +3,7 @@ import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 import { GRID } from "../catalog";
 import { BUILDABLES } from "../objects/catalog";
 import { LOT, sizeOf } from "../lot";
+import { ecto } from "../ecto";
 
 /**
  * The lot's ground: a height level per cell, kept in the world as one fact (`park.land`, a digit per
@@ -79,7 +80,7 @@ export function canShape(w: WorldModel, col: number, row: number, step: 1 | -1):
   const level = levelAt(w, col, row) + step;
   if (level < 0) return { ok: false, reason: "Already at the lowest level" };
   if (level > MAX_LEVEL) return { ok: false, reason: "Already at the highest level" };
-  if (w.num("park.cash") < LAND_COST) return { ok: false, reason: "Not enough cash" };
+  if (w.num("park.cash") < LAND_COST) return { ok: false, reason: "Not enough ectoplasm" };
   return { ok: true, level };
 }
 
@@ -120,8 +121,8 @@ export function cellCentre(col: number, row: number): [number, number] {
 
 /** The two land tools the build bar offers: they sit in the tool slot like a blueprint does. */
 export const LAND_TOOLS = {
-  land_raise: { label: "Raise Land", icon: "⬆️", step: 1, blurb: `Lift the ground a level. Click a cell or drag over an area · $${LAND_COST} a cell.` },
-  land_lower: { label: "Lower Land", icon: "⬇️", step: -1, blurb: `Dig the ground down a level. Click a cell or drag over an area · $${LAND_COST} a cell.` },
+  land_raise: { label: "Raise Land", icon: "⬆️", step: 1, blurb: `Heave the ground up a level. Click a cell or drag over an area · ${ecto(LAND_COST)} a cell.` },
+  land_lower: { label: "Lower Land", icon: "⬇️", step: -1, blurb: `Dig the ground down a level. Click a cell or drag over an area · ${ecto(LAND_COST)} a cell.` },
 } as const satisfies Record<string, { label: string; icon: string; step: 1 | -1; blurb: string }>;
 export type LandTool = keyof typeof LAND_TOOLS;
 

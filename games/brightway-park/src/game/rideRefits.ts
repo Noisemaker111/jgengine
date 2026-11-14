@@ -16,8 +16,8 @@ export const REFIT_SHARE = 0.4;
 
 /** What each refit adds to a ride's scales (1 is the ride as built) and its appeal. */
 export const REFITS = {
-  efficient: { label: "Efficient refit", upkeep: -0.3, wear: -0.4, capacity: 0, service: 0, appeal: -0.5 },
-  premium: { label: "Premium refit", upkeep: 0.5, wear: 0.25, capacity: 0.5, service: 0.15, appeal: 1.5 },
+  efficient: { label: "Hushed refit", upkeep: -0.3, wear: -0.4, capacity: 0, service: 0, appeal: -0.5 },
+  premium: { label: "Ghastly refit", upkeep: 0.5, wear: 0.25, capacity: 0.5, service: 0.15, appeal: 1.5 },
 } as const;
 
 export type RefitId = keyof typeof REFITS;
@@ -92,18 +92,18 @@ export function rideRunActions(def: BuildableDef): Record<string, WorldActionDec
   return {
     ...upgradePathActions(refitLadder(def)),
     [shutAction(def.id)]: {
-      label: `Close the ${def.label} for refurbishment`,
+      label: `Rest the ${def.label}`,
       on: def.id,
       whenTarget: { shut: false, broken: false },
-      refuse: "Only a working, open ride can close for refurbishment",
+      refuse: "Only a working, open ride can be rested",
       effect: { shut: true },
-      note: "The {target} is closed for refurbishment.",
+      note: "The {target} is resting: the living stay off it.",
     },
     [reopenAction(def.id)]: {
       label: `Reopen the ${def.label}`,
       on: def.id,
       whenTarget: { shut: true },
-      refuse: "The ride is not closed",
+      refuse: "The ride is not resting",
       effect: { shut: false },
       note: "The {target} is open again.",
     },

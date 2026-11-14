@@ -8,12 +8,13 @@ const ANCHORS: readonly SeedPlacement[] = [
   { catalogId: "ride_coaster", x: 20, z: 4 },
   { catalogId: "stall_food", x: -12, z: 28 },
   { catalogId: "stall_food", x: 12, z: 28 },
+  { catalogId: "ride_haunted", x: -24, z: 28 },
 ];
 const TRACK_PIECES = 14;
 /** Scenery markers are drawn, not built, so the seed never reads them. */
 const PARK_MARKERS = editorLayers.markers.filter((marker) => marker.kind !== "scenery");
 
-describe("brightway-park starter park (authored scene)", () => {
+describe("hauntworks starter park (authored scene)", () => {
   test("the document seeds rides first, then track, then the rest", () => {
     const placements = seedPlacements();
     expect(placements.slice(0, ANCHORS.length)).toEqual([...ANCHORS]);

@@ -20,13 +20,14 @@ import { ParkFlow, resultOpen } from "./ParkFlow";
 import { ResearchPanel } from "./ResearchPanel";
 import { ParkMenu, parkFocus } from "./menu/ParkMenu";
 import { ParkSettings } from "./menu/ParkSettings";
-import { BUILD_PANEL, PARK_PANELS, RESEARCH_PANEL } from "./panels";
+import { BUILD_PANEL, GHOSTS_PANEL, PARK_PANELS, RESEARCH_PANEL } from "./panels";
+import { GhostsPanel } from "./GhostsPanel";
 import { pointHint } from "./hintRing";
-import { BAD, Button, Card, GOOD, Heading, INK, PAPER, Row, Tag, Text, parkTheme, stillTheme, WindowRoom } from "./look";
+import { BAD, BAR, Button, Card, GOLD, GOOD, Heading, INK, PAPER, RING, Row, SHADE, Tag, Text, parkTheme, stillTheme, WindowRoom } from "./look";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
-const MOTION_KEY = "brightway-park.reduced-motion";
+const MOTION_KEY = "hauntworks.reduced-motion";
 function savedMotion(): boolean { try { return localStorage.getItem(MOTION_KEY) === "true"; } catch { return false; } }
 
 export function GameUI() {
@@ -50,7 +51,7 @@ export function GameUI() {
     {started ? <Hud panels={panels} paused={clock.paused} /> : null}
     <ParkMenu reducedMotion={reducedMotion} onReducedMotion={onReducedMotion} />
     <ParkFlow />
-    {settings.isOpen ? <RuneView anchor="fill" fill="#14323888" modal onBack={settings.close} justify="center" items="center">
+    {settings.isOpen ? <RuneView anchor="fill" fill={SHADE} modal onBack={settings.close} justify="center" items="center">
       <Card width={560} maxHeight={640} responsive={{ phone: { width: { fraction: 0.94 } } }} label="Settings">
         <Row justify="between"><Heading>Settings</Heading><Button tone="ghost" label="Close settings" onPress={settings.close}>×</Button></Row>
         <RuneView scroll gap={10} maxHeight={560}><ParkSettings reducedMotion={reducedMotion} onReducedMotion={onReducedMotion} /></RuneView>
@@ -68,15 +69,15 @@ export function GameUI() {
 
 type Panels = ReturnType<typeof usePanels>;
 
-/** The live park: the status and goal cards, the hint, the clock, the side window, the palette and the touch camera. */
+/** The live haunt: the status and goal cards, the hint, the clock, the side window, the palette and the touch camera. */
 function Hud({ panels, paused }: { panels: Panels; paused: boolean }) {
   const { width, height } = useRuneViewport(), phone = width < 600;
   const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
-  const books = panels.isOpen("books"), lab = panels.isOpen(RESEARCH_PANEL), side = inspecting || books || lab;
+  const books = panels.isOpen("books"), lab = panels.isOpen(RESEARCH_PANEL), ghosts = panels.isOpen(GHOSTS_PANEL), side = inspecting || books || lab || ghosts;
   const room = phone ? Math.round(height * 0.5) : height - 92 - (panels.isOpen(BUILD_PANEL) ? 262 : 16);
-  const sideWindow = !side ? null : <WindowRoom value={room}>{inspecting ? <Inspector /> : books ? <ParkBooks onClose={() => panels.close("books")} /> : <ResearchPanel onClose={() => panels.close(RESEARCH_PANEL)} />}</WindowRoom>;
+  const sideWindow = !side ? null : <WindowRoom value={room}>{inspecting ? <Inspector /> : books ? <ParkBooks onClose={() => panels.close("books")} /> : lab ? <ResearchPanel onClose={() => panels.close(RESEARCH_PANEL)} /> : <GhostsPanel onClose={() => panels.close(GHOSTS_PANEL)} />}</WindowRoom>;
   const build = panels.isOpen(BUILD_PANEL) && !(phone && side);
-  const openLab = () => { panels.close("books"); panels.open(RESEARCH_PANEL); };
+  const openLab = () => { panels.close("books"); panels.close(GHOSTS_PANEL); panels.open(RESEARCH_PANEL); };
   if (phone) return <>
     <RuneView anchor="top" safe inset={8} width={width - 16} gap={6}>
       <TimeBar panels={panels} />
@@ -98,17 +99,18 @@ function Hud({ panels, paused }: { panels: Panels; paused: boolean }) {
   </>;
 }
 
-/** Pause, the clock speeds and the three windows. */
+/** Pause, the clock speeds and the four windows. */
 function TimeBar({ panels }: { panels: Panels }) {
   const { commands } = useGame();
   const clock = useGameClock();
   const phone = useRuneViewport().width < 600;
-  return <RuneView layout="row" gap={4} padding={6} radius={12} fill="#fff4dae6" border={{ width: 2, color: "#edbc5c" }} label="Simulation controls" justify={phone ? "between" : "start"}>
-    <Button label="Pause park" pressed={clock.paused} minHeight={34} padding={[4, 10, 4, 10]} onPress={() => commands.run("pauseToggle", {})}>II</Button>
+  return <RuneView layout="row" gap={4} padding={6} radius={12} fill={BAR} border={{ width: 2, color: GOLD }} label="Simulation controls" justify={phone ? "between" : "start"}>
+    <Button label="Pause the haunt" pressed={clock.paused} minHeight={34} padding={[4, 10, 4, 10]} onPress={() => commands.run("pauseToggle", {})}>II</Button>
     {clock.speeds.map((s) => <Button key={s} pressed={!clock.paused && clock.speed === s} minHeight={34} padding={[4, 8, 4, 8]} onPress={() => commands.run("park.speed", { speed: s })}>{`${s}×`}</Button>)}
     <Button tone="ghost" hint="hud:build" label="Build" pressed={panels.isOpen(BUILD_PANEL)} minHeight={34} onPress={() => panels.toggle(BUILD_PANEL)}>Build</Button>
-    <Button tone="ghost" hint="hud:lab" label="Lab" pressed={panels.isOpen(RESEARCH_PANEL)} minHeight={34} onPress={() => panels.toggle(RESEARCH_PANEL)}>Lab</Button>
-    <Button tone="ghost" label="Books" pressed={panels.isOpen("books")} minHeight={34} onPress={() => panels.toggle("books")}>Books</Button>
+    <Button tone="ghost" hint="hud:lab" label="Séance table" pressed={panels.isOpen(RESEARCH_PANEL)} minHeight={34} onPress={() => panels.toggle(RESEARCH_PANEL)}>Séance</Button>
+    <Button tone="ghost" hint="hud:ghosts" label="Ghost register" pressed={panels.isOpen(GHOSTS_PANEL)} minHeight={34} onPress={() => panels.toggle(GHOSTS_PANEL)}>Ghosts</Button>
+    <Button tone="ghost" label="Ledger" pressed={panels.isOpen("books")} minHeight={34} onPress={() => panels.toggle("books")}>Ledger</Button>
   </RuneView>;
 }
 
@@ -125,7 +127,7 @@ function ParkHint() {
   const step = id === null ? null : currentHint(ctx);
   useEffect(() => { pointHint(step?.ui ?? []); return () => pointHint([]); }, [id]);
   if (step === null) return null;
-  return <Card padding={12} gap={4} role="status" label={`Next step: ${step.id}`} border={{ width: 2, color: "#ff5a3c" }}>
+  return <Card padding={12} gap={4} role="status" label={`Next step: ${step.id}`} border={{ width: 2, color: RING }}>
     <Row justify="between"><Tag>NEXT STEP</Tag><Button tone="ghost" label="Hide the hints" minHeight={26} padding={[2, 8, 2, 8]} onPress={() => commands.run("onboarding.skip", {})}><Text size={12} weight={800}>Hide hints</Text></Button></Row>
     <Text>{step.text}</Text>
   </Card>;

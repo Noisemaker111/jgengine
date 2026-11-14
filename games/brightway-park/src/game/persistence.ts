@@ -15,8 +15,9 @@ import { restoreRides, rideSnapshot } from "./rides";
 import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffState } from "./session";
 import { restoreStaff } from "./staff";
 import { parkProfile } from "./parkProfile";
+import { ecto } from "./ecto";
 
-export const SAVE_KEY = "brightway-park.save.v1";
+export const SAVE_KEY = "hauntworks.save.v1";
 
 /**
  * Where each store the park writes is kept. The engine's own save is off (`save: "none"`): the park
@@ -24,7 +25,7 @@ export const SAVE_KEY = "brightway-park.save.v1";
  */
 export const STORE_POLICY: Readonly<Record<string, { kept: "park-save" | "session"; reason: string }>> = {
   // `park.store.key`; spelled out because this module loads inside park.ts's own import graph.
-  "brightway.world": { kept: "park-save", reason: "the whole park - money, rating, structures, loan, scenario, crew orders - saved as `world`" },
+  "brightway.world": { kept: "park-save", reason: "the whole haunt - ectoplasm, rumor, structures, ghosts, evidence, debt, scenario, crew orders - saved as `world`" },
   "park.reduced-motion": { kept: "session", reason: "a viewer setting read from browser storage at boot" },
 };
 
@@ -119,9 +120,9 @@ function isGuestPhase(value: unknown): value is GuestPhase {
 /** A saved guest whose target, if any, is a structure the saved park still has. */
 function validGuest(value: unknown, structures: ReadonlySet<string>): value is GuestState {
   if (!record(value)) return false;
-  const { id, kind, money, visits, busy, phase, targetId, target, agent } = value;
+  const { id, kind, courage, visits, busy, phase, targetId, target, agent } = value;
   if (typeof id !== "string" || !GUEST_KINDS.some((known) => known === kind)) return false;
-  if (!finite(money) || !finite(visits) || !finite(busy) || !isGuestPhase(phase)) return false;
+  if (!finite(courage) || !finite(visits) || !finite(busy) || !isGuestPhase(phase)) return false;
   if (targetId !== null && (typeof targetId !== "string" || !structures.has(targetId))) return false;
   if (target !== null && !isPoint(target)) return false;
   return validAgent(agent);
@@ -219,7 +220,7 @@ export function snapshotPark(ctx: GameContext): ParkSave {
 
 function savedLine(ctx: GameContext, prefix: string): string {
   const w = park.of(ctx);
-  return `${prefix} - day ${w.num("park.day")}, $${Math.round(w.num("park.cash")).toLocaleString()}`;
+  return `${prefix} - night ${w.num("park.day")}, ${ecto(w.num("park.cash"))}`;
 }
 
 export function savePark(ctx: GameContext): void {
@@ -243,6 +244,8 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
   spawnAll(ctx);
   session.guestSeq = s.sim.guestSeq;
   session.spawnAcc = s.sim.spawnAcc;
+  // Groups are never more than visitors, so numbering them from the visitor count keeps new ones apart from saved ones.
+  session.groupSeq = s.sim.guestSeq;
   session.hasSave = true;
   for (const { state, position } of s.guests) {
     session.guests.set(state.id, state);

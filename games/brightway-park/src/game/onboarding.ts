@@ -24,19 +24,19 @@ const firstRide = (w: WorldModel): readonly [number, number] | null => w.instanc
 const when = (done: (w: WorldModel) => boolean): OnboardingStep<GameContext>["done"] => ({ when: (ctx) => done(park.of(ctx)) });
 
 export const PARK_HINTS: OnboardingConfig<GameContext> = {
-  id: "brightway-first-park",
-  title: "Opening day",
+  id: "hauntworks-first-night",
+  title: "The first night",
   style: "blended",
   steps: [
     {
       id: "path",
-      text: "Lay a path in from the gate: pick Path, then click the ground just past the gate plaza.",
+      text: "Lay a path in from the gate: pick Cobbled Path, then click the ground just past the gate plaza.",
       anchor: "item:path_walk",
       done: when((w) => w.num("n.path_walk") > PLAZA_PATHS || w.num("park.rides") > 0),
     },
     {
       id: "ride",
-      text: "Build your first ride beside the path: pick the Carousel and click a green spot next to the path.",
+      text: "Build your first ride beside the path: pick the Upside-Down Carousel and click a glowing spot next to the path.",
       anchor: "item:ride_carousel",
       done: when((w) => w.num("park.rides") > 0),
     },
@@ -48,19 +48,31 @@ export const PARK_HINTS: OnboardingConfig<GameContext> = {
     },
     {
       id: "gate",
-      text: "The ride is running. Open the gate and the first guests will come in.",
+      text: "The ride is running. Unchain the gate: at dusk the first of the living will wander in.",
       anchor: "hud:gate",
       done: when((w) => w.fact("park.gate") === true),
     },
     {
+      id: "scare",
+      text: "Line the path with a scare: pick Scares and drop a Jack-in-the-Coffin beside it. Scares close together chain - and a ghost child loves that toy.",
+      anchor: "item:prop_coffin",
+      done: when((w) => w.num("park.props") > 0),
+    },
+    {
       id: "research",
-      text: "The lab opens new rides, shops and scenery. Open the Lab and start the Ice Cream Cart: it takes about a minute.",
+      text: "The séance table channels new rides, scares and stalls. Open Séance and start the Grave-Dirt Sundaes: it takes about a minute.",
       anchor: "research:stall_icecream",
       done: when((w) => w.orders("lab").length > 0 || RESEARCH_IDS.some((id) => w.fact(researched(id)) === true)),
     },
     {
+      id: "ghosts",
+      text: "Open Ghosts to see who might move in. The Victorian Child wants the carousel and a toy: give her both, keep the night running and she comes.",
+      anchor: "hud:ghosts",
+      done: when((w) => w.num("park.ghosts") > 0),
+    },
+    {
       id: "mechanic",
-      text: "Rides wear out and break down, and only a mechanic mends them. Hire one from Staff before the first breakdown.",
+      text: "Rides wear out and seize up, and only a Gremlin Tinker un-jams them. Bind one from Spooks before the first jam.",
       anchor: "item:staff_mechanic",
       done: when((w) => w.num("n.staff_mechanic") > 0),
     },
@@ -73,6 +85,8 @@ const POINTS: Readonly<Record<string, { ui: readonly string[]; world?: (w: World
   ride: { ui: ["category:ride", BUILD] },
   connect: { ui: [], world: firstRide },
   gate: { ui: [] },
+  scare: { ui: ["category:prop", BUILD] },
+  ghosts: { ui: [] },
   research: { ui: ["hud:lab"] },
   mechanic: { ui: ["category:staff", BUILD] },
 };

@@ -134,8 +134,9 @@ describe("park saves and real command boundaries", () => {
     live.ui.invoke("build.clear");
     live.ui.invoke("build.select", { id: "staff_janitor" });
     live.ui.invoke("park.pointer", { point: [-12, 0, 28], object: null, entity: null });
-    // Advance a finite season through the actual loop, without forcing award stats.
-    for (let frame = 0; frame < 450; frame++) live.step(1);
+    // Advance three nights through the actual loop, without forcing award stats, and stop a little
+    // after the fourth dusk so the living are in the park again.
+    for (let frame = 0; frame < 470; frame++) live.step(1);
     const w = park.of(live.ctx);
     // The first award is a goal for real building, not for one carousel: the climb is what shows here.
     expect(w.num("park.guests_today") + w.num("park.guests")).toBeGreaterThan(0);

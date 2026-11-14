@@ -2,12 +2,12 @@ import { expect, test } from "bun:test";
 import { NATIVE_STATES, runeUiFixture } from "../../../proofs/runeUiFixture";
 
 const expected: Partial<Record<(typeof NATIVE_STATES)[number], string>> = {
-  title: "Open the park", new: "Scenarios open one after another", saves: "Load this park", settings: "Master volume", credits: "KayKit City Builder",
-  hud: "NEXT STEP", inspector: "Demolish", guest: "MOOD", books: "Park books", research: "Research", paused: "Resume the park",
-  "pause-settings": "Reduce motion", help: "Pan with WASD", won: "Scenario won!", bankrupt: "Park bankrupt", ribbon: "Blue ribbon!",
+  title: "Wake the haunt", new: "Scenarios open one after another", saves: "Return to this haunt", settings: "Master volume", credits: "KayKit City Builder",
+  hud: "NEXT STEP", inspector: "Tear down", guest: "NERVE", books: "The ledger", research: "Channel the beyond", paused: "Resume the night",
+  "pause-settings": "Reduce motion", help: "Pan with WASD", won: "The night is yours", bankrupt: "The haunt has faded", ribbon: "A ghost paradise!",
 };
 
-test("every Brightway UI state serializes native elements at desktop and phone widths", async () => {
+test("every Hauntworks UI state serializes native elements at desktop and phone widths", async () => {
   for (const [width, height] of [[1280, 720], [390, 844]] as const) {
     for (const state of NATIVE_STATES) {
       const spec = await runeUiFixture(state, width, height);

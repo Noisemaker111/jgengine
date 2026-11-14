@@ -11,11 +11,13 @@ import { savePark } from "./persistence";
 import { connectPark, relinkPark } from "./build/links";
 import { groundAt } from "./build/terrain";
 import { recordScenarioWin } from "./scenarios";
+import { syncGhostBodies } from "./ghosts";
+import { ecto } from "./ecto";
 
 /**
- * Where the park's declaration meets the screen: a built structure is placed in the scene, a removed
- * one leaves it, a landed action is heard, a breakdown sends the crew, a scenario's end stops play.
- * Everything here reacts to the world; none of it keeps state of its own.
+ * Where the haunt's declaration meets the screen: a built structure is placed in the scene, a
+ * removed one leaves it, a landed action is heard, a jam sends the gremlin, a scenario's end stops
+ * play. Everything here reacts to the world; none of it keeps state of its own.
  */
 
 export function spawnObject(ctx: GameContext, instance: WorldInstanceView): void {
@@ -26,7 +28,7 @@ export function spawnObject(ctx: GameContext, instance: WorldInstanceView): void
   ctx.scene.object.place(instance.kind, instance.position[0], y, instance.position[1], { instanceId: instance.id, onExisting: "keep", rotation });
   rethemeRides(ctx);
   relinkPark(ctx);
-  // A new mechanic goes straight to every ride that broke while there was no one to fix it.
+  // A new gremlin goes straight to every ride that jammed while there was no one to fix it.
   if (instance.kind === "staff_mechanic") {
     const busy = new Set(w.orders("crew").map((order) => order.target));
     for (const ride of w.instances("ride")) {
@@ -47,6 +49,7 @@ export function spawnAll(ctx: GameContext): void {
   }
   for (const instance of w.instances()) spawnObject(ctx, instance);
   relinkPark(ctx);
+  syncGhostBodies(ctx);
 }
 
 /** The world removed a structure (`brightway.remove`, refund already in the till): it leaves the scene. */
@@ -54,7 +57,7 @@ export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   ctx.scene.object.remove(id);
   rethemeRides(ctx);
   relinkPark(ctx);
-  ctx.game.notices.push({ text: refund > 0 ? `Demolished — $${Math.round(refund).toLocaleString()} refunded` : "Demolished", tone: "info" });
+  ctx.game.notices.push({ text: refund > 0 ? `Torn down — ${ecto(refund)} back` : "Torn down", tone: "info" });
   ctx.game.audio.play("sell");
   if (session.selectedObject === id) session.selectedObject = null;
   for (const guest of session.guests.values()) {
@@ -68,7 +71,7 @@ export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   savePark(ctx);
 }
 
-/** A ride broke: mark it down in the world and send a mechanic if the park has one and the till can pay. */
+/** A ride jammed: mark it down in the world and send a gremlin if the haunt has one and the vault can pay. */
 export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): void {
   const instance = w.instance(rideId);
   if (instance === null) return;
@@ -77,11 +80,11 @@ export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): v
   const refused = w.canAct(action, rideId);
   if (refused === null) {
     w.act(action, rideId);
-    ctx.game.notices.push({ text: `${instance.label} has broken down - the mechanic is on the way`, tone: "warn" });
+    ctx.game.notices.push({ text: `The ${instance.label} has seized up - the gremlin is scuttling over`, tone: "warn" });
   } else if (w.num("n.staff_mechanic") < 1) {
-    ctx.game.notices.push({ text: `${instance.label} has broken down - hire a mechanic from Staff to fix it`, tone: "warn" });
+    ctx.game.notices.push({ text: `The ${instance.label} has seized up - bind a Gremlin Tinker from Spooks to fix it`, tone: "warn" });
   } else {
-    ctx.game.notices.push({ text: `${instance.label} has broken down - ${refused.message}. Click it to send the mechanic.`, tone: "warn" });
+    ctx.game.notices.push({ text: `The ${instance.label} has seized up - ${refused.message}. Click it to send the gremlin.`, tone: "warn" });
   }
   ctx.game.audio.play("denied");
 }
