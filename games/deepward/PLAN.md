@@ -135,12 +135,17 @@ bottle caps) in 5 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Ki
 ## Handoff
 
 Done: the whole game layer is replaced (see README): 16 room templates over 5 zones, seeded
-room-after-room runs with seven kinds of night, 40 finds in 5 sets, 7 gear effects, 6 Littles,
-7 hunters with on-screen tells, 4 exit kinds, burrow upgrades, crafting, charts, the kid's toy box,
-footsteps and heartbeat audio. Tests: `bun run test` in the package; suite 13/16 (`proofs/sim`,
-`proofs/content.ts`); flow `proofs/flows/first-night.flow.ts`.
+room-after-room runs with seven kinds of night, 40 finds in 5 sets, 7 gear effects, 6 Littles (traps
+hide from everyone but Bolt; food glints for Pip, curios for Dot; Wren reads doors ahead), 7 hunters
+with on-screen tells, 4 exit kinds with their own conditions, burrow upgrades, crafting, charts, the
+kid's toy box, a night report on extraction, footsteps and heartbeat audio. Depth pays about three
+times as much six rooms in as at the crack. Tests: `bun run test` in the package (43); suite 13/16
+(`proofs/sim`, `proofs/content.ts`); flow `proofs/flows/first-night.flow.ts`. The verify:fast boot
+probe for deepward passes.
 
-Not yet verified on screen: the shared capture browser was saturated by other lanes for this whole
-session, so no screenshot of the new house was taken. Next: capture `mid-run`, `room-counter`,
-`room-rug`, `room-toys`, `room-attic`, `stash`, `workbench` and `nook`, tune lamp intensities, fog and
-prop scale from what they show, then the remaining suite entries (find-features, settings, menu).
+Not verified on screen. In this sandbox no Rune-UI game can be photographed: the shared capture
+broker never answered, a self-launched Chrome without WebGPU stops on "WebGPU adapter unavailable",
+and with SwiftShader WebGPU the jg-ui wasm panics in `std::time` (`library/std/src/sys/time/unsupported.rs`)
+inside the vendored Rune. Next, on a machine with a GPU: capture `mid-run`, `room-counter`,
+`room-rug`, `room-toys`, `room-attic`, `stash`, `workbench` and `nook`; tune lamp intensities, fog
+and prop scale from what they show; then the remaining suite entries (find-features, settings, menu).
