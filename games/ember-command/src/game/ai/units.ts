@@ -4,7 +4,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
 import { ACID_SECONDS, ACID_SLOW, ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS, HOSE_SLOW, TRAIL_HARVEST_BONUS, TRAIL_HAUL_DEPOSIT, TRAIL_SPEED_BONUS } from "../tuning";
-import { hazardSpeedFactor } from "../hazards";
+import { hazardSpeedFactor, inMowerLane } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
 import { YARD } from "../yardInstance";
@@ -50,8 +50,26 @@ export function yardPace(catalogId: string, faction: "player" | "enemy", x: numb
   return pace;
 }
 
+/**
+ * Foragers feel the mower's engine through the soil: while it warns or crosses, a laden or empty worker
+ * that is about to step into its lane waits at the edge instead. Ants already in the lane are the
+ * commander's to save; soldiers march wherever they are ordered.
+ */
+export function forageHoldsAtLane(u: UnitRuntime, from: EntityPosition, x: number, z: number): boolean {
+  if (u.command.kind !== "gather" || session.hazards.mower.phase === "idle") return false;
+  if (inMowerLane(YARD, from[0], from[2])) return false;
+  const dx = x - from[0];
+  const dz = z - from[2];
+  const d = Math.hypot(dx, dz);
+  if (d < 0.01) return false;
+  const look = Math.min(d, 2);
+  return inMowerLane(YARD, from[0] + (dx / d) * look, from[2] + (dz / d) * look);
+}
+
 /** Every unit step: a soldier marches at its side's researched pace; workers keep their own. */
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
+  const here = ctx.scene.entity.get(u.id)?.position;
+  if (here !== undefined && forageHoldsAtLane(u, here, x, z)) return;
   const base = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
   const at = ctx.scene.entity.get(u.id)?.position;
   const acid = (session.acid[u.id] ?? 0) > session.elapsed ? ACID_SLOW : 1;

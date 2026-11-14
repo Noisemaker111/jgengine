@@ -27,7 +27,16 @@ const ALARM_RINGS = 24;
 const PUFFS = 48;
 const DIG_SITES = 8;
 const PUFF_SECONDS = 0.9;
-const PUFF_COLOR: Record<string, THREE.Color> = { death: new THREE.Color("#c9b38a"), acid: new THREE.Color("#8dff5a"), chamber: new THREE.Color("#8a5a32") };
+const PUFF_COLOR: Record<string, THREE.Color> = {
+  death: new THREE.Color("#c9b38a"),
+  acid: new THREE.Color("#8dff5a"),
+  chamber: new THREE.Color("#8a5a32"),
+  slam: new THREE.Color("#b08a5a"),
+  rally: new THREE.Color("#ffd23f"),
+  ward: new THREE.Color("#8fb7ff"),
+};
+/** How big each puff swells: an act fills the radius it reaches. */
+const PUFF_SIZE: Record<string, number> = { death: 1.1, acid: 0.7, chamber: 3.2, slam: 5.5, rally: 4.5, ward: 4 };
 const TRAIL_CAPACITY = 2400;
 
 function sprinklerHead(): THREE.Group {
@@ -343,9 +352,10 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         const age = now - fx.at;
         if (age < 0 || age > PUFF_SECONDS || n2 >= PUFFS) continue;
         const k = age / PUFF_SECONDS;
-        const size = (fx.kind === "chamber" ? 3.2 : fx.kind === "acid" ? 0.7 : 1.1) * (0.4 + k);
-        p.set(fx.x, ground(fx.x, fx.z) + 0.4 + k * (fx.kind === "chamber" ? 2 : 0.8), fx.z);
-        s.setScalar(size * (1 - k * 0.3));
+        const size = (PUFF_SIZE[fx.kind] ?? 1.1) * (0.4 + k);
+        const flat = fx.kind === "slam" || fx.kind === "rally" || fx.kind === "ward";
+        p.set(fx.x, ground(fx.x, fx.z) + (flat ? 0.3 : 0.4 + k * (fx.kind === "chamber" ? 2 : 0.8)), fx.z);
+        s.set(size * (1 - k * 0.3), flat ? 0.35 : size * (1 - k * 0.3), size * (1 - k * 0.3));
         m.compose(p, q, s);
         puffs.setMatrixAt(n2, m);
         puffColor.copy(PUFF_COLOR[fx.kind] ?? PUFF_COLOR["death"]!).multiplyScalar(1 - k * 0.5);

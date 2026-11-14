@@ -3,7 +3,8 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
-import { tickUnits } from "./ai/units";
+import { forageHoldsAtLane, tickUnits } from "./ai/units";
+import { YARD } from "./yardInstance";
 import { combatantDef } from "./catalog";
 import { content } from "./content";
 import { beamSpeedAt, BEAM_SPEED } from "./hazards";
@@ -52,6 +53,20 @@ describe("caste depth", () => {
     }
     expect(hits[0]).toBeGreaterThan(0);
     expect(hits[1]! / hits[0]!).toBeCloseTo(1.25, 2);
+  });
+
+  test("foragers wait at the mower lane's edge while it warns, and walk on once it has passed", () => {
+    const lane = YARD.mowerLane!;
+    const forager: UnitRuntime = { id: "w", catalogId: "worker", faction: "player", kind: "unit", command: { kind: "gather", nodeId: "n", resource: "sugar", phase: "toNode", carried: 0, timer: 0 }, leash: 0, attackCooldown: 0 };
+    const edge: [number, number, number] = [0, 0, lane.from.z + lane.halfWidth + 1];
+    const across = { x: 0, z: lane.from.z - 20 };
+    expect(forageHoldsAtLane(forager, edge, across.x, across.z)).toBe(false);
+    session.hazards.mower.phase = "warning";
+    expect(forageHoldsAtLane(forager, edge, across.x, across.z)).toBe(true);
+    // Already inside the lane: the commander has to save it.
+    expect(forageHoldsAtLane(forager, [0, 0, lane.from.z], across.x, across.z)).toBe(false);
+    // Soldiers march wherever they are ordered.
+    expect(forageHoldsAtLane({ ...forager, command: { kind: "move", x: 0, z: -20 } }, edge, across.x, across.z)).toBe(false);
   });
 
   test("the kid gets impatient: the beam drags faster as the battle wears on, up to double", () => {

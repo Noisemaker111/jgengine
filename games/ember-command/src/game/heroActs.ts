@@ -18,7 +18,7 @@ import {
   type HeroPickDef,
   type HeroPickStat,
 } from "./heroPicks";
-import { session } from "./session";
+import { pushFx, session } from "./session";
 import type { Faction } from "./tuning";
 import { factionDamage } from "./upgrades";
 
@@ -269,15 +269,23 @@ export function castHeroAct(ctx: GameContext, id: string): HeroActCast {
   const hero = ctx.scene.entity.get(HERO_ID);
   if (id === "thunderclap") {
     ctx.game.audio.play("thunder", hero?.position);
+    if (hero !== null) pushFx("slam", hero.position[0], hero.position[2]);
     burst(ctx, act.radius, base);
   } else if (id === "volley") {
     ctx.game.audio.play("volley", hero?.position);
+    for (const unit of session.units.values()) {
+      if (unit.faction !== "enemy" || hero === null) continue;
+      const at = ctx.scene.entity.get(unit.id)?.position;
+      if (at !== undefined && Math.hypot(at[0] - hero.position[0], at[2] - hero.position[2]) <= act.radius) pushFx("acid", at[0], at[2]);
+    }
     burst(ctx, act.radius, base);
   } else if (id === "banner") {
     ctx.game.audio.play("banner", hero?.position);
+    if (hero !== null) pushFx("rally", hero.position[0], hero.position[2]);
     lineBuff("act.banner", "damage", BANNER_DAMAGE, BANNER_SECONDS);
   } else {
     ctx.game.audio.play("ward", hero?.position);
+    if (hero !== null) pushFx("ward", hero.position[0], hero.position[2]);
     lineBuff("act.ward", "damageTaken", WARD_TAKEN, WARD_SECONDS);
   }
   return { ok: true, act };
