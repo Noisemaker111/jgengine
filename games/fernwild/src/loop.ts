@@ -6,6 +6,7 @@ import { editorLayers } from "./editorLayers";
 import { baseSave, buildHut, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { resetRootServer, rootServerSave, tickRootServer } from "./game/rootServer";
+import { placeFabricatorSolids } from "./game/machineRuins";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
@@ -146,8 +147,9 @@ export const systems = [
   defineSystem({
     id: "caves",
     create(ctx) {
-      // The rock is laid out and made solid as the world starts, not on the first step inside.
+      // The rock is laid out and made solid as the world starts, not on the first step inside; so are the fabricators.
       cavesOf(ctx);
+      placeFabricatorSolids(ctx);
       ctx.game.commands.define("takeArtifact", { apply: (state) => (takeArtifact(state), state) });
     },
     tick: { type: "fixed", rate: 4 },

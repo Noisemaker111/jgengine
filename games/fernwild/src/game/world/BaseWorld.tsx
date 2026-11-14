@@ -9,7 +9,9 @@ import { Bodies } from "./Bodies";
 import { HiveLair } from "./HiveLair";
 import { Caves } from "./Caves";
 import { Eggs } from "./Eggs";
+import { MachineRuins } from "./MachineRuins";
 import { Obelisks } from "./Obelisks";
+import { StormSky } from "./StormSky";
 import { SupplyDrops } from "./SupplyDrops";
 import { WildEggs } from "./WildEggs";
 
@@ -19,6 +21,8 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
     <>
       <BaseStructures building={baseBuilding(ctx)} colorOf={structureColor} ghost={() => baseGhost(ctx)} />
       <Obelisks ctx={ctx} />
+      <MachineRuins ctx={ctx} />
+      <StormSky ctx={ctx} />
       <Caves ctx={ctx} />
       <Bodies ctx={ctx} />
       <SupplyDrops ctx={ctx} />

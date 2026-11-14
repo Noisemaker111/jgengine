@@ -15337,6 +15337,146 @@
       "meta": {
         "clearance": 1.5
       }
+    },
+    {
+      "id": "fabricator_player_spawn",
+      "kind": "fabricator",
+      "position": {
+        "x": 211.5,
+        "y": 0,
+        "z": 1265.0
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": -2.98,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_south_1",
+      "kind": "fabricator",
+      "position": {
+        "x": -315.8,
+        "y": 0,
+        "z": 784.1
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": 2.76,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_south_3",
+      "kind": "fabricator",
+      "position": {
+        "x": 677.1,
+        "y": 0,
+        "z": 905.9
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": -2.5,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_east_1",
+      "kind": "fabricator",
+      "position": {
+        "x": 1179.7,
+        "y": 0,
+        "z": 338.7
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": -1.85,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_east_2",
+      "kind": "fabricator",
+      "position": {
+        "x": 1234.0,
+        "y": 0,
+        "z": 2.8
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": -1.57,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_north_1",
+      "kind": "fabricator",
+      "position": {
+        "x": 372.9,
+        "y": 0,
+        "z": -1120.6
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": -0.32,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_spawn_north_2",
+      "kind": "fabricator",
+      "position": {
+        "x": -258.9,
+        "y": 0,
+        "z": -1091.9
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": 0.23,
+        "vines": 5
+      }
+    },
+    {
+      "id": "fabricator_volcano",
+      "kind": "fabricator",
+      "position": {
+        "x": -303,
+        "y": 0,
+        "z": -152
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": 0.8,
+        "vines": 7
+      }
+    },
+    {
+      "id": "fabricator_red_peak",
+      "kind": "fabricator",
+      "position": {
+        "x": -3,
+        "y": 0,
+        "z": 238
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": 0.8,
+        "vines": 7
+      }
+    },
+    {
+      "id": "fabricator_weathertop",
+      "kind": "fabricator",
+      "position": {
+        "x": -426,
+        "y": 0,
+        "z": 760
+      },
+      "label": "Rusted Fabricator",
+      "meta": {
+        "yaw": 0.8,
+        "vines": 7
+      }
     }
   ],
   "volumes": [
