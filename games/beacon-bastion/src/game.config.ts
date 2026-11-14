@@ -10,29 +10,34 @@ import { keep, towersStanding } from "./game/keep";
 import { currentWaveNumber, session } from "./game/session";
 import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { entityModels, scatterModels } from "./game/models";
+import { renderEntity } from "./game/render/renderEntity";
+import { TOWER_IDS } from "./game/entities/towers/catalog";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { BeaconBastionWorldOverlay } from "./game/world/WorldOverlay";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
+/** The hiring board's first ten workers take the number keys; the rest are a click away. */
+const HOTKEYED = Math.min(10, TOWER_IDS.length);
+
 export const game = defineGame({
-  name: "Beacon Bastion",
+  name: "Do Not Disturb",
   assets,
   world,
   physics,
   input: {
-    ...hotbarSlotBindings(4, { action: (slot) => `buildTower${slot}` }),
+    ...hotbarSlotBindings(HOTKEYED, { action: (slot) => `buildTower${slot}` }),
     upgradeTower: ["KeyU"],
     sellTower: ["KeyX"],
     cycleAim: ["KeyT"],
-    abilityFire: ["KeyQ"],
-    abilityBell: ["KeyE"],
+    abilityBlackout: ["KeyQ"],
+    abilityQuiet: ["KeyE"],
     mendWalls: ["KeyR"],
   },
   server: { mode: "defense" },
   content,
-  // A refused build/upgrade reaches the player as a deny notice; its cue is the keep's own "denied" knock.
+  // A refused hire/promotion reaches the player as a deny notice; its cue is the town's own "denied" buzz.
   audio: { sounds: BEACON_SOUNDS, uiCues: { deny: BEACON_SOUNDS.denied } },
   chrome: {
     notices: { cap: 3 },
@@ -40,13 +45,13 @@ export const game = defineGame({
       variant: "panel",
     },
   },
-  // The keep's signage, menus and memorial draw natively through Rune from the game's own theme.
+  // The town's signage, menus and end-of-day card draw natively through Rune from the game's own theme.
   hudTheme: false,
   uiRenderer: "rune",
   controls: {
-    // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
-  // the derived touch buttons would only repeat them over the field.
-    touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell", "mendWalls"] },
+    // Every action already has a control on the HUD itself (the hiring board, the worker card), so the
+    // derived touch buttons would only repeat them over the street.
+    touch: { hidden: [...Array.from({ length: HOTKEYED }, (_, index) => `buildTower${index + 1}`), "upgradeTower", "sellTower", "cycleAim", "abilityBlackout", "abilityQuiet", "mendWalls"] },
     pointer: { moveCommand: "tower.build" },
   },
   systems,
@@ -54,6 +59,8 @@ export const game = defineGame({
   GameUI,
   scene: {
     entityModels,
+    // Tech has no catalog model: each piece draws its own procedural body.
+    renderEntity,
     // Draped creep path + instanced foliage render from the document; towers/creeps/props spawn as
   // entities in the loop, so object placement stays off — no double render.
     editorLayers,
@@ -68,21 +75,21 @@ export const game = defineGame({
     // land behind the title and the shot is the menu, not the state.
     //
     // States a lane can jump to instead of playing there (all compose `run.stage`, dev-only):
-    //   mid-wave  wave 1 on the approach, raiders mid-path
-    //   boss      the Warden on the field, driven through its second phase by real damage
-    //   result    a defense played to its own ending, with the result card up
-    //   breached  wave 1 leaked into an empty keep, the road clear and the Mend sign up
+    //   mid-wave  a staffed street with a wave of tech mid-route and workers distracted
+    //   boss      the server rack on the street, driven through its second phase by real damage
+    //   result    a day played to its own ending, with the end-of-day card up
+    //   breached  wave 1 rolled into an empty town, the street clear and the Coffee Break sign up
     states: {
       title: [],
-      menu: ["run.begin", { name: "menu.commander", input: { commander: "Mara Vell" } }, "menu.save", "menu.title"],
-      "menu-keeps": ["run.begin", { name: "menu.commander", input: { commander: "Mara Vell" } }, "menu.save", "menu.keeps"],
+      menu: ["run.begin", { name: "menu.commander", input: { commander: "Dot Moreno" } }, "menu.save", "menu.title"],
+      "menu-keeps": ["run.begin", { name: "menu.commander", input: { commander: "Dot Moreno" } }, "menu.save", "menu.keeps"],
       "menu-new": ["menu.new"],
       "menu-keeps-empty": ["menu.keeps"],
       pause: ["run.begin", "run.pause"],
       "mid-wave": ["run.begin", { name: "run.stage", input: { mode: "midwave" } }],
       boss: ["run.begin", { name: "run.stage", input: { mode: "boss" } }],
       result: ["run.begin", { name: "run.stage", input: { mode: "result" } }],
-      // The first wave walked into an empty keep: walls breached, the road clear, the wave's pay in.
+      // The first wave rolled into an empty town: focus lost, the street clear, the wave's pay in.
       breached: ["run.begin", { name: "run.stage", input: { mode: "breached" } }],
       "two-towers": [
         "run.begin",
@@ -102,9 +109,9 @@ export const game = defineGame({
       ],
     },
     views: {
-      menu: { description: "Title menu over the standing keep, Continue highlighted", state: "menu", settleMs: 1800 },
-      menuKeeps: { description: "Slot grid with the keep just saved", state: "menu-keeps", settleMs: 1800 },
-      menuNew: { description: "New defense pane", state: "menu-new", settleMs: 1200 },
+      menu: { description: "Title menu over the town, Continue highlighted", state: "menu", settleMs: 1800 },
+      menuKeeps: { description: "Slot grid with the street just saved", state: "menu-keeps", settleMs: 1800 },
+      menuNew: { description: "New day pane", state: "menu-new", settleMs: 1200 },
       menuKeepsEmpty: { description: "Slot grid with no save", state: "menu-keeps-empty", settleMs: 1200 },
       pause: { description: "Pause menu over live play", state: "pause", settleMs: 900 },
     },
@@ -116,27 +123,27 @@ export const game = defineGame({
     }),
   },
   rendering: {
-    // Late highland afternoon: a low western sun rakes the keep and towers into long shadows, and a
-    // partly cloudy sky supplies the cool fill so shadow sides lean slate blue.
+    // A bright small-town morning: a high sun, saturated cartoon colours and a postcard grade, so
+    // the street reads like a Saturday-morning cartoon and the glowing gadgets pop against it.
     look: "cinematic",
     shadows: true,
-    mood: { preset: "golden", sun: { azimuth: 240, elevation: 34, color: "#ffd9a8" }, horizonColor: "#c9d6d8", fog: { near: 120, far: 260 } },
-    environmentSource: hdriEnvironment("highland-clouds", { intensity: 0.8 }),
+    mood: { preset: "bright", sun: { azimuth: 210, elevation: 52, color: "#fff2d8" }, horizonColor: "#cfe6f2", fog: { near: 130, far: 280 } },
+    environmentSource: hdriEnvironment("partly-cloudy", { intensity: 0.9 }),
     postProcessing: {
       toneMapping: "aces",
-      exposure: 0.95,
-      bloom: { strength: 0.16, radius: 0.5, threshold: 0.95 },
-      ao: { intensity: 1.3, radius: 1.4 },
-      grade: { lut: lutGrade("warm-filmic"), vignette: 0.22, saturation: 1, gamma: 1, lift: [0, 0, 0], gain: [1, 1, 1] },
+      exposure: 1,
+      bloom: { strength: 0.22, radius: 0.5, threshold: 0.9 },
+      ao: { intensity: 1.1, radius: 1.2 },
+      grade: { lut: lutGrade("sunny-postcard"), vignette: 0.14, saturation: 1.08, gamma: 1, lift: [0, 0, 0], gain: [1, 1, 1] },
     },
   },
   camera: {
     rig: "topDown",
     follow: { followEntityId: null },
     rigs: {
-      // The arena is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
-    // vertically, so the default height has to clear both ends of the raider route plus the
-    // bottom build bar; the offset centres the route in the band the HUD leaves free.
+      // The street is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
+      // vertically, so the default height has to clear both ends of Main Street plus the hiring
+      // board at the foot; the offset centres the route in the band the HUD leaves free.
       topDown: {
         height: 70,
         pitch: 1.08,

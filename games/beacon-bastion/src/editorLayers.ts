@@ -35,3 +35,11 @@ export const FLANK_WAYPOINTS_XZ: readonly Vec2[] = (
 export const BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = editorLayers.markers
   .filter((marker) => marker.id.startsWith("plot-"))
   .map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker) }));
+
+/**
+ * The street's buildings and lamps, authored as `building` markers: each names the model it stands as
+ * in `meta.model` and faces the street by its `rotationY`. Spawned as scenery by the game.
+ */
+export const BUILDING_MARKERS: readonly { id: string; xz: Vec2; rotationY: number; model: string }[] = editorLayers.markers
+  .filter((marker) => marker.kind === "building" && typeof marker.meta?.["model"] === "string")
+  .map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker), rotationY: marker.rotationY ?? 0, model: marker.meta!["model"] as string }));

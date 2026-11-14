@@ -6,33 +6,33 @@ import { bossProfile } from "./manifest";
 export interface WaveStatusInput {
   /** Whether the player has released at least one wave. */
   started: boolean;
-  /** True while the current wave's release window is spawning raiders. */
+  /** True while the current wave's release window is still sending tech. */
   releasing: boolean;
   /** 1-based wave number shown to the player. */
   wave: number;
-  /** Raiders currently alive on the approach. */
+  /** Tech currently on the street. */
   alive: number;
 }
 
 /** One line for the wave widget that says what the field is doing right now. */
 export function waveStatusLine({ started, releasing, wave, alive }: WaveStatusInput): string {
   if (!started) return `Wave ${wave} · ready to release`;
-  if (alive === 0) return releasing ? `Wave ${wave} · raiders incoming` : `Wave ${wave} · field clear`;
-  return `Wave ${wave} · ${alive} ${alive === 1 ? "raider" : "raiders"} left`;
+  if (alive === 0) return releasing ? `Wave ${wave} · tech incoming` : `Wave ${wave} · street clear`;
+  return `Wave ${wave} · ${alive} ${alive === 1 ? "gadget" : "gadgets"} left`;
 }
 
-/** How hard the director is leaning, in one word per pressure tier. */
+/** How hard the director is pushing, in one word per pressure tier. */
 export function tierLabel(tier: number): string {
-  if (tier >= 2) return "hammering";
-  if (tier === 1) return "leaning";
-  return "probing";
+  if (tier >= 2) return "flooding";
+  if (tier === 1) return "pinging";
+  return "idling";
 }
 
-/** One raider, or several of one kind, as the HUD names them. A named raider is never pluralised. */
+/** One piece of tech, or several of one kind, as the HUD names them. A boss is never counted. */
 function raiderPart(unit: string, count: number): string {
   const def = CREEP_CATALOG[unit];
   if (def === undefined) return count === 1 ? unit : `${count} ${unit}`;
-  if (def.title !== undefined) return count === 1 ? creepName(unit) : `${count} ${def.label}s`;
+  if (bossProfile(unit) !== null && count === 1) return creepName(unit);
   return count === 1 ? `${count} ${def.label}` : `${count} ${def.label}s`;
 }
 
@@ -51,7 +51,7 @@ function compositionParts(wave: EncounterWave, skipBosses = false): string[] {
  * not shuffle between reads.
  */
 export function waveCompositionLine(units: readonly string[], tier: number): string {
-  if (units.length === 0) return `Director ${tierLabel(tier)} · no host on the field`;
+  if (units.length === 0) return `Director ${tierLabel(tier)} · nothing on the street`;
   const counts = new Map<string, number>();
   for (const unit of units) counts.set(unit, (counts.get(unit) ?? 0) + 1);
   const parts = [...counts.entries()]
@@ -65,7 +65,7 @@ export function waveCompositionLine(units: readonly string[], tier: number): str
  * the same host the director will send, not an estimate; pressure may still thicken it.
  */
 export function wavePreviewLine(wave: EncounterWave | null, waveNumber: number): string {
-  if (wave === null) return "No further assault — hold the keep";
+  if (wave === null) return "Nothing else is coming — hold the street";
   const boss = wave.groups.find((group) => bossProfile(group.unit) !== null);
   const parts = compositionParts(wave, true);
   const label = wave.label === undefined ? `Wave ${waveNumber}` : `${wave.label}`;

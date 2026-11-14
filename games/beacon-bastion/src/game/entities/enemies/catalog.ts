@@ -1,280 +1,388 @@
-import type { RaiderClass } from "../../combat/damage";
+import type { TechClass } from "../../combat/damage";
 
-/** Fresnel rim tuned per raider so its edge separates from the road it walks on. */
-export interface CreepRim {
-  color: string;
-  strength: number;
-  power?: number;
-}
+/**
+ * The procedural body a piece of tech draws with (`render/techMesh.ts`): stylized three.js meshes,
+ * big readable silhouettes, one per kind.
+ */
+export type TechMesh =
+  | "earbuds"
+  | "watch"
+  | "phone"
+  | "flock"
+  | "speaker"
+  | "vacuum"
+  | "drone"
+  | "scooter"
+  | "fridge"
+  | "gpu"
+  | "rig"
+  | "car"
+  | "chatbot"
+  | "router"
+  | "server"
+  | "backup"
+  | "datacenter"
+  | "cloud";
 
 export interface CreepDef {
   id: string;
   label: string;
-  /** A named raider's name, shown after the label ("Captain Ironjaw"). Composed elites carry one. */
-  title?: string;
+  /** A one-line description for the field guide and tooltips. */
+  blurb: string;
   health: number;
   speed: number;
-  /** The unit's weight in gold at wave 1; the wave and a relic multiply it (`waves/bounty.ts`). */
+  /** The unit's weight in cash at wave 1; the wave and a perk multiply it (`waves/bounty.ts`). */
   bounty: number;
+  /** Attention span it costs the town when it gets through. */
   leak: number;
-  /** Visual size, and the hitbox it derives. The default camera puts about seven vertical pixels on one world unit, so this carries most of the "which raider is that" answer. */
+  /** Visual size, and the hitbox it derives. */
   scale: number;
-  /** The body: a `kaykit-adventurers` model for the living, a `kaykit-skeletons` model for the dead. */
-  model: string;
-  /** Weapons in each hand, `kaykit-adventurers` prop ids: the heavy ranks carry a two-hander or a shield so rank shows in outline. */
-  gear?: { right?: string; left?: string };
-  /** A second skeleton model when the first is missing; living raiders have none. */
-  fallbackModel?: string;
-  /** Body tint, multiplied over the model's own texture - the arena is warm tan and green, so each raider carries a hue the ground never has. */
+  mesh: TechMesh;
+  /** Body colour; the screen/light colour is `glow`. */
   color: string;
-  rim: CreepRim;
-  /** What it is made of, read against each tower's damage type (`combat/damage.ts`). */
-  class: RaiderClass;
-  /** Armor points against arrows and shells; 40 halves a hit. */
+  glow: string;
+  /** What it is, read against each worker's damage type (`combat/damage.ts`). */
+  class: TechClass;
+  /** Armor points against physical hits; 40 halves a hit. */
   armor: number;
-  /** Floats above the road: only towers that hit the air can aim at it. */
+  /** Floats above the street: only workers that reach the air can hit it. */
   flying?: boolean;
-  /** A ward that soaks damage first and rebuilds after a lull. */
+  /** A shield that soaks damage first and rebuilds after a lull. */
   shield?: { max: number; regenPerSecond: number; regenDelayMs: number };
-  /** Mends raiders around it on a beat. */
+  /** Patches tech around it on a beat. */
   heals?: { radius: number; share: number; everySeconds: number };
-  /** Breaks into smaller raiders where it falls. */
+  /** Breaks into smaller tech where it falls. */
   splits?: { unit: string; count: number };
+  /**
+   * Fires notifications at workers: a hit worker becomes Distracted and stops working.
+   * `area` pings every worker in the radius at once ("Hey—"); otherwise one worker in range.
+   */
+  notify?: { everySeconds: number; range: number; seconds: number; area?: boolean; text: readonly string[] };
+  /** A camera that spots a worker: every notification goes for a spotted worker first. */
+  spots?: { everySeconds: number; range: number };
+  /** Runs hot: workers in the radius work slower, and a Firefighter's hose lands harder on it. */
+  overheats?: { radius: number; rateFactor: number };
+  /** Boosts tech around it: faster and better armored. */
+  boosts?: { radius: number; speed: number; armor: number };
+  /** Respawns backups on a beat unless an Electrician is close enough to pull its plug. */
+  backups?: { everySeconds: number; unit: string; count: number; electricianRange: number };
+  /** Drops a parcel on a plot near the street, blocking it until a player signs for it. */
+  drops?: { atProgress: number };
+  /** The longer it lives the more it is worth; when it gets through it steals cash. */
+  mines?: { bountyPerSecond: number; stealBase: number; stealPerSecond: number };
+  /** A Teacher can confiscate it. */
+  confiscatable?: boolean;
+  /** A data center on mains power: takes a share of damage until an Electrician cuts it off. */
+  power?: { max: number; poweredDamage: number; electricianRange: number; drainPerSecond: number; spawn: { unit: string; everySeconds: number } };
+  /** What it becomes when it would die (the Data Center migrates to The Cloud). */
+  becomes?: string;
 }
 
+const PHONE_PINGS = ["*ding*", "New message!", "3 new likes", "Breaking news!", "Your order shipped!", "Battery low"];
+
 export const CREEP_CATALOG: Record<string, CreepDef> = {
-  raider_scout: {
-    id: "raider_scout",
-    label: "Scout",
-    health: 20,
-    speed: 3.6,
-    bounty: 4,
+  tech_earbuds: {
+    id: "tech_earbuds",
+    label: "Earbuds",
+    blurb: "A tiny, fast pair. They come in swarms.",
+    health: 14,
+    speed: 4,
+    bounty: 2,
     leak: 1,
-    scale: 0.8,
-    model: "kaykit-adventurers/Rogue",
-    gear: { right: "kaykit-adventurers/dagger" },
-    color: "#9be8ff",
-    rim: { color: "#ffe4b0", strength: 1.8, power: 2.4 },
-    class: "flesh",
+    scale: 0.6,
+    mesh: "earbuds",
+    color: "#f4f4f4",
+    glow: "#7fd8ff",
+    class: "gadget",
     armor: 0,
+    confiscatable: true,
   },
-  raider_grunt: {
-    id: "raider_grunt",
-    label: "Grunt",
+  tech_watch: {
+    id: "tech_watch",
+    label: "Smartwatch",
+    blurb: "Fast, and it buzzes the nearest worker now and then.",
+    health: 24,
+    speed: 3.5,
+    bounty: 3,
+    leak: 1,
+    scale: 0.7,
+    mesh: "watch",
+    color: "#2a2a34",
+    glow: "#6affb0",
+    class: "gadget",
+    armor: 0,
+    confiscatable: true,
+    notify: { everySeconds: 8, range: 5, seconds: 1.2, text: ["*bzzt*", "Stand up!", "Hydrate!"] },
+  },
+  tech_phone: {
+    id: "tech_phone",
+    label: "Smartphone",
+    blurb: "The core of the swarm. Pings workers with notifications.",
     health: 46,
-    speed: 2.35,
+    speed: 2.4,
     bounty: 6,
     leak: 1,
-    scale: 1.15,
-    model: "kaykit-adventurers/Knight",
-    gear: { right: "kaykit-adventurers/axe_1handed", left: "kaykit-adventurers/shield_round" },
-    color: "#bcd2ff",
-    rim: { color: "#dbe8ff", strength: 2.2, power: 2.4 },
-    class: "flesh",
-    armor: 10,
+    scale: 1,
+    mesh: "phone",
+    color: "#1c1c24",
+    glow: "#5ab8ff",
+    class: "gadget",
+    armor: 0,
+    confiscatable: true,
+    notify: { everySeconds: 6, range: 6, seconds: 2.2, text: PHONE_PINGS },
   },
-  raider_elite: {
-    id: "raider_elite",
-    label: "Elite",
-    health: 95,
-    speed: 2.2,
-    bounty: 10,
+  tech_flock: {
+    id: "tech_flock",
+    label: "Flock Camera",
+    blurb: "Slow. Spots a worker, and every notification goes for them. Kill it first.",
+    health: 120,
+    speed: 1.3,
+    bounty: 12,
+    leak: 2,
+    scale: 1.2,
+    mesh: "flock",
+    color: "#3a3f48",
+    glow: "#ff3a3a",
+    class: "network",
+    armor: 10,
+    spots: { everySeconds: 6, range: 9 },
+  },
+  tech_speaker: {
+    id: "tech_speaker",
+    label: "Smart Speaker",
+    blurb: "\"Hey—\" Distracts every worker around it at once.",
+    health: 70,
+    speed: 2,
+    bounty: 9,
     leak: 1,
-    scale: 1.35,
-    model: "kaykit-adventurers/Knight",
-    gear: { right: "kaykit-adventurers/sword_1handed", left: "kaykit-adventurers/shield_square_color" },
-    color: "#f2d16b",
-    rim: { color: "#fff0b8", strength: 3, power: 2 },
-    class: "flesh",
+    scale: 1,
+    mesh: "speaker",
+    color: "#3c4048",
+    glow: "#3ae0ff",
+    class: "wireless",
+    armor: 0,
+    notify: { everySeconds: 8, range: 6, seconds: 2, area: true, text: ["\"Hey—\"", "\"Sorry, I didn't catch that.\"", "\"Playing music…\""] },
+  },
+  tech_vacuum: {
+    id: "tech_vacuum",
+    label: "Robot Vacuum",
+    blurb: "A bumper of solid armor. Crush it or go around it.",
+    health: 120,
+    speed: 1.8,
+    bounty: 12,
+    leak: 1,
+    scale: 1.1,
+    mesh: "vacuum",
+    color: "#e6e6ea",
+    glow: "#3aff8a",
+    class: "hardware",
     armor: 30,
   },
-  raider_warden: {
-    id: "raider_warden",
-    label: "The Warden",
-    health: 1200,
-    speed: 1.1,
-    bounty: 90,
-    leak: 6,
-    scale: 1.95,
-    model: "kaykit-adventurers/Knight",
-    gear: { right: "kaykit-adventurers/sword_2handed_color" },
-    color: "#ff5c4d",
-    rim: { color: "#ffd2c4", strength: 3.4, power: 1.8 },
-    class: "flesh",
-    armor: 25,
+  tech_drone: {
+    id: "tech_drone",
+    label: "Delivery Drone",
+    blurb: "Flies. Drops a parcel on a plot that blocks hiring until you sign for it.",
+    health: 48,
+    speed: 2.9,
+    bounty: 8,
+    leak: 1,
+    scale: 1,
+    mesh: "drone",
+    color: "#f0f0f4",
+    glow: "#3ab0ff",
+    class: "wireless",
+    armor: 0,
+    flying: true,
+    drops: { atProgress: 0.35 },
   },
-  raider_brute: {
-    id: "raider_brute",
-    label: "Brute",
-    health: 150,
-    speed: 1.5,
+  tech_scooter: {
+    id: "tech_scooter",
+    label: "E-Scooter",
+    blurb: "Very, very fast.",
+    health: 60,
+    speed: 4.2,
+    bounty: 5,
+    leak: 1,
+    scale: 1,
+    mesh: "scooter",
+    color: "#2ac07a",
+    glow: "#c8ff3a",
+    class: "vehicle",
+    armor: 5,
+  },
+  tech_fridge: {
+    id: "tech_fridge",
+    label: "Smart Fridge",
+    blurb: "Tanky, with a frost-free shield that grows back.",
+    health: 200,
+    speed: 1.3,
+    bounty: 18,
+    leak: 2,
+    scale: 1.4,
+    mesh: "fridge",
+    color: "#dfe6ee",
+    glow: "#5ad8ff",
+    class: "hardware",
+    armor: 20,
+    shield: { max: 70, regenPerSecond: 20, regenDelayMs: 2500 },
+  },
+  tech_gpu: {
+    id: "tech_gpu",
+    label: "Graphics Card",
+    blurb: "Armored and running hot: workers near it slow down. Hose it.",
+    health: 190,
+    speed: 1.7,
     bounty: 15,
     leak: 2,
-    scale: 1.6,
-    model: "kaykit-adventurers/Barbarian",
-    gear: { right: "kaykit-adventurers/axe_2handed" },
-    color: "#ff8a7a",
-    rim: { color: "#fff2d6", strength: 2.6, power: 2 },
-    class: "flesh",
-    armor: 20,
-  },
-  // Named elites the composer calls up from wave 7. Same pack as the anonymous raiders, a heavier
-  // stat line and a louder hue so one is recognisable on the road at the default camera.
-  raider_captain: {
-    id: "raider_captain",
-    label: "Captain",
-    title: "Ironjaw",
-    health: 175,
-    speed: 2,
-    bounty: 18,
-    leak: 1,
-    scale: 1.45,
-    model: "kaykit-adventurers/Knight",
-    gear: { right: "kaykit-adventurers/sword_1handed", left: "kaykit-adventurers/shield_badge_color" },
-    color: "#b7f7c0",
-    rim: { color: "#e9ffd6", strength: 3, power: 2 },
-    class: "flesh",
+    scale: 1.2,
+    mesh: "gpu",
+    color: "#2a2a30",
+    glow: "#ff4ad8",
+    class: "hardware",
     armor: 30,
+    overheats: { radius: 5, rateFactor: 0.6 },
   },
-  raider_reaver: {
-    id: "raider_reaver",
-    label: "Reaver",
-    title: "Sable",
-    health: 130,
-    speed: 2.85,
-    bounty: 16,
-    leak: 1,
-    scale: 1.3,
-    model: "kaykit-adventurers/Rogue_Hooded",
-    gear: { right: "kaykit-adventurers/dagger", left: "kaykit-adventurers/dagger" },
-    color: "#e7a4ff",
-    rim: { color: "#f5d9ff", strength: 2.8, power: 2.2 },
-    class: "flesh",
-    armor: 10,
-  },
-  raider_breaker: {
-    id: "raider_breaker",
-    label: "Breaker",
-    title: "Hollow",
-    health: 260,
-    speed: 1.75,
-    bounty: 24,
+  tech_rig: {
+    id: "tech_rig",
+    label: "Crypto Mining Rig",
+    blurb: "Worth more the longer it lives, and steals cash if it gets through.",
+    health: 280,
+    speed: 1.4,
+    bounty: 12,
     leak: 2,
-    scale: 1.7,
-    model: "kaykit-adventurers/Barbarian",
-    gear: { right: "kaykit-adventurers/axe_1handed", left: "kaykit-adventurers/shield_spikes_color" },
-    color: "#8fd0ff",
-    rim: { color: "#d8efff", strength: 3, power: 1.9 },
-    class: "bone",
-    armor: 35,
+    scale: 1.4,
+    mesh: "rig",
+    color: "#5a5a64",
+    glow: "#ffb020",
+    class: "hardware",
+    armor: 15,
+    overheats: { radius: 4, rateFactor: 0.7 },
+    mines: { bountyPerSecond: 0.6, stealBase: 10, stealPerSecond: 1.5 },
   },
-  raider_warlord: {
-    id: "raider_warlord",
-    label: "The Warlord",
-    health: 1900,
-    speed: 1.2,
-    bounty: 140,
-    leak: 8,
-    scale: 2.1,
-    model: "kaykit-adventurers/Barbarian",
-    gear: { right: "kaykit-adventurers/sword_2handed_color" },
-    color: "#ff7a1f",
-    rim: { color: "#ffd9a8", strength: 3.6, power: 1.7 },
-    class: "flesh",
-    armor: 20,
+  tech_car: {
+    id: "tech_car",
+    label: "Self-Driving Car",
+    blurb: "Big, armored, and when it's wrecked two e-scooters roll out of the trunk.",
+    health: 400,
+    speed: 2.3,
+    bounty: 22,
+    leak: 3,
+    scale: 1.6,
+    mesh: "car",
+    color: "#f4f4f8",
+    glow: "#3ad8ff",
+    class: "vehicle",
+    armor: 25,
+    splits: { unit: "tech_scooter", count: 2 },
   },
-  // The barrow host: what the old dead send up the road once the living have tried and failed.
-  raider_wraith: {
-    id: "raider_wraith",
-    label: "Barrow Wraith",
-    health: 52,
-    speed: 2.9,
-    bounty: 7,
+  tech_chatbot: {
+    id: "tech_chatbot",
+    label: "Chatbot",
+    blurb: "Echoes workers' own lines back at them until they're confused.",
+    health: 90,
+    speed: 2.1,
+    bounty: 9,
     leak: 1,
-    scale: 0.95,
-    model: "kaykit-skeletons/Skeleton_Rogue",
-    fallbackModel: "kaykit-skeletons/Skeleton_Minion",
-    color: "#c8f4ff",
-    rim: { color: "#e8fbff", strength: 3.4, power: 1.6 },
-    class: "spirit",
+    scale: 1.1,
+    mesh: "chatbot",
+    color: "#7a5aff",
+    glow: "#c8b8ff",
+    class: "network",
+    armor: 0,
+    notify: { everySeconds: 7, range: 7, seconds: 2, text: ["As an AI, I—", "Great question!", "Let me rephrase that…"] },
+  },
+  tech_router: {
+    id: "tech_router",
+    label: "Wi-Fi Router",
+    blurb: "Boosts the tech around it, faster and better armored, and patches it up.",
+    health: 100,
+    speed: 1.8,
+    bounty: 11,
+    leak: 1,
+    scale: 1,
+    mesh: "router",
+    color: "#1e1e26",
+    glow: "#3aff6a",
+    class: "wireless",
+    armor: 5,
+    heals: { radius: 5, share: 0.06, everySeconds: 3 },
+    boosts: { radius: 5, speed: 1.2, armor: 10 },
+  },
+  tech_backup: {
+    id: "tech_backup",
+    label: "Backup Drive",
+    blurb: "A thumb drive a server rack spits out.",
+    health: 26,
+    speed: 3,
+    bounty: 2,
+    leak: 1,
+    scale: 0.6,
+    mesh: "backup",
+    color: "#3a6aff",
+    glow: "#9fd0ff",
+    class: "gadget",
+    armor: 0,
+    confiscatable: true,
+  },
+  tech_server: {
+    id: "tech_server",
+    label: "Server Rack",
+    blurb: "A miniboss. Spits out backups unless an Electrician is near enough to pull its plug.",
+    health: 850,
+    speed: 1,
+    bounty: 80,
+    leak: 6,
+    scale: 1.8,
+    mesh: "server",
+    color: "#16161c",
+    glow: "#3aff8a",
+    class: "network",
+    armor: 30,
+    backups: { everySeconds: 6, unit: "tech_backup", count: 2, electricianRange: 9 },
+  },
+  boss_datacenter: {
+    id: "boss_datacenter",
+    label: "THE DATA CENTER",
+    blurb: "The final boss. On mains power it shrugs off most damage: an Electrician must cut it off.",
+    health: 3200,
+    speed: 0.7,
+    bounty: 40,
+    leak: 12,
+    scale: 2.6,
+    mesh: "datacenter",
+    color: "#2a2f3a",
+    glow: "#3ab0ff",
+    class: "network",
+    armor: 20,
+    overheats: { radius: 6, rateFactor: 0.75 },
+    power: { max: 500, poweredDamage: 0.3, electricianRange: 9, drainPerSecond: 18, spawn: { unit: "tech_phone", everySeconds: 5 } },
+    becomes: "boss_cloud",
+  },
+  boss_cloud: {
+    id: "boss_cloud",
+    label: "THE CLOUD",
+    blurb: "The Data Center's final form. It flies.",
+    health: 1500,
+    speed: 1.3,
+    bounty: 60,
+    leak: 12,
+    scale: 2.4,
+    mesh: "cloud",
+    color: "#f0f4ff",
+    glow: "#7ab8ff",
+    class: "wireless",
     armor: 0,
     flying: true,
   },
-  raider_bulwark: {
-    id: "raider_bulwark",
-    label: "Bulwark",
-    health: 90,
-    speed: 1.9,
-    bounty: 14,
-    leak: 2,
-    scale: 1.4,
-    model: "kaykit-skeletons/Skeleton_Warrior",
-    fallbackModel: "kaykit-skeletons/Skeleton_Minion",
-    color: "#9fb4c8",
-    rim: { color: "#d6f0ff", strength: 2.8, power: 2 },
-    class: "bone",
-    armor: 45,
-    shield: { max: 80, regenPerSecond: 22, regenDelayMs: 2500 },
-  },
-  raider_shaman: {
-    id: "raider_shaman",
-    label: "Bone Shaman",
-    health: 70,
-    speed: 2.1,
-    bounty: 12,
-    leak: 1,
-    scale: 1.15,
-    model: "kaykit-skeletons/Skeleton_Mage",
-    fallbackModel: "kaykit-skeletons/Skeleton_Warrior",
-    color: "#9effa8",
-    rim: { color: "#d8ffdc", strength: 3, power: 1.9 },
-    class: "warded",
-    armor: 5,
-    heals: { radius: 5, share: 0.1, everySeconds: 3 },
-  },
-  raider_hulk: {
-    id: "raider_hulk",
-    label: "Ossuary Hulk",
-    health: 240,
-    speed: 1.5,
-    bounty: 16,
-    leak: 2,
-    scale: 1.8,
-    model: "kaykit-skeletons/Skeleton_Minion",
-    fallbackModel: "kaykit-skeletons/Skeleton_Warrior",
-    color: "#e8d9b8",
-    rim: { color: "#fff4dc", strength: 2.6, power: 2 },
-    class: "bone",
-    armor: 15,
-    splits: { unit: "raider_boneling", count: 3 },
-  },
-  raider_boneling: {
-    id: "raider_boneling",
-    label: "Boneling",
-    health: 22,
-    speed: 3.2,
-    bounty: 2,
-    leak: 1,
-    scale: 0.7,
-    model: "kaykit-skeletons/Skeleton_Minion",
-    fallbackModel: "kaykit-skeletons/Skeleton_Warrior",
-    color: "#f2e6c9",
-    rim: { color: "#fff7e2", strength: 2.2, power: 2.2 },
-    class: "bone",
-    armor: 0,
-  },
 };
 
-/** A raider's display name: its name when it has one, else its role. */
 export function creepName(id: string): string {
-  const def = CREEP_CATALOG[id];
-  if (def === undefined) return id;
-  return def.title === undefined ? def.label : `${def.label} ${def.title}`;
+  return CREEP_CATALOG[id]?.label ?? id;
 }
 
 export function creepDef(id: string): CreepDef {
   const def = CREEP_CATALOG[id];
-  if (def === undefined) throw new Error(`beacon-bastion: unknown creep id "${id}"`);
+  if (def === undefined) throw new Error(`beacon-bastion: unknown tech id "${id}"`);
   return def;
 }
 
@@ -285,10 +393,12 @@ export function creepTraits(id: string): readonly string[] {
   const traits: string[] = [];
   if (def.flying === true) traits.push("flying");
   if (def.armor >= 30) traits.push("armored");
-  if (def.class === "warded") traits.push("warded");
-  if (def.class === "bone") traits.push("bone");
+  if (def.notify !== undefined) traits.push("notifies");
+  if (def.spots !== undefined) traits.push("spots");
+  if (def.overheats !== undefined) traits.push("overheats");
   if (def.shield !== undefined) traits.push("shielded");
-  if (def.heals !== undefined) traits.push("healer");
-  if (def.splits !== undefined) traits.push("splits");
+  if (def.heals !== undefined || def.boosts !== undefined) traits.push("boosts");
+  if (def.splits !== undefined || def.backups !== undefined) traits.push("splits");
+  if (def.power !== undefined) traits.push("powered");
   return traits;
 }

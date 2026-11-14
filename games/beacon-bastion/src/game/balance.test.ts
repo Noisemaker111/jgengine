@@ -12,23 +12,23 @@ import { BUILD_PLOTS } from "./world/path";
 import { restartDefense } from "./world/setup";
 
 /**
- * Pacing checks: a scripted defense played headless, start to finish, against the real director,
- * towers and economy. They pin the shape of the difficulty curve rather than exact numbers: doing
- * nothing loses, one kind of tower spammed loses to the raiders it can't answer, and a sensible
- * mixed keep holds on Knight without finishing with a fortune it never had to spend.
- * `BEACON_TRACE=1` prints each wave's walls, purse and towers, and every raider that broke through.
+ * Pacing checks: a scripted day played headless, start to finish, against the real director,
+ * workers, distraction and economy. They pin the shape of the difficulty curve rather than exact
+ * numbers: hiring nobody loses, one trade spammed loses to the tech it can't answer, and a sensible
+ * mixed crew holds on Full-Time without finishing with a fortune it never had to spend.
+ * `BEACON_TRACE=1` prints each wave's attention, cash and crew, and every gadget that got through.
  */
 
 interface Plan {
-  /** Towers to raise, in order, one per free plot. */
+  /** Workers to hire, in order, one per free plot. */
   builds: readonly string[];
-  /** Branch each tower kind takes at its fork. */
+  /** Career each worker takes at their fork. */
   branch: Record<string, string>;
   /** Whether the player upgrades at all. */
   upgrades: boolean;
   /** Plots in the order the player fills them; omitted means the list order. */
   plots?: readonly string[];
-  /** Whether the player uses Beacon Fire and the Frost Bell. */
+  /** Whether the player uses Blackout and Do Not Disturb. */
   rites?: boolean;
 }
 
@@ -73,7 +73,7 @@ function spend(runner: HeadlessRunner, plan: Plan, built: { next: number }): voi
   if (best !== null) runner.ui.tryInvoke("beacon.act", { action: best.action, target: best.id });
 }
 
-/** Drop the fire on the raider furthest down the road; ring the bell when a boss or a crowd is close. */
+/** Flip the breaker on the tech furthest down the street; press Do Not Disturb for a boss or a crowd. */
 function useRites(runner: HeadlessRunner): void {
   let lead: { id: string; progress: number } | null = null;
   for (const creep of session.creeps.values()) {
@@ -81,15 +81,15 @@ function useRites(runner: HeadlessRunner): void {
     if (lead === null || progress > lead.progress) lead = { id: creep.instanceId, progress };
   }
   if (lead === null) return;
-  if (runner.ui.tryInvoke("abilityFire", {}).status === "applied") {
+  if (runner.ui.tryInvoke("abilityBlackout", {}).status === "applied") {
     const at = runner.ctx.scene.entity.get(lead.id)?.position;
     if (at !== undefined) castAt(runner.ctx, at);
   }
-  if (session.boss !== null || session.creeps.size >= 8) runner.ui.tryInvoke("abilityBell", {});
+  if (session.boss !== null || session.creeps.size >= 8) runner.ui.tryInvoke("abilityQuiet", {});
 }
 
-function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
-  const runner = beaconRunner("Beacon balance");
+function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome {
+  const runner = beaconRunner("Town balance");
   setDifficulty(runner.ctx, difficulty);
   restartDefense(runner.ctx);
   const built = { next: 0 };
@@ -99,7 +99,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
   let bountyAtLastTrip = 0;
   let lastWave = 0;
   const trace: string[] = [];
-  for (let t = 0; t < 1500 && !runEnded(keep.of(runner.ctx)); t += DT) {
+  for (let t = 0; t < 2400 && !runEnded(keep.of(runner.ctx)); t += DT) {
     const now = session.encounter.view().wave;
     if (now !== lastWave) {
       const w = keep.of(runner.ctx);
@@ -124,7 +124,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
     }
   }
   const world = keep.of(runner.ctx);
-  if (process.env.BEACON_TRACE) console.log(trace.join(" "));
+  if (process.env.BEACON_TRACE) console.log(trace.join(" "), `end:t${Math.round(runner.ctx.time.now())}:L${world.num("keep.lives")}:held${world.fact("keep.held") === true}:creeps${session.creeps.size}:G${world.num("keep.gold")}:gate${world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip)}`);
   return {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
@@ -135,36 +135,59 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
 }
 
 const MIXED: Plan = {
-  builds: ["tower_archer", "tower_cannon", "tower_archer", "tower_frost", "tower_arcane", "tower_cannon", "tower_archer", "tower_arcane", "tower_frost", "tower_cannon", "tower_archer"],
-  branch: { tower_archer: "longbow", tower_cannon: "ironshot", tower_frost: "glacier", tower_arcane: "storm" },
+  builds: [
+    "worker_barista",
+    "worker_farmer",
+    "worker_farmer",
+    "worker_teacher",
+    "worker_plumber",
+    "worker_electrician",
+    "worker_construction",
+    "worker_librarian",
+    "worker_barista",
+    "worker_lawyer",
+    "worker_firefighter",
+  ],
+
+  branch: {
+    worker_barista: "espresso",
+    worker_farmer: "harvest",
+    worker_plumber: "burstmain",
+    worker_teacher: "detention",
+    worker_electrician: "breaker",
+    worker_construction: "jackhammer",
+    worker_librarian: "quiet",
+    worker_firefighter: "ladder",
+    worker_lawyer: "injunction",
+  },
   upgrades: true,
-  // The corners where the road doubles back first, then the flank's mouth, then the long legs.
-  plots: ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-3", "plot-7", "plot-11", "plot-2", "plot-9", "plot-1"],
+  // The corners where the street doubles back first, then the side street's mouth, then the long legs.
+  plots: ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-7", "plot-3", "plot-11", "plot-2", "plot-9", "plot-1"],
   rites: true,
 };
 
 describe("pacing", () => {
-  test("an empty keep falls early", () => {
+  test("a town that hires nobody loses focus early", () => {
     const outcome = playDefense({ builds: [], branch: {}, upgrades: false });
     expect(outcome.held).toBe(false);
     expect(outcome.wave).toBeLessThanOrEqual(3);
   });
 
-  test("a mixed, upgraded keep holds on Knight, losing walls on the way and never sitting on a fortune", () => {
+  test("a mixed, promoted crew holds Full-Time, losing some focus on the way and never sitting on a fortune", () => {
     const outcome = playDefense(MIXED);
     expect(outcome.held).toBe(true);
     expect(outcome.lives).toBeLessThan(20);
     expect(outcome.gold).toBeLessThan(300);
   });
 
-  test("cannons alone can't answer the wraiths", () => {
-    const outcome = playDefense({ ...MIXED, builds: Array(11).fill("tower_cannon"), branch: { tower_cannon: "mortar" } });
+  test("baristas alone can't reach the drones or The Cloud", () => {
+    const outcome = playDefense({ ...MIXED, builds: Array(11).fill("worker_barista"), branch: { worker_barista: "pourover" } });
     expect(outcome.held).toBe(false);
   });
 
-  test("Warlord is harder than Knight for the same keep", () => {
-    const warlord = playDefense(MIXED, "warlord");
-    const knight = playDefense(MIXED, "knight");
-    expect(warlord.wave * 100 + warlord.lives).toBeLessThan(knight.wave * 100 + knight.lives);
+  test("Overtime is harder than Full-Time for the same crew", () => {
+    const overtime = playDefense(MIXED, "overtime");
+    const fulltime = playDefense(MIXED, "fulltime");
+    expect(overtime.wave * 100 + overtime.lives).toBeLessThan(fulltime.wave * 100 + fulltime.lives);
   });
 });

@@ -77,3 +77,33 @@ export function nearestPlot(point: Waypoint, maxDistance: number): BuildPlot | n
   }
   return best;
 }
+
+/** The nearest point on any road to an XZ spot. */
+function nearestRoadPoint(x: number, z: number): [number, number] {
+  let best: [number, number] = [x, z + 1];
+  let bestGap = Number.POSITIVE_INFINITY;
+  for (const route of Object.values(ROUTES)) {
+    for (let index = 1; index < route.length; index += 1) {
+      const a = route[index - 1]!;
+      const b = route[index]!;
+      const dx = b[0] - a[0];
+      const dz = b[2] - a[2];
+      const length = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[2]) * dz) / length));
+      const px = a[0] + dx * t;
+      const pz = a[2] + dz * t;
+      const gap = Math.hypot(px - x, pz - z);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = [px, pz];
+      }
+    }
+  }
+  return best;
+}
+
+/** The yaw that turns something standing at `position` to face the street (models face +Z). */
+export function facingStreet(position: readonly [number, number, number]): number {
+  const [px, pz] = nearestRoadPoint(position[0], position[2]);
+  return Math.atan2(px - position[0], pz - position[2]);
+}

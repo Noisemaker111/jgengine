@@ -10,7 +10,7 @@ import type { LedgerState } from "@jgengine/core/economy/transactionLedger";
 import type { WorldFactValue, WorldModelState } from "@jgengine/core/worldModel/worldModel";
 
 import { BASE_CATALOG_ID, BASE_ENTITY_ID } from "./entities/base/catalog";
-import { creepDef } from "./entities/enemies/catalog";
+import { CREEP_CATALOG, creepDef } from "./entities/enemies/catalog";
 import { resetProjectiles } from "./combat/pendingProjectiles";
 import { keep, keepBooks, resetKeep, spawnStandingTowers } from "./keep";
 import { newShield, newSpeedStats, resetSession, session, type BossRuntime } from "./session";
@@ -18,16 +18,16 @@ import { freshLegacy, openingKeep, readLegacy, relicLoop, upgradeLegacy, writeLe
 import { campaign, freshCampaign, readCampaign } from "./campaign";
 import type { AbilityKitState } from "@jgengine/core/combat/abilityKit";
 import type { WaveCountdownState } from "@jgengine/core/waves/waveCountdown";
-import { WARDEN_ID } from "./waves/manifest";
+import { MINIBOSS_ID } from "./waves/manifest";
 import type { EncounterState } from "@jgengine/core/waves/encounter";
 import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
-/** The keeps a player can hold. One document per keep, all inside the shared save document. */
+/** The streets a player can keep. One document per street, all inside the shared save document (slot ids keep their first names). */
 export const KEEP_SLOTS = ["keep", "ward", "beacon"] as const;
-export const KEEP_LABEL: Record<string, string> = { keep: "The Keep", ward: "The Ward", beacon: "The Beacon" };
+export const KEEP_LABEL: Record<string, string> = { keep: "Maple Street", ward: "Elm Street", beacon: "Oak Street" };
 
 /** A document written before the keep was a world: its purse, walls and wave flags sat in this section. */
 interface PreWorldFields {
@@ -44,7 +44,7 @@ interface PreWorldFields {
 
 /**
  * The real-time half of a run as the save document stores it: the clock, the wave director, the
- * Warden and every raider mid-route. Gold, lives, plots, towers and builds are the `world` section.
+ * boss and every piece of tech mid-route. Cash, attention, plots, workers and hires are the `world` section.
  */
 export interface DefenseSave extends PreWorldFields {
   clock: ClockSnapshot;
@@ -53,7 +53,22 @@ export interface DefenseSave extends PreWorldFields {
   boss: BossRuntime | null;
   openingComposition: string[];
   creepSeq: number;
-  creeps: { instanceId: string; catalogId: string; path: PathFollowState; route?: string; shield?: number; healIn?: number }[];
+  creeps: {
+    instanceId: string;
+    catalogId: string;
+    path: PathFollowState;
+    route?: string;
+    shield?: number;
+    healIn?: number;
+    notifyIn?: number;
+    alive?: number;
+    dropped?: boolean;
+    installing?: number;
+    updated?: boolean;
+    power?: number | null;
+  }[];
+  /** Plots a drone's parcel is blocking. */
+  parcels?: string[];
   /** The clock to the next wave and what an early call would pay. */
   countdown?: WaveCountdownState;
   /** Ability cooldowns. */
@@ -75,8 +90,15 @@ export function captureDefense(ctx: GameContext): DefenseSave {
       route: creep.route,
       shield: creep.shield?.current() ?? 0,
       healIn: creep.healIn,
+      notifyIn: creep.notifyIn,
+      alive: creep.alive,
+      dropped: creep.dropped,
+      installing: creep.installing,
+      updated: creep.updated,
+      power: creep.power,
     })),
     countdown: session.countdown.snapshot(),
+    parcels: [...session.parcels],
     abilities: session.abilities.state(),
   };
 }
@@ -99,7 +121,7 @@ export function restoreDefense(ctx: GameContext, save: DefenseSave): void {
   session.pressure = { ...save.pressure };
   session.boss = save.boss === null ? null : {
     instanceId: save.boss.instanceId,
-    unitId: save.boss.unitId ?? WARDEN_ID,
+    unitId: save.boss.unitId ?? MINIBOSS_ID,
     state: { ...save.boss.state },
     stance: save.boss.stance,
   };
@@ -108,10 +130,13 @@ export function restoreDefense(ctx: GameContext, save: DefenseSave): void {
 
   ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop" });
   if (!worldLoaded(ctx).restored) migratePreWorld(ctx, save);
+  session.parcels = new Set((save.parcels ?? []).filter((id) => typeof id === "string"));
 
   if (save.countdown !== undefined) session.countdown.restore(save.countdown);
   if (save.abilities !== undefined) session.abilities.restore(save.abilities);
   for (const creep of save.creeps) {
+    // Something saved under a name this build no longer fields is left off the street.
+    if (CREEP_CATALOG[creep.catalogId] === undefined) continue;
     const def = creepDef(creep.catalogId);
     ctx.scene.entity.spawn(creep.catalogId, { id: creep.instanceId, position: creep.path.position, role: "npc" });
     ctx.scene.entity.setPose(creep.instanceId, { position: creep.path.position, rotationY: creep.path.heading });
@@ -126,6 +151,12 @@ export function restoreDefense(ctx: GameContext, save: DefenseSave): void {
       speedStats: newSpeedStats(def.speed),
       shield,
       healIn: creep.healIn ?? def.heals?.everySeconds ?? 0,
+      notifyIn: creep.notifyIn ?? def.notify?.everySeconds ?? 0,
+      alive: creep.alive ?? 0,
+      dropped: creep.dropped ?? false,
+      installing: creep.installing ?? 0,
+      updated: creep.updated ?? false,
+      power: def.power === undefined ? null : (typeof creep.power === "number" ? creep.power : def.power.max),
     });
   }
 }

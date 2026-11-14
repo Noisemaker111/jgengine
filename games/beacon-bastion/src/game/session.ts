@@ -18,14 +18,26 @@ import { DIRECTOR_SEED, ENCOUNTER } from "./waves/manifest";
 export interface CreepRuntime {
   instanceId: string;
   catalogId: string;
-  /** The approach this raider walks (`approach` or `flank`). */
+  /** The road this tech rolls down (`approach` or `flank`). */
   route: string;
   path: PathFollowState;
   speedStats: Stats<"speed">;
-  /** A Bulwark's ward, backed by the entity's `shield` stat. */
+  /** A smart fridge's frost-free shield, backed by the entity's `shield` stat. */
   shield: RegenShield | null;
-  /** Seconds until a Shaman's next mending. */
+  /** Seconds until a router's next patch. */
   healIn: number;
+  /** Seconds until its next notification, camera spot, backup or spawn. */
+  notifyIn: number;
+  /** Seconds it has been on the street (a mining rig's bounty grows with it). */
+  alive: number;
+  /** A drone has already dropped its parcel. */
+  dropped: boolean;
+  /** "Installing Update...": seconds left while it stands still, then it comes out armored. */
+  installing: number;
+  /** It finished an update: extra armor until an IT Guy wipes it. */
+  updated: boolean;
+  /** A data center's mains power left; null for tech that runs on batteries. */
+  power: number | null;
 }
 
 /** The boss on the field, if it is out: its instance, what it is, phase state, and the stance that phase sets. */
@@ -37,19 +49,45 @@ export interface BossRuntime {
 }
 
 /**
- * Raider conditions, run by the engine's status runtime: a burn that stacks, armor cracked by
- * ironshot, a freeze, and the brittleness a deep chill leaves behind.
+ * Tech conditions, run by the engine's status runtime: a scald that stacks, armor crushed by a
+ * jackhammer, a freeze (a Cease and Desist, a stun), brittleness, and Wet, which a live wire loves.
  */
 export const RAIDER_STATUSES: readonly StatusDef[] = [
   { id: "burn", stack: { kind: "stack", max: 3 }, durationMs: 3000, intervalMs: 500, magnitude: 0.5, effect: { kind: "damage", channel: "fire" } },
   { id: "sunder", stack: { kind: "stack", max: 3 }, durationMs: 5000, magnitude: 10, effect: { kind: "stat", stat: "armor_loss" } },
   { id: "freeze", stack: { kind: "refresh" }, durationMs: 1000 },
   { id: "brittle", stack: { kind: "refresh" }, durationMs: 1600, magnitude: 1, effect: { kind: "stat", stat: "brittle" } },
+  { id: "wet", stack: { kind: "refresh" }, durationMs: 4000 },
 ];
 
 /**
- * The real-time half of a defense: the wave director, raiders mid-route and tower aim. Gold, lives,
- * plots, towers, builds and the run's flags live in the keep's world (`keep.ts`).
+ * Worker conditions, on the same engine status runtime the tech's run on: the town's one twist is
+ * that technology fights back without shooting. A notification leaves a worker Distracted (looking
+ * at their phone, not working); a Flock camera leaves one Spotted (every notification goes for
+ * them first); a hot graphics card leaves the workers near it Overheated (working slower).
+ * A one-adopter mechanism kept local: the seam is "statuses on placed structures", which the
+ * engine status runtime already serves once the caller owns a second runtime.
+ */
+export const WORKER_STATUSES: readonly StatusDef[] = [
+  { id: "distracted", stack: { kind: "refresh" }, durationMs: 1000 },
+  { id: "spotted", stack: { kind: "refresh" }, durationMs: 6000 },
+  { id: "overheated", stack: { kind: "refresh" }, durationMs: 600 },
+];
+
+/** A worker's own clocks: when each job's ability is next ready, and when they last spoke. */
+export interface WorkerClock {
+  /** Seconds until a Teacher confiscates, an IT Guy reboots or a Lawyer files again. */
+  ability: number;
+  /** Seconds until they may say a line on the job again. */
+  voice: number;
+  /** How hard the hottest tech near them is cooking them (1 = not at all). */
+  heat: number;
+}
+
+/**
+ * The real-time half of a defense: the wave director, tech mid-route, worker aim and worker
+ * conditions. Cash, attention span, plots, workers, hires and the run's flags live in the town's
+ * world (`keep.ts`).
  */
 export interface SessionState {
   /** The authored raider host and how far through it the run is. */
@@ -63,13 +101,25 @@ export interface SessionState {
   /** Unit ids the open wave sent, pressure additions included, in entry order. */
   openingComposition: string[];
   creeps: Map<string, CreepRuntime>;
-  /** Burns, cracked armor, freezes and brittleness on the raiders. */
+  /** Scalds, crushed armor, freezes, brittleness and Wet on the tech. */
   statuses: StatusRuntime;
-  /** Beacon Fire and the Frost Bell. */
+  /** Distracted, Spotted and Overheated on the workers. */
+  workers: StatusRuntime;
+  /** Each standing worker's ability and voice clocks. */
+  workerClocks: Map<string, WorkerClock>;
+  /** Plots a drone's parcel is blocking, until a player signs for it. */
+  parcels: Set<string>;
+  /** Seconds into the open wave when its "Installing Update..." lands; null when it has landed or none comes. */
+  updateAt: number | null;
+  /** Seconds the open wave has been running. */
+  waveClock: number;
+  /** Counts voice lines spoken, so each pick is deterministic. */
+  voiceSeq: number;
+  /** Blackout and Do Not Disturb. */
   abilities: AbilityKit;
   /** The ability waiting for a click on the field, if one is armed. */
   armedAbility: string | null;
-  /** Beacon fires on their way down: they land after the telegraph, not when the click lands. */
+  /** Blackouts on their way: they land after the telegraph, not when the click lands. */
   falling: { at: [number, number, number]; landsInMs: number }[];
   /** Seconds until each standing tower may fire again: aim state, not keep state. */
   towerCooldowns: Map<string, number>;
@@ -91,6 +141,12 @@ function freshState(): SessionState {
     openingComposition: [],
     creeps: new Map(),
     statuses: createStatusRuntime({ statuses: RAIDER_STATUSES, rng: seededRng(`beacon-bastion:status:${DIRECTOR_SEED}`) }),
+    workers: createStatusRuntime({ statuses: WORKER_STATUSES, rng: seededRng(`beacon-bastion:workers:${DIRECTOR_SEED}`) }),
+    workerClocks: new Map(),
+    parcels: new Set(),
+    updateAt: null,
+    waveClock: 0,
+    voiceSeq: 0,
     abilities: createAbilityKit(ABILITIES.map((ability) => ({ id: ability.id, cooldownMs: ability.cooldownMs, castType: ability.castType }))),
     armedAbility: null,
     falling: [],
@@ -106,6 +162,7 @@ export let session: SessionState = freshState();
 
 export function resetSession(): void {
   session.statuses.dispose();
+  session.workers.dispose();
   session = freshState();
 }
 

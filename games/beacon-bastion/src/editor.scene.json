@@ -9,7 +9,7 @@
         "y": 0,
         "z": -24
       },
-      "label": "Spawn",
+      "label": "Cell tower",
       "meta": {
         "clearance": 5
       }
@@ -22,7 +22,7 @@
         "y": 0,
         "z": 24
       },
-      "label": "Keep",
+      "label": "Town Hall",
       "meta": {
         "clearance": 6
       }
@@ -35,7 +35,7 @@
         "y": 0,
         "z": -15.2
       },
-      "label": "Foundation 1",
+      "label": "Sidewalk plot 1",
       "meta": {
         "clearance": 3
       }
@@ -48,7 +48,7 @@
         "y": 0,
         "z": -15.2
       },
-      "label": "Foundation 2",
+      "label": "Sidewalk plot 2",
       "meta": {
         "clearance": 3
       }
@@ -61,7 +61,7 @@
         "y": 0,
         "z": -14
       },
-      "label": "Foundation 3",
+      "label": "Sidewalk plot 3",
       "meta": {
         "clearance": 3
       }
@@ -74,7 +74,7 @@
         "y": 0,
         "z": -3.2
       },
-      "label": "Foundation 4",
+      "label": "Sidewalk plot 4",
       "meta": {
         "clearance": 3
       }
@@ -87,7 +87,7 @@
         "y": 0,
         "z": 4
       },
-      "label": "Foundation 5",
+      "label": "Sidewalk plot 5",
       "meta": {
         "clearance": 3
       }
@@ -100,7 +100,7 @@
         "y": 0,
         "z": 14
       },
-      "label": "Foundation 6",
+      "label": "Sidewalk plot 6",
       "meta": {
         "clearance": 3
       }
@@ -113,7 +113,7 @@
         "y": 0,
         "z": 16
       },
-      "label": "Foundation 7",
+      "label": "Sidewalk plot 7",
       "meta": {
         "clearance": 3
       }
@@ -126,7 +126,7 @@
         "y": 0,
         "z": 16
       },
-      "label": "Foundation 8",
+      "label": "Sidewalk plot 8",
       "meta": {
         "clearance": 3
       }
@@ -139,7 +139,7 @@
         "y": 0,
         "z": 18
       },
-      "label": "Foundation 9",
+      "label": "Sidewalk plot 9",
       "meta": {
         "clearance": 3
       }
@@ -152,7 +152,7 @@
         "y": 0,
         "z": -4
       },
-      "label": "Flank gate"
+      "label": "Side-street cell tower"
     },
     {
       "id": "plot-10",
@@ -162,7 +162,7 @@
         "y": 0,
         "z": 0
       },
-      "label": "Flank plot"
+      "label": "Sidewalk plot 10"
     },
     {
       "id": "plot-11",
@@ -172,7 +172,277 @@
         "y": 0,
         "z": 2
       },
-      "label": "Flank plot"
+      "label": "Sidewalk plot 11"
+    },
+    {
+      "id": "building-1",
+      "kind": "building",
+      "position": {
+        "x": -39,
+        "y": 0,
+        "z": -21.3
+      },
+      "rotationY": 1.571,
+      "label": "House 1",
+      "meta": {
+        "model": "house",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-2",
+      "kind": "building",
+      "position": {
+        "x": -21,
+        "y": 0,
+        "z": -21.3
+      },
+      "rotationY": -1.571,
+      "label": "Shop 2",
+      "meta": {
+        "model": "shop",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-3",
+      "kind": "building",
+      "position": {
+        "x": -27,
+        "y": 0,
+        "z": 1
+      },
+      "rotationY": 3.142,
+      "label": "House2 3",
+      "meta": {
+        "model": "house2",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-4",
+      "kind": "building",
+      "position": {
+        "x": -15,
+        "y": 0,
+        "z": 4
+      },
+      "rotationY": 1.571,
+      "label": "Diner 4",
+      "meta": {
+        "model": "diner",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-5",
+      "kind": "building",
+      "position": {
+        "x": -9,
+        "y": 0,
+        "z": -17
+      },
+      "rotationY": 0,
+      "label": "House3 5",
+      "meta": {
+        "model": "house3",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-6",
+      "kind": "building",
+      "position": {
+        "x": 3,
+        "y": 0,
+        "z": -5.3
+      },
+      "rotationY": -1.571,
+      "label": "Bakery 6",
+      "meta": {
+        "model": "bakery",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-7",
+      "kind": "building",
+      "position": {
+        "x": -3,
+        "y": 0,
+        "z": 17
+      },
+      "rotationY": 3.142,
+      "label": "House4 7",
+      "meta": {
+        "model": "house4",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-8",
+      "kind": "building",
+      "position": {
+        "x": 15,
+        "y": 0,
+        "z": -1
+      },
+      "rotationY": 0,
+      "label": "Corner 8",
+      "meta": {
+        "model": "corner",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-9",
+      "kind": "building",
+      "position": {
+        "x": 9,
+        "y": 0,
+        "z": 21.3
+      },
+      "rotationY": 1.571,
+      "label": "House5 9",
+      "meta": {
+        "model": "house5",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-10",
+      "kind": "building",
+      "position": {
+        "x": 21,
+        "y": 0,
+        "z": 33
+      },
+      "rotationY": 3.142,
+      "label": "Hardware 10",
+      "meta": {
+        "model": "hardware",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-11",
+      "kind": "building",
+      "position": {
+        "x": 36.5,
+        "y": 0,
+        "z": -13
+      },
+      "rotationY": 0,
+      "label": "Flat 11",
+      "meta": {
+        "model": "flat",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-12",
+      "kind": "building",
+      "position": {
+        "x": 36.5,
+        "y": 0,
+        "z": 8
+      },
+      "rotationY": -1.571,
+      "label": "Tall 12",
+      "meta": {
+        "model": "tall",
+        "clearance": 4.5
+      }
+    },
+    {
+      "id": "building-lamp-1",
+      "kind": "building",
+      "position": {
+        "x": -24,
+        "y": 0,
+        "z": -4.7
+      },
+      "rotationY": 3.142,
+      "label": "Street lamp 1",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-lamp-2",
+      "kind": "building",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": -11.3
+      },
+      "rotationY": 0,
+      "label": "Street lamp 2",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-lamp-3",
+      "kind": "building",
+      "position": {
+        "x": -2.7,
+        "y": 0,
+        "z": 0
+      },
+      "rotationY": -1.571,
+      "label": "Street lamp 3",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-lamp-4",
+      "kind": "building",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 11.3
+      },
+      "rotationY": 3.142,
+      "label": "Street lamp 4",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-lamp-5",
+      "kind": "building",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 4.7
+      },
+      "rotationY": 0,
+      "label": "Street lamp 5",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-lamp-6",
+      "kind": "building",
+      "position": {
+        "x": 22,
+        "y": 0,
+        "z": 11.3
+      },
+      "rotationY": 3.142,
+      "label": "Street lamp 6",
+      "meta": {
+        "model": "lamp",
+        "clearance": 1.2
+      }
     }
   ],
   "volumes": [
@@ -192,12 +462,12 @@
       },
       "label": "Approach meadow",
       "meta": {
-        "species": "highland-moor",
-        "baseColor": "#405b3c",
-        "tipColor": "#85956a",
+        "species": "lawn",
+        "baseColor": "#4f8a3a",
+        "tipColor": "#9fd06a",
         "season": 0,
         "dryness": 0,
-        "seed": "beacon-approach-meadow"
+        "seed": "dnd-town-lawn"
       }
     }
   ],
@@ -243,8 +513,8 @@
         }
       ],
       "width": 4,
-      "color": "#967a55",
-      "label": "Raider approach",
+      "color": "#55555c",
+      "label": "Main Street",
       "meta": {
         "clearance": 3.6
       }
@@ -274,9 +544,9 @@
           "z": 40
         }
       ],
-      "label": "Low approach scrub",
+      "label": "Front-yard shrubs",
       "meta": {
-        "density": 0.045,
+        "density": 0.03,
         "minSpacing": 3,
         "seed": "beacon-bastion-meadow",
         "maxSlope": 5,
@@ -290,8 +560,8 @@
             "weight": 4
           },
           {
-            "item": "rock",
-            "weight": 1
+            "item": "hedge",
+            "weight": 2
           }
         ]
       }
@@ -321,7 +591,7 @@
           "z": 40
         }
       ],
-      "label": "Southwest woods",
+      "label": "Town park (southwest)",
       "meta": {
         "density": 0.24,
         "minSpacing": 2.2,
@@ -333,20 +603,20 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 5
-          },
-          {
             "item": "tree",
-            "weight": 3
+            "weight": 4
           },
           {
-            "item": "oak",
-            "weight": 2
+            "item": "maple",
+            "weight": 3
           },
           {
             "item": "bush",
             "weight": 2
+          },
+          {
+            "item": "bench",
+            "weight": 1
           }
         ]
       }
@@ -376,7 +646,7 @@
           "z": -16
         }
       ],
-      "label": "Northeast woods",
+      "label": "Town park (northeast)",
       "meta": {
         "density": 0.24,
         "minSpacing": 2.2,
@@ -388,20 +658,20 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 5
-          },
-          {
             "item": "tree",
-            "weight": 3
+            "weight": 4
           },
           {
-            "item": "oak",
-            "weight": 2
+            "item": "maple",
+            "weight": 3
           },
           {
             "item": "bush",
             "weight": 2
+          },
+          {
+            "item": "bench",
+            "weight": 1
           }
         ]
       }
@@ -431,9 +701,9 @@
           "z": 33
         }
       ],
-      "label": "Highland rocks NW",
+      "label": "Diner parking lot",
       "meta": {
-        "density": 0.12,
+        "density": 0.06,
         "minSpacing": 2.4,
         "seed": "beacon-bastion-rock-nw",
         "maxSlope": 0,
@@ -443,15 +713,19 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "rock",
-            "weight": 4
-          },
-          {
-            "item": "stone",
+            "item": "car",
             "weight": 3
           },
           {
-            "item": "bush",
+            "item": "wagon",
+            "weight": 2
+          },
+          {
+            "item": "bin",
+            "weight": 1
+          },
+          {
+            "item": "hedge",
             "weight": 1
           }
         ]
@@ -482,9 +756,9 @@
           "z": -19
         }
       ],
-      "label": "Highland rocks SE",
+      "label": "Hardware store lot",
       "meta": {
-        "density": 0.12,
+        "density": 0.06,
         "minSpacing": 2.4,
         "seed": "beacon-bastion-rock-se",
         "maxSlope": 0,
@@ -494,15 +768,19 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "rock",
-            "weight": 4
+            "item": "car",
+            "weight": 2
           },
           {
-            "item": "stone",
+            "item": "wagon",
             "weight": 3
           },
           {
-            "item": "bush",
+            "item": "bin",
+            "weight": 1
+          },
+          {
+            "item": "hedge",
             "weight": 1
           }
         ]
@@ -533,7 +811,7 @@
           "z": -6
         }
       ],
-      "label": "Muster Cairn",
+      "label": "Edge-of-town maples",
       "meta": {
         "density": 0.22,
         "minSpacing": 2.2,
@@ -545,12 +823,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "rock",
-            "weight": 5
+            "item": "maple",
+            "weight": 4
+          },
+          {
+            "item": "tree",
+            "weight": 3
           },
           {
             "item": "bush",
-            "weight": 3
+            "weight": 2
           }
         ]
       }
@@ -580,7 +862,7 @@
           "z": -26
         }
       ],
-      "label": "Approach pines",
+      "label": "Cell-tower woods",
       "meta": {
         "density": 0.2,
         "minSpacing": 2.6,
@@ -593,11 +875,11 @@
         "palette": [
           {
             "item": "pine",
-            "weight": 6
+            "weight": 5
           },
           {
             "item": "tree",
-            "weight": 2
+            "weight": 3
           },
           {
             "item": "bush",
@@ -631,7 +913,7 @@
           "z": 18
         }
       ],
-      "label": "The Broken Watch",
+      "label": "Corner park",
       "meta": {
         "density": 0.22,
         "minSpacing": 2.2,
@@ -643,12 +925,20 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "rock",
-            "weight": 6
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "bench",
+            "weight": 2
           },
           {
             "item": "bush",
             "weight": 3
+          },
+          {
+            "item": "hydrant",
+            "weight": 1
           }
         ]
       }
@@ -678,7 +968,7 @@
           "z": -13
         }
       ],
-      "label": "Inside-bend scrub",
+      "label": "Backyards",
       "meta": {
         "density": 0.16,
         "minSpacing": 2.8,
@@ -690,16 +980,16 @@
         "jitter": 1,
         "palette": [
           {
+            "item": "hedge",
+            "weight": 4
+          },
+          {
             "item": "bush",
-            "weight": 5
+            "weight": 3
           },
           {
-            "item": "tree",
-            "weight": 2
-          },
-          {
-            "item": "rock",
-            "weight": 2
+            "item": "bin",
+            "weight": 1
           }
         ]
       }
@@ -729,7 +1019,7 @@
           "z": 41
         }
       ],
-      "label": "Keep Gate pines",
+      "label": "Town hall green",
       "meta": {
         "density": 0.22,
         "minSpacing": 2.6,
@@ -741,16 +1031,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 6
+            "item": "maple",
+            "weight": 4
           },
           {
-            "item": "oak",
-            "weight": 2
+            "item": "tree",
+            "weight": 3
           },
           {
-            "item": "bush",
-            "weight": 2
+            "item": "bench",
+            "weight": 1
           }
         ]
       }
@@ -780,7 +1070,7 @@
           "z": 34
         }
       ],
-      "label": "North meadow rocks",
+      "label": "Community garden",
       "meta": {
         "density": 0.12,
         "minSpacing": 3.2,
@@ -793,11 +1083,15 @@
         "palette": [
           {
             "item": "bush",
-            "weight": 5
+            "weight": 4
           },
           {
-            "item": "rock",
+            "item": "hedge",
             "weight": 3
+          },
+          {
+            "item": "bench",
+            "weight": 1
           }
         ]
       }
@@ -827,7 +1121,7 @@
           "z": -42
         }
       ],
-      "label": "Horizon pines (north)",
+      "label": "Horizon trees (north)",
       "meta": {
         "density": 0.05,
         "minSpacing": 5,
@@ -839,16 +1133,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 6
+            "item": "tree",
+            "weight": 5
           },
           {
-            "item": "tree",
+            "item": "maple",
             "weight": 3
           },
           {
-            "item": "rock",
-            "weight": 1
+            "item": "pine",
+            "weight": 2
           }
         ]
       }
@@ -878,7 +1172,7 @@
           "z": 78
         }
       ],
-      "label": "Horizon pines (south)",
+      "label": "Horizon trees (south)",
       "meta": {
         "density": 0.05,
         "minSpacing": 5,
@@ -890,16 +1184,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 6
+            "item": "tree",
+            "weight": 5
           },
           {
-            "item": "oak",
+            "item": "maple",
             "weight": 3
           },
           {
-            "item": "rock",
-            "weight": 1
+            "item": "pine",
+            "weight": 2
           }
         ]
       }
@@ -929,7 +1223,7 @@
           "z": 42
         }
       ],
-      "label": "Horizon pines (west)",
+      "label": "Horizon trees (west)",
       "meta": {
         "density": 0.05,
         "minSpacing": 5,
@@ -941,16 +1235,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 6
+            "item": "tree",
+            "weight": 5
           },
           {
-            "item": "tree",
+            "item": "maple",
             "weight": 3
           },
           {
-            "item": "rock",
-            "weight": 1
+            "item": "pine",
+            "weight": 2
           }
         ]
       }
@@ -980,7 +1274,7 @@
           "z": 42
         }
       ],
-      "label": "Horizon pines (east)",
+      "label": "Horizon trees (east)",
       "meta": {
         "density": 0.05,
         "minSpacing": 5,
@@ -992,16 +1286,16 @@
         "jitter": 1,
         "palette": [
           {
-            "item": "pine",
-            "weight": 6
+            "item": "tree",
+            "weight": 5
           },
           {
-            "item": "oak",
+            "item": "maple",
             "weight": 3
           },
           {
-            "item": "rock",
-            "weight": 1
+            "item": "pine",
+            "weight": 2
           }
         ]
       }
@@ -1032,7 +1326,8 @@
         }
       ],
       "width": 4,
-      "label": "East flank"
+      "color": "#55555c",
+      "label": "Side Street"
     }
   ],
   "annotations": [],
@@ -1043,46 +1338,156 @@
       "id": "towers",
       "entries": [
         {
-          "id": "tower_arcane",
-          "label": "Arcane Sanctum",
-          "meta": {
-            "cost": 110,
-            "range": 7,
-            "damage": 28,
-            "fireRateHz": 0.6,
-            "splashRadius": 0
-          }
-        },
-        {
-          "id": "tower_archer",
-          "label": "Archer Post",
+          "id": "worker_barista",
+          "label": "Barista",
           "meta": {
             "cost": 50,
-            "range": 8,
-            "damage": 10,
-            "fireRateHz": 2,
+            "range": 7.5,
+            "damage": 9,
+            "fireRateHz": 1.5,
+            "splashRadius": 1.6
+          }
+        },
+        {
+          "id": "worker_plumber",
+          "label": "Plumber",
+          "meta": {
+            "cost": 65,
+            "range": 7,
+            "damage": 4,
+            "fireRateHz": 1.3,
             "splashRadius": 0
           }
         },
         {
-          "id": "tower_cannon",
-          "label": "Cannon Redoubt",
+          "id": "worker_farmer",
+          "label": "Farmer",
+          "meta": {
+            "cost": 60,
+            "range": 8,
+            "damage": 11,
+            "fireRateHz": 1.4,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_grandma",
+          "label": "Grandma",
+          "meta": {
+            "cost": 70,
+            "range": 6,
+            "damage": 7,
+            "fireRateHz": 1.1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_electrician",
+          "label": "Electrician",
+          "meta": {
+            "cost": 100,
+            "range": 7,
+            "damage": 20,
+            "fireRateHz": 0.8,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_teacher",
+          "label": "Teacher",
           "meta": {
             "cost": 90,
-            "range": 7.5,
-            "damage": 30,
-            "fireRateHz": 0.7,
+            "range": 6.5,
+            "damage": 8,
+            "fireRateHz": 1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_librarian",
+          "label": "Librarian",
+          "meta": {
+            "cost": 80,
+            "range": 6,
+            "damage": 3,
+            "fireRateHz": 1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_construction",
+          "label": "Construction Worker",
+          "meta": {
+            "cost": 95,
+            "range": 6.5,
+            "damage": 28,
+            "fireRateHz": 0.6,
             "splashRadius": 2.2
           }
         },
         {
-          "id": "tower_frost",
-          "label": "Frost Spire",
+          "id": "worker_firefighter",
+          "label": "Firefighter",
           "meta": {
-            "cost": 70,
+            "cost": 85,
+            "range": 7.5,
+            "damage": 12,
+            "fireRateHz": 1.1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_janitor",
+          "label": "Janitor",
+          "meta": {
+            "cost": 75,
+            "range": 5,
+            "damage": 6,
+            "fireRateHz": 1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_mail",
+          "label": "Mail Carrier",
+          "meta": {
+            "cost": 80,
             "range": 7,
-            "damage": 5,
+            "damage": 6,
             "fireRateHz": 1.2,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_monk",
+          "label": "Monk",
+          "meta": {
+            "cost": 90,
+            "range": 6,
+            "damage": 0,
+            "fireRateHz": 0,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_itguy",
+          "label": "IT Guy",
+          "meta": {
+            "cost": 120,
+            "range": 7,
+            "damage": 9,
+            "fireRateHz": 1,
+            "splashRadius": 0
+          }
+        },
+        {
+          "id": "worker_lawyer",
+          "label": "Lawyer",
+          "meta": {
+            "cost": 130,
+            "range": 7.5,
+            "damage": 24,
+            "fireRateHz": 0.6,
             "splashRadius": 0
           }
         }

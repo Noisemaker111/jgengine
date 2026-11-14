@@ -44,8 +44,8 @@ export function interestOn(gold: number): number {
 /** One line for the notice a held wave raises. */
 export function heldPayLine(wave: number, pay: HeldPay): string {
   const parts = [`${pay.wages} wages`, `${pay.interest} interest`];
-  if (pay.flawless > 0) parts.push(`${pay.flawless} for whole walls`);
-  return `Wave ${wave} held: +${pay.total} gold (${parts.join(", ")})`;
+  if (pay.flawless > 0) parts.push(`${pay.flawless} for full focus`);
+  return `Wave ${wave} held: +${pay.total} cash (${parts.join(", ")})`;
 }
 
 /**

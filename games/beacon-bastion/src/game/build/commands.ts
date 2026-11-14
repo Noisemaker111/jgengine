@@ -25,27 +25,34 @@ const refusal = (result: { reason: string; message: string } | null): Refusal | 
   result === null ? null : { reason: result.reason, message: result.message };
 
 /**
- * A click on the field: an occupied plot opens its tower, open ground closes the panel, and an empty
- * plot builds the picked tower through `beacon.place`, which pays, reserves the plot and starts the build.
+ * A click on the street: an occupied plot opens its worker's card, a parcel on a plot is signed for,
+ * open ground closes the card, and an empty plot hires the picked worker through `beacon.place`,
+ * which pays, reserves the plot and starts them clocking in.
  */
 function rejectBuild(ctx: GameContext, input: BuildPlaceInput): Refusal | null {
   if (session.armedAbility !== null) return null;
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
   if (plot === null) return session.inspectedTowerId === null ? { reason: "no-plot" } : null;
   const world = keep.of(ctx);
-  if (world.occupant(plot.id) !== null) return null;
+  if (world.occupant(plot.id) !== null || session.parcels.has(plot.id)) return null;
   if (runEnded(world)) return { reason: "run-ended" };
   const kind = session.selectedTowerId;
-  if (kind === null) return { reason: "no-tower-selected", message: "Pick a tower first" };
+  if (kind === null) return { reason: "no-tower-selected", message: "Pick a worker to hire first" };
   return refusal(world.canPlace(kind, { slot: plot.id }));
 }
 
 function clickPlot(ctx: GameContext, input: BuildPlaceInput): GameContext {
-  // An armed ability takes the click: the fire falls where the player pointed.
+  // An armed ability takes the click: the breaker flips where the player pointed.
   if (castAt(ctx, input.point)) return ctx;
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
   if (plot === null) {
     session.inspectedTowerId = null;
+    return ctx;
+  }
+  // A drone's parcel blocks the plot until someone signs for it: the click does.
+  if (session.parcels.delete(plot.id)) {
+    ctx.scene.entity.floatText({ position: [plot.position[0], plot.position[1] + 1.2, plot.position[2]], text: "Signed for it.", element: "holy" });
+    ctx.game.audio.play("select");
     return ctx;
   }
   const occupant = keep.of(ctx).occupant(plot.id);
@@ -69,8 +76,8 @@ function targetOf(ctx: GameContext, input: TowerTargetInput | undefined): { id: 
  */
 function upgradeActionFor(ctx: GameContext, id: string, kind: string): string | Refusal {
   const options = towerOptions(keep.of(ctx), id, kind);
-  if (options.length === 0) return { reason: "max-level", message: "Fully upgraded" };
-  if (options.length > 1) return { reason: "choose-branch", message: "Choose a branch on the tower card" };
+  if (options.length === 0) return { reason: "max-level", message: "Top of the ladder" };
+  if (options.length > 1) return { reason: "choose-branch", message: "Choose a career on the worker's card" };
   return options[0]!.action;
 }
 
@@ -121,7 +128,7 @@ export function registerBuildCommands(ctx: GameContext): void {
     validate(state) {
       const world = keep.of(state);
       if (runEnded(world)) return { reason: "run-ended" };
-      if (world.num("keep.breaches") <= 0) return { reason: "walls-whole", message: "The walls are whole" };
+      if (world.num("keep.breaches") <= 0) return { reason: "walls-whole", message: "The town is fully focused" };
       return refusal(world.canAct("mend"));
     },
     apply(state) {

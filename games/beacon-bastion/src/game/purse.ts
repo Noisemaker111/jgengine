@@ -10,6 +10,8 @@ export type PurseReason =
   | "kill-bounty"
   | "early-call-bonus"
   | "held-pay"
+  | "mail-delivery"
+  | "theft"
   | "tower-build"
   | "tower-upgrade"
   | "tower-sale"
@@ -29,6 +31,8 @@ const EVENT_REASONS: Readonly<Record<string, PurseReason>> = {
   bounty: "kill-bounty",
   overlap_bonus: "early-call-bonus",
   held_pay: "held-pay",
+  mail_pay: "mail-delivery",
+  theft: "theft",
 };
 
 /** The reason a world call that moved the purse is booked under. */

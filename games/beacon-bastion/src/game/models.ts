@@ -1,92 +1,85 @@
-import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
 import { BASE_CATALOG_ID } from "./entities/base/catalog";
-import { CREEP_CATALOG, type CreepDef } from "./entities/enemies/catalog";
+import { TOWER_CATALOG, type TowerDef } from "./entities/towers/catalog";
 
-const HEXAGON = "kaykit-medieval-hexagon";
+const CITY = "kaykit-city-builder";
+const HOUSES = "quaternius-lowpoly-buildings";
 const FOREST = "kaykit-forest";
 
-/** Height of a raider at scale 1; each catalog entry's scale multiplies it. */
-const RAIDER_HEIGHT = 1.8;
+/**
+ * How tall a worker stands. A little over life size: the camera sits high over the street, and a
+ * barista has to read as a barista from there.
+ */
+export const WORKER_HEIGHT = 2.7;
 
-function gearOf(def: CreepDef): ModelAttachment[] {
-  const gear: ModelAttachment[] = [];
-  if (def.gear?.right !== undefined) gear.push({ slot: "handslot.r", model: def.gear.right });
-  if (def.gear?.left !== undefined) gear.push({ slot: "handslot.l", model: def.gear.left });
-  return gear;
-}
-
-// Preserve automatic clip roles while advancing raiders with the game's accepted clock.
-function raiderPick(def: CreepDef): ModelPick {
-  const gear = gearOf(def);
+/** A worker in their work clothes: one Quaternius character, tinted so two trades on one body read apart. */
+function workerPick(def: TowerDef): ModelPick {
   return {
     model: def.model,
-    ...(def.fallbackModel === undefined ? {} : { fallbackModel: def.fallbackModel }),
     style: {
-      targetHeight: RAIDER_HEIGHT * def.scale,
-      material: { color: def.color, rim: def.rim },
+      targetHeight: WORKER_HEIGHT,
+      ...(def.tint === undefined ? {} : { material: { color: def.tint } }),
       animation: { auto: true, clock: "game" },
-      ...(gear.length === 0 ? {} : { attachments: gear }),
     },
   };
 }
 
-// The keep's own blue roofs, so every building the player raises reads as one side against the red raiders.
-const TOWER_PLAN: Record<string, ModelPick> = {
-  tower_archer: {
-    model: `${HEXAGON}/building_tower_A_blue`,
-    style: { targetHeight: 3.4 },
-  },
-  tower_cannon: {
-    model: `${HEXAGON}/building_tower_catapult_blue`,
-    style: { targetHeight: 3.1 },
-  },
-  tower_frost: {
-    model: `${HEXAGON}/building_tower_B_blue`,
-    style: {
-      targetHeight: 3.6,
-      material: { emissive: "#3fb9d1", emissiveIntensity: 0.35 },
-    },
-  },
-  // The sanctum: an open-topped tower lit violet from inside, so it never reads as a frost spire.
-  tower_arcane: {
-    model: `${HEXAGON}/building_tower_base_blue`,
-    style: {
-      targetHeight: 3.1,
-      material: { color: "#b7a2e0", emissive: "#a35cff", emissiveIntensity: 0.55 },
-    },
-  },
+/** The town hall at the end of Main Street: the thing the tech is marching on. */
+const TOWN_HALL: ModelPick = { model: `${HOUSES}/Bank`, style: { targetHeight: 8 } };
+
+/**
+ * The street's buildings, placed as `building-*` markers in the scene document (each names one of
+ * these in its `meta.model`) and spawned as scenery facing the street. Cartoon houses and shops,
+ * scaled up so a front door is about a worker's height.
+ */
+export const BUILDING_PLAN: Record<string, ModelPick> = {
+  house: { model: `${HOUSES}/House`, style: { targetHeight: 6 } },
+  house2: { model: `${HOUSES}/House2`, style: { targetHeight: 5.6 } },
+  house3: { model: `${HOUSES}/House3`, style: { targetHeight: 7.5 } },
+  house4: { model: `${HOUSES}/House4`, style: { targetHeight: 5.4 } },
+  house5: { model: `${HOUSES}/House5`, style: { targetHeight: 5.4 } },
+  shop: { model: `${HOUSES}/Shop`, style: { targetHeight: 5.4 } },
+  flat: { model: `${HOUSES}/Flat`, style: { targetHeight: 9 } },
+  diner: { model: `${CITY}/building_E_withoutBase`, style: { targetHeight: 7.5 } },
+  bakery: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5 } },
+  corner: { model: `${CITY}/building_G_withoutBase`, style: { targetHeight: 8.5 } },
+  hardware: { model: `${CITY}/building_F_withoutBase`, style: { targetHeight: 7.5 } },
+  tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10 } },
+  lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.6 } },
 };
 
-const KEEP_PLAN: ModelPick = {
-  model: `${HEXAGON}/building_castle_blue`,
-  style: { targetHeight: 7.5 },
-};
+/** Entity names the buildings spawn under, one per plan entry. */
+export const buildingEntity = (model: string): string => `building_${model}`;
 
 function buildEntityModels(): Record<string, ModelConfig> {
-  const plan: Record<string, ModelPick> = {
-    [BASE_CATALOG_ID]: KEEP_PLAN,
-    ...TOWER_PLAN,
-  };
-  for (const def of Object.values(CREEP_CATALOG)) plan[def.id] = raiderPick(def);
+  const plan: Record<string, ModelPick> = { [BASE_CATALOG_ID]: TOWN_HALL };
+  for (const def of Object.values(TOWER_CATALOG)) plan[def.id] = workerPick(def);
+  for (const [id, pick] of Object.entries(BUILDING_PLAN)) plan[buildingEntity(id)] = pick;
+  // Tech has no catalog model: each piece draws its own procedural body (`render/techMesh.ts`).
   return resolveModelPlan(assets, plan);
 }
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
-/** The pack's spring lime pulled toward the highland's wet moss (`#5b7a3a`); trunks darken with it. */
-const MOSS = { color: "#a9b48e" };
+/** A sunny small-town green, so the trees read as front-yard maples rather than a forest. */
+const LAWN = { color: "#c8e6a0" };
 
-/** Each authored scatter item's KayKit Forest model: tall pines on the edge, round oaks, low bushes and stones. */
+/** Each authored scatter item's model: yard trees, hedges, lamp posts, hydrants, benches, bins and parked cars. */
 const SCATTER_PLAN: Record<string, ModelPick> = {
-  pine: { model: `${FOREST}/Tree_4_A_Color1`, style: { targetHeight: 7.2, material: MOSS } },
-  oak: { model: `${FOREST}/Tree_1_A_Color1`, style: { targetHeight: 5, material: MOSS } },
-  tree: { model: `${FOREST}/Tree_3_A_Color1`, style: { targetHeight: 4.5, material: MOSS } },
-  bush: { model: `${FOREST}/Bush_2_A_Color1`, style: { targetHeight: 0.9, material: MOSS } },
-  rock: { model: `${FOREST}/Rock_3_A_Color1`, style: { targetHeight: 0.9 } },
-  stone: { model: `${FOREST}/Rock_1_A_Color1`, style: { targetHeight: 0.5 } },
+  tree: { model: `${FOREST}/Tree_1_A_Color1`, style: { targetHeight: 5.2, material: LAWN } },
+  maple: { model: `${FOREST}/Tree_3_A_Color1`, style: { targetHeight: 4.6, material: LAWN } },
+  pine: { model: `${FOREST}/Tree_4_A_Color1`, style: { targetHeight: 6.4, material: LAWN } },
+  bush: { model: `${FOREST}/Bush_2_A_Color1`, style: { targetHeight: 0.9, material: LAWN } },
+  hedge: { model: `${CITY}/bush`, style: { targetHeight: 1.3 } },
+  lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.2 } },
+  hydrant: { model: `${CITY}/firehydrant`, style: { targetHeight: 0.9 } },
+  bench: { model: `${CITY}/bench`, style: { targetHeight: 0.8 } },
+  bin: { model: `${CITY}/dumpster`, style: { targetHeight: 1.4 } },
+  car: { model: `${CITY}/car_sedan`, style: { targetHeight: 1.5 } },
+  wagon: { model: `${CITY}/car_stationwagon`, style: { targetHeight: 1.5 } },
 };
 
 /** Scatter palette item → resolved model when its pack is live; else InstancedScatter stylized proxy. */

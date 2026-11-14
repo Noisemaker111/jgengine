@@ -4,6 +4,7 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
+  CylinderGeometry,
   DoubleSide,
   Group,
   Mesh,
@@ -20,10 +21,13 @@ import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInsta
 
 import { buildCost, keep, towerStats } from "../keep";
 import { session } from "../session";
+import { towerDef } from "../entities/towers/catalog";
+import { editorLayers } from "../../editorLayers";
+import { WORKER_HEIGHT } from "../models";
 import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
-/** Where the east flank road opens. */
+/** Where the side street opens. */
 const FLANK_GATE = ROUTES[FLANK_POINT_KEY]![0]!;
 import { plotShapes } from "./plotShapes";
 import { rangeRingBand } from "./rangeRing";
@@ -37,19 +41,19 @@ function BuildPlots() {
   const selectedId = session.selectedTowerId;
   const cost = selectedId === null ? 0 : buildCost(selectedId);
   const affordable = selectedId !== null && gold >= cost;
-  // Prepared stone foundations - an empty plot reads as masonry waiting for a tower - with a halo
-  // coloured by whether the picked tower is affordable.
-  const color = selectedId === null ? "#4a5a44" : affordable ? "#5fbf6a" : "#8a4a4a";
+  // Concrete pads on the sidewalk - an empty plot reads as a spot waiting for a worker - with a halo
+  // coloured by whether the picked worker is affordable.
+  const color = selectedId === null ? "#8a8a80" : affordable ? "#5fdf6a" : "#df4a4a";
   const shapes = useMemo(() => plotShapes(BUILD_PLOTS, occupied.split(",").map((flag) => flag !== "true"), color), [occupied, color]);
   return <StaticShapeInstances instances={shapes} />;
 }
 
-/** A tower still rising: a timber frame that climbs with the keep's build order, so a timed build reads on the field. */
+/** A worker still clocking in: an orange traffic-cone frame that climbs with the hire, so a timed hire reads on the street. */
 function buildSitesDraw(sites: readonly string[]): EngineDraw {
   const group = new Group();
   const unitBox = new BoxGeometry(1, 1, 1);
-  const timber = new MeshStandardMaterial({ color: "#8a6a3e", roughness: 1 });
-  const capMaterial = new MeshStandardMaterial({ color: "#a07a46", roughness: 1 });
+  const timber = new MeshStandardMaterial({ color: "#ff8a2a", roughness: 0.7 });
+  const capMaterial = new MeshStandardMaterial({ color: "#f4f0e8", roughness: 0.8 });
   const posts: { plot: (typeof BUILD_PLOTS)[number]; height: number }[] = [];
   for (const site of sites) {
     const [slot, progressText] = site.split(":");
@@ -97,7 +101,7 @@ function BuildSites() {
   return <EngineDrawMount create={() => buildSitesDraw(sites.split(","))} deps={[sites]} />;
 }
 
-/** The inspected tower's firing radius: a draped ground outline, so the raider road stays readable under it. */
+/** The inspected worker's reach: a draped ground outline, so the street stays readable under it. */
 function rangeRingDraw(center: readonly [number, number], radius: number): EngineDraw {
   const [x, z] = center;
   const geometry = new BufferGeometry();
@@ -152,7 +156,7 @@ function inspectionRingDraw(): EngineDraw {
   };
 }
 
-/** Selection ring plus the live firing radius of the tower whose sell/upgrade panel is open. */
+/** Selection ring plus the live reach of the worker whose card is open. */
 function InspectedTower() {
   const inspectedId = useGameStore(() => session.inspectedTowerId);
   const slot = useGameStore((c) => (inspectedId === null ? null : keep.of(c).instance(inspectedId)?.slot ?? null));
@@ -169,45 +173,64 @@ function InspectedTower() {
   );
 }
 
-/** Raider gate landmark at a spawn — two rough stone pillars and a dark banner mark where the horde emerges. */
+/**
+ * Where the tech comes from: a 5G cell tower at each road's mouth, a tapering lattice with panel
+ * antennas and a blinking red beacon on top, so the source of the march reads from the camera.
+ */
 function spawnGateDraw(at: readonly [number, number, number], facing: number): EngineDraw {
   const [x, y, z] = at;
   const group = new Group();
-  group.position.set(x, y, z);
+  group.position.set(x - 3.2, y, z - 3.2);
   group.rotation.y = facing;
   const unitBox = new BoxGeometry(1, 1, 1);
   const unitSphere = new SphereGeometry(1, 10, 8);
   const unitPlane = new PlaneGeometry(1, 1);
-  const stone = new MeshStandardMaterial({ color: "#565049", roughness: 1 });
-  const lintelMaterial = new MeshStandardMaterial({ color: "#463f39", roughness: 1 });
-  const banner = new MeshStandardMaterial({ color: "#7a2320", roughness: 0.6, side: DoubleSide });
-  const flame = new MeshStandardMaterial({ color: "#ff8b3a", emissive: "#ff5a1e", emissiveIntensity: 1.4, roughness: 0.4 });
+  const steel = new MeshStandardMaterial({ color: "#9aa4b0", roughness: 0.5, metalness: 0.4 });
+  const panel = new MeshStandardMaterial({ color: "#e8ecf0", roughness: 0.6 });
+  const sign = new MeshStandardMaterial({ color: "#1c1c24", emissive: "#3ab0ff", emissiveIntensity: 0.6, roughness: 0.4, side: DoubleSide });
+  const beacon = new MeshStandardMaterial({ color: "#ff2a2a", emissive: "#ff2a2a", emissiveIntensity: 1.6, roughness: 0.3 });
+  let light: Mesh | null = null;
+  let clock = 0;
   return {
     mount(state: EngineFrameState) {
       state.scene.add(group);
-      for (const dx of [-1.5, 1.5]) {
-        const pillar = new Mesh(unitBox, stone);
-        pillar.scale.set(0.7, 2.2, 0.7);
-        pillar.position.set(dx, 1.1, 0);
-        pillar.castShadow = true;
-        pillar.receiveShadow = true;
-        group.add(pillar);
+      const height = 11;
+      for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+        const leg = new Mesh(unitBox, steel);
+        leg.scale.set(0.16, height, 0.16);
+        leg.position.set(dx * 0.75, height / 2, dz * 0.75);
+        leg.rotation.set(dz * 0.06, 0, -dx * 0.06);
+        leg.castShadow = true;
+        group.add(leg);
       }
-      const top = new Mesh(unitBox, lintelMaterial);
-      top.scale.set(4, 0.5, 0.6);
-      top.position.set(0, 2.45, 0);
-      top.castShadow = true;
-      group.add(top);
-      const cloth = new Mesh(unitPlane, banner);
-      cloth.scale.set(1.5, 1.3, 1);
-      cloth.position.set(0, 1.75, 0.02);
-      group.add(cloth);
-      for (const dx of [-1.5, 1.5]) {
-        const brazier = new Mesh(unitSphere, flame);
-        brazier.scale.setScalar(0.22);
-        brazier.position.set(dx, 2.35, 0);
-        group.add(brazier);
+      for (let level = 1; level < 6; level += 1) {
+        const width = 1.6 - level * 0.18;
+        const brace = new Mesh(unitBox, steel);
+        brace.scale.set(width, 0.08, width);
+        brace.position.y = level * 2;
+        group.add(brace);
       }
+      for (let side = 0; side < 3; side += 1) {
+        const antenna = new Mesh(unitBox, panel);
+        const angle = (side * Math.PI * 2) / 3;
+        antenna.scale.set(0.35, 1.4, 0.12);
+        antenna.position.set(Math.sin(angle) * 0.55, height - 1, Math.cos(angle) * 0.55);
+        antenna.rotation.y = angle;
+        antenna.castShadow = true;
+        group.add(antenna);
+      }
+      light = new Mesh(unitSphere, beacon);
+      light.scale.setScalar(0.3);
+      light.position.y = height + 0.4;
+      group.add(light);
+      const board = new Mesh(unitPlane, sign);
+      board.scale.set(2.6, 1.3, 1);
+      board.position.set(0, 3.2, 0.95);
+      group.add(board);
+    },
+    frame(_state: EngineFrameState, dt: number) {
+      clock += dt;
+      if (light !== null) light.visible = clock % 1.2 < 0.6;
     },
     dispose(state: EngineFrameState) {
       state.scene.remove(group);
@@ -215,10 +238,10 @@ function spawnGateDraw(at: readonly [number, number, number], facing: number): E
       unitBox.dispose();
       unitSphere.dispose();
       unitPlane.dispose();
-      stone.dispose();
-      lintelMaterial.dispose();
-      banner.dispose();
-      flame.dispose();
+      steel.dispose();
+      panel.dispose();
+      sign.dispose();
+      beacon.dispose();
     },
   };
 }
@@ -287,7 +310,133 @@ function ProjectileBolts() {
   return <EngineDrawMount create={() => projectileBoltsDraw(ctx)} deps={[ctx]} />;
 }
 
-/** VFX-only overlay — the authored scene (draped creep path + instanced foliage) is auto-mounted
+/**
+ * What the workers are going through, drawn every frame from the session without a render: a glowing
+ * phone over everyone Distracted (looking down, not working), a red ring under the Spotted, a coloured
+ * work mat under every worker, the hush and offline circles around Librarians and Monks, and the
+ * cardboard parcels drones leave on plots.
+ */
+function workerStatusDraw(ctx: GameContext): EngineDraw {
+  const group = new Group();
+  const phoneBody = new BoxGeometry(0.5, 0.85, 0.08);
+  const phoneScreen = new PlaneGeometry(0.42, 0.72);
+  const ring = new RingGeometry(1.15, 1.4, 32);
+  const mat = new CylinderGeometry(1.3, 1.3, 0.06, 28);
+  const aura = new RingGeometry(0.97, 1, 64);
+  const parcelBox = new BoxGeometry(1.1, 0.9, 1.1);
+  const tape = new BoxGeometry(1.12, 0.12, 0.3);
+  const dark = new MeshStandardMaterial({ color: "#1c1c24", roughness: 0.4 });
+  const glow = new MeshStandardMaterial({ color: "#5ab8ff", emissive: "#5ab8ff", emissiveIntensity: 1.4, side: DoubleSide });
+  const spotted = new MeshStandardMaterial({ color: "#ff3a3a", emissive: "#ff3a3a", emissiveIntensity: 1, transparent: true, opacity: 0.9, side: DoubleSide, depthWrite: false });
+  const cardboard = new MeshStandardMaterial({ color: "#c08a4a", roughness: 0.95 });
+  const tapeMaterial = new MeshStandardMaterial({ color: "#e8d27a", roughness: 0.6 });
+  const mats = new Map<string, MeshStandardMaterial>();
+  const auras = new Map<string, MeshStandardMaterial>();
+  const pool = { phones: [] as Group[], rings: [] as Mesh[], mats: [] as Mesh[], auras: [] as Mesh[], parcels: [] as Group[] };
+  const matOf = (color: string) => {
+    let value = mats.get(color);
+    if (value === undefined) {
+      value = new MeshStandardMaterial({ color, roughness: 0.8 });
+      mats.set(color, value);
+    }
+    return value;
+  };
+  const auraOf = (color: string) => {
+    let value = auras.get(color);
+    if (value === undefined) {
+      value = new MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.7, transparent: true, opacity: 0.55, side: DoubleSide, depthWrite: false });
+      auras.set(color, value);
+    }
+    return value;
+  };
+  const take = <T extends Group | Mesh>(list: T[], index: number, make: () => T): T => {
+    let item = list[index];
+    if (item === undefined) {
+      item = make();
+      list.push(item);
+      group.add(item);
+    }
+    item.visible = true;
+    return item;
+  };
+  let clock = 0;
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+    },
+    frame(_state: EngineFrameState, dt: number) {
+      clock += dt;
+      const used = { phones: 0, rings: 0, mats: 0, auras: 0, parcels: 0 };
+      const world = keep.of(ctx);
+      for (const worker of world.instances()) {
+        if (!worker.ready) continue;
+        const at = ctx.scene.entity.get(worker.id)?.position;
+        if (at === undefined) continue;
+        const def = towerDef(worker.kind, editorLayers);
+        const pad = take(pool.mats, used.mats++, () => new Mesh(mat, matOf(def.color)));
+        pad.material = matOf(def.color);
+        pad.position.set(at[0], at[1] + 0.05, at[2]);
+        if (def.job === "librarian" || def.job === "monk") {
+          const radius = towerStats(world, worker.id).range;
+          const circle = take(pool.auras, used.auras++, () => new Mesh(aura, auraOf("#b68cff")));
+          circle.material = auraOf(def.job === "librarian" ? "#b68cff" : "#ffb060");
+          circle.rotation.x = -Math.PI / 2;
+          circle.scale.setScalar(radius);
+          circle.position.set(at[0], groundHeightAt(at[0], at[2]) + 0.12, at[2]);
+        }
+        if (session.workers.has(worker.id, "spotted")) {
+          const red = take(pool.rings, used.rings++, () => new Mesh(ring, spotted));
+          red.rotation.x = -Math.PI / 2;
+          red.position.set(at[0], at[1] + 0.12, at[2]);
+        }
+        if (session.workers.has(worker.id, "distracted")) {
+          const phone = take(pool.phones, used.phones++, () => {
+            const holder = new Group();
+            const body = new Mesh(phoneBody, dark);
+            const screen = new Mesh(phoneScreen, glow);
+            screen.position.z = 0.045;
+            holder.add(body, screen);
+            return holder;
+          });
+          phone.position.set(at[0], at[1] + WORKER_HEIGHT + 0.7 + Math.sin(clock * 5) * 0.08, at[2]);
+          phone.rotation.set(-0.5, clock * 1.5, 0.15 * Math.sin(clock * 3));
+        }
+      }
+      for (const plotId of session.parcels) {
+        const plot = BUILD_PLOTS.find((candidate) => candidate.id === plotId);
+        if (plot === undefined) continue;
+        const parcel = take(pool.parcels, used.parcels++, () => {
+          const holder = new Group();
+          const boxMesh = new Mesh(parcelBox, cardboard);
+          boxMesh.position.y = 0.45;
+          boxMesh.castShadow = true;
+          const strip = new Mesh(tape, tapeMaterial);
+          strip.position.y = 0.91;
+          holder.add(boxMesh, strip);
+          return holder;
+        });
+        parcel.position.set(plot.position[0], plot.position[1] + 0.2, plot.position[2]);
+        parcel.rotation.y = 0.4;
+      }
+      for (const [key, list] of Object.entries(pool) as [keyof typeof used, (Group | Mesh)[]][]) {
+        for (let index = used[key]; index < list.length; index += 1) list[index]!.visible = false;
+      }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      for (const geometry of [phoneBody, phoneScreen, ring, mat, aura, parcelBox, tape]) geometry.dispose();
+      for (const material of [dark, glow, spotted, cardboard, tapeMaterial, ...mats.values(), ...auras.values()]) material.dispose();
+    },
+  };
+}
+
+function WorkerStatus() {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => workerStatusDraw(ctx)} deps={[ctx]} />;
+}
+
+/** VFX-only overlay — the authored scene (draped streets + instanced yard scatter) is auto-mounted
  * by `defineGame({ editorLayers })`. */
 export function BeaconBastionWorldOverlay() {
   return (
@@ -298,6 +447,7 @@ export function BeaconBastionWorldOverlay() {
       <BuildPlots />
       <BuildSites />
       <InspectedTower />
+      <WorkerStatus />
       <ProjectileBolts />
     </>
   );

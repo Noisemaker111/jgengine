@@ -12,15 +12,15 @@ import { currentWaveNumber } from "../session";
 import { DIRECTOR_SEED, TOTAL_WAVES } from "./manifest";
 
 export interface BoonEffect {
-  /** Extra gold in the next defense's opening purse. */
+  /** Extra cash in the next day's opening till. */
   gold?: number;
-  /** Extra lives on the next keep. */
+  /** Extra attention span for the next day. */
   lives?: number;
   /** Added to the kill-pay multiplier for the whole run, as a fraction (0.4 = +40%). */
   bounty?: number;
 }
 
-/** A relic the result card can offer: banked progress the next defense carries in. */
+/** A perk the end-of-day card can offer: banked progress the next day carries in. */
 export interface BoonDef {
   id: string;
   label: string;
@@ -31,11 +31,11 @@ export interface BoonDef {
 }
 
 export const BOONS: readonly BoonDef[] = [
-  { id: "spoils", label: "Spoils of the Keep", detail: "+60 gold in the opening purse", weight: 3, effect: { gold: 60 } },
-  { id: "gate", label: "Reinforced Gate", detail: "+5 lives on the keep", weight: 3, effect: { lives: 5 } },
-  { id: "writ", label: "Bounty Writ", detail: "Kill pay +40% for the whole run", weight: 2, effect: { bounty: 0.4 } },
-  { id: "levy", label: "Warden's Levy", detail: "+35 gold and kill pay +15%", weight: 2, effect: { gold: 35, bounty: 0.15 } },
-  { id: "mason", label: "Stonemason's Gift", detail: "+3 lives and +25 gold", weight: 2, effect: { lives: 3, gold: 25 } },
+  { id: "tipjar", label: "Tip Jar", detail: "+60 cash in the opening till", weight: 3, effect: { gold: 60 } },
+  { id: "watch", label: "Neighborhood Watch", detail: "+5 attention span", weight: 3, effect: { lives: 5 } },
+  { id: "scrapyard", label: "Scrapyard Contract", detail: "Scrap pay +40% for the whole day", weight: 2, effect: { bounty: 0.4 } },
+  { id: "potluck", label: "Church Potluck", detail: "+35 cash and scrap pay +15%", weight: 2, effect: { gold: 35, bounty: 0.15 } },
+  { id: "flipphone", label: "Grandpa's Flip Phone", detail: "+3 attention span and +25 cash", weight: 2, effect: { lives: 3, gold: 25 } },
 ];
 
 /**

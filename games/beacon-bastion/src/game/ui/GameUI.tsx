@@ -10,7 +10,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { pauseRun } from "../menu";
 import { AbilityStones, BuildBar, KeepSigns, ReleaseHorn, WaveBoard } from "./Hud";
-import { BLOOD, FIRE, Glyph, beaconTheme, Text, usePhone } from "./look";
+import { BLOOD, FIRE, Glyph, townTheme, Text, usePhone } from "./look";
 import { Memorial } from "./Memorial";
 import { BeaconMenu } from "./menu/BeaconMenu";
 import { TowerPanel } from "./TowerPanel";
@@ -18,9 +18,10 @@ import { TowerPanel } from "./TowerPanel";
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
 /**
- * Beacon's HUD is the keep's own signage at the screen edges - the brazier and purse sign top-left,
- * the wave board top-centre, the builder's rack along the foot - and the front end is carved stone,
- * timber and a war banner. Live-play signage shows only in play, so a title or pause owns the frame.
+ * The HUD is the town's own signage at the screen edges - the attention mug and till top-left, the
+ * diner's wave sign top-centre, the hiring board along the foot - and the front end is a diner sign,
+ * red buttons and a DO NOT DISTURB door hanger. Live-play signage shows only in play, so a title or
+ * pause owns the frame.
  */
 export function GameUI() {
   const ctx = useGameContext(), phase = useOptionalGamePhase();
@@ -36,7 +37,7 @@ export function GameUI() {
     return () => window.removeEventListener("keydown", key, true);
   }, [ctx]);
   const live = phase === "playing" || phase === "ended";
-  return <RuneRoot context={ctx} theme={beaconTheme}>
+  return <RuneRoot context={ctx} theme={townTheme}>
     {live ? <PlayHud notices={<RuneView anchor="top" safe inset={96} gap={6} items="center">
       <RuneTransient source={notices} expire={ctx.game.notices.prune}>{(notice) =>
         <RuneView variant="sign" padding={[6, 14, 6, 14]}><Text size={14} color={notice.tone === "deny" ? BLOOD : FIRE}>{notice.text}</Text></RuneView>}
@@ -46,14 +47,14 @@ export function GameUI() {
   </RuneRoot>;
 }
 
-/** Live-play signage; the notices sit under the memorial, so its stone is never written over. */
+/** Live-play signage; the notices sit under the end-of-day card, so its board is never written over. */
 function PlayHud({ notices }: { notices: ReactNode }) {
   const ctx = useGameContext(), phone = usePhone();
   return <>
     <RuneView anchor="top-left" safe inset={phone ? 10 : 16} gap={10}><KeepSigns /><ReleaseHorn /></RuneView>
     <RuneView anchor={phone ? "top-right" : "top"} safe inset={phone ? 10 : 0} padding={phone ? [56, 0, 0, 0] : 0}><WaveBoard /></RuneView>
     <RuneView anchor="top-right" safe inset={phone ? 10 : 16}>
-      <RuneAction variant="sign" width={44} height={44} padding={0} items="center" justify="center" label="Pause the defense" run={() => pauseRun(ctx)} hover="#ffffff22"><Glyph name="pause" size={20} /></RuneAction>
+      <RuneAction variant="sign" width={44} height={44} padding={0} items="center" justify="center" label="Pause the day" run={() => pauseRun(ctx)} hover="#ffffff22"><Glyph name="pause" size={20} /></RuneAction>
     </RuneView>
     <RuneView anchor="bottom" safe inset={phone ? 10 : 14}><BuildBar /></RuneView>
     <RuneView anchor="bottom-right" safe inset={phone ? 10 : 16} padding={phone ? [0, 0, 150, 0] : 0}><AbilityStones /></RuneView>

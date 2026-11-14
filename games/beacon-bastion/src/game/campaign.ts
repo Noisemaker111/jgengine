@@ -4,40 +4,40 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { createSkillTree, type SkillNodeDef, type SkillResolution, type SkillTree, type SkillTreeState } from "@jgengine/core/progression/skillTree";
 
 /**
- * The campaign above every defense: the difficulty the next keep is raised on, the best stars each
- * difficulty has earned, and the War Council those stars buy. The council is the engine skill tree,
- * so its ranks, exclusive doctrines and respec are the engine's rules; this file is its content.
+ * The campaign above every day on the street: the shift the next day is worked on, the best stars
+ * each shift has earned, and the Town Council those stars buy. The council is the engine skill
+ * tree, so its ranks, exclusive ordinances and respec are the engine's rules; this file is its content.
  */
 
-export type DifficultyId = "squire" | "knight" | "warlord";
+export type DifficultyId = "parttime" | "fulltime" | "overtime";
 
 export interface DifficultyDef {
   id: DifficultyId;
   label: string;
   detail: string;
-  /** Raider health multiplier. */
+  /** Tech health multiplier. */
   health: number;
-  /** Armor every raider gains. */
+  /** Armor every piece of tech gains. */
   armor: number;
   lives: number;
-  /** Gold added to (or taken from) the opening purse. */
+  /** Cash added to (or taken from) the opening till. */
   gold: number;
   /** Kill-pay multiplier. */
   bounty: number;
   /** Seconds between a wave arriving in full and the next one marching on its own. */
   intermission: number;
-  /** Stars a hold on this difficulty can add on top of the lives it kept. */
+  /** Stars a held day on this shift can add on top of the attention it kept. */
   bonusStar: number;
 }
 
 export const DIFFICULTIES: Record<DifficultyId, DifficultyDef> = {
-  squire: { id: "squire", label: "Squire", detail: "Softer raiders, more lives, long breathers", health: 0.8, armor: 0, lives: 25, gold: 30, bounty: 1.1, intermission: 32, bonusStar: 0 },
-  knight: { id: "knight", label: "Knight", detail: "The keep as it was built", health: 1, armor: 0, lives: 20, gold: 0, bounty: 1, intermission: 25, bonusStar: 0 },
-  warlord: { id: "warlord", label: "Warlord", detail: "Tougher, armored raiders; twelve lives; short breathers. A hold earns a fourth star", health: 1.2, armor: 5, lives: 12, gold: -10, bounty: 0.95, intermission: 20, bonusStar: 1 },
+  parttime: { id: "parttime", label: "Part-Time", detail: "Flimsier tech, a longer attention span, long breaks", health: 0.8, armor: 0, lives: 25, gold: 30, bounty: 1.1, intermission: 32, bonusStar: 0 },
+  fulltime: { id: "fulltime", label: "Full-Time", detail: "An ordinary day on the street", health: 1, armor: 0, lives: 20, gold: 0, bounty: 1, intermission: 25, bonusStar: 0 },
+  overtime: { id: "overtime", label: "Overtime", detail: "Tougher, armored tech; twelve attention; short breaks. A held day earns a fourth star", health: 1.2, armor: 5, lives: 12, gold: -10, bounty: 0.95, intermission: 20, bonusStar: 1 },
 };
-export const DIFFICULTY_IDS: readonly DifficultyId[] = ["squire", "knight", "warlord"];
+export const DIFFICULTY_IDS: readonly DifficultyId[] = ["parttime", "fulltime", "overtime"];
 
-/** Stars a defense earns: none for a fall, then by the share of lives kept, plus the difficulty's bonus. */
+/** Stars a day earns: none for a loss, then by the share of attention kept, plus the shift's bonus. */
 export function starsFor(held: boolean, lives: number, livesMax: number, difficulty: DifficultyId): number {
   if (!held) return 0;
   const kept = livesMax <= 0 ? 0 : lives / livesMax;
@@ -45,48 +45,46 @@ export function starsFor(held: boolean, lives: number, livesMax: number, difficu
   return base + DIFFICULTIES[difficulty].bonusStar;
 }
 
-/** The council's stats: multipliers on tower damage, ability strength and cooldown, and flat purse and walls. */
+/** The council's stats: multipliers on worker damage, ability strength and cooldown, and flat cash and attention. */
 export type CouncilStat =
-  | "archer_damage"
-  | "cannon_damage"
-  | "frost_damage"
-  | "arcane_damage"
+  | "service_damage"
+  | "trades_damage"
+  | "civic_damage"
   | "range"
   | "opening_gold"
   | "lives"
   | "bounty"
   | "early_bonus"
-  | "fire_damage"
-  | "fire_cooldown"
-  | "bell_cooldown";
+  | "blackout_damage"
+  | "blackout_cooldown"
+  | "dnd_cooldown";
 
 export const COUNCIL_NODES: readonly (SkillNodeDef<CouncilStat> & { label: string; detail: string })[] = [
-  { id: "fletchers", label: "Fletchers' Guild", detail: "Archer damage +10% a rank", branch: "arsenal", maxRank: 2, passives: { archer_damage: { multiply: 1.1 } } },
-  { id: "foundry", label: "Gunfounders", detail: "Cannon damage +10% a rank", branch: "arsenal", maxRank: 2, passives: { cannon_damage: { multiply: 1.1 } } },
-  { id: "frostwrights", label: "Frostwrights", detail: "Frost damage +15% a rank", branch: "arsenal", maxRank: 2, passives: { frost_damage: { multiply: 1.15 } } },
-  { id: "lorekeepers", label: "Lorekeepers", detail: "Arcane damage +10% a rank", branch: "arsenal", maxRank: 2, passives: { arcane_damage: { multiply: 1.1 } } },
-  { id: "surveyors", label: "Surveyors", detail: "Every tower reaches 0.6 m further", branch: "arsenal", cost: 2, requiresPointsInBranch: 2, passives: { range: { add: 0.6 } } },
-  { id: "iron_doctrine", label: "Iron Doctrine", detail: "Archers and cannons +15%. Closes the Arcane Doctrine", branch: "arsenal", cost: 2, excludes: ["arcane_doctrine"], passives: { archer_damage: { multiply: 1.15 }, cannon_damage: { multiply: 1.15 } } },
-  { id: "arcane_doctrine", label: "Arcane Doctrine", detail: "Frost and arcane +15%. Closes the Iron Doctrine", branch: "arsenal", cost: 2, excludes: ["iron_doctrine"], passives: { frost_damage: { multiply: 1.15 }, arcane_damage: { multiply: 1.15 } } },
-  { id: "war_chest", label: "War Chest", detail: "+25 gold in the opening purse a rank", branch: "treasury", maxRank: 3, passives: { opening_gold: { add: 25 } } },
-  { id: "masonry", label: "Masonry", detail: "+3 keep lives a rank", branch: "treasury", maxRank: 2, passives: { lives: { add: 3 } } },
-  { id: "tithe", label: "Bounty Tithe", detail: "Kill pay +10%", branch: "treasury", cost: 2, requires: [{ nodeId: "war_chest" }], passives: { bounty: { multiply: 1.1 } } },
-  { id: "heralds", label: "Heralds", detail: "Calling a wave early pays half again", branch: "treasury", passives: { early_bonus: { multiply: 1.5 } } },
-  { id: "pyre", label: "Beacon Pyre", detail: "Beacon Fire burns 25% hotter a rank", branch: "rites", maxRank: 2, passives: { fire_damage: { multiply: 1.25 } } },
-  { id: "kindling", label: "Kindling", detail: "Beacon Fire is back 20% sooner", branch: "rites", cost: 2, requires: [{ nodeId: "pyre" }], passives: { fire_cooldown: { multiply: 0.8 } } },
-  { id: "bellwright", label: "Bellwright", detail: "The Frost Bell is back 15% sooner a rank", branch: "rites", maxRank: 2, passives: { bell_cooldown: { multiply: 0.85 } } },
+  { id: "service", label: "Service Industry Week", detail: "Hot and water damage +10% a rank (baristas, plumbers, firefighters)", branch: "union", maxRank: 2, passives: { service_damage: { multiply: 1.1 } } },
+  { id: "trades", label: "Trades Apprenticeships", detail: "Shock, blunt and pierce damage +10% a rank", branch: "union", maxRank: 2, passives: { trades_damage: { multiply: 1.1 } } },
+  { id: "civics", label: "Civics Class", detail: "Legal and analog damage +15% a rank", branch: "union", maxRank: 2, passives: { civic_damage: { multiply: 1.15 } } },
+  { id: "sidewalks", label: "Wider Sidewalks", detail: "Every worker reaches 0.6 m further", branch: "union", cost: 2, requiresPointsInBranch: 2, passives: { range: { add: 0.6 } } },
+  { id: "blue_collar", label: "Blue-Collar Ordinance", detail: "Service and trades +15%. Closes the Civic Ordinance", branch: "union", cost: 2, excludes: ["civic_ordinance"], passives: { service_damage: { multiply: 1.15 }, trades_damage: { multiply: 1.15 } } },
+  { id: "civic_ordinance", label: "Civic Ordinance", detail: "Civic +25% and trades +5%. Closes the Blue-Collar Ordinance", branch: "union", cost: 2, excludes: ["blue_collar"], passives: { civic_damage: { multiply: 1.25 }, trades_damage: { multiply: 1.05 } } },
+  { id: "bake_sale", label: "Bake Sale", detail: "+25 cash in the opening till a rank", branch: "budget", maxRank: 3, passives: { opening_gold: { add: 25 } } },
+  { id: "yoga", label: "Lunchtime Yoga", detail: "+3 attention span a rank", branch: "budget", maxRank: 2, passives: { lives: { add: 3 } } },
+  { id: "recycling", label: "Recycling Program", detail: "Scrap pay +10%", branch: "budget", cost: 2, requires: [{ nodeId: "bake_sale" }], passives: { bounty: { multiply: 1.1 } } },
+  { id: "early_bird", label: "Early Bird Special", detail: "Calling a wave early pays half again", branch: "budget", passives: { early_bonus: { multiply: 1.5 } } },
+  { id: "grid", label: "Old Power Grid", detail: "Blackout hits 25% harder a rank", branch: "rituals", maxRank: 2, passives: { blackout_damage: { multiply: 1.25 } } },
+  { id: "fuse_box", label: "Spare Fuses", detail: "Blackout is back 20% sooner", branch: "rituals", cost: 2, requires: [{ nodeId: "grid" }], passives: { blackout_cooldown: { multiply: 0.8 } } },
+  { id: "sabbath", label: "Screen-Free Sundays", detail: "Do Not Disturb is back 15% sooner a rank", branch: "rituals", maxRank: 2, passives: { dnd_cooldown: { multiply: 0.85 } } },
 ];
 
 export interface CampaignState {
   difficulty: DifficultyId;
-  /** Best stars each difficulty has earned. */
+  /** Best stars each shift has earned. */
   stars: Record<DifficultyId, number>;
   /** The council's spent ranks; its points are the stars, so they are not stored. */
   council: SkillTreeState;
 }
 
 export function freshCampaign(): CampaignState {
-  return { difficulty: "knight", stars: { squire: 0, knight: 0, warlord: 0 }, council: { points: 0, ranks: {} } };
+  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} } };
 }
 
 export const campaign = defineStore<CampaignState>("beacon:campaign", freshCampaign);
@@ -170,7 +168,7 @@ export function recordStars(ctx: GameContext, stars: number): number {
 export function readCampaign(value: unknown): CampaignState | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<CampaignState>;
-  const difficulty = DIFFICULTY_IDS.includes(raw.difficulty as DifficultyId) ? (raw.difficulty as DifficultyId) : "knight";
+  const difficulty = DIFFICULTY_IDS.includes(raw.difficulty as DifficultyId) ? (raw.difficulty as DifficultyId) : "fulltime";
   const stars = freshCampaign().stars;
   for (const id of DIFFICULTY_IDS) {
     const value = raw.stars?.[id];

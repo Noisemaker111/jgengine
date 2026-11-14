@@ -11,41 +11,44 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { GLYPHS, type GlyphName } from "./glyphs";
 
-/** The beacon's fire, soot timber, carved stone, parchment and the red war enamel. */
-export const FIRE = "#ffb347", GOLD = "#f6cf5a", BLOOD = "#e0624a", INK = "#f4ead2", DIM = "#c2b08c", SOOT = "#1f1813";
-export const PARCHMENT_INK = "#2e1f12", ENAMEL = "#8a2414", STONE = "#57524a", WOOD = "#6b4a2c";
+/**
+ * A small-town diner and its noticeboard: a tomato-red accent, cash green, a cream ink, a teal
+ * diner sign, a chalkboard, sticky notes, and the hot-pink door hanger that says DO NOT DISTURB.
+ */
+export const FIRE = "#ff7a4a", GOLD = "#8fe07a", BLOOD = "#ff5a6a", INK = "#fff6e6", DIM = "#c8c2b4", SOOT = "#1b1d24";
+export const PARCHMENT_INK = "#3a2a12", ENAMEL = "#c8245a", STONE = "#2f3b36", WOOD = "#1f5a59";
 export const FULL = { fraction: 1 };
-export const DISPLAY = "Cinzel", BODY = "Alegreya Sans";
+export const DISPLAY = "Lilita One", BODY = "Nunito";
 
-export const beaconTheme = {
-  colors: { fire: FIRE, gold: GOLD, blood: BLOOD, ink: INK, muted: DIM, soot: SOOT, track: "#3a2c1e" },
+export const townTheme = {
+  colors: { fire: FIRE, gold: GOLD, blood: BLOOD, ink: INK, muted: DIM, soot: SOOT, track: "#2a3430" },
   text: {
     body: { family: BODY, size: 15 },
     label: { family: BODY, size: 12, weight: 600, tracking: 1.4, color: DIM },
-    heading: { family: DISPLAY, size: 26, weight: 700, color: INK, tracking: 1 },
+    heading: { family: DISPLAY, size: 26, weight: 400, color: INK, tracking: 0.5 },
   },
   variants: {
-    // A timber sign: the HUD's plaques and the purse.
-    sign: { padding: [6, 12, 6, 12], gap: 6, gradient: { angle: 90, stops: [[0, "#5a3d24"], [1, "#3b2716"]] }, border: { width: 1, color: "#8d6c40" }, radius: 3, shadow: { y: 2, blur: 6, color: "#00000080" } },
-    // Carved stone: the mason's tablet, the memorial and the settings slab.
-    stone: { padding: 16, gap: 10, gradient: { angle: 90, stops: [[0, "#5d5850"], [1, "#3c3833"]] }, border: { width: 2, color: "#2a2622" }, radius: 4, shadow: { y: 4, blur: 14, color: "#000000a0" } },
-    // A torn commission or dispatch.
-    parchment: { padding: [18, 20, 20, 20], gap: 10, gradient: { angle: 90, stops: [[0, "#efe0bb"], [1, "#d8c393"]] }, border: { width: 1, color: "#9c7f4c" }, radius: 2, shadow: { y: 4, blur: 12, color: "#00000090" } },
-    // A timber plank to press.
-    plank: { minHeight: 40, padding: [8, 16, 8, 16], gap: 8, items: "center", justify: "center", gradient: { angle: 90, stops: [[0, "#7a5532"], [1, "#55381f"]] }, border: { width: 1, color: "#a8814a" }, radius: 3, hover: "#ffffff22", press: "#00000033" },
-    // A carved keystone for the beacon's rites; its recharge fill rises inside it.
-    keystone: { items: "center", justify: "center", fill: "#3f3b35", radius: 4, clip: true, hover: "#ffffff1a", press: "#00000033" },
-    // The red war enamel: the horn, Raise and the chosen oath.
-    enamel: { minHeight: 44, padding: [10, 20, 10, 20], gap: 8, items: "center", justify: "center", gradient: { angle: 90, stops: [[0, "#a8321c"], [1, "#6e1a0e"]] }, border: { width: 2, color: "#e8a050" }, radius: 3, hover: "#ffffff22", press: "#00000033", shadow: { y: 0, blur: 14, color: "#ff8c3260" } },
+    // The teal diner sign: the HUD's readouts and the till.
+    sign: { padding: [6, 12, 6, 12], gap: 6, gradient: { angle: 90, stops: [[0, "#2f8a86"], [1, "#1f5c5a"]] }, border: { width: 2, color: "#f6e7c1" }, radius: 10, shadow: { y: 3, blur: 6, color: "#00000070" } },
+    // The chalkboard: the worker card, the end-of-day card and the settings board.
+    stone: { padding: 16, gap: 10, gradient: { angle: 90, stops: [[0, "#34443e"], [1, "#25302c"]] }, border: { width: 4, color: "#c99a5a" }, radius: 8, shadow: { y: 5, blur: 14, color: "#00000090" } },
+    // A sticky note on the corkboard.
+    parchment: { padding: [16, 18, 18, 18], gap: 10, gradient: { angle: 90, stops: [[0, "#fff4a8"], [1, "#f6df72"]] }, border: { width: 1, color: "#d8b84a" }, radius: 3, shadow: { y: 4, blur: 10, color: "#00000070" } },
+    // A tomato-red diner button to press.
+    plank: { minHeight: 40, padding: [8, 16, 8, 16], gap: 8, items: "center", justify: "center", gradient: { angle: 90, stops: [[0, "#e4573f"], [1, "#b83a28"]] }, border: { width: 2, color: "#ffd9b0" }, radius: 12, hover: "#ffffff22", press: "#00000033" },
+    // A rounded tile for the town's two big buttons; its recharge fill rises inside it.
+    keystone: { items: "center", justify: "center", fill: "#2a2f3a", radius: 14, clip: true, hover: "#ffffff1a", press: "#00000033" },
+    // The hot-pink DO NOT DISTURB door hanger: the wave call, New Day and the chosen shift.
+    enamel: { minHeight: 44, padding: [10, 20, 10, 20], gap: 8, items: "center", justify: "center", gradient: { angle: 90, stops: [[0, "#f0407a"], [1, "#b01f52"]] }, border: { width: 2, color: "#ffe08a" }, radius: 22, hover: "#ffffff22", press: "#00000033", shadow: { y: 0, blur: 14, color: "#ff4a8a60" } },
   },
   motion: { duration: 180, distance: 10, bounce: 0 },
 } satisfies RuneTheme;
 
 export type TextProps = Omit<RuneElementProps, "text"> & { text?: Live<string> };
 export function Text({ text, ...props }: TextProps) { return <RuneLabel {...props} {...(text === undefined ? {} : { value: text })} />; }
-export function Tag(props: TextProps) { return <Text {...beaconTheme.text.label} {...props} />; }
-export function Heading(props: TextProps) { return <Text {...beaconTheme.text.heading} {...props} />; }
-/** A short line over the field, on a soot backing so it reads over bright grass. */
+export function Tag(props: TextProps) { return <Text {...townTheme.text.label} {...props} />; }
+export function Heading(props: TextProps) { return <Text {...townTheme.text.heading} {...props} />; }
+/** A short line over the street, on a dark backing so it reads over bright lawns. */
 export function Caption({ maxWidth, ...props }: TextProps & { maxWidth?: number }) {
   return <RuneView fill="#120d09c0" radius={3} padding={[3, 8, 3, 8]} {...(maxWidth === undefined ? {} : { maxWidth })}><Text size={13} {...props} /></RuneView>;
 }
@@ -64,29 +67,29 @@ export function Glyph({ name, size = 16, color = INK }: { name: GlyphName; size?
 }
 
 /**
- * The beacon brazier: iron bowl under a two-tone flame whose height follows `strength` (0..1).
- * A failing keep visibly gutters; at 0 only the coals glow.
+ * The town's attention span as a mug of coffee: the steam rises as high as the town is focused and
+ * the coffee is there while there is any focus left. A distracted town visibly goes cold.
  */
-export function Brazier({ size = 48, strength }: { size?: number; strength: Live<number> }) {
-  const fire = () => Math.max(0, Math.min(1, readLive(strength)));
-  const scale = bind(() => 0.3 + fire() * 0.7), lit = bind(() => (fire() > 0.02 ? 1 : 0));
+export function AttentionMug({ size = 48, strength }: { size?: number; strength: Live<number> }) {
+  const focus = () => Math.max(0, Math.min(1, readLive(strength)));
+  const scale = bind(() => 0.3 + focus() * 0.7), lit = bind(() => (focus() > 0.02 ? 1 : 0));
   return <RuneView width={size} height={size} items="center" justify="center">
     <RuneView pin={[0, 0, null, null]} width={size} height={size} items="center" justify="center" scale={scale} opacity={lit}>
-      <Glyph name="flameOuter" size={size} color="#ff7a1a" />
+      <Glyph name="steam" size={size} color="#f4f0ea" />
     </RuneView>
-    <RuneView pin={[0, 0, null, null]} width={size} height={size} items="center" justify="center" scale={scale} opacity={lit}>
-      <Glyph name="flameInner" size={size} color="#ffe07a" />
+    <RuneView pin={[0, 0, null, null]} width={size} height={size} items="center" justify="center" opacity={lit}>
+      <Glyph name="coffeeFill" size={size} color="#8a4a22" />
     </RuneView>
     <RuneView pin={[0, 0, null, null]} width={size} height={size} items="center" justify="center">
-      <Glyph name="bowl" size={size} color="#7a6c5e" />
+      <Glyph name="mug" size={size} color="#ffffff" />
     </RuneView>
   </RuneView>;
 }
 
-/** A full-screen sheet the field is shut out behind: dark wash, one centred slab, Back on Escape. */
+/** A full-screen sheet the street is shut out behind: dark wash, one centred board, Back on Escape. */
 export function Sheet({ children, label, close, width = 640, variant = "stone" }: { children: ReactNode; label: string; close?: () => void; width?: number; variant?: "stone" | "parchment" }) {
   const viewport = useRuneViewport();
-  return <RuneView anchor="fill" fill="#0b0705d8" modal {...(close === undefined ? {} : { onBack: close })}>
+  return <RuneView anchor="fill" fill="#0b1014d0" modal {...(close === undefined ? {} : { onBack: close })}>
     <RuneView anchor="center" variant={variant} width={Math.min(width, viewport.width - 24)} maxHeight={viewport.height - 24} label={label} role="dialog">
       <RuneView scroll maxHeight={viewport.height - 60} gap={10}>{children}</RuneView>
     </RuneView>

@@ -1,6 +1,6 @@
 /**
- * Beacon's own marks as SVG artwork on a 24-unit grid, drawn by Rune in the colour the caller
- * passes. Each is one silhouette, so a glyph reads at 12 points on a phone plaque.
+ * The town's own marks as SVG artwork on a 24-unit grid, drawn by Rune in the colour the caller
+ * passes. Each is one silhouette, so a glyph reads at 12 points on a phone button.
  */
 const filled = (body: string) => `<g fill="currentColor">${body}</g>`;
 const R45 = "rotate(45 12 12)";
@@ -31,10 +31,32 @@ export const GLYPHS = {
   debuffArrow: filled('<path d="M5,6 L7.3,6 L12,10.2 L16.7,6 L19,6 L12,13.5 Z"/><path d="M5,13.5 L7.3,13.5 L12,17.7 L16.7,13.5 L19,13.5 L12,21 Z"/>'),
   arrowUp: filled('<polygon points="12,3 19.5,11 14.4,11 14.4,21 9.6,21 9.6,11 4.5,11"/>'),
   amulet: filled('<path fill-rule="evenodd" d="M12,2.5 C13.4,2.5 14.5,3.6 14.5,5 C14.5,6.4 13.4,7.5 12,7.5 C10.6,7.5 9.5,6.4 9.5,5 C9.5,3.6 10.6,2.5 12,2.5 Z M12,3.9 C11.4,3.9 10.9,4.4 10.9,5 C10.9,5.6 11.4,6.1 12,6.1 C12.6,6.1 13.1,5.6 13.1,5 C13.1,4.4 12.6,3.9 12,3.9 Z"/><polygon points="12,7 16.5,11.5 14.3,19.5 9.7,19.5 7.5,11.5"/>'),
-  // The beacon brazier in three passes, so each can take its own colour and the flame its own scale.
-  flameOuter: filled('<path d="M12 1 C15.4 6 18.4 9.4 17.6 13.6 C17.2 16.6 14.6 18.4 12 18.4 C9.4 18.4 6.8 16.6 6.4 13.6 C5.6 9.4 9 6.4 12 1 Z"/>'),
-  flameInner: filled('<path d="M12 8.4 C13.6 10.6 14.6 12.4 14.2 14.4 C13.9 16 13 17 12 17 C11 17 10.1 16 9.8 14.4 C9.4 12.4 10.4 10.6 12 8.4 Z"/>'),
-  bowl: filled('<rect x="3.4" y="16" width="17.2" height="1.8" rx="0.6"/><path d="M4.2 17.8 H19.8 L17.2 22.6 H6.8 Z"/><path d="M8 22.4 L6 24 M16 22.4 L18 24" stroke="currentColor" stroke-width="1.2"/>'),
-} as const;
+  // The attention mug in three passes, so the steam and the coffee can take their own colour and scale.
+  steam: filled('<path d="M8 2.5c-1.6 1.6-1.6 3 0 4.6s1.6 3 0 4.6l1.3 1c2-2 2-4 0-6s-1.4-2.7 0-4.2zM13 2.5c-1.6 1.6-1.6 3 0 4.6s1.6 3 0 4.6l1.3 1c2-2 2-4 0-6s-1.4-2.7 0-4.2z"/>'),
+  coffeeFill: filled('<path d="M4.4 14.2h12.2v2.4c0 2.6-2.2 4.6-4.9 4.6H9.3c-2.7 0-4.9-2-4.9-4.6z"/>'),
+  mug: filled('<path fill-rule="evenodd" d="M3 12.6h15v4c0 3.5-2.9 6.2-6.4 6.2H9.4C5.9 22.8 3 20.1 3 16.6zM4.6 14.2v2.4c0 2.6 2.2 4.6 4.8 4.6h2.2c2.6 0 4.8-2 4.8-4.6v-2.4z M18 13.6h1.4c1.7 0 3 1.3 3 3s-1.3 3-3 3H17.6v-1.6h1.8c.8 0 1.4-.6 1.4-1.4s-.6-1.4-1.4-1.4H18z"/>'),
+  coffee: filled('<path d="M4 9h13v5.5c0 3.6-2.9 6.5-6.5 6.5S4 18.1 4 14.5z"/><path fill-rule="evenodd" d="M16.5 10.5H19c1.7 0 3 1.3 3 3s-1.3 3-3 3h-2.8v-1.8H19c.7 0 1.2-.5 1.2-1.2s-.5-1.2-1.2-1.2h-2.5z"/><path d="M7 2.5c-1.2 1.2-1.2 2.4 0 3.6l-1 .9c-1.7-1.7-1.7-3.6 0-5.3zM11 2.5c-1.2 1.2-1.2 2.4 0 3.6l-1 .9c-1.7-1.7-1.7-3.6 0-5.3z"/><rect x="3" y="21" width="15" height="1.6" rx="0.8"/>'),
+  wrench: filled('<path d="M20.6 6.3l-3.1 3.1-2.8-.7-.7-2.8 3.1-3.1c-2.3-.8-5 .1-6.3 2.3-.9 1.5-1 3.2-.4 4.7L3.3 16.9c-1 1-1 2.7 0 3.7s2.7 1 3.7 0l7.1-7.1c1.5.6 3.2.5 4.7-.4 2.2-1.3 3.1-4 2.3-6.3z"/>'),
+  bolt: filled('<polygon points="13,2 5,14 11,14 9,22 19,9 12,9 14.5,2"/>'),
+  book: filled('<path fill-rule="evenodd" d="M3 4.5C5.5 3.5 8.5 3.6 11.2 5v15.5C8.5 19 5.5 19 3 20zM12.8 5c2.7-1.4 5.7-1.5 8.2-.5V20c-2.5-1-5.5-1-8.2.5z"/>'),
+  apple: filled('<path d="M12 7.5c-1.6-1.2-3.8-1.6-5.6-.6C3.4 8.6 3.4 13.4 5 16.8c1.2 2.6 3.2 5 5 4.4.9-.3 1.4-.6 2-.6s1.1.3 2 .6c1.8.6 3.8-1.8 5-4.4 1.6-3.4 1.6-8.2-1.4-9.9-1.8-1-4-.6-5.6.6z"/><path d="M12 7.6c-.2-2 .4-4 2.2-5.3l.9 1c-1.4 1.2-1.8 2.6-1.6 4.3z"/><path d="M13 5.2c1.4-2 3.6-2.6 5.6-2-1 1.9-3.2 2.8-5.6 2z"/>'),
+  teacup: filled('<path d="M3 9h14v3.5C17 16.6 13.9 20 10 20s-7-3.4-7-7.5z"/><path fill-rule="evenodd" d="M16.6 10H19c1.7 0 3 1.3 3 3s-1.3 3-3 3h-3v-1.8h3c.7 0 1.2-.5 1.2-1.2s-.5-1.2-1.2-1.2h-2.4z"/><rect x="1.5" y="20.2" width="17" height="1.8" rx="0.9"/><circle cx="10" cy="5.5" r="1.5"/>'),
+  laptop: filled('<path fill-rule="evenodd" d="M4 4.5h16v11H4zM5.8 6.3v7.4h12.4V6.3z"/><path d="M1.5 16.8h21l-1.5 2.7H3z"/>'),
+  hose: filled('<path d="M3 14c0-3.9 3.1-7 7-7h4V4.5l7 4.5-7 4.5V11h-4c-1.7 0-3 1.3-3 3v6H3z"/>'),
+  hardhat: filled('<path d="M4 15c0-4.4 3.1-8.1 7.2-8.9V4h1.6v2.1C16.9 6.9 20 10.6 20 15z"/><rect x="2" y="15.4" width="20" height="2.6" rx="1.3"/>'),
+  pitchfork: filled('<rect x="11.1" y="9" width="1.8" height="14" rx="0.9"/><path d="M6 2h1.8v5.4c0 1.2 1 2.2 2.2 2.2h4c1.2 0 2.2-1 2.2-2.2V2H18v5.4c0 2.2-1.8 4-4 4h-4c-2.2 0-4-1.8-4-4z"/><rect x="11.1" y="2" width="1.8" height="7"/>'),
+  gavel: filled(`<g transform="${R45}"><rect x="7" y="3" width="10" height="6" rx="1.5"/><rect x="11" y="9" width="2" height="12" rx="1"/></g><rect x="3" y="20" width="10" height="2.2" rx="1"/>`),
+  broom: filled('<rect x="11.2" y="1.5" width="1.6" height="12" rx="0.8" transform="rotate(20 12 12)"/><path d="M8.6 12.6l6.2 2.3 1.1 7.6-10.4-3.8z"/>'),
+  envelope: filled('<path fill-rule="evenodd" d="M2.5 5.5h19v13h-19zM4.4 7.4v.3l7.6 5.5 7.6-5.5v-.3zM4.4 10v6.6h15.2V10L12 15.5z"/>'),
+  lotus: filled('<path d="M12 4c1.8 2 2.6 4.6 2.6 7.2 0 2.4-1 4.6-2.6 6.3-1.6-1.7-2.6-3.9-2.6-6.3C9.4 8.6 10.2 6 12 4z"/><path d="M3 10.5c2.6-.2 5 .9 6.6 2.9 1 1.3 1.6 2.9 1.7 4.6-2.8.3-5.4-1-7-3.2-.8-1.3-1.3-2.8-1.3-4.3zM21 10.5c0 1.5-.5 3-1.3 4.3-1.6 2.2-4.2 3.5-7 3.2.1-1.7.7-3.3 1.7-4.6 1.6-2 4-3.1 6.6-2.9z"/><rect x="5" y="19" width="14" height="1.8" rx="0.9"/>'),
+  phone: filled('<path fill-rule="evenodd" d="M7 1.5h10c1.1 0 2 .9 2 2v17c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2v-17c0-1.1.9-2 2-2zM7 4v13.5h10V4z"/><circle cx="12" cy="20" r="1"/>'),
+  moon: filled('<path d="M14.5 2.5A9.5 9.5 0 1 0 21.5 15 7.5 7.5 0 0 1 14.5 2.5z"/>'),
+  camera: filled('<path fill-rule="evenodd" d="M2 7h14v9H2zM16 9.5l6-3v10l-6-3z"/><circle cx="6" cy="11.5" r="1.6" fill="currentColor"/><rect x="7" y="16" width="2" height="5"/><rect x="3" y="20.5" width="10" height="1.8" rx="0.9"/>'),
+  wifi: filled('<path d="M12 18.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/><path d="M7.4 15.6l1.5 1.5a4.4 4.4 0 0 1 6.2 0l1.5-1.5a6.5 6.5 0 0 0-9.2 0z"/><path d="M4.2 12.4l1.5 1.5a8.9 8.9 0 0 1 12.6 0l1.5-1.5a11 11 0 0 0-15.6 0z"/><path d="M1 9.2l1.5 1.5a13.4 13.4 0 0 1 19 0L23 9.2a15.5 15.5 0 0 0-22 0z"/>'),
+  thermometer: filled('<path fill-rule="evenodd" d="M10 3.5c0-1.1.9-2 2-2s2 .9 2 2v10.3a4.5 4.5 0 1 1-4 0zM11.6 5v10.2a3 3 0 1 0 .8 0V5z"/><circle cx="12" cy="18" r="2.2"/>'),
+  plug: filled('<rect x="7.5" y="1.5" width="1.8" height="5" rx="0.9"/><rect x="14.7" y="1.5" width="1.8" height="5" rx="0.9"/><path d="M5 6.5h14v4c0 3.3-2.4 6-5.5 6.5V22h-3v-5c-3.1-.5-5.5-3.2-5.5-6.5z"/>'),
+  megaphone: filled('<path d="M3 9.5h4l10-5.5v16L7 14.5H3z"/><path d="M5 15h3l1.5 6H6.8z"/><path d="M19 8.5c1.6.8 2.5 2.1 2.5 3.5s-.9 2.7-2.5 3.5l-.7-1.4c1-.5 1.6-1.3 1.6-2.1s-.6-1.6-1.6-2.1z"/>'),
+  parcel: filled('<path d="M12 2l9 4.5v11L12 22l-9-4.5v-11zm0 2.1L6.4 6.9 12 9.7l5.6-2.8z"/>'),
+  } as const;
 
 export type GlyphName = keyof typeof GLYPHS;

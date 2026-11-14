@@ -13,20 +13,23 @@ import { TOWER_IDS, towerDef, type TowerDef } from "./entities/towers/catalog";
 import { baseTowerFacts, TOWER_FACTS, TOWER_LADDERS, type TowerFact } from "./entities/towers/ladders";
 import { PURSE_ACCOUNT, PURSE_CURRENCY, PURSE_FACT, purseReason, purseRef } from "./purse";
 import { finishRun } from "./waves/legacy";
-import { BUILD_PLOTS } from "./world/path";
+import { speak } from "./combat/towerAI";
+import { BUILD_PLOTS, facingStreet } from "./world/path";
 import { session } from "./session";
 
 /**
- * The keep as one declaration: its purse and walls, the nine plots, every tower type with its build
- * time, upgrades and sale, and what kills, leaks and early releases do to it. The engine runs it, so
- * the HUD, the tower panel, the build bar, saves and co-op all read the same world. Creeps on the road,
- * tower aim and the wave director stay real-time game code that reads and writes these facts.
+ * The town as one declaration: its cash and attention span, the plots along the street, every
+ * worker with their clock-in time, promotions and severance, and what kills, leaks and early calls
+ * do to it. The engine runs it, so the HUD, the worker card, the hiring board, saves and co-op all
+ * read the same world. Tech on the street, worker aim and the wave director stay real-time game code
+ * that reads and writes these facts. (Fact ids keep their first names: `keep.gold` is the town's
+ * cash and `keep.lives` its attention span.)
  */
 
-/** Share of everything a tower cost (build and upgrades) that a sale returns. */
+/** Share of everything a worker cost (hiring and promotions) that letting them go returns. */
 export const SELL_SHARE = 0.7;
 
-/** What mending one wall breach costs and restores. Repairs wait for a clear road. */
+/** What one coffee break costs and how much attention it restores. Breaks wait for a clear street. */
 export const MEND_RULE = { gold: 20, lives: 1 } as const;
 
 /** One sale for every tower type: the `tower` tag covers them all. */
@@ -65,7 +68,7 @@ export const keep = defineGameSpec({
   world: {
     factions: {
       keep: {
-        label: "The Keep",
+        label: "The Town",
         facts: {
           gold: { value: STARTING_GOLD, min: 0 },
           lives: { value: STARTING_LIVES, min: 0 },
@@ -96,14 +99,14 @@ export const keep = defineGameSpec({
     kinds: Object.fromEntries(defs.map((def) => [def.id, towerKind(def)])),
     actions: Object.assign(
       // The kind's refund (SELL_SHARE) is a share of everything the tower cost, upgrades included.
-      { sell: { label: "Sell", on: "tower", removes: true, note: "{target} sold." } },
+      { sell: { label: "Let go", on: "tower", removes: true, note: "{target} clocked out for good." } },
       {
         mend: {
-          label: "Mend the walls",
+          label: "Coffee break",
           when: { "keep.field_clear": true, "keep.breaches": { atLeast: MEND_RULE.lives } },
           cost: { "keep.gold": -MEND_RULE.gold },
           world: { "keep.lives": MEND_RULE.lives, "keep.breaches": -MEND_RULE.lives },
-          refuse: "Mend the walls once the road is clear",
+          refuse: "Take a coffee break once the street is clear",
         },
       },
       aimActions(),
@@ -113,8 +116,10 @@ export const keep = defineGameSpec({
     ripples: {
       bounty: { world: { "keep.gold": 1, "keep.bounty_earned": 1 } },
       overlap_bonus: { world: { "keep.gold": 1 }, note: "An early release paid the keep." },
-      leak: { world: { "keep.lives": -1, "keep.breaches": 1, "keep.wave_leaks": 1 }, note: "Raiders broke through to the keep.", hook: "keep_breached" },
-      held_pay: { world: { "keep.gold": 1 }, note: "The garrison was paid for holding the road." },
+      leak: { world: { "keep.lives": -1, "keep.breaches": 1, "keep.wave_leaks": 1 }, note: "Tech got through and the town lost focus.", hook: "keep_breached" },
+      held_pay: { world: { "keep.gold": 1 }, note: "The town paid its workers for a clear street." },
+      mail_pay: { world: { "keep.gold": 1 }, note: "The mail came in." },
+      theft: { world: { "keep.gold": -1 }, note: "A mining rig siphoned the town's cash." },
     },
     totals,
   },
@@ -130,12 +135,15 @@ export const keep = defineGameSpec({
   onReady(ctx, tower) {
     const plot = BUILD_PLOTS.find((candidate) => candidate.id === tower.slot);
     if (plot === undefined) return;
-    ctx.scene.entity.spawn(tower.kind, { id: tower.id, position: plot.position, role: "prop" });
+    ctx.scene.entity.spawn(tower.kind, { id: tower.id, position: plot.position, role: "prop", rotationY: facingStreet(plot.position) });
+    speak(ctx, tower.id, tower.kind, "place");
   },
   onRemoved(ctx, { id }) {
     ctx.scene.entity.despawn(id);
     session.towerCooldowns.delete(id);
     session.towerShots.delete(id);
+    session.workerClocks.delete(id);
+    session.workers.clear(id);
     if (session.inspectedTowerId === id) session.inspectedTowerId = null;
   },
   // Every move of the purse (a build, an upgrade, a sale, a bounty, held pay) goes into the keep's books.
@@ -145,10 +153,14 @@ export const keep = defineGameSpec({
       keepBooks(ctx).record(PURSE_CURRENCY, change.to - change.from, purseReason(change.cause), purseRef(change.cause));
     },
   },
-  onLanded(ctx, action) {
+  onLanded(ctx, action, target) {
     if (action === "sell") ctx.game.audio.play("sell");
     else if (action.startsWith("aim_")) ctx.game.audio.play("select");
-    else ctx.game.audio.play("upgrade");
+    else {
+      ctx.game.audio.play("upgrade");
+      const worker = target === null ? null : keep.of(ctx).instance(target);
+      if (worker !== null) speak(ctx, worker.id, worker.kind, "promote");
+    }
   },
 });
 
@@ -166,7 +178,7 @@ export const keepBooks = perContext((ctx: GameContext): WalletBooks => createWal
   opening: "opening-purse",
 }));
 
-/** A defense that already fell or held: nothing more is built, released or banked. */
+/** A defense that was already lost or held: nothing more is hired, released or banked. */
 export function runEnded(world: WorldModel): boolean {
   return world.fact("keep.fallen") === true || world.fact("keep.held") === true;
 }
@@ -244,12 +256,12 @@ export function resetKeep(ctx: GameContext, opening: { gold: number; lives: numb
   keepBooks(ctx).reset("opening-purse");
 }
 
-/** Put every ready tower of the stored world back on the field (after a load). */
+/** Put every ready worker of the stored world back on their plot (after a load). */
 export function spawnStandingTowers(ctx: GameContext): void {
   for (const tower of keep.of(ctx).instances()) {
     if (!tower.ready || ctx.scene.entity.get(tower.id) !== null) continue;
     const plot = BUILD_PLOTS.find((candidate) => candidate.id === tower.slot);
-    if (plot !== undefined) ctx.scene.entity.spawn(tower.kind, { id: tower.id, position: plot.position, role: "prop" });
+    if (plot !== undefined) ctx.scene.entity.spawn(tower.kind, { id: tower.id, position: plot.position, role: "prop", rotationY: facingStreet(plot.position) });
   }
 }
 

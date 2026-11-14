@@ -16,10 +16,10 @@ const STEP = 1 / 30;
 const MAX_STAGED_SECONDS = 900;
 
 /**
- * Run the defense's own three systems for `seconds` of game time without waiting for a
- * frame. A staged state is the real fight advanced quickly, never a scene assembled by hand:
- * the wave director spawns and walks the raiders, the keep's world raises the towers, tower AI
- * shoots, and leaks, kills, gold and the result all come out of those systems.
+ * Run the day's own three systems for `seconds` of game time without waiting for a frame. A staged
+ * state is the real fight advanced quickly, never a scene assembled by hand: the wave director
+ * spawns and rolls the tech, the town's world clocks the workers in, worker AI works (or doomscrolls),
+ * and leaks, kills, cash and the result all come out of those systems.
  */
 function advance(ctx: GameContext, seconds: number): void {
   for (let elapsed = 0; elapsed < seconds; elapsed += STEP) {
@@ -30,7 +30,7 @@ function advance(ctx: GameContext, seconds: number): void {
   }
 }
 
-/** Open the authored Warden wave and walk it until the boss is on the field. */
+/** Open the authored server-room wave and roll it until the server rack is on the street. */
 function stageBossWave(ctx: GameContext): void {
   session.encounter.openWave(AUTHORED_WAVES.length - 1, session.pressure);
   keep.of(ctx).set("keep.wave_started", true);
@@ -41,13 +41,44 @@ function stageBossWave(ctx: GameContext): void {
   if (boss === null) return;
   const health = ctx.scene.entity.stats.get(boss.instanceId, "health");
   if (health === null || health.max <= 0) return;
-  // Put the Warden under its second cut point so the next simulated tick runs the real
+  // Put the server rack under its second cut point so the next simulated tick runs the real
   // `advancePhase` transition and raises its tell, rather than photographing a phase banner.
   ctx.scene.entity.stats.set(boss.instanceId, "health", { current: Math.round(health.max * 0.55) });
   advance(ctx, STEP * 2);
 }
 
-/** Release each assault only once the field is clear, so the run is a defense and not a wave rush. */
+/** The staffed street a capture shows: a mixed crew hired through the town's own `beacon.place`. */
+const STAGED_CREW: readonly [string, string][] = [
+  ["plot-5", "worker_barista"],
+  ["plot-4", "worker_plumber"],
+  ["plot-10", "worker_farmer"],
+  ["plot-6", "worker_electrician"],
+  ["plot-8", "worker_teacher"],
+  ["plot-3", "worker_grandma"],
+  ["plot-7", "worker_librarian"],
+  ["plot-2", "worker_construction"],
+  ["plot-11", "worker_lawyer"],
+];
+
+function hireCrew(ctx: GameContext): void {
+  const world = keep.of(ctx);
+  world.set("keep.gold", 5000);
+  for (const [slot, kind] of STAGED_CREW) ctx.game.commands.run("beacon.place", { kind, slot });
+  advance(ctx, 4);
+  world.set("keep.gold", 180);
+}
+
+/** A staffed street with the surveillance wave rolling through it: notifications, a camera, drones. */
+function stageMidwave(ctx: GameContext): void {
+  hireCrew(ctx);
+  session.encounter.openWave(3, session.pressure);
+  keep.of(ctx).set("keep.wave_started", true);
+  keep.of(ctx).set("keep.wave_ready", false);
+  keep.of(ctx).set("keep.wave", session.encounter.view().wave);
+  advance(ctx, 13);
+}
+
+/** Release each wave only once the street is clear, so the run is a defense and not a wave rush. */
 function playOutDefense(ctx: GameContext): void {
   for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
     const world = keep.of(ctx);
@@ -57,7 +88,7 @@ function playOutDefense(ctx: GameContext): void {
   }
 }
 
-/** Let the first wave walk into an empty keep, holding the clock, so the walls are breached and the road clears. */
+/** Let the first wave roll into an empty town, holding the clock, so focus is lost and the street clears. */
 function stageBreach(ctx: GameContext): void {
   sendWave(ctx);
   for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
@@ -81,13 +112,12 @@ export function stageRun(ctx: GameContext, mode: StageMode): void {
     playOutDefense(ctx);
     return;
   }
-  sendWave(ctx);
-  advance(ctx, 12);
+  stageMidwave(ctx);
 }
 
 /**
- * Dev-only capture staging for the states that need real play to reach: a wave on the field,
- * the Warden mid-phase, and a finished defense with its result card. Never registered in a
+ * Dev-only capture staging for the states that need real play to reach: a wave on a staffed street,
+ * the server rack mid-phase, and a finished day with its end-of-day card. Never registered in a
  * production build; each state is a command sequence, so a lane jumps here instead of playing.
  */
 export function registerCaptureCommands(ctx: GameContext): void {

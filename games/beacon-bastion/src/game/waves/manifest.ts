@@ -3,104 +3,125 @@ import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/en
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
-import { COMPOSE_FROM_WAVE, composeWaves } from "./composer";
+import { COMPOSE_FROM_WAVE, COMPOSE_TO_WAVE, composeWaves } from "./composer";
 
-export { COMPOSE_FROM_WAVE } from "./composer";
+export { COMPOSE_FROM_WAVE, COMPOSE_TO_WAVE } from "./composer";
 
 /**
- * The raider host, authored as data. Each wave names its composition, the approach it uses, and the
- * second each group walks on; `escalates` marks the groups the director may thicken when the keep is
- * hurting. Nothing here spawns anything — `waves/director.ts` turns orders into creeps.
+ * The march of technology, authored as data. Each wave names its composition, the road it takes,
+ * and the second each group rolls on; `escalates` marks the groups the director may thicken when
+ * the town is losing focus. The ramp: gadgets, then the smart home, then surveillance and delivery,
+ * then the server room. Nothing here spawns anything — `waves/director.ts` turns orders into tech.
  */
 export const AUTHORED_WAVES: readonly EncounterWave[] = [
   {
-    id: "probe",
-    label: "Probe",
+    id: "push-notifications",
+    label: "Push Notifications",
     durationSeconds: 20,
     groups: [
-      { unit: "raider_scout", entry: SPAWN_POINT_KEY, count: 5 },
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 2, at: 6 },
+      { unit: "tech_earbuds", entry: SPAWN_POINT_KEY, count: 6 },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 3, at: 6 },
     ],
   },
   {
-    id: "press",
-    label: "Press",
+    id: "wearables",
+    label: "Wearables",
     durationSeconds: 20,
     groups: [
-      { unit: "raider_scout", entry: SPAWN_POINT_KEY, count: 5 },
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 4, at: 4, escalates: true },
-      // The first wraiths: a shell can't reach them, so a cannon-only road learns it here.
-      { unit: "raider_wraith", entry: SPAWN_POINT_KEY, count: 3, at: 11 },
+      { unit: "tech_earbuds", entry: SPAWN_POINT_KEY, count: 6 },
+      { unit: "tech_watch", entry: SPAWN_POINT_KEY, count: 4, at: 4 },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 4, at: 8, escalates: true },
+      // The first flyers: a barista can't reach them, so a coffee-only street learns it here.
+      { unit: "tech_drone", entry: SPAWN_POINT_KEY, count: 2, at: 12 },
     ],
   },
   {
-    id: "breakers",
-    label: "Breakers",
+    id: "smart-home",
+    label: "Smart Home",
     durationSeconds: 22,
     groups: [
-      { unit: "raider_scout", entry: SPAWN_POINT_KEY, count: 3 },
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 4, at: 3, escalates: true },
-      // The flank track opens: a squad that skips most of the main road.
-      { unit: "raider_scout", entry: FLANK_POINT_KEY, count: 3, at: 7 },
-      { unit: "raider_elite", entry: SPAWN_POINT_KEY, count: 1, at: 9, escalates: true },
-      { unit: "raider_hulk", entry: SPAWN_POINT_KEY, count: 1, at: 14 },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 5, escalates: true },
+      { unit: "tech_speaker", entry: SPAWN_POINT_KEY, count: 2, at: 4 },
+      // The side street opens: a squad that skips most of Main Street.
+      { unit: "tech_earbuds", entry: FLANK_POINT_KEY, count: 4, at: 7 },
+      { unit: "tech_vacuum", entry: SPAWN_POINT_KEY, count: 2, at: 10, escalates: true },
+      { unit: "tech_watch", entry: SPAWN_POINT_KEY, count: 4, at: 14 },
     ],
   },
   {
-    id: "wardens-shield",
-    label: "Shield Wall",
+    id: "surveillance",
+    label: "Surveillance",
     durationSeconds: 22,
     groups: [
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 6, escalates: true },
-      { unit: "raider_bulwark", entry: SPAWN_POINT_KEY, count: 2, at: 5 },
-      { unit: "raider_shaman", entry: SPAWN_POINT_KEY, count: 1, at: 7 },
-      { unit: "raider_wraith", entry: FLANK_POINT_KEY, count: 3, at: 10 },
-      { unit: "raider_brute", entry: SPAWN_POINT_KEY, count: 2, at: 12 },
+      { unit: "tech_flock", entry: SPAWN_POINT_KEY, count: 1 },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 6, at: 2, escalates: true },
+      { unit: "tech_drone", entry: FLANK_POINT_KEY, count: 3, at: 7 },
+      { unit: "tech_fridge", entry: SPAWN_POINT_KEY, count: 1, at: 10 },
+      { unit: "tech_scooter", entry: SPAWN_POINT_KEY, count: 3, at: 13 },
     ],
   },
   {
-    id: "tide",
-    label: "Barrow Tide",
+    id: "same-day-delivery",
+    label: "Same-Day Delivery",
     durationSeconds: 24,
     groups: [
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 6, escalates: true },
-      { unit: "raider_elite", entry: SPAWN_POINT_KEY, count: 3, at: 4, escalates: true },
-      { unit: "raider_shaman", entry: SPAWN_POINT_KEY, count: 2, at: 6 },
-      { unit: "raider_wraith", entry: FLANK_POINT_KEY, count: 5, at: 8 },
-      { unit: "raider_hulk", entry: SPAWN_POINT_KEY, count: 2, at: 12 },
-      { unit: "raider_elite", entry: SPAWN_POINT_KEY, count: 2, at: 15, elite: true },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 6, escalates: true },
+      { unit: "tech_router", entry: SPAWN_POINT_KEY, count: 1, at: 4 },
+      { unit: "tech_fridge", entry: SPAWN_POINT_KEY, count: 2, at: 6 },
+      { unit: "tech_drone", entry: FLANK_POINT_KEY, count: 3, at: 8 },
+      { unit: "tech_drone", entry: SPAWN_POINT_KEY, count: 2, at: 10 },
+      { unit: "tech_speaker", entry: SPAWN_POINT_KEY, count: 2, at: 12 },
+      { unit: "tech_vacuum", entry: SPAWN_POINT_KEY, count: 3, at: 15 },
     ],
   },
   {
-    id: "warden",
-    label: "The Warden",
+    id: "server-room",
+    label: "The Server Room",
     durationSeconds: 26,
     groups: [
-      { unit: "raider_grunt", entry: SPAWN_POINT_KEY, count: 4, escalates: true },
-      { unit: "raider_bulwark", entry: SPAWN_POINT_KEY, count: 2, at: 4 },
-      { unit: "raider_wraith", entry: FLANK_POINT_KEY, count: 4, at: 6 },
-      { unit: "raider_warden", entry: SPAWN_POINT_KEY, count: 1, at: 10 },
+      { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 5, escalates: true },
+      { unit: "tech_vacuum", entry: SPAWN_POINT_KEY, count: 2, at: 4 },
+      { unit: "tech_drone", entry: FLANK_POINT_KEY, count: 4, at: 6 },
+      { unit: "tech_server", entry: SPAWN_POINT_KEY, count: 1, at: 10 },
     ],
   },
 ];
 
-export const DIRECTOR_SEED = 1337;
-
-/** One defense runs this many waves: six authored, the rest composed from the seed. */
-export const TOTAL_WAVES = 12;
-
-/** The authored act plus the composed one, as one definition the director already knows how to run. */
-export const ENCOUNTER: EncounterDefinition = {
-  id: "beacon-bastion",
-  waves: [...AUTHORED_WAVES, ...composeWaves(DIRECTOR_SEED, TOTAL_WAVES)],
+/** The last wave: the Data Center itself, with an escort, then whatever it migrates into. */
+export const FINALE: EncounterWave = {
+  id: "the-data-center",
+  label: "THE DATA CENTER",
+  durationSeconds: 30,
+  groups: [
+    { unit: "tech_phone", entry: SPAWN_POINT_KEY, count: 8, escalates: true },
+    { unit: "tech_router", entry: SPAWN_POINT_KEY, count: 2, at: 3 },
+    { unit: "tech_gpu", entry: SPAWN_POINT_KEY, count: 2, at: 5 },
+    { unit: "tech_drone", entry: FLANK_POINT_KEY, count: 6, at: 7 },
+    { unit: "tech_chatbot", entry: SPAWN_POINT_KEY, count: 2, at: 9 },
+    { unit: "boss_datacenter", entry: SPAWN_POINT_KEY, count: 1, at: 12 },
+  ],
 };
 
-/** The Warden's id in the creep catalog, and the entity it becomes. */
-export const WARDEN_ID = "raider_warden";
+export const DIRECTOR_SEED = 1337;
+
+/** One day runs this many waves: six authored, five composed from the seed, and the finale. */
+export const TOTAL_WAVES = 12;
+
+/** The authored act, the composed one and the finale, as one definition the director already knows how to run. */
+export const ENCOUNTER: EncounterDefinition = {
+  id: "beacon-bastion",
+  waves: [...AUTHORED_WAVES, ...composeWaves(DIRECTOR_SEED, COMPOSE_TO_WAVE), FINALE],
+};
+
+/** The server rack's id in the tech catalog: the authored act's miniboss. */
+export const MINIBOSS_ID = "tech_server";
+/** The final boss and the form it migrates into. */
+export const FINAL_BOSS_ID = "boss_datacenter";
+export const CLOUD_ID = "boss_cloud";
 
 /**
- * How hard the director leans on a hurting keep. Player health, wave progress and time each weigh
- * in; `maxTier` 2 caps the whole plan, so a nearly-dead keep on a long match still sends tier 2.
+ * How hard the director leans on a town losing focus. Attention, wave progress and time each weigh
+ * in; `maxTier` 2 caps the whole plan.
  */
 export const PRESSURE_RULE: PressureRule = {
   healthWeight: 1,
@@ -111,7 +132,7 @@ export const PRESSURE_RULE: PressureRule = {
   maxTier: 2,
 };
 
-/** One phase's stance: its pace and name, a ward it raises and an escort it calls when the phase opens. */
+/** One phase's stance: its pace and name, a shield it raises and an escort it calls when the phase opens. */
 export interface BossStance {
   speedScale: number;
   label: string;
@@ -122,58 +143,65 @@ export interface BossStance {
 export interface BossProfile {
   /** Cut points and tells, high to low. */
   phases: readonly PhaseLike[];
-  /** What each phase looks like on the approach: how fast it walks, what the HUD calls it, and what it calls up. */
+  /** What each phase looks like on the street: how fast it rolls, what the HUD calls it, and what it calls up. */
   stance: Record<string, BossStance>;
   /** The banner text for a tell. */
   tells: Record<string, string>;
 }
 
-/**
- * The Warden's three phases. Cut points and tells are engine data; what a phase *does* is this
- * game's stance table below, so the phase change is visible on the field.
- */
-const WARDEN_PHASES: readonly PhaseLike[] = [
-  { id: "opening", at: 1, tell: { id: "arrival", seconds: 2.5 } },
-  { id: "enraged", at: 0.6, tell: { id: "roar", seconds: 2.5 } },
-  { id: "last-stand", at: 0.25, tell: { id: "dig-in", seconds: 2.5 } },
-];
-
-const WARDEN_STANCE: Record<string, BossStance> = {
-  opening: { speedScale: 1, label: "Opening" },
-  // Enraged, the Warden raises a ward that soaks 200 before the blows reach it again.
-  enraged: { speedScale: 1.35, label: "Warded", ward: 200 },
-  "last-stand": { speedScale: 1.8, label: "Last Stand", summon: [{ unit: "raider_bulwark", count: 2 }] },
-};
-
-const WARDEN_TELL_TEXT: Record<string, string> = {
-  arrival: "The Warden takes the field",
-  roar: "The Warden raises a ward — break it",
-  "dig-in": "The Warden makes its last stand and calls its shield-bearers",
-};
-
-/** The composed boss: slower to anger, faster once it does, and it digs in earlier. */
-const WARLORD_PHASES: readonly PhaseLike[] = [
+const SERVER_PHASES: readonly PhaseLike[] = [
   { id: "opening", at: 1, tell: { id: "arrival", seconds: 3 } },
-  { id: "enraged", at: 0.65, tell: { id: "roar", seconds: 2.5 } },
-  { id: "last-stand", at: 0.3, tell: { id: "dig-in", seconds: 2 } },
+  { id: "enraged", at: 0.5, tell: { id: "overclock", seconds: 2.5 } },
 ];
 
-const WARLORD_STANCE: Record<string, BossStance> = {
-  opening: { speedScale: 1, label: "Opening" },
-  enraged: { speedScale: 1.35, label: "Bloodied", summon: [{ unit: "raider_grunt", count: 4 }] },
-  "last-stand": { speedScale: 1.8, label: "Cornered", summon: [{ unit: "raider_boneling", count: 5 }] },
+const SERVER_STANCE: Record<string, BossStance> = {
+  opening: { speedScale: 1, label: "Online" },
+  enraged: { speedScale: 1.3, label: "Overclocked", ward: 150, summon: [{ unit: "tech_backup", count: 3 }] },
 };
 
-const WARLORD_TELL_TEXT: Record<string, string> = {
-  arrival: "The Warlord takes the field",
-  roar: "The Warlord is bloodied and calls its guard",
-  "dig-in": "The Warlord is cornered — nothing left to lose",
+const SERVER_TELL_TEXT: Record<string, string> = {
+  arrival: "A SERVER RACK rolls in — park an Electrician near it to stop its backups",
+  overclock: "The server rack overclocks and raises a firewall — break it",
 };
 
-/** Every raider that walks with a phase table. A boss is a catalog entry plus one of these. */
+const DATACENTER_PHASES: readonly PhaseLike[] = [
+  { id: "opening", at: 1, tell: { id: "arrival", seconds: 4 } },
+  { id: "overload", at: 0.55, tell: { id: "overload", seconds: 3 } },
+  { id: "last-stand", at: 0.2, tell: { id: "brownout", seconds: 2.5 } },
+];
+
+const DATACENTER_STANCE: Record<string, BossStance> = {
+  opening: { speedScale: 1, label: "On mains power" },
+  overload: { speedScale: 1.15, label: "Overloaded", summon: [{ unit: "tech_drone", count: 3 }, { unit: "tech_gpu", count: 1 }] },
+  "last-stand": { speedScale: 1.4, label: "Brownout", summon: [{ unit: "tech_phone", count: 4 }] },
+};
+
+const DATACENTER_TELL_TEXT: Record<string, string> = {
+  arrival: "THE DATA CENTER is coming — Electricians must cut its power",
+  overload: "The Data Center overloads and launches its delivery fleet",
+  brownout: "The Data Center browns out — it's trying to escape to the cloud!",
+};
+
+const CLOUD_PHASES: readonly PhaseLike[] = [
+  { id: "opening", at: 1, tell: { id: "arrival", seconds: 3.5 } },
+  { id: "storm", at: 0.5, tell: { id: "storm", seconds: 2.5 } },
+];
+
+const CLOUD_STANCE: Record<string, BossStance> = {
+  opening: { speedScale: 1, label: "Migrating" },
+  storm: { speedScale: 1.25, label: "Data Storm", summon: [{ unit: "tech_drone", count: 4 }] },
+};
+
+const CLOUD_TELL_TEXT: Record<string, string> = {
+  arrival: "It migrated to THE CLOUD! It flies — only workers who reach the air can touch it",
+  storm: "The Cloud whips up a data storm of drones",
+};
+
+/** Every piece of tech that rolls with a phase table. A boss is a catalog entry plus one of these. */
 export const BOSS_PROFILES: Record<string, BossProfile> = {
-  raider_warden: { phases: WARDEN_PHASES, stance: WARDEN_STANCE, tells: WARDEN_TELL_TEXT },
-  raider_warlord: { phases: WARLORD_PHASES, stance: WARLORD_STANCE, tells: WARLORD_TELL_TEXT },
+  tech_server: { phases: SERVER_PHASES, stance: SERVER_STANCE, tells: SERVER_TELL_TEXT },
+  boss_datacenter: { phases: DATACENTER_PHASES, stance: DATACENTER_STANCE, tells: DATACENTER_TELL_TEXT },
+  boss_cloud: { phases: CLOUD_PHASES, stance: CLOUD_STANCE, tells: CLOUD_TELL_TEXT },
 };
 
 export function bossProfile(unit: string): BossProfile | null {

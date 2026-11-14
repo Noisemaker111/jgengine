@@ -5,22 +5,24 @@ import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { registerBuildCommands } from "../build/commands";
 import { BASE_CATALOG_ID, BASE_ENTITY_ID } from "../entities/base/catalog";
 import { creepDef, CREEP_CATALOG } from "../entities/enemies/catalog";
-import { councilScale, DIFFICULTY_IDS, difficultyOf, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
+import { DIFFICULTY_IDS, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
 import { registerAbilityCommands } from "../combat/cast";
-import { currentWaveNumber, resetSession, session } from "../session";
+import { resetSession, session } from "../session";
 import { exposeKeepReadout, keep, resetKeep, runEnded } from "../keep";
 import { resetProjectiles } from "../combat/pendingProjectiles";
-import { KEEP_POINT } from "./path";
-import { registerWaveCommands, spawnRaider } from "../waves/director";
+import { KEEP_POINT, PATH_WAYPOINTS, groundHeightAt } from "./path";
+import { BUILDING_MARKERS } from "../../editorLayers";
+import { BUILDING_PLAN, buildingEntity } from "../models";
+
+/** The town hall at the end of Main Street turns its door to the street that leads to it. */
+const TOWN_HALL_FACING = (() => {
+  const end = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 1]!;
+  const before = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 2] ?? end;
+  return Math.atan2(before[0] - end[0], before[2] - end[2]);
+})();
+import { payBounty, registerWaveCommands, spawnRaider, transformOnDeath } from "../waves/director";
 import { registerCaptureCommands } from "../capture";
-import { killBounty } from "../waves/bounty";
-import {
-  legacy,
-  chooseRelic,
-  openingKeep,
-  relicBountyScale,
-  startDefense,
-} from "../waves/legacy";
+import { legacy, chooseRelic, openingKeep, startDefense } from "../waves/legacy";
 import { beginRun, pauseRun } from "../menu";
 
 function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
@@ -29,18 +31,18 @@ function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     session.creeps.delete(event.instanceId);
     session.statuses.clear(event.instanceId);
     if (session.boss?.instanceId === event.instanceId) session.boss = null;
-    // A hulk breaks apart where it fell: its bonelings carry on down the same road from that spot.
-    const splits = creepDef(event.catalogId).splits;
-    if (creep !== undefined && splits !== undefined && !runEnded(keep.of(ctx))) {
-      for (let index = 0; index < splits.count; index += 1) {
+    if (creep !== undefined && !runEnded(keep.of(ctx))) {
+      // A wrecked self-driving car lets its scooters out where it stopped; they carry on down the same road.
+      const splits = creepDef(event.catalogId).splits;
+      for (let index = 0; index < (splits?.count ?? 0); index += 1) {
         const offset = Math.max(0, creep.path.distanceTravelled - index * 0.6);
-        spawnRaider(ctx, splits.unit, creep.route, { ...creep.path, distanceTravelled: offset });
+        spawnRaider(ctx, splits!.unit, creep.route, { ...creep.path, distanceTravelled: offset });
       }
+      // The Data Center does not die: it migrates to The Cloud.
+      if (transformOnDeath(ctx, creep) !== null) ctx.scene.entity.vfx({ preset: "explosion", to: event.position, radius: 5, durationMs: 900, color: 0x7ab8ff });
     }
-    // The bounty is a world ripple into the keep's shared purse, scaled by what this kill pays.
-    const scale = relicBountyScale(legacy.read(ctx)) * difficultyOf(ctx).bounty * councilScale(ctx, "bounty");
-    const paid = killBounty(event.catalogId, currentWaveNumber(), scale);
-    keep.emit(ctx, { kind: "bounty", scale: paid });
+    // The bounty is a world ripple into the town's shared till, scaled by what this kill pays.
+    payBounty(ctx, event.catalogId, creep);
     ctx.game.audio.play("kill", event.position);
   }
 }
@@ -53,12 +55,12 @@ export function restartDefense(ctx: GameContext): void {
   // The engine loop opens the defense and adopts the relic it carries.
   startDefense(ctx);
   resetKeep(ctx, openingKeep(ctx));
-  ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop" });
+  ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop", rotationY: TOWN_HALL_FACING });
   ctx.time.play();
   setGamePhase(ctx, "playing");
 }
 
-/** The campaign's own commands: pick a difficulty and seat the war council between defenses. */
+/** The campaign's own commands: pick a shift and seat the town council between days. */
 function registerCampaignCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ difficulty?: string } | undefined>("campaign.difficulty", {
     validate: (_state, input) => (DIFFICULTY_IDS.includes(input?.difficulty as DifficultyId) ? null : { reason: "unknown-difficulty" }),
@@ -80,8 +82,18 @@ function registerCampaignCommands(ctx: GameContext): void {
   } });
 }
 
+/** Stand the street's authored buildings and lamps up as scenery, each facing the street. */
+function spawnBuildings(ctx: GameContext): void {
+  for (const building of BUILDING_MARKERS) {
+    if (BUILDING_PLAN[building.model] === undefined) continue;
+    const position: [number, number, number] = [building.xz[0], groundHeightAt(building.xz[0], building.xz[1]), building.xz[1]];
+    ctx.scene.entity.spawn(buildingEntity(building.model), { id: building.id, position, rotationY: building.rotationY, role: "prop" });
+  }
+}
+
 export function setupWorld(ctx: GameContext): void {
   restartDefense(ctx);
+  spawnBuildings(ctx);
   registerBuildCommands(ctx);
   registerWaveCommands(ctx);
   registerCaptureCommands(ctx);
