@@ -80,6 +80,8 @@ export interface DeliveryReceipt {
   total: number;
   thanks: string;
   floor: DropFloor;
+  /** Game time it landed, so the HUD shows the slip for a few seconds. */
+  at?: number;
 }
 
 export interface ShiftSummary {
@@ -467,7 +469,7 @@ function deliverHere(ctx: GameContext): void {
     delivered: state.delivered + handed.length,
     best: Math.max(state.best, total),
     idaDue: customerId === LIGHTHOUSE_KEEPER ? true : state.idaDue,
-    lastReceipt: { customerId, lines, total, thanks, floor },
+    lastReceipt: { customerId, lines, total, thanks, floor, at: ctx.time.now() },
   });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${total}`, kind: "loot" });
   // The customer's line floats up from their door, the box burst in the shop's colours.

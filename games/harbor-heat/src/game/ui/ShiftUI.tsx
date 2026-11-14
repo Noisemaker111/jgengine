@@ -34,6 +34,8 @@ interface ShiftView {
   quota: number;
   water: string;
   bag: { id: string; who: string; pizza: string; heat: number; soak: number; cold: number }[];
+  /** The last delivery's slip while it is fresh: who, each line and the total. */
+  slip: { who: string; lines: { label: string; amount: number }[]; total: number } | null;
 }
 
 function shiftView(ctx: GameContext): ShiftView | null {
@@ -52,6 +54,9 @@ function shiftView(ctx: GameContext): ShiftView | null {
     takings: shift.takings,
     quota: nightlyQuota(shop),
     water: streetPlayOf(ctx).telemetry().water,
+    slip: shift.lastReceipt !== null && ctx.time.now() - (shift.lastReceipt.at ?? -99) < 8
+      ? { who: customerById(shift.lastReceipt.customerId)?.name ?? "", lines: shift.lastReceipt.lines, total: shift.lastReceipt.total }
+      : null,
     bag: shift.bag.map((order) => ({
       id: order.id,
       who: customerById(order.customerId)?.name ?? order.customerId,
@@ -131,13 +136,22 @@ export function ShiftPanel() {
         <Label color={HH.dim} text={view.open ? `Board ${view.board} · bag ${view.bag.length}/${view.capacity}` : "Vell's is closed"} />
         <Text size={12} weight={700} color={view.takings >= view.quota ? HH.cash : HH.amber} text={`${money(view.takings)} / ${money(view.quota)}`} />
       </Row>
+      {view.slip === null ? null : (
+        <RuneView gap={1} padding={[5, 8, 5, 8]} radius={4} fill={HH.paper}>
+          <Text size={11} weight={700} color="#5a4a30" text={`PAID · ${view.slip.who.toUpperCase()}`} />
+          {view.slip.lines.map((line, i) => (
+            <Row key={i} justify="between"><Text size={12} shrink color={HH.night} text={line.label} /><Text size={12} weight={700} color={line.amount < 0 ? HH.coral : HH.night} text={money(line.amount)} /></Row>
+          ))}
+          <Row justify="between"><Text family={DISPLAY} size={15} color={HH.night} text="Total" /><Text family={DISPLAY} size={17} color="#2f7a4f" text={money(view.slip.total)} /></Row>
+        </RuneView>
+      )}
       {view.bag.map((box) => (
         <RuneView key={box.id} gap={2} padding={[4, 6, 4, 6]} radius={4} fill="#123742">
           <Row justify="between" gap={6}>
             <Text size={12} weight={700} shrink color={HH.cream} text={box.who} />
             <Text size={12} weight={700} color={heatColor(box.heat)} text={`${box.heat}°`} />
           </Row>
-          <Text size={11} color={HH.dim} text={box.soak > 0 ? `${box.pizza} · ${box.soak}% soggy` : box.pizza} />
+          {view.slip !== null || view.bag.length > 2 ? null : <Text size={11} color={HH.dim} text={box.soak > 0 ? `${box.pizza} · ${box.soak}% soggy` : box.pizza} />}
           <Meter value={box.heat} color={box.heat < box.cold ? "#7fb6d9" : heatColor(box.heat)} width={meter - 12} />
         </RuneView>
       ))}

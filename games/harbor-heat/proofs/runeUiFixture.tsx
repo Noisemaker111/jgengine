@@ -60,6 +60,10 @@ async function renderFixture(state: HarborFixture, width: number, height: number
       ctx.scene.entity.setPose(ctx.player.userId, { position: [OVEN[0], ctx.world.groundHeightAt(OVEN[0], OVEN[1]), OVEN[1]] });
     }
     tick();
+    if (state === "shift") {
+      shiftStore.write(ctx, { ...shiftStore.read(ctx), lastReceipt: { customerId: "okafor_twins", floor: "balcony", thanks: "Hot! Tell Nonna the market says hi.", total: 81, at: ctx.time.now(),
+        lines: [{ label: "Neon Diavola", amount: 28 }, { label: "Tip · 86° hot", amount: 24 }, { label: "Balcony drop", amount: 2 }, { label: "Margherita", amount: 21 }, { label: "Stack of 2", amount: 6 }] } });
+    }
     if (state === "books") run("pizzeria.open");
     if (state === "shift-over") {
       shiftStore.write(ctx, { ...shiftStore.read(ctx), summary: { day: 2, delivered: 9, takings: 412, best: 96, lost: 1, quota: 360, metQuota: true, foreclosed: false, headline: "Quota made. MegaSlice's man left without a word." } });
