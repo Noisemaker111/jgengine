@@ -192,5 +192,6 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_string_lights: { url: art("string-lights"), anchor: "origin" },
     obj_swap_dock: { url: art("swap-dock"), anchor: "origin" },
     obj_pizza_sign: { url: art("pizza-sign"), anchor: "origin" },
+    obj_blimp_mast: { url: art("blimp-mast"), anchor: "origin" },
   };
 })();

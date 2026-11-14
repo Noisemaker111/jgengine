@@ -31,6 +31,7 @@ export const OBJECTS: readonly ObjectDef[] = [
   { id: "obj_submarine", label: "Submarine Sardine", color: "#2c8c97", footprint: { w: 4, h: 3, d: 18 }, solid: false, fixture: true },
   { id: "obj_string_lights", label: "Festoon lights", color: "#ffcf7a", footprint: { w: 14, h: 4.4, d: 0.3 }, solid: false, fixture: true },
   { id: "obj_swap_dock", label: "Swap dock", color: "#ff4f8b", footprint: { w: 5, h: 0.3, d: 3 }, solid: false, fixture: true },
+  { id: "obj_blimp_mast", label: "Blimp line mast", color: "#d93a2f", footprint: { w: 2, h: 13, d: 2 }, solid: true },
   { id: "obj_pizza_sign", label: "Vell's sign", color: "#ffcf4a", footprint: { w: 1, h: 7, d: 1 }, solid: false, fixture: true },
   { id: "obj_gunshop_sign", label: "Mercato Fresco", color: "#ffb020", footprint: { w: 2, h: 2, d: 1 }, solid: false },
   { id: "obj_safehouse_sign", label: "Palmview Bungalow", color: "#3fbf5a", footprint: { w: 2, h: 2, d: 1 }, solid: false },

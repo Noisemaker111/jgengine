@@ -7,7 +7,7 @@ import { secondsAtHour, DAY_SECONDS } from "../clock";
 import { streetPlayOf } from "../streetPlay";
 import { tickTide, waterAt, FLOOD_SHEETS } from "../tide/tideRuntime";
 import { buyUpgrade } from "./pizzeria";
-import { CALL_PATIENCE, customerSpot, OVEN, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
+import { CALL_PATIENCE, customerSpot, OVEN, SHOP_BLIMP, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
 
 function boot() {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "shift-test", isNew: true } });
@@ -216,5 +216,20 @@ describe("a night at Vell's", () => {
     shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ id: "sp1", customerId: "gus", pizzaId: special, heat: 90, soak: 0, age: 10, par: 60 }], nextCallIn: 999 });
     ctx.game.commands.run("pizza.deliver", {});
     expect(shiftStore.read(ctx).lastReceipt!.lines.some((line) => line.label === "Tonight's special")).toBe(true);
+  });
+  test("at the king tide a rooftop takes the box only from the blimp line or a boat, and the blimp drop pays a show tip", () => {
+    const ctx = boot();
+    at(ctx, 23.7);
+    run(ctx, 1);
+    expect(ctx.scene.entity.get(SHOP_BLIMP)).not.toBeNull();
+    const spot = customerSpot("gus")!;
+    moveTo(ctx, spot);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ id: "k1", customerId: "gus", pizzaId: "margherita", heat: 90, soak: 0, age: 10, par: 60 }], nextCallIn: 999 });
+    expect(ctx.game.commands.run("pizza.deliver", {}).status).toBe("rejected");
+    const y = ctx.world.groundHeightAt(spot[0], spot[1]) + 12;
+    ctx.scene.entity.setPose(SHOP_BLIMP, { position: [spot[0], y, spot[1]] });
+    streetPlayOf(ctx).enterVehicle(ctx, SHOP_BLIMP);
+    expect(ctx.game.commands.run("pizza.deliver", {}).status).not.toBe("rejected");
+    expect(shiftStore.read(ctx).lastReceipt!.lines.some((line) => line.label === "Blimp drop")).toBe(true);
   });
 });

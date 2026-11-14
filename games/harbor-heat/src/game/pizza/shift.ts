@@ -12,7 +12,7 @@ import { streetPlayOf } from "../streetPlay";
 import { grantCred, PIZZA_CRED } from "../progression/cred";
 import { nightRules, scoreNight } from "./nights";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
-import { waterAt } from "../tide/tideRuntime";
+import { tideStore, waterAt } from "../tide/tideRuntime";
 import { customerById, LIGHTHOUSE_KEEPER, PIZZAS, pizzaById } from "./menu";
 import { ageOrder, coldLimitOf, hottest, nextCaller, ORDER_MODS, parSeconds, repStars, rollMod, settleOrder, type Order, type OrderMod, type TipLine } from "./orders";
 import {
@@ -372,6 +372,7 @@ export function tickShift(ctx: GameContext, dt: number): void {
   state = tickBag(ctx, state, dt);
   state = tickRival(ctx, state, dt);
   shiftStore.write(ctx, state);
+  tickBlimpLine(ctx);
   tickLessons(ctx, state);
   syncBeacons(ctx, state);
 }
@@ -473,8 +474,25 @@ function deliverRefusal(ctx: GameContext) {
     const medium = driving === null ? null : vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium;
     if (medium !== "water" && medium !== "air") return { reason: "water-only", message: "The conning tower is out in the bay. Come alongside by jet-ski, gondola or blimp." };
   }
+  // King tide: the stairwells are under water, so a rooftop takes the box only from the air or from a
+  // boat the roof can lower a basket to.
+  if (kingTide(ctx) && floorAt(ctx, customerSpot(here)!) === "rooftop") {
+    const medium = ridingMedium(ctx);
+    if (medium !== "water" && medium !== "air") return { reason: "rooftop-only", message: "King tide: the stairs are under water. Come by the blimp line, or by boat for the roof basket." };
+  }
   if (streetPlayOf(ctx).carSpeedKmh() > HANDOFF_SPEED) return { reason: "moving", message: "Slow down to hand it over." };
   return null;
+}
+
+/** What the rider is on: null on foot. */
+function ridingMedium(ctx: GameContext): "road" | "water" | "air" | null {
+  const driving = streetPlayOf(ctx).drivingVehicleId();
+  return driving === null ? null : (vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium ?? null);
+}
+
+/** The top stage of the night, when only rooftops, bridges and the blimp line work. */
+export function kingTide(ctx: GameContext): boolean {
+  return (tideStore.read(ctx)?.stageIndex ?? 0) >= 4;
 }
 
 function deliverHere(ctx: GameContext): void {
@@ -505,6 +523,14 @@ function deliverHere(ctx: GameContext): void {
     const bonus = specials.reduce((sum, order) => sum + Math.round((pizzaById(order.pizzaId)?.price ?? 0) * SPECIAL_BONUS), 0);
     lines.push({ label: "Tonight's special", amount: bonus });
     total += bonus;
+  }
+  // A box lowered from the blimp line is a show: the whole building comes up on the roof to watch.
+  if (ridingMedium(ctx) === "air") {
+    const show = Math.round((total - price) * BLIMP_DROP);
+    if (show > 0) {
+      lines.push({ label: "Blimp drop", amount: show });
+      total += show;
+    }
   }
   // A set-piece night's crowd tips on top.
   const rules = nightRules(ctx);
@@ -711,6 +737,19 @@ export function registerShift(ctx: GameContext): void {
 }
 
 /** The shop's starter scooter waits at the kerb by the oven on a new game. */
+/** The blimp line: from the king tide, the family blimp waits at its mast on the beach, free to fly. */
+export const SHOP_BLIMP = "shop_blimp";
+export const BLIMP_MAST = markerXZ("blimp_mast");
+/** Extra tip share for a box lowered from the blimp. */
+export const BLIMP_DROP = 0.2;
+
+function tickBlimpLine(ctx: GameContext): void {
+  if (!kingTide(ctx) || ctx.scene.entity.get(SHOP_BLIMP) !== null) return;
+  const [x, z] = BLIMP_MAST;
+  ctx.scene.entity.spawn("air_helicopter", { id: SHOP_BLIMP, position: [x + 6, ctx.world.groundHeightAt(x + 6, z) + 1, z], rotationY: Math.PI / 2, role: "prop", meta: { owned: true } });
+  ctx.game.notices.push({ text: "King tide: the blimp line is running. The family blimp is moored at the mast on the beach behind Vell's.", tone: "success" });
+}
+
 export function setupShift(ctx: GameContext): void {
   if (ctx.scene.entity.get(SHOP_SCOOTER) !== null) return;
   const x = OVEN[0] + 4;
@@ -772,7 +811,11 @@ export function shiftGoal(ctx: GameContext): ShiftGoal | null {
       eyebrow: `${order.mod === undefined ? "" : `${ORDER_MODS[order.mod].label.toUpperCase()} · `}${state.bag.length} in the bag · ${Math.round(order.heat)}° hot · ${Math.round(order.soak)}% soggy`,
       title: `${customer?.name ?? "Customer"} · ${where}`,
       target: spot,
-      hint: customer?.waterOnly === true ? "Out in the bay: only a jet-ski or the blimp gets there." : "Stop at the beacon and press E. Splashing soaks the boxes.",
+      hint: customer?.waterOnly === true
+        ? "Out in the bay: only a jet-ski or the blimp gets there."
+        : kingTide(ctx) && floor === "rooftop"
+          ? "King tide: the roof takes it from the blimp (moored behind Vell's) or a boat's basket."
+          : "Stop at the beacon and press E. Splashing soaks the boxes.",
     };
   }
   if (!shiftOpen(hourOf(ctx))) {

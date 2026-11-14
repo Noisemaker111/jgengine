@@ -5418,6 +5418,29 @@
         "z": 64
       },
       "label": "Nonna Rosa Vell"
+    },
+    {
+      "id": "blimp_mast",
+      "kind": "poi",
+      "position": {
+        "x": -236,
+        "y": 0,
+        "z": 40
+      },
+      "label": "The blimp line mast"
+    },
+    {
+      "id": "htp_blimp_mast",
+      "kind": "prop",
+      "position": {
+        "x": -240,
+        "y": 0,
+        "z": 40
+      },
+      "catalogId": "obj_blimp_mast",
+      "meta": {
+        "catalogId": "obj_blimp_mast"
+      }
     }
   ],
   "volumes": [

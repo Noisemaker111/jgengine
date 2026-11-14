@@ -382,3 +382,27 @@ function buildTideWater() {
   return batch.group('tide water');
 }
 await exportModel('tide-water', buildTideWater());
+
+/** The blimp line's mooring mast: a red-and-white lattice tower with a lit cap the blimp noses up to. */
+function buildMast() {
+  const batch = new Batch();
+  const red = named('mast red', '#d93a2f', { roughness: 0.5, metalness: 0.3 });
+  const white = named('mast white', '#f4efe6', { roughness: 0.6, metalness: 0.2 });
+  const dark = named('mast dark', '#24282e', { roughness: 0.6 });
+  const lamp = glow('mast lamp', '#ffcf4a', 2.4);
+  batch.add(dark, new THREE.CylinderGeometry(1.6, 1.8, 0.4, 12), [0, 0.2, 0]);
+  const H = 12, levels = 8;
+  for (let i = 0; i < levels; i++) {
+    const y0 = 0.4 + (i / levels) * H, y1 = 0.4 + ((i + 1) / levels) * H, r = 0.9 - 0.4 * (i / levels);
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+      batch.add(i % 2 === 0 ? red : white, new THREE.CylinderGeometry(0.06, 0.06, y1 - y0, 6), [Math.cos(a) * r, (y0 + y1) / 2, Math.sin(a) * r]);
+    }
+    batch.add(dark, new THREE.TorusGeometry(r, 0.04, 4, 12), [0, y1, 0], [Math.PI / 2, 0, 0]);
+  }
+  batch.add(red, new THREE.CylinderGeometry(0.5, 0.5, 0.5, 12), [0, H + 0.65, 0]);
+  batch.add(lamp, new THREE.SphereGeometry(0.28, 12, 8), [0, H + 1.1, 0]);
+  batch.add(dark, new THREE.BoxGeometry(0.1, 0.1, 2.4), [0, H + 0.6, 1.2]);
+  return batch.group('blimp mast');
+}
+await exportModel('blimp-mast', buildMast());
