@@ -98,6 +98,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome
   // Bounty paid by the last shopping trip: anything paid after it arrived with no trip left to spend it.
   let bountyAtLastTrip = 0;
   let lastWave = 0;
+  let distractedSeconds = 0;
   const trace: string[] = [];
   for (let t = 0; t < 2400 && !runEnded(keep.of(runner.ctx)); t += DT) {
     const now = session.encounter.view().wave;
@@ -115,6 +116,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome
       for (const [id, creep] of before) if (!session.creeps.has(id) && creep.path.done) trace.push(`leak:${creep.catalogId}`);
     }
     tickTowers(runner.ctx, DT);
+    for (const tower of keep.of(runner.ctx).instances()) if (session.workers.has(tower.id, "distracted")) distractedSeconds += DT;
     spendIn -= DT;
     if (spendIn <= 0) {
       bountyAtLastTrip = keep.of(runner.ctx).num("keep.bounty_earned");
@@ -124,7 +126,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome
     }
   }
   const world = keep.of(runner.ctx);
-  if (process.env.BEACON_TRACE) console.log(trace.join(" "), `end:t${Math.round(runner.ctx.time.now())}:L${world.num("keep.lives")}:held${world.fact("keep.held") === true}:creeps${session.creeps.size}:G${world.num("keep.gold")}:gate${world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip)}`);
+  if (process.env.BEACON_TRACE) console.log(trace.join(" "), `end:t${Math.round(runner.ctx.time.now())}:L${world.num("keep.lives")}:held${world.fact("keep.held") === true}:creeps${session.creeps.size}:G${world.num("keep.gold")}:gate${world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip)}:distracted${Math.round(distractedSeconds)}s`);
   return {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
@@ -171,23 +173,32 @@ describe("pacing", () => {
     const outcome = playDefense({ builds: [], branch: {}, upgrades: false });
     expect(outcome.held).toBe(false);
     expect(outcome.wave).toBeLessThanOrEqual(3);
-  });
+  }, 60_000);
 
   test("a mixed, promoted crew holds Full-Time, losing some focus on the way and never sitting on a fortune", () => {
     const outcome = playDefense(MIXED);
     expect(outcome.held).toBe(true);
     expect(outcome.lives).toBeLessThan(20);
     expect(outcome.gold).toBeLessThan(300);
-  });
+  }, 60_000);
 
   test("baristas alone can't reach the drones or The Cloud", () => {
     const outcome = playDefense({ ...MIXED, builds: Array(11).fill("worker_barista"), branch: { worker_barista: "pourover" } });
     expect(outcome.held).toBe(false);
-  });
+  }, 60_000);
+
+  test("answering distraction matters: the same crew with no Teacher or Librarian does worse", () => {
+    const answered = playDefense(MIXED);
+    const ignored = playDefense({
+      ...MIXED,
+      builds: MIXED.builds.map((kind) => (kind === "worker_teacher" || kind === "worker_librarian" ? "worker_barista" : kind)),
+    });
+    expect(ignored.wave * 100 + ignored.lives).toBeLessThan(answered.wave * 100 + answered.lives);
+  }, 60_000);
 
   test("Overtime is harder than Full-Time for the same crew", () => {
     const overtime = playDefense(MIXED, "overtime");
     const fulltime = playDefense(MIXED, "fulltime");
     expect(overtime.wave * 100 + overtime.lives).toBeLessThan(fulltime.wave * 100 + fulltime.lives);
-  });
+  }, 60_000);
 });

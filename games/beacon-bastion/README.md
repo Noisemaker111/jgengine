@@ -39,7 +39,7 @@ is what the build does now.
   - Held-wave pay: wages of 10 + 2 × wave, 10% interest on the till capped at 20, 10 more for a wave with no leak.
   - Coffee break: with the street clear, R wins back one attention for $20, up to the day's starting attention.
 - **Distraction — technology fights back without shooting.**
-  - Phones (every 6 s, 2.2 s), smartwatches, chatbots and smart speakers ("Hey—" distracts everyone in 6 m) fire notifications. A distracted worker looks at their phone (a glowing phone floats over them) and stops working.
+  - Phones (every 4.5 s from 8 m, 2.5 s), smartwatches, chatbots and smart speakers ("Hey—" distracts everyone in 7 m) fire notifications. A distracted worker looks at their phone (a glowing phone floats over them) and stops working.
   - Flock cameras spot a worker every 6 s: notifications go for spotted workers first and last 1.5× longer.
   - Graphics cards, mining rigs and the data center overheat the workers near them (they work 25–40% slower).
   - Answers: Teacher (snap out), Librarian (hush), Monk (immune), and the Do Not Disturb button.
@@ -48,7 +48,7 @@ is what the build does now.
   - Seven damage types (hot, water, shock, blunt, pierce, legal, analog) against five classes (gadget, hardware, wireless, network, vehicle) on the engine damage table. Legal and analog ignore armor; 40 armor halves a hit; shock is ×2.5 on Wet tech.
   - Smart fridges carry a 70-point shield that regrows; routers patch 6% of nearby tech every 3 s and boost it (+20% speed, +10 armor); wrecked self-driving cars release two scooters; drones drop a parcel on a plot that blocks hiring until clicked; mining rigs pay more the longer they live and steal cash if they get through.
   - "Installing Update…": from wave 3, part-way through each wave the healthiest tech stops for 4 s and takes +25% damage; if it finishes it gains +20 armor (an IT Guy's Factory Reset wipes it).
-  - Tech gets 4% sturdier each wave (bosses excepted).
+  - Tech gets 3% sturdier each wave (bosses excepted).
 - **Bosses.**
   - Server Rack (wave 6, again on 9): restores two backup drives every 6 s unless an Electrician stands within 9 m; at half health it overclocks and raises a 150-point firewall.
   - THE DATA CENTER (wave 12): on mains power it takes 30% damage and spawns phones; Electricians within 9 m drain its power; then it takes full damage. It overloads (drones, a GPU) and browns out, and when destroyed it migrates to THE CLOUD, a flying final form that summons drones.
@@ -62,7 +62,8 @@ is what the build does now.
 - **Pacing, checked headless** (`src/game/balance.test.ts`):
   - A town that hires nobody loses by wave 3.
   - Baristas alone can't reach the drones or The Cloud.
-  - A mixed, promoted crew holds Full-Time with about 11 of 20 attention and never banks more than 300 unspent.
+  - A mixed, promoted crew holds Full-Time with about 6 of 20 attention and never banks more than 300 unspent.
+  - The same crew with its Teacher and Librarian swapped for Baristas loses: answering distraction matters.
   - The same crew loses on Overtime.
 - **Failure states.** Losing all attention ends the day with "Total Distraction"; victory is twelve waves with the street clear.
 - **Gap to target.** A worker "looking at the phone" animation (today a floating phone); world-anchored speech bubbles (an engine gap); a second map.

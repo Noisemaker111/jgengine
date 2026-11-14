@@ -112,7 +112,7 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     class: "gadget",
     armor: 0,
     confiscatable: true,
-    notify: { everySeconds: 8, range: 5, seconds: 1.2, text: ["*bzzt*", "Stand up!", "Hydrate!"] },
+    notify: { everySeconds: 6, range: 6.5, seconds: 1.5, text: ["*bzzt*", "Stand up!", "Hydrate!"] },
   },
   tech_phone: {
     id: "tech_phone",
@@ -129,7 +129,7 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     class: "gadget",
     armor: 0,
     confiscatable: true,
-    notify: { everySeconds: 6, range: 6, seconds: 2.2, text: PHONE_PINGS },
+    notify: { everySeconds: 4.5, range: 8, seconds: 2.5, text: PHONE_PINGS },
   },
   tech_flock: {
     id: "tech_flock",
@@ -161,7 +161,7 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     glow: "#3ae0ff",
     class: "wireless",
     armor: 0,
-    notify: { everySeconds: 8, range: 6, seconds: 2, area: true, text: ["\"Hey—\"", "\"Sorry, I didn't catch that.\"", "\"Playing music…\""] },
+    notify: { everySeconds: 7, range: 7, seconds: 2.5, area: true, text: ["\"Hey—\"", "\"Sorry, I didn't catch that.\"", "\"Playing music…\""] },
   },
   tech_vacuum: {
     id: "tech_vacuum",
@@ -289,7 +289,7 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     glow: "#c8b8ff",
     class: "network",
     armor: 0,
-    notify: { everySeconds: 7, range: 7, seconds: 2, text: ["As an AI, I—", "Great question!", "Let me rephrase that…"] },
+    notify: { everySeconds: 6, range: 8, seconds: 2.5, text: ["As an AI, I—", "Great question!", "Let me rephrase that…"] },
   },
   tech_router: {
     id: "tech_router",

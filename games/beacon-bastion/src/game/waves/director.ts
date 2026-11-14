@@ -29,7 +29,7 @@ export const FLIGHT_HEIGHT = 2.4;
 export const UPDATE_RULE = { fromWave: 3, atShare: 0.45, seconds: 4 } as const;
 
 /** Each wave after the first fields tech this much sturdier (a share of its catalog health), so a fully promoted crew still feels the late waves. */
-export const WAVE_HEALTH_RAMP = 0.04;
+export const WAVE_HEALTH_RAMP = 0.03;
 
 /** How far from the street a drone's parcel may land on a plot. */
 const PARCEL_REACH = 9;
@@ -130,7 +130,7 @@ export function spawnRaider(ctx: GameContext, unit: string, route: string, from?
     shield: def.shield === undefined ? null : newShield(ctx, instanceId, def.shield),
     healIn: def.heals?.everySeconds ?? 0,
     // The first ping comes a little after it arrives, so a fresh wave doesn't distract on frame one.
-    notifyIn: (def.notify?.everySeconds ?? def.spots?.everySeconds ?? def.backups?.everySeconds ?? def.power?.spawn.everySeconds ?? 0) * 0.6,
+    notifyIn: (def.notify?.everySeconds ?? def.spots?.everySeconds ?? def.backups?.everySeconds ?? def.power?.spawn.everySeconds ?? 0) * 0.35,
     alive: 0,
     dropped: false,
     installing: 0,
