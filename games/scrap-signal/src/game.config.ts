@@ -210,6 +210,12 @@ export const game = defineGame({
         { name: "front.capture", input: { mode: "fight" } },
         { name: "kit.capture", input: { family: "rifle" } },
       ],
+      // Junk in hand on the front lawn: a toaster with its mod and googly eyes, appliances converging.
+      "junk-armed": [
+        { name: "character.pick", input: { characterId: "gunk" } },
+        { name: "front.capture", input: { mode: "fight" } },
+        { name: "kit.capture", input: { family: "launcher", rarity: "epic" } },
+      ],
       // The relay contract's first ambush, so a flow can prove the session opens in the real game
       // without a two-minute walk from the crash site.
       "dead-air": [{ name: "character.pick", input: { characterId: "gunk" } }, { name: "relay.capture", input: { mode: "upload" } }],

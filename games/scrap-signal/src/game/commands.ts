@@ -655,15 +655,17 @@ export function registerCommands(ctx: GameContext): void {
     });
     // Dev-only: put a rolled gun of one family in the first hotbar slot with its ammo full, so a
     // capture of how guns handle does not first have to find one in a chest.
-    ctx.game.commands.define<{ family?: GunFamily }>("kit.capture", {
+    ctx.game.commands.define<{ family?: GunFamily; rarity?: "common" | "uncommon" | "rare" | "epic" | "legendary" }>("kit.capture", {
       cheat: true,
       apply(state: GameContext, input) {
-        const gun = rollGun(seededRng("kit-capture"), 3, { family: input.family ?? "rifle" });
+        const gun = rollGun(seededRng("kit-capture"), 3, { family: input.family ?? "rifle", ...(input.rarity === undefined ? {} : { rarity: input.rarity }) });
         const userId = state.player.userId;
         state.player.inventory.put("hotbar", gun.id, 1, { slot: 0 });
         session.selectSlot(state, 0);
         noteEquipped(gun.id);
         noteGunHeld(state, gun);
+        lastPickupStore.write(state, { gunId: gun.id, atMs: state.time.now() * 1000 });
+        moodPickup(state, gun);
         const pool = AMMO_STAT_IDS[gun.ammo];
         const ammo = state.scene.entity.stats.get(userId, pool);
         if (ammo !== null) state.scene.entity.stats.set(userId, pool, { current: ammo.max });
