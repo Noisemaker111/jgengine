@@ -157,6 +157,7 @@ export function tickTide(ctx: GameContext): TideStage | null {
   syncSheets(ctx, level);
   const stage = stageAt(level);
   const rose = runtime.stage !== null && runtime.stage !== stage.id && stage.index > 0;
+  if (rose) ctx.game.audio.play("tide_bell");
   if (rose) ctx.game.notices.push({ text: `${stage.label.toUpperCase()} · ${stage.note}`, tone: stage.index >= 3 ? "warn" : "info" });
   runtime.stage = stage.id;
   tideStore.write(ctx, {

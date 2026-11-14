@@ -72,6 +72,38 @@ export const SFX_PATCHES: Record<string, SynthPatch> = {
   delivery_fail: {
     voices: [{ kind: "tone", freq: 330, duration: 0.3, gain: 0.16, wave: "triangle", slideTo: 196 }],
   },
+  // High Tide Pizza cues. The harbour bell tolls when the tide reaches a new stage; the oven bell
+  // rings a new order onto the board; the till rings a paid box; the splash is spray off a wheel or
+  // hull; the snatch is a Crust rider grabbing a box.
+  tide_bell: {
+    voices: [
+      { kind: "tone", freq: 196, duration: 1.6, gain: 0.2, wave: "sine" },
+      { kind: "tone", freq: 392, duration: 1.2, gain: 0.08, wave: "sine" },
+      { kind: "tone", freq: 523, duration: 0.8, gain: 0.05, wave: "triangle" },
+    ],
+  },
+  oven_bell: {
+    voices: [
+      { kind: "tone", freq: 1568, duration: 0.18, gain: 0.12, wave: "sine" },
+      { kind: "tone", freq: 2093, duration: 0.3, gain: 0.08, wave: "sine" },
+    ],
+  },
+  till_ring: {
+    voices: [
+      { kind: "noise", duration: 0.06, filterFreq: 3000, gain: 0.15, decay: 0.5, filterType: "highpass" },
+      { kind: "tone", freq: 1319, duration: 0.16, gain: 0.13, wave: "triangle" },
+      { kind: "tone", freq: 1760, duration: 0.32, gain: 0.12, wave: "sine" },
+    ],
+  },
+  water_splash: {
+    voices: [{ kind: "noise", duration: 0.22, filterFreq: 1200, gain: 0.18, decay: 0.6, filterType: "bandpass" }],
+  },
+  box_snatch: {
+    voices: [
+      { kind: "noise", duration: 0.12, filterFreq: 900, gain: 0.25, decay: 0.6 },
+      { kind: "tone", freq: 520, duration: 0.25, gain: 0.14, wave: "square", slideTo: 260 },
+    ],
+  },
 };
 
 /** Ids the shell realises as retained, pitch/gain-controlled loops rather than one-shots. */

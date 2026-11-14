@@ -198,6 +198,7 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   const serial = state.serial + 1;
   const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas: caller.pizzas, calledAt: ctx.time.now() };
   ctx.game.notices.push({ text: `New order · ${caller.name}: "${caller.call}"`, tone: "info" });
+  ctx.game.audio.play("oven_bell");
   return { ...state, serial, board: [...state.board, call], nextCallIn: interval, idaDue: caller.id === LIGHTHOUSE_KEEPER ? false : state.idaDue };
 }
 
@@ -212,6 +213,7 @@ function splash(ctx: GameContext, soak: number, dt: number): void {
   const from = riderPosition(ctx);
   if (from === null) return;
   ctx.scene.entity.vfx({ kind: "spark", color: 0x9fe8ff, from: [from[0], from[1] + 0.2, from[2]], radius: Math.min(2.2, 0.8 + soak * 0.15) });
+  ctx.game.audio.play("water_splash", from);
 }
 
 /** Every box cools; water, spray and wading soak it; the blimp's altitude chills it. */
@@ -270,6 +272,7 @@ function tickRival(ctx: GameContext, state: ShiftState, dt: number): ShiftState 
   if (stolen === undefined) return state;
   const who = customerById(stolen.customerId)?.name ?? "a customer";
   const next = { ...state, bag: state.bag.filter((order) => order.id !== stolen.id), lost: state.lost + 1 };
+  ctx.game.audio.play("box_snatch", at);
   return leave(next, `Carmine's Crust snatched ${who}'s box and sold it as their own!`, "warn");
 }
 
@@ -486,6 +489,7 @@ function deliverHere(ctx: GameContext): void {
     streak: nextStreak,
   });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${total}`, kind: "loot" });
+  ctx.game.audio.play("till_ring");
   // The customer's line floats up from their door, the box burst in the shop's colours.
   const top = (waterAt(ctx, spot[0], spot[1])?.surface ?? ctx.world.groundHeightAt(spot[0], spot[1])) + FLOOR_HEIGHT[floor] + 2.6;
   ctx.scene.entity.floatText({ position: [spot[0], top, spot[1]], text: `"${thanks}"`, kind: worst === "bad" ? "warn" : "info", scale: 0.8 });
