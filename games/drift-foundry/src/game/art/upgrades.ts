@@ -3,18 +3,18 @@ import type { SessionSnapshot } from "../run/session";
 import type { PartIconId } from "../parts/catalog";
 
 export const UPGRADE_KINDS: Record<PartIconId, string> = {
-  salvage_v6: "upgrade_salvage_v6",
-  truck_engine: "upgrade_truck_engine",
-  ev_conversion: "upgrade_ev_conversion",
-  plow_blade: "upgrade_plow_blade",
-  hood_plate: "upgrade_hood_plate",
-  fan_blade_vanes: "upgrade_fan_blade_vanes",
-  coil_springs: "upgrade_coil_springs",
-  steel_rims: "upgrade_steel_rims",
-  monster_treads: "upgrade_monster_treads",
-  scrap_frame: "upgrade_scrap_frame",
-  roll_cage: "upgrade_roll_cage",
-  armor_plating: "upgrade_armor_plating",
+  power_walker: "upgrade_power_walker",
+  leaf_blower: "upgrade_leaf_blower",
+  e_assist: "upgrade_e_assist",
+  pallet_plow: "upgrade_pallet_plow",
+  noodle_bumper: "upgrade_noodle_bumper",
+  sign_spoiler: "upgrade_sign_spoiler",
+  spring_casters: "upgrade_spring_casters",
+  fixed_squeak: "upgrade_fixed_squeak",
+  knobby_casters: "upgrade_knobby_casters",
+  wire_basket: "upgrade_wire_basket",
+  cage_basket: "upgrade_cage_basket",
+  bin_lid_armor: "upgrade_bin_lid_armor",
 };
 
 // Geometry shares the chassis origin and heading. Each replacement has a new id,

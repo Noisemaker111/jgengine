@@ -1,4 +1,4 @@
-import { ROW_SIX_TRACK, type ActiveHazard, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, type ActiveHazard, type Track } from "../tracks/catalog";
 import { zoneAt, type ZoneSurface } from "../zones/catalog";
 
 /** Grip on the dirt shoulders either side of the paved haul strip. */
@@ -7,7 +7,7 @@ const SHOULDER_GRIP = 0.84;
 const EDGE_BLEND = 1.2;
 
 /** What each hazard does to the tires while the kart is in it. */
-const HAZARD_GRIP: Readonly<Record<string, number>> = { slick: 0.78, flood: 0.86, slag: 0.9, belt: 1, train: 1 };
+const HAZARD_GRIP: Readonly<Record<string, number>> = { spill: 0.78, puddle: 0.86, tumble: 0.9, belt: 1, tugger: 1 };
 
 export interface SurfaceSample {
   /** The yard surface the kart is over (zone-owned authored data). */
@@ -37,7 +37,7 @@ export function surfaceFrictionAt(x: number, z: number): number {
  * corner taken a yard later holds differently. A hazard under the kart (glazed slag, standing water)
  * takes its own cut on top.
  */
-export function surfaceAt(lateral: number, run: number, track: Track = ROW_SIX_TRACK, hazards: readonly ActiveHazard[] = []): SurfaceSample {
+export function surfaceAt(lateral: number, run: number, track: Track = AISLE_NINE_TRACK, hazards: readonly ActiveHazard[] = []): SurfaceSample {
   const zone = zoneAt(run, track.zones).surface;
   const over = Math.abs(lateral) - track.def.pavedHalfWidth;
   const paved = over <= 0;
@@ -58,8 +58,8 @@ export function hazardFeel(hazards: readonly ActiveHazard[]): { drag: number; to
   let topSpeedScale = 1;
   let push = 0;
   for (const hazard of hazards) {
-    if (hazard.kind === "flood") drag += 0.5 + 0.75 * hazard.push;
-    else if (hazard.kind === "slag") topSpeedScale = Math.min(topSpeedScale, 0.55);
+    if (hazard.kind === "puddle") drag += 0.5 + 0.75 * hazard.push;
+    else if (hazard.kind === "tumble") topSpeedScale = Math.min(topSpeedScale, 0.55);
     else if (hazard.kind === "belt") push += hazard.push;
   }
   return { drag, topSpeedScale, push };

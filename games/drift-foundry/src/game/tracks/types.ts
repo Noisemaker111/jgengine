@@ -13,7 +13,7 @@ import type { TrackZone } from "../zones/catalog";
  * distance it skips.
  */
 
-export type HazardKind = "slag" | "train" | "belt" | "flood" | "slick";
+export type HazardKind = "tumble" | "tugger" | "belt" | "puddle" | "spill";
 
 /** A hazard over a stretch of one route. `from`/`to` are run metres (main) or branch-local metres (a branch). */
 export interface TrackHazardDef {

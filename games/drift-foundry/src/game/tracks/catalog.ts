@@ -13,16 +13,16 @@ import {
 import type { PickupDef } from "../run/pickups";
 import type { RouteGate } from "../route/gates";
 import { zoneAt, type TrackZone } from "../zones/catalog";
-import { CONVEYOR_MAZE } from "./conveyorMaze";
-import { FLOODED_QUARRY } from "./floodedQuarry";
-import { RAIL_YARD } from "./railYard";
-import { ROW_SIX } from "./rowSix";
-import { SLAG_RIVER } from "./slagRiver";
-import { SMELTER_CLIMB } from "./smelterClimb";
+import { ELECTRONICS } from "./electronics";
+import { GARDEN_CENTER } from "./gardenCenter";
+import { LOADING_BAY } from "./loadingBay";
+import { AISLE_NINE } from "./aisleNine";
+import { PRODUCE } from "./produce";
+import { TOY_AISLE } from "./toyAisle";
 import type { HazardKind, TrackDef } from "./types";
 
 /** Row Six's barricades span past its fences, the way the corridor was first built. */
-const ROW_SIX_LANE: readonly [number, number] = [-20, 20];
+const AISLE_NINE_LANE: readonly [number, number] = [-20, 20];
 const PICKUP_Y = 0.9;
 
 /** A hazard as the run meets it: the span the course found, with the track's own words. */
@@ -105,7 +105,7 @@ export function buildTrack(def: TrackDef): Track {
   };
   const point = (route: string, run: number, offset = 0): CoursePoint => course.pointAt(route, sOf(route, run), offset);
 
-  const corridor = def.id === ROW_SIX.id;
+  const corridor = def.id === AISLE_NINE.id;
   const gates: RouteGate[] = def.gates.map((gate) => {
     const route = gate.route ?? MAIN_ROUTE;
     const hw = point(route, gate.at).halfWidth;
@@ -114,7 +114,7 @@ export function buildTrack(def: TrackDef): Track {
       zoneId: zoneAt(gate.at, def.zones).id,
       requirement: gate.requirement,
       route,
-      laneX: corridor ? ROW_SIX_LANE : [-(hw + 1), hw + 1],
+      laneX: corridor ? AISLE_NINE_LANE : [-(hw + 1), hw + 1],
       atZ: gate.at,
       label: gate.label,
       radioLine: gate.radioLine,
@@ -165,13 +165,13 @@ export function buildTrack(def: TrackDef): Track {
 /** Where every kart's grid is measured from: the start line is run metre 0, the spawn 4 m past it. */
 export const SPAWN_RUN = 4;
 
-export const TRACK_DEFS: readonly TrackDef[] = [ROW_SIX, SLAG_RIVER, RAIL_YARD, SMELTER_CLIMB, CONVEYOR_MAZE, FLOODED_QUARRY];
+export const TRACK_DEFS: readonly TrackDef[] = [AISLE_NINE, PRODUCE, LOADING_BAY, TOY_AISLE, ELECTRONICS, GARDEN_CENTER];
 
 export const TRACKS: readonly Track[] = TRACK_DEFS.map(buildTrack);
 
-export const ROW_SIX_TRACK: Track = TRACKS[0]!;
+export const AISLE_NINE_TRACK: Track = TRACKS[0]!;
 
-export const DEFAULT_TRACK_ID = ROW_SIX.id;
+export const DEFAULT_TRACK_ID = AISLE_NINE.id;
 
 export function trackById(id: string): Track | null {
   return TRACKS.find((track) => track.id === id) ?? null;

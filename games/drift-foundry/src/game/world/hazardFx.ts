@@ -27,7 +27,7 @@ function cycleLive(cycle: { period: number; active: number; phase?: number } | u
 export function slagSpurts(track: Track, time: number, world: Pick<WorldRuntime, "spurts">, near: readonly [number, number, number]): HazardBurst[] {
   const out: HazardBurst[] = [];
   for (const span of track.hazardSpans) {
-    if (span.kind !== "slag" || !cycleLive(span.cycle, time)) continue;
+    if (span.kind !== "tumble" || !cycleLive(span.cycle, time)) continue;
     const mid = track.course.pointAt(span.route, (span.from + span.to) / 2);
     if (Math.hypot(mid.x - near[0], mid.z - near[2]) > SPURT_RANGE) continue;
     const last = world.spurts.get(span.id) ?? -Infinity;

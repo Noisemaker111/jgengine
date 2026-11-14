@@ -8,7 +8,7 @@ import { RIVAL_DEFS } from "./game/race/opponents";
 import { createRunSession, runSessionStore, type RunSession } from "./game/run/session";
 import { autopilotFrame, registerCaptureCommands } from "./game/capture";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
-import { ROW_SIX_TRACK, trackById, type Track } from "./game/tracks/catalog";
+import { AISLE_NINE_TRACK, trackById, type Track } from "./game/tracks/catalog";
 import { createDriveInput } from "./game/vehicle/input";
 import { slagSpurts } from "./game/world/hazardFx";
 import {
@@ -23,7 +23,7 @@ import {
   syncPickupMarkers,
 } from "./game/world/setup";
 
-const trackOf = (session: RunSession): Track => trackById(session.snapshot().track.id) ?? ROW_SIX_TRACK;
+const trackOf = (session: RunSession): Track => trackById(session.snapshot().track.id) ?? AISLE_NINE_TRACK;
 
 export const lifecycle: LifecycleConfig<RunSession> = {
   store: runSessionStore,
@@ -58,7 +58,7 @@ export function onInit(ctx: GameContext): void {
 
 export function onNewPlayer(ctx: GameContext): void {
   const session = runSessionStore.peek(ctx);
-  const track = session === undefined ? ROW_SIX_TRACK : trackOf(session);
+  const track = session === undefined ? AISLE_NINE_TRACK : trackOf(session);
   const at = (run: number, lateral: number): [number, number, number] => {
     const point = track.point("main", run, lateral);
     return [point.x, ctx.world.groundHeightAt(point.x, point.z), point.z];
@@ -86,12 +86,12 @@ export function onTick(ctx: GameContext, dt: number): void {
   // scenery when a new run resets the session.
   const track = trackOf(session);
   if (track.id !== world.trackId) {
-    clearRunObjects(ctx, trackById(world.trackId) ?? ROW_SIX_TRACK);
+    clearRunObjects(ctx, trackById(world.trackId) ?? AISLE_NINE_TRACK);
     placeRunObjects(ctx, track);
-    worldRuntimeStore.write(ctx, createWorldRuntime(track === ROW_SIX_TRACK ? placeZoneDressing(ctx) : world.propRows, track.id));
+    worldRuntimeStore.write(ctx, createWorldRuntime(track === AISLE_NINE_TRACK ? placeZoneDressing(ctx) : world.propRows, track.id));
     input.reset();
   } else if (session.snapshot().collectedIds.size < world.removedMarkers.size || session.snapshot().runTime < world.lastRunTime) {
-    const rows = track === ROW_SIX_TRACK ? placeZoneDressing(ctx) : world.propRows;
+    const rows = track === AISLE_NINE_TRACK ? placeZoneDressing(ctx) : world.propRows;
     placeRunObjects(ctx, track);
     worldRuntimeStore.write(ctx, createWorldRuntime(rows, track.id));
     input.reset();
@@ -147,7 +147,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   syncDroppedGates(ctx, track, snapshot.runTime, snapshot.clearedGateIds, currentWorld.droppedGates);
   syncClearedGates(ctx, snapshot.clearedGateIds, currentWorld.removedGates, track);
   // Only Row Six's corridor props stand in the crusher's path; the other tracks keep their scenery.
-  if (track === ROW_SIX_TRACK) syncCompactorRow(ctx, snapshot.compactorZ, currentWorld.propRows, currentWorld.cursor);
+  if (track === AISLE_NINE_TRACK) syncCompactorRow(ctx, snapshot.compactorZ, currentWorld.propRows, currentWorld.cursor);
   currentWorld.lastRunTime = snapshot.runTime;
 
   runSessionStore.write(ctx, session);
@@ -155,7 +155,7 @@ export function onTick(ctx: GameContext, dt: number): void {
 
 /** The crusher's wall, square across the track's road at its run mark. */
 function compactorBody(ctx: GameContext, track: Track, compactorRun: number) {
-  if (track === ROW_SIX_TRACK) {
+  if (track === AISLE_NINE_TRACK) {
     return { id: COMPACTOR_ENTITY, kind: COMPACTOR_ENTITY, position: [0, ctx.world.groundHeightAt(0, compactorRun), compactorRun] as [number, number, number], role: "prop" as const };
   }
   const at = track.point("main", Math.max(-track.origin, compactorRun), 0);

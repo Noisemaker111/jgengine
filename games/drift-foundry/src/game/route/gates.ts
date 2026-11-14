@@ -3,7 +3,7 @@ import { MAIN_ROUTE, type CourseFix } from "@jgengine/core/roads/routeCourse";
 import type { KartTuning } from "../parts/build";
 import { partById, type DriftFoundryPartDef } from "../parts/catalog";
 import type { PickupDef } from "../run/pickups";
-import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, type Track } from "../tracks/catalog";
 
 export type GateNeed = "plow" | "jump";
 
@@ -33,7 +33,7 @@ export interface RouteGate {
  *
  * `ROUTE_GATES` is Row Six's gauntlet, the corridor every other default is measured on.
  */
-export const ROUTE_GATES: readonly RouteGate[] = ROW_SIX_TRACK.gates;
+export const ROUTE_GATES: readonly RouteGate[] = AISLE_NINE_TRACK.gates;
 
 export function gateSatisfied(gate: RouteGate, tuning: KartTuning): boolean {
   return gate.requirement === "plow" ? tuning.hasPlow : tuning.jumpPower > 0;
@@ -92,7 +92,7 @@ export function courseBlock(track: Track, from: CourseFix, to: CourseFix, tuning
     if (block === null || gate.atZ < block.run) block = { run: gate.atZ, gate, train: null };
   }
   for (const span of track.hazardSpans) {
-    if (span.kind !== "train" || span.route !== to.route) continue;
+    if (span.kind !== "tugger" || span.route !== to.route) continue;
     const cycle = span.cycle;
     if (cycle !== undefined) {
       const t = (((time - (cycle.phase ?? 0)) % cycle.period) + cycle.period) % cycle.period;

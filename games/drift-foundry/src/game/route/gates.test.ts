@@ -7,9 +7,9 @@ import { CORRIDOR_LANE_SPAN, EXIT_Z } from "../run/constants";
 import { PICKUPS } from "../run/pickups";
 
 const NO_PARTS = tuningFrom([]);
-const PLOW_ONLY = tuningFrom([partById("plow_blade")!]);
-const JUMP_ONLY = tuningFrom([partById("coil_springs")!]);
-const FULLY_KITTED = [partById("plow_blade")!, partById("coil_springs")!];
+const PLOW_ONLY = tuningFrom([partById("pallet_plow")!]);
+const JUMP_ONLY = tuningFrom([partById("spring_casters")!]);
+const FULLY_KITTED = [partById("pallet_plow")!, partById("spring_casters")!];
 const PLOW_AND_JUMP = tuningFrom(FULLY_KITTED);
 
 /** How far a straight run down the centerline gets before a barricade clamps it. */
@@ -96,7 +96,7 @@ describe("drift-foundry route gates", () => {
 describe("advice at a barricade that will not open", () => {
   const plowWall = ROUTE_GATES.find((gate) => gate.requirement === "plow")!;
   const jumpStack = ROUTE_GATES.find((gate) => gate.requirement === "jump")!;
-  const plowDrop = PICKUPS.find((pickup) => pickup.partId === "plow_blade")!;
+  const plowDrop = PICKUPS.find((pickup) => pickup.partId === "pallet_plow")!;
   const stopped = (over: Partial<StoppedKart> = {}): StoppedKart => ({ run: plowWall.atZ, tuning: NO_PARTS, collected: new Set(), crusherAt: 0, ...over });
 
   test("a missed plow blade still on the road is named with how far back it lies", () => {
@@ -124,7 +124,7 @@ describe("advice at a barricade that will not open", () => {
   });
 
   test("missing springs point back to the springs drop, not to any other part", () => {
-    const springs = PICKUPS.find((pickup) => pickup.partId === "coil_springs")!;
+    const springs = PICKUPS.find((pickup) => pickup.partId === "spring_casters")!;
     const advice = gateAdvice(jumpStack, PICKUPS, stopped({ run: jumpStack.atZ, tuning: PLOW_ONLY }));
     expect(advice.call).toBe(`NO COIL SPRINGS - ${Math.round(jumpStack.atZ - springs.at)}M BACK`);
     expect(advice.partAt).toBe(springs.at);

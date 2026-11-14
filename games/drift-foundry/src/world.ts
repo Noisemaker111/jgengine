@@ -19,14 +19,14 @@ import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import { SALVAGE_FACADE_KIT } from "./game/art/facades";
 import { CORRIDOR_HALF_WIDTH, EXIT_Z, HAUL_ROAD_HALF_WIDTH } from "./game/run/constants";
 import { ZONES, type ZoneDef } from "./game/zones/catalog";
-import { ROW_SIX_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
+import { AISLE_NINE_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
 
 /** The racing line everywhere is dark cracked asphalt: oil-black against the packed-dirt yard. */
 const RACING_LINE_SCAN = librarySurfaceScan("asphalt/dark-cracked");
 
 /** Every yard track but Row Six, each laid in its own stretch of the yard along z. */
-const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
+const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
 
 /**
  * The yard holds every track at once, stacked along z (the quarry farthest north, the conveyor hall

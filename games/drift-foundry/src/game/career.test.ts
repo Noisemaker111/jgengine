@@ -58,7 +58,7 @@ describe("yard career", () => {
 
   test("a part is locked by standing and opens exactly at its threshold", () => {
     const twoRungs = (score: number) => garageRows({ ...standingAt(score), ladders: { ranks: { engine: 2 } } }).find(row => row.slot === "engine")!;
-    expect(twoRungs(24).part?.id).toBe("ev_conversion");
+    expect(twoRungs(24).part?.id).toBe("e_assist");
     expect(twoRungs(24).locked).toBe(true);
     expect(twoRungs(24).needs).toBe(25);
     expect(twoRungs(25).locked).toBe(false);
@@ -71,12 +71,12 @@ describe("yard career", () => {
     expect(saveCareer(start, storage)).toBe(true);
     const bought = buyPart(readCareer(storage), "engine");
     expect(bought.bank.banked).toBe(350);
-    expect(ownedParts(bought).map(part => part.id)).toEqual(["salvage_v6"]);
+    expect(ownedParts(bought).map(part => part.id)).toEqual(["power_walker"]);
     saveCareer(bought, storage);
     const reloaded = readCareer(storage);
     expect(reloaded.bank.banked).toBe(350);
     expect(reloaded.ladders.ranks.engine).toBe(1);
-    expect(ownedParts(reloaded).map(part => part.id)).toEqual(["salvage_v6"]);
+    expect(ownedParts(reloaded).map(part => part.id)).toEqual(["power_walker"]);
   });
 
   test("a locked rung or an empty wallet refuses without moving anything", () => {

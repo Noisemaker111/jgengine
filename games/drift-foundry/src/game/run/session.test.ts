@@ -55,8 +55,8 @@ describe("drift-foundry run session", () => {
         session.tick(DT, { throttle: 1, brake: 0, steer: 0 }, { jumpPressed: shouldJump(session), plowBracing: false, salvageSwap: session.snapshot().pose.position[2] < 70 || takeElectric });
       }
     }
-    expect(truck.snapshot().installed.engine?.id).toBe("truck_engine");
-    expect(electric.snapshot().installed.engine?.id).toBe("ev_conversion");
+    expect(truck.snapshot().installed.engine?.id).toBe("leaf_blower");
+    expect(electric.snapshot().installed.engine?.id).toBe("e_assist");
     expect(electric.snapshot().tuning.topSpeed).toBeLessThan(truck.snapshot().tuning.topSpeed);
     expect(electric.snapshot().tuning.turnRate).toBeGreaterThan(truck.snapshot().tuning.turnRate);
     // Midair swaps retain momentum. The speed cost becomes tangible after
@@ -74,12 +74,12 @@ describe("drift-foundry run session", () => {
       session.start();
       for (let i = 0; i < 1500 && session.snapshot().pose.position[2] < 60; i++) session.tick(DT, { throttle: 1, brake: 0, steer: 0 }, { jumpPressed: false, plowBracing: false, salvageSwap: consent });
     }
-    expect(keep.snapshot().installed.engine?.id).toBe("salvage_v6");
-    expect(swap.snapshot().installed.engine?.id).toBe("truck_engine");
+    expect(keep.snapshot().installed.engine?.id).toBe("power_walker");
+    expect(swap.snapshot().installed.engine?.id).toBe("leaf_blower");
     expect(swap.snapshot().tuning.topSpeed).toBeGreaterThan(keep.snapshot().tuning.topSpeed);
     expect(swap.snapshot().tuning.turnRate).toBeLessThan(keep.snapshot().tuning.turnRate);
-    expect(keep.snapshot().collectedIds.has("pickup_truck_engine")).toBe(false);
-    expect(swap.snapshot().collectedIds.has("pickup_truck_engine")).toBe(true);
+    expect(keep.snapshot().collectedIds.has("pickup_leaf_blower")).toBe(false);
+    expect(swap.snapshot().collectedIds.has("pickup_leaf_blower")).toBe(true);
   });
   test("holding throttle without jumping stops at the tire stack and loses", () => {
     const session = createRunSession();
@@ -173,7 +173,7 @@ describe("drift-foundry run session", () => {
   test("a kart that dodged the plow is told where it lies, backs onto it and breaks through the wall", () => {
     const session = createRunSession();
     session.start();
-    const plow = PICKUPS.find((p) => p.partId === "plow_blade")!;
+    const plow = PICKUPS.find((p) => p.partId === "pallet_plow")!;
     const wall = ROUTE_GATES.find((g) => g.requirement === "plow")!;
     // Swing 9 m wide past the plow drop only, then back to the centreline into the wall.
     for (let i = 0; i < 900 && !session.snapshot().pose.blockedByGate && session.snapshot().phase === "running"; i++) {

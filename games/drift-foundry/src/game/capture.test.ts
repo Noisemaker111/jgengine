@@ -27,9 +27,9 @@ describe("staged race capture", () => {
 
   test("stages any event's own track: the slag river's time sheet runs on the slag river", () => {
     const live = runner();
-    stageRun(live.ctx, "midrun", { event: "time-sheet", seconds: 12 });
+    stageRun(live.ctx, "midrun", { event: "price-check", seconds: 12 });
     const read = stageReadout(live.ctx);
-    expect(read.track).toBe("slag-river");
+    expect(read.track).toBe("produce");
     expect(read.phase).toBe("running");
     expect(read.run).toBeGreaterThan(60);
   });

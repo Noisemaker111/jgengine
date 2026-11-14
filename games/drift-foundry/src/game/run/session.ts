@@ -24,7 +24,7 @@ import { gateAdvice, gateSatisfied, gateStanding, inLane, type GateAdvice, type 
 import { createVehicleController, type DriveAxis, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
-import { ROW_SIX_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
 import { FLAT_YARD_GROUND } from "../tracks/ground";
 import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RunStorage } from "./records";
 import { checkpointParts, readParkedRun, saveParkedRun, type ParkedRun } from "./progress";
@@ -207,13 +207,13 @@ const WALL_REACH = 3;
 
 /** The track an event runs on; an unknown id falls back to Row Six. */
 export function trackOfEvent(event: YardEvent): Track {
-  return trackById(event.track) ?? ROW_SIX_TRACK;
+  return trackById(event.track) ?? AISLE_NINE_TRACK;
 }
 
 /** Ghosts are kept per track and event; Row Six keeps the bare event id its ghosts were first saved under. */
 export function ghostKey(event: YardEvent): string {
   const track = trackOfEvent(event);
-  return track.id === ROW_SIX_TRACK.id ? event.id : `${track.id}:${event.id}`;
+  return track.id === AISLE_NINE_TRACK.id ? event.id : `${track.id}:${event.id}`;
 }
 
 const runOf = (pose: VehicleTelemetry): number => pose.run ?? pose.position[2];
@@ -259,7 +259,7 @@ export function createRunSession(
   let event: YardEvent = currentEvent();
   let track: Track = trackOfEvent(event);
   // A parked run belongs to the track it was parked on.
-  if (parkedRun !== null && (parkedRun.track ?? ROW_SIX_TRACK.id) !== track.id) parkedRun = null;
+  if (parkedRun !== null && (parkedRun.track ?? AISLE_NINE_TRACK.id) !== track.id) parkedRun = null;
   const startingParts = (): readonly DriftFoundryPartDef[] => (event.garage ? ownedParts(career) : []);
   const ghostRecorder = createGhostRecorder();
   let ghosts = readGhosts(storage);
@@ -462,7 +462,7 @@ export function createRunSession(
         announcedHazards.add(hazard.id);
         pushRadio(hazard.label);
       }
-      if (hazard.kind !== "train") continue;
+      if (hazard.kind !== "tugger") continue;
       const span = track.hazardSpans.find((entry) => entry.id === hazard.id);
       if (span === undefined) continue;
       const back = track.course.progressOf(span.route, span.from) - track.origin - TRAIN_KNOCKBACK;
@@ -568,9 +568,9 @@ export function createRunSession(
     if (event.metric === "place") return place;
     if (event.metric === "time") return Math.round(runTime * 100) / 100;
     if (event.metric === "sweep") return collected.size;
-    const hobbs = standings.snapshot().standings.find((entry) => entry.id === "rival_hobbs");
+    const hobbs = standings.snapshot().standings.find((entry) => entry.id === "rival_brick");
     if (hobbs?.finishTime != null) return Math.round((hobbs.finishTime - runTime) * 100) / 100;
-    const body = opponents.bodies().find((entry) => entry.id === "rival_hobbs");
+    const body = opponents.bodies().find((entry) => entry.id === "rival_brick");
     if (body === undefined) return 0;
     const metresLeft = Math.max(0, track.exitAt - body.run);
     return Math.round((metresLeft / Math.max(6, body.speedKmh / 3.6)) * 100) / 100;

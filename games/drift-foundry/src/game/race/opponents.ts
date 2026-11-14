@@ -16,7 +16,7 @@ import { tuningFrom, type KartTuning } from "../parts/build";
 import { partById, type PartIconId } from "../parts/catalog";
 import { ROUTE_GATES } from "../route/gates";
 import { EXIT_Z, RUN_SEED, SPAWN_Z } from "../run/constants";
-import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, type Track } from "../tracks/catalog";
 import { createVehicleController, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 
 /**
@@ -89,39 +89,39 @@ export interface RivalDef {
 
 export const RIVAL_DEFS: readonly RivalDef[] = [
   {
-    id: "rival_tally",
+    id: "rival_grandma",
     name: "TALLY",
-    entityKind: "kart_rival_tally",
+    entityKind: "kart_rival_grandma",
     tier: "easy",
     pace: 0.9,
     lookahead: 5,
-    parts: ["ev_conversion", "plow_blade", "coil_springs", "scrap_frame"],
+    parts: ["e_assist", "pallet_plow", "spring_casters", "wire_basket"],
     band: 1,
     grid: { x: -3.4, z: 12 },
     // No rhythm: drifts across the haul strip gate to gate, so it sheds speed in every correction.
     line: [0, -5, -3.4, -4.6, -3, -4.8, -3.2, -4.4, -3, 0],
   },
   {
-    id: "rival_moss",
+    id: "rival_twins",
     name: "MOSS",
-    entityKind: "kart_rival_moss",
+    entityKind: "kart_rival_twins",
     tier: "standard",
     pace: 0.97,
     lookahead: 9,
-    parts: ["salvage_v6", "plow_blade", "coil_springs", "scrap_frame"],
+    parts: ["power_walker", "pallet_plow", "spring_casters", "wire_basket"],
     band: 0.8,
     grid: { x: 3.4, z: 17 },
     // A weaver: takes the free side of each barricade, so it is often off-line and re-aiming.
     line: [0, 3, -2.4, 2.6, -3, 3.2, -2.4, 2.8, -3, 0],
   },
   {
-    id: "rival_hobbs",
+    id: "rival_brick",
     name: "HOBBS",
-    entityKind: "kart_rival_hobbs",
+    entityKind: "kart_rival_brick",
     tier: "expert",
     pace: 1,
     lookahead: 15,
-    parts: ["truck_engine", "plow_blade", "coil_springs", "roll_cage"],
+    parts: ["leaf_blower", "pallet_plow", "spring_casters", "cage_basket"],
     band: 0.5,
     grid: { x: 0, z: 24 },
     // Holds one wide outside line the whole way: fewest heading changes, so it brakes least.
@@ -177,8 +177,8 @@ export interface OpponentField {
 export const RIVAL_ROLLOUT = 24;
 
 /** The authored route with this rival's lateral bias sampled in: spawn, each barricade, the exit. */
-export function rivalLine(def: RivalDef, track: Track = ROW_SIX_TRACK): readonly DrivePathPoint[] {
-  if (track.id === ROW_SIX_TRACK.id) {
+export function rivalLine(def: RivalDef, track: Track = AISLE_NINE_TRACK): readonly DrivePathPoint[] {
+  if (track.id === AISLE_NINE_TRACK.id) {
     const zs = [SPAWN_Z, ...ROUTE_GATES.map((gate) => gate.atZ), EXIT_Z];
     const line = zs.map((z, index) => [def.line[index] ?? def.line[def.line.length - 1] ?? 0, z] as const);
     return [...line, [0, EXIT_Z + RIVAL_ROLLOUT] as const];
@@ -305,7 +305,7 @@ export function createOpponentField(options: {
   const groundHeightAt = options.groundHeightAt ?? (() => 0);
   const defs = options.defs ?? RIVAL_DEFS;
   const seed = options.seed ?? RUN_SEED;
-  const track = options.track ?? ROW_SIX_TRACK;
+  const track = options.track ?? AISLE_NINE_TRACK;
   let rivals = defs.map((def) => createRival(def, groundHeightAt, seed, track));
 
   const nudge = (rival: Rival, dx: number, dz: number): void => {
@@ -316,7 +316,7 @@ export function createOpponentField(options: {
 
   const field: OpponentField = {
     tick(dt, player, playerRun = player[2], time = 0) {
-      const playerLateral = track.id === ROW_SIX_TRACK.id ? player[0] : track.locate(player[0], player[2]).offset;
+      const playerLateral = track.id === AISLE_NINE_TRACK.id ? player[0] : track.locate(player[0], player[2]).offset;
       for (const rival of rivals) {
         const target = pathTargetAhead(rival.line, rival.pose.position[0], rival.pose.position[2], rival.def.lookahead);
         const goal = {

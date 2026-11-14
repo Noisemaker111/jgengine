@@ -7,8 +7,8 @@ import { detour, straight, turn, type TrackDef } from "./types";
  * sheds, under searchlights. Belts run under the road - some carry you, some fight you, some only
  * cover half a lane. The belt hall runs straight through the first shed on a fast belt, past a ramp.
  */
-export const CONVEYOR_MAZE: TrackDef = {
-  id: "conveyor-maze",
+export const ELECTRONICS: TrackDef = {
+  id: "electronics",
   label: "Conveyor Maze",
   blurb: "Night in the sorting sheds: narrow right angles, belts that carry or fight you, and a fast belt hall over a ramp.",
   origin: 60,
@@ -35,9 +35,9 @@ export const CONVEYOR_MAZE: TrackDef = {
     turn(-90, 14),
     straight(60),
   ],
-  branches: [{ id: "belt-hall", from: 103, to: 224, halfWidth: 5.5, label: "BELT HALL" }],
+  branches: [{ id: "stockroom", from: 103, to: 224, halfWidth: 5.5, label: "BELT HALL" }],
   hazards: [
-    { id: "hall-belt", kind: "belt", route: "belt-hall", from: 6, to: 70, push: 4.5, label: "FAST BELT IN THE HALL" },
+    { id: "hall-belt", kind: "belt", route: "stockroom", from: 6, to: 70, push: 4.5, label: "FAST BELT IN THE HALL" },
     { id: "long-way-belt", kind: "belt", from: 140, to: 186, offset: [-8, 0], push: -2.5, label: "RETURN BELT ON THE LONG WAY" },
     { id: "feed-belt", kind: "belt", from: 252, to: 298, push: 3, label: "FEED BELT" },
     { id: "return-belt", kind: "belt", from: 406, to: 462, offset: [0, 8], push: -3, label: "RETURN BELT - TAKE THE OTHER LANE" },
@@ -46,7 +46,7 @@ export const CONVEYOR_MAZE: TrackDef = {
   ],
   gates: [
     { id: "belt_plow_pallets", requirement: "plow", at: 92, label: "PALLET WALL", radioLine: "PALLETS EVERYWHERE — INTO THE MAZE" },
-    { id: "belt_jump_hall", requirement: "jump", route: "belt-hall", at: 160, label: "HALL RAMP", radioLine: "OFF THE HALL RAMP — BELT'S DOING THE WORK" },
+    { id: "belt_jump_hall", requirement: "jump", route: "stockroom", at: 160, label: "HALL RAMP", radioLine: "OFF THE HALL RAMP — BELT'S DOING THE WORK" },
     { id: "belt_jump_feed", requirement: "jump", at: 275, label: "FEED-BELT HUMP", radioLine: "OVER THE HUMP — LEFT, RIGHT, LEFT" },
     { id: "belt_plow_bales", requirement: "plow", at: 430, label: "BALE STACK", radioLine: "BALES BURST — MIND THE RETURN BELT" },
     { id: "belt_jump_sorter", requirement: "jump", at: 600, label: "SORTER GAP", radioLine: "CLEARED THE SORTER — TWO MORE CORNERS" },
@@ -64,7 +64,7 @@ export const CONVEYOR_MAZE: TrackDef = {
   fog: { color: "#0e1224", near: 30, far: 170 },
   sky: { horizonColor: "#1d2340", zenithColor: "#070910", sunIntensity: 0.35, ambientIntensity: 0.4 },
   baseLevel: 0,
-  rivalTake: { rival_hobbs: ["belt-hall"] },
+  rivalTake: { rival_brick: ["stockroom"] },
   par: 63,
   dressing: {
     edge: O.edgeTyre,

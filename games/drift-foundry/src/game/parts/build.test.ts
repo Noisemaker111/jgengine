@@ -19,7 +19,7 @@ describe("drift-foundry modular kart handling", () => {
   });
 
   test("installing the truck engine raises top speed and hurts handling", () => {
-    const truckEngine = partById("truck_engine")!;
+    const truckEngine = partById("leaf_blower")!;
     const { installed } = swapPart([], truckEngine);
     const tuning = tuningFrom(installed);
     const bare = tuningFrom([]);
@@ -28,38 +28,38 @@ describe("drift-foundry modular kart handling", () => {
   });
 
   test("plow blade grants plow capability", () => {
-    const plow = partById("plow_blade")!;
+    const plow = partById("pallet_plow")!;
     const { installed } = swapPart([], plow);
     expect(tuningFrom(installed).hasPlow).toBe(true);
   });
 
   test("coil springs grant jump power", () => {
-    const springs = partById("coil_springs")!;
+    const springs = partById("spring_casters")!;
     const { installed } = swapPart([], springs);
     expect(tuningFrom(installed).jumpPower).toBeGreaterThan(0);
   });
 
   test("armor-capable frame parts grant one armor charge", () => {
-    const armor = partById("armor_plating")!;
+    const armor = partById("bin_lid_armor")!;
     const { installed } = swapPart([], armor);
     expect(tuningFrom(installed).armorCharges).toBe(1);
   });
 
   test("swapping a second part into an occupied slot ejects the old part and keeps one per slot", () => {
-    const hoodPlate = partById("hood_plate")!;
-    const fanVanes = partById("fan_blade_vanes")!;
+    const hoodPlate = partById("noodle_bumper")!;
+    const fanVanes = partById("sign_spoiler")!;
     const first = swapPart([], hoodPlate);
     expect(first.ejected).toBeNull();
 
     const second = swapPart(first.installed, fanVanes);
-    expect(second.ejected?.id).toBe("hood_plate");
+    expect(second.ejected?.id).toBe("noodle_bumper");
     expect(second.installed.filter((entry) => entry.slot === "front")).toHaveLength(1);
-    expect(second.installed.find((entry) => entry.slot === "front")?.id).toBe("fan_blade_vanes");
+    expect(second.installed.find((entry) => entry.slot === "front")?.id).toBe("sign_spoiler");
   });
 
   test("swapping into a different slot never ejects an unrelated part", () => {
-    const engine = partById("salvage_v6")!;
-    const wheels = partById("steel_rims")!;
+    const engine = partById("power_walker")!;
+    const wheels = partById("fixed_squeak")!;
     const withEngine = swapPart([], engine);
     const withWheels = swapPart(withEngine.installed, wheels);
     expect(withWheels.ejected).toBeNull();
@@ -85,7 +85,7 @@ describe("drift-foundry modular kart handling", () => {
   });
 
   test("monster treads actually grip harder: wider plateau and more slide grip than the base tire", () => {
-    const treads = tuningFrom(swapPart([], partById("monster_treads")!).installed);
+    const treads = tuningFrom(swapPart([], partById("knobby_casters")!).installed);
     const bare = tuningFrom([]);
     expect(treads.feel.slideGrip).toBeGreaterThan(bare.feel.slideGrip);
     expect(treads.feel.peakSlip).toBeGreaterThanOrEqual(bare.feel.peakSlip);
@@ -94,14 +94,14 @@ describe("drift-foundry modular kart handling", () => {
   });
 
   test("brakes and reverse follow the composed engine rather than the bare chassis", () => {
-    const truck = tuningFrom(swapPart([], partById("truck_engine")!).installed);
+    const truck = tuningFrom(swapPart([], partById("leaf_blower")!).installed);
     expect(truck.handling.brakes.brake).toBeCloseTo(truck.accel * 1.3, 5);
     expect(truck.handling.engine.reverseSpeed).toBeCloseTo(truck.topSpeed * 0.35, 5);
   });
 
   test("composed numbers are additive across installed parts and match their flat claims", () => {
-    const engine = partById("truck_engine")!;
-    const armor = partById("armor_plating")!;
+    const engine = partById("leaf_blower")!;
+    const armor = partById("bin_lid_armor")!;
     const installed = swapPart(swapPart([], engine).installed, armor).installed;
     const tuning = tuningFrom(installed);
     expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.engine.topSpeed + claimedChange(engine, "topSpeed") + claimedChange(armor, "topSpeed"), 5);

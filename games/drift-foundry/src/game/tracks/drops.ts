@@ -9,17 +9,17 @@ import type { TrackPickupDef } from "./types";
  * the sweep's real choice.
  */
 const OPENING: readonly { partId: PartIconId; lane: number }[] = [
-  { partId: "salvage_v6", lane: 0 },
-  { partId: "hood_plate", lane: -1.5 },
-  { partId: "truck_engine", lane: 1.5 },
-  { partId: "fan_blade_vanes", lane: -1 },
-  { partId: "steel_rims", lane: 1 },
-  { partId: "plow_blade", lane: 0 },
-  { partId: "monster_treads", lane: -1 },
-  { partId: "coil_springs", lane: 0 },
+  { partId: "power_walker", lane: 0 },
+  { partId: "noodle_bumper", lane: -1.5 },
+  { partId: "leaf_blower", lane: 1.5 },
+  { partId: "sign_spoiler", lane: -1 },
+  { partId: "fixed_squeak", lane: 1 },
+  { partId: "pallet_plow", lane: 0 },
+  { partId: "knobby_casters", lane: -1 },
+  { partId: "spring_casters", lane: 0 },
 ];
 
-const LATE: readonly PartIconId[] = ["ev_conversion", "scrap_frame", "roll_cage", "armor_plating"];
+const LATE: readonly PartIconId[] = ["e_assist", "wire_basket", "cage_basket", "bin_lid_armor"];
 
 /** The opening eight at the given run metres, then the four late drops where the track puts them. */
 export function trackDrops(opening: readonly number[], late: readonly { at: number; lane?: number; route?: string }[]): readonly TrackPickupDef[] {

@@ -5,7 +5,7 @@ import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { CORRIDOR_HALF_WIDTH, EXIT_Z } from "./run/constants";
 import { world } from "../world";
 import { ZONES } from "./zones/catalog";
-import { ROW_SIX_TRACK, TRACKS, trackById } from "./tracks/catalog";
+import { AISLE_NINE_TRACK, TRACKS, trackById } from "./tracks/catalog";
 import { YARD_GROUND } from "./tracks/ground";
 
 describe("drift-foundry world", () => {
@@ -92,20 +92,20 @@ describe("drift-foundry world", () => {
   });
 
   test("the haul road spans the whole run, and every other track's routes are paved", () => {
-    const laid = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
+    const laid = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
     expect(summary.roads).toHaveLength(1 + laid.reduce((sum, track) => sum + track.course.routes.length, 0));
     expect(summary.roads[0]!.length).toBeGreaterThan(EXIT_Z);
   });
 
   test("every laid track has its own light and ground, and the slag and the flood are liquid", () => {
-    const laid = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
+    const laid = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
     const bands = world.kind === "environment" ? world.terrain?.biomeBands ?? [] : [];
     for (const track of laid) expect(bands.some((band) => band.z === track.def.bandZ && band.sky === track.def.sky)).toBe(true);
     expect(new Set(laid.map((track) => track.def.sky.horizonColor)).size).toBe(laid.length);
     expect(bands.filter((band) => band.weather === "rain")).toHaveLength(1);
     expect(summary.counts.water ?? (world.kind === "environment" ? [world.water].flat().length : 0)).toBe(laid.filter((track) => track.def.liquid !== undefined).length);
     // The terrain is the course's own grade: a kart on the smelter's top deck stands on it.
-    const top = trackById("smelter-climb")!.point("main", 600);
+    const top = trackById("toy-aisle")!.point("main", 600);
     expect(YARD_GROUND(top.x, top.z)).toBeCloseTo(top.elevation, 1);
   });
 

@@ -1,5 +1,5 @@
 import type { EmitterConfig } from "@jgengine/core/vfx/particles";
-import { ROW_SIX_TRACK, trackById } from "./tracks/catalog";
+import { AISLE_NINE_TRACK, trackById } from "./tracks/catalog";
 import type { SessionSnapshot } from "./run/session";
 
 type ImpactSnapshot = Pick<SessionSnapshot, "phase" | "paused" | "runTime" | "pose" | "clearedGateIds" | "armorSavesUsed"> & Partial<Pick<SessionSnapshot, "track" | "lateral">>;
@@ -28,7 +28,7 @@ export function impactBursts(before: ImpactSnapshot, after: ImpactSnapshot): Imp
       alpha: { start: .9, end: 0 }, seed: `${kind}:${after.runTime}`,
     },
   });
-  const track = (after.track === undefined ? null : trackById(after.track.id)) ?? ROW_SIX_TRACK;
+  const track = (after.track === undefined ? null : trackById(after.track.id)) ?? AISLE_NINE_TRACK;
   for (const gate of track.gates) {
     if (gate.requirement === "plow" && after.clearedGateIds.has(gate.id) && !before.clearedGateIds.has(gate.id)) {
       // The debris bursts where the wall stood, in line with the kart.

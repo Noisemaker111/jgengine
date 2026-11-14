@@ -1,10 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RunSession, SessionSnapshot } from "../run/session";
-import { ROW_SIX_TRACK, trackById } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, trackById } from "../tracks/catalog";
 import { PART_SLOTS, partById } from "../parts/catalog";
 import { launchCue } from "./launchCue";
 
-type Track = typeof ROW_SIX_TRACK;
+type Track = typeof AISLE_NINE_TRACK;
 export type SignTone = "plow" | "jump" | "launch" | "stop" | "home";
 
 const mainGateLists = new WeakMap<Track, Track["gates"]>();
@@ -19,7 +19,7 @@ function mainGates(track: Track): Track["gates"] {
 
 /** Everything the race HUD shows, read from one snapshot. */
 export function raceHud(snapshot: SessionSnapshot) {
-  const track = trackById(snapshot.track.id) ?? ROW_SIX_TRACK;
+  const track = trackById(snapshot.track.id) ?? AISLE_NINE_TRACK;
   const run = snapshot.run;
   // Only what is on the road ahead counts: a shortcut's wall is not in the way of a kart on the main line.
   const shortcut = track.def.branches.find(branch => branch.id === snapshot.route);

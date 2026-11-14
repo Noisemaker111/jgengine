@@ -37,12 +37,12 @@ export interface YardEvent {
   rewards: { bronze: number; silver: number; gold: number };
 }
 
-export type TierId = "row-six" | "night-crew" | "bare-metal" | "legend";
+export type TierId = "aisle-nine" | "late-shift" | "empty-cart" | "legend";
 
 export const YARD_TIERS: readonly { id: TierId; label: string; requires: number }[] = [
-  { id: "row-six", label: "Row Six", requires: 0 },
-  { id: "night-crew", label: "Night Crew", requires: 4 },
-  { id: "bare-metal", label: "Bare Metal", requires: 10 },
+  { id: "aisle-nine", label: "Row Six", requires: 0 },
+  { id: "late-shift", label: "Night Crew", requires: 4 },
+  { id: "empty-cart", label: "Bare Metal", requires: 10 },
   { id: "legend", label: "Yard Legend", requires: 16 },
 ];
 
@@ -55,10 +55,10 @@ export type MedalId = (typeof MEDALS)[number]["id"];
 
 export const YARD_EVENTS: readonly YardEvent[] = [
   {
-    id: "salvage-run",
-    track: "row-six",
+    id: "last-call",
+    track: "aisle-nine",
     label: "Salvage Run",
-    tier: "row-six",
+    tier: "aisle-nine",
     blurb: "The shift as it always runs: three yard karts ahead, the crusher behind. Medals go on where you finish.",
     metric: "place",
     targets: { bronze: 3, silver: 2, gold: 1 },
@@ -67,10 +67,10 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 60, silver: 120, gold: 220 },
   },
   {
-    id: "time-sheet",
-    track: "slag-river",
+    id: "price-check",
+    track: "produce",
     label: "Time Sheet",
-    tier: "row-six",
+    tier: "aisle-nine",
     blurb: "Nobody on the grid. The foreman holds a stopwatch at the gate and the crusher still rolls.",
     metric: "time",
     targets: { bronze: 66, silver: 54, gold: 43.5 },
@@ -79,10 +79,10 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 60, silver: 120, gold: 220 },
   },
   {
-    id: "scrap-sweep",
-    track: "flooded-quarry",
+    id: "cart-stuffer",
+    track: "garden-center",
     label: "Scrap Sweep",
-    tier: "row-six",
+    tier: "aisle-nine",
     blurb: "The yard pays by the piece. Weave for every drop on the route and still make the gate.",
     metric: "sweep",
     targets: { bronze: 7, silver: 10, gold: 12 },
@@ -91,10 +91,10 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 60, silver: 120, gold: 220 },
   },
   {
-    id: "night-shift",
-    track: "conveyor-maze",
+    id: "lights-out",
+    track: "electronics",
     label: "Night Shift",
-    tier: "night-crew",
+    tier: "late-shift",
     blurb: "The night crew starts the crusher 15 m closer, runs it faster between surges and hits the surges harder.",
     metric: "time",
     targets: { bronze: 73, silver: 63, gold: 55 },
@@ -104,24 +104,24 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 90, silver: 180, gold: 320 },
   },
   {
-    id: "grudge-hobbs",
-    track: "rail-yard",
+    id: "grudge-brick",
+    track: "loading-bay",
     label: "Grudge: HOBBS",
-    tier: "night-crew",
+    tier: "late-shift",
     blurb: "Just you and the yard champion on a clean line, 6% hotter than usual. Medals on your margin at the gate.",
     metric: "grudge",
     targets: { bronze: -6, silver: -2, gold: 1.5 },
-    rivals: ["rival_hobbs"],
+    rivals: ["rival_brick"],
     rivalPace: 1.06,
     rivalLine: 0.4,
     garage: true,
     rewards: { bronze: 90, silver: 180, gold: 320 },
   },
   {
-    id: "bare-metal",
-    track: "smelter-climb",
+    id: "empty-cart",
+    track: "toy-aisle",
     label: "Bare Metal",
-    tier: "bare-metal",
+    tier: "empty-cart",
     blurb: "The garage stays shut: a bare chassis and whatever the route drops. Beat the clock on salvage alone.",
     metric: "time",
     targets: { bronze: 68, silver: 61, gold: 54.5 },
@@ -130,10 +130,10 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 120, silver: 240, gold: 400 },
   },
   {
-    id: "crusher-rush",
-    track: "row-six",
+    id: "shutter-rush",
+    track: "aisle-nine",
     label: "Crusher Rush",
-    tier: "bare-metal",
+    tier: "empty-cart",
     blurb: "The compactor never idles: it rolls at surge speed from the horn, 20 m behind. One stop and it has you.",
     metric: "time",
     targets: { bronze: 40, silver: 35, gold: 30.5 },
@@ -143,8 +143,8 @@ export const YARD_EVENTS: readonly YardEvent[] = [
     rewards: { bronze: 120, silver: 240, gold: 400 },
   },
   {
-    id: "foundry-gauntlet",
-    track: "rail-yard",
+    id: "closing-time",
+    track: "loading-bay",
     label: "Foundry Gauntlet",
     tier: "legend",
     blurb: "Everything at once: shut garage, the night crusher and the whole field on tight lines. Finish where you can.",
@@ -159,7 +159,7 @@ export const YARD_EVENTS: readonly YardEvent[] = [
   },
 ];
 
-export const DEFAULT_EVENT_ID = "salvage-run";
+export const DEFAULT_EVENT_ID = "last-call";
 
 const DIRECTION: Record<EventMetric, MedalDirection> = { place: "lower", time: "lower", sweep: "higher", grudge: "higher" };
 

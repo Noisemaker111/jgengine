@@ -49,10 +49,10 @@ export const YARD_STANDING = {
 
 /** Parts the yard will not sell until the driver is known well enough. */
 const PART_GATES: readonly GateDef[] = [
-  { id: "part_plow", unlock: "plow_blade", requires: { gte: ["standing.yard", 0] } },
-  { id: "part_treads", unlock: "monster_treads", label: "Monster treads", requires: { gte: ["standing.yard", 12] } },
-  { id: "part_ev", unlock: "ev_conversion", label: "EV conversion", requires: { gte: ["standing.yard", 25] } },
-  { id: "part_armor", unlock: "armor_plating", label: "Armor plating", requires: { gte: ["standing.yard", 40] } },
+  { id: "part_plow", unlock: "pallet_plow", requires: { gte: ["standing.yard", 0] } },
+  { id: "part_treads", unlock: "knobby_casters", label: "Monster treads", requires: { gte: ["standing.yard", 12] } },
+  { id: "part_ev", unlock: "e_assist", label: "EV conversion", requires: { gte: ["standing.yard", 25] } },
+  { id: "part_armor", unlock: "bin_lid_armor", label: "Armor plating", requires: { gte: ["standing.yard", 40] } },
 ];
 
 /** The yard's locked shelf. Built at load, so a part id that does not exist throws here. */
@@ -64,10 +64,10 @@ export const YARD_COUNTER = createGateSet({
 
 /** Each slot is a ladder: rank `n` is the `n`th catalog part for that slot. */
 export const LADDERS: Record<PartSlotId, readonly string[]> = {
-  engine: ["salvage_v6", "truck_engine", "ev_conversion"],
-  front: ["hood_plate", "fan_blade_vanes", "plow_blade"],
-  wheels: ["steel_rims", "coil_springs", "monster_treads"],
-  frame: ["scrap_frame", "roll_cage", "armor_plating"],
+  engine: ["power_walker", "leaf_blower", "e_assist"],
+  front: ["noodle_bumper", "sign_spoiler", "pallet_plow"],
+  wheels: ["fixed_squeak", "spring_casters", "knobby_casters"],
+  frame: ["wire_basket", "cage_basket", "bin_lid_armor"],
 };
 
 const NODES = PART_SLOTS.map((slot) => ({
@@ -93,7 +93,7 @@ export interface CareerSave {
 
 /** Every event's track today. Careers saved before the tracks ran every event on Row Six. */
 const eventCourses = (): Record<string, string> => Object.fromEntries(YARD_EVENTS.map((event) => [event.id, event.track]));
-const LEGACY_COURSE = "row-six";
+const LEGACY_COURSE = "aisle-nine";
 
 /** Bests kept only for events still on the track they were set on. */
 function sameCourseBests(medals: MedalBoardState, courses: unknown): MedalBoardState {

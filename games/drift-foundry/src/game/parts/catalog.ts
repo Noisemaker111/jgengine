@@ -3,18 +3,18 @@ import type { VehiclePart } from "@jgengine/core/physics/vehicleParts";
 
 export type PartSlotId = "engine" | "front" | "wheels" | "frame";
 export type PartIconId =
-  | "salvage_v6"
-  | "truck_engine"
-  | "ev_conversion"
-  | "plow_blade"
-  | "hood_plate"
-  | "fan_blade_vanes"
-  | "coil_springs"
-  | "steel_rims"
-  | "monster_treads"
-  | "scrap_frame"
-  | "roll_cage"
-  | "armor_plating";
+  | "power_walker"
+  | "leaf_blower"
+  | "e_assist"
+  | "pallet_plow"
+  | "noodle_bumper"
+  | "sign_spoiler"
+  | "spring_casters"
+  | "fixed_squeak"
+  | "knobby_casters"
+  | "wire_basket"
+  | "cage_basket"
+  | "bin_lid_armor";
 
 /**
  * Route capabilities the barricade gates read. These are the kart's rules, not handling numbers -
@@ -53,7 +53,7 @@ const MONSTER_TREAD_CURVE: GripCurve = {
 
 export const PARTS: readonly DriftFoundryPartDef[] = [
   {
-    id: "salvage_v6",
+    id: "power_walker",
     slot: "engine",
     slotLabel: "ENGINE",
     label: "Salvage V6",
@@ -62,7 +62,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { topSpeed: { add: 4.5 }, accel: { add: 4 }, turnRate: { add: -0.1 } },
   },
   {
-    id: "truck_engine",
+    id: "leaf_blower",
     slot: "engine",
     slotLabel: "ENGINE",
     label: "Truck Engine",
@@ -71,7 +71,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { topSpeed: { add: 9.5 }, accel: { add: 7 }, turnRate: { add: -0.7 } },
   },
   {
-    id: "ev_conversion",
+    id: "e_assist",
     slot: "engine",
     slotLabel: "ENGINE",
     label: "EV Conversion",
@@ -80,7 +80,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { topSpeed: { add: 3 }, accel: { add: 6 }, turnRate: { add: 0.5 } },
   },
   {
-    id: "plow_blade",
+    id: "pallet_plow",
     slot: "front",
     slotLabel: "FRONT",
     label: "Plow Blade",
@@ -90,7 +90,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     grants: { plow: 1 },
   },
   {
-    id: "hood_plate",
+    id: "noodle_bumper",
     slot: "front",
     slotLabel: "FRONT",
     label: "Hood Plate",
@@ -99,7 +99,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { topSpeed: { add: 0.5 }, turnRate: { add: 0.3 } },
   },
   {
-    id: "fan_blade_vanes",
+    id: "sign_spoiler",
     slot: "front",
     slotLabel: "FRONT",
     label: "Fan Blade Vanes",
@@ -108,7 +108,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { topSpeed: { add: 1 }, turnRate: { add: 0.6 } },
   },
   {
-    id: "coil_springs",
+    id: "spring_casters",
     slot: "wheels",
     slotLabel: "WHEELS",
     label: "Coil Springs",
@@ -118,7 +118,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     grants: { jumpPower: 9 },
   },
   {
-    id: "steel_rims",
+    id: "fixed_squeak",
     slot: "wheels",
     slotLabel: "WHEELS",
     label: "Steel Rims",
@@ -128,7 +128,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     gripCurve: DEFAULT_GRIP_CURVE,
   },
   {
-    id: "monster_treads",
+    id: "knobby_casters",
     slot: "wheels",
     slotLabel: "WHEELS",
     label: "Monster Treads",
@@ -138,7 +138,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     gripCurve: MONSTER_TREAD_CURVE,
   },
   {
-    id: "scrap_frame",
+    id: "wire_basket",
     slot: "frame",
     slotLabel: "FRAME",
     label: "Scrap Frame",
@@ -147,7 +147,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     effects: { turnRate: { add: 0.2 } },
   },
   {
-    id: "roll_cage",
+    id: "cage_basket",
     slot: "frame",
     slotLabel: "FRAME",
     label: "Roll Cage",
@@ -157,7 +157,7 @@ export const PARTS: readonly DriftFoundryPartDef[] = [
     grants: { armor: 1 },
   },
   {
-    id: "armor_plating",
+    id: "bin_lid_armor",
     slot: "frame",
     slotLabel: "FRAME",
     label: "Armor Plating",

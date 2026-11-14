@@ -32,15 +32,15 @@ describe("best-run ghost", () => {
 
   test("saved ghosts survive a reload and junk rows are dropped", () => {
     const storage = memory();
-    saveGhost("time-sheet", { time: 30, frames: [[0, 0, 0, 0, 0], [1, 0, 0, 10, 0]] }, storage);
+    saveGhost("price-check", { time: 30, frames: [[0, 0, 0, 0, 0], [1, 0, 0, 10, 0]] }, storage);
     storage.setItem(GHOST_KEY, JSON.stringify({ ...JSON.parse(storage.getItem(GHOST_KEY)!), broken: { time: "x", frames: [] } }));
-    expect(Object.keys(readGhosts(storage))).toEqual(["time-sheet"]);
+    expect(Object.keys(readGhosts(storage))).toEqual(["price-check"]);
   });
 
   test("the Time Sheet replays your best escape, and only a faster escape replaces it", () => {
     const storage = memory();
     const session = createRunSession(() => 0, storage);
-    session.selectEvent("time-sheet");
+    session.selectEvent("price-check");
     expect(session.snapshot().ghost).toBeNull();
     session.start();
     driveLine(session, 3);
@@ -60,13 +60,13 @@ describe("best-run ghost", () => {
     expect(live.aheadMetres!).toBeLessThan(-40);
   });
 
-  test("ghosts are kept per track: the Time Sheet's slag-river ghost is not its old Row Six one", () => {
+  test("ghosts are kept per track: the Time Sheet's produce ghost is not its old Row Six one", () => {
     const storage = memory();
-    saveGhost("time-sheet", { time: 20, frames: [[0, 0, -56, 0, 0], [20, 0, 414, 0, 0]] }, storage);
+    saveGhost("price-check", { time: 20, frames: [[0, 0, -56, 0, 0], [20, 0, 414, 0, 0]] }, storage);
     const session = createRunSession(() => 0, storage);
-    session.selectEvent("time-sheet");
-    expect(ghostKey(eventById("time-sheet")!)).toBe("slag-river:time-sheet");
-    expect(ghostKey(eventById("crusher-rush")!)).toBe("crusher-rush");
+    session.selectEvent("price-check");
+    expect(ghostKey(eventById("price-check")!)).toBe("produce:price-check");
+    expect(ghostKey(eventById("shutter-rush")!)).toBe("shutter-rush");
     expect(session.snapshot().ghost).toBeNull();
   });
 

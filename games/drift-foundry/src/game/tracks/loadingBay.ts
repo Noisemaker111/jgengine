@@ -8,8 +8,8 @@ import { detour, straight, turn, type TrackDef } from "./types";
  * straight through the engine shed, doors and oily floor and all. On the back straight a gantry drops
  * a container into the road a little over twenty seconds in - be past it or plow it.
  */
-export const RAIL_YARD: TrackDef = {
-  id: "rail-yard",
+export const LOADING_BAY: TrackDef = {
+  id: "loading-bay",
   label: "Rail Yard",
   blurb: "Right angles through the marshalling yard, two live freight crossings and a gantry that drops a container on the late.",
   origin: 60,
@@ -29,16 +29,16 @@ export const RAIL_YARD: TrackDef = {
     turn(90, 40),
     straight(60),
   ],
-  branches: [{ id: "shed-cut", from: 334, to: 489, halfWidth: 6, label: "SHED CUT" }],
+  branches: [{ id: "trailer-cut", from: 334, to: 489, halfWidth: 6, label: "SHED CUT" }],
   hazards: [
-    { id: "crossing-a", kind: "train", from: 210, to: 218, cycle: { period: 12, active: 4, phase: 5 }, label: "FREIGHT ON THE INBOUND LINE" },
-    { id: "crossing-b", kind: "train", from: 612, to: 620, cycle: { period: 10, active: 3.5, phase: 1 }, label: "FREIGHT ON THE MARSHALLING LINE" },
-    { id: "shed-oil", kind: "slick", route: "shed-cut", from: 18, to: 100, label: "OIL-SOAKED SHED FLOOR" },
+    { id: "crossing-a", kind: "tugger", from: 210, to: 218, cycle: { period: 12, active: 4, phase: 5 }, label: "FREIGHT ON THE INBOUND LINE" },
+    { id: "crossing-b", kind: "tugger", from: 612, to: 620, cycle: { period: 10, active: 3.5, phase: 1 }, label: "FREIGHT ON THE MARSHALLING LINE" },
+    { id: "shed-oil", kind: "spill", route: "trailer-cut", from: 18, to: 100, label: "OIL-SOAKED SHED FLOOR" },
   ],
   gates: [
     { id: "rail_plow_sleepers", requirement: "plow", at: 108, label: "SLEEPER STACK", radioLine: "SLEEPERS SPLIT — WATCH THE CROSSING" },
     { id: "rail_jump_buffer", requirement: "jump", at: 252, label: "BUFFER-STOP RAMP", radioLine: "OVER THE BUFFERS — NICE AIR" },
-    { id: "rail_plow_shed", requirement: "plow", route: "shed-cut", at: 405, label: "ENGINE SHED DOORS", radioLine: "THROUGH THE SHED DOORS — SHORT WAY HOME" },
+    { id: "rail_plow_shed", requirement: "plow", route: "trailer-cut", at: 405, label: "ENGINE SHED DOORS", radioLine: "THROUGH THE SHED DOORS — SHORT WAY HOME" },
     { id: "rail_plow_container", requirement: "plow", at: 598, dropsAt: 24, label: "DROPPED CONTAINER", radioLine: "CONTAINER SMASHED — THE GANTRY MISSED YOU" },
     { id: "rail_jump_last", requirement: "jump", at: 735, label: "LAST BUFFER RAMP", radioLine: "LAST BUFFERS CLEARED — GATE'S RIGHT THERE" },
   ],
@@ -54,7 +54,7 @@ export const RAIL_YARD: TrackDef = {
   fog: { color: "#8b97a3", near: 60, far: 320 },
   sky: { horizonColor: "#a9bccf", zenithColor: "#3d5672", sunIntensity: 2.2, ambientIntensity: 1.05 },
   baseLevel: 0,
-  rivalTake: { rival_hobbs: ["shed-cut"], rival_moss: ["shed-cut"] },
+  rivalTake: { rival_brick: ["trailer-cut"], rival_twins: ["trailer-cut"] },
   par: 64,
   dressing: {
     edge: O.edgeRail,

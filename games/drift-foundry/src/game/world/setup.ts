@@ -17,7 +17,7 @@ import { EXIT_Z, RUN_SEED } from "../run/constants";
 import { gateStanding, type RouteGate } from "../route/gates";
 import { ZONES } from "../zones/catalog";
 import { partById } from "../parts/catalog";
-import { ROW_SIX_TRACK, TRACKS, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, TRACKS, type Track } from "../tracks/catalog";
 
 const CORRIDOR_AVOID = { minX: -21, maxX: 21 };
 const PROP_COUNT_PER_ZONE = 46;
@@ -154,12 +154,12 @@ export function placeTrackScenery(ctx: GameContext): number {
       const mid = (span.from + span.to) / 2;
       const centre = track.course.pointAt(span.route, mid);
       const hw = centre.halfWidth;
-      if (span.kind === "slag") {
+      if (span.kind === "tumble") {
         for (const side of [1, -1]) {
           const at = track.course.pointAt(span.route, mid, side * (hw + 2.6));
           put(TRACK_OBJECT.slagVent, at.x, at.z, `${id}-vent-${span.id}-${side}`, at.heading);
         }
-      } else if (span.kind === "train") {
+      } else if (span.kind === "tugger") {
         for (const side of [1, -1]) {
           const before = track.course.pointAt(span.route, Math.max(0, span.from - 3), side * (hw + 1.4));
           put(TRACK_OBJECT.crossing, before.x, before.z, `${id}-xing-${span.id}-${side}`, before.heading);
@@ -174,7 +174,7 @@ export function placeTrackScenery(ctx: GameContext): number {
             put(TRACK_OBJECT.belt, at.x, at.z, `${id}-belt-${span.id}-${n}-${lane}`, at.heading, 0.02);
           }
         }
-      } else if (span.kind === "flood") {
+      } else if (span.kind === "puddle") {
         const at = track.course.pointAt(span.route, span.from, hw + 4);
         put(TRACK_OBJECT.pumpRig, at.x, at.z, `${id}-pump-${span.id}`, at.heading);
       }
@@ -192,7 +192,7 @@ function placeGate(ctx: GameContext, track: Track, gate: RouteGate): void {
   const span = gate.laneX[1] - gate.laneX[0];
   // +1 so the even spacing lands at <= one segment width apart and the props seal the span solidly.
   const segments = gateSegments(span);
-  const flat = track === ROW_SIX_TRACK;
+  const flat = track === AISLE_NINE_TRACK;
   if (gate.requirement === "jump") {
     const cue = track.point(gate.route, gate.atZ - 10, 0);
     placeIdempotent(ctx, JUMP_CUE, cue.x, ctx.world.groundHeightAt(cue.x, cue.z) + 0.03, cue.z, `cue-${gate.id}`, flat ? undefined : cue.heading);
@@ -211,7 +211,7 @@ function removeGate(ctx: GameContext, gate: RouteGate): void {
 }
 
 /** The track's barricades. A set-piece barricade (`dropsAt`) is open road until it falls; see {@link syncDroppedGates}. */
-export function placeGateBarricades(ctx: GameContext, track: Track = ROW_SIX_TRACK): void {
+export function placeGateBarricades(ctx: GameContext, track: Track = AISLE_NINE_TRACK): void {
   for (const gate of track.gates) {
     if (gate.dropsAt !== undefined) {
       removeGate(ctx, gate);
@@ -230,7 +230,7 @@ export function syncDroppedGates(ctx: GameContext, track: Track, runTime: number
   }
 }
 
-export function placePickupMarkers(ctx: GameContext, track: Track = ROW_SIX_TRACK): void {
+export function placePickupMarkers(ctx: GameContext, track: Track = AISLE_NINE_TRACK): void {
   for (const pickup of track.pickups) {
     const y = ctx.world.groundHeightAt(pickup.position[0], pickup.position[2]);
     const slot = partById(pickup.partId)!.slot;
@@ -238,9 +238,9 @@ export function placePickupMarkers(ctx: GameContext, track: Track = ROW_SIX_TRAC
   }
 }
 
-export function placeExitGate(ctx: GameContext, track: Track = ROW_SIX_TRACK): void {
+export function placeExitGate(ctx: GameContext, track: Track = AISLE_NINE_TRACK): void {
   const at = track.point(MAIN_ROUTE, track.exitAt, 0);
-  placeIdempotent(ctx, EXIT_GATE_ARCH, at.x, ctx.world.groundHeightAt(at.x, at.z), at.z, "exit-gate", track === ROW_SIX_TRACK ? undefined : at.heading);
+  placeIdempotent(ctx, EXIT_GATE_ARCH, at.x, ctx.world.groundHeightAt(at.x, at.z), at.z, "exit-gate", track === AISLE_NINE_TRACK ? undefined : at.heading);
 }
 
 /** Take one track's run objects off the yard before another track's go down. */
@@ -257,7 +257,7 @@ export function placeRunObjects(ctx: GameContext, track: Track): void {
   placeExitGate(ctx, track);
 }
 
-export function syncPickupMarkers(ctx: GameContext, collected: ReadonlySet<string>, removed: Set<string>, track: Track = ROW_SIX_TRACK): void {
+export function syncPickupMarkers(ctx: GameContext, collected: ReadonlySet<string>, removed: Set<string>, track: Track = AISLE_NINE_TRACK): void {
   for (const pickup of track.pickups) {
     if (!collected.has(pickup.id) || removed.has(pickup.id)) continue;
     removed.add(pickup.id);
@@ -273,7 +273,7 @@ export function syncCompactorRow(ctx: GameContext, compactorZ: number, rows: rea
   }
 }
 
-export function syncClearedGates(ctx: GameContext, cleared: ReadonlySet<string>, removed: Set<string>, track: Track = ROW_SIX_TRACK): void {
+export function syncClearedGates(ctx: GameContext, cleared: ReadonlySet<string>, removed: Set<string>, track: Track = AISLE_NINE_TRACK): void {
   for (const gate of track.gates) {
     if (!cleared.has(gate.id) || removed.has(gate.id)) continue;
     removed.add(gate.id);
@@ -292,7 +292,7 @@ const WAGON_LENGTH = 17.25;
 export function freightWagons(track: Track, time: number): { id: string; position: [number, number, number]; rotationY: number }[] {
   const out: { id: string; position: [number, number, number]; rotationY: number }[] = [];
   for (const span of track.hazardSpans) {
-    if (span.kind !== "train" || span.cycle === undefined) continue;
+    if (span.kind !== "tugger" || span.cycle === undefined) continue;
     const { period, active, phase = 0 } = span.cycle;
     const centre = track.course.pointAt(span.route, (span.from + span.to) / 2);
     const width = 2 * centre.halfWidth + 4;

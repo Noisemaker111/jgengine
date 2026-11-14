@@ -8,8 +8,8 @@ import { straight, type TrackDef } from "./types";
  * eight full-width barricades. Because it runs straight up +z from z = 0, its run metres are world z
  * and its lateral offset is world x - every number the corridor was first authored in still holds.
  */
-export const ROW_SIX: TrackDef = {
-  id: "row-six",
+export const AISLE_NINE: TrackDef = {
+  id: "aisle-nine",
   label: "Row Six",
   blurb: "The straight corridor out of the yard: three zones, eight barricades, nowhere to hide.",
   origin: 60,

@@ -19,8 +19,8 @@ function firstGateZ(requirement: "plow" | "jump"): number {
 
 describe("drift-foundry debris pickups", () => {
   test("accepted replacements and duplicate or unknown contacts preserve installed state until acceptance", () => {
-    const first = PICKUPS.find(pickup => pickup.partId === "salvage_v6")!;
-    const next = PICKUPS.find(pickup => pickup.partId === "truck_engine")!;
+    const first = PICKUPS.find(pickup => pickup.partId === "power_walker")!;
+    const next = PICKUPS.find(pickup => pickup.partId === "leaf_blower")!;
     const collected = new Set<string>();
     const grant = grantPickup(first, [], collected);
     expect(grant.status).toBe("accepted");
@@ -32,10 +32,10 @@ describe("drift-foundry debris pickups", () => {
     const replacement = grantPickup(next, grant.installed, collected);
     expect(replacement.status).toBe("accepted");
     if (replacement.status !== "accepted") throw new Error("replacement rejected");
-    expect(replacement.ejected?.id).toBe("salvage_v6");
+    expect(replacement.ejected?.id).toBe("power_walker");
     expect(replacement.installed).toHaveLength(1);
-    expect(replacement.installed[0]?.id).toBe("truck_engine");
-    expect(grant.installed[0]?.id).toBe("salvage_v6");
+    expect(replacement.installed[0]?.id).toBe("leaf_blower");
+    expect(grant.installed[0]?.id).toBe("power_walker");
   });
   test("places exactly one pickup per catalog part", () => {
     expect(PICKUPS).toHaveLength(PARTS.length);
@@ -52,13 +52,13 @@ describe("drift-foundry debris pickups", () => {
   test("the plow blade is the last front drop, reachable before the first plow wall gates progress", () => {
     // Grabbing the whole route ends with the plow equipped (no later front drop ejects it),
     // and the drop lands before the first plow barricade so the kart can smash through it.
-    expect(zOf("plow_blade")).toBe(lastDropZForSlot("front"));
-    expect(zOf("plow_blade")).toBeLessThan(firstGateZ("plow"));
+    expect(zOf("pallet_plow")).toBe(lastDropZForSlot("front"));
+    expect(zOf("pallet_plow")).toBeLessThan(firstGateZ("plow"));
   });
 
   test("the coil springs are the last wheels drop, reachable before the first jump ramp gates progress", () => {
-    expect(zOf("coil_springs")).toBe(lastDropZForSlot("wheels"));
-    expect(zOf("coil_springs")).toBeLessThan(firstGateZ("jump"));
+    expect(zOf("spring_casters")).toBe(lastDropZForSlot("wheels"));
+    expect(zOf("spring_casters")).toBeLessThan(firstGateZ("jump"));
   });
 
   test("pickup z ordering is strictly increasing, spread across the route", () => {

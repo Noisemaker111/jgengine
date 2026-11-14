@@ -13,7 +13,7 @@ const OPEN_ROAD = { position: [0, 0, -400] as const, heading: 0 };
 const FLAT = (): number => 0;
 
 const BARE = tuningFrom([]);
-const LOADED = tuningFrom([partById("plow_blade")!, partById("coil_springs")!, partById("truck_engine")!]);
+const LOADED = tuningFrom([partById("pallet_plow")!, partById("spring_casters")!, partById("leaf_blower")!]);
 
 const NO_INPUT = { jumpPressed: false, plowBracing: false };
 const drive = (partial: Partial<DriveAxis>): DriveAxis => ({ throttle: 0, brake: 0, steer: 0, ...partial });

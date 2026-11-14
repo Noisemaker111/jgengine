@@ -43,33 +43,33 @@ describe("drift foundry shifts", () => {
 
   test("the night crew is a late shift, so it cannot be the second run", () => {
     const played = shiftSequence(12);
-    expect(played[1]).not.toBe("night-shift");
-    expect(played).toContain("night-shift");
+    expect(played[1]).not.toBe("night-stockers");
+    expect(played).toContain("night-stockers");
   });
 
   test("HOBBS's shift tightens his line and hardens his pace", () => {
-    const before = RIVAL_DEFS.find((def) => def.id === "rival_hobbs")!;
-    const after = rivalsForShift("hobbs-line").find((def) => def.id === "rival_hobbs")!;
+    const before = RIVAL_DEFS.find((def) => def.id === "rival_brick")!;
+    const after = rivalsForShift("brick-line").find((def) => def.id === "rival_brick")!;
     expect(after.pace).toBeGreaterThan(before.pace);
     expect(Math.max(...after.line.map(Math.abs))).toBeLessThan(Math.max(...before.line.map(Math.abs)));
     // The other two drive exactly as authored.
-    expect(rivalsForShift("hobbs-line").filter((def) => def.id !== "rival_hobbs")).toEqual(RIVAL_DEFS.filter((def) => def.id !== "rival_hobbs"));
+    expect(rivalsForShift("brick-line").filter((def) => def.id !== "rival_brick")).toEqual(RIVAL_DEFS.filter((def) => def.id !== "rival_brick"));
   });
 
   test("TALLY's shift takes away the field's tow", () => {
-    const before = RIVAL_DEFS.find((def) => def.id === "rival_tally")!;
-    const after = rivalsForShift("tally-honest").find((def) => def.id === "rival_tally")!;
+    const before = RIVAL_DEFS.find((def) => def.id === "rival_grandma")!;
+    const after = rivalsForShift("grandma-honest").find((def) => def.id === "rival_grandma")!;
     expect(after.band).toBeLessThan(before.band);
     expect(after.line).toEqual(before.line);
   });
 
   test("the crusher's shift starts it closer to the grid", () => {
-    expect(compactorPlanForShift("crusher-lead").startZ).toBe(COMPACTOR_PLAN.startZ - 12);
-    expect(compactorPlanForShift("crusher-lead").surges).toEqual(COMPACTOR_SURGES);
+    expect(compactorPlanForShift("shutters-early").startZ).toBe(COMPACTOR_PLAN.startZ - 12);
+    expect(compactorPlanForShift("shutters-early").surges).toEqual(COMPACTOR_SURGES);
   });
 
   test("the night shift brings every surge earlier and faster", () => {
-    const plan = compactorPlanForShift("night-shift");
+    const plan = compactorPlanForShift("night-stockers");
     plan.surges.forEach((surge, index) => {
       expect(surge.startT).toBe(COMPACTOR_SURGES[index]!.startT - 6);
       expect(surge.endT).toBe(COMPACTOR_SURGES[index]!.endT - 6);
@@ -125,8 +125,8 @@ describe("drift foundry shifts", () => {
     const behind = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 1, completed: 4, haul: 0, changeId: null, bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
     expect(readRunState(behind)).toBeNull();
     expect(readRunState(undefined)).toBeNull();
-    const legacy = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 3, completed: 2, haul: 5, changeId: "hobbs-line", bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
-    expect(readRunState(legacy)).toEqual({ session: 3, closed: 2, carried: 5, optionId: "hobbs-line" });
+    const legacy = storage({ [RUN_STATE_KEY]: JSON.stringify({ run: 3, completed: 2, haul: 5, changeId: "brick-line", bankedTotal: 0, lostTotal: 0, bestHaul: 0 }) });
+    expect(readRunState(legacy)).toEqual({ session: 3, closed: 2, carried: 5, optionId: "brick-line" });
     expect(readRunState(storage({ [RUN_STATE_KEY]: "not json" }))).toBeNull();
   });
 });

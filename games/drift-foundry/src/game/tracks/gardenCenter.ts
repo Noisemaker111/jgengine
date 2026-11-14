@@ -7,8 +7,8 @@ import { detour, straight, turn, type TrackDef } from "./types";
  * the far wall. The ledge road skirts the deep pool and carries a scrap frame; the pit wade goes
  * straight through the water, shorter and slower, and leaves the frame behind.
  */
-export const FLOODED_QUARRY: TrackDef = {
-  id: "flooded-quarry",
+export const GARDEN_CENTER: TrackDef = {
+  id: "garden-center",
   label: "Flooded Quarry",
   blurb: "Down into a rain-filled pit and out again. Wade the deep pool or take the ledge and the drop on it.",
   origin: 60,
@@ -29,12 +29,12 @@ export const FLOODED_QUARRY: TrackDef = {
     straight(120, { rise: 12 }),
     straight(30),
   ],
-  branches: [{ id: "pit-wade", from: 459, to: 576, halfWidth: 7, label: "PIT WADE" }],
+  branches: [{ id: "koi-pond", from: 459, to: 576, halfWidth: 7, label: "PIT WADE" }],
   hazards: [
-    { id: "flood-south", kind: "flood", from: 292, to: 353, label: "STANDING WATER" },
-    { id: "flood-floor", kind: "flood", from: 416, to: 456, label: "STANDING WATER" },
-    { id: "flood-exit", kind: "flood", from: 579, to: 612, label: "STANDING WATER" },
-    { id: "pool", kind: "flood", route: "pit-wade", from: 4, to: 78, push: 1, label: "DEEP POOL" },
+    { id: "flood-south", kind: "puddle", from: 292, to: 353, label: "STANDING WATER" },
+    { id: "flood-floor", kind: "puddle", from: 416, to: 456, label: "STANDING WATER" },
+    { id: "flood-exit", kind: "puddle", from: 579, to: 612, label: "STANDING WATER" },
+    { id: "pool", kind: "puddle", route: "koi-pond", from: 4, to: 78, push: 1, label: "DEEP POOL" },
   ],
   gates: [
     { id: "pit_plow_spoil", requirement: "plow", at: 108, label: "SPOIL HEAP", radioLine: "THROUGH THE SPOIL — DOWN WE GO" },
@@ -58,7 +58,7 @@ export const FLOODED_QUARRY: TrackDef = {
   weather: "rain",
   baseLevel: 0,
   liquid: { level: -11.55, color: "#3d5a5e", waveHeight: 0.18, palette: { deep: "#12262a", foam: "#9fb3ad" } },
-  rivalTake: { rival_moss: ["pit-wade"] },
+  rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,
   dressing: {
     edge: O.edgeBoulder,

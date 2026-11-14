@@ -111,8 +111,8 @@ function buggy({ box, cylinder, tube, ring, panel }, roof) {
   if (roof !== undefined) ROOFS[roof]({ box, cylinder, tube, ring });
 }
 
-author('row-six-buggy', (b) => buggy(b, undefined));
-for (const rival of Object.keys(ROOFS)) author(`row-six-rival-${rival}`, (b) => buggy(b, rival));
+author('cart-player', (b) => buggy(b, undefined));
+for (const rival of Object.keys(ROOFS)) author(`cart-rival-${rival}`, (b) => buggy(b, rival));
 
 for (const [name, color] of [['engine', 1], ['front', 2], ['wheels', 6], ['frame', 3]]) author(`pickup-${name}`, ({ box, tube, cylinder, ring }) => {
   cylinder(1.05, .16, [0, .08, 0], 0); ring(.94, .06, [0, .2, 0], color, [Math.PI / 2, 0, 0]);
@@ -145,14 +145,14 @@ author('jump-cue', ({ box }) => {
 
 // Installed weldments use the original chassis origin; no imported replacement vehicle.
 // Keep the distinctive silhouette above/outside the stock engine, hood, tires and cage.
-author('upgrade-salvage_v6', ({ box, cylinder, tube }) => {
+author('upgrade-power_walker', ({ box, cylinder, tube }) => {
   box([1.12, .28, .7], [0, 1.04, -1.07], 1);
   for (const side of [-1, 1]) for (const z of [-1.3, -1.05, -.8]) {
     cylinder(.12, .35, [side * .36, 1.3, z], 2, [0, 0, side * -.3]);
     tube([side * .42, 1.1, z], [side * .72, .85, z], .055, 3);
   }
 });
-author('upgrade-truck_engine', ({ box, cylinder, tube }) => {
+author('upgrade-leaf_blower', ({ box, cylinder, tube }) => {
   box([1.24, .48, .82], [0, 1.14, -1.04], 0);
   for (const x of [-.68, .68]) {
     cylinder(.11, 1.28, [x, 1.6, -1.13], 3);
@@ -161,7 +161,7 @@ author('upgrade-truck_engine', ({ box, cylinder, tube }) => {
   }
   box([1.15, .09, .06], [0, 1.36, -1.48], 2);
 });
-author('upgrade-ev_conversion', ({ box, tube }) => {
+author('upgrade-e_assist', ({ box, tube }) => {
   box([1.15, .38, .9], [0, 1.1, -1.04], 3);
   for (const x of [-.39, 0, .39]) {
     box([.28, .29, .83], [x, 1.32, -1.04], 0);
@@ -170,7 +170,7 @@ author('upgrade-ev_conversion', ({ box, tube }) => {
   tube([-.62, 1.22, -1.1], [-.76, .75, -.5], .05, 6);
   tube([.62, 1.22, -1.1], [.76, .75, -.5], .05, 2);
 });
-author('upgrade-plow_blade', ({ box, tube }) => {
+author('upgrade-pallet_plow', ({ box, tube }) => {
   for (const side of [-1, 1]) {
     box([1.21, .62, .13], [side * .55, .47, 1.84], 2, [-.2, side * .24, 0]);
     tube([side * .62, .48, 1.1], [side * .82, .44, 1.78], .075, 3);
@@ -178,24 +178,24 @@ author('upgrade-plow_blade', ({ box, tube }) => {
   }
   box([.1, .64, .15], [0, .48, 1.96], 3, [-.2, 0, 0]);
 });
-author('upgrade-hood_plate', ({ box }) => {
+author('upgrade-noodle_bumper', ({ box }) => {
   box([1.56, .08, 1.15], [0, .99, 1], 3, [-.13, 0, 0]);
   for (const x of [-.66, .66]) box([.09, .12, 1.15], [x, 1.05, 1], 2, [-.13, 0, 0]);
   for (const z of [.7, .9, 1.1]) box([.77, .035, .07], [0, 1.06, z], 0, [-.13, 0, 0]);
 });
-author('upgrade-fan_blade_vanes', ({ box, cylinder }) => {
+author('upgrade-sign_spoiler', ({ box, cylinder }) => {
   box([1.92, .12, .3], [0, .63, 1.64], 0);
   for (const side of [-1, 1]) for (let i = 0; i < 3; i++)
     box([.17, .38, .72], [side * (.37 + i * .36), .82, 1.58], i % 2 ? 3 : 6, [-.45, side * .26, side * -.14]);
   cylinder(.13, .1, [0, .77, 1.75], 2);
 });
-author('upgrade-coil_springs', ({ tube, ring }) => {
+author('upgrade-spring_casters', ({ tube, ring }) => {
   for (const x of [-.87, .87]) for (const z of [-1.03, 1.02]) {
     tube([x, .55, z], [x * .75, 1.05, z], .055, 3);
     for (let i = 0; i < 6; i++) ring(.13, .028, [x * .85, .66 + i * .07, z], 6, [Math.PI / 2, 0, 0]);
   }
 });
-author('upgrade-steel_rims', ({ cylinder, tube, ring }) => {
+author('upgrade-fixed_squeak', ({ cylinder, tube, ring }) => {
   for (const side of [-1, 1]) for (const z of [-1.03, 1.02]) {
     const x = side * 1.15;
     ring(.35, .065, [x, .48, z], 4, [0, Math.PI / 2, 0]);
@@ -203,14 +203,14 @@ author('upgrade-steel_rims', ({ cylinder, tube, ring }) => {
     for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; tube([x, .48, z], [x, .48 + Math.cos(a) * .32, z + Math.sin(a) * .32], .045, 3); }
   }
 });
-author('upgrade-monster_treads', ({ box, cylinder }) => {
+author('upgrade-knobby_casters', ({ box, cylinder }) => {
   for (const x of [-1.02, 1.02]) for (const z of [-1.03, 1.02]) {
     cylinder(.6, .48, [x, .56, z], 5, [0, 0, Math.PI / 2]);
     cylinder(.29, .5, [x, .56, z], 1, [0, 0, Math.PI / 2]);
     for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; box([.53, .1, .21], [x, .56 + Math.cos(a) * .59, z + Math.sin(a) * .59], 0, [a, 0, 0]); }
   }
 });
-author('upgrade-scrap_frame', ({ tube, box }) => {
+author('upgrade-wire_basket', ({ tube, box }) => {
   for (const side of [-1, 1]) {
     tube([side * .86, .55, -1.3], [side * .86, .55, 1.25], .1, 1);
     tube([side * .86, .55, -1.15], [side * .76, 1.15, -.45], .07, 3);
@@ -218,7 +218,7 @@ author('upgrade-scrap_frame', ({ tube, box }) => {
     box([.11, .11, .65], [side * .83, .88, -.28], 1, [0, 0, side * .16]);
   }
 });
-author('upgrade-roll_cage', ({ tube, box }) => {
+author('upgrade-cage_basket', ({ tube, box }) => {
   for (const x of [-.78, .78]) {
     tube([x, .65, -.85], [x, 1.87, -.64], .08, 2);
     tube([x, 1.87, -.64], [x, 1.87, .35], .08, 2);
@@ -228,7 +228,7 @@ author('upgrade-roll_cage', ({ tube, box }) => {
   tube([.78, 1.87, -.64], [-.78, 1.87, .35], .065, 3);
   box([1.75, .07, .12], [0, 1.94, -.64], 2);
 });
-author('upgrade-armor_plating', ({ box, cylinder }) => {
+author('upgrade-bin_lid_armor', ({ box, cylinder }) => {
   for (const side of [-1, 1]) {
     box([.13, .7, 1.67], [side * .83, .94, -.12], 3, [0, 0, side * -.12]);
     box([.14, .11, 1.58], [side * .9, 1.25, -.12], 2);

@@ -11,7 +11,7 @@ import { COMPACTOR_START_Z } from "./constants";
  * these are the authored entries it picks from, and a results screen names the winner.
  */
 
-export type ShiftId = "hobbs-line" | "tally-honest" | "crusher-lead" | "night-shift";
+export type ShiftId = "brick-line" | "grandma-honest" | "shutters-early" | "night-stockers";
 
 /** How one shift changes the corridor. Every field is optional, so a shift says only what it touches. */
 export interface ShiftEffect {
@@ -26,19 +26,19 @@ export interface ShiftEffect {
 }
 
 export const SHIFT_LABELS: Record<ShiftId, { label: string; hint: string }> = {
-  "hobbs-line": {
+  "brick-line": {
     label: "HOBBS SCOUTED YOUR LINE",
     hint: "HOBBS runs it tighter and 4% harder, cutting the wobble out of his outside line.",
   },
-  "tally-honest": {
+  "grandma-honest": {
     label: "TALLY GOT A TALKING-TO",
     hint: "TALLY stops taking the field's tow: the rookie races his own build, so he holds whatever gap he earns.",
   },
-  "crusher-lead": {
+  "shutters-early": {
     label: "THE CRUSHER ROLLED OUT EARLY",
     hint: "The compactor starts 12 m closer to the grid, so the opening sprint is already under pressure.",
   },
-  "night-shift": {
+  "night-stockers": {
     label: "NIGHT CREW RAN THE SURGES",
     hint: "Both surges come 6 s earlier and 0.6 m/s harder. The clock, not the corridor, is different.",
   },
@@ -46,10 +46,10 @@ export const SHIFT_LABELS: Record<ShiftId, { label: string; hint: string }> = {
 
 export const SHIFT_TABLE: readonly SessionOfferOption<ShiftEffect>[] = [
   // `after: 1` keeps the first run honest - every run after it differs.
-  { id: "hobbs-line", value: { rival: { id: "rival_hobbs", paceScale: 1.04, lineScale: 0.55 } }, after: 1 },
-  { id: "tally-honest", value: { rival: { id: "rival_tally", band: 0.15 } }, after: 1 },
-  { id: "crusher-lead", value: { compactorStartZ: -12 }, after: 1 },
-  { id: "night-shift", value: { surgeShiftT: 6, surgeSpeed: 0.6 }, after: 2 },
+  { id: "brick-line", value: { rival: { id: "rival_brick", paceScale: 1.04, lineScale: 0.55 } }, after: 1 },
+  { id: "grandma-honest", value: { rival: { id: "rival_grandma", band: 0.15 } }, after: 1 },
+  { id: "shutters-early", value: { compactorStartZ: -12 }, after: 1 },
+  { id: "night-stockers", value: { surgeShiftT: 6, surgeSpeed: 0.6 }, after: 2 },
 ];
 
 for (const entry of SHIFT_TABLE) {

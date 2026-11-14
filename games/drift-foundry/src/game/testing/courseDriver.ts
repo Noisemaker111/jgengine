@@ -2,7 +2,7 @@ import { steerToward } from "@jgengine/core/movement/steering";
 import { MAIN_ROUTE, type CourseVec2 } from "@jgengine/core/roads/routeCourse";
 
 import type { RunSession, SessionSnapshot } from "../run/session";
-import { ROW_SIX_TRACK, trackById, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, trackById, type Track } from "../tracks/catalog";
 
 /**
  * A scripted driver for any track, used by the tests and the medal tuning: it follows the course's
@@ -29,7 +29,7 @@ const CORNER_GRIP = 11;
 const BRAKING = 7;
 
 export function sessionTrack(session: RunSession): Track {
-  return trackById(session.snapshot().track.id) ?? ROW_SIX_TRACK;
+  return trackById(session.snapshot().track.id) ?? AISLE_NINE_TRACK;
 }
 
 function nearestIndex(line: readonly CourseVec2[], x: number, z: number, from: number): number {
@@ -103,7 +103,7 @@ export function createCoursePilot(track: Track, options: Pick<CourseDriveOptions
 
     // The freight: stop short of an active crossing, or one that turns red before the kart is over.
     for (const span of track.hazardSpans) {
-      if (options.reckless === true || span.kind !== "train" || span.cycle === undefined || !routes.has(span.route)) continue;
+      if (options.reckless === true || span.kind !== "tugger" || span.cycle === undefined || !routes.has(span.route)) continue;
       const at = track.course.progressOf(span.route, span.from) - track.origin;
       const ahead = at - snap.run;
       if (ahead < 0 || ahead > 30) continue;

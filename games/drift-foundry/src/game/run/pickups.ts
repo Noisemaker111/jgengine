@@ -1,6 +1,6 @@
 import type { PartIconId, DriftFoundryPartDef } from "../parts/catalog";
 import { partById } from "../parts/catalog";
-import { ROW_SIX_TRACK } from "../tracks/catalog";
+import { AISLE_NINE_TRACK } from "../tracks/catalog";
 import { partInSlotId, swapPart } from "../parts/build";
 
 export interface PickupDef {
@@ -34,7 +34,7 @@ export function grantPickup(pickup: PickupDef, installed: readonly DriftFoundryP
  * path the barricade gauntlet (see route/gates.ts) is built around, authored per track in
  * tracks/drops.ts. `PICKUPS` is Row Six's.
  */
-export const PICKUPS: readonly PickupDef[] = ROW_SIX_TRACK.pickups;
+export const PICKUPS: readonly PickupDef[] = AISLE_NINE_TRACK.pickups;
 
 export const PICKUP_RADIUS = 3.2;
 

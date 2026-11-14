@@ -8,7 +8,7 @@ export const KART_GHOST_ENTITY = "kart_ghost";
 export const FREIGHT_CAR_ENTITY = "freight_car";
 
 /** The three yard karts that race the corridor with you. */
-export const RIVAL_ENTITY_KINDS = ["kart_rival_tally", "kart_rival_moss", "kart_rival_hobbs"] as const;
+export const RIVAL_ENTITY_KINDS = ["kart_rival_grandma", "kart_rival_twins", "kart_rival_brick"] as const;
 
 const rivalEntry: GameContextEntityEntry = { role: "vehicle" };
 

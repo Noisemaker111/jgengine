@@ -40,11 +40,11 @@ test("real installs replace the spawned model identity and restart removes all w
     for (const body of bodies) seen.add(body.kind);
     maximumVisible = Math.max(maximumVisible, visible.size);
   }
-  expect(seen.has(UPGRADE_KINDS.salvage_v6)).toBe(true);
+  expect(seen.has(UPGRADE_KINDS.power_walker)).toBe(true);
   expect(maximumVisible).toBeLessThanOrEqual(4);
-  expect(seen.has(UPGRADE_KINDS.truck_engine)).toBe(true);
-  expect(removed).toContain("racer:upgrade:salvage_v6");
-  expect(visible.has("racer:upgrade:salvage_v6")).toBe(false);
+  expect(seen.has(UPGRADE_KINDS.leaf_blower)).toBe(true);
+  expect(removed).toContain("racer:upgrade:power_walker");
+  expect(visible.has("racer:upgrade:power_walker")).toBe(false);
   session.restart();
   binding.sync(upgradeBodies("racer", session.snapshot()));
   expect(visible.size).toBe(0);

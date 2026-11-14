@@ -1,6 +1,6 @@
 import { swapPart } from "../parts/build";
 import { partById, type DriftFoundryPartDef } from "../parts/catalog";
-import { ROW_SIX_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "./constants";
 import type { RunStorage } from "./records";
 
@@ -25,7 +25,7 @@ export interface ParkedRun {
 
 /** The track a parked run stands on; runs parked before the tracks are Row Six's. */
 export function parkedTrack(run: ParkedRun) {
-  return (run.track === undefined ? null : trackById(run.track)) ?? ROW_SIX_TRACK;
+  return (run.track === undefined ? null : trackById(run.track)) ?? AISLE_NINE_TRACK;
 }
 
 /** Run metres a parked run had covered. */
@@ -48,12 +48,12 @@ export function readParkedRun(storage?: RunStorage): ParkedRun | null {
     const ids = (value: unknown, known: ReadonlySet<string>) => Array.isArray(value) && value.every(id => typeof id === "string" && known.has(id)) && new Set(value).size === value.length;
     if (!run || run.version !== 1 || !Array.isArray(run.position) || run.position.length !== 3 || !run.position.every((value: unknown) => typeof value === "number" && Number.isFinite(value)) || !Number.isFinite(run.heading) || !nonnegative(run.runTime) || run.runTime === 0) return null;
     if (run.track !== undefined && typeof run.track !== "string") return null;
-    const track = run.track === undefined ? ROW_SIX_TRACK : trackById(run.track);
+    const track = run.track === undefined ? AISLE_NINE_TRACK : trackById(run.track);
     if (track === null) return null;
     // Parked on the track's road, between the spawn and the exit.
     const fix = track.locate(run.position[0], run.position[2]);
     const along = track.run(fix);
-    const offRoad = track === ROW_SIX_TRACK ? Math.abs(run.position[0]) > CORRIDOR_DRIVE_HALF_WIDTH : !fix.inside;
+    const offRoad = track === AISLE_NINE_TRACK ? Math.abs(run.position[0]) > CORRIDOR_DRIVE_HALF_WIDTH : !fix.inside;
     if (offRoad || along < SPAWN_RUN - 0.01 || along >= track.exitAt) return null;
     const gateIds = new Set(track.gates.flatMap(g => [g.id, `${g.id}:beaten`]));
     if (!ids(run.collectedIds, new Set(track.pickups.map(p => p.id))) || !ids(run.gateIds, gateIds) || !Array.isArray(run.partIds) || run.partIds.some((id: unknown) => typeof id !== "string" || !partById(id))) return null;

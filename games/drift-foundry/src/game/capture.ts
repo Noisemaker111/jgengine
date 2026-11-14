@@ -65,7 +65,7 @@ function drive(ctx: GameContext, seconds: number): void {
 /** Swing wide past Row Six's plow drop and drive on until the first plow wall stops the kart. */
 function driveIntoWall(ctx: GameContext): void {
   const session = runSessionStore.peek(ctx);
-  const plow = PICKUPS.find((pickup) => pickup.partId === "plow_blade");
+  const plow = PICKUPS.find((pickup) => pickup.partId === "pallet_plow");
   if (session === undefined || plow === undefined) return;
   for (let elapsed = 0; elapsed < 30; elapsed += STEP) {
     const snap = session.snapshot();

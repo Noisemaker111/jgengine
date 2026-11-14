@@ -14,7 +14,7 @@ import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 
 import { ROUTE_GATES } from "../route/gates";
 import { CORRIDOR_DRIVE_HALF_WIDTH, EXIT_Z } from "../run/constants";
-import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, type Track } from "../tracks/catalog";
 
 /**
  * Live position, lap and finish for the four karts on the corridor. The ordering, splits, lap
@@ -26,7 +26,7 @@ export const PLAYER_RACER_ID = "player";
 export const RACE_LAPS = 1;
 
 /** One checkpoint volume per barricade plus the finish line: the corridor's authored milestones. */
-const ROW_SIX_CHECKPOINTS: readonly Checkpoint[] = [
+const AISLE_NINE_CHECKPOINTS: readonly Checkpoint[] = [
   ...ROUTE_GATES.map((gate) => ({
     id: gate.id,
     center: [0, 0, gate.atZ] as readonly [number, number, number],
@@ -79,13 +79,13 @@ export interface Standings {
  * marks a shortcut skips and hands back the forks, so a kart is placed fairly down either path.
  */
 export function trackCheckpoints(track: Track): { checkpoints: readonly Checkpoint[]; forks: readonly RaceFork[] } {
-  if (track.id === ROW_SIX_TRACK.id) return { checkpoints: ROW_SIX_CHECKPOINTS, forks: [] };
+  if (track.id === AISLE_NINE_TRACK.id) return { checkpoints: AISLE_NINE_CHECKPOINTS, forks: [] };
   const at = track.gates.filter((gate) => gate.route === MAIN_ROUTE).map((gate) => gate.atZ + track.origin);
   return track.course.checkpoints({ at, finish: track.exitAt + track.origin, height: 10 });
 }
 
 /** Racers are placed by their positions with `y` the road height under them (see the session). */
-export function createStandings(names: Readonly<Record<string, string>>, course: Track = ROW_SIX_TRACK): Standings {
+export function createStandings(names: Readonly<Record<string, string>>, course: Track = AISLE_NINE_TRACK): Standings {
   const ids = Object.keys(names);
   const track = raceTrack({ ...trackCheckpoints(course), laps: RACE_LAPS });
   // Every kart must cross before the race closes: the player's own finish ends the run, and the

@@ -10,14 +10,14 @@ import { createRunSession } from "../run/session";
 import { driveCourse } from "../testing/courseDriver";
 import { createVehicleController } from "../vehicle/controller";
 import { FLAT_YARD_GROUND } from "./ground";
-import { ROW_SIX_TRACK, TRACKS, trackById, type Track } from "./catalog";
+import { AISLE_NINE_TRACK, TRACKS, trackById, type Track } from "./catalog";
 
-const LAID = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
+const LAID = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
 
 function memory() {
   const map = new Map<string, string>();
   const career = newCareer();
-  career.medals = { best: { "salvage-run": 1, "scrap-sweep": 12, "night-shift": 20, "grudge-hobbs": 9, "time-sheet": 20, "bare-metal": 20 } };
+  career.medals = { best: { "last-call": 1, "cart-stuffer": 12, "lights-out": 20, "grudge-brick": 9, "price-check": 20, "empty-cart": 20 } };
   map.set(CAREER_KEY, JSON.stringify(career));
   return { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => void map.set(key, value) };
 }
@@ -85,8 +85,8 @@ describe("yard tracks", () => {
       const fork = Math.min(Number.POSITIVE_INFINITY, ...track.def.branches.map((branch) => branch.from));
       const first = (requirement: string) =>
         Math.min(fork, ...track.gates.filter((gate) => gate.requirement === requirement).map((gate) => (gate.route === MAIN_ROUTE ? gate.atZ : track.def.branches.find((b) => b.id === gate.route)!.from)));
-      expect(at("plow_blade")).toBeLessThan(first("plow"));
-      expect(at("coil_springs")).toBeLessThan(first("jump"));
+      expect(at("pallet_plow")).toBeLessThan(first("plow"));
+      expect(at("spring_casters")).toBeLessThan(first("jump"));
     }
   });
 
@@ -115,23 +115,23 @@ describe("yard tracks", () => {
       expect(long.phase).toBe("won");
       const short = runOn(track, track.def.branches.map((branch) => branch.id));
       expect(short.phase).toBe("won");
-      if (track.id !== "flooded-quarry") expect(short.runTime).toBeLessThan(long.runTime - 1.5);
+      if (track.id !== "garden-center") expect(short.runTime).toBeLessThan(long.runTime - 1.5);
       // The pit wade trades the deep pool for distance: no faster, never much slower.
       else expect(short.runTime).toBeLessThan(long.runTime + 1);
     }
   }, 30_000); // drives all six tracks twice at 60 Hz; the default 5 s budget is tight on a shared CI runner (took 5.08 s)
 
   test("a gate on a shortcut only stops karts on that shortcut", () => {
-    const track = trackById("rail-yard")!;
-    const shed = track.gates.find((gate) => gate.route === "shed-cut")!;
-    const noPlow = tuningFrom([partById("coil_springs")!]);
+    const track = trackById("loading-bay")!;
+    const shed = track.gates.find((gate) => gate.route === "trailer-cut")!;
+    const noPlow = tuningFrom([partById("spring_casters")!]);
     const run = shed.atZ - 8;
-    const onBranch = track.point("shed-cut", run);
+    const onBranch = track.point("trailer-cut", run);
     const heading = onBranch.heading;
     const kart = createVehicleController({ position: [onBranch.x, onBranch.elevation, onBranch.z], heading }, track);
     let pose = kart.tick(1 / 60, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }, noPlow, { jumpPressed: false, plowBracing: false }, FLAT_YARD_GROUND);
     for (let i = 0; i < 180; i += 1) pose = kart.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, noPlow, { jumpPressed: false, plowBracing: false }, FLAT_YARD_GROUND);
-    expect(pose.route).toBe("shed-cut");
+    expect(pose.route).toBe("trailer-cut");
     expect(pose.blockedByGate).toBe(true);
     expect(pose.run!).toBeLessThanOrEqual(shed.atZ + 0.01);
     // The same kart on the main line beside the shortcut drives on: that wall is not its wall.
@@ -144,8 +144,8 @@ describe("yard tracks", () => {
   });
 
   test("the rail yard's freight throws a kart back off the crossing", () => {
-    const track = trackById("rail-yard")!;
-    const crossing = track.hazardSpans.find((span) => span.kind === "train")!;
+    const track = trackById("loading-bay")!;
+    const crossing = track.hazardSpans.find((span) => span.kind === "tugger")!;
     const session = createRunSession(() => 0, memory());
     session.selectEvent(eventOn(track).id);
     session.start();
@@ -169,7 +169,7 @@ describe("yard tracks", () => {
   });
 
   test("hazards change the drive: slag slows, a belt shoves, a flood drags", () => {
-    const tuning = tuningFrom([partById("salvage_v6")!]);
+    const tuning = tuningFrom([partById("power_walker")!]);
     const drive = (track: Track, run: number, offset: number, time: number, seconds = 1.5) => {
       const at = track.point(MAIN_ROUTE, run, offset);
       const kart = createVehicleController({ position: [at.x, at.elevation, at.z], heading: at.heading }, track);
@@ -177,16 +177,16 @@ describe("yard tracks", () => {
       for (let t = 0; t < seconds; t += 1 / 60) pose = kart.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }, tuning, { jumpPressed: false, plowBracing: false, time: time + t }, FLAT_YARD_GROUND);
       return pose;
     };
-    const conveyor = trackById("conveyor-maze")!;
+    const conveyor = trackById("electronics")!;
     const belt = conveyor.def.hazards.find((hazard) => hazard.kind === "belt" && (hazard.route ?? MAIN_ROUTE) === MAIN_ROUTE && hazard.offset === undefined)!;
     const onBelt = drive(conveyor, belt.from + 2, 0, 0, 1);
     const offBelt = drive(conveyor, belt.from - 40, 0, 0, 1);
     expect(onBelt.hazards?.some((hazard) => hazard.kind === "belt")).toBe(true);
     expect(onBelt.run! - (belt.from + 2)).not.toBeCloseTo(offBelt.run! - (belt.from - 40), 0);
-    const quarry = trackById("flooded-quarry")!;
-    const flood = quarry.def.hazards.find((hazard) => hazard.kind === "flood" && hazard.route === undefined)!;
+    const quarry = trackById("garden-center")!;
+    const flood = quarry.def.hazards.find((hazard) => hazard.kind === "puddle" && hazard.route === undefined)!;
     const wet = drive(quarry, flood.from + 1, 0, 0, 2);
-    expect(wet.hazards?.some((hazard) => hazard.kind === "flood")).toBe(true);
+    expect(wet.hazards?.some((hazard) => hazard.kind === "puddle")).toBe(true);
     const dry = drive(quarry, flood.from - 50, 0, 0, 2);
     expect(wet.speedKmh).toBeLessThan(dry.speedKmh);
   });
