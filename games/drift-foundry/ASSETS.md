@@ -1,15 +1,12 @@
-# Drift Foundry art
+# Cleanup on Aisle 9 art
 
-The Row Six salvage buggy, four pickup stations, jump barriers and teal jump marks in
-`src/game/art/` are original procedural geometry authored for this game. Regenerate
-them with `bun run author-models`. The pit poster in `StartScreen.tsx` is original SVG.
-Model module URLs travel with the published-package game through either its standalone
-mount or the engine host.
+Shopping carts, shoppers, cart mods, products, store fixtures, the shutter and floor scrubber and the
+tugger train in `src/game/art/` are original procedural geometry authored for this game. Regenerate
+them with `bun --cwd=games/drift-foundry run author-models`. Every product label is invented; no real
+brands appear.
 
-Existing yard props retain their catalog source credits: Kay Lousberg's
-[KayKit City Builder](https://kaylousberg.itch.io/kaykit-city-builder-bits) and
-[KayKit Space Base](https://kaylousberg.itch.io/kaykit-space-base-bits), and the
-[ambientCG Ground025](https://ambientcg.com/view?id=Ground025) ground material.
-The in-game credits list those sources. Local `public/models/` and `public/materials/`
-are unchanged copies of the engine's licensed asset files, provisioned for standalone
-development according to this repository's ignored asset-cache convention.
+Pack pieces keep their catalog source credits (the in-game credits are generated from
+`src/game/assets.ts`): Kay Lousberg's KayKit City Builder, Space Base and Forest packs, Quaternius'
+Toon Shooter Game Kit and Low Poly Animals, and the ambientCG Terrazzo005, Tiles007, Plastic006,
+Concrete025 and CorrugatedSteel009 materials. Local `public/models/` and `public/materials/` are
+provisioned copies of the engine's licensed asset files.

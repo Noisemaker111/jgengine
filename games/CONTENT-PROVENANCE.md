@@ -11,7 +11,7 @@ JGengine Games uses familiar genre mechanics with independently named projects a
 | Beacon Bastion | Defend a beacon with towers and authored approach routes. |
 | Deepward | Oxygen-limited salvage dives through abandoned printing vaults, with banked salvage, competing refits, and reprint recovery. |
 | Harbor Heat | Run courier jobs and crew contracts across a coastal city. |
-| Drift Foundry | Race modular scrap vehicles through an industrial canyon. |
+| Cleanup on Aisle 9 (drift-foundry) | Race shopping carts through a mega-store at closing time, ahead of the shutters. |
 
 The removed Lantern Reach game retained source from Levy Street’s MIT project. Its historical acknowledgment was exactly **Port of World of ClaudeCraft · Levy Street (MIT)**, linked to [the upstream source](https://github.com/levy-street/world-of-claudecraft), in its credit export and running game. Its source and attribution remain in Git history.
 
@@ -52,6 +52,6 @@ Each game ships one display font and one body font from [Google Fonts](https://g
 | Ember Command | IM Fell English SC | Alegreya |
 | Brightway Park | Lilita One | Nunito |
 | Deepward | Share Tech Mono | Rajdhani |
-| Drift Foundry | Saira Stencil One | Barlow Condensed |
+| Cleanup on Aisle 9 | Lilita One | Nunito |
 | Odd Orbit | Comfortaa | Quicksand |
 | Scrap Signal | Russo One | Chakra Petch |

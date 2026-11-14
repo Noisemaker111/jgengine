@@ -9,7 +9,7 @@ export const CREATE_COMMAND = 'npx jgengine create "My Game"';
 /** Each idea is the pitch of a real game in games/, so the hero never shows a game that doesn't exist. */
 const IDEAS: readonly { idea: string; id: string }[] = [
   { idea: "defends a highland keep from raider waves", id: "beacon-bastion" },
-  { idea: "races a welded buggy ahead of a compactor", id: "drift-foundry" },
+  { idea: "races shopping carts through a closing mega-store", id: "drift-foundry" },
   { idea: "tames dinosaurs and survives the wild", id: "fernwild" },
   { idea: "runs a theme park full of hungry guests", id: "brightway-park" },
   { idea: "loots guns across six wasteland zones", id: "scrap-signal" },
