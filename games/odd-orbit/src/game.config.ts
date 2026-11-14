@@ -37,7 +37,7 @@ export const game = defineGame({
   scene: {
     // The boarding house's modules and neon sign are drawn from the room model; the capture binding
     // hands the live frame to the save card's thumbnail request.
-    WorldOverlay: () => createElement(Fragment, {}, createElement(RoomModules, {}), createElement(SceneCaptureBinding, {})),
+    WorldOverlay: (props) => createElement(Fragment, {}, createElement(RoomModules, { ctx: props.ctx }), createElement(SceneCaptureBinding, {})),
     editorLayers,
     objectModels,
     renderEntity,
@@ -93,8 +93,8 @@ export const game = defineGame({
     lighting: {
       // Deep space: almost no ambient, a cool violet fill from the station's running lights and one
       // hard white key from the star, so the rooms' own pastel lamps carry the colour.
-      ambient: { color: "#7a6fb0", intensity: 0.45 },
-      hemisphere: { skyColor: "#8f80d0", groundColor: "#2a2440", intensity: 0.6 },
+      ambient: { color: "#7a6fb0", intensity: 0.35 },
+      hemisphere: { skyColor: "#8f80d0", groundColor: "#1a1528", intensity: 0.45 },
       directional: [{ color: "#fff1d6", intensity: 2.2, position: [-30, 34, 22], castShadow: true }],
     },
     // The station sits in black space; "cinematic" fills the unset post stack (IBL, tone-map, bloom,
@@ -132,10 +132,12 @@ export const game = defineGame({
     lens: { frustum: { far: 1200 } },
     rigs: {
       rts: {
-        start: { x: 0, z: -5 },
-        height: 21,
+        start: { x: 0, z: -11 },
+        height: 20,
         pitch: 1.0,
-        yaw: 0,
+        // Looking north from the commons: the rooms sit behind the airlock wall with their cut-away
+        // door side facing the camera.
+        yaw: Math.PI,
         targetOffset: { y: terrainField.sampleHeight(0, 0) },
         panSpeed: 30,
         edgeScroll: true,

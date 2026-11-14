@@ -1,7 +1,7 @@
 /** The station hull and the black around it: the deck plating outside, the haze, the deep sky. */
 export const HABITAT = {
-  groundLow: "#3a3552",
-  groundHigh: "#4a4466",
+  groundLow: "#221e36",
+  groundHigh: "#2e2944",
   pad: "#3a3550",
   horizon: "#2a2150",
   zenith: "#05040c",

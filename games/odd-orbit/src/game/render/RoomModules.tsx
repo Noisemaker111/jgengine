@@ -91,8 +91,26 @@ function buildRoom(state: HouseholdState, room: RoomState, now: number, anims: A
     const comfort = tenantComfort(state, room.tenantId, now).score;
     const c = comfortColor(comfort);
     anim.lamp = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.6 });
+    // A lived-in room: a bunk in the tenant's colour, a round rug and a reading lamp.
+    const plan = state.members[room.tenantId]?.bodyPlan;
+    const hue = plan?.hue ?? 280;
+    const blanket = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hue / 360, 0.55, 0.62), roughness: 0.8 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: STATION.trim, roughness: 0.5, metalness: 0.3 });
+    g.add(block(frameMat, [1.7, 0.35, 1.0], [-w / 2 + 1.15, 0.45, -d / 2 + 0.85]));
+    g.add(block(blanket, [1.5, 0.16, 0.85], [-w / 2 + 1.2, 0.7, -d / 2 + 0.85]));
+    g.add(block(new THREE.MeshStandardMaterial({ color: "#fff6e8", roughness: 0.9 }), [0.4, 0.14, 0.7], [-w / 2 + 0.55, 0.72, -d / 2 + 0.85]));
+    const rug = new THREE.Mesh(geo.circle, new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hue / 360, 0.45, 0.78), roughness: 1 }));
+    rug.rotation.x = -Math.PI / 2;
+    rug.scale.setScalar(0.85);
+    rug.position.set(0.5, 0.31, 0.2);
+    g.add(rug);
+    g.add(block(frameMat, [0.08, 1.1, 0.08], [w / 2 - 0.55, 0.85, -d / 2 + 0.6]));
+    const shade = new THREE.Mesh(geo.sphere, glowMat);
+    shade.scale.set(0.22, 0.16, 0.22);
+    shade.position.set(w / 2 - 0.55, 1.45, -d / 2 + 0.6);
+    g.add(shade);
     const bulb = new THREE.Mesh(geo.sphere, anim.lamp);
-    bulb.scale.setScalar(0.16);
+    bulb.scale.setScalar(0.24);
     bulb.position.set(0, 1.85, d / 2);
     g.add(bulb);
   }
@@ -151,7 +169,9 @@ function buildCorridor(): THREE.Group {
 /** "NO VACANCY" in neon on a canvas: NO lights only when every berth is let. */
 function buildSign(): { group: THREE.Group; paint: (full: boolean, t: number) => void } {
   const group = new THREE.Group();
-  group.position.set(AIRLOCK.x, 4.1, AIRLOCK.z + 0.4);
+  // Up on a mast behind the back row, so it reads over the roofs instead of hiding a room.
+  const backZ = Math.min(...BERTHS.map((b) => b.z)) - BERTH_SIZE.d / 2 - 0.6;
+  group.position.set(AIRLOCK.x, 4.6, backZ);
   if (typeof document === "undefined") return { group, paint() {} };
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -164,6 +184,10 @@ function buildSign(): { group: THREE.Group; paint: (full: boolean, t: number) =>
   frame.scale.set(4.4, 1.2, 0.12);
   frame.position.z = -0.08;
   group.add(frame);
+  const mast = new THREE.Mesh(geo.box, new THREE.MeshStandardMaterial({ color: "#4a4566", metalness: 0.6, roughness: 0.4 }));
+  mast.scale.set(0.25, 4.6, 0.25);
+  mast.position.set(0, -2.6, -0.2);
+  group.add(mast);
   const g2d = canvas.getContext("2d");
   let last = "";
   return {
@@ -209,6 +233,7 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
   root.add(sign.group);
   let anims: Animated[] = [];
   let last = "";
+  let warned = false;
   const clear = () => {
     modules.traverse((node) => { const m = (node as THREE.Mesh).material as THREE.Material | undefined; m?.dispose(); });
     modules.clear();
@@ -217,7 +242,18 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
   return {
     mount(state: EngineFrameState) { state.scene.add(root); },
     frame(state: EngineFrameState) {
-      if (ctx === null) return;
+      if (ctx === null) { if (!warned) { warned = true; console.warn("[no-vacancy] room modules have no game context"); } return; }
+      try { drawFrame(state, ctx); } catch (error) { if (!warned) { warned = true; console.warn("[no-vacancy] room modules failed", error); } }
+    },
+    dispose(state: EngineFrameState) {
+      clear();
+      state.scene.remove(root);
+    },
+  };
+  function drawFrame(state: EngineFrameState, ctx: GameContext): void {
+    {
+      // The station deck is flattened around the house; stand the modules on it, not at sea level.
+      root.position.y = ctx.world.groundHeightAt(AIRLOCK.x, AIRLOCK.z);
       const household = householdStore.read(ctx);
       const now = ctx.time.now();
       const sig = signature(household, now);
@@ -237,15 +273,13 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
       }
       sign.paint(household.order.length > 0 && noVacancy(household), t);
       state.invalidate();
-    },
-    dispose(state: EngineFrameState) {
-      clear();
-      state.scene.remove(root);
-    },
-  };
+    }
+  }
 }
 
-export function RoomModules() {
-  const ctx = useGameContext();
+/** The overlay is handed the live context; the hook is only a fallback outside the world scene. */
+export function RoomModules({ ctx: given }: { ctx?: GameContext }) {
+  const hooked = useGameContext();
+  const ctx = given ?? hooked;
   return <EngineDrawMount create={() => roomModulesDraw(ctx)} deps={[ctx]} />;
 }
