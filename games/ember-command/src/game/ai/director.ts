@@ -111,10 +111,21 @@ function assaultTarget(): { x: number; z: number } {
   return playerKeepPoint();
 }
 
-/** The camp a wave can muster from: the forward camp if it stands, else the home brood_mound. */
+/** The black colony's home, by authored id: its nest (the scene's `keep_enemy`), else a lone mound. */
+const HOME_IDS = ["keep_enemy", "brood_mound"] as const;
+
+function homeNest(ctx: GameContext): ReturnType<GameContext["scene"]["entity"]["get"]> {
+  for (const id of HOME_IDS) {
+    const entity = ctx.scene.entity.get(id);
+    if (entity !== null) return entity;
+  }
+  return null;
+}
+
+/** The camp a wave can muster from: the forward camp if it stands, else the black nest. */
 function musterCamp(ctx: GameContext): { id: string; point: { x: number; z: number } } | null {
   const forward = session.enemyWave.campId;
-  const wanted = forward !== null ? [forward, "brood_mound"] : ["brood_mound"];
+  const wanted = forward !== null ? [forward, ...HOME_IDS] : [...HOME_IDS];
   for (const id of wanted) {
     const entity = ctx.scene.entity.get(id);
     if (entity === null) continue;
@@ -259,7 +270,9 @@ function keepHealthFraction(ctx: GameContext): number {
 
 /** The forward camp: a Black Ant hold halfway to the player, so waves arrive sooner. */
 function raiseForwardCamp(ctx: GameContext): void {
-  const home = ctx.scene.entity.get("brood_mound");
+  // The home was looked up by an id no scene authored, so the camp (and the attack phase after it)
+  // never came: the black nest is the home a forward camp is pushed out from.
+  const home = homeNest(ctx);
   const target = assaultTarget();
   if (home === null) return;
   const x = home.position[0] + (target.x - home.position[0]) * 0.45;

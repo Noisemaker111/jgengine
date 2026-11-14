@@ -14,7 +14,7 @@ import { heroActViews, carriedHeroPicks, pendingHeroOffer, tickHero } from "./he
 import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore, type ResearchView } from "./hudStore";
-import { TRAINING_CONFIG } from "./production";
+import { trainingConfigFor } from "./production";
 import { SUGAR, GRANARY_TRICKLE, INCOME_TRICKLE, LEAF, NURSERY_HATCH_BONUS, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
 import {
   advanceHazards,
@@ -37,7 +37,7 @@ import { decayTrails, pruneAlarms, scentAt, washTrails } from "./pheromone";
 import { dueTips, type CoachFacts } from "./coach";
 import { onPatio } from "./yard";
 import { YARD } from "./yardInstance";
-import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
+import { broodLanes, matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 
 /** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
@@ -170,7 +170,7 @@ const productionSystem: SystemDefinition = defineSystem({
     if (!matchRunning()) return;
     // A standing Nursery Chamber warms the brood: every egg hatches faster.
     const warmed = livingUnits("player", "building").some((u) => u.catalogId === "nursery") ? 1 + NURSERY_HATCH_BONUS : 1;
-    const result = tickQueue(session.production, TRAINING_CONFIG, dt * warmed);
+    const result = tickQueue(session.production, trainingConfigFor(broodLanes()), dt * warmed);
     session.production = result.state;
     for (const event of result.events) {
       if (event.type === "completed") spawnTrained(ctx, event.output.unitId);
@@ -294,12 +294,16 @@ function applyHazardHarm(ctx: GameContext, dt: number): void {
 }
 
 /**
- * Black ants are not stupid: when the mower roars they run out of its lane on their own side. The red
- * colony gets the same warning and has to make that call itself.
+ * Nobody stands still under a mower: when it roars, black ants and idle red ants run out of its lane
+ * on their own side. Red ants on a standing order keep it, so a march or a forage run through the cut
+ * is still the commander's gamble (foragers wait at the edge, see `forageHoldsAtLane`).
  */
 function dodgeMower(ctx: GameContext): void {
   for (const unit of session.units.values()) {
-    if (unit.faction !== "enemy" || unit.kind !== "unit" || unit.catalogId === "wasp") continue;
+    if (unit.kind !== "unit" || unit.catalogId === "wasp") continue;
+    // A red ant under a standing order (a march, an attack, a forage run) is the commander's call; one
+    // just standing about feels the engine through the soil and gets out of the cut.
+    if (unit.faction === "player" && unit.command.kind !== "idle" && unit.command.kind !== "hold") continue;
     const entity = ctx.scene.entity.get(unit.id);
     if (entity === null) continue;
     const out = laneEscape(YARD, entity.position[0], entity.position[2]);

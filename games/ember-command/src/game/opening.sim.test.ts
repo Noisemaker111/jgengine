@@ -7,6 +7,8 @@ import { content } from "./content";
 import { onInit } from "../loop";
 import { resetSession, session } from "./session";
 import { systems } from "./systems";
+import { createHazardState, MOWER_FIRST, MOWER_WARNING, NO_HAZARDS } from "./hazards";
+import { YARD } from "./yardInstance";
 
 /**
  * The opening of the first mission, played headless with every system running and no orders given:
@@ -39,5 +41,28 @@ describe("the opening raid", () => {
     expect(report).toMatchObject({ hero: true });
     expect(report.soldiers).toBeGreaterThanOrEqual(3);
     expect([...session.units.keys()].filter((id) => id.startsWith("raider_raid") || id.startsWith("major_raid"))).toEqual([]);
+  }, 60_000);
+
+  test("in the free skirmish the black colony raises a forward camp and its raids start marching", () => {
+    resetSession();
+    const definition = defineGameDefinition({ name: "LawnOrderSkirmish", multiplayer: "off", world, physics, systems, loop: { onInit, onNewPlayer() {} } });
+    const runner = createHeadlessRunner({ definition, content, loop: definition.loop! });
+    runner.ctx.game.commands.run("match.skirmish", {});
+    for (let t = 0; t < 130; t += 0.1) runner.step(0.1);
+    expect(session.enemyWave.campId).not.toBeNull();
+    expect(session.enemyWave.sent).toBeGreaterThanOrEqual(1);
+  }, 60_000);
+
+  test("idle red ants walk out of the mower's lane when it roars; black ants do too", () => {
+    const runner = opening();
+    const lane = YARD.mowerLane!;
+    runner.ctx.scene.entity.setPose("soldier_1", { position: [0, 0, lane.from.z] });
+    session.hazards = createHazardState({ ...NO_HAZARDS, mower: true });
+    session.hazards.t = MOWER_FIRST - MOWER_WARNING - 0.5;
+    session.hazards.mower.nextAt = MOWER_FIRST;
+    for (let t = 0; t < 4; t += 0.1) runner.step(0.1);
+    const at = runner.ctx.scene.entity.get("soldier_1")?.position;
+    expect(at).toBeDefined();
+    expect(Math.abs(at![2] - lane.from.z)).toBeGreaterThan(lane.halfWidth);
   }, 60_000);
 });

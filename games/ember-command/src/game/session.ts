@@ -181,6 +181,11 @@ export function matchRunning(): boolean {
   return session.started && !session.paused && !session.over;
 }
 
+/** Brood lanes: the nest hatches one egg at a time, and every standing Barracks Chamber adds a lane. */
+export function broodLanes(): number {
+  return 1 + livingUnits("player", "building").filter((u) => u.catalogId === "barracks").length;
+}
+
 /** Supply is reserved when training is queued, not only when a recruit spawns. */
 export function reservedSupply(): number {
   return [...activeJobs(session.production), ...queuedJobs(session.production)]

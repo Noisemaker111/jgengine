@@ -232,7 +232,7 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
       <Slot {...p} icon="trail" hotkey="P" command={{ name: "unit.trail" }} tone={() => (!playing() ? "locked" : hud().trailArmed ? "active" : hud().sugar >= TRAIL_PAINT_COST ? "ready" : "locked")}
         foot={() => String(TRAIL_PAINT_COST)}
         tip={() => ({ title: "Pheromone Line", desc: "Arm, then right-click: lays a scent trail from the selected ants (or the nest) to that point. Red ants run up to 40% faster on scent and forage quicker at a scented node. Rain and the sprinkler wash it away.", chips: costChips(TRAIL_PAINT_COST) })} />
-      {build("barracks", "barracks", "B", "Dig Barracks Chamber", "Hatches Soldiers, Spitters and Beetles, unlocks instincts, and takes food drop-offs.")}
+      {build("barracks", "barracks", "B", "Dig Barracks Chamber", "Hatches Soldiers, Spitters and Beetles, unlocks instincts and takes food drop-offs. Every Barracks adds a brood lane: one more egg hatching at once.")}
       {build("fungus_garden", "fungus_garden", "G", "Dig Fungus Garden", `Feeds the brood: raises your brood room (supply) by ${BUILDINGS.fungus_garden.supply}.`, [{ icon: "food", text: `+${BUILDINGS.fungus_garden.supply}` }])}
       {build("nursery", "nursery", "U", "Dig Nursery Chamber", "Warms the brood: unlocks the Tank Beetle and every egg hatches 25% faster.")}
       {build("granary", "granary", "Y", "Dig Granary Chamber", "A forward food store: workers drop their loads here (dig it near the popsicle), and it ferments +1 sugar a second.")}

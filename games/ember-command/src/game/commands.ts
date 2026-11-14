@@ -6,11 +6,11 @@ import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";
 import { BARRACKS_UNITS, buildingDef, combatantDef, missingChamber, trainableDef } from "./catalog";
 import { BUILD_CONFIG } from "./building";
 import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type FormationKind } from "./formations";
-import { TRAINING_CONFIG } from "./production";
+import { trainingConfigFor } from "./production";
 import { SUGAR, LEAF, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS, TRAIL_PAINT_COST, TRAIL_PAINT_MAX_LENGTH, TRAIL_PAINT_STRENGTH } from "./tuning";
 import { paintLine } from "./pheromone";
 import { raiseBuilding } from "./systems";
-import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
+import { broodLanes, matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
 import { castHeroAct, chooseHeroPick, heroActViews, pendingHeroOffer } from "./heroActs";
 import { CAMPAIGN, campaignStore, MUSTER_MARKER, noteCampaignBuild, noteCampaignTrain, startCampaignMission, syncCampaignHud, tickCampaign } from "./campaign";
@@ -280,7 +280,7 @@ export function trainUnit(ctx: GameContext, unitId: string): GameContext {
     notify(ctx, explainTrainRefusal(ctx, unitId), "deny");
     return ctx;
   }
-  const result = enqueue(session.production, TRAINING_CONFIG, { unitId });
+  const result = enqueue(session.production, trainingConfigFor(broodLanes()), { unitId });
   if (!result.ok) return ctx;
   session.production = result.state;
   for (const [currency, amount] of Object.entries(def.cost)) {
