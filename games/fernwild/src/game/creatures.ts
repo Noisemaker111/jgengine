@@ -1,4 +1,4 @@
-import { createCreatureDriver, type CreatureBody, type CreatureDriverState, type CreatureStep } from "@jgengine/core/ai/creatureDriver";
+import { createCreatureDriver, type CreatureBody, type CreatureTerrain, type CreatureDriverState, type CreatureStep } from "@jgengine/core/ai/creatureDriver";
 import { createPopulationDirector, type PopulationDirector, type PopulationDirectorState } from "@jgengine/core/ai/populationDirector";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { countItem, createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
@@ -232,7 +232,13 @@ const worldOf = perContext((ctx: GameContext): World => {
   ctx.sim.addStage({ id: "airlift", phase: "afterMovement", run: () => holdLifted(ctx) });
   return {
     creatures: new Map(),
-    driver: createCreatureDriver({ sight: 24, memorySeconds: 10, blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE, notices: (context, self, candidate) => notices(context, self, candidate) }),
+    driver: createCreatureDriver({
+      sight: 24,
+      memorySeconds: 10,
+      blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE,
+      waterSurface: (context, x, z) => waterSurface(context, x, z),
+      notices: (context, self, candidate) => notices(context, self, candidate),
+    }),
     taming: createKnockoutTaming(TAMING),
     roster: createCompanionRoster(),
     carcasses: createResourceNodeField({ nodes: [], resolve: (id) => carcassNode(worldOf(ctx), id), rng: () => ctx.rng() }),
@@ -312,6 +318,9 @@ function body(ctx: GameContext, world: World, creature: Creature): CreatureBody 
     attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * melee, interval: def.attack.interval, reach: def.attack.reach + def.radius },
     // An ambusher holds its post; everything else grazes its zone.
     wander: { radius: botProfile(creature.species)?.temperament === "ambush" ? 0.5 : (world.regions.get(creature.region)?.radius ?? 16) },
+    // Swimmers keep to their element: tamed ones too, except when ridden (riding has its own swim).
+    terrain: botProfile(creature.species)?.terrain ?? "land",
+    swimDepth: SWIM_UNDER,
   };
 }
 
@@ -426,17 +435,36 @@ function rollLevel(ctx: GameContext, max: number): number {
 }
 
 /** The nearest open ground to `at` a body of `radius` fits on: never inside a trunk or a boulder, never in the sea. */
-function openGround(ctx: GameContext, at: readonly [number, number], radius: number): [number, number, number] | null {
-  for (let ring = 0; ring <= 4; ring += 1) {
+function openGround(ctx: GameContext, at: readonly [number, number], radius: number, terrain: CreatureTerrain = "land"): [number, number, number] | null {
+  // A water-only bot needs water deep enough to swim under; it searches wider, rivers being narrow.
+  const rings = terrain === "water" ? 8 : 4;
+  const spacing = terrain === "water" ? 2 : 1;
+  for (let ring = 0; ring <= rings; ring += 1) {
     for (let step = 0; step < (ring === 0 ? 1 : 8); step += 1) {
       const angle = (step / 8) * Math.PI * 2;
-      const x = at[0] + Math.sin(angle) * ring;
-      const z = at[1] + Math.cos(angle) * ring;
+      const x = at[0] + Math.sin(angle) * ring * spacing;
+      const z = at[1] + Math.cos(angle) * ring * spacing;
       const y = ctx.world.groundHeightAt(x, z);
-      if (y >= SHORE && solidObstaclesNear(ctx, [x, y, z], radius, radius).length === 0) return [x, y, z];
+      if (terrain === "water") {
+        const surface = waterSurface(ctx, x, z);
+        if (surface !== null && y < surface - 1.2) return [x, surface - SWIM_UNDER, z];
+        continue;
+      }
+      if ((terrain === "amphibious" || y >= SHORE) && solidObstaclesNear(ctx, [x, y, z], radius, radius).length === 0) {
+        const surface = terrain === "amphibious" ? waterSurface(ctx, x, z) : null;
+        return [x, surface === null ? y : Math.max(y, surface - SWIM_UNDER), z];
+      }
     }
   }
   return null;
+}
+
+/** How deep a wild swimmer travels under the surface, metres. */
+const SWIM_UNDER = 0.6;
+
+/** The water's surface over (x, z), or null where the ground is dry or only damp. */
+function waterSurface(ctx: GameContext, x: number, z: number): number | null {
+  return ctx.world.groundHeightAt(x, z) < SEA_LEVEL - 0.3 ? SEA_LEVEL : null;
 }
 
 /** What a creature is born with: a wild one rolls it, a bred one inherits it. */
@@ -483,7 +511,7 @@ export function spawnCreature(
   options: { region?: string; level?: number; sex?: "female" | "male"; genes?: CreatureGenes; size?: number; traits?: readonly string[] } = {},
 ): string | null {
   const def = speciesDef(species);
-  const position = def === null ? null : openGround(ctx, at, def.radius);
+  const position = def === null ? null : openGround(ctx, at, def.radius, botProfile(species)?.terrain ?? "land");
   if (def === null || position === null) return null;
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;

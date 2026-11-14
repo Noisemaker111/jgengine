@@ -15477,6 +15477,363 @@
         "yaw": 0.8,
         "vines": 7
       }
+    },
+    {
+      "id": "deep_water_player_spawn",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 237.6,
+        "y": -5,
+        "z": 1422.5
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_south_1",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -434.9,
+        "y": -5,
+        "z": 1081.1
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_south_3",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 778.9,
+        "y": -5,
+        "z": 1042.0
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_east_1",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 1343.4,
+        "y": -5,
+        "z": 386.0
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_east_2",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 1404.0,
+        "y": -5,
+        "z": 3.1
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_north_1",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 430.6,
+        "y": -5,
+        "z": -1291.9
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep_water_spawn_north_2",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -314.2,
+        "y": -5,
+        "z": -1324.9
+      },
+      "label": "Deep water",
+      "meta": {
+        "biome": "deep_water",
+        "count": 2,
+        "radius": 22,
+        "species": [
+          {
+            "species": "lampjaw",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_central_0",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 90,
+        "y": -1.5,
+        "z": 300
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_central_1",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 90,
+        "y": -1.5,
+        "z": 660
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_western_2",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -780,
+        "y": -1.5,
+        "z": -240
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_western_3",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -1050,
+        "y": -1.5,
+        "z": 30
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_eastern_4",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 840,
+        "y": -1.5,
+        "z": -300
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_eastern_5",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 1125,
+        "y": -1.5,
+        "z": -126
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_southeast_6",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 360,
+        "y": -1.5,
+        "z": 570
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_southeast_7",
+      "kind": "creature_spawn",
+      "position": {
+        "x": 480,
+        "y": -1.5,
+        "z": 960
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_swamp_8",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -390,
+        "y": -1.5,
+        "z": 420
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "river_river_swamp_9",
+      "kind": "creature_spawn",
+      "position": {
+        "x": -240,
+        "y": -1.5,
+        "z": 810
+      },
+      "label": "River",
+      "meta": {
+        "biome": "river",
+        "count": 2,
+        "radius": 16,
+        "species": [
+          {
+            "species": "arcwire",
+            "weight": 1
+          }
+        ]
+      }
     }
   ],
   "volumes": [

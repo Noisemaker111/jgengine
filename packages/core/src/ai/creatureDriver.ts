@@ -14,7 +14,17 @@ export interface CreatureBody {
   attack: { effect: string; amount: number; interval: number; reach: number } | null;
   /** Grazing around home when nothing is happening: radius in metres and the seconds it lingers between walks. Default 14 m and 2-7 s. */
   wander?: { radius?: number; linger?: readonly [number, number] };
+  /**
+   * Where it may go. `land` (default) keeps off whatever the driver's `blocked` check refuses; `amphibious`
+   * goes anywhere and swims where there is water; `water` never leaves the water (the driver's `waterSurface`).
+   */
+  terrain?: CreatureTerrain;
+  /** How far under the surface a swimmer travels, metres. Default 0.6. */
+  swimDepth?: number;
 }
+
+/** Where a creature may move: on land only, on land and in water, or in water only. */
+export type CreatureTerrain = "land" | "amphibious" | "water";
 
 /**
  * What drives a creature this tick: its own temperament (wild), its owner's standing order (tamed,
@@ -59,8 +69,13 @@ export interface CreatureDriverConfig {
   memorySeconds?: number;
   /** Which entities wild creatures react to. Default: player-role entities. */
   notices?: (ctx: GameContext, creatureId: string, candidateId: string) => boolean;
-  /** Ground a creature must not walk onto (deep water, lava): it turns back instead. */
+  /** Ground a land creature must not walk onto (deep water, lava): it turns back instead. */
   blocked?: (ctx: GameContext, x: number, z: number) => boolean;
+  /**
+   * The water surface's height at a point, or null where there is no water to swim in. Swimmers
+   * (`terrain` amphibious or water) travel just under it, and a water-only creature never leaves it.
+   */
+  waterSurface?: (ctx: GameContext, x: number, z: number) => number | null;
   /** Seconds-based [0,1) generator for grazing; default the context rng. */
   rng?: () => number;
 }
@@ -117,8 +132,23 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
   const driven = new Map<string, { state: CreatureDriverState; senses: PerceptionService }>();
   const senses = (): PerceptionService => createPerception({ sightRange: sight, sightConeDeg: 360, hearingRange: 0, memorySeconds });
 
+  /** Whether a body of this terrain may stand at (x, z). */
+  const forbidden = (ctx: GameContext, terrain: CreatureTerrain, x: number, z: number): boolean => {
+    if (terrain === "amphibious") return false;
+    if (terrain === "water") return config.waterSurface !== undefined && config.waterSurface(ctx, x, z) === null;
+    return config.blocked?.(ctx, x, z) === true;
+  };
+  /** The height a body stands or swims at over (x, z). */
+  const heightAt = (ctx: GameContext, body: CreatureBody | undefined, x: number, z: number): number => {
+    const ground = ctx.world.groundHeightAt(x, z);
+    if (body === undefined || (body.terrain ?? "land") === "land") return ground;
+    const surface = config.waterSurface?.(ctx, x, z) ?? null;
+    return surface === null ? ground : Math.max(ground, surface - (body.swimDepth ?? 0.6));
+  };
+
   /** Walk or run toward `goal`, stopping `stop` metres short; returns whether it is there. */
-  const travel = (ctx: GameContext, id: string, goal: PerceptionPosition, speed: number, stop: number, dt: number): boolean => {
+  const travel = (ctx: GameContext, id: string, goal: PerceptionPosition, speed: number, stop: number, dt: number, body?: CreatureBody): boolean => {
+    const terrain = body?.terrain ?? "land";
     const entity = ctx.scene.entity.get(id);
     if (entity === null) return true;
     const [px, , pz] = entity.position;
@@ -133,7 +163,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
     for (const veer of VEERS) {
       const turn = heading + veer;
       const step = resolveWalkerStep(ctx, entity.position, Math.sin(turn) * length, Math.cos(turn) * length, { radius: 0.6 });
-      if (config.blocked?.(ctx, px + step.stepX, pz + step.stepZ) === true) continue;
+      if (forbidden(ctx, terrain, px + step.stepX, pz + step.stepZ)) continue;
       // Progress toward the goal picks the way around; a sidestep still beats standing still.
       const moved = Math.hypot(step.stepX, step.stepZ);
       const score = (step.stepX * dx + step.stepZ * dz) / distance + moved * 0.01;
@@ -144,7 +174,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
     if (moved === 0) return true;
     const nx = px + best.stepX;
     const nz = pz + best.stepZ;
-    ctx.scene.entity.setPose(id, { position: [nx, ctx.world.groundHeightAt(nx, nz), nz], rotationY: best.heading, dt });
+    ctx.scene.entity.setPose(id, { position: [nx, heightAt(ctx, body, nx, nz), nz], rotationY: best.heading, dt });
     return moved < length * 0.25;
   };
 
@@ -176,7 +206,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
       const z = entry.home[2] + Math.sin(angle) * reach;
       entry.wanderTo = [x, ctx.world.groundHeightAt(x, z), z];
     }
-    if (travel(ctx, id, entry.wanderTo, body.walk, 0.4, dt)) {
+    if (travel(ctx, id, entry.wanderTo, body.walk, 0.4, dt, body)) {
       entry.wanderTo = null;
       entry.linger = lo + roll() * (hi - lo);
     }
@@ -189,7 +219,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
     if (target === null || body.attack === null) return false;
     const distance = ctx.scene.entity.distance(id, targetId) ?? Infinity;
     if (distance > body.attack.reach) {
-      travel(ctx, id, target.position, body.sprint, body.attack.reach * 0.8, dt);
+      travel(ctx, id, target.position, body.sprint, body.attack.reach * 0.8, dt, body);
       return false;
     }
     face(ctx, id, targetId);
@@ -235,7 +265,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
         if (intent.leashTo === null) return graze(ctx, id, state, body, dt);
         const gap = intent.anchor === "owner" ? FOLLOW_GAP : 0.5;
         const far = flat(self.position, intent.leashTo) > RUN_TO_CATCH_UP;
-        if (travel(ctx, id, intent.leashTo, far ? body.sprint : body.walk, gap, dt)) settle(ctx, id);
+        if (travel(ctx, id, intent.leashTo, far ? body.sprint : body.walk, gap, dt, body)) settle(ctx, id);
         return { mode: intent.kind, targetId: null, struck: false, reason: intent.anchor === "owner" ? "following" : "staying" };
       }
       // Wild: sense what is near, then let the temperament decide.
@@ -267,14 +297,14 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
       }
       state.wanderTo = null;
       if (intent.mode === "flee") {
-        travel(ctx, id, fleeGoal(ctx, self.position, intent.targetId, intent.goal), body.sprint, 0, dt);
+        travel(ctx, id, fleeGoal(ctx, self.position, intent.targetId, intent.goal), body.sprint, 0, dt, body);
       } else if (intent.goal === null) {
         if (intent.targetId !== null) face(ctx, id, intent.targetId);
         settle(ctx, id);
       } else {
         const hurry = intent.mode === "stalk";
         const stop = intent.mode === "stalk" ? (body.attack?.reach ?? 1.5) * 0.8 : 0.5;
-        travel(ctx, id, intent.goal, hurry ? body.sprint : body.walk, stop, dt);
+        travel(ctx, id, intent.goal, hurry ? body.sprint : body.walk, stop, dt, body);
       }
       return { mode: intent.mode, targetId: intent.targetId, struck: false, reason: intent.reason };
     },

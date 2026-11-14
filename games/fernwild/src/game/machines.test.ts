@@ -9,6 +9,8 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
 import { burrowed, creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
+import { editorLayers } from "../editorLayers";
+import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { survivorView } from "./survivor";
 
 /** Wildwire's machine instincts, played in the real game: tricks, stealth, helpers and the Hivemind's signal. */
@@ -226,4 +228,25 @@ test("a wild Thermite Beetle lies burrowed with only its shell showing, and burs
     up = !burrowed(g.ctx, beetle);
   }
   expect(up).toBe(true);
+});
+
+test("Lampjaws spawn and stay in deep water off the beaches; Arcwires spawn in the rivers and swim them", () => {
+  // A fresh game: the zones near the start fill on the first step, the deep water off the beach among them.
+  const g = runner();
+  tick(g, 0.1);
+  const zone = (prefix: string) => markersOfKind(editorLayers, "creature_spawn").find((marker) => marker.id.startsWith(prefix))!;
+  const anglers = g.ctx.scene.entity.list().filter((entity) => entity.name === "lampjaw");
+  expect(anglers.length).toBeGreaterThan(0);
+  tick(g, 10);
+  for (const angler of g.ctx.scene.entity.list().filter((entity) => entity.name === "lampjaw")) {
+    const [x, y, z] = angler.position;
+    expect(g.ctx.world.groundHeightAt(x, z)).toBeLessThan(-0.3);
+    expect(y).toBeCloseTo(-0.6, 1);
+  }
+  const river = zone("river_");
+  g.ui.tryInvoke("cheat", { teleport: [river.position.x + 50, river.position.z + 50, 0] });
+  for (let i = 0; i < 20; i += 1) tick(g, 0.5);
+  const eels = g.ctx.scene.entity.list().filter((entity) => entity.name === "arcwire" && Math.hypot(entity.position[0] - river.position.x, entity.position[2] - river.position.z) < 30);
+  expect(eels.length).toBeGreaterThan(0);
+  expect(eels.some((eel) => g.ctx.world.groundHeightAt(eel.position[0], eel.position[2]) < -0.3)).toBe(true);
 });

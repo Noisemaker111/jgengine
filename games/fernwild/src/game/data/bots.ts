@@ -1,3 +1,4 @@
+import type { CreatureTerrain } from "@jgengine/core/ai/creatureDriver";
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
 
 /**
@@ -128,6 +129,8 @@ export interface BotProfile {
   patches?: number;
   /** Uploaded on Guard Zone, it powers every fuelled station within `radius`: they never burn out. */
   powers?: { radius: number };
+  /** Where it may go: land (default), amphibious (swims rivers and shallows too) or water only. */
+  terrain?: CreatureTerrain;
   /** What it is, in a line, for the dossier. */
   role: string;
 }
@@ -144,14 +147,14 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   lodestone: P("pack", ["loudest", "attacker"], "Magnetic wolves. Packmates charge each other's coils, and a bite can yank a metal tool from your hand.", { trick: { kind: "disarm", chance: 0.2 }, pack: { radius: 12, per: 0.2, max: 4 } }),
   mirrorcat: P("ambush", ["weakest"], "Light-bending hunter that waits unseen and strikes whatever is weakest. Rigged, it hides its rider: an invisible scout.", { cloak: true }),
   watchwing: P("skittish", [], "An owl-shaped sentry drone, out at night and perched still by day. Perched at your base on Guard Zone, it pings hostiles.", { sentry: { radius: 40 }, nocturnal: true }),
-  arcwire: P("aggressive", ["loudest"], "River eel whose bite arcs through everything nearby, twice as hard through water. Uploaded on Guard Zone, it powers your stations.", { trick: { kind: "chain", radius: 6, share: 0.5 }, powers: { radius: 12 } }),
+  arcwire: P("aggressive", ["loudest"], "River eel whose bite arcs through everything nearby, twice as hard through water. Uploaded on Guard Zone, it powers your stations.", { trick: { kind: "chain", radius: 6, share: 0.5 }, powers: { radius: 12 }, terrain: "amphibious" }),
   klepto: P("aggressive", ["richest"], "Glitchy teleporter. Grabs one stack from your bag and blinks away to its nest.", { trick: { kind: "steal", blink: 30 } }),
   rootkit: P("ambush", ["loudest"], "Robots disguised as trees. Chop near one and the forest stands up.", { dormantUntilChop: { radius: 10 } }),
   thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore: only its shell shows until you cross its ground. Uploaded, it mines faster than any pick.", { burrows: true }),
   homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),
-  lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot."),
+  lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot. It never leaves the water.", { terrain: "water" }),
   hoover: P("retaliator", ["attacker"], "A huge passive vacuum leviathan. Leave it be and it leaves you be."),
   scrapper: P("aggressive", ["machines", "biggest"], "Apex hunter that tears other robots apart for parts and grows stronger with every one.", { scraps: { perKill: 0.1, max: 2 } }),
   // The wider machine ecosystem.
@@ -184,10 +187,10 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   sawbeaver: P("retaliator", ["attacker"], "Buzzsaw-toothed builder bot; uploaded, it cuts wood."),
   hivedrone: P("pack", ["attacker", "brightest"], "The Hivemind's worker drones.", { pack: { radius: 8, per: 0.1, max: 6 } }),
   heatsink: P("territorial", ["attacker"], "Radiator-finned bot that keeps forged cores at temperature."),
-  snapjaw: P("aggressive", ["loudest"], "Swamp crusher that waits in the shallows."),
-  springtoad: P("skittish", [], "Spring-loaded hopper of the swamp."),
-  siphon: P("ambush", ["weakest"], "Leech drone that siphons charge from the unwary."),
-  riptide: P("aggressive", ["loudest"], "River hunter that swims faster than you."),
+  snapjaw: P("aggressive", ["loudest"], "Swamp crusher that waits in the shallows.", { terrain: "amphibious" }),
+  springtoad: P("skittish", [], "Spring-loaded hopper of the swamp.", { terrain: "amphibious" }),
+  siphon: P("ambush", ["weakest"], "Leech drone that siphons charge from the unwary.", { terrain: "amphibious" }),
+  riptide: P("aggressive", ["loudest"], "River hunter that swims faster than you.", { terrain: "amphibious" }),
   railcrawler: P("aggressive", ["loudest"], "Segmented crawler of the caves."),
   stingvolt: P("aggressive", ["brightest"], "Scorpion bot with a shock tail."),
   wallcrawler: P("aggressive", ["weakest"], "Wall-climbing lizard bot of the caves."),

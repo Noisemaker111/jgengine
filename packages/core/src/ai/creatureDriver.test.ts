@@ -152,3 +152,33 @@ test("a light-drawn grazer walks toward a lit survivor the driver is told about"
   expect(driver.step(ctx, "m1", drawn, GRAZER, 0.1).mode).toBe("investigate");
   expect(driver.step(ctx, "m1", { ...drawn, lightOf: () => 0 }, GRAZER, 0.1).mode).not.toBe("investigate");
 });
+
+test("terrain: a land creature keeps off blocked ground, a water creature never leaves the water and swims under its surface, an amphibious one goes both ways", () => {
+  // Water east of x = 10, a surface at height 0 over a seabed at -3; dry land west of it at height 1.
+  const definition = defineGameDefinition({ name: "Shore", multiplayer: "off" });
+  const ctx = createGameContext({ definition, content: {}, player: { userId: "p1", isNew: true } });
+  ctx.scene.entity.spawn("player", { id: "p1", position: [-20, 0, 0], role: "player" });
+  const wet = (x: number) => x > 10;
+  (ctx.world as { groundHeightAt: (x: number, z: number) => number }).groundHeightAt = (x) => (wet(x) ? -3 : 1);
+  const driver = createCreatureDriver({
+    rng: () => 0.5,
+    blocked: (_ctx, x) => wet(x),
+    waterSurface: (_ctx, x) => (wet(x) ? 0 : null),
+  });
+  const swim = (id: string, start: number, terrain: "land" | "water" | "amphibious") => {
+    ctx.scene.entity.spawn("bot", { id, position: [start, wet(start) ? -0.6 : 1, 0], role: "npc" });
+    driver.add(id, [start, 0, 0]);
+    const body: CreatureBody = { walk: 4, sprint: 6, attack: null, terrain };
+    const mind = { kind: "tamed" as const, intent: { kind: "follow" as const, targetId: null, leashTo: [start < 10 ? 30 : -30, 0, 0] as [number, number, number], anchor: "home" as const } };
+    run(ctx, 8, (dt) => driver.step(ctx, id, mind, body, dt));
+    return ctx.scene.entity.get(id)!.position;
+  };
+  const walker = swim("walker", 0, "land");
+  expect(walker[0]).toBeLessThanOrEqual(10.01);
+  const fish = swim("fish", 20, "water");
+  expect(fish[0]).toBeGreaterThan(10);
+  expect(fish[1]).toBeCloseTo(-0.6, 5);
+  const frog = swim("frog", 0, "amphibious");
+  expect(frog[0]).toBeGreaterThan(20);
+  expect(frog[1]).toBeCloseTo(-0.6, 5);
+});
