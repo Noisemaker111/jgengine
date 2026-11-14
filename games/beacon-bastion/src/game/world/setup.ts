@@ -42,7 +42,8 @@ function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
       if (transformOnDeath(ctx, creep) !== null) ctx.scene.entity.vfx({ preset: "explosion", to: event.position, radius: 5, durationMs: 900, color: 0x7ab8ff });
     }
     // The bounty is a world ripple into the town's shared till, scaled by what this kill pays.
-    payBounty(ctx, event.catalogId, creep);
+    const paid = payBounty(ctx, event.catalogId, creep);
+    ctx.scene.entity.floatText({ position: [event.position[0], event.position[1] + 1.2, event.position[2]], text: `+$${paid}`, kind: "heal", scale: 0.8 });
     ctx.game.audio.play("kill", event.position);
   }
 }
