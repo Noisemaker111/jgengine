@@ -274,7 +274,17 @@ function tickRival(ctx: GameContext, state: ShiftState, dt: number): ShiftState 
   // Their scooter drowns in a canal just like yours.
   const water = waterAt(ctx, rival.position[0], rival.position[2]);
   const speed = water !== null && water.depth >= 0.45 && !water.openSea ? 3 : RIVAL_SPEED;
-  ctx.scene.entity.moveToward(RIVAL_ID, at, { speed, stopDistance: 1.6, dt });
+  // The rider steers straight at you, kinematically: a vehicle body has no walk speed of its own.
+  if (distance > 1.6) {
+    const step = Math.min(distance - 1.6, speed * dt);
+    const dx = (at[0] - rival.position[0]) / distance;
+    const dz = (at[2] - rival.position[2]) / distance;
+    const x = rival.position[0] + dx * step;
+    const z = rival.position[2] + dz * step;
+    const surface = waterAt(ctx, x, z);
+    const y = surface !== null && !surface.openSea ? Math.max(ctx.world.groundHeightAt(x, z), surface.surface - 0.5) : ctx.world.groundHeightAt(x, z);
+    ctx.scene.entity.setPose(RIVAL_ID, { position: [x, y, z], rotationY: Math.atan2(dx, dz), dt });
+  }
   if (distance > RIVAL_REACH) return { ...state, rivalGrip: Math.max(0, state.rivalGrip - dt) };
   const rivalGrip = state.rivalGrip + dt;
   if (rivalGrip < RIVAL_GRAB_SECONDS) return { ...state, rivalGrip };
@@ -591,7 +601,7 @@ function sleepRefusal(ctx: GameContext) {
   return null;
 }
 
-/** Nap upstairs until dusk: the clock jumps to half past five and the tide is out. */
+/** Nap upstairs until the doors open: the clock jumps to six and the first order is minutes away. */
 export function sleepTillDusk(ctx: GameContext): void {
   if (!nearOven(ctx)) {
     streetPlayOf(ctx).exitVehicle(ctx, true);
@@ -603,7 +613,7 @@ export function sleepTillDusk(ctx: GameContext): void {
   ctx.time.hydrate({ ...clock, now: clock.now + secondsAtHour(hours) });
   const state = shiftStore.read(ctx);
   shiftStore.write(ctx, { ...state, summary: null });
-  ctx.game.notices.push({ text: `You sleep upstairs until ${Math.floor(DUSK_HOUR)}:30. Nonna has the dough rising.`, tone: "info" });
+  ctx.game.notices.push({ text: `You sleep upstairs until ${DUSK_HOUR}:00. The ovens are hot.`, tone: "info" });
 }
 
 export function registerShift(ctx: GameContext): void {

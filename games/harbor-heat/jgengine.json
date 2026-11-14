@@ -38,8 +38,17 @@
   "suite": {
     "genres": [
       "open-world",
-      "racing"
-    ]
+      "racing",
+      "delivery"
+    ],
+    "cut": {
+      "content.item-source": "No crafting or item economy: the only items are first-aid kits and crash jackets sold at Mercato Fresco.",
+      "content.item-use": "No crafting or item economy: first aid and crash jackets are covered by the store tests.",
+      "content.recipes-reachable": "No recipes: pizzas are menu data, not crafted items.",
+      "content.placeables-place": "Nothing is placed by the player.",
+      "content.weapons-have-ammo": "High Tide Pizza has no weapons."
+    },
+    "notSimulatable": {}
   },
   "assetBuild": {
     "lods": {

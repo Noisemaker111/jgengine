@@ -70,11 +70,12 @@ describe("the tide clock", () => {
     expect(dropFloor(1.2)).toBe("rooftop");
   });
 
-  test("the shop is open dusk to midnight and the skip lands before the doors", () => {
+  test("the shop is open dusk to midnight and the skip lands as the doors open", () => {
     expect(shiftOpen(17.9)).toBe(false);
     expect(shiftOpen(18)).toBe(true);
     expect(shiftOpen(23.99)).toBe(true);
-    expect(hoursUntilDusk(0)).toBeCloseTo(17.5, 5);
-    expect(hoursUntilDusk(17.5)).toBe(24);
+    expect(hoursUntilDusk(0)).toBeCloseTo(18, 5);
+    expect(hoursUntilDusk(17.5)).toBeCloseTo(0.5, 5);
+    expect(hoursUntilDusk(18)).toBe(24);
   });
 });

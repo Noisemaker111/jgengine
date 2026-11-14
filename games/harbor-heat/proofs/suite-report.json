@@ -1,0 +1,79 @@
+{
+  "game": "harbor-heat",
+  "proofs": [
+    {
+      "file": "proofs/sim/crust-rider.proof.ts",
+      "proves": [
+        "delivery.rival-steal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/deliver-hot.proof.ts",
+      "proves": [
+        "open-world.jobs-pay",
+        "delivery.deliver-fresh"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/first-goal.proof.ts",
+      "proves": [
+        "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/scooter.proof.ts",
+      "proves": [
+        "open-world.vehicle-enter-drive"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/shift-over.proof.ts",
+      "proves": [
+        "delivery.shift-pay",
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/shop-upgrade.proof.ts",
+      "proves": [
+        "delivery.shop-upgrade"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/swap-dock.proof.ts",
+      "proves": [
+        "delivery.vehicle-swap"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tide-closes-route.proof.ts",
+      "proves": [
+        "delivery.route-changes"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tide-rush.proof.ts",
+      "proves": [
+        "racing.lap-timing",
+        "racing.opponents"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/wardens.proof.ts",
+      "proves": [
+        "open-world.pursuit"
+      ],
+      "ok": true
+    }
+  ],
+  "data": []
+}

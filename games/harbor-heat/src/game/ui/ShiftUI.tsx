@@ -257,7 +257,7 @@ export function PizzeriaBooks() {
     {
       id: "rest",
       title: "Upstairs",
-      rows: open ? [] : [{ id: "sleep", name: "Sleep till dusk", line: "Wake at 17:30 with the dough risen and the tide out.", price: 0, pick: () => commands.run("shift.sleep", {}) }],
+      rows: open ? [] : [{ id: "sleep", name: "Sleep till dusk", line: "Wake at 18:00 as the doors open and the first call rings.", price: 0, pick: () => commands.run("shift.sleep", {}) }],
     },
   ];
   return (

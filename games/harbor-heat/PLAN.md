@@ -13,43 +13,50 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 0/2 | 0 | 0 | 2 | 0 |
-| failure | 0/1 | 0 | 0 | 1 | 0 |
+| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
 | save | 0/1 | 0 | 0 | 1 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 0 | 0 | 1 | 0 |
-| content | 0/5 | 0 | 0 | 5 | 0 |
-| racing | 0/5 | 0 | 0 | 5 | 0 |
-| open-world | 0/3 | 0 | 0 | 3 | 0 |
-| **total** | **0/20** | 0 | 0 | 20 | 0 |
+| content | 0/0 | 0 | 0 | 0 | 5 |
+| racing | 2/5 | 0 | 0 | 3 | 0 |
+| open-world | 3/3 | 0 | 0 | 0 | 0 |
+| delivery | 6/6 | 0 | 0 | 0 | 0 |
+| **total** | **13/21** | 0 | 0 | 8 | 5 |
 
 <details><summary>Every required entry</summary>
 
-Genres: open-world, racing. 0/20 proven · 20 missing.
+Genres: open-world, racing, delivery. 13/21 proven · 5 cut · 8 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
-| `onboarding.first-goal` | missing | A new game shows a first goal, and the first player action toward it advances it. |  |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
 | `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
-| `failure.lose-and-recover` | missing | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. |  |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/shift-over.proof.ts |
 | `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
-| `content.item-source` | missing | Every item can be obtained by playing. | no content sheet (proofs/content.ts) |
-| `content.item-use` | missing | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no content sheet (proofs/content.ts) |
-| `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
-| `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
-| `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
+| `content.item-source` | cut | Every item can be obtained by playing. | No crafting or item economy: the only items are first-aid kits and crash jackets sold at Mercato Fresco. |
+| `content.item-use` | cut | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | No crafting or item economy: first aid and crash jackets are covered by the store tests. |
+| `content.recipes-reachable` | cut | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | No recipes: pizzas are menu data, not crafted items. |
+| `content.placeables-place` | cut | Every item that says it can be placed can be placed. | Nothing is placed by the player. |
+| `content.weapons-have-ammo` | cut | Every weapon that fires has obtainable ammo, or needs none. | High Tide Pizza has no weapons. |
 | `racing.drive-handling` | missing | Accelerate, brake and steer a vehicle that handles by its physics. |  |
-| `racing.lap-timing` | missing | Laps and checkpoints are timed. |  |
-| `racing.opponents` | missing | Opponents race and finish in an order. |  |
+| `racing.lap-timing` | proven | Laps and checkpoints are timed. | proofs/sim/tide-rush.proof.ts |
+| `racing.opponents` | proven | Opponents race and finish in an order. | proofs/sim/tide-rush.proof.ts |
 | `racing.unlock-vehicles-tracks` | missing | Results unlock new vehicles or tracks. |  |
 | `racing.crash-recover` | missing | A crash or wrong way is recoverable. |  |
-| `open-world.vehicle-enter-drive` | missing | Walk to a vehicle, get in and drive. |  |
-| `open-world.jobs-pay` | missing | Take a job, do it, get paid. |  |
-| `open-world.pursuit` | missing | Breaking the rules brings pursuit the player can escape. |  |
+| `open-world.vehicle-enter-drive` | proven | Walk to a vehicle, get in and drive. | proofs/sim/scooter.proof.ts |
+| `open-world.jobs-pay` | proven | Take a job, do it, get paid. | proofs/sim/deliver-hot.proof.ts |
+| `open-world.pursuit` | proven | Breaking the rules brings pursuit the player can escape. | proofs/sim/wardens.proof.ts |
+| `delivery.deliver-fresh` | proven | Load an order, carry it to its customer and get paid by how fresh it arrives. | proofs/sim/deliver-hot.proof.ts |
+| `delivery.route-changes` | proven | The map changes under the player (water, weather, closures) and a route that worked stops working. | proofs/sim/tide-closes-route.proof.ts |
+| `delivery.vehicle-swap` | proven | Mid-run the player swaps to a vehicle that suits the changed map, keeping the orders. | proofs/sim/swap-dock.proof.ts |
+| `delivery.shop-upgrade` | proven | Earnings buy upgrades that change capacity, freshness or pay. | proofs/sim/shop-upgrade.proof.ts |
+| `delivery.rival-steal` | proven | Rivals can take an order the player is carrying unless the player shakes them. | proofs/sim/crust-rider.proof.ts |
+| `delivery.shift-pay` | proven | A shift closes and settles against a target with a stated consequence. | proofs/sim/shift-over.proof.ts |
 
 </details>
 <!-- /suite-score -->

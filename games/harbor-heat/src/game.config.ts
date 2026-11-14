@@ -15,12 +15,16 @@ import { createElement } from "@jgengine/core/ui/jsx";
 import { loop } from "./loop";
 import { residentBoardStore } from "./game/world/residents";
 import { physics, world } from "./world";
-import { drivingStore, RIVAL_RACER_ID, raceStore } from "./game/streetPlay";
+import { drivingStore, RIVAL_RACER_ID, raceStore, streetPlayOf } from "./game/streetPlay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
+import { pizzeriaStore, shiftStore } from "./game/pizza/shift";
+import { tideStore } from "./game/tide/tideRuntime";
+import { nightStore } from "./game/pizza/nights";
+import { cityOf } from "./game/cityRuntime";
 import { DAY_SECONDS, secondsAtHour } from "./game/clock";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
@@ -28,6 +32,39 @@ function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | n
   const value = wantedStore.peek(ctx) as { heat?: unknown; stars?: unknown } | null | undefined;
   if (value == null || typeof value.heat !== "number" || typeof value.stars !== "number") return null;
   return { heat: value.heat, stars: value.stars };
+}
+
+/** The pizza loop as probe readings: what a suite proof or a flow asserts a shift did. */
+function pizzaProbe(ctx: GameContext, vehicleId: string | null | undefined) {
+  const shift = shiftStore.read(ctx);
+  const shop = pizzeriaStore.read(ctx);
+  const tide = tideStore.read(ctx);
+  const medium = vehicleId == null ? null : vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "")?.medium;
+  const goal = cityOf(ctx).missionView();
+  return {
+    cash: ctx.game.economy.balance(ctx.player.userId, "cash"),
+    bag: shift.bag.length,
+    board: shift.board.length,
+    delivered: shop.deliveries,
+    takings: shift.takings,
+    lost: shift.lost,
+    shiftOver: shift.summary === null ? 0 : 1,
+    quotaMet: shift.summary?.metQuota === true ? 1 : 0,
+    oven: shop.oven,
+    toppings: shop.toppings,
+    debt: shop.debt,
+    swaps: shop.swaps ?? 0,
+    hullDrops: shop.hullDrops ?? 0,
+    tideStage: tide?.stageIndex ?? 0,
+    open: tide?.open === true ? 1 : 0,
+    // 0 on foot, 1 wheels, 2 a hull, 3 the blimp: what the swap docks and the tide change.
+    medium: medium === "road" ? 1 : medium === "water" ? 2 : medium === "air" ? 3 : 0,
+    // The engine is drowned or the hull aground (aircraft read their own stall here).
+    stuck: streetPlayOf(ctx).telemetry().stalled ? 1 : 0,
+    chapterSteps: goal === null ? 0 : goal.step,
+    storyAct: Number(cityOf(ctx).fact("story.act") ?? 0),
+    nightScore: nightStore.read(ctx).score,
+  };
 }
 
 export const game = defineGame({
@@ -214,12 +251,16 @@ export const game = defineGame({
         }
       }
       return {
-        driving: vehicleId === null ? 0 : 1,
+        driving: vehicleId == null ? 0 : 1,
         carX: car?.x ?? 0,
         carZ: car?.z ?? 0,
         carDistance: car?.distance ?? -1,
         // A circuit race in progress, and one that ended because the player left the car.
         racing: race?.active === true ? 1 : 0,
+        raceCheckpoint: race?.checkpoint ?? 0,
+        raceTime: race?.timeSec ?? 0,
+        raceFinished: race?.finished === true ? 1 : 0,
+        racePosition: race?.position ?? 0,
         raceForfeit: race?.forfeit != null ? 1 : 0,
         rivalOnScene: ctx.scene.entity.get(RIVAL_RACER_ID) === null ? 0 : 1,
         x: entity?.position[0] ?? 0,
@@ -233,6 +274,7 @@ export const game = defineGame({
         wave: convoySnapshot(ctx)?.wave ?? 0,
         // The run is stopped behind the pause phone: a flow tells "never paused" from "paused then resumed".
         paused: sessionStore.read(ctx).paused ? 1 : 0,
+        ...pizzaProbe(ctx, vehicleId),
       };
     },
   },

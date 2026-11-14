@@ -12,8 +12,8 @@
 /** When the pizzeria takes orders: dusk to midnight. */
 export const SHIFT_START_HOUR = 18;
 export const SHIFT_END_HOUR = 24;
-/** The clock the "sleep till dusk" skip lands on, half an hour before the doors open. */
-export const DUSK_HOUR = 17.5;
+/** The clock the "sleep till dusk" skip lands on: the minute the doors open. */
+export const DUSK_HOUR = 18;
 
 /** The tide curve as (hour, level) knots; between knots the level runs linearly. */
 const TIDE_KNOTS: readonly (readonly [number, number])[] = [
@@ -53,7 +53,7 @@ export interface TideStage {
 export const TIDE_STAGES: readonly TideStage[] = [
   { id: "low", index: 0, label: "Low tide", from: -1, note: "The streets are dry. Scooter weather." },
   { id: "wet", index: 1, label: "Wet feet", from: 0.1, note: "The docks are wetting. Splashing soaks the boxes." },
-  { id: "canal", index: 2, label: "Canal hour", from: 0.55, note: "Port Carmine is a canal now. Scooters stall there; boats float." },
+  { id: "canal", index: 2, label: "Canal hour", from: 0.45, note: "Port Carmine is a canal now. Scooters stall there; boats float." },
   { id: "high", index: 3, label: "High water", from: 1.1, note: "The boulevard has gone under. Swap to a boat at the docks." },
   { id: "king", index: 4, label: "King tide", from: 1.65, note: "Everything but the Heights is water. Boats, bridges and the blimp line only." },
 ];
@@ -153,7 +153,7 @@ export function shiftOpen(hour: number): boolean {
   return hour >= SHIFT_START_HOUR && hour < SHIFT_END_HOUR;
 }
 
-/** Game hours from `hour` until the next dusk skip lands (at least a little, at most a day). */
+/** Game hours from `hour` until the doors next open (a whole day when they just did). */
 export function hoursUntilDusk(hour: number): number {
   const ahead = (DUSK_HOUR - hour + 24) % 24;
   return ahead < 0.05 ? 24 : ahead;

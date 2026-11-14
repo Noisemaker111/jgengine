@@ -60,6 +60,7 @@ export const SUITE_GENRES: readonly SuiteGenre[] = [
   { id: "life-sim", label: "Life sim: needs, work, relationships, a home" },
   { id: "racing", label: "Racing: drive, race opponents, unlock cars and tracks" },
   { id: "open-world", label: "Open world: travel, vehicles, jobs across a map" },
+  { id: "delivery", label: "Delivery: carry perishable orders across a changing map, paid by how they arrive" },
   { id: "online", label: "Online: a shared world other players join" },
 ];
 
@@ -500,6 +501,25 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
   },
   { id: "open-world.jobs-pay", genres: ["open-world"], by: "sim", does: "Take a job, do it, get paid.", proof: "Play takes a job and completes it; money rises." },
   { id: "open-world.pursuit", genres: ["open-world"], by: "sim", does: "Breaking the rules brings pursuit the player can escape.", proof: "Setup raises heat; play escapes and it falls." },
+
+  // Delivery.
+  {
+    id: "delivery.deliver-fresh", genres: ["delivery"], by: "sim",
+    does: "Load an order, carry it to its customer and get paid by how fresh it arrives.",
+    proof: "Setup loads an order beside its customer; play hands it over and money rises with a freshness-scaled tip.",
+    depth: {
+      find: "The first order is waiting where the player starts.",
+      improves: "Better kit keeps orders fresh longer and better stock raises every tip.",
+      feeds: ["delivery.shop-upgrade", "delivery.shift-pay"],
+      repeat: "New customers with their own rules open as reputation grows.",
+      fails: "A late, cold or damaged order pays the price and no tip.",
+    },
+  },
+  { id: "delivery.route-changes", genres: ["delivery"], by: "sim", does: "The map changes under the player (water, weather, closures) and a route that worked stops working.", proof: "Setup puts the player on a route; play waits as the world changes and a vehicle or road reading turns from usable to blocked." },
+  { id: "delivery.vehicle-swap", genres: ["delivery"], by: "sim", does: "Mid-run the player swaps to a vehicle that suits the changed map, keeping the orders.", proof: "Setup puts the player at a swap point with orders aboard; play swaps and the vehicle reading changes while the orders stay." },
+  { id: "delivery.shop-upgrade", genres: ["delivery"], by: "sim", does: "Earnings buy upgrades that change capacity, freshness or pay.", proof: "Setup gives money; play buys an upgrade and its reading rises." },
+  { id: "delivery.rival-steal", genres: ["delivery"], by: "sim", does: "Rivals can take an order the player is carrying unless the player shakes them.", proof: "Setup loads several orders and brings a rival close; play waits and the order count drops while a lost reading rises." },
+  { id: "delivery.shift-pay", genres: ["delivery"], by: "sim", does: "A shift closes and settles against a target with a stated consequence.", proof: "Setup runs the clock to the shift's end; play waits through it and a summary with the target and its outcome appears." },
 
   // Online.
   {

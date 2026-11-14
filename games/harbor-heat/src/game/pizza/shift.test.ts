@@ -145,8 +145,8 @@ describe("a night at Vell's", () => {
     expect(ctx.game.commands.run("shift.sleep", {}).status).not.toBe("rejected");
     const home = ctx.scene.entity.get(ctx.player.userId)!.position;
     expect(Math.hypot(home[0] - OVEN[0], home[2] - OVEN[1])).toBeLessThan(5);
-    expect(ctx.time.calendar().hour).toBe(17);
-    expect(ctx.time.calendar().minute).toBe(30);
+    expect(ctx.time.calendar().hour).toBe(18);
+    expect(ctx.time.calendar().minute).toBe(0);
     expect(shiftStore.read(ctx).summary).toBeNull();
   });
 
