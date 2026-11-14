@@ -31,6 +31,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/first-goal.proof.ts",
+      "proves": [
+        "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/save-continue.proof.ts",
       "proves": [
         "save.continue"
@@ -38,5 +45,36 @@
       "ok": true
     }
   ],
-  "data": []
+  "data": [
+    {
+      "id": "content.item-source",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.item-use",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.recipes-reachable",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.placeables-place",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.weapons-have-ammo",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "progression.runway",
+      "ok": true,
+      "problems": []
+    }
+  ]
 }

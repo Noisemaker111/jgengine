@@ -16,34 +16,34 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 0/2 | 0 | 0 | 2 | 0 |
+| onboarding | 1/2 | 0 | 0 | 1 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
 | save | 1/1 | 0 | 0 | 0 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
 | menu | 0/1 | 0 | 0 | 1 | 0 |
-| progression | 0/1 | 0 | 0 | 1 | 0 |
-| content | 0/5 | 0 | 0 | 5 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
+| content | 5/5 | 0 | 0 | 0 | 0 |
 | extraction | 4/4 | 0 | 0 | 0 | 0 |
-| **total** | **6/16** | 0 | 0 | 10 | 0 |
+| **total** | **13/16** | 0 | 0 | 3 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: extraction. 6/16 proven · 10 missing.
+Genres: extraction. 13/16 proven · 3 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
-| `onboarding.first-goal` | missing | A new game shows a first goal, and the first player action toward it advances it. |  |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
 | `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/caught.proof.ts |
 | `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
-| `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
-| `content.item-source` | missing | Every item can be obtained by playing. | no content sheet (proofs/content.ts) |
-| `content.item-use` | missing | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no content sheet (proofs/content.ts) |
-| `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
-| `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
-| `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
+| `content.item-source` | proven | Every item can be obtained by playing. | content check |
+| `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
+| `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
+| `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
+| `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
 | `extraction.enter-run` | proven | Go into a run with chosen gear. | proofs/sim/enter-run.proof.ts |
 | `extraction.carry-limit` | proven | What can be carried out is limited by space or weight. | proofs/sim/carry-limit.proof.ts |
 | `extraction.extract-bank` | proven | Reaching an exit banks what was carried. | proofs/sim/extract-bank.proof.ts |
