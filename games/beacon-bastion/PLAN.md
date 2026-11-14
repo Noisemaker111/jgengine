@@ -120,15 +120,20 @@ Genres: tower-defense. 0/17 proven · 17 missing.
   hiring board; an RTS camera that frames the street (pan with arrows/edge, zoom out for both ends);
   a denser town (more buildings, parked cars, signed DINER/SCHOOL/LIBRARY/BAKERY/HARDWARE); tech
   walks in lanes so phones spread; the Data Center is a tall narrow tower; a second map (Downtown
-  Grid, `src/downtown.scene.json`). 176 game tests green; check-types clean.
-- The second map is interim: `src/maps.ts` picks the scene document per boot (`?map=`, stored pick,
-  `DND_MAP` for headless) and the page reloads onto another map, because `defineGame` mounts one scene
-  document and terrain statically. Lawn Order (ember-command) hit the same wall, so the owner is the
-  engine: a scene set on `defineGame` plus a runtime switch that rebuilds scene, terrain and the world
-  spec's slots. Build that upstream with tests, then replace `maps.ts`/`editorLayers.ts` selection with
-  it here and let ember-command adopt it. Downtown authoring today: edit through a copy (the editor CLI
-  saves to `editor.scene.json`).
-- Downtown is harder: the scripted Main Street crew reaches the finale and loses it
-  (`DND_MAP=downtown BEACON_TRACE=1 bun test src/game/balance.test.ts`); retune or lengthen its roads.
+  Grid, `src/downtown.scene.json`). 178 game tests green; check-types clean.
+- Maps are an engine scene set: `src/maps.ts` declares `createSceneSet` (`@jgengine/core/editor/sceneSet`)
+  over `editor.scene.json` and `downtown.scene.json`; `game.config.ts` wraps the game in `withSceneSet`,
+  and the shell rebuilds the game in place (scene, terrain, world spec, roads, plots) when the menu's
+  Map button switches it. No page reload. The JSX host now discards nested Rune surfaces on a keyed
+  remount (`Host.discard`), which the switch needed. Edit a map with the editor CLI's
+  `--scene downtown.scene.json --save`; a map keeps its own (empty) catalogs, the towers table lives in
+  `editor.scene.json`.
+- Lawn Order (ember-command) can adopt the same scene set for its maps: declare the set, wrap
+  `defineGame` in `withSceneSet`, author each map with `--scene`.
+- Downtown is the harder map by tougher tech (`MAPS.downtown.toughness`, 1.06x health on ordinary
+  tech) and two long roads; its west road now S-bends into the town hall and its plots sit on inside
+  corners. The scripted crew holds it only on the corners (`balance.test.ts`, about 2 focus left);
+  the same crew in plot-number order falls. The margin is thin:
+  1.08x toughness loses the finale.
 - Shots: /tmp/claude-0/dnd-cam2-finale.png (Main Street, new camera), dnd-downtown-mid.png,
   dnd-polish-close.png, dnd-result.png, dnd-title.png.

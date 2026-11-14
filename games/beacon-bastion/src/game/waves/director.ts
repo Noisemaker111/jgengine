@@ -7,6 +7,7 @@ import { advancePathFollow, createPathFollow, type PathFollowState } from "@jgen
 import { vec3 } from "@jgengine/core/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
+import { activeMap, MAPS } from "../../maps";
 import { councilScale, difficultyOf } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";
 import { towerDef } from "../entities/towers/catalog";
@@ -128,7 +129,7 @@ export function spawnRaider(ctx: GameContext, unit: string, route: string, from?
   const position: [number, number, number] = [path.position[0], path.position[1] + lift, path.position[2]];
   ctx.scene.entity.spawn(unit, { id: instanceId, position, role: "npc" });
   // Bosses carry their own authored health; only the ordinary tech ramps.
-  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? 1 : 1 + WAVE_HEALTH_RAMP * Math.max(0, session.encounter.view().wave - 1);
+  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? 1 : MAPS[activeMap()].toughness * (1 + WAVE_HEALTH_RAMP * Math.max(0, session.encounter.view().wave - 1));
   const health = Math.round(def.health * difficulty.health * ramp);
   ctx.scene.entity.stats.set(instanceId, "health", { max: health, current: health });
   const runtime: CreepRuntime = {

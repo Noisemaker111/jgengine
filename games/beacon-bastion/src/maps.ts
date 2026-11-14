@@ -15,11 +15,13 @@ export interface MapDef {
   id: MapId;
   label: string;
   detail: string;
+  /** Health multiplier on the ordinary tech (bosses keep their authored health). */
+  toughness: number;
 }
 
 export const MAPS: Record<MapId, MapDef> = {
-  "main-street": { id: "main-street", label: "Main Street", detail: "One long winding street and a short side street to the town hall" },
-  downtown: { id: "downtown", label: "Downtown Grid", detail: "Harder: square blocks and two long entrances, west and north, meeting at the town hall" },
+  "main-street": { id: "main-street", label: "Main Street", detail: "One long winding street and a short side street to the town hall", toughness: 1 },
+  downtown: { id: "downtown", label: "Downtown Grid", detail: "Harder: square blocks and two long entrances, west and north, meeting at the town hall", toughness: 1.06 },
 };
 
 export const MAP_IDS: readonly MapId[] = ["main-street", "downtown"];

@@ -9,7 +9,7 @@ import { session } from "./session";
 import { beaconRunner } from "./testing";
 import { tickWaves } from "./waves/director";
 import { BUILD_PLOTS } from "./world/path";
-import { activeMap } from "../maps";
+import type { MapId } from "../maps";
 import { restartDefense } from "./world/setup";
 
 /**
@@ -165,11 +165,23 @@ const MIXED: Plan = {
   },
   upgrades: true,
   // The corners where the street doubles back first, then the side street's mouth, then the long legs.
-  plots: activeMap() === "downtown"
-    ? ["plot-2", "plot-4", "plot-7", "plot-8", "plot-11", "plot-6", "plot-3", "plot-5", "plot-9", "plot-10", "plot-1"]
-    : ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-7", "plot-3", "plot-11", "plot-2", "plot-9", "plot-1"],
+  plots: ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-7", "plot-3", "plot-11", "plot-2", "plot-9", "plot-1"],
   rites: true,
 };
+
+/** Downtown's corners: the inside bends of the west road, the S-bend where both roads meet, then the north road. */
+const DOWNTOWN_PLOTS = ["plot-3", "plot-7", "plot-2", "plot-6", "plot-11", "plot-9", "plot-8", "plot-4", "plot-5", "plot-1", "plot-10"];
+
+/** Play `run` with the town switched to `map`, then switch back to Main Street. */
+async function onMap<T>(map: MapId, run: () => T): Promise<T> {
+  const { game } = await import("../game.config");
+  game.scenes.build(map);
+  try {
+    return run();
+  } finally {
+    game.scenes.build("main-street");
+  }
+}
 
 describe("pacing", () => {
   test("a town that hires nobody loses focus early", () => {
@@ -198,6 +210,14 @@ describe("pacing", () => {
     });
     expect(ignored.wave * 100 + ignored.lives).toBeLessThan(answered.wave * 100 + answered.lives);
   }, 60_000);
+
+  test("Downtown: the same crew holds its tougher tech only when set on the corners", async () => {
+    const corners = await onMap("downtown", () => playDefense({ ...MIXED, plots: DOWNTOWN_PLOTS }));
+    const inOrder = await onMap("downtown", () => playDefense({ ...MIXED, plots: undefined }));
+    expect(corners.held).toBe(true);
+    expect(corners.lives).toBeLessThan(10);
+    expect(inOrder.held).toBe(false);
+  }, 120_000);
 
   test("Overtime is harder than Full-Time for the same crew", () => {
     const overtime = playDefense(MIXED, "overtime");

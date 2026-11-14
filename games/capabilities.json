@@ -10123,6 +10123,16 @@
       "intent": "classify an editor-visible object as expose/bake/reject with a diagnostic"
     },
     {
+      "id": "scene-set",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/editor/sceneSet",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "several authored scene documents per game with a live, switchable active scene"
+    },
+    {
       "id": "scene-swap",
       "packages": [
         "@jgengine/core"

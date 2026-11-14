@@ -130,6 +130,15 @@ export function saveSceneDocument(gameId: string, document: EditorDocument, game
   return { ok: true, saved: path, derivedSkipped: authored.derivedSkipped };
 }
 
+/**
+ * The game's catalogs seed every editor session, but a non-default scene (a map) reads them from the
+ * default document at runtime. Unless the batch edited them, keep the scene file's own catalogs so a
+ * `--scene` save does not copy the game's tables into the map. @internal
+ */
+export function keepSceneCatalogs(document: EditorDocument, seeded: EditorDocument["catalogs"], own: EditorDocument["catalogs"]): EditorDocument {
+  return JSON.stringify(document.catalogs) === JSON.stringify(seeded) ? { ...document, catalogs: own } : document;
+}
+
 async function main(argv: string[]): Promise<number> {
   if (argv.includes("--help") || argv.includes("-h")) {
     printHelp();
@@ -178,6 +187,8 @@ async function main(argv: string[]): Promise<number> {
     catalogs: catalogs.catalogs,
   });
 
+  const seededCatalogs = session.getState().document.catalogs;
+
   if (rpcSources.length > 0) {
     for (const rpcSource of rpcSources) {
       const payload = await loadRpcPayload(rpcSource);
@@ -206,7 +217,9 @@ async function main(argv: string[]): Promise<number> {
       }
     }
     if (save) {
-      const result = saveSceneDocument(gameId, session.getState().document, undefined, sceneFile);
+      const edited = session.getState().document;
+      const document = sceneFile === DEFAULT_SCENE_FILE ? edited : keepSceneCatalogs(edited, seededCatalogs, layers.document.catalogs);
+      const result = saveSceneDocument(gameId, document, undefined, sceneFile);
       console.log(JSON.stringify(result, null, 2));
       if (!result.ok) {
         dispose();

@@ -6,7 +6,7 @@ import { join } from "node:path";
 
 import { createEmptyEditorDocument, normalizeEditorLayers, withDerivedEditorLayers, type EditorEnvironment } from "@jgengine/core/editor/index";
 
-import { parseEditorCliArgs, saveSceneDocument, validSceneFile } from "./cli";
+import { keepSceneCatalogs, parseEditorCliArgs, saveSceneDocument, validSceneFile } from "./cli";
 
 const cliEntry = join(import.meta.dir, "cli.ts");
 const repoRoot = join(import.meta.dir, "../../../..");
@@ -110,6 +110,14 @@ describe("--scene: a game's other scene documents", () => {
     expect(JSON.parse(readFileSync(join(src, "downtown.scene.json"), "utf8")).markers[0].id).toBe("spawn");
     expect(readFileSync(join(src, "editor.scene.json"), "utf8")).toBe("main scene bytes\n");
     expect(saveSceneDocument("demo", document, root, "../escape.scene.json").ok).toBe(false);
+  });
+
+  test("a map keeps its own catalogs unless the batch edited the seeded ones", () => {
+    const seeded = [{ id: "towers", entries: [{ id: "a", meta: { cost: 5 } }] }] as unknown as ReturnType<typeof createEmptyEditorDocument>["catalogs"];
+    const document = { ...createEmptyEditorDocument(), catalogs: seeded };
+    expect(keepSceneCatalogs(document, seeded, []).catalogs).toEqual([]);
+    const edited = { ...document, catalogs: [{ id: "towers", entries: [{ id: "a", meta: { cost: 9 } }] }] } as typeof document;
+    expect(keepSceneCatalogs(edited, seeded, []).catalogs).toBe(edited.catalogs);
   });
 });
 

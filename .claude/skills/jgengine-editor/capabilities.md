@@ -141,6 +141,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
 
+## scene-set — several authored scene documents per game with a live, switchable active scene
+
+- `SceneSetEntry` (interface) · `import { SceneSetEntry } from "@jgengine/core/editor/sceneSet"`
+
 ## simulation-inspector — author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
 
 - `SimulationInspector` (function) · `import { SimulationInspector } from "@jgengine/editor/SimulationInspector"`

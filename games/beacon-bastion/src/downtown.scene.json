@@ -59,7 +59,7 @@
       "position": {
         "x": -7,
         "y": 0,
-        "z": -8
+        "z": 1
       },
       "label": "Sidewalk plot 3",
       "meta": {
@@ -72,7 +72,7 @@
       "position": {
         "x": -17,
         "y": 0,
-        "z": 2
+        "z": -4
       },
       "label": "Sidewalk plot 4",
       "meta": {
@@ -83,7 +83,7 @@
       "id": "plot-5",
       "kind": "prop",
       "position": {
-        "x": 0,
+        "x": 2,
         "y": 0,
         "z": 11
       },
@@ -96,7 +96,7 @@
       "id": "plot-6",
       "kind": "prop",
       "position": {
-        "x": 2,
+        "x": 9,
         "y": 0,
         "z": 1
       },
@@ -111,7 +111,7 @@
       "position": {
         "x": 18,
         "y": 0,
-        "z": -5
+        "z": 4
       },
       "label": "Sidewalk plot 7",
       "meta": {
@@ -137,7 +137,7 @@
       "position": {
         "x": -1,
         "y": 0,
-        "z": 19
+        "z": 29
       },
       "label": "Sidewalk plot 9",
       "meta": {
@@ -338,9 +338,9 @@
       "id": "building-11",
       "kind": "building",
       "position": {
-        "x": 24,
+        "x": 26,
         "y": 0,
-        "z": -9.5
+        "z": -12
       },
       "rotationY": 0,
       "label": "House5 11",
@@ -473,7 +473,7 @@
       "id": "building-20",
       "kind": "building",
       "position": {
-        "x": 7.5,
+        "x": 5.5,
         "y": 0,
         "z": -8.5
       },
@@ -683,9 +683,9 @@
       "id": "building-lamp-4",
       "kind": "building",
       "position": {
-        "x": 7.5,
+        "x": 2,
         "y": 0,
-        "z": 2.7
+        "z": 3
       },
       "rotationY": 0,
       "label": "Street lamp 4",
@@ -698,9 +698,9 @@
       "id": "building-lamp-5",
       "kind": "building",
       "position": {
-        "x": -2.7,
+        "x": -1,
         "y": 0,
-        "z": 32
+        "z": 19
       },
       "rotationY": -1.571,
       "label": "Street lamp 5",
@@ -743,9 +743,9 @@
       "id": "building-lamp-8",
       "kind": "building",
       "position": {
-        "x": 18.7,
+        "x": 18,
         "y": 0,
-        "z": 6
+        "z": -1
       },
       "rotationY": 1.571,
       "label": "Street lamp 8",
@@ -808,6 +808,16 @@
         },
         {
           "x": 14,
+          "y": 0,
+          "z": -5
+        },
+        {
+          "x": 22,
+          "y": 0,
+          "z": -5
+        },
+        {
+          "x": 22,
           "y": 0,
           "z": 0
         },
