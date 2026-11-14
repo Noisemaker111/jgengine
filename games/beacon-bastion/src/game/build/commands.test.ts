@@ -9,8 +9,9 @@ import { session } from "../session";
 import { advanceKeep, beaconRunner } from "../testing";
 import { BUILD_PLOTS } from "../world/path";
 
-const archer = TOWER_CATALOG.tower_archer!;
-const cannon = TOWER_CATALOG.tower_cannon!;
+/** The first three hiring-board slots: Barista (instant), Plumber, Farmer. */
+const archer = TOWER_CATALOG.worker_barista!;
+const cannon = TOWER_CATALOG.worker_plumber!;
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -56,7 +57,7 @@ describe("tower.build on plots", () => {
   });
 
   test("an empty plot with nothing selected still rejects, and says why", () => {
-    expect(runner.ui.tryInvoke("tower.build", { point: plotPoint(1) })).toEqual({ status: "rejected", reason: "no-tower-selected", message: "Pick a tower first" });
+    expect(runner.ui.tryInvoke("tower.build", { point: plotPoint(1) })).toEqual({ status: "rejected", reason: "no-tower-selected", message: "Pick a worker to hire first" });
     expect(occupant(1)).toBeNull();
   });
 
@@ -71,7 +72,7 @@ describe("tower.build on plots", () => {
 test("a refused build shows its message as a deny notice in the shared feed", () => {
   const detach = attachRefusalNotices(runner.ctx.game.events, runner.ctx.game.notices, { localUserId: () => runner.ctx.player.userId });
   runner.ui.tryInvoke("tower.build", { point: plotPoint(1) });
-  expect(runner.ctx.game.notices.list().at(-1)).toMatchObject({ text: "Pick a tower first", tone: "deny" });
+  expect(runner.ctx.game.notices.list().at(-1)).toMatchObject({ text: "Pick a worker to hire first", tone: "deny" });
   detach();
 });
 
@@ -106,7 +107,7 @@ describe("sellTower (keybind)", () => {
     runner.ui.invoke("sellTower", { instanceId: first });
     const second = build(3, 0);
     expect(second).not.toBe(first);
-    expect(world().instance(second)?.kind).toBe("tower_frost");
+    expect(world().instance(second)?.kind).toBe("worker_farmer");
   });
 });
 
@@ -121,17 +122,18 @@ describe("upgradeTower (keybind)", () => {
 
   test("rejects without enough gold, at the fork, and once mastered", () => {
     const id = build(2, 0);
-    expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "cost", message: expect.stringMatching(/^Rank II needs \d+ more gold$/) });
+    world().set("keep.gold", 10);
+    expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "cost", message: expect.stringMatching(/^Journeyman Plumber needs \d+ more gold$/) });
     world().set("keep.gold", 10_000);
     runner.ui.invoke("upgradeTower", { instanceId: id });
     runner.ui.invoke("upgradeTower", { instanceId: id });
     expect(towerLevel(world(), id)).toBe(3);
     // The key never picks a path for the player.
     expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "choose-branch" });
-    runner.ui.invoke("beacon.act", { action: "tower_cannon:mortar:1", target: id });
+    runner.ui.invoke("beacon.act", { action: "worker_plumber:pressure:1", target: id });
     runner.ui.invoke("upgradeTower", { instanceId: id });
     expect(towerLevel(world(), id)).toBe(5);
-    expect(world().num(`${id}.stun_ms`)).toBe(500);
+    expect(world().num(`${id}.stun_ms`)).toBe(300);
     expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "max-level" });
   });
 

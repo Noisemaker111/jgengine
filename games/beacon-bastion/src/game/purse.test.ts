@@ -7,8 +7,8 @@ import { keep, keepBooks, MEND_RULE, sellAction } from "./keep";
 import { PURSE_CURRENCY } from "./purse";
 import { advanceKeep, beaconRunner } from "./testing";
 
-const archer = TOWER_CATALOG.tower_archer!;
-const cannon = TOWER_CATALOG.tower_cannon!;
+const archer = TOWER_CATALOG.worker_farmer!;
+const cannon = TOWER_CATALOG.worker_construction!;
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -18,7 +18,7 @@ const gold = () => world().num("keep.gold");
 const reasons = () => books().entries().map((entry) => [entry.reason, entry.amount]);
 
 beforeEach(() => {
-  runner = beaconRunner("Beacon books");
+  runner = beaconRunner("Town books");
 });
 
 describe("the keep's purse moves only through its books", () => {
@@ -29,15 +29,15 @@ describe("the keep's purse moves only through its books", () => {
 
   test("builds, a cancelled build, bounty, an upgrade, a mend, a sale and held pay each post their reason", () => {
     const opening = gold();
-    run("beacon.place", { kind: "tower_cannon", slot: "plot-2" });
-    run("beacon.remove", { id: "tower_cannon-1" });
-    run("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+    run("beacon.place", { kind: "worker_construction", slot: "plot-2" });
+    run("beacon.remove", { id: "worker_construction-1" });
+    run("beacon.place", { kind: "worker_farmer", slot: "plot-1" });
     advanceKeep(runner, 0.25);
     keep.emit(runner.ctx, { kind: "bounty", scale: 40 });
-    run("beacon.act", { action: upgradeStepAction("tower_archer", null, 1), target: "tower_archer-2" });
+    run("beacon.act", { action: upgradeStepAction("worker_farmer", null, 1), target: "worker_farmer-2" });
     keep.emit(runner.ctx, { kind: "leak", scale: 1 });
     run("beacon.act", { action: "mend" });
-    run("beacon.act", { action: sellAction("tower_archer"), target: "tower_archer-2" });
+    run("beacon.act", { action: sellAction("worker_farmer"), target: "worker_farmer-2" });
     keep.emit(runner.ctx, { kind: "held_pay", scale: 22 });
     keep.emit(runner.ctx, { kind: "overlap_bonus", scale: 5 });
 
@@ -47,20 +47,20 @@ describe("the keep's purse moves only through its books", () => {
       ["build-cancelled", cannon.cost],
       ["tower-build", -archer.cost],
       ["kill-bounty", 40],
-      ["tower-upgrade", -38],
+      ["tower-upgrade", -Math.round(archer.cost * 0.75)],
       ["wall-mend", -MEND_RULE.gold],
-      ["tower-sale", Math.round((archer.cost + 38) * 0.7)],
+      ["tower-sale", Math.round((archer.cost + Math.round(archer.cost * 0.75)) * 0.7)],
       ["held-pay", 22],
       ["early-call-bonus", 5],
     ]);
     // The history alone explains the purse: every entry sums to it and the books are square.
     expect(books().entries().reduce((sum, entry) => sum + entry.amount, 0)).toBe(gold());
     expect(books().unexplained()).toEqual({ [PURSE_CURRENCY]: 0 });
-    expect(books().entries().find((entry) => entry.reason === "tower-sale")?.ref).toBe("tower_archer-2");
+    expect(books().entries().find((entry) => entry.reason === "tower-sale")?.ref).toBe("worker_farmer-2");
   });
 
   test("a load reopens the books at the purse it brought, and a saved journal squares to it", () => {
-    run("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+    run("beacon.place", { kind: "worker_farmer", slot: "plot-1" });
     const saved = world().snapshot();
     const journal = books().snapshot();
     keep.emit(runner.ctx, { kind: "bounty", scale: 12 });

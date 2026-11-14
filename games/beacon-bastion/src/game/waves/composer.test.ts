@@ -2,10 +2,9 @@ import { describe, expect, test } from "bun:test";
 
 import { CREEP_CATALOG } from "../entities/enemies/catalog";
 import {
-  BOSS_EVERY_WAVES,
-  BOSS_ORDER,
+  BOSS_WAVES,
   COMPOSE_FROM_WAVE,
-  ELITE_ROSTER,
+  COMPOSE_TO_WAVE,
   SQUAD_PATTERNS,
   bossForWave,
   composeWave,
@@ -13,11 +12,11 @@ import {
 } from "./composer";
 import { DIRECTOR_SEED, ENCOUNTER, TOTAL_WAVES, bossProfile } from "./manifest";
 
-const composedWaves = () => ENCOUNTER.waves.slice(COMPOSE_FROM_WAVE - 1);
+const composedWaves = () => ENCOUNTER.waves.slice(COMPOSE_FROM_WAVE - 1, COMPOSE_TO_WAVE);
 
 describe("the seeded wave composer", () => {
   test("the same seed and wave always compose the same wave", () => {
-    for (let wave = COMPOSE_FROM_WAVE; wave <= TOTAL_WAVES; wave += 1) {
+    for (let wave = COMPOSE_FROM_WAVE; wave <= COMPOSE_TO_WAVE; wave += 1) {
       expect(composeWave(DIRECTOR_SEED, wave)).toEqual(composeWave(DIRECTOR_SEED, wave));
     }
   });
@@ -26,20 +25,21 @@ describe("the seeded wave composer", () => {
     const before = composeWave(DIRECTOR_SEED, 9);
     composeWave(DIRECTOR_SEED, 7);
     composeWave(99, 8);
-    composeWaves(DIRECTOR_SEED, TOTAL_WAVES);
+    composeWaves(DIRECTOR_SEED, COMPOSE_TO_WAVE);
     expect(composeWave(DIRECTOR_SEED, 9)).toEqual(before);
   });
 
   test("a different seed fields a different act", () => {
-    const mine = composeWaves(DIRECTOR_SEED, TOTAL_WAVES);
-    const other = composeWaves(DIRECTOR_SEED + 1, TOTAL_WAVES);
+    const mine = composeWaves(DIRECTOR_SEED, COMPOSE_TO_WAVE);
+    const other = composeWaves(DIRECTOR_SEED + 1, COMPOSE_TO_WAVE);
     expect(mine).not.toEqual(other);
   });
 
-  test("the run definition holds exactly the composed band", () => {
+  test("the run definition holds exactly the composed band, with the authored finale after it", () => {
     expect(ENCOUNTER.waves).toHaveLength(TOTAL_WAVES);
-    expect(composedWaves()).toEqual(composeWaves(DIRECTOR_SEED, TOTAL_WAVES));
+    expect(composedWaves()).toEqual(composeWaves(DIRECTOR_SEED, COMPOSE_TO_WAVE));
     expect(COMPOSE_FROM_WAVE).toBeGreaterThan(1);
+    expect(COMPOSE_TO_WAVE).toBe(TOTAL_WAVES - 1);
   });
 });
 
@@ -62,45 +62,26 @@ describe("what a composed wave is made of", () => {
     }
   });
 
-  test("composed waves call named elites, and each name is the unit that carries it", () => {
-    const named = new Set(ELITE_ROSTER.map((elite) => elite.unit));
-    const seen = new Set<string>();
-    for (const wave of composedWaves()) {
-      for (const group of wave.groups) {
-        if (!named.has(group.unit)) continue;
-        seen.add(group.unit);
-        const roster = ELITE_ROSTER.find((elite) => elite.unit === group.unit)!;
-        expect(CREEP_CATALOG[group.unit]?.title).toBe(roster.name);
-        expect(group.count).toBe(1);
-      }
-    }
-    expect(seen.size).toBeGreaterThanOrEqual(2);
+  test("composed waves field the late roster: graphics cards, rigs, cars, chatbots, routers", () => {
+    const seen = new Set(composedWaves().flatMap((wave) => wave.groups.map((group) => group.unit)));
+    for (const unit of ["tech_gpu", "tech_chatbot"]) expect(seen.has(unit)).toBe(true);
+    const roster = new Set(SQUAD_PATTERNS.flatMap((pattern) => pattern.squads.map((squad) => squad.unit)));
+    for (const unit of ["tech_gpu", "tech_rig", "tech_car", "tech_chatbot", "tech_router", "tech_flock"]) expect(roster.has(unit)).toBe(true);
   });
 
-  test("a boss lands every fourth wave from the composed band, and nowhere else", () => {
-    const bossWaves = composedWaves()
-      .map((wave, index) => ({ wave, number: index + COMPOSE_FROM_WAVE }))
-      .filter(({ wave }) => wave.groups.some((group) => bossProfile(group.unit) !== null));
-    const expected = [];
-    for (let wave = COMPOSE_FROM_WAVE; wave <= TOTAL_WAVES; wave += 1) {
-      const boss = bossForWave(wave);
-      if (boss !== null) expected.push({ number: wave, boss });
+  test("the server rack returns only on its authored composed wave, and the composer never fields the final boss", () => {
+    for (let wave = COMPOSE_FROM_WAVE; wave <= COMPOSE_TO_WAVE; wave += 1) {
+      const bosses = composeWave(DIRECTOR_SEED, wave).groups.filter((group) => bossProfile(group.unit) !== null).map((group) => group.unit);
+      expect(bosses).toEqual(BOSS_WAVES[wave] === undefined ? [] : [BOSS_WAVES[wave]!]);
+      expect(bossForWave(wave)).toBe(BOSS_WAVES[wave] ?? null);
+      expect(bosses).not.toContain("boss_datacenter");
     }
-    expect(expected.length).toBeGreaterThanOrEqual(2);
-    expect(bossWaves.map(({ number }) => number)).toEqual(expected.map(({ number }) => number));
-    for (const [index, entry] of expected.entries()) {
-      const groups = bossWaves[index]!.wave.groups.filter((group) => bossProfile(group.unit) !== null);
-      expect(groups).toHaveLength(1);
-      expect(groups[0]!.unit).toBe(entry.boss);
-      expect(entry.number % BOSS_EVERY_WAVES).toBe(0);
-    }
-    expect(new Set(expected.map(({ boss }) => boss))).toEqual(new Set(BOSS_ORDER));
   });
 
   test("counts stay inside the density the field can read", () => {
     for (const wave of composedWaves()) {
       const total = wave.groups.reduce((sum, group) => sum + (group.count ?? 1), 0);
-      expect(total).toBeLessThanOrEqual(28);
+      expect(total).toBeLessThanOrEqual(44);
     }
   });
 

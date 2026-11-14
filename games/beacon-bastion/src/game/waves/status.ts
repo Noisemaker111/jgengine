@@ -33,7 +33,7 @@ function raiderPart(unit: string, count: number): string {
   const def = CREEP_CATALOG[unit];
   if (def === undefined) return count === 1 ? unit : `${count} ${unit}`;
   if (bossProfile(unit) !== null && count === 1) return creepName(unit);
-  return count === 1 ? `${count} ${def.label}` : `${count} ${def.label}s`;
+  return count === 1 || def.label.endsWith("s") ? `${count} ${def.label}` : `${count} ${def.label}s`;
 }
 
 function compositionParts(wave: EncounterWave, skipBosses = false): string[] {

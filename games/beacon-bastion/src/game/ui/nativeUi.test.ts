@@ -2,20 +2,20 @@ import { expect, test } from "bun:test";
 import { NATIVE_STATES, runeUiFixture } from "../../../proofs/runeUiFixture";
 
 const expected: Partial<Record<(typeof NATIVE_STATES)[number], string>> = {
-  title: "New Defense",
-  new: "Commission",
-  keeps: "Unclaimed",
+  title: "New Day",
+  new: "Time Card",
+  keeps: "Closed for business",
   settings: "Master volume",
   credits: "JGengine",
-  hud: "Begin first assault",
+  hud: "Open for business",
   midwave: "WAVE",
   tower: "Aim:",
-  breached: "Mend",
-  paused: "Hold the line",
-  result: "War Council",
+  breached: "Coffee break",
+  paused: "Back to work",
+  result: "Town Council",
 };
 
-test("every Beacon Bastion UI state serializes native elements at desktop and phone widths", async () => {
+test("every Do Not Disturb UI state serializes native elements at desktop and phone widths", async () => {
   for (const [width, height] of [[1280, 720], [390, 844]] as const) {
     for (const state of NATIVE_STATES) {
       const spec = await runeUiFixture(state, width, height);

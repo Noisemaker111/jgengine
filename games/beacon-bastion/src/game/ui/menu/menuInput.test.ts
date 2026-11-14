@@ -23,7 +23,7 @@ test("the title's main buttons each play the menu confirm cue", async () => {
   try {
     const played: string[] = [];
     ui.ctx.game.events.on("audio.play", ({ sound }) => played.push(sound));
-    for (const label of ["New Defense", "Back", "Keeps", "Back", "Settings", "Back", "Credits", "Back"]) {
+    for (const label of ["New Day", "Back", "Streets", "Back", "Settings", "Back", "Credits", "Back"]) {
       await settle();
       const before = played.length;
       await act(() => pressable(ui.surface, label).props.onPress?.());
@@ -32,11 +32,11 @@ test("the title's main buttons each play the menu confirm cue", async () => {
   } finally { ui.dispose(); }
 });
 
-test("a commander name typed on the keyboard is sealed into the commission", async () => {
+test("a shift manager name typed on the keyboard is punched into the time card", async () => {
   const ui = mountRuneUi("new");
   try {
     await settle();
-    await act(() => pressable(ui.surface, "Commander name").props.onPress?.());
+    await act(() => pressable(ui.surface, "Shift manager name").props.onPress?.());
     for (const code of ["KeyA", "KeyD", "KeyA", "Space", "KeyR", "KeyO", "KeyO", "KeyK", "KeyX", "Backspace"]) {
       await settle();
       await act(() => keyTarget(ui.surface).props.onKey?.(code));

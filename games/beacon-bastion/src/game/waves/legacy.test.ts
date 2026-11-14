@@ -114,18 +114,18 @@ describe("the relic the next defense carries", () => {
   });
 
   test("opening gold is the flat purse plus the bank plus the relic", () => {
-    expect(openingGold({ ...freshLegacy(), bankedGold: 120, run: { ...freshLegacy().run, optionId: "spoils" } }))
+    expect(openingGold({ ...freshLegacy(), bankedGold: 120, run: { ...freshLegacy().run, optionId: "tipjar" } }))
       .toBe(STARTING_GOLD + 120 + 60);
     expect(openingGold({ ...freshLegacy(), bankedGold: BANK_RULE.cap + 500 })).toBe(STARTING_GOLD + BANK_RULE.cap);
   });
 
   test("a life relic raises the keep above its authored twenty", () => {
-    expect(openingLives({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "gate" } })).toBe(STARTING_LIVES + 5);
+    expect(openingLives({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "watch" } })).toBe(STARTING_LIVES + 5);
     expect(openingLives(freshLegacy())).toBe(STARTING_LIVES);
   });
 
   test("a bounty relic multiplies kill pay and nothing else", () => {
-    expect(relicBountyScale({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "writ" } })).toBeCloseTo(1.4, 5);
+    expect(relicBountyScale({ ...freshLegacy(), run: { ...freshLegacy().run, optionId: "scrapyard" } })).toBeCloseTo(1.4, 5);
     expect(relicBountyScale(freshLegacy())).toBe(1);
   });
 
@@ -152,26 +152,26 @@ describe("the relic the next defense carries", () => {
   });
 
   test("a defense restarted without a pick keeps the relic it already carried", () => {
-    writeLegacy(runner.ctx, carrying("writ"));
+    writeLegacy(runner.ctx, carrying("scrapyard"));
     keep.of(runner.ctx).set("keep.fallen", true);
     runner.ui.invoke("defense.restart", {});
-    expect(carriedRelic(legacy.read(runner.ctx))?.id).toBe("writ");
+    expect(carriedRelic(legacy.read(runner.ctx))?.id).toBe("scrapyard");
   });
 });
 
 describe("a stored keep", () => {
   test("the pre-loop document migrates into the engine's run state", () => {
-    const migrated = upgradeLegacy({ standing: 12, runs: 3, bankedGold: 90, boonId: "gate", offer: [] });
+    const migrated = upgradeLegacy({ standing: 12, runs: 3, bankedGold: 90, boonId: "watch", offer: [] });
     expect(migrated).not.toBeNull();
     expect(migrated!.run.closed).toBe(3);
     expect(migrated!.run.session).toBe(4);
-    expect(migrated!.run.optionId).toBe("gate");
+    expect(migrated!.run.optionId).toBe("watch");
     expect(migrated!.standing).toBe(12);
   });
 
   test("a run state saved by the old run loop reads as the same session", () => {
-    const read = upgradeLegacy({ standing: 3, bankedGold: 10, offer: [], run: { run: 3, completed: 2, haul: 0, changeId: "gate", bankedTotal: 240, lostTotal: 0, bestHaul: 120 } });
-    expect(read!.run).toEqual({ session: 3, closed: 2, carried: 0, optionId: "gate" });
+    const read = upgradeLegacy({ standing: 3, bankedGold: 10, offer: [], run: { run: 3, completed: 2, haul: 0, changeId: "watch", bankedTotal: 240, lostTotal: 0, bestHaul: 120 } });
+    expect(read!.run).toEqual({ session: 3, closed: 2, carried: 0, optionId: "watch" });
   });
 
   test("an unreadable section is refused rather than half applied", () => {

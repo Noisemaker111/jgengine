@@ -4,9 +4,10 @@ import { expandWave } from "@jgengine/core/waves/encounter";
 import { DIRECTOR_SEED, ENCOUNTER, TOTAL_WAVES } from "./manifest";
 
 describe("wave manifest", () => {
-  test("declares the authored host with a boss wave last", () => {
-    expect(TOTAL_WAVES).toBeGreaterThanOrEqual(3);
-    expect(ENCOUNTER.waves[TOTAL_WAVES - 1]!.groups.some((group) => group.unit === "raider_warden")).toBe(true);
+  test("declares the march with the Data Center last and the server rack closing the authored act", () => {
+    expect(ENCOUNTER.waves).toHaveLength(TOTAL_WAVES);
+    expect(ENCOUNTER.waves[TOTAL_WAVES - 1]!.groups.some((group) => group.unit === "boss_datacenter")).toBe(true);
+    expect(ENCOUNTER.waves[5]!.groups.some((group) => group.unit === "tech_server")).toBe(true);
   });
 
   test("every wave names a unit, an entry and a positive count", () => {
@@ -26,7 +27,7 @@ describe("wave manifest", () => {
     const later = first.filter((order) => order.atSeconds > 0);
     expect(atZero.length).toBeGreaterThan(0);
     expect(later.length).toBeGreaterThan(0);
-    expect(first.length).toBeLessThanOrEqual(12);
+    expect(first.length).toBeLessThanOrEqual(18);
   });
 
   test("pressure can thicken a wave but never changes the authored units", () => {

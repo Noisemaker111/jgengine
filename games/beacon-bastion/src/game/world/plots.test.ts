@@ -38,10 +38,11 @@ function plotClearance(id: string): number {
 }
 
 describe("build plots vs tower ranges", () => {
-  test("every tower can fire on the path centerline from every plot", () => {
+  test("every working worker can reach the street centerline from every plot", () => {
     for (const plot of BUILD_PLOT_XZ) {
       const toPath = distanceToPath(plot.xz);
-      for (const id of TOWER_IDS) {
+      // A worker who never throws anything (the Monk) only has to reach the workers beside them.
+      for (const id of TOWER_IDS.filter((tower) => TOWER_CATALOG[tower]!.fireRateHz > 0)) {
         const range = towerDef(id, editorLayers).range;
         expect(range, `${id} on ${plot.id} (path ${toPath.toFixed(1)} away)`).toBeGreaterThanOrEqual(toPath + RANGE_MARGIN);
         const chord = 2 * Math.sqrt(Math.max(0, range * range - toPath * toPath));

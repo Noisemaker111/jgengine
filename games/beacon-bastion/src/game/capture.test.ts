@@ -50,7 +50,7 @@ describe("staged capture states", () => {
   test("boss stands the Warden on the field in its second phase", () => {
     stageRun(runner.ctx, "boss");
     expect(session.boss).not.toBeNull();
-    expect(session.boss?.unitId).toBe("raider_warden");
+    expect(session.boss?.unitId).toBe("tech_server");
     expect(session.boss?.stance).toBe("enraged");
   });
 

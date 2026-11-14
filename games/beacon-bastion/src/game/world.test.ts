@@ -31,8 +31,8 @@ describe("beacon-bastion world", () => {
     expect(summary.terrain?.height.max).toBeGreaterThan(summary.terrain?.height.min ?? 0);
   });
 
-  test("terrain uses this game's own warm palette, not an engine default", () => {
-    expect(summary.terrain?.palette.low).toBe("#4d6a33");
+  test("terrain uses this game's own lawn palette, not an engine default", () => {
+    expect(summary.terrain?.palette.low).toBe("#5a9a3e");
     expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.grass);
     expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.highland);
   });

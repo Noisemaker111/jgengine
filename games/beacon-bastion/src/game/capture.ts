@@ -43,7 +43,7 @@ function stageBossWave(ctx: GameContext): void {
   if (health === null || health.max <= 0) return;
   // Put the server rack under its second cut point so the next simulated tick runs the real
   // `advancePhase` transition and raises its tell, rather than photographing a phase banner.
-  ctx.scene.entity.stats.set(boss.instanceId, "health", { current: Math.round(health.max * 0.55) });
+  ctx.scene.entity.stats.set(boss.instanceId, "health", { current: Math.round(health.max * 0.45) });
   advance(ctx, STEP * 2);
 }
 

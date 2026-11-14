@@ -1375,7 +1375,7 @@
           "label": "Grandma",
           "meta": {
             "cost": 70,
-            "range": 6,
+            "range": 7,
             "damage": 9,
             "fireRateHz": 1.1,
             "splashRadius": 0
@@ -1397,7 +1397,7 @@
           "label": "Teacher",
           "meta": {
             "cost": 90,
-            "range": 6.5,
+            "range": 7,
             "damage": 10,
             "fireRateHz": 1,
             "splashRadius": 0
@@ -1408,7 +1408,7 @@
           "label": "Librarian",
           "meta": {
             "cost": 80,
-            "range": 6,
+            "range": 7,
             "damage": 3,
             "fireRateHz": 1,
             "splashRadius": 0
@@ -1419,7 +1419,7 @@
           "label": "Construction Worker",
           "meta": {
             "cost": 95,
-            "range": 6.5,
+            "range": 7,
             "damage": 32,
             "fireRateHz": 0.6,
             "splashRadius": 2.2
@@ -1441,7 +1441,7 @@
           "label": "Janitor",
           "meta": {
             "cost": 75,
-            "range": 5,
+            "range": 7,
             "damage": 7,
             "fireRateHz": 1,
             "splashRadius": 0
@@ -1463,7 +1463,7 @@
           "label": "Monk",
           "meta": {
             "cost": 90,
-            "range": 6,
+            "range": 7,
             "damage": 0,
             "fireRateHz": 0,
             "splashRadius": 0

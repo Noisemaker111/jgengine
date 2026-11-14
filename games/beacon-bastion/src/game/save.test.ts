@@ -10,7 +10,7 @@ import { resetSession, session } from "./session";
 import { advanceKeep, beaconRunner } from "./testing";
 import { beaconSave, captureDefense, checkpointKeep, defenseSystem, keepIsUnsaved, legacySystem, loadSlot, prepareKeep, validDefenseSave, worldSystem } from "./save";
 import { drawRelics, freshLegacy, legacy, openingGold, upgradeLegacy, writeLegacy } from "./waves/legacy";
-import { WARDEN_ID, bossProfile } from "./waves/manifest";
+import { MINIBOSS_ID, bossProfile } from "./waves/manifest";
 import { beginRun } from "./menu";
 import { worldHeartbeat } from "./systems";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
@@ -34,17 +34,17 @@ function playedIntoWave(): void {
     session.encounter.openWave();
     session.encounter.completeWave();
   }
-  runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+  runner.ui.invoke("beacon.place", { kind: "worker_farmer", slot: "plot-1" });
   world().set("keep.gold", 200);
-  runner.ui.invoke("beacon.act", { action: "tower_archer:trunk:1", target: "tower_archer-1" });
-  runner.ui.invoke("beacon.place", { kind: "tower_cannon", slot: "plot-4" });
+  runner.ui.invoke("beacon.act", { action: "worker_farmer:trunk:1", target: "worker_farmer-1" });
+  runner.ui.invoke("beacon.place", { kind: "worker_construction", slot: "plot-4" });
   advanceKeep(runner, 1);
   world().set("keep.lives", 11);
   world().set("keep.bounty_earned", 133);
   session.boss = {
     instanceId: "warden-1",
-    unitId: WARDEN_ID,
-    state: createPhaseClock(bossProfile(WARDEN_ID)!.phases),
+    unitId: MINIBOSS_ID,
+    state: createPhaseClock(bossProfile(MINIBOSS_ID)!.phases),
     stance: "opening",
   };
 }
@@ -62,7 +62,7 @@ describe("the keep's save document", () => {
       await prepareKeep(runner.ctx, "keep");
       beginRun(runner.ctx);
       expect(gamePhase(runner.ctx)).toBe("playing");
-      runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+      runner.ui.invoke("beacon.place", { kind: "worker_farmer", slot: "plot-1" });
       advanceKeep(runner, 10);
       const [tower] = keep.of(runner.ctx).instances();
       expect(tower?.ready).toBe(true);
@@ -151,19 +151,19 @@ describe("the keep's save document", () => {
     await save.save();
 
     // A fresh defense, as a reload would build it, then the document read back.
-    runner.ui.invoke("beacon.act", { action: "sell", target: "tower_archer-1" });
+    runner.ui.invoke("beacon.act", { action: "sell", target: "worker_farmer-1" });
     advanceKeep(runner, 0.25);
     resetSession();
     await save.load();
 
     expect(world().facts()).toEqual(facts);
-    expect(towerLevel(world(), "tower_archer-1")).toBe(2);
-    expect(runner.ctx.scene.entity.get("tower_archer-1")).not.toBeNull();
-    expect(world().orders("build")[0]?.progress).toBeCloseTo(0.25);
+    expect(towerLevel(world(), "worker_farmer-1")).toBe(2);
+    expect(runner.ctx.scene.entity.get("worker_farmer-1")).not.toBeNull();
+    expect(world().orders("build")[0]?.progress).toBeCloseTo(1 / 3);
     expect(session.encounter.view().wave).toBe(7);
-    expect(session.boss?.unitId).toBe(WARDEN_ID);
+    expect(session.boss?.unitId).toBe(MINIBOSS_ID);
     advanceKeep(runner, 3);
-    expect(runner.ctx.scene.entity.get("tower_cannon-2")).not.toBeNull();
+    expect(runner.ctx.scene.entity.get("worker_construction-2")).not.toBeNull();
   });
 
   test("a document from before the keep was a world loads as a fresh keep with its old purse and walls", async () => {
@@ -187,12 +187,12 @@ describe("the keep's save document", () => {
       gameOver: false,
       victory: false,
       towerSeq: 1,
-      towers: [{ instanceId: "tower-1", catalogId: "tower_archer", plotId: "plot-1", level: 2, cooldownSeconds: 0 }],
+      towers: [{ instanceId: "tower-1", catalogId: "worker_farmer", plotId: "plot-1", level: 2, cooldownSeconds: 0 }],
       queue: { jobs: [] },
     });
     written.set(key, JSON.stringify(document));
 
-    runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-2" });
+    runner.ui.invoke("beacon.place", { kind: "worker_farmer", slot: "plot-2" });
     const loaded = createGameSave({ backend, game: "beacon-bastion-test", systems: [legacySystem(runner.ctx), worldSystem(runner.ctx), defenseSystem(runner.ctx)] });
     await loaded.load();
 
@@ -204,7 +204,7 @@ describe("the keep's save document", () => {
 
   test("an unreadable world section falls back to a fresh keep instead of a half-built field", () => {
     const system = worldSystem(runner.ctx);
-    runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-2" });
+    runner.ui.invoke("beacon.place", { kind: "worker_farmer", slot: "plot-2" });
     system.restore({ time: 0, facts: { "keep.gold": 5, "keep.lives": 3 }, log: [], instances: { "ghost-1": { kind: "tower_ghost", slot: "plot-9", ready: true } } });
     expect(world().instances()).toEqual([]);
     expect(world().num("keep.gold")).toBe(openingGold(legacy.read(runner.ctx)));
@@ -213,11 +213,11 @@ describe("the keep's save document", () => {
     expect(world().num("keep.lives")).toBe(STARTING_LIVES);
   });
 
-  test("the defense section is only the live sim: director, raiders and the Warden", () => {
+  test("the defense section is only the live sim: director, tech, parcels and the boss", () => {
     playedIntoWave();
     const snapshot = JSON.parse(JSON.stringify(captureDefense(runner.ctx)));
     expect(validDefenseSave(snapshot)).toBe(true);
-    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "openingComposition", "pressure"]);
+    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "openingComposition", "parcels", "pressure"]);
   });
 
   test("the bank is its own section, so a new run does not clear it", async () => {
@@ -226,7 +226,7 @@ describe("the keep's save document", () => {
       standing: 18,
       bankedGold: 120,
       offer: drawRelics("beacon:save"),
-      run: { session: 3, closed: 2, carried: 0, optionId: "gate" },
+      run: { session: 3, closed: 2, carried: 0, optionId: "watch" },
     };
     writeLegacy(runner.ctx, banked);
     expect(world().fact("keep.banked")).toBe(false);

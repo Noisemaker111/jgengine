@@ -1,3 +1,4 @@
+import { CREEP_CATALOG } from "../entities/enemies/catalog";
 import { beforeEach, describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
@@ -10,9 +11,9 @@ import { setupWorld } from "../world/setup";
 import { keep } from "../keep";
 import { readPressure, tickWaves, waveOverlapBonus } from "./director";
 import { legacy, openingGold, openingLives } from "./legacy";
-import { DIRECTOR_SEED, AUTHORED_WAVES, ENCOUNTER, PRESSURE_RULE, TOTAL_WAVES, WARDEN_ID, bossProfile } from "./manifest";
+import { DIRECTOR_SEED, AUTHORED_WAVES, ENCOUNTER, PRESSURE_RULE, TOTAL_WAVES, MINIBOSS_ID, bossProfile } from "./manifest";
 
-const wardenProfile = bossProfile(WARDEN_ID)!;
+const wardenProfile = bossProfile(MINIBOSS_ID)!;
 
 let runner: HeadlessRunner;
 const gold = () => keep.of(runner.ctx).num("keep.gold");
@@ -37,7 +38,7 @@ function reachWarden(): void {
 }
 
 function warden() {
-  for (const creep of session.creeps.values()) if (creep.catalogId === "raider_warden") return creep;
+  for (const creep of session.creeps.values()) if (creep.catalogId === "tech_server") return creep;
   return null;
 }
 
@@ -119,22 +120,22 @@ describe("player released assaults", () => {
     expect(keep.of(runner.ctx).num("keep.lives")).toBe(openingLives(legacy.read(runner.ctx)));
     expect(keep.of(runner.ctx).num("keep.lives")).toBeGreaterThanOrEqual(STARTING_LIVES);
     const before = gold();
-    runner.ctx.game.events.emit("entity.died", { instanceId: "one-scout", catalogId: "raider_scout", reason: { kind: "environment", source: "test" }, position: [0, 0, 0] });
-    expect(gold() - before).toBe(4);
+    runner.ctx.game.events.emit("entity.died", { instanceId: "one-scout", catalogId: "tech_earbuds", reason: { kind: "environment", source: "test" }, position: [0, 0, 0] });
+    expect(gold() - before).toBe(CREEP_CATALOG.tech_earbuds!.bounty);
     expect(runner.ui.tryInvoke("defense.restart", {}).status).toBe("rejected");
   });
 });
 
 describe("authored encounters on the field", () => {
-  test("the authored act ends on the Warden: flyers from the second wave, elites and the flank from the third", () => {
+  test("the authored act ends on the server rack: drones from the second wave, armor and the side street from the third", () => {
     expect(AUTHORED_WAVES.length).toBe(6);
     const has = (index: number, unit: string) => AUTHORED_WAVES[index]!.groups.some((group) => group.unit === unit);
-    expect(has(1, "raider_wraith")).toBe(true);
-    expect(has(2, "raider_elite")).toBe(true);
+    expect(has(1, "tech_drone")).toBe(true);
+    expect(has(2, "tech_vacuum")).toBe(true);
     expect(AUTHORED_WAVES[2]!.groups.some((group) => group.entry === "flank")).toBe(true);
-    expect(AUTHORED_WAVES[AUTHORED_WAVES.length - 1]!.groups.filter((group) => group.unit === WARDEN_ID)).toHaveLength(1);
+    expect(AUTHORED_WAVES[AUTHORED_WAVES.length - 1]!.groups.filter((group) => group.unit === MINIBOSS_ID)).toHaveLength(1);
     for (let wave = 0; wave < AUTHORED_WAVES.length - 1; wave += 1) {
-      expect(AUTHORED_WAVES[wave]!.groups.some((group) => group.unit === WARDEN_ID)).toBe(false);
+      expect(AUTHORED_WAVES[wave]!.groups.some((group) => group.unit === MINIBOSS_ID)).toBe(false);
     }
   });
 
@@ -168,30 +169,28 @@ describe("authored encounters on the field", () => {
   });
 });
 
-describe("the Warden's phases", () => {
+describe("the server rack's phases", () => {
   test("it opens on the approach, then speeds up when its health crosses a threshold", () => {
     reachWarden();
     const boss = warden();
     expect(boss).not.toBeNull();
     expect(session.boss?.state.phaseId).toBe("opening");
-    expect(boss!.speedStats.get("speed")).toBeCloseTo(1.1, 5);
+    const base = CREEP_CATALOG.tech_server!.speed;
+    expect(boss!.speedStats.get("speed")).toBeCloseTo(base, 5);
 
-    runner.ctx.scene.entity.effect({ from: BASE_ENTITY_ID, to: boss!.instanceId, effect: "damage", via: { amount: 700 } });
+    runner.ctx.scene.entity.effect({ from: BASE_ENTITY_ID, to: boss!.instanceId, effect: "damage", via: { amount: 500 } });
     tickWaves(runner.ctx, 0.1);
     expect(session.boss?.state.phaseId).toBe("enraged");
     expect(session.boss?.stance).toBe("enraged");
-    expect(boss!.speedStats.get("speed")).toBeCloseTo(1.1 * wardenProfile.stance.enraged!.speedScale, 5);
-
-    runner.ctx.scene.entity.effect({ from: BASE_ENTITY_ID, to: boss!.instanceId, effect: "damage", via: { amount: 450 } });
-    tickWaves(runner.ctx, 0.1);
-    expect(session.boss?.state.phaseId).toBe("last-stand");
-    expect(boss!.speedStats.get("speed")).toBeCloseTo(1.1 * wardenProfile.stance["last-stand"]!.speedScale, 5);
+    expect(boss!.speedStats.get("speed")).toBeCloseTo(base * wardenProfile.stance.enraged!.speedScale, 5);
+    // Overclocked, it raises a firewall that soaks hits before its health.
+    expect(runner.ctx.scene.entity.stats.get(boss!.instanceId, "shield")?.current).toBe(wardenProfile.stance.enraged!.ward);
   });
 
   test("a heal does not rewind the phase, and the tell clears", () => {
     reachWarden();
     const boss = warden()!;
-    runner.ctx.scene.entity.effect({ from: BASE_ENTITY_ID, to: boss.instanceId, effect: "damage", via: { amount: 700 } });
+    runner.ctx.scene.entity.effect({ from: BASE_ENTITY_ID, to: boss.instanceId, effect: "damage", via: { amount: 500 } });
     tickWaves(runner.ctx, 0.1);
     expect(session.boss?.state.phaseId).toBe("enraged");
     const health = runner.ctx.scene.entity.stats.get(boss.instanceId, "health")!;

@@ -23,9 +23,9 @@ beforeEach(() => {
 
 describe("kill pay scales with the unit's weight and the wave", () => {
   test("wave 1 pays the authored weight and every later wave pays more", () => {
-    expect(killBounty("raider_scout", 1)).toBe(CREEP_CATALOG.raider_scout!.bounty);
-    expect(killBounty("raider_scout", 5)).toBeGreaterThan(killBounty("raider_scout", 1));
-    expect(killBounty("raider_scout", 9)).toBeGreaterThan(killBounty("raider_scout", 5));
+    expect(killBounty("tech_phone", 1)).toBe(CREEP_CATALOG.tech_phone!.bounty);
+    expect(killBounty("tech_phone", 5)).toBeGreaterThan(killBounty("tech_phone", 1));
+    expect(killBounty("tech_phone", 9)).toBeGreaterThan(killBounty("tech_phone", 5));
   });
 
   test("the curve is authored data, not a magic number per unit", () => {
@@ -36,20 +36,20 @@ describe("kill pay scales with the unit's weight and the wave", () => {
 
   test("a heavier raider still pays more than a light one on the same wave", () => {
     for (const wave of [1, 4, 8, 12]) {
-      expect(killBounty("raider_brute", wave)).toBeGreaterThan(killBounty("raider_scout", wave));
-      expect(killBounty("raider_warlord", wave)).toBeGreaterThan(killBounty("raider_brute", wave));
+      expect(killBounty("tech_fridge", wave)).toBeGreaterThan(killBounty("tech_phone", wave));
+      expect(killBounty("tech_server", wave)).toBeGreaterThan(killBounty("tech_fridge", wave));
     }
   });
 
   test("a relic's bounty bonus multiplies the same way", () => {
-    expect(killBounty("raider_scout", 5, 1.4)).toBe(Math.round(killBounty("raider_scout", 5) * 1.4));
+    expect(killBounty("tech_phone", 5, 1.4)).toBe(Math.round(killBounty("tech_phone", 5) * 1.4));
   });
 
   test("a late wave's kill is visibly worth more, and the readout says so", () => {
     const readout = bountyReadout(8, 240);
     expect(readout.scale).toBeGreaterThan(1);
     expect(readout.closing).toBeGreaterThan(readout.opening);
-    expect(readout.opening).toBe(CREEP_CATALOG.raider_scout!.bounty);
+    expect(readout.opening).toBe(CREEP_CATALOG.tech_earbuds!.bounty);
     expect(readout.earned).toBe(240);
   });
 });
@@ -59,12 +59,12 @@ describe("the bounty on the live field", () => {
     const opening = gold();
     runner.ctx.game.events.emit("entity.died", {
       instanceId: "scout-opening",
-      catalogId: "raider_scout",
+      catalogId: "tech_phone",
       reason: { kind: "environment", source: "test" },
       position: [0, 0, 0],
     });
     const firstPay = gold() - opening;
-    expect(firstPay).toBe(4);
+    expect(firstPay).toBe(CREEP_CATALOG.tech_phone!.bounty);
     expect(keep.of(runner.ctx).num("keep.bounty_earned")).toBe(firstPay);
 
     for (let wave = 0; wave < 5; wave += 1) {
@@ -75,26 +75,26 @@ describe("the bounty on the live field", () => {
     const later = gold();
     runner.ctx.game.events.emit("entity.died", {
       instanceId: "scout-late",
-      catalogId: "raider_scout",
+      catalogId: "tech_phone",
       reason: { kind: "environment", source: "test" },
       position: [0, 0, 0],
     });
     const latePay = gold() - later;
     expect(latePay).toBeGreaterThan(firstPay);
-    expect(latePay).toBe(killBounty("raider_scout", 6));
+    expect(latePay).toBe(killBounty("tech_phone", 6));
     expect(keep.of(runner.ctx).num("keep.bounty_earned")).toBe(firstPay + latePay);
   });
 
   test("a carried relic raises the pay without changing the wave curve", () => {
-    writeLegacy(runner.ctx, carrying("writ"));
+    writeLegacy(runner.ctx, carrying("scrapyard"));
     const before = gold();
     runner.ctx.game.events.emit("entity.died", {
       instanceId: "scout-writ",
-      catalogId: "raider_scout",
+      catalogId: "tech_phone",
       reason: { kind: "environment", source: "test" },
       position: [0, 0, 0],
     });
-    expect(gold() - before).toBe(Math.round(4 * 1.4));
+    expect(gold() - before).toBe(Math.round(CREEP_CATALOG.tech_phone!.bounty * 1.4));
   });
 });
 
