@@ -5,27 +5,31 @@ import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 
-export const TEAL = "#9cddd1", AMBER = "#e2bd6e", RED = "#ff6a52", INK = "#e8fbf5", DIM = "#91afa9";
-export const FULL = { fraction: 1 }, ALL = [0,0,0,0] as const;
-export const deepwardTheme = {
-  colors: { accent: TEAL, signal: AMBER, danger: RED, ink: INK, muted: DIM, track: "#30494c" },
-  text: { body: { family: "Rajdhani", size: 16, color: INK }, label: { family: "Share Tech Mono", size: 12, tracking: 1.2, color: DIM }, heading: { family: "Rajdhani", size: 28, weight: 650, color: INK } },
+/** Candle gold on cocoa: the burrow's colours, readable over a dark house. */
+export const GOLD = "#f2c46d", CREAM = "#fff3e0", MUTED = "#cdb79a", RED = "#ff7a5c", GREEN = "#9fe0a0", SKY = "#9fd3ff", COCOA = "#2a1d15";
+export const FULL = { fraction: 1 };
+export const crumbTheme = {
+  colors: { accent: GOLD, signal: SKY, danger: RED, ink: CREAM, muted: MUTED, track: "#4a3628" },
+  text: { body: { family: "Nunito", size: 16, color: CREAM }, label: { family: "Nunito", size: 12, weight: 700, tracking: 1.1, color: MUTED }, heading: { family: "Fredoka", size: 28, weight: 600, color: CREAM } },
   variants: {
-    surface: { padding: 18, gap: 10, fill: "#12272bed", border: { width: 1, color: "#486561" }, radius: 2 },
-    action: { minHeight: 42, padding: [10,14,10,14], fill: "#d7b774", border: { width: 1, color: "#ecd3a1" }, hover: "#ffffff25", press: "#00000025", radius: 2 },
-  }, motion: { duration: 160, distance: 12, bounce: 0 },
+    surface: { padding: 18, gap: 10, fill: "#2a1d15ee", border: { width: 2, color: "#7a5a3c" }, radius: 14 },
+    action: { minHeight: 42, padding: [10, 16, 10, 16], fill: GOLD, border: { width: 2, color: "#ffe2a8" }, hover: "#ffffff30", press: "#00000025", radius: 12 },
+  }, motion: { duration: 180, distance: 10, bounce: 0.15 },
 } satisfies RuneTheme;
 export function Text({ text, ...props }: RuneElementProps) { return <RuneLabel {...props} {...(text === undefined ? {} : { value: text })} />; }
-export function Tag(props: RuneElementProps) { return <Text {...deepwardTheme.text.label} {...props} />; }
-export function Heading(props: RuneElementProps) { return <Text {...deepwardTheme.text.heading} {...props} />; }
-export function Section(props: RuneViewProps) { return <RuneView gap={9} padding={[12,0,12,0]} {...props} />; }
+export function Tag(props: RuneElementProps) { return <Text {...crumbTheme.text.label} {...props} />; }
+export function Heading(props: RuneElementProps) { return <Text {...crumbTheme.text.heading} {...props} />; }
+export function Section(props: RuneViewProps) { return <RuneView gap={8} padding={[10, 0, 10, 0]} {...props} />; }
 export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={10} items="center" {...props} />; }
-export function Button({ onPress, ...props }: RuneViewProps) { return <RuneAction variant="action" color="#172529" {...props} {...(onPress === undefined ? {} : { run: onPress })} />; }
-export function Frame({ paper: _paper, ...props }: RuneViewProps & { paper?: boolean }) { return <RuneView variant="surface" {...props} />; }
+export function Button({ onPress, ...props }: RuneViewProps) { return <RuneAction variant="action" color={COCOA} {...props} {...(onPress === undefined ? {} : { run: onPress })} />; }
+export function Frame(props: RuneViewProps) { return <RuneView variant="surface" {...props} />; }
+export function Meter({ value, color, height = 6 }: { value: NonNullable<RuneViewProps["width"]>; color: NonNullable<RuneViewProps["fill"]>; height?: number }) {
+  return <RuneView height={height} fill="#4a3628" width={FULL} radius={height / 2}><RuneView height={height} width={value} fill={color} radius={height / 2} /></RuneView>;
+}
 export function Sheet({ children, title, close, label }: { children: ReactNode; title: string; close?: (() => void) | undefined; label?: string }) {
   const { width, height } = useRuneViewport();
-  return <RuneView anchor="fill" fill="#030d12dc" modal {...(close === undefined ? {} : { onBack: close })}>
-    <RuneView anchor="center" variant="surface" width={Math.min(680,width - 32)} maxHeight={height - 32} label={label ?? title} role="dialog">
+  return <RuneView anchor="fill" fill="#120b07d8" modal {...(close === undefined ? {} : { onBack: close })}>
+    <RuneView anchor="center" variant="surface" width={Math.min(720, width - 32)} maxHeight={height - 32} label={label ?? title} role="dialog">
       <Row justify="between" items="start"><Heading grow={1} shrink>{title}</Heading>{close === undefined ? null : <Button onPress={close}>Close ×</Button>}</Row>
       <RuneView scroll maxHeight={height - 140} gap={10}>{children}</RuneView>
     </RuneView>

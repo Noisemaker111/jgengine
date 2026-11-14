@@ -1,11 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { captureRecordThumb, refreshRecordSlots } from "./menuRecord";
-import { openMarrowTitle, persistRecord, stageMidDive } from "./controls";
-import { menuFocus } from "./ui/menu/DeepwardMenu";
+import { openBurrowTitle, persistRecord, stageMidRun } from "./controls";
+import { menuFocus } from "./ui/menu/CrumbMenu";
 
 /**
  * Dev-only staging for the menu's evidence shots. The departure itself is the real one
- * (`stageMidDive` walks through `begin` and the 1.4 s search channel); this only decides that the
+ * (`stageMidRun` walks through `begin` and the real search channel); this only decides that the
  * record is written afterwards and the title is holding it.
  */
 export function registerCaptureCommands(ctx: GameContext): void {
@@ -14,11 +14,11 @@ export function registerCaptureCommands(ctx: GameContext): void {
     apply(state) {
       void (async () => {
         if (state.scene.entity.get(state.player.userId) !== null) {
-          await stageMidDive(state);
+          await stageMidRun(state);
           await captureRecordThumb();
           await persistRecord(state);
         }
-        openMarrowTitle(state);
+        openBurrowTitle(state);
         await refreshRecordSlots(state);
       })();
       return state;

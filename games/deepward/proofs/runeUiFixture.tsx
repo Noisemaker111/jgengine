@@ -9,11 +9,11 @@ import { RuneNode, nativeSpec, nativeTreeHost, type RuneTreeSink } from "@jgengi
 import { GameProvider } from "@jgengine/ui/provider";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
 import { physics, world } from "../src/world";
-import { initialize, seatPlayer, stageMidDive, viewStore, whenReady } from "../src/game/controls";
+import { initialize, seatPlayer, stageMidRun, viewStore, whenReady } from "../src/game/controls";
 import { GameUI } from "../src/game/ui/GameUI";
-import { menuFocus } from "../src/game/ui/menu/DeepwardMenu";
+import { menuFocus } from "../src/game/ui/menu/CrumbMenu";
 
-export type NativeFixture = "home" | "dive" | "stash" | "fabricator" | "cache" | "title" | "settings" | "credits" | "paused" | "reprinting" | "saving" | "blocked";
+export type NativeFixture = "home" | "run" | "stash" | "workbench" | "nook" | "pack" | "title" | "settings" | "credits" | "paused" | "caught" | "saving" | "blocked";
 
 /** Real GameUI and game state, with deterministic viewport/settings inputs for native paint checks. */
 export async function runeUiFixture(state: NativeFixture, width = 1280, height = 720) {
@@ -33,17 +33,18 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
 
 async function renderFixture(state: NativeFixture, width: number, height: number) {
   const ctx = createGameContext({
-    definition: defineGameDefinition({ name: "Deepward native UI proof", world, physics, multiplayer: "off", persist: false, lifecycle: "always-live" }),
-    player: { userId: "diver", isNew: true },
-    content: { entityById: id => id === "diver" ? { stats: { health: { max: 100 }, oxygen: { max: 110 }, ammo: { max: 6 } } } : id === "fitter" ? { stats: { health: { max: 80 } } } : null },
+    definition: defineGameDefinition({ name: "Crumb Run native UI proof", world, physics, multiplayer: "off", persist: false, lifecycle: "always-live" }),
+    player: { userId: "little", isNew: true },
+    content: { entityById: id => id === "little" ? { stats: { health: { max: 150 } } } : null },
   });
   initialize(ctx); seatPlayer(ctx); await whenReady(ctx);
   setGamePhase(ctx, "playing");
-  if (state === "dive" || state === "cache") await stageMidDive(ctx);
-  if (state === "cache") ctx.game.commands.run("deepward.cache", {});
+  if (state === "run" || state === "pack") await stageMidRun(ctx);
+  if (state === "pack") ctx.game.commands.run("deepward.pack", {});
   if (state === "stash") ctx.game.commands.run("deepward.openStash", {});
-  if (state === "fabricator") ctx.game.commands.run("deepward.openFabricator", {});
-  if (state === "reprinting" || state === "saving" || state === "blocked") viewStore.update(ctx, value => ({ ...value, mode: state, error: state === "blocked" ? "Saved record could not be read" : "" }));
+  if (state === "workbench") ctx.game.commands.run("deepward.openWorkbench", {});
+  if (state === "nook") ctx.game.commands.run("deepward.openNook", {});
+  if (state === "caught" || state === "saving" || state === "blocked") viewStore.update(ctx, value => ({ ...value, mode: state, error: state === "blocked" ? "Saved record could not be read" : "" }));
   if (state === "paused") ctx.game.commands.run("deepward.pause", {});
   if (state === "title" || state === "settings" || state === "credits") setGamePhase(ctx, "menu");
   menuFocus.id = state === "settings" || state === "credits" ? state : "new";
@@ -57,7 +58,7 @@ async function renderFixture(state: NativeFixture, width: number, height: number
   const tree = new Root(nativeTreeHost(() => {}), container, "fixture", false);
   tree.render(<GameProvider context={ctx}><SettingsControllerProvider controller={settings}><RuneViewport width={width} height={height}><GameUI /></RuneViewport></SettingsControllerProvider></GameProvider>);
   const surface = container.children[0];
-  if (surface?.tag !== "rune-surface") throw new Error("Deepward did not mount a direct native surface");
+  if (surface?.tag !== "rune-surface") throw new Error("Crumb Run did not mount a direct native surface");
   const unused = () => { throw new Error("headless sampling must not bind slots"); };
   const sink: RuneTreeSink = { setSpec: unused, bindNumber: unused, writeNumber: unused, bindText: unused };
   const spec = nativeSpec(surface, sink, true);
@@ -70,8 +71,8 @@ if (import.meta.main) {
   const state = process.argv[2];
   const output = process.argv[3];
   if (state === undefined || output === undefined) throw new Error("usage: bun games/deepward/proofs/runeUiFixture.tsx <state> <out.json> [width height]");
-  const states: readonly string[] = ["home","dive","stash","fabricator","cache","title","settings","credits","paused","reprinting","saving","blocked"];
-  if (!states.includes(state)) throw new Error(`Unknown Deepward UI state: ${state}`);
+  const states: readonly string[] = ["home","run","stash","workbench","nook","pack","title","settings","credits","paused","caught","saving","blocked"];
+  if (!states.includes(state)) throw new Error(`Unknown Crumb Run UI state: ${state}`);
   const spec = await runeUiFixture(state as NativeFixture, Number(process.argv[4] ?? 1280), Number(process.argv[5] ?? 720)); // type-escape: state was checked against the fixture vocabulary above
   await writeFile(output, JSON.stringify(spec));
 }

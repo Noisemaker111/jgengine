@@ -1,195 +1,241 @@
 import { createSessionLoop, type SessionLoopState } from "@jgengine/core/run/sessionLoop";
-import { spawnFauna, type Creature } from "./fauna";
-import { isStratum, type Stratum } from "./strata";
-import { PRINT_SPAWN, type Point } from "../world";
-import { FITTER_HEALTH, reserveOf } from "./combat";
-import { openScripBooks, settleEconomy } from "./counter";
-import { bankHaul, canCache, loseHaul } from "./haul";
-import { ITEMS, kindOf, rollItem, type Item, type ItemKind } from "./items";
 import { createItemLedger, type ItemLedgerState } from "@jgengine/core/loot/salvage";
-import type { CareerBankState } from "@jgengine/core/progression/careerBank";
-import type { StandingState } from "@jgengine/core/progression/standing";
-import type { LedgerState } from "@jgengine/core/economy/transactionLedger";
+import type { Point, Zone } from "../world";
+import { completeSets, defOf, ITEMS, itemValue, kindOf, rollItem, SETS, type Item, type ItemKind, type SetId } from "./loot";
+import { LITTLES, type LittleId } from "./littles";
+import { bankHaul, canCarry, loseHaul } from "./haul";
+import { packOf, STARTING_ZONES, unlockedLittles, UPGRADE_IDS, wellFed, type Milestones, type UpgradeId } from "./burrow";
+import { ROOT, depthOf, planRoom, seedFor, type PlannedLoot, type RoomPlan, type RunSeed } from "./runGen";
+import type { ThreatState } from "./threats";
 
-export { ITEMS, type Item, type ItemKind } from "./items";
+export { ITEMS, type Item, type ItemKind } from "./loot";
 
 export interface PackedItem extends Item { x: number; y: number; rotated: boolean }
-export const CACHE = { w: 4, h: 3 };
-export const TANK_SECONDS = 110;
-export interface Result { kind: "extracted" | "lost"; dive: number; count: number | null; reason: string; scrip?: number }
+/** The night: a run starts at 3 a.m.; dawn is six minutes later on the run clock; half an hour of game time after that, the family is up. */
+export const NIGHT_SECONDS = 360;
+export const GRACE_SECONDS = 60;
+export const NIGHT_START_MINUTE = 180;
+export const NIGHT_MINUTES = 180;
+
+export interface Result {
+  kind: "extracted" | "lost"; run: number; count: number | null; reason: string;
+  caps?: number; sets?: SetId[]; depth?: number; via?: string;
+}
 export interface Home {
-  version: 5; refits: ("tank" | "reserve")[]; reprintPending: boolean; revision: number; nextDive: number; life: number;
-  /** The diver's own name for the record; absent on saves written before it existed. */
+  version: 1; revision: number; nextRun: number; extractions: number; caught: number;
+  activeRun: number | null; last: Result | null;
+  /** A lost run waits on its acknowledgement before the next one. */
+  caughtPending: boolean;
+  /** The burrow's own name, if the player gave it one. */
   callsign?: string;
-  activeDive: number | null; stash: Item[]; extractions: number; deaths: number; last: Result | null;
-  /** Career scrip: what the counter keeps, and what a Life's haul becomes. */
-  bank: CareerBankState;
-  /** Marrow's standing, moved by returning and by dying. */
-  standing: StandingState;
-  /** Instances that left play; a broken-down item can never be equipped or paid again. */
+  stash: Item[]; caps: number;
+  little: LittleId;
+  upgrades: Record<UpgradeId, number>;
+  zones: Zone[];
+  /** Sets banked at least once. */
+  sets: SetId[];
+  /** What the kid took off you, kept in the toy box until a Little gets it back. */
+  kidsBox: Item[];
+  milestones: Milestones;
+  /** Gear chosen at the stash to take on the next run (at risk until extracted). */
+  bring: string[];
+  /** Instances traded away: never banked, packed or paid again. */
   ledger: ItemLedgerState;
-  /** The counter's books: every scrip movement with its reason and the balance it produced. */
-  books: LedgerState;
-  /** The dive session loop's own state, so a reload resumes the run that was outstanding. */
   session?: SessionLoopState;
 }
-export interface Dive {
-  id: number; elapsed: number; tankSeconds: number; oxygen: number; health: number; cache: PackedItem[];
-  collected: string[]; hand: "sidearm" | "service-rifle";
-  /** Rounds the refit issued for this dive's one reserve; the held weapon's magazine draws from it. */
-  reservePool: number;
-  flash: number; hurt: number;
-  print: { at: Point; health: number; mode: "route" | "calling" | "winding"; attack: number; cooldown: number; drop: Point | null };
-  channel: { id: string; remaining: number; anchor: Point; kind?: ChannelKind; total?: number } | null;
-  /** The stratum the diver stands in; receiving is the rail's floor. */
-  stratum: Stratum;
-  /** Headlamp: lights the dark strata, and lights the diver up for anything that hunts by sight. */
-  lamp: boolean;
-  /** Food, water and lures carried on the belt; food and water ride home into Marrow's galley. */
-  belt: { ration: number; water: number; lure: number };
-  /** Every creature in Bellwether this Life, by id. A creature put down stays down for the dive. */
-  fauna: Record<string, Creature>;
-  /** Times each resource node has been worked this Life. */
-  harvested: Record<string, number>;
-  /** Lures on the floor: where each landed and how long its blood keeps calling. */
-  thrown: { id: string; at: Point; remaining: number }[];
-  /** Seconds of ink still on the suit: a courier can smell it. */
-  inked: number;
+
+export interface Channel { kind: "search" | "disarm" | "cross" | "exit" | "toybox"; id: string; remaining: number; total: number; anchor: Point }
+export interface Run {
+  id: number; seed: string; little: LittleId; zones: Zone[];
+  elapsed: number; nightSeconds: number;
+  health: number; maxHealth: number;
+  pack: PackedItem[]; packW: number; packH: number; capacity: number;
+  room: string; visited: string[]; deepest: number;
+  taken: string[]; sprung: string[]; dead: string[];
+  dropped: { id: string; item: Item; at: Point; room: string }[];
+  kidTook: Item[];
+  channel: Channel | null;
+  hurt: number; flash: number;
+  /** The button shield is ready again in each new room. */
+  shield: boolean;
+  /** Live hunters in the current room. */
+  threats: ThreatState[];
+  sling: number;
+  /** The last thing that hurt you, for the caught screen. */
+  cause: string;
 }
-/** What a held E (or C) is doing: searching a locker, working a node, scanning, or taking a supply. */
-export type ChannelKind = "search" | "harvest" | "scan" | "supply" | "creature" | "zero";
-/** What the dive starts with beyond the refits: the base's air, carried lures and the crawler's landing. */
-export interface DiveStart { airBonus?: number; lures?: number; stratum?: Stratum }
+
 export function newHome(): Home {
   return {
-    version: 5, refits: [], reprintPending: false, revision: 0, nextDive: 1, life: 1, activeDive: null, stash: [], extractions: 0, deaths: 0, last: null,
-    bank: { banked: 0, haul: 0, deposited: 0, lost: 0, bestHaul: 0, runs: 0 },
-    standing: { records: {} }, ledger: {}, books: openScripBooks(0),
+    version: 1, revision: 0, nextRun: 1, extractions: 0, caught: 0, activeRun: null, last: null, caughtPending: false,
+    stash: [], caps: 0, little: "pip",
+    upgrades: { workbench: 1, larder: 0, mapRoom: 0, satchel: 0, trophies: 0 },
+    zones: [...STARTING_ZONES], sets: [], kidsBox: [],
+    milestones: { mapRoom: 0, bulkyBanked: 0, setsBanked: 0, deepestExtraction: 0 },
+    bring: [], ledger: {},
   };
 }
 export function ledgerOf(home: Home) { return createItemLedger(home.ledger); }
-/**
- * A dive is a session on the shared loop: it opens at departure, carries the haul it packed, and its
- * boundary is the game's own bank-or-lose rule. The loop is rebuilt from the home it is asked about,
- * so a pure `Home` value stays the only storage and a reload resumes the outstanding run.
- */
-function diveLoop(home: Home) {
-  const loop = createSessionLoop<never, { home: Home; dive: Pick<Dive, "id" | "cache">; kind: Result["kind"]; reason: string }, Home>({
+export const littlesOf = (home: Home) => unlockedLittles({ ...home.milestones, mapRoom: home.upgrades.mapRoom });
+export const runSeedOf = (run: Pick<Run, "seed" | "little" | "zones">): RunSeed => ({ seed: run.seed, little: run.little, zones: run.zones });
+export const roomOf = (run: Pick<Run, "seed" | "little" | "zones" | "room">): RoomPlan => planRoom(runSeedOf(run), run.room);
+
+function runLoop(home: Home) {
+  const loop = createSessionLoop<never, { home: Home; run: Pick<Run, "id" | "pack" | "kidTook" | "deepest">; kind: Result["kind"]; reason: string; via: string }, Home>({
     kind: "run",
-    settle: ({ input }) => settleDive(input.home, input.dive, input.kind, input.reason),
+    settle: ({ input }) => settleRun(input.home, input.run, input.kind, input.reason, input.via),
   });
   if (home.session !== undefined) loop.restore(home.session);
   return loop;
 }
-export function depart(home: Home, rifleUid: string | null = null): Home {
-  if (home.reprintPending) throw new Error("Acknowledge the reprint before departing");
-  if (home.activeDive !== null) throw new Error("A dive is already outstanding");
-  if (rifleUid !== null) {
-    if (!ledgerOf(home).canUse(rifleUid)) throw new Error("That rifle was broken down at the counter");
-    if (!home.stash.some(item => item.id === rifleUid && kindOf(item) === "service-rifle")) throw new Error("That service rifle is no longer banked");
+
+/** Leave the burrow: the brought gear leaves the stash and rides in the pack, at risk. */
+export function depart(home: Home): Home {
+  if (home.caughtPending) throw new Error("Shake it off at the burrow before the next run");
+  if (home.activeRun !== null) throw new Error("A run is already outstanding");
+  for (const uid of home.bring) {
+    if (!ledgerOf(home).canUse(uid)) throw new Error("That gear was traded away");
+    if (!home.stash.some(item => item.id === uid)) throw new Error("That gear is no longer in the stash");
   }
-  const loop = diveLoop(home);
+  if (!littlesOf(home).includes(home.little)) throw new Error("That Little has not moved in yet");
+  const loop = runLoop(home);
   const offer = loop.start();
-  return { ...home, stash: rifleUid === null ? home.stash : home.stash.filter(item => item.id !== rifleUid), revision: home.revision + 1, session: loop.snapshot(), activeDive: offer.session, nextDive: offer.session + 1 };
+  // The larder feeds you from the stash's cheapest food before you go.
+  const food = home.upgrades.larder > 0 ? home.stash.filter(item => defOf(item).category === "food").sort((a, b) => itemValue(a) - itemValue(b))[0] : undefined;
+  const stash = home.stash.filter(item => !home.bring.includes(item.id) && item.id !== food?.id);
+  return { ...home, stash, revision: home.revision + 1, session: loop.snapshot(), activeRun: offer.session, nextRun: offer.session + 1 };
 }
-export function newDive(id: number, home: Pick<Home, "refits"> = { refits: [] }, rifle: Item | null = null, start: DiveStart = {}): Dive {
-  if (rifle !== null && kindOf(rifle) !== "service-rifle") throw new Error("Only a service rifle can be prepared for departure");
-  const tankSeconds = (home.refits.includes("tank") ? 145 : TANK_SECONDS) + (start.airBonus ?? 0);
-  return { id, elapsed: 0, tankSeconds, oxygen: tankSeconds, health: 100, cache: rifle === null ? [] : [pack([], rifle)!], collected: [], hand: rifle === null ? "sidearm" : "service-rifle",
-    reservePool: reserveOf(home.refits), flash: 0, hurt: 0,
-    print: { at: PRINT_SPAWN, health: FITTER_HEALTH, mode: "route", attack: 0, cooldown: 0, drop: null }, channel: null,
-    stratum: start.stratum ?? "vault", lamp: false, belt: { ration: 0, water: 0, lure: start.lures ?? 0 }, fauna: spawnFauna(), harvested: {}, thrown: [], inked: 0 };
+/** Whether this departure eats from the larder: the same rule `depart` uses, read before it runs. */
+export function larderMeal(home: Home): Item | null {
+  if (home.upgrades.larder <= 0) return null;
+  return home.stash.filter(item => defOf(item).category === "food").sort((a, b) => itemValue(a) - itemValue(b))[0] ?? null;
 }
+
+export function newRun(id: number, home: Home, before: Home = home): Run {
+  const little = LITTLES[home.little];
+  const pack = packOf(home.upgrades.satchel);
+  const brought = before.stash.filter(item => before.bring.includes(item.id));
+  const fed = larderMeal(before) === null ? 0 : wellFed(home.upgrades.larder);
+  const maxHealth = 100 + fed;
+  let packed: PackedItem[] = [];
+  for (const item of brought) { const slot = fitInto(packed, item, pack.w, pack.h); if (slot !== null) packed = [...packed, slot]; }
+  return {
+    id, seed: seedFor(id, home.revision), little: home.little, zones: [...home.zones],
+    elapsed: 0, nightSeconds: NIGHT_SECONDS + little.extraNight,
+    health: maxHealth, maxHealth,
+    pack: packed, packW: pack.w, packH: pack.h, capacity: Math.round(pack.weight * little.carry * 10) / 10,
+    room: ROOT, visited: [ROOT], deepest: 0,
+    taken: [], sprung: [], dead: [], dropped: [], kidTook: [],
+    channel: null, hurt: 0, flash: 0, shield: true, threats: [], sling: 0, cause: "",
+  };
+}
+
 export function footprint(item: Pick<PackedItem, "baseId" | "rotated">): { w: number; h: number } {
   const { w, h } = ITEMS[kindOf(item)];
   return item.rotated ? { w: h, h: w } : { w, h };
 }
-export function fits(cache: readonly PackedItem[], item: PackedItem): boolean {
+export function fits(pack: readonly PackedItem[], item: PackedItem, w: number, h: number): boolean {
   const a = footprint(item);
-  return item.x >= 0 && item.y >= 0 && item.x + a.w <= CACHE.w && item.y + a.h <= CACHE.h && cache.every(other => {
+  return item.x >= 0 && item.y >= 0 && item.x + a.w <= w && item.y + a.h <= h && pack.every(other => {
     if (other.id === item.id) return true;
     const b = footprint(other);
     return item.x + a.w <= other.x || other.x + b.w <= item.x || item.y + a.h <= other.y || other.y + b.h <= item.y;
   });
 }
-export function pack(cache: readonly PackedItem[], item: Item): PackedItem | null {
-  for (const rotated of [false, true]) for (let y = 0; y < CACHE.h; y++) for (let x = 0; x < CACHE.w; x++) {
+export function fitInto(pack: readonly PackedItem[], item: Item, w: number, h: number): PackedItem | null {
+  for (const rotated of [false, true]) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const candidate = { ...item, x, y, rotated };
-    if (fits(cache, candidate)) return candidate;
+    if (fits(pack, candidate, w, h)) return candidate;
   }
   return null;
 }
-/** What an empty square, the weight gate or an already-searched source refused, in the player's words. */
-export type LootRefusal = "taken" | "over-capacity" | "grid-full";
-export type Looted = { ok: true; dive: Dive } | { ok: false; reason: LootRefusal; message: string };
-/** The instance a source would yield in this Life; extraction and the pre-search check roll the same one. */
-export function peekLoot(dive: Dive, source: string, kind: ItemKind, depth = 1): Item {
-  return rollItem(kind, depth, `deepward:${dive.id}:${source}`, `${dive.id}:${source}`);
+export const pack = (run: Pick<Run, "pack" | "packW" | "packH">, item: Item) => fitInto(run.pack, item, run.packW, run.packH);
+
+export type LootRefusal = "taken" | "over-capacity" | "pack-full";
+export type Looted = { ok: true; run: Run; item: Item } | { ok: false; reason: LootRefusal; message: string };
+/** The instance a spot holds this run; the pre-search check and the search roll the same one. */
+export function peekLoot(run: Pick<Run, "id" | "seed">, planned: Pick<PlannedLoot, "key" | "kind" | "level">): Item {
+  if (planned.kind === "toybox") throw new Error("The toy box holds what the kid took, not a roll");
+  return rollItem(planned.kind, planned.level, `crumb:${run.seed}:${planned.key}`, `${run.id}:${planned.kind}~${planned.key.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`);
 }
-/** Item level is the room's depth, so the same source in the same Life always rolls the same instance. */
-export function takeLoot(dive: Dive, source: string, kind: ItemKind, depth = 1): Looted {
-  if (dive.collected.includes(source)) return { ok: false, reason: "taken", message: "That source is already empty." };
-  if (dive.health <= 0) return { ok: false, reason: "taken", message: "This Life is over." };
-  const item = peekLoot(dive, source, kind, depth);
-  const weight = canCache(dive.cache, item);
-  if (!weight.ok) return { ok: false, reason: weight.reason === "over-capacity" ? "over-capacity" : "grid-full", message: weight.message };
-  const packed = pack(dive.cache, item);
-  if (packed === null) return { ok: false, reason: "grid-full", message: `The cache grid has no room for ${ITEMS[kind].name}. Tab to repack or leave something behind.` };
-  return { ok: true, dive: { ...dive, cache: [...dive.cache, packed], collected: [...dive.collected, source], channel: null } };
+/** Put a find in the pack: weight first, then a square that fits. */
+export function carry(run: Run, item: Item, key: string): Looted {
+  if (run.taken.includes(key)) return { ok: false, reason: "taken", message: "Nothing left there." };
+  if (run.health <= 0) return { ok: false, reason: "taken", message: "This run is over." };
+  const weight = canCarry(run.pack, item, run.capacity, LITTLES[run.little]);
+  if (!weight.ok) return { ok: false, reason: weight.reason === "over-capacity" ? "over-capacity" : "pack-full", message: weight.message };
+  const slot = pack(run, item);
+  if (slot === null) return { ok: false, reason: "pack-full", message: `No room in your pack for the ${defOf(item).name.toLowerCase()}. Tab to repack, or leave something behind.` };
+  return { ok: true, item, run: { ...run, pack: [...run.pack, slot], taken: [...run.taken, key], channel: null } };
 }
-/** Resolve once against the durable departure id. Cache coordinates never enter home storage. */
-export function settle(home: Home, dive: Pick<Dive, "id" | "cache">, kind: Result["kind"], reason: string): Home {
-  const loop = diveLoop(home);
-  if (loop.phase() !== "open" || loop.snapshot().session !== dive.id) throw new Error("Dive already settled or superseded");
-  // The run carries the instances it packed; its boundary hands them to the shared haul rules.
-  loop.carry(dive.cache.length);
-  const settlement = loop.settle({ home, dive, kind, reason });
+
+/** Resolve the run once, against its durable id. */
+export function settle(home: Home, run: Pick<Run, "id" | "pack" | "kidTook" | "deepest">, kind: Result["kind"], reason: string, via = ""): Home {
+  const loop = runLoop(home);
+  if (loop.phase() !== "open" || loop.snapshot().session !== run.id) throw new Error("Run already settled or superseded");
+  loop.carry(run.pack.length);
+  const settlement = loop.settle({ home, run, kind, reason, via });
   return { ...settlement.result, session: loop.snapshot() };
 }
 
-/** The boundary's own rule: the shared haul banks what the stash takes or loses it with the Life. */
-function settleDive(home: Home, dive: Pick<Dive, "id" | "cache">, kind: Result["kind"], reason: string): Home {
-  const carried: Item[] = dive.cache.map(({ x: _x, y: _y, rotated: _rotated, ...item }) => item);
-  const moved = kind === "extracted" ? bankHaul(carried, home.stash) : { banked: [], refused: loseHaul(carried) };
-  const economy = settleEconomy(home, carried, kind, dive.id);
-  return { ...home, revision: home.revision + 1, activeDive: null, nextDive: dive.id + 1, reprintPending: kind === "lost",
-    stash: [...home.stash, ...moved.banked], extractions: home.extractions + (kind === "extracted" ? 1 : 0),
-    deaths: home.deaths + (kind === "lost" ? 1 : 0), life: home.life + (kind === "lost" ? 1 : 0),
-    bank: economy.bank, standing: economy.standing, books: economy.books,
-    last: { kind, dive: dive.id, count: dive.cache.length, reason, scrip: economy.scrip } };
+/** Bottle caps become the purse; sets pay their bonus; everything else goes on the stash shelves. */
+function settleRun(home: Home, run: Pick<Run, "id" | "pack" | "kidTook" | "deepest">, kind: Result["kind"], reason: string, via: string): Home {
+  const carried: Item[] = run.pack.map(({ x: _x, y: _y, rotated: _r, ...item }) => item);
+  const kidsBox = [...home.kidsBox, ...run.kidTook].slice(-12);
+  if (kind === "lost") {
+    loseHaul(carried);
+    return { ...home, revision: home.revision + 1, activeRun: null, nextRun: run.id + 1, caughtPending: true, caught: home.caught + 1, kidsBox, bring: [],
+      last: { kind, run: run.id, count: carried.length, reason, depth: run.deepest } };
+  }
+  const caps = carried.filter(item => kindOf(item) === "bottle-cap");
+  const goods = carried.filter(item => kindOf(item) !== "bottle-cap");
+  const moved = bankHaul(goods, home.stash);
+  const sets = completeSets(goods);
+  const setBonus = sets.reduce((sum, id) => sum + SETS[id].bonus * (home.upgrades.trophies > 0 ? 2 : 1), 0);
+  const capsEarned = caps.reduce((sum, item) => sum + itemValue(item), 0) + setBonus;
+  const bulky = goods.filter(item => defOf(item).bulky === true).length;
+  const allSets = [...new Set([...home.sets, ...sets])];
+  return { ...home, revision: home.revision + 1, activeRun: null, nextRun: run.id + 1, extractions: home.extractions + 1, kidsBox, bring: [],
+    stash: [...home.stash, ...moved.banked], caps: home.caps + capsEarned, sets: allSets,
+    milestones: { ...home.milestones, bulkyBanked: home.milestones.bulkyBanked + bulky, setsBanked: allSets.length, deepestExtraction: Math.max(home.milestones.deepestExtraction, run.deepest), mapRoom: home.upgrades.mapRoom },
+    last: { kind, run: run.id, count: carried.length, reason, caps: capsEarned, sets, depth: run.deepest, via } };
 }
+
 export function recoverInterrupted(home: Home): Home {
-  if (home.activeDive === null) return home;
-  const lost = settle(home, { id: home.activeDive, cache: [] }, "lost", "Radio lost during a dive. The Life ended; its carried haul stayed in Bellwether.");
-  return { ...lost, last: { ...lost.last!, count: null } }; // Carried instances were never persisted mid-dive.
+  if (home.activeRun === null) return home;
+  const lost = settle(home, { id: home.activeRun, pack: [], kidTook: [], deepest: 0 }, "lost", "The night ended while you were away. Whatever you carried stayed in the house.");
+  return { ...lost, last: { ...lost.last!, count: null } };
 }
-/** What else is wearing on the diver this tick: crush, hunger, thirst, and how hard the air works. */
-export interface Wear { damage?: number; airRate?: number }
-export function ageDive(dive: Dive, dt: number, steam: boolean, wear: Wear = {}): Dive {
-  if (!(dt > 0) || !Number.isFinite(dt)) return dive;
-  const breath = dt * (wear.airRate ?? 1);
-  const oxygen = Math.max(0, dive.oxygen - breath);
-  const suffocation = Math.max(0, breath - dive.oxygen) / (wear.airRate ?? 1) * 12;
-  const health = Math.max(0, dive.health - suffocation - (steam ? 18 * dt : 0) - (wear.damage ?? 0) * dt);
-  return { ...dive, elapsed: dive.elapsed + dt, oxygen, health,
-    flash: Math.max(0, dive.flash - dt),
-    hurt: health < dive.health ? 0.35 : Math.max(0, dive.hurt - dt) };
+export function acknowledgeCaught(home: Home): Home {
+  if (!home.caughtPending || home.activeRun !== null) throw new Error("Nothing to shake off");
+  return { ...home, revision: home.revision + 1, caughtPending: false };
 }
 
-export function acknowledgeReprint(home: Home): Home {
-  if (!home.reprintPending || home.activeDive !== null) throw new Error("No reprint awaiting acknowledgement");
-  return { ...home, revision: home.revision + 1, reprintPending: false };
+/** The night's clock as the HUD prints it: "4:12 AM". */
+export function clockText(run: Pick<Run, "elapsed" | "nightSeconds">): string {
+  const minute = Math.floor(NIGHT_START_MINUTE + Math.min(run.elapsed, run.nightSeconds + GRACE_SECONDS) / run.nightSeconds * NIGHT_MINUTES);
+  const h = Math.floor(minute / 60), m = minute % 60;
+  return `${h}:${String(m).padStart(2, "0")} AM`;
 }
-
-/** A dive saved before the strata existed resumes in receiving with an empty belt and fresh fauna. */
-export function normalizeDive(dive: Dive): Dive {
-  const saved = dive as Partial<Dive> & Pick<Dive, "id">;
-  return { ...dive,
-    stratum: isStratum(saved.stratum) ? saved.stratum : "vault",
-    lamp: saved.lamp === true,
-    belt: saved.belt ?? { ration: 0, water: 0, lure: 0 },
-    fauna: saved.fauna ?? spawnFauna(),
-    harvested: saved.harvested ?? {},
-    thrown: saved.thrown ?? [],
-    inked: typeof saved.inked === "number" ? saved.inked : 0 };
+/** The minute of the night, for the room's lights. */
+export const nightMinute = (run: Pick<Run, "elapsed" | "nightSeconds">) => NIGHT_START_MINUTE + run.elapsed / run.nightSeconds * NIGHT_MINUTES;
+export const isDawn = (run: Pick<Run, "elapsed" | "nightSeconds">) => run.elapsed >= run.nightSeconds;
+export const familyUp = (run: Pick<Run, "elapsed" | "nightSeconds">) => run.elapsed >= run.nightSeconds + GRACE_SECONDS;
+/** Whether the room's light is on: someone up for water, or the family awake at dawn. */
+export function lightsOn(run: Pick<Run, "elapsed" | "nightSeconds">, plan: Pick<RoomPlan, "lightsAt">): boolean {
+  if (isDawn(run)) return true;
+  if (plan.lightsAt === null) return false;
+  const minute = nightMinute(run);
+  return minute >= plan.lightsAt && minute < plan.lightsAt + 25;
 }
+export const roomDepth = (run: Pick<Run, "room">) => depthOf(run.room);
+export function age(run: Run, dt: number, damage = 0): Run {
+  if (!(dt > 0) || !Number.isFinite(dt)) return run;
+  const health = Math.max(0, run.health - damage);
+  return { ...run, elapsed: run.elapsed + dt, health, flash: Math.max(0, run.flash - dt), sling: Math.max(0, run.sling - dt), hurt: health < run.health ? 0.4 : Math.max(0, run.hurt - dt) };
+}
+/** Whether the Little is carrying something that needs both arms. */
+export const twoHanded = (run: Pick<Run, "pack" | "little">) => !LITTLES[run.little].bulkyFree && run.pack.some(item => defOf(item).bulky === true);
+/** Gear in the pack works for you; the effect is on while it is carried. */
+export const hasGear = (run: Pick<Run, "pack">, effect: NonNullable<ReturnType<typeof defOf>["gear"]>) => run.pack.some(item => defOf(item).gear === effect);
+export { UPGRADE_IDS };

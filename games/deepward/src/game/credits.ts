@@ -1,22 +1,13 @@
 import { mergeCredits } from "@jgengine/core/menu/credits";
 import { lookCredits } from "../art/look";
 
-/** Deepward ships original procedural geometry and synthesized cues; the engine supplies the rest. */
-export const DEEPWARD_CREDITS = mergeCredits({
-  title: "DEEPWARD",
+/** Crumb Run ships original procedural geometry, canvas-painted surfaces and synthesized cues; the engine supplies the rest. */
+export const CRUMB_RUN_CREDITS = mergeCredits({
+  title: "CRUMB RUN",
   sections: [
     {
-      heading: "Original Deepward artwork",
-      entries: [
-        {
-          label: "Deepward",
-          detail: "Original vault geometry, machinery, Fitter rig, signage, item art and synthesized mechanical sound cues.",
-        },
-      ],
-    },
-    {
-      heading: "Surfaces",
-      entries: [{ label: "ambientCG", detail: "CC0 PBR scans: PaintedMetal006, DiamondPlate005A, MetalPlates001, Rust007, Concrete025, Terrazzo005", href: "https://ambientcg.com" }],
+      heading: "Original Crumb Run artwork",
+      entries: [{ label: "Crumb Run", detail: "Original giant-house rooms, the burrow, the Littles' finds, the Cat, the Roomba, the Kid, the Dog and the spider, canvas-painted surfaces and synthesized sound cues." }],
     },
     ...lookCredits(),
     {
@@ -28,5 +19,5 @@ export const DEEPWARD_CREDITS = mergeCredits({
       ],
     },
   ],
-  notice: "Marrow keeps one record per browser profile. Nothing leaves this device.",
+  notice: "The burrow keeps its records in this browser. Nothing leaves this device.",
 });

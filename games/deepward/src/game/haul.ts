@@ -1,79 +1,64 @@
 import { createInventorySet, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { createRunHaul } from "@jgengine/core/loot/haul";
 import { itemMass } from "@jgengine/core/loot/drop";
-import type { Item } from "./items";
+import { defOf, type Item } from "./loot";
+import type { LittleDef } from "./littles";
 
-/** Cache weight in the same unit the rolled items carry. Twelve squares is the grid; this is the load. */
-export const CACHE_WEIGHT = 12;
-/** Deepward's carrying bands: encumbered from 85% of the cache, slowing toward half speed at the limit. */
-const ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
-/** Slot counts only bound the shared inventory model; Deepward's grid decides what actually fits. */
-const RUN_SLOTS = 16;
-const STASH_SLOTS = 2048;
+/** Encumbered from 80% of the load, slowing toward 55% speed at the limit. */
+const ENCUMBRANCE = { soft: 0.8, floor: 0.55 } as const;
+const RUN_SLOTS = 24;
+const STASH_SLOTS = 4096;
 
 export interface HaulLoad { mass: number; remaining: number; capacity: number }
-export type CacheCheck = { ok: true; load: HaulLoad } | { ok: false; reason: "over-capacity" | "no-space"; message: string };
+export type PackCheck = { ok: true; load: HaulLoad } | { ok: false; reason: "over-capacity" | "no-space"; message: string };
 
-function slotsOf(items: readonly Item[], slots: number): InventoryState {
-  const state: (readonly [string, number])[] = items.map(item => [item.id, 1] as const);
-  const out: ({ itemId: string; count: number } | null)[] = [];
-  for (let index = 0; index < slots; index += 1) {
-    const entry = state[index];
-    out.push(entry === undefined ? null : { itemId: entry[0], count: entry[1] });
-  }
-  return { slots: out };
+/** What an item weighs on this Little's back: Pip carries food at half weight. */
+export function carriedWeight(item: Item, little: Pick<LittleDef, "foodSense">): number {
+  const mass = itemMass(item);
+  return Math.round((little.foodSense && defOf(item).category === "food" ? mass * 0.5 : mass) * 100) / 100;
 }
 
-/** A run haul restored from the live records, so the weight gate and bank/fail rules are the shared ones. */
-function haulOf(cache: readonly Item[], stash: readonly Item[], incoming: readonly Item[] = []) {
+function slotsOf(items: readonly Item[], slots: number): InventoryState {
+  const out: ({ itemId: string; count: number } | null)[] = [];
+  for (let index = 0; index < slots; index += 1) { const item = items[index]; out.push(item === undefined ? null : { itemId: item.id, count: 1 }); }
+  return { slots: out };
+}
+/** A run haul restored from the live records, so the weight gate and the bank/fail rules are the shared ones. */
+function haulOf(pack: readonly Item[], stash: readonly Item[], capacity: number, weigh: (item: Item) => number, incoming: readonly Item[] = []) {
   const inventories = createInventorySet({ run: { slots: RUN_SLOTS }, stash: { slots: STASH_SLOTS } }, { stackLimit: () => 1 });
   const masses = new Map<string, number>();
-  for (const item of [...cache, ...stash, ...incoming]) masses.set(item.id, itemMass(item));
-  const haul = createRunHaul({
-    inventories,
-    runId: "run",
-    stashId: "stash",
-    weightOf: id => masses.get(id) ?? 0,
-    capacity: CACHE_WEIGHT,
-    encumbrance: ENCUMBRANCE,
-    storage: null,
-  });
-  if (!haul.restore({ run: slotsOf(cache, RUN_SLOTS), stash: slotsOf(stash, STASH_SLOTS) })) throw new Error("deepward: cache records are not a valid haul");
+  for (const item of [...pack, ...stash, ...incoming]) masses.set(item.id, weigh(item));
+  const haul = createRunHaul({ inventories, runId: "run", stashId: "stash", weightOf: id => masses.get(id) ?? 0, capacity, encumbrance: ENCUMBRANCE, storage: null });
+  if (!haul.restore({ run: slotsOf(pack, RUN_SLOTS), stash: slotsOf(stash, STASH_SLOTS) })) throw new Error("crumb-run: pack records are not a valid haul");
   return haul;
 }
 
-export function loadOf(cache: readonly Item[]): HaulLoad {
-  const mass = cache.reduce((sum, item) => sum + itemMass(item), 0);
-  return { mass: Math.round(mass * 100) / 100, remaining: Math.round((CACHE_WEIGHT - mass) * 100) / 100, capacity: CACHE_WEIGHT };
+export function loadOf(pack: readonly Item[], capacity: number, little: Pick<LittleDef, "foodSense">): HaulLoad {
+  const mass = pack.reduce((sum, item) => sum + carriedWeight(item, little), 0);
+  return { mass: Math.round(mass * 100) / 100, remaining: Math.round((capacity - mass) * 100) / 100, capacity };
 }
 
-/**
- * Whether the cache can take one more instance, through the shared weight gate. Over capacity and
- * out of slots read differently, because the player's next move differs: drop something, or nothing
- * about the load is the problem.
- */
-export function canCache(cache: readonly Item[], item: Item): CacheCheck {
-  const haul = haulOf(cache, [], [item]);
-  const outcome = haul.carry(item.id);
-  const load = loadOf(cache);
-  if (outcome.ok) return { ok: true, load: loadOf([...cache, item]) };
+/** Whether the pack can take one more find, through the shared weight gate. */
+export function canCarry(pack: readonly Item[], item: Item, capacity: number, little: Pick<LittleDef, "foodSense">): PackCheck {
+  const weigh = (entry: Item) => carriedWeight(entry, little);
+  const outcome = haulOf(pack, [], capacity, weigh, [item]).carry(item.id);
+  if (outcome.ok) return { ok: true, load: loadOf([...pack, item], capacity, little) };
   if (outcome.reason === "over-capacity") {
-    const after = Math.round((load.mass + itemMass(item)) * 100) / 100;
-    return { ok: false, reason: "over-capacity", message: `${item.name} would put the cache at ${after} of ${CACHE_WEIGHT}. Leave something behind first.` };
+    const after = Math.round((loadOf(pack, capacity, little).mass + weigh(item)) * 100) / 100;
+    return { ok: false, reason: "over-capacity", message: `${item.name} would make your pack ${after} of ${capacity}. Leave something behind first.` };
   }
-  return { ok: false, reason: "no-space", message: `The cache carries no more than ${RUN_SLOTS} instances.` };
+  return { ok: false, reason: "no-space", message: `Your pack holds no more than ${RUN_SLOTS} things.` };
 }
 
-/** Move what the stash holds out of the carried haul; what it refuses stays carried, i.e. lost with the Life. */
-export function bankHaul(cache: readonly Item[], stash: readonly Item[]): { banked: Item[]; refused: Item[] } {
-  const haul = haulOf(cache, stash);
+/** Move the haul into the stash; what the stash refuses stays behind. */
+export function bankHaul(pack: readonly Item[], stash: readonly Item[]): { banked: Item[]; refused: Item[] } {
+  const haul = haulOf(pack, stash, Number.MAX_SAFE_INTEGER, item => itemMass(item));
   const moved = haul.bank();
-  const byId = new Map(cache.map(item => [item.id, item] as const));
+  const byId = new Map(pack.map(item => [item.id, item] as const));
   const keep = (stacks: readonly { itemId: string }[]) => stacks.map(stack => byId.get(stack.itemId)).filter((item): item is Item => item !== undefined);
   return { banked: keep(moved.stacks), refused: keep(moved.refused) };
 }
-
-/** A failed Life gives up the carried haul; the stash is untouched. */
-export function loseHaul(cache: readonly Item[]): Item[] {
-  return haulOf(cache, []).fail().stacks.map(stack => cache.find(item => item.id === stack.itemId)).filter((item): item is Item => item !== undefined);
+/** A caught Little gives up the carried haul; the stash is untouched. */
+export function loseHaul(pack: readonly Item[]): Item[] {
+  return haulOf(pack, [], Number.MAX_SAFE_INTEGER, item => itemMass(item)).fail().stacks.map(stack => pack.find(item => item.id === stack.itemId)).filter((item): item is Item => item !== undefined);
 }

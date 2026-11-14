@@ -14,99 +14,101 @@ import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { useGameStore } from "@jgengine/ui/hooks";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { AMBER, Button, DIM, Frame, FULL, Heading, RED, Row, Section, Sheet, Tag, TEAL, Text, deepwardTheme } from "./dock";
-import { groundDistance, EXIT, roomAt } from "../../world";
+import { Button, crumbTheme, Frame, GOLD, GREEN, Heading, Meter, MUTED, RED, Row, Section, Sheet, SKY, Tag, Text } from "./dock";
 import { nearby, storageChanged, viewStore } from "../controls";
-import { CACHE, footprint, ITEMS, type Dive } from "../state";
-import { weaponReadout } from "../combat";
-import { loadOf, CACHE_WEIGHT } from "../haul";
-import { breakdownValue, compareToPrepared, kindOf, statLines, type Item } from "../items";
-import { REFITS, refitMissing } from "../progression";
-import { counterRows, marrowStanding, OPERATOR } from "../counter";
+import { clockText, footprint, hasGear, isDawn, lightsOn, littlesOf, roomOf, twoHanded, type Run } from "../state";
+import { loadOf } from "../haul";
+import { completeSets, defOf, ITEMS, kindOf, SETS, SET_IDS, tradeValue, type Item, type ItemKind } from "../loot";
+import { LITTLES, LITTLE_IDS } from "../littles";
+import { CHARTS, missing, nextGoal, packOf, RECIPES, UPGRADES, UPGRADE_IDS, wellFed, type Cost } from "../burrow";
 import { ItemMark } from "./ItemMark";
-import { DeepwardMenu, RecordSettings } from "./menu/DeepwardMenu";
-import { RECORD_KEY, SAVE_KEY } from "../save";
-import { FabricatorSheet } from "./FabricatorSheet";
-import { marrowOf, marrowState } from "../marrow";
-import { nextGoal, sealMark } from "../deep";
-import { crushDamage } from "../strata";
+import { CrumbMenu, RecordSettings } from "./menu/CrumbMenu";
+import { RECORD_KEY } from "../save";
+import { ZONE_NAME, type Zone } from "../../world";
 import { GAME_FONTS } from "../../art/look";
 
 type Command = (name: string, input?: unknown) => unknown;
-for (const face of [GAME_FONTS.display,GAME_FONTS.body,GAME_FONTS.numeric]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
-const NO_CACHE: Dive["cache"] = [];
-const positionOf = (ctx: GameContext) => ctx.scene.entity.get(ctx.player.userId)?.position ?? [0,0,14] as const;
+for (const face of [GAME_FONTS.display, GAME_FONTS.body, GAME_FONTS.numeric]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
+const NO_PACK: Run["pack"] = [];
 
 export function GameUI() {
   const ctx = useGameContext(), phase = useOptionalGamePhase(), settings = useSettings(), bindings = useActionBindings();
-  const screen = useStore(viewStore,v => ({panel:v.panel,mode:v.mode,paused:v.paused,diving:v.dive !== null}));
-  // A save boundary or reprint also freezes the game; only a held home or dive shows the pause menu over it.
-  const swapping = useSceneSwapping(), menu = phase === "menu" || (phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive"));
-  const command: Command = (name,input = {}) => ctx.game.commands.run(`deepward.${name}`,input);
+  const screen = useStore(viewStore, v => ({ panel: v.panel, mode: v.mode, paused: v.paused, out: v.run !== null && v.mode === "run" }));
+  const swapping = useSceneSwapping(), menu = phase === "menu" || (phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "run"));
+  const command: Command = (name, input = {}) => ctx.game.commands.run(`deepward.${name}`, input);
   const close = () => { command("close"); };
-  const notices = useMemo(() => ({read:ctx.game.notices.list,subscribe:ctx.game.notices.subscribe}),[ctx]);
-  useBrowserSuspension(() => { const v = viewStore.read(ctx); if (v.panel === null && !v.paused && (v.mode === "home" || v.mode === "dive")) command("pause",{paused:true}); });
+  const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
+  useBrowserSuspension(() => { const v = viewStore.read(ctx); if (v.panel === null && !v.paused && (v.mode === "home" || v.mode === "run")) command("pause", { paused: true }); });
   useEffect(() => {
-    const cache = bindings["deepwardCache"], codes = cache === undefined ? [] : allActionCodes(cache);
+    const pack = bindings["crumbPack"], codes = pack === undefined ? [] : allActionCodes(pack);
     const key = (e: KeyboardEvent) => {
       if (e.repeat || settings.isOpen) return;
       const v = viewStore.read(ctx);
-      if (codes.includes(e.code) && v.panel === "cache") { e.preventDefault(); e.stopImmediatePropagation(); command("cache"); }
-      else if (e.code === "Escape" && v.panel === null && !v.paused && (v.mode === "home" || v.mode === "dive")) { e.preventDefault(); e.stopImmediatePropagation(); command("pause"); }
+      if (codes.includes(e.code) && v.panel === "pack") { e.preventDefault(); e.stopImmediatePropagation(); command("pack"); }
+      else if (e.code === "Escape" && v.panel === null && !v.paused && (v.mode === "home" || v.mode === "run")) { e.preventDefault(); e.stopImmediatePropagation(); command("pause"); }
     };
-    const storage = (e: StorageEvent) => { if (e.key === null || e.key === SAVE_KEY || e.key.startsWith(RECORD_KEY)) storageChanged(ctx); };
-    window.addEventListener("keydown",key,true); window.addEventListener("storage",storage);
-    return () => { window.removeEventListener("keydown",key,true); window.removeEventListener("storage",storage); };
-  },[ctx,settings.isOpen,bindings]);
-  return <RuneRoot context={ctx} theme={deepwardTheme}>
+    const storage = (e: StorageEvent) => { if (e.key === null || e.key.startsWith(RECORD_KEY)) storageChanged(ctx); };
+    window.addEventListener("keydown", key, true); window.addEventListener("storage", storage);
+    return () => { window.removeEventListener("keydown", key, true); window.removeEventListener("storage", storage); };
+  }, [ctx, settings.isOpen, bindings]);
+  return <RuneRoot context={ctx} theme={crumbTheme}>
     <RuneView anchor="fill" hidden={menu}>
-      <RuneView anchor="top-right" safe inset={18}><Button onPress={() => command("pause")}>Hold / Esc</Button></RuneView>
-      {screen.diving ? <DiveHud /> : screen.mode === "home" ? <HomeHud /> : null}
-      <RuneView anchor="bottom" safe inset={20} gap={8} maxWidth={560} responsive={{phone:{maxWidth:340}}}><Prompt command={command} /><Radio /></RuneView>
-      {screen.panel === "stash" ? <StashSheet command={command} close={close} /> : screen.panel === "fabricator" ? <FabricatorPanel command={command} close={close} /> : screen.panel === "cache" ? <CacheSheet command={command} close={close} /> : null}
-      {screen.mode === "reprinting" ? <ReprintSheet command={command} /> : screen.mode === "saving" || screen.mode === "blocked" ? <SaveSheet command={command} /> : null}
-      {swapping ? <RuneView anchor="fill" fill="#050e13" justify="center" items="center"><Heading>Taking the rail…</Heading></RuneView> : null}
+      <RuneView anchor="top-right" safe inset={18}><Button onPress={() => command("pause")}>Hold still / Esc</Button></RuneView>
+      {screen.out ? <RunHud /> : screen.mode === "home" ? <HomeHud /> : null}
+      <RuneView anchor="bottom" safe inset={20} gap={8} maxWidth={620} responsive={{ phone: { maxWidth: 340 } }}><Prompt command={command} /><Radio /></RuneView>
+      {screen.panel === "stash" ? <StashSheet command={command} close={close} /> : screen.panel === "workbench" ? <WorkbenchSheet command={command} close={close} /> : screen.panel === "nook" ? <NookSheet command={command} close={close} /> : screen.panel === "pack" ? <PackSheet command={command} close={close} /> : null}
+      {screen.mode === "caught" ? <CaughtSheet command={command} /> : screen.mode === "saving" || screen.mode === "blocked" ? <SaveSheet command={command} /> : null}
+      {swapping ? <RuneView anchor="fill" fill="#140c08" justify="center" items="center" gap={8}><Heading>Creeping on…</Heading><Text color={MUTED} text={bind(() => { const v = viewStore.read(ctx); return v.run === null ? "Home to the burrow." : roomOf(v.run).template.name; })} /></RuneView> : null}
     </RuneView>
-    {menu ? <DeepwardMenu key={phase} /> : null}
+    {menu ? <CrumbMenu key={phase} /> : null}
     {settings.isOpen ? <Sheet title="Settings" close={settings.close}><RecordSettings /></Sheet> : null}
-    <RuneView anchor="top" safe inset={70} gap={6}><RuneTransient source={notices} expire={ctx.game.notices.prune}>{notice => <Frame><Text color={notice.tone === "deny" ? RED : AMBER}>{notice.text}</Text></Frame>}</RuneTransient></RuneView>
+    <RuneView anchor="top" safe inset={70} gap={6} maxWidth={560}><RuneTransient source={notices} expire={ctx.game.notices.prune}>{notice => <Frame padding={10}><Text color={notice.tone === "deny" ? RED : GOLD}>{notice.text}</Text></Frame>}</RuneTransient></RuneView>
   </RuneRoot>;
 }
 
-function DiveHud() {
-  const ctx = useGameContext(), view = () => viewStore.read(ctx), dive = () => view().dive;
+function RunHud() {
+  const ctx = useGameContext(), view = () => viewStore.read(ctx), run = () => view().run;
   const { width } = useRuneViewport(), phone = width < 600;
-  const pulse = useMemo(() => runePulse(() => dive()?.health,200),[ctx]);
-  const stats: [string,() => number,() => number][] = [["SEC AIR",() => dive()?.oxygen ?? 0,() => dive()?.tankSeconds ?? 110],["SUIT",() => dive()?.health ?? 0,() => 100],["FOOD",() => view().deep.body.values["food"] ?? 0,() => 100],["WATER",() => view().deep.body.values["water"] ?? 0,() => 100]];
+  const pulse = useMemo(() => runePulse(() => run()?.health, 200), [ctx]);
+  const gear = useGameStore(c => { const r = viewStore.read(c).run; return r === null ? "" : r.pack.filter(i => defOf(i).gear !== undefined).map(i => kindOf(i)).join(","); });
   return <>
-    <RuneView anchor="top-left" safe inset={20} maxWidth={600} responsive={{phone:{maxWidth:220}}}><Tag color={AMBER}>BELLWETHER / LINE 06</Tag><Text text={bind(() => roomAt(positionOf(ctx),dive()?.stratum ?? "vault"))} /></RuneView>
-    <RuneView anchor="bottom-left" safe inset={20} responsive={{phone:{padding:[0,0,140,0]}}}>
-      <Frame width={260} responsive={{phone:{width:width - 40,padding:12,gap:8}}} scale={bind(() => 1 + pulse.get() * .025)}>
-        <Tag>HALLOWAY / DIVE COMPUTER</Tag>
-        <RuneView layout="grid" columns={1} responsive={{phone:{columns:2}}} gap={8}>{stats.map(([label,read,max]) => <RuneView key={label} gap={4}>
-          <Row justify="between"><Tag>{label}</Tag><RuneLabel value={bind(read)} format={n => String(Math.ceil(n))} size={phone ? 24 : label === "SEC AIR" ? 36 : 18} family="Share Tech Mono" color={bind(() => read() < max()*.25 ? RED : TEAL)} /></Row>
-          <RuneView height={4} fill="#30494c" width={FULL}><RuneView height={4} width={bind(() => ({fraction:Math.max(0,Math.min(1,read()/max()))}))} fill={bind(() => read() < max()*.25 ? RED : TEAL)} /></RuneView>
-        </RuneView>)}</RuneView>
-        <Text color={AMBER} text={bind(() => `Rail ${Math.ceil(groundDistance(positionOf(ctx),EXIT))}m · Seal ${sealMark(view().deep)}`)} />
-        <Text color={RED} text={bind(() => (dive()?.oxygen ?? 100) <= 25 ? "TURN BACK / LOW AIR" : crushDamage(dive()?.stratum ?? "vault",sealMark(view().deep)) > 0 ? "PRESSURE EXCEEDS SEAL" : "")} />
+    <RuneView anchor="top-left" safe inset={20} maxWidth={420} responsive={{ phone: { maxWidth: 230 } }} gap={4}>
+      <Tag color={GOLD} text={bind(() => { const r = run(); if (r === null) return ""; const p = roomOf(r); return p.depth === 0 ? "THE CRACK HOME IS HERE" : `${p.depth} ROOM${p.depth === 1 ? "" : "S"} FROM THE CRACK`; })} />
+      <Heading size={phone ? 20 : 26} text={bind(() => { const r = run(); return r === null ? "" : roomOf(r).template.name; })} />
+      <Text color={MUTED} text={bind(() => { const r = run(); if (r === null) return ""; const p = roomOf(r); const lit = lightsOn(r, p) ? "The light is ON. " : ""; return `${lit}${p.exits.length > 0 ? `Way out here: ${p.exits.map(e => e.label).join(", ")}.` : "No way out here: go back, or find one deeper."}`; })} />
+    </RuneView>
+    <RuneView anchor="bottom-left" safe inset={20} responsive={{ phone: { padding: [0, 0, 150, 0] } }}>
+      <Frame width={270} responsive={{ phone: { width: width - 40, padding: 12, gap: 8 } }} scale={bind(() => 1 + pulse.get() * 0.03)}>
+        <Row justify="between"><Tag text={bind(() => { const r = run(); return r === null ? "" : `${LITTLES[r.little].name.toUpperCase()} ${LITTLES[r.little].title.toUpperCase()}`; })} />
+          <RuneLabel value={bind(() => { const r = run(); return r === null ? "" : clockText(r); })} family="Fredoka" size={phone ? 22 : 30} color={bind(() => { const r = run(); return r !== null && r.elapsed > r.nightSeconds - 60 ? RED : GOLD; })} /></Row>
+        <Meter value={bind(() => { const r = run(); return { fraction: r === null ? 0 : Math.min(1, r.elapsed / r.nightSeconds) }; })} color={bind(() => { const r = run(); return r !== null && isDawn(r) ? RED : SKY; })} height={4} />
+        <Row justify="between"><Tag>HEALTH</Tag><RuneLabel value={bind(() => Math.ceil(run()?.health ?? 0))} format={n => `${Math.ceil(n)}`} family="Fredoka" size={20} color={bind(() => (run()?.health ?? 100) < 35 ? RED : GREEN)} /></Row>
+        <Meter value={bind(() => { const r = run(); return { fraction: r === null ? 0 : Math.max(0, r.health / r.maxHealth) }; })} color={bind(() => (run()?.health ?? 100) < 35 ? RED : GREEN)} />
+        <Row justify="between"><Tag>NOTICED</Tag><Tag color={bind(() => view().sneaking ? GREEN : MUTED)} text={bind(() => view().sneaking ? "SNEAKING" : view().noise > 12 ? "LOUD" : view().noise > 0 ? "FOOTSTEPS" : "STILL")} /></Row>
+        <Meter value={bind(() => ({ fraction: Math.min(1, view().danger) }))} color={bind(() => view().danger > 0.6 ? RED : GOLD)} height={5} />
+        <Text color={RED} text={bind(() => { const r = run(); if (r === null) return ""; if (isDawn(r)) return "DAWN: THE FAMILY IS WAKING. GET OUT!"; if (r.elapsed > r.nightSeconds - 60) return "Nearly dawn. Head for a way out."; return ""; })} />
       </Frame>
     </RuneView>
-    <RuneView anchor="bottom-right" safe inset={20} responsive={{phone:{padding:[0,0,60,0]}}}><Frame width={220} responsive={{phone:{width:width - 40,layout:"row",items:"center",justify:"between",padding:10}}}>
-      {phone ? null : <Tag text={bind(() => weaponReadout(dive()).label)} />}<Text size={phone ? 22 : 32} family="Share Tech Mono" text={bind(() => view().ammo?.reloading ? "LOADING" : `${view().ammo?.loaded ?? "–"} / ${view().ammo?.capacity ?? "–"}`)} />
-      {phone ? null : <Text color={DIM} text={bind(() => `${view().ammo?.reserve ?? 0} reserve`)} />}
-      <Button onPress={() => ctx.game.commands.run("deepward.cache",{})}><Text color="#172529" text={bind(() => `${loadOf(dive()?.cache ?? NO_CACHE).mass}/${CACHE_WEIGHT}kg · Cache`)} /></Button>
-    </Frame></RuneView>
-    <RuneView anchor="center"><Text size={26} color={bind(() => (dive()?.flash ?? 0) > 0 ? AMBER : "#e8fbf5b0")}>+</Text></RuneView>
+    <RuneView anchor="bottom-right" safe inset={20} responsive={{ phone: { padding: [0, 0, 64, 0] } }}>
+      <Frame width={240} responsive={{ phone: { width: width - 40, layout: "row", items: "center", justify: "between", padding: 10 } }}>
+        <Tag>PACK</Tag>
+        <Text size={phone ? 18 : 24} family="Fredoka" text={bind(() => { const r = run(); if (r === null) return ""; const load = loadOf(r.pack, r.capacity, LITTLES[r.little]); return `${r.pack.length} things · ${load.mass}/${r.capacity}`; })} />
+        <Text color={RED} text={bind(() => { const r = run(); return r !== null && twoHanded(r) ? "Two arms full: slow, no running" : ""; })} />
+        {gear === "" ? null : <Row gap={4}>{gear.split(",").map(k => <ItemMark key={k} kind={k as ItemKind} size={24} />)}</Row>}
+        <Button onPress={() => ctx.game.commands.run("deepward.pack", {})}>Repack / Tab</Button>
+      </Frame>
+    </RuneView>
+    <RuneView anchor="center"><Text size={22} color={bind(() => (run()?.hurt ?? 0) > 0 ? RED : "#fff3e0a0")}>·</Text></RuneView>
   </>;
 }
 function HomeHud() {
   const ctx = useGameContext(), read = () => viewStore.read(ctx);
-  return <RuneView anchor="top-left" safe inset={20}><Frame width={340} responsive={{phone:{width:220}}}>
-    <Tag color={AMBER}>MARROW / RAIL DEPARTURE 06</Tag><Heading>Another Life.</Heading>
-    <Text text={bind(() => `Life ${read().home.life} · ${read().home.bank.banked} scrip · ${read().home.stash.length} stashed`)} />
-    <Text text={bind(() => nextGoal(read().deep,marrowOf(ctx))?.text ?? "Pattern 406 is home.")} />
-    <Tag text={bind(() => { const s = marrowStanding(read().home.standing); return `STANDING ${s.tier(OPERATOR,"marrow").id}`; })} />
+  return <RuneView anchor="top-left" safe inset={20}><Frame width={360} responsive={{ phone: { width: 230 } }}>
+    <Tag color={GOLD}>THE BURROW · INSIDE THE KITCHEN WALL</Tag>
+    <Heading text={bind(() => `Night ${read().home.nextRun}`)} />
+    <Text text={bind(() => { const h = read().home; return `${h.caps} caps · ${h.stash.length} stashed · ${h.extractions} safe home · ${h.caught} caught`; })} />
+    <Text color={GOLD} text={bind(() => { const h = read().home; return `${LITTLES[h.little].name} ${LITTLES[h.little].title} goes next${h.bring.length > 0 ? `, with ${h.bring.length} gear` : ""}.`; })} />
+    <Text color={MUTED} text={bind(() => nextGoal(read().home))} />
   </Frame></RuneView>;
 }
 function Radio() {
@@ -115,58 +117,118 @@ function Radio() {
 }
 function Prompt({ command }: { command: Command }) {
   const ctx = useGameContext();
-  const prompt = useGameStore(c => { const v = viewStore.read(c); return { channel:v.dive?.channel?.kind ?? (v.dive?.channel ? "search" : null), target:v.panel === null && !v.paused ? nearby(c)?.label ?? null : null }; });
-  if (prompt.channel !== null) return <RuneView width={280} gap={5}><Tag>{prompt.channel.toUpperCase()} / HOLD STILL</Tag><RuneView height={5} fill="#30494c"><RuneView height={5} fill={AMBER} width={bind(() => { const c = viewStore.read(ctx).dive?.channel; return {fraction:c == null ? 0 : 1-c.remaining/(c.total ?? 1.4)}; })} /></RuneView></RuneView>;
-  return prompt.target === null ? null : <Button onPress={() => command("interact")}>{`E / ${prompt.target}`}</Button>;
+  const prompt = useGameStore(c => { const v = viewStore.read(c); return { channel: v.run?.channel?.kind ?? null, target: v.panel === null && !v.paused ? nearby(c)?.label ?? null : null }; });
+  if (prompt.channel !== null) return <RuneView width={300} gap={5}><Tag>{prompt.channel === "search" ? "RUMMAGING / HOLD STILL" : prompt.channel === "cross" ? "ON THE WAY / HOLD STILL" : prompt.channel === "exit" ? "SQUEEZING OUT / HOLD STILL" : "CAREFULLY / HOLD STILL"}</Tag>
+    <Meter value={bind(() => { const c = viewStore.read(ctx).run?.channel; return { fraction: c == null ? 0 : 1 - c.remaining / c.total }; })} color={GOLD} /></RuneView>;
+  return prompt.target === null ? null : <Button onPress={() => command("interact")}>{`E · ${prompt.target}`}</Button>;
 }
 
-function StashSheet({ command,close }: { command: Command; close: () => void }) {
-  const { home,rifleUid,hint,error } = useStore(viewStore,v => ({home:v.home,rifleUid:v.rifleUid,hint:v.hint,error:v.error}));
-  const prepared = home.stash.find(i => i.id === rifleUid);
-  return <Sheet title="Marrow's stash" close={close}>
-    <Tag color={AMBER}>PERMANENT / SAVED ON RETURN</Tag><Text>Travel light, or risk a recovered rifle. Prepared gear is lost on death.</Text>
-    <Button onPress={() => command("prepareRifle",{uid:null})}>Travel light / keep rifles safe</Button>
-    {home.stash.length === 0 ? <Text>Empty shelves. Bring something home from Bellwether.</Text> : home.stash.map(item => <Section key={item.id}>
-      <Row><ItemMark kind={kindOf(item)} /><Heading size={22} grow={1} shrink>{item.name}</Heading></Row><Text>{item.rarity} · level {item.level} · {item.mass}kg · {ITEMS[kindOf(item)].detail}</Text>
-      <Text>{statLines(item).map(s => `${s.label} ${s.value.toFixed(s.digits)}${s.unit}`).join(" · ")}</Text><Text>{item.affixes.map(a => `${a.id} ${a.value.toFixed(2)} ${a.stat}`).join(" · ")}</Text>
-      {prepared === undefined || kindOf(prepared) !== kindOf(item) ? null : <Text color={AMBER}>Prepared comparison: {compareToPrepared(item,prepared).better}</Text>}
-      {kindOf(item) !== "service-rifle" ? null : <Button onPress={() => command("prepareRifle",{uid:item.id})}>{rifleUid === item.id ? "Prepared / at risk" : "Prepare rifle"}</Button>}
-      <Button onPress={() => command("dismantle",{id:item.id})}>{`Dismantle / ${breakdownValue(item)} scrip`}</Button>
-    </Section>)}
-    <Heading>Fitter's counter / {home.bank.banked} scrip</Heading>
-    {counterRows(home).map(r => <Section key={r.supply.kind}><Row><ItemMark kind={r.supply.kind} /><Text>{r.supply.label}</Text></Row><Text>{r.supply.blurb}</Text><Button disabled={r.locked || r.price > home.bank.banked} onPress={() => command("buy",{kind:r.supply.kind})}>{r.locked ? `Needs ${r.needs} standing` : `Buy / ${r.price} scrip`}</Button></Section>)}
-    <Heading>Refit next departure</Heading>
-    {Object.entries(REFITS).map(([id,r]) => { if (id !== "tank" && id !== "reserve") throw new Error(`Unknown refit: ${id}`); const installed = home.refits.includes(id), missing = refitMissing(home,id);
-      return <Section key={id}><Text>{r.name} · {r.effect}</Text><Text>Cost: {r.recipe.inputs.map(i => `${i.count} ${i.itemId}`).join(" + ")}</Text><Button disabled={installed || missing.length > 0} onPress={() => command("refit",{id})}>{installed ? "Installed" : missing.length > 0 ? `Need ${missing.map(i => `${i.count} ${i.itemId}`).join(" + ")}` : `Install ${r.name}`}</Button></Section>;
-    })}<Text role="status" color={error ? RED : DIM}>{error || hint}</Text>
+function costText(cost: Cost): string {
+  const parts = Object.entries(cost.items).map(([k, n]) => `${n} ${ITEMS[k as ItemKind].name.toLowerCase()}`);
+  if (cost.caps > 0) parts.push(`${cost.caps} caps`);
+  return parts.length === 0 ? "free" : parts.join(" + ");
+}
+function StashSheet({ command, close }: { command: Command; close: () => void }) {
+  const { home, hint, error } = useStore(viewStore, v => ({ home: v.home, hint: v.hint, error: v.error }));
+  const [filter, setFilter] = useState<"all" | "gear" | "food" | "part" | "curio">("all");
+  const shown = home.stash.filter(i => filter === "all" || defOf(i).category === filter);
+  return <Sheet title="The matchbox stash" close={close}>
+    <Tag color={GOLD}>{`${home.caps} BOTTLE CAPS · ${home.stash.length} THINGS · SAFE AT HOME`}</Tag>
+    <Text>Gear you pack rides in your pack and works while carried, but a caught Little loses it. Trading pays caps.</Text>
+    <Row gap={6}>{(["all", "gear", "food", "part", "curio"] as const).map(f => <Button key={f} fill={filter === f ? GOLD : "#bfa684"} onPress={() => setFilter(f)}>{f === "all" ? "All" : f === "part" ? "Parts" : f === "curio" ? "Curios" : f[0]!.toUpperCase() + f.slice(1)}</Button>)}</Row>
+    {shown.length === 0 ? <Text color={MUTED}>Empty shelves. Bring something home from the house.</Text> : shown.map(item => { const def = defOf(item), packed = home.bring.includes(item.id);
+      return <Section key={item.id}>
+        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{item.name}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
+        <Text>{def.flavor}</Text>
+        <Row gap={6}>{def.gear !== undefined ? <Button onPress={() => command("bring", { uid: item.id, on: !packed })}>{packed ? "Packed / unpack" : "Pack for the run"}</Button> : null}<Button onPress={() => command("trade", { id: item.id })}>{`Trade · ${tradeValue(item)} caps`}</Button></Row>
+      </Section>; })}
+    <Heading>Sets</Heading>
+    <Text color={MUTED}>Carry every piece home in one run: each piece is worth more together, and the set pays a bonus.</Text>
+    {SET_IDS.map(id => { const set = SETS[id], have = new Set(home.stash.map(i => i.baseId)); return <Section key={id}>
+      <Row justify="between"><Heading size={19}>{set.name}</Heading><Tag color={home.sets.includes(id) ? GREEN : MUTED}>{home.sets.includes(id) ? "BANKED" : `+${set.bonus} CAPS`}</Tag></Row>
+      <Row gap={4}>{set.pieces.map(p => <RuneView key={p} opacity={have.has(p) ? 1 : 0.35}><ItemMark kind={p} size={26} /></RuneView>)}</Row>
+      <Text color={MUTED}>{set.pieces.map(p => ITEMS[p].name).join(" · ")}</Text></Section>; })}
+    <Text role="status" color={error ? RED : MUTED}>{error || hint}</Text>
   </Sheet>;
 }
-function FabricatorPanel({ command,close }: { command: Command; close: () => void }) {
-  const ctx = useGameContext();
-  const s = useGameStore(c => { const v = viewStore.read(c); return {home:v.home,gear:v.deep.gear,codex:v.deep.codex,lures:v.deep.lures,charted:v.deep.charted,departTo:v.departTo,hint:v.hint,error:v.error,world:marrowState(c)}; });
-  return <FabricatorSheet home={s.home} deep={viewStore.read(ctx).deep} world={marrowOf(ctx)} departTo={s.departTo} hint={s.hint} error={s.error} command={command} close={close} />;
+function WorkbenchSheet({ command, close }: { command: Command; close: () => void }) {
+  const { home, hint, error } = useStore(viewStore, v => ({ home: v.home, hint: v.hint, error: v.error }));
+  return <Sheet title="The reel workbench" close={close}>
+    <Tag color={GOLD}>{`${home.caps} CAPS · COSTS COME FROM THE STASH`}</Tag>
+    <Heading>Burrow</Heading>
+    {UPGRADE_IDS.map(id => { const def = UPGRADES[id], level = home.upgrades[id], next = def.levels[level], need = next === undefined ? [] : missing(home.stash, home.caps, next.cost);
+      return <Section key={id}>
+        <Row justify="between"><Heading size={20}>{def.name}</Heading><Tag>{`LEVEL ${level}/${def.levels.length}`}</Tag></Row>
+        <Text color={MUTED}>{def.flavor}</Text>
+        {next === undefined ? <Text color={GREEN}>Finished.</Text> : <><Text>{next.effect}</Text><Text color={MUTED}>{`Cost: ${costText(next.cost)}`}</Text>
+          <Button disabled={need.length > 0} onPress={() => command("upgrade", { id })}>{need.length > 0 ? `Need ${need.join(", ")}` : `Build ${def.name}`}</Button></>}
+      </Section>; })}
+    <Heading>Craft gear</Heading>
+    {RECIPES.map(r => { const need = missing(home.stash, home.caps, { items: r.needs, caps: r.caps }), locked = home.upgrades.workbench < r.bench;
+      return <Section key={r.makes}><Row><ItemMark kind={r.makes} /><Heading size={19} grow={1} shrink>{ITEMS[r.makes].name}</Heading></Row>
+        <Text color={MUTED}>{ITEMS[r.makes].flavor}</Text><Text color={MUTED}>{`From ${costText({ items: r.needs, caps: r.caps })}`}</Text>
+        <Button disabled={locked || need.length > 0} onPress={() => command("craft", { kind: r.makes })}>{locked ? "Needs the workbench vise" : need.length > 0 ? `Need ${need.join(", ")}` : "Make it"}</Button></Section>; })}
+    <Heading>Charts</Heading>
+    {(Object.keys(CHARTS) as (keyof typeof CHARTS)[]).map(zone => { const chart = CHARTS[zone], have = home.zones.includes(zone as Zone), need = missing(home.stash, home.caps, chart.cost);
+      return <Section key={zone}><Row justify="between"><Heading size={19}>{ZONE_NAME[zone as Zone]}</Heading><Tag color={have ? GREEN : MUTED}>{have ? "CHARTED" : costText(chart.cost)}</Tag></Row>
+        <Text color={MUTED}>{chart.flavor}</Text>
+        {have ? null : <Button disabled={home.upgrades.mapRoom < 1 || need.length > 0} onPress={() => command("chart", { zone })}>{home.upgrades.mapRoom < 1 ? "Build the map room first" : need.length > 0 ? `Need ${need.join(", ")}` : "Chart it"}</Button>}</Section>; })}
+    <Text role="status" color={error ? RED : MUTED}>{error || hint}</Text>
+  </Sheet>;
 }
-function CacheSheet({ command,close }: { command: Command; close: () => void }) {
-  const [selected,setSelected] = useState<string | null>(null), { cache,hand } = useStore(viewStore,v => ({cache:v.dive?.cache ?? NO_CACHE,hand:v.dive?.hand ?? "sidearm"}));
-  const chosen = cache.find(i => i.id === selected), load = loadOf(cache);
-  const cell = 64, cells = Array.from({length:CACHE.w*CACHE.h},(_,i) => ({x:i%CACHE.w,y:Math.floor(i/CACHE.w)}));
-  const move = (item: Item,c: {x:number;y:number}) => command("pack",{uid:item.id,...c});
-  return <Sheet title="What fits comes home." label="Carried cache" close={close}>
-    <Tag color={AMBER}>CARRIED CACHE / 4 × 3</Tag><Text color={RED}>The tank keeps moving while you pack.</Text><Text>{load.mass}/{CACHE_WEIGHT}kg · {load.remaining} free</Text>
-    <RuneView width={cell*CACHE.w} height={cell*CACHE.h}>
-      {cells.map(c => <RuneAction key={`${c.x}:${c.y}`} pin={[c.x*cell,c.y*cell,null,null]} width={cell-4} height={cell-4} fill="#1b3439" label={`Move selected item to column ${c.x+1}, row ${c.y+1}`} run={() => {if (chosen) move(chosen,c);}} acceptDrop={id => {const i = cache.find(i => i.id === id); if (i) move(i,c);}} />)}
-      {cache.map(i => { const f = footprint(i); return <RuneAction key={i.id} pin={[i.x*cell,i.y*cell,null,null]} width={cell*f.w-4} height={cell*f.h-4} padding={6} fill="#29454a" border={{width:selected === i.id ? 3 : 1,color:ITEMS[kindOf(i)].color}} dragValue={i.id} run={() => setSelected(i.id)} label={`Select ${i.name}`} tooltip={i.name}><ItemMark kind={kindOf(i)} size={24} /><Tag size={10}>{ITEMS[kindOf(i)].name}</Tag></RuneAction>; })}
+function NookSheet({ command, close }: { command: Command; close: () => void }) {
+  const { home, error } = useStore(viewStore, v => ({ home: v.home, error: v.error }));
+  const open = littlesOf(home);
+  const fed = home.upgrades.larder > 0 && home.stash.some(i => defOf(i).category === "food") ? ` The larder will feed them first (+${wellFed(home.upgrades.larder)} health).` : "";
+  const pack = packOf(home.upgrades.satchel);
+  return <Sheet title="The Littles' nook" close={close}>
+    <Text>{`Who slips out tonight? Pack ${pack.w} × ${pack.h}, carrying ${pack.weight}.${fed}`}</Text>
+    {LITTLE_IDS.map(id => { const l = LITTLES[id], here = open.includes(id), chosen = home.little === id;
+      return <Section key={id} opacity={here ? 1 : 0.55}>
+        <Row justify="between"><Heading size={22} color={l.color}>{`${l.name} ${l.title}`}</Heading>{chosen ? <Tag color={GREEN}>GOES NEXT</Tag> : null}</Row>
+        <Text>{l.ability}</Text>
+        {here ? <Button disabled={chosen} onPress={() => command("chooseLittle", { id })}>{chosen ? "Chosen" : `Send ${l.name}`}</Button> : <Text color={MUTED}>{l.unlock}</Text>}
+      </Section>; })}
+    <Text role="status" color={RED}>{error}</Text>
+  </Sheet>;
+}
+function PackSheet({ command, close }: { command: Command; close: () => void }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const { pack, w, h, run } = useStore(viewStore, v => ({ pack: v.run?.pack ?? NO_PACK, w: v.run?.packW ?? 4, h: v.run?.packH ?? 3, run: v.run }));
+  const chosen = pack.find(i => i.id === selected);
+  const cell = 60, cells = Array.from({ length: w * h }, (_, i) => ({ x: i % w, y: Math.floor(i / w) }));
+  const move = (item: Item, c: { x: number; y: number }) => command("packMove", { uid: item.id, ...c });
+  const load = run === null ? null : loadOf(pack, run.capacity, LITTLES[run.little]);
+  const sets = completeSets(pack);
+  return <Sheet title="What fits comes home." label="Your pack" close={close}>
+    <Tag color={GOLD}>{`YOUR PACK · ${w} × ${h} · ${load?.mass ?? 0}/${run?.capacity ?? 0} WEIGHT`}</Tag>
+    <Text color={RED}>The night keeps ticking while you pack.</Text>
+    {sets.length > 0 ? <Text color={GREEN}>{`Complete set in your pack: ${sets.map(s => SETS[s].name).join(", ")}. Get it home!`}</Text> : null}
+    <RuneView width={cell * w} height={cell * h}>
+      {cells.map(c => <RuneAction key={`${c.x}:${c.y}`} pin={[c.x * cell, c.y * cell, null, null]} width={cell - 4} height={cell - 4} fill="#3a2a1f" radius={8} label={`Move to column ${c.x + 1}, row ${c.y + 1}`} run={() => { if (chosen) move(chosen, c); }} acceptDrop={id => { const i = pack.find(p => p.id === id); if (i) move(i, c); }} />)}
+      {pack.map(i => { const f = footprint(i); return <RuneAction key={i.id} pin={[i.x * cell, i.y * cell, null, null]} width={cell * f.w - 4} height={cell * f.h - 4} padding={6} radius={8} fill="#5a4231" border={{ width: selected === i.id ? 3 : 1, color: ITEMS[kindOf(i)].color }} dragValue={i.id} run={() => setSelected(i.id)} label={`Select ${i.name}`} tooltip={i.name}><ItemMark kind={kindOf(i)} size={24} /><Tag size={10}>{ITEMS[kindOf(i)].name}</Tag></RuneAction>; })}
     </RuneView>
-    {chosen === undefined ? <Text>Select or drag an item to repack.</Text> : <Section><Heading>{chosen.name}</Heading><Row>{([[-1,0,"←"],[0,-1,"↑"],[0,1,"↓"],[1,0,"→"]] as const).map(([dx,dy,label]) => <Button key={label} label={`Move ${label}`} onPress={() => move(chosen,{x:chosen.x+dx,y:chosen.y+dy})}>{label}</Button>)}</Row><Button onPress={() => command("pack",{uid:chosen.id,rotate:true})}>Rotate</Button><Button onPress={() => {command("discard",{uid:chosen.id});setSelected(null);}}>Leave behind</Button></Section>}
-    {cache.some(i => kindOf(i) === "service-rifle") ? <Section><Tag>ONE HAND / {hand}</Tag><Button onPress={() => command("equip",{hand:"sidearm"})}>Issue sidearm</Button><Button onPress={() => command("equip",{hand:"service-rifle"})}>Found service rifle</Button></Section> : null}
-    <Button onPress={() => command("cache")}>Close cache / Tab</Button>
+    {chosen === undefined ? <Text color={MUTED}>Select or drag something to repack it.</Text> : <Section><Heading>{chosen.name}</Heading><Text color={MUTED}>{defOf(chosen).flavor}</Text>
+      <Row>{([[-1, 0, "←"], [0, -1, "↑"], [0, 1, "↓"], [1, 0, "→"]] as const).map(([dx, dy, label]) => <Button key={label} label={`Move ${label}`} onPress={() => move(chosen, { x: chosen.x + dx, y: chosen.y + dy })}>{label}</Button>)}</Row>
+      <Row><Button onPress={() => command("packMove", { uid: chosen.id, rotate: true })}>Turn it</Button><Button onPress={() => { command("drop", { uid: chosen.id }); setSelected(null); }}>Set it down here</Button></Row></Section>}
+    {run !== null && hasGear(run, "slingshot") ? <Text color={SKY}>G flings a pebble to draw hunters away.</Text> : null}
+    {run !== null && hasGear(run, "spear") ? <Text color={SKY}>F jabs with the needle.</Text> : null}
+    <Button onPress={() => command("pack")}>Close the pack / Tab</Button>
   </Sheet>;
 }
-function ReprintSheet({ command }: { command: Command }) {
-  const { home,error } = useStore(viewStore,v => ({home:v.home,error:v.error}));
-  return <Sheet title="Bellwether kept the haul." label="Life ended"><Tag color={AMBER}>LIFE {home.life-1} ENDED</Tag><Text>{home.last?.reason}</Text><Text>{home.last?.count ?? 0} carried items lost. {home.stash.length} stashed items and {home.refits.length} refits remain safe.</Text><Text>Life {home.life} is printed. The loss is already saved.</Text><Text color={RED}>{error}</Text><Button onPress={() => command("acknowledgeReprint")}>Accept reprint / return to Marrow</Button><Button onPress={() => window.location.reload()}>Reload saved Marrow</Button></Sheet>;
+function CaughtSheet({ command }: { command: Command }) {
+  const { home, error } = useStore(viewStore, v => ({ home: v.home, error: v.error }));
+  return <Sheet title="Caught!" label="Run lost"><Tag color={RED}>{`NIGHT ${home.last?.run ?? ""} · ${home.last?.count ?? 0} THINGS LEFT IN THE HOUSE`}</Tag>
+    <Text>{home.last?.reason}</Text>
+    <Text>{`You limp home through the walls. The stash (${home.stash.length} things) and ${home.caps} caps are safe.${home.kidsBox.length > 0 ? ` The kid's treasure box holds ${home.kidsBox.length} of your things: find it in the kid's bedroom.` : ""}`}</Text>
+    <Text color={RED}>{error}</Text>
+    <Button onPress={() => command("acknowledgeCaught")}>Shake it off / back to the burrow</Button>
+  </Sheet>;
 }
 function SaveSheet({ command }: { command: Command }) {
-  const { mode,error } = useStore(viewStore,v => ({mode:v.mode,error:v.error}));
-  return <Sheet title={mode === "saving" ? "Return pending" : "Marrow is unavailable"} label="Marrow save boundary"><Text color={RED}>{error}</Text><Text>{mode === "saving" ? "Simulation stopped. Retry this return or reload the saved record." : "The saved record is preserved. No new dive can begin."}</Text>{mode === "saving" ? <Button onPress={() => command("retrySave")}>Retry saving this return</Button> : null}<Button onPress={() => window.location.reload()}>Reload saved Marrow</Button></Sheet>;
+  const { mode, error } = useStore(viewStore, v => ({ mode: v.mode, error: v.error }));
+  return <Sheet title={mode === "saving" ? "Getting home…" : "The burrow is unavailable"} label="Burrow save boundary"><Text color={RED}>{error}</Text>
+    <Text>{mode === "saving" ? "The house is holding its breath. Retry the return or reload the saved burrow." : "The saved burrow is kept. No run can begin."}</Text>
+    {mode === "saving" ? <Button onPress={() => command("retrySave")}>Retry getting home</Button> : null}
+    <Button onPress={() => window.location.reload()}>Reload the burrow</Button></Sheet>;
 }

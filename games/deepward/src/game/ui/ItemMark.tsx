@@ -1,17 +1,18 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { RuneView, RuneGlyph } from "@jgengine/core/ui/rune/primitives.view";
-import { ITEMS, type ItemKind } from "../state";
+import { ITEMS, type Category, type ItemKind } from "../loot";
 
-const GLYPHS = {
-  wire: '<ellipse cx="32" cy="14" rx="19" ry="8"/><path d="M13 14v32c0 5 9 9 19 9s19-4 19-9V14M13 22c10 9 28 9 38 0M13 30c10 9 28 9 38 0M13 38c10 9 28 9 38 0M28 6v13m8-13v13"/>',
-  polymer: '<rect x="9" y="11" width="30" height="30" rx="8"/><rect x="16" y="18" width="16" height="16" rx="4"/><rect x="27" y="27" width="28" height="27" rx="8"/><rect x="34" y="34" width="14" height="13" rx="3"/>',
-  cells: '<path d="M18 12h28v44H18zM26 6h12v6M24 21h16M24 45h16m-5-20-9 11h8l-4 7 10-12h-8z"/>',
-  ink: '<path d="M20 6h24v11l7 8v31H13V25l7-8zM20 17h24M18 32h28v17H18zM23 11h18M32 34c-8 10-8 13 0 13s8-3 0-13"/>',
-  rifle: '<path d="M5 24h38l4 5h12v7H39l-7 8H20l-4-8H5zM20 36l-3 15h10l4-15M43 24v12M48 27v9M35 19v5M12 19v5"/>',
+/** One original line glyph per kind of find, tinted with the item's own colour. */
+const BY_CATEGORY: Record<Category, string> = {
+  food: '<path d="M14 40c-4-10 4-22 18-24 14-2 22 8 20 18-2 12-14 18-24 17-8 0-12-4-14-11z"/><circle cx="26" cy="32" r="2"/><circle cx="38" cy="28" r="2"/><circle cx="34" cy="40" r="2"/>',
+  part: '<circle cx="32" cy="32" r="10"/><path d="M32 8v8M32 48v8M8 32h8M48 32h8M15 15l6 6M43 43l6 6M49 15l-6 6M21 43l-6 6"/>',
+  curio: '<path d="M18 22h28l8 10-22 24L10 32z"/><path d="M10 32h44M26 22l6 34 6-34"/>',
+  gear: '<path d="M32 8l20 8v14c0 14-9 22-20 26-11-4-20-12-20-26V16z"/><path d="M24 32l6 6 12-14"/>',
+  cap: '<circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="13"/><path d="M32 6v6M32 52v6M6 32h6M52 32h6M14 14l4 4M46 46l4 4M50 14l-4 4M18 46l-4 4"/>',
 };
 export function ItemMark({ kind, size = 32 }: { kind: ItemKind; size?: number }) {
-  const glyph = kind === "wire" ? GLYPHS.wire : kind === "polymer" ? GLYPHS.polymer : kind === "cells" ? GLYPHS.cells : kind === "ink" ? GLYPHS.ink : GLYPHS.rifle;
-  return <RuneView width={size} height={size} fill="#122528" border={{ width: 1, color: ITEMS[kind].color }} justify="center" items="center">
-    <RuneGlyph size={size - 4} color={ITEMS[kind].color} artwork={`<g transform="scale(.375)" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">${glyph}</g>`} />
+  const def = ITEMS[kind];
+  return <RuneView width={size} height={size} fill="#1d140e" radius={size / 4} border={{ width: 1, color: def.color }} justify="center" items="center">
+    <RuneGlyph size={size - 4} color={def.color} artwork={`<g transform="scale(.375)" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">${BY_CATEGORY[def.category]}</g>`} />
   </RuneView>;
 }
