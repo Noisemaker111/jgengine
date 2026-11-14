@@ -1,7 +1,7 @@
 # Crumb Run
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **13/16 proven · 3 missing** · `jgengine suite deepward`
+Game suite: **16/16 proven** · `jgengine suite deepward`
 <!-- /suite-score -->
 
 You are one of the Littles: people an inch tall who live in the walls of a family home. Every night

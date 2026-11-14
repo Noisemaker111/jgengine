@@ -31,9 +31,30 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/find-features.proof.ts",
+      "proves": [
+        "onboarding.find-features"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/menu-credits.proof.ts",
+      "proves": [
+        "menu.start-and-credits"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/rebind-pack.proof.ts",
+      "proves": [
+        "settings.controls"
       ],
       "ok": true
     },

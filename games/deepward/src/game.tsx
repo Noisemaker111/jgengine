@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { memo, useLayoutEffect, useMemo } from "@jgengine/core/ui/jsx";
-import { Group, Vector3 } from "three";
+import { Group, Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from "three";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
 import { SceneObjectPortal, useSceneObjectAttach, EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -15,7 +15,7 @@ import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { BURROW, editorLayers, physics, world } from "./world";
 import { houseAssets } from "./game/assets";
-import { canSprint, captureProbe, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
+import { canSprint, captureProbe, guideOf, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { Clockwork, LootLayer, RoomBuild, RoomLights, ThreatLayer, WayMarks } from "./game/houseArt";
 import { itemMesh } from "./game/itemArt";
@@ -87,6 +87,31 @@ function Trophies() {
     }} deps={[id, i]} />;
   })}</>;
 }
+/**
+ * For a burrow's first three nights, a firefly floats over whatever the game's guidance points at:
+ * the goal card's station at home, the next find, door or way out in the house.
+ */
+function Guide() {
+  const ctx = useGameContext();
+  const on = useStore(viewStore, v => v.home.extractions < 3 && (v.mode === "home" || v.mode === "run"));
+  const fly = useMemo(() => {
+    const mesh = new Mesh(new SphereGeometry(0.22, 12, 8), new MeshBasicMaterial({ color: "#fff2a0" }));
+    const halo = new Mesh(new SphereGeometry(0.6, 12, 8), new MeshBasicMaterial({ color: "#ffd86b", transparent: true, opacity: 0.25, depthWrite: false }));
+    mesh.add(halo);
+    return mesh;
+  }, []);
+  useSceneObjectAttach(fly);
+  useFrameTask(({ clock }) => {
+    const v = viewStore.read(ctx);
+    const at = ctx.scene.entity.get(ctx.player.userId)?.position ?? null;
+    const g = on ? guideOf(ctx, v, at) : null;
+    fly.visible = g !== null && g.guideDist > 1.5;
+    if (g === null) return;
+    const t = clock.elapsedTime;
+    fly.position.set(g.guideX + Math.sin(t * 1.7) * 0.3, 2.2 + Math.sin(t * 3.1) * 0.25, g.guideZ + Math.cos(t * 1.3) * 0.3);
+  });
+  return null;
+}
 function RunLayers() {
   const run = useStore(viewStore, v => v.mode === "run" || v.mode === "saving" ? v.run : null);
   return run === null ? null : <><LootLayer run={run} /><WayMarks run={run} /><Clockwork run={run} /></>;
@@ -100,7 +125,7 @@ function WorldOverlay() {
     <SceneCaptureBinding />
     <Build templateId={templateId} levels={templateId === "burrow" ? view.levels : "{}"} />
     {templateId === "burrow" ? <Trophies /> : <><RunLayers /><ThreatLayer templateId={templateId} /></>}
-    <Hands />
+    <Hands /><Guide />
   </>;
 }
 

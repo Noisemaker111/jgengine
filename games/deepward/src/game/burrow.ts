@@ -17,7 +17,7 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     { cost: { items: { "toy-gear": 1, spring: 1, screw: 1 }, caps: 30 }, effect: "Adds a vise: craft napkin parachutes and candle torches." },
   ] },
   larder: { name: "Larder", flavor: "Bottle caps stacked into shelves.", levels: [
-    { cost: { items: { crumb: 2, raisin: 1 }, caps: 10 }, effect: "Eat before a run from the stash's food: start well fed, +25 health." },
+    { cost: { items: { crumb: 2, raisin: 1 }, caps: 0 }, effect: "Eat before a run from the stash's food: start well fed, +25 health." },
     { cost: { items: { "cheese-cube": 1, "sugar-cube": 1 }, caps: 25 }, effect: "A proper supper: well fed is +50 health." },
   ] },
   mapRoom: { name: "Map room", flavor: "A postcard pinned to the stud, with a pin-and-thread route.", levels: [

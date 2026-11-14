@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneLayers, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind, createRuneFlow } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useOptionalGamePhase } from "@jgengine/ui/hooks";
+import { useGameStore, useOptionalGamePhase } from "@jgengine/ui/hooks";
+import { menuPane, showMenuPane } from "@jgengine/core/game/gameFlow";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
@@ -52,13 +53,19 @@ export function CrumbMenu() {
     return f;
   }, []);
   useEffect(() => { void refreshRecordSlots(ctx); }, [ctx]);
+  // The shared menu pane (what `menu.pane` sets, and what a pad or a proof reaches) opens the same screens.
+  const pane = useGameStore(c => menuPane(c));
+  useEffect(() => {
+    const top = flow.read().at(-1)?.kind;
+    if ((pane === "settings" || pane === "credits") && top !== pane) flow.push(pane);
+  }, [pane, flow]);
   const work = async (run: () => Promise<unknown>) => {
     if (busy) return; setBusy(true); setNotice("");
     try { await run(); await refreshRecordSlots(ctx); } catch (error) { setNotice(String(error)); } finally { setBusy(false); }
   };
   const load = (id: string) => void work(() => loadRecordSlot(ctx,id));
   const start = (id: string) => void work(() => beginRecordSlot(ctx,id,recordSlots.get(id)?.empty === false));
-  const back = () => { if (flow.read().length > 1) flow.pop(); else if (paused) ctx.game.commands.run("deepward.close",{}); };
+  const back = () => { showMenuPane(ctx, null); if (flow.read().length > 1) flow.pop(); else if (paused) ctx.game.commands.run("deepward.close",{}); };
   return <RuneLayers flow={flow}>{entry => <RuneView anchor="fill" fill="#140c08f0" padding={phone ? 24 : 48} onBack={back}>
     <RuneView layout="row" justify="between" items="center"><Tag color={AMBER}>THE LITTLES OF THE KITCHEN WALL</Tag><Tag>{paused ? "HOLDING VERY STILL" : "NIGHT FALLS"}</Tag></RuneView>
     <RuneView anchor="center" width={Math.min(840,width - 48)} gap={phone ? 20 : 28}>
@@ -68,7 +75,7 @@ export function CrumbMenu() {
           {paused ? <><Button onPress={back}>Back to the house</Button><Button onPress={() => void work(async () => { await captureRecordThumb(); await persistRecord(ctx); setNotice("Burrow saved."); })}>Save record</Button><Button onPress={() => void work(() => withdrawToTitle(ctx))}>Save & creep back to the title</Button></> : <>
             <Button disabled={recent === null} onPress={() => { if (recent !== null) load(recent.id); }}>Continue</Button>
             <Button onPress={() => { const empty = slots.find(s => s.empty); if (empty !== undefined) start(empty.id); else flow.push("records"); }}>New burrow</Button><Button onPress={() => flow.push("records")}>Burrows</Button></>}
-          <Button onPress={() => flow.push("settings")}>Settings</Button><Button onPress={() => flow.push("credits")}>Credits</Button>
+          <Button onPress={() => showMenuPane(ctx, "settings")}>Settings</Button><Button onPress={() => showMenuPane(ctx, "credits")}>Credits</Button>
         </RuneView> : entry.kind === "settings" ? <RecordSettings /> : entry.kind === "credits" ? <>
           {CRUMB_RUN_CREDITS.sections.map(s => <Section key={s.heading}><Heading>{s.heading}</Heading>{s.entries.map(e => <Text key={e.label}>{[e.label,e.detail,e.href].filter(Boolean).join(" · ")}</Text>)}</Section>)}<Text>{CRUMB_RUN_CREDITS.notice}</Text>
         </> : slots.map(slot => <Section key={slot.id}><Heading>{slot.name ?? recordLabel(slot.id)}</Heading>

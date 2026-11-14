@@ -3,7 +3,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { hashUnit } from "@jgengine/core/random/rng";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { openTitle } from "@jgengine/core/game/gameFlow";
+import { menuPane, openTitle, showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { rebindAction } from "@jgengine/core/game/controlGate";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
+import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { BURROW, DEPART, groundDistance, HOME_SPAWN, inCover, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
@@ -531,6 +534,10 @@ export function registerControls(ctx: GameContext): void {
   registerBurrow(ctx);
   ctx.game.commands.define("deepward.depart", { apply: (state) => { void begin(state); return state; } });
   ctx.game.commands.define("deepward.enter", { apply(state) { enterFromTitle(state); } });
+  // The shared menu verbs, so a pad, a test or a proof runs what the menus run.
+  ctx.game.commands.define("start", { apply(state) { showMenuPane(state, null); enterFromTitle(state); return state; } });
+  ctx.game.commands.define<{ pane: MenuPane | null }>("menu.pane", { apply(state, input) { showMenuPane(state, input.pane); return state; } });
+  ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", { apply(state, input) { rebindAction(state, input.action, input.codes); return state; } });
   // The pause menu's "Save" and the title's "Continue", as commands a test or a pad can reach.
   ctx.game.commands.define("deepward.saveRecord", { apply(state) { void persistRecord(state).catch(() => { /* the menu shows the error */ }); return state; } });
   ctx.game.commands.define("deepward.continue", { apply(state) { void resumeRecord(state); return state; } });
@@ -882,7 +889,39 @@ export function captureProbe(ctx: GameContext) {
     noise: Math.round(v.noise), refusals: runtime(ctx).refusals,
     seedHash: run === null ? 0 : hashUnit(run.seed) * 1e6 | 0, roomHash: run === null ? 0 : hashUnit(run.room) * 1e6 | 0,
     goal: goalStep(v.home),
+    phase: ["menu", "playing", "paused", "ended"].indexOf(gamePhase(ctx)),
+    menuPane: ["controls", "settings", "credits"].indexOf(menuPane(ctx) ?? "") + 1,
+    ...guideOf(ctx, v, at),
+    larder: v.home.upgrades.larder, little: ["pip", "bolt", "wren", "tuck", "dot", "fennel"].indexOf(v.home.little),
+    prompt: (() => { const t = nearby(ctx); return t === null ? 0 : ["depart", "stash", "workbench", "nook", "exit", "forward", "back", "loot", "toybox", "disarm", "pickup"].indexOf(t.act.type) + 1; })(),
   };
+}
+/**
+ * Where the game's own guidance points right now: the burrow's goal card names a station, and out in
+ * the house the prompts lead to the next find, then a door on, then the way home. A first-run
+ * Little following it meets every core verb once.
+ */
+export function guideOf(ctx: GameContext, v: View, at: Point | null): { guideX: number; guideZ: number; guideDist: number } {
+  const none = { guideX: 0, guideZ: 0, guideDist: -1 };
+  if (at === null) return none;
+  let target: Point | null = null;
+  if (v.mode === "home") {
+    const step = goalStep(v.home);
+    target = step === 0 ? DEPART.at : step === 1 && v.home.upgrades.larder === 0 ? WORKBENCH.at : step <= 2 ? NOOK.at : DEPART.at;
+  } else if (v.mode === "run" && v.run !== null) {
+    const run = v.run, plan = roomOf(run);
+    // Until the larder is built, the guidance favours food: that is what the burrow's next goal costs.
+    const wantsFood = v.home.upgrades.larder === 0;
+    const score = (l: (typeof plan.loot)[number]) => groundDistance(at, l.spot.at) + (wantsFood && l.kind !== "toybox" && ITEMS[l.kind].category !== "food" ? 100 : 0);
+    const find = plan.loot.filter(l => l.kind !== "toybox" && !run.taken.includes(l.key)).sort((a, b) => score(a) - score(b))[0];
+    const free = loadOf(run.pack, run.capacity, LITTLES[run.little]).remaining > 1.5;
+    if (find !== undefined && free && run.pack.length < 3) target = find.spot.at;
+    else if (run.deepest === 0 && plan.forwards[0] !== undefined) target = plan.forwards[0].slot.at;
+    else if (plan.exits[0] !== undefined) target = plan.exits[0].at;
+    else target = plan.entry.slot.at;
+  }
+  if (target === null) return none;
+  return { guideX: target[0], guideZ: target[2], guideDist: Math.round(groundDistance(at, target) * 100) / 100 };
 }
 /** The movement rule for the current room: walkable floor, slowed by load, web and sneaking. */
 export function moveRule(ctx: GameContext, current: Point, next: Point): Point {

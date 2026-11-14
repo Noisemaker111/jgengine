@@ -75,6 +75,14 @@ describe("the procedural house", () => {
     const away = Array.from({ length: 400 }, (_, i) => `night-${i + 2}-${i}`).find(seed => nightOf(seed) === "away")!;
     for (const path of ["0-0-0", "0-1-0-0", "0-0-1-1", "0-1-1-0-0"]) expect(planRoom(night(away, ALL), path).threats.some(t => t.kind === "kid")).toBe(false);
   });
+  test("a burrow's first night opens safe under the kitchen cabinets with the larder's cost on the floor", () => {
+    const first = planRoom(night("night-1-1"), ROOT);
+    expect(first.template.id).toBe("kitchen-cabinets");
+    expect(first.threats).toEqual([]);
+    const kinds = first.loot.map(l => l.kind);
+    expect(kinds.filter(k => k === "crumb").length).toBeGreaterThanOrEqual(2);
+    expect(kinds).toContain("raisin");
+  });
   test("every authored door, spot and exit stands on walkable floor", () => {
     for (const t of ROOM_TEMPLATES) {
       for (const d of t.doors) expect(walkable(t, d.at[0], d.at[2]), `${t.id} ${d.id}`).toBe(true);

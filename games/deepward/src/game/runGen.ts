@@ -54,6 +54,8 @@ export function nightOf(seed: string): NightKind {
 }
 
 export const ROOT = "0";
+/** A burrow's very first run: a quiet, safe first room that teaches the loop. */
+export const firstNight = (run: Pick<RunSeed, "seed">) => run.seed.startsWith("night-1-");
 export const depthOf = (path: string): number => path.split("-").length - 1;
 export const parentOf = (path: string): string | null => path === ROOT ? null : path.slice(0, path.lastIndexOf("-"));
 const roll = (run: RunSeed, path: string, what: string): number => hashUnit(`${run.seed}|${path}|${what}`);
@@ -71,6 +73,9 @@ function templateFor(run: RunSeed, path: string, via: DoorSlot | null, parent: R
   const depth = depthOf(path);
   const open = ROOM_TEMPLATES.filter(t => t.zone !== "burrow" && run.zones.includes(t.zone as Zone));
   if (via === null || parent === null) {
+    // The burrow is in the kitchen wall: a burrow's first night always opens under the kitchen cabinets.
+    const first = firstNight(run) ? open.find(t => t.id === "kitchen-cabinets") : undefined;
+    if (first !== undefined) return { template: first, kind: "crack" };
     const roots = open.filter(t => t.root);
     const template = weighted(roots.map(t => [t, t.weight] as const), roll(run, path, "template")) ?? ROOM_TEMPLATES.find(t => t.root)!;
     return { template, kind: "crack" };
@@ -94,6 +99,11 @@ function lootFor(run: RunSeed, path: string, depth: number, template: RoomTempla
   const zone = template.zone as Zone;
   const out: PlannedLoot[] = [];
   let foodBonus = little.foodSense ? 1 : 0;
+  // A burrow's first night teaches the loop: the first room holds exactly what the larder costs, on open floor.
+  if (firstNight(run) && path === ROOT) {
+    const lesson: ItemKind[] = ["crumb", "raisin", "crumb", "paperclip", "button"];
+    return template.spots.map((spot, i) => ({ key: `${path}:${spot.id}`, spot, kind: lesson[i % lesson.length]!, level: 1 }));
+  }
   for (const spot of template.spots) {
     const key = `${path}:${spot.id}`;
     if (spot.toybox) { out.push({ key, spot, kind: "toybox", level: depth + 1 }); continue; }
@@ -131,6 +141,7 @@ export function threatChance(kind: ThreatKind, depth: number, minDepth: number):
 }
 
 function threatsFor(run: RunSeed, path: string, depth: number, template: RoomTemplate): PlannedThreat[] {
+  if (firstNight(run) && path === ROOT) return [];
   const night = NIGHTS[nightOf(run.seed)];
   return template.threats.filter(slot => roll(run, `${path}:${slot.id}`, "home") < Math.min(0.97, threatChance(slot.kind, depth, slot.minDepth) * (night.threats[slot.kind] ?? 1)))
     .map(slot => ({ key: `${path}:${slot.id}`, slot, kind: slot.kind }));
