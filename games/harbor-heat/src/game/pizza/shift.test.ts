@@ -7,7 +7,7 @@ import { secondsAtHour, DAY_SECONDS } from "../clock";
 import { streetPlayOf } from "../streetPlay";
 import { tickTide, waterAt, FLOOD_SHEETS } from "../tide/tideRuntime";
 import { buyUpgrade } from "./pizzeria";
-import { customerSpot, OVEN, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
+import { CALL_PATIENCE, customerSpot, OVEN, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
 
 function boot() {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "shift-test", isNew: true } });
@@ -160,5 +160,23 @@ describe("a night at Vell's", () => {
     expect(ctx.game.commands.run("pizzeria.pay", { amount: pizzeriaStore.read(ctx).debt }).status).not.toBe("rejected");
     expect(pizzeriaStore.read(ctx).saved).toBe(true);
     expect(cash(ctx)).toBe(start - 1200 - 12000);
+  });
+  test("a call left on the board too long walks to a rival, and the first stack teaches the risk once", () => {
+    const ctx = boot();
+    at(ctx, 18.05);
+    moveTo(ctx, OVEN);
+    run(ctx, 5);
+    const first = shiftStore.read(ctx).board[0]!;
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), board: [{ ...first, calledAt: ctx.time.now() - CALL_PATIENCE - 1 }], nextCallIn: 999 });
+    run(ctx, 0.5);
+    expect(shiftStore.read(ctx).board.find((call) => call.id === first.id)).toBeUndefined();
+    expect(shiftStore.read(ctx).lost).toBeGreaterThan(0);
+    const order = { id: "x1", customerId: "gus", pizzaId: "margherita", heat: 90, soak: 0, age: 0, par: 60 };
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [order, { ...order, id: "x2" }], rivalIn: 999 });
+    run(ctx, 0.5);
+    expect(pizzeriaStore.read(ctx).hints).toContain("stack");
+    const notices = ctx.game.notices.list().filter((n) => n.text.startsWith("Two boxes in the bag")).length;
+    run(ctx, 2);
+    expect(ctx.game.notices.list().filter((n) => n.text.startsWith("Two boxes in the bag")).length).toBe(notices);
   });
 });

@@ -11,6 +11,8 @@ import { drivingStore, raceStore, wantedStore } from "../streetPlay";
 import { bountyStore } from "../jobs/bounties";
 import { courierStore, DELIVERY_ROUTES, DISPATCH } from "../jobs/courier";
 import { stashStore } from "../jobs/stashes";
+import { customerSpot, OVEN, shiftStore, SWAP_DOCKS } from "../pizza/shift";
+import { FLOOD_SHEETS, tideStore } from "../tide/tideRuntime";
 import { gigStore } from "../jobs/gigs";
 import { BOUNTY_SPOTS, DISTRICTS, districtAt, RACE_ROUTES, ROADS, SAFEHOUSE_POS, SHORE_X, STASH_SPOTS } from "../world/districts";
 import { StreetSign, Text, useRoom, useVersioned } from "./kit";
@@ -27,6 +29,8 @@ const BLIP: Record<WorldBlip["kind"], [string, number]> = { objective: ["#ffb020
 
 interface Pin { id: string; position: Pt; color: string; radius: number }
 const pin = (id: string, position: Pt, color: string, radius: number): Pin => ({ id, position, color, radius });
+/** Each flood sheet as a 24-point ellipse in world XZ, drawn over its district once the water is up. */
+const FLOOD_SHAPES = FLOOD_SHEETS.map((sheet) => ({ district: sheet.district, corners: Array.from({ length: 24 }, (_, i): Pt => { const a = (i / 24) * Math.PI * 2; return [sheet.center[0] + Math.cos(a) * sheet.rx, sheet.center[1] + Math.sin(a) * sheet.rz]; }) }));
 
 /** Everything the chart draws, read once per store version. */
 function readMap(ctx: GameContext) {
@@ -46,6 +50,13 @@ function readMap(ctx: GameContext) {
   for (const blip of world.blips()) pins.push(pin(`${blip.kind}-${blip.id}`, [blip.x, blip.z], ...BLIP[blip.kind]));
   // Scared places: where the city is still reacting to gunfire, a body or a wreck.
   const scared = Object.entries(world.def.places ?? {}).flatMap(([id, place]) => { const at = world.position(id); const fear = world.num(`${id}.fear`); return at === null || fear < 10 ? [] : [{ at, radius: Math.min(place.radius ?? 30, 60), fear }]; });
+  // The shop, the swap docks and every door in the bag: the pizza loop's own marks.
+  pins.push(pin("oven", OVEN, "#d93a2f", 7));
+  for (const dock of SWAP_DOCKS) pins.push(pin(`dock-${dock.id}`, dock.position, "#ff4f8b", 4.5));
+  for (const customerId of new Set(shiftStore.read(ctx).bag.map((order) => order.customerId))) {
+    const spot = customerSpot(customerId);
+    if (spot !== null) pins.push(pin(`drop-${customerId}`, spot, "#fff1d6", 7));
+  }
   pins.push(pin("courier", courier.phase === "running" ? DELIVERY_ROUTES[courier.route % DELIVERY_ROUTES.length]!.position : DISPATCH, "#ffb020", 6.5));
   if (circuit !== undefined && race !== undefined) pins.push(pin("gate", circuit.checkpoints[Math.min(race.checkpoint, circuit.checkpoints.length - 1)]!, "#ffb020", 6.5));
   // Gigs: the job in hand is the amber goal, a hailing fare or a paged race a yellow job pin.
@@ -53,14 +64,15 @@ function readMap(ctx: GameContext) {
   if (gigs.view?.target != null) pins.push(pin("gig", [gigs.view.target.x, gigs.view.target.z], "#ffb020", 6.5));
   else for (const offer of gigs.offers) if (offer.kindId !== "taxi" || gigs.duty) pins.push(pin(`gig-${offer.id}`, [offer.pickup.x, offer.pickup.z], "#ffe066", 5.5));
   const at: Pt = [body.position[0], body.position[2]];
-  return { at, heading: headingToBearing(body.rotationY), pins, scared, search: wantedStore.read(ctx)?.search ?? null, district: districtAt(at[0], at[1])?.label };
+  const depths = tideStore.read(ctx)?.depths ?? {};
+  return { at, heading: headingToBearing(body.rotationY), pins, depths, scared, search: wantedStore.read(ctx)?.search ?? null, district: districtAt(at[0], at[1])?.label };
 }
 
 /** What the chart's elements are, leaving out where they sit: the chart re-renders only when this changes. */
 function chartShape(ctx: GameContext) {
   const map = readMap(ctx);
   if (map === null) return null;
-  return { district: map.district ?? null, search: map.search !== null, scared: map.scared.map((s) => s.radius), pins: map.pins.map((p) => ({ id: p.id, color: p.color, radius: p.radius })) };
+  return { district: map.district ?? null, flooded: FLOOD_SHAPES.filter((f) => (map.depths[f.district] ?? 0) > 0.02).map((f) => f.district), search: map.search !== null, scared: map.scared.map((s) => s.radius), pins: map.pins.map((p) => ({ id: p.id, color: p.color, radius: p.radius })) };
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -114,6 +126,9 @@ export function CityMinimap() {
               x={bind(() => project(d.center).x - r)} y={bind(() => project(d.center).y - r)} />;
           })}
           {ROADS.map((seg, i) => <RuneView key={`road-${i}`} {...full} fill="#f4ead2cc" shape={bind(() => ({ points: segment(project(seg.from), project(seg.to), 4), viewBox: [size, size] as const }))} />)}
+          {FLOOD_SHAPES.filter((f) => shape.flooded.includes(f.district)).map((f) => (
+            <RuneView key={`flood-${f.district}`} {...full} fill="#1f7fa8" opacity={bind(() => Math.min(0.75, 0.25 + (read()?.depths[f.district] ?? 0) * 0.4))} shape={polygon(f.corners)} />
+          ))}
           {shape.scared.map((radius, i) => {
             const r = radius * scale;
             return <RuneView key={`fear-${i}`} pin={[0, 0, null, null]} width={r * 2} height={r * 2} radius={r} fill="#e23b3b"

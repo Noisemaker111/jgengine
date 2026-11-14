@@ -47,6 +47,8 @@ export const DOCK_RADIUS = 9;
 export const HANDOFF_SPEED = 10;
 /** Most calls the board holds; the rest wait. */
 export const BOARD_SIZE = 4;
+/** Game seconds a call waits on the board before the customer gives up and calls a rival. */
+export const CALL_PATIENCE = 150;
 
 export interface SwapDock {
   id: string;
@@ -169,7 +171,15 @@ export function floorAt(ctx: GameContext, spot: readonly [number, number]): Drop
 }
 
 /** Put a call on the board when the oven's interval comes round. */
-function tickCalls(ctx: GameContext, state: ShiftState, dt: number): ShiftState {
+function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState {
+  let state = input;
+  // A call left too long on the board walks to a rival pizzeria.
+  const now = ctx.time.now();
+  const stale = state.board.filter((call) => now - call.calledAt > CALL_PATIENCE);
+  if (stale.length > 0) {
+    for (const call of stale) ctx.game.notices.push({ text: `${customerById(call.customerId)?.name ?? "A customer"} gave up waiting and called Carmine's Crust.`, tone: "warn" });
+    state = { ...state, board: state.board.filter((call) => !stale.includes(call)), lost: state.lost + stale.reduce((sum, call) => sum + call.pizzas.length, 0) };
+  }
   if (state.board.length >= BOARD_SIZE) return state;
   const nextCallIn = state.nextCallIn - dt;
   if (nextCallIn > 0) return { ...state, nextCallIn };
@@ -264,6 +274,35 @@ function closeTheShift(ctx: GameContext, state: ShiftState): ShiftState {
   return { ...freshShift(), serial: state.serial, summary };
 }
 
+/** First-time lessons, each said once per career: what the water just did and what to do about it. */
+const HINTS: Record<string, string> = {
+  drowned: "Your engine drowned: wheels can't run a canal. Ride for a pink swap dock on the chart and take the jet-ski.",
+  beached: "A hull on dry stone barely moves. Get back to the water, or swap to the scooter at a dock.",
+  stack: "Two boxes in the bag: a stack bonus on every tip, and Carmine's Crust riders will come for the hottest one.",
+  rooftop: "The water's up, so customers lean out of balconies and rooftops now. They tip extra for the climb.",
+  cold: "A box is below its customer's cold limit: they'll pay the menu price and not a cent of tip.",
+};
+
+function teach(ctx: GameContext, id: keyof typeof HINTS): void {
+  const shop = pizzeriaStore.read(ctx);
+  const seen = shop.hints ?? [];
+  if (seen.includes(id)) return;
+  pizzeriaStore.write(ctx, { ...shop, hints: [...seen, id] });
+  ctx.game.notices.push({ text: HINTS[id]!, tone: "info" });
+}
+
+function tickLessons(ctx: GameContext, state: ShiftState): void {
+  const water = streetPlayOf(ctx).telemetry().water;
+  if (water === "ENGINE DROWNED") teach(ctx, "drowned");
+  if (water === "BEACHED" || water === "AGROUND") teach(ctx, "beached");
+  if (state.bag.length >= 2) teach(ctx, "stack");
+  if (state.bag.some((order) => order.heat < (customerById(order.customerId)?.coldLimit ?? 25))) teach(ctx, "cold");
+  for (const order of state.bag) {
+    const spot = customerSpot(order.customerId);
+    if (spot !== null && floorAt(ctx, spot) !== "door") { teach(ctx, "rooftop"); break; }
+  }
+}
+
 /** Run the night: open at dusk, take calls, age the bag, send the rival, close at midnight. */
 export function tickShift(ctx: GameContext, dt: number): void {
   let state = shiftStore.read(ctx);
@@ -279,6 +318,7 @@ export function tickShift(ctx: GameContext, dt: number): void {
   state = tickBag(ctx, state, dt);
   state = tickRival(ctx, state, dt);
   shiftStore.write(ctx, state);
+  tickLessons(ctx, state);
   syncBeacons(ctx, state);
 }
 
@@ -604,7 +644,8 @@ export function shiftGoal(ctx: GameContext): ShiftGoal | null {
   }
   if (state.board.length > 0) {
     const call = state.board[0]!;
-    return { eyebrow: `${state.board.length} on the board`, title: `Load ${customerById(call.customerId)?.name ?? "the next order"}`, target: OVEN, hint: "Ride back to the oven window and press E. Stack more if the oven allows." };
+    const wait = Math.max(0, Math.ceil(CALL_PATIENCE - (ctx.time.now() - call.calledAt)));
+    return { eyebrow: `${state.board.length} on the board · hangs up in ${wait}s`, title: `Load ${customerById(call.customerId)?.name ?? "the next order"}`, target: OVEN, hint: "Ride back to the oven window and press E. Stack more if the oven allows." };
   }
   return null;
 }

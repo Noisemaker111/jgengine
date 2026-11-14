@@ -83,6 +83,8 @@ export interface PizzeriaState {
   foreclosures: number;
   /** The note is paid: the shop is the family's. */
   saved: boolean;
+  /** First-time lessons the rider has already been told. */
+  hints?: string[];
 }
 
 export const STARTING_DEBT = 12000;
