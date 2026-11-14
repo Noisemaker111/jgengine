@@ -17,7 +17,7 @@ const LAID = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
 function memory() {
   const map = new Map<string, string>();
   const career = newCareer();
-  career.medals = { best: { "last-call": 1, "cart-stuffer": 12, "lights-out": 20, "grudge-brick": 9, "price-check": 20, "empty-cart": 20 } };
+  career.medals = { best: { "last-call": 1, "cart-stuffer": 200, "lights-out": 20, "grudge-brick": 9, "price-check": 20, "empty-cart": 20 } };
   map.set(CAREER_KEY, JSON.stringify(career));
   return { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => void map.set(key, value) };
 }
@@ -34,7 +34,7 @@ function runOn(track: Track, take: readonly string[] = [], sweep = false) {
   return session.snapshot();
 }
 
-describe("yard tracks", () => {
+describe("store departments", () => {
   test("six tracks, each a different shape: no two share a length, a bend count or a shortcut", () => {
     expect(TRACKS).toHaveLength(6);
     const turns = (track: Track) => track.def.pieces.filter((piece) => piece.kind === "turn").length;
@@ -143,13 +143,13 @@ describe("yard tracks", () => {
     expect(free.run!).toBeGreaterThan(shed.atZ);
   });
 
-  test("the rail yard's freight throws a kart back off the crossing", () => {
+  test("the loading bay tugger train throws a cart back off the crossing", () => {
     const track = trackById("loading-bay")!;
     const crossing = track.hazardSpans.find((span) => span.kind === "tugger")!;
     const session = createRunSession(() => 0, memory());
     session.selectEvent(eventOn(track).id);
     session.start();
-    // Floor it with no regard for the lights: sooner or later a train is on the crossing.
+    // Floor it with no regard for the lights: sooner or later a tugger train is on the crossing.
     const crossingRun = track.course.progressOf(crossing.route, crossing.from) - track.origin;
     let hit = false;
     let thrownTo = Number.POSITIVE_INFINITY;
@@ -157,7 +157,7 @@ describe("yard tracks", () => {
     session.tick = (dt, axis, input) => {
       original(dt, axis, input);
       const snap = session.snapshot();
-      if (!hit && snap.ticker.some((line) => line.text.includes("FREIGHT"))) {
+      if (!hit && snap.ticker.some((line) => line.text.includes("TUGGER"))) {
         hit = true;
         thrownTo = snap.run;
       }
@@ -168,7 +168,7 @@ describe("yard tracks", () => {
     expect(thrownTo).toBeLessThan(crossingRun);
   });
 
-  test("hazards change the drive: slag slows, a belt shoves, a flood drags", () => {
+  test("hazards change the drive: tumbles slow, a conveyor shoves, a puddle drags", () => {
     const tuning = tuningFrom([partById("power_walker")!]);
     const drive = (track: Track, run: number, offset: number, time: number, seconds = 1.5) => {
       const at = track.point(MAIN_ROUTE, run, offset);

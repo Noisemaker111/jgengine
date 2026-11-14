@@ -92,7 +92,7 @@ describe("createVehicleController — straight-line feel", () => {
 });
 
 describe("createVehicleController — handling model", () => {
-  test("the same corner grips less in the gravel gantry than on the concrete flats", () => {
+  test("the same corner grips less on the frozen-foods ice than on the bulk-aisle concrete", () => {
     const run = (startZ: number) => {
       const controller = createVehicleController({ position: [0, 0, startZ], heading: 0 });
       let peakSlip = 0;
@@ -105,15 +105,15 @@ describe("createVehicleController — handling model", () => {
       }
       return { peakSlip, cornerEntrySurface, surface: last!.surface, pose: last! };
     };
-    // Flats (concrete) at z=170, gantry (gravel) at z=360 - same x, same script, different yard.
-    const flats = run(170);
-    const gantry = run(360);
-    expect(flats.cornerEntrySurface).toBeCloseTo(surfaceAt(0, 170).grip, 6);
-    expect(gantry.cornerEntrySurface).toBeCloseTo(surfaceAt(0, 360).grip, 6);
-    expect(gantry.cornerEntrySurface).toBeLessThan(flats.cornerEntrySurface);
-    // Less grip means the same lock carves less of the corner before the kart washes wide.
-    expect(Math.abs(gantry.pose.heading)).toBeLessThan(Math.abs(flats.pose.heading) * 0.99);
-    expect(gantry.peakSlip).toBeGreaterThan(0);
+    // Frozen (frosted, icy) at z=170, bulk (dusty concrete) at z=360 - same x, same script, different aisle.
+    const ice = run(170);
+    const concrete = run(360);
+    expect(ice.cornerEntrySurface).toBeCloseTo(surfaceAt(0, 170).grip, 6);
+    expect(concrete.cornerEntrySurface).toBeCloseTo(surfaceAt(0, 360).grip, 6);
+    expect(ice.cornerEntrySurface).toBeLessThan(concrete.cornerEntrySurface);
+    // Less grip means the same lock carves less of the corner before the cart washes wide.
+    expect(Math.abs(ice.pose.heading)).toBeLessThan(Math.abs(concrete.pose.heading) * 0.99);
+    expect(ice.peakSlip).toBeGreaterThan(0);
   });
 
   test("the handbrake breaks the rear loose: more yaw and more slip than steering alone", () => {

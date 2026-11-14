@@ -12,7 +12,7 @@ import { compactorPlanForShift, rivalsForShift, shiftInfo, type ShiftEffect } fr
 import { createShiftLoop, readRunState, saveRunState, type RunBank } from "./shiftState";
 import { createGhostRecorder, readGhosts, replayGhost, saveGhost, type GhostPose, type GhostReplay } from "./ghost";
 import { resolveCrusherContact } from "../compactor/contact";
-import { partInSlotId, tuningFrom, type KartTuning } from "../parts/build";
+import { partInSlotId, STUB_HOP_SPEED, tuningFrom, type KartTuning } from "../parts/build";
 import type { DriftFoundryPartDef } from "../parts/catalog";
 import { PART_SLOTS, partById, type PartSlotId } from "../parts/catalog";
 import { createKartDamage, impactImpulse, noseHitPoint } from "../vehicle/damage";
@@ -28,8 +28,16 @@ import { AISLE_NINE_TRACK, trackById, type ActiveHazard, type Track } from "../t
 import { FLAT_YARD_GROUND } from "../tracks/ground";
 import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RunStorage } from "./records";
 import { checkpointParts, readParkedRun, saveParkedRun, type ParkedRun } from "./progress";
-import { ESCAPE_BONUS, bankOf, buyPart as buyGaragePart, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
-import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric, MEDALS, targetText, YARD_EVENTS, YARD_TIERS, type MedalId, type YardEvent } from "../events/catalog";
+import { ESCAPE_BONUS, bankOf, buyChassis as buyCorralChassis, buyPart as buyGaragePart, CART_VALUE_SHARE, corralRows, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, selectChassis as selectCorralChassis, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
+import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRacers, eventRivals, formatMetric, MEDALS, targetText, YARD_EVENTS, YARD_TIERS, type MedalId, type YardEvent } from "../events/catalog";
+import { basketValue, EMPTY_BASKET, grab, loadPart, loadReading, usePowerUp, type Basket, type LoadFeel } from "../cart/basket";
+import { chassisById, DEFAULT_CHASSIS, wobbleSteer, type CartChassis, type ChassisId } from "../cart/chassis";
+import { checkoutReceipt, readBestReceipts, saveBestReceipt, type Receipt } from "../cart/checkout";
+import { shelfItemById, type GoodsDef, type PowerUpDef } from "../cart/goods";
+import { nearestShelf } from "../cart/shelves";
+import { createStyleMeter, SWAT_POINTS, type StyleAward } from "../cart/style";
+import { combineModifiers } from "../vehicle/controller";
+import type { VehicleDynamicsModifiers } from "@jgengine/core/physics/vehicleDynamics";
 
 /**
  * Where a run stands, in the player's words. It is derived, never stored: a settled run reports the
@@ -73,6 +81,12 @@ export interface RunOutcome {
   nextShift: { id: string; label: string; hint: string } | null;
   /** The calendar event this run raced and what it did to that event's medals. */
   event: EventResult;
+  /** The self-checkout receipt, or `null` when the shutters caught the cart. */
+  receipt: Receipt | null;
+  /** Dollars in the basket and how many items, as the cart stood at the end. */
+  cartValue: number;
+  items: number;
+  style: number;
 }
 
 /** One calendar event's result on the results card. */
@@ -173,9 +187,29 @@ export interface SessionSnapshot {
   ghost: { pose: GhostPose | null; best: number; aheadMetres: number | null } | null;
   /** The yard calendar: tiers, events, medals held and medal points. */
   calendar: { points: number; maxPoints: number; tiers: readonly CalendarTier[] };
+  /** What is in the basket and how it is making the cart handle. */
+  basket: { goods: readonly GoodsDef[]; powerUps: readonly PowerUpDef[]; weight: number; value: number; capacity: number; feel: LoadFeel };
+  /** The cart under the shopper this run. */
+  chassis: { id: ChassisId; label: string; entityKind: string; wobble: number };
+  /** The cart corral: every chassis, owned or for sale. */
+  corral: ReturnType<typeof corralRows>;
+  /** Style banked this run, the live combo and the last trick, for the HUD pop. */
+  style: { points: number; combo: number; comboLeft: number; last: { label: string; at: number } | null };
+  /** Standing on the back bar, and seconds of extinguisher boost left. */
+  riding: boolean;
+  boostLeft: number;
+  /** Marble spills on the floor this run. */
+  marbles: readonly { id: string; position: readonly [number, number, number] }[];
+  /** Shelf grab spots already emptied this run. */
+  shelvesTaken: ReadonlySet<string>;
+  /** The last thing grabbed or used, for the HUD pop. */
+  lastGrab: { label: string; at: number } | null;
+  /** Best self-checkout receipt on this event, or `null` before the first. */
+  bestReceipt: number | null;
 }
 
 type CareerView = {
+  corral: SessionSnapshot["corral"];
   career: Omit<SessionSnapshot["career"], "saved">;
   event: SessionSnapshot["event"];
   calendar: SessionSnapshot["calendar"];
@@ -190,17 +224,19 @@ export interface RunSession {
   selectEvent(eventId: string): { ok: boolean; reason?: string };
   /** Buy the next rung of a slot's ladder; the pit screen re-reads the career from the snapshot. */
   buyPart(slot: PartSlotId): { ok: boolean; reason?: string };
+  /** Unlock a cart at the corral (or pick an owned one) for the next run. */
+  chooseChassis(id: ChassisId): { ok: boolean; reason?: string };
   /** Park the stopped, grounded run where it stands; false when it is moving or airborne. */
   park(): boolean;
   togglePause(): void;
   suspend(value: boolean): void;
-  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean; effects?: KartTireEffects }): void;
+  tick(dt: number, axis: DriveAxis, input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap?: boolean; ride?: boolean; usePower?: boolean; effects?: KartTireEffects }): void;
 }
 
 export const runSessionStore = defineStore<RunSession>("runSession", () => createRunSession());
 
 const TICKER_LIMIT = 6;
-/** A train on a crossing throws a kart this far back up the road. */
+/** A tugger train on a crossing throws a cart this far back up the aisle. */
 const TRAIN_KNOCKBACK = 4;
 /** A kart this close to a wall it cannot open is stopped at it. */
 const WALL_REACH = 3;
@@ -215,6 +251,22 @@ export function ghostKey(event: YardEvent): string {
   const track = trackOfEvent(event);
   return track.id === AISLE_NINE_TRACK.id ? event.id : `${track.id}:${event.id}`;
 }
+
+/** Extinguisher boost: seconds, and how hard it pushes. */
+const BOOST_SECONDS = 2.2;
+const BOOST: VehicleDynamicsModifiers = { driveScale: 1.8, speedLimitScale: 1.38 };
+/** Standing on the back bar: a touch faster, a lot less planted. */
+const RIDING: VehicleDynamicsModifiers = { speedLimitScale: 1.07, gripScale: 0.86, steerScale: 0.9 };
+/** A stack of bouncy balls: one hop this much stronger than the stock hop, enough for any pallet ramp. */
+const BOUNCE_HOP = 12;
+const MARBLE_SECONDS = 30;
+const MARBLE_RADIUS = 2.6;
+const MARBLE_STUN = 1.6;
+const MOP_REACH = 5;
+const MOP_PUSH = 2.6;
+const MOP_STUN = 1.1;
+/** Metres inside the shelving where a drift counts as an end-cap drift. */
+const EDGE_BAND = 3.5;
 
 const runOf = (pose: VehicleTelemetry): number => pose.run ?? pose.position[2];
 const lateralOf = (pose: VehicleTelemetry): number => pose.lateral ?? pose.position[0];
@@ -251,6 +303,19 @@ export function createRunSession(
   let outcome: RunOutcome | null = null;
   let career: CareerSave = readCareer(storage);
   let careerSaved = true;
+  let bestReceipts = readBestReceipts(storage);
+  let basket: Basket = EMPTY_BASKET;
+  let shelvesTaken = new Set<string>();
+  const style = createStyleMeter();
+  let lastStyle: { label: string; at: number } | null = null;
+  let lastGrab: { label: string; at: number } | null = null;
+  let riding = false;
+  let boostLeft = 0;
+  let marbles: { id: string; run: number; position: readonly [number, number, number]; until: number; hit: Set<string> }[] = [];
+  let marbleCounter = 0;
+  /** The cart the next run pushes: the career's selected chassis. */
+  const chassisNow = (): CartChassis => chassisById(career.carts.selected) ?? chassisById(DEFAULT_CHASSIS)!;
+  let chassis: CartChassis = chassisNow();
   /** The event the open run races; a locked or unknown saved choice falls back to the salvage run. */
   function currentEvent(): YardEvent {
     const chosen = eventById(career.event);
@@ -292,9 +357,13 @@ export function createRunSession(
   let tuning: KartTuning = tuningFrom(installed);
   /** One barricade hit per approach: pinned against a gate must not grind damage tick after tick. */
   let gateImpactArmed = true;
+  /** A stack of bouncy balls was used: next tick hops high. */
+  let pendingBounce = false;
+  /** How much the squeaky caster wobbles this run: the chassis's own, or none once the wheel is fixed. */
+  const squeak = (): number => (installed.some((part) => part.id === "fixed_squeak") ? 0 : chassis.wobble);
 
   function rebuildTuning(): void {
-    tuning = tuningFrom(installed, damage.total() > 0 ? damageEffect : undefined);
+    tuning = tuningFrom(installed, damage.total() > 0 ? damageEffect : undefined, { chassis: chassis.part, load: loadPart(basket) });
   }
 
   let vehicle: VehicleController = createVehicleController(track.spawn, track);
@@ -310,6 +379,12 @@ export function createRunSession(
         vehicle.shove(dx, dz);
         pose = { ...pose, position: [pose.position[0] + dx, pose.position[1], pose.position[2] + dz] };
       },
+      // Officer Dale's tackle: three quarters of the cart's speed gone and a spin, once per cooldown.
+      onGuardTackle: () => {
+        vehicle.jolt(0.25, pose.lateral !== undefined && pose.lateral < 0 ? 1.4 : -1.4);
+        notify("TACKLED BY OFFICER DALE — \"SIR, THE STORE IS CLOSED\"", "warn");
+        pushRadio("SECURITY TACKLE — GET MOVING");
+      },
     });
   }
 
@@ -319,13 +394,13 @@ export function createRunSession(
   let opponents: OpponentField = createField();
   function createGrid(): Standings {
     return createStandings({
-      ...Object.fromEntries(eventRivals(event, RIVAL_DEFS).map((def) => [def.id, def.name])),
+      ...Object.fromEntries(eventRacers(event, RIVAL_DEFS).map((def) => [def.id, def.name])),
       // Added last so the player starts bottom of the grid, behind every rival.
       [PLAYER_RACER_ID]: "YOU",
     }, track);
   }
   let standings: Standings = createGrid();
-  let FIELD_SIZE = eventRivals(event, RIVAL_DEFS).length + 1;
+  let FIELD_SIZE = eventRacers(event, RIVAL_DEFS).length + 1;
   let announcedPlace = standings.placeOf(PLAYER_RACER_ID);
   const restPose = (position: readonly [number, number, number], heading: number): VehicleTelemetry => {
     const fix = track.locate(position[0], position[2]);
@@ -389,8 +464,82 @@ export function createRunSession(
     checkpointLiveRun();
     notify(part.radioLine, "success");
     pushRadio(part.radioLine);
-    if (ejected !== null) pushRadio(`${ejected.label.toUpperCase()} FLEW OFF THE BACK`);
+    if (ejected !== null) pushRadio(`${ejected.label.toUpperCase()} CLATTERED OFF THE BACK`);
     if ((part.grants?.armor ?? 0) > 0) armorSaveArmed = true;
+  }
+
+  /** Grab whatever is on the shelf spot the cart is passing: into the basket, and the cart retunes. */
+  function grabShelf(): void {
+    const spot = nearestShelf(pose.position, shelvesTaken, track.shelves);
+    if (spot === null) return;
+    const result = grab(basket, spot.item, chassis.capacity);
+    if (result.status !== "added") return;
+    shelvesTaken.add(spot.id);
+    basket = result.basket;
+    rebuildTuning();
+    // A reload mid-run comes back with the shopping, the way a mod sweep does.
+    checkpointLiveRun();
+    const item = spot.item;
+    const heft = item.kind === "power" ? "POWER-UP" : item.heft === "heavy" ? "HEAVY" : item.heft === "light" ? "LIGHT" : "";
+    lastGrab = { label: `${item.label.toUpperCase()}${heft === "" ? "" : ` · ${heft}`}`, at: runTime };
+    if (item.kind === "power") pushRadio(`GRABBED A ${item.label.toUpperCase()} — ${item.blurb.toUpperCase()}`);
+    if (result.dropped !== null) pushRadio(`${result.dropped.label.toUpperCase()} BOUNCED OUT THE BACK`);
+  }
+
+  /** Use the oldest power-up in the child seat. */
+  function usePower(): void {
+    const used = usePowerUp(basket);
+    if (used.used === null) return;
+    basket = used.basket;
+    rebuildTuning();
+    const power = used.used;
+    lastGrab = { label: power.useLine, at: runTime };
+    pushRadio(power.useLine);
+    if (power.id === "extinguisher") boostLeft = BOOST_SECONDS;
+    else if (power.id === "bouncy_balls") pendingBounce = true;
+    else if (power.id === "rotisserie_chicken") {
+      damage.reset();
+      damageEffect = damage.effect();
+      rebuildTuning();
+      notify("CART REPAIRED — THE CHICKEN WAS DELICIOUS", "success");
+    } else if (power.id === "marbles") {
+      const behind = Math.max(0, runOf(pose) - 3);
+      const at = track.point(pose.route ?? "main", behind, lateralOf(pose));
+      marbleCounter += 1;
+      marbles.push({ id: `marbles-${marbleCounter}`, run: behind, position: [at.x, at.elevation, at.z], until: runTime + MARBLE_SECONDS, hit: new Set() });
+    } else if (power.id === "mop") {
+      let swatted = 0;
+      for (const body of opponents.bodies()) {
+        const dx = body.position[0] - pose.position[0];
+        const dz = body.position[2] - pose.position[2];
+        const distance = Math.hypot(dx, dz);
+        if (distance > MOP_REACH) continue;
+        const push = distance === 0 ? 1 : MOP_PUSH / distance;
+        opponents.knock(body.id, dx * push, dz * push);
+        opponents.stun(body.id, MOP_STUN);
+        swatted += 1;
+      }
+      if (swatted > 0) awardStyle(style.award("swat", SWAT_POINTS * swatted, swatted > 1 ? `MOP SWAT ×${swatted}` : "MOP SWAT"));
+    }
+  }
+
+  /** Marbles under a rival spin it out, once per spill per cart; the shutters sweep up spills they pass. */
+  function rollMarbles(shutterRun: number): void {
+    if (marbles.length === 0) return;
+    marbles = marbles.filter((spill) => spill.until > runTime && spill.run > shutterRun);
+    for (const spill of marbles) {
+      for (const body of opponents.bodies()) {
+        if (spill.hit.has(body.id)) continue;
+        if (Math.hypot(body.position[0] - spill.position[0], body.position[2] - spill.position[2]) > MARBLE_RADIUS) continue;
+        spill.hit.add(body.id);
+        opponents.stun(body.id, MARBLE_STUN);
+        pushRadio(`${body.name} HIT THE MARBLES`);
+      }
+    }
+  }
+
+  function awardStyle(award: StyleAward): void {
+    lastStyle = { label: award.label, at: runTime };
   }
 
   function announceGates(): void {
@@ -474,8 +623,8 @@ export function createRunSession(
         damageEffect = damage.effect();
         rebuildTuning();
       }
-      notify("FREIGHT CLIPPED YOU — WAIT FOR THE GAP", "warn");
-      pushRadio("CLIPPED BY THE FREIGHT — WATCH THE LIGHTS");
+      notify("TUGGER TRAIN CLIPPED YOU — WAIT FOR THE GAP", "warn");
+      pushRadio("CLIPPED BY THE TUGGER — WATCH THE LIGHTS");
     }
   }
 
@@ -503,6 +652,16 @@ export function createRunSession(
     shift = shiftInfo(loop.offer().optionId);
     compactor = eventCompactor(event, compactorPlanForShift(loop.offer().optionId));
     collected = new Set<string>();
+    chassis = chassisNow();
+    basket = EMPTY_BASKET;
+    shelvesTaken = new Set<string>();
+    style.reset();
+    lastStyle = null;
+    lastGrab = null;
+    riding = false;
+    boostLeft = 0;
+    pendingBounce = false;
+    marbles = [];
     gateAnnounced = new Set<string>();
     advised = new Set<string>();
     stuckAt = null;
@@ -523,7 +682,7 @@ export function createRunSession(
     pose = restPose(track.spawn.position, track.spawn.heading);
     opponents = createField();
     standings = createGrid();
-    FIELD_SIZE = eventRivals(event, RIVAL_DEFS).length + 1;
+    FIELD_SIZE = eventRacers(event, RIVAL_DEFS).length + 1;
     announcedPlace = standings.placeOf(PLAYER_RACER_ID);
   }
 
@@ -531,7 +690,7 @@ export function createRunSession(
 
   /** The live run as the pit would restore it: parts, route, clocks, haul-side details. */
   function checkpointNow(): ParkedRun {
-    return { version: 1, track: track.id, position: pose.position, heading: pose.heading, runTime, partIds: installed.map(entry => entry.id), collectedIds: [...collected], gateIds: [...gateAnnounced], armorSaveArmed, armorSavesUsed, nearMissCount, closestGap: Number.isFinite(closestGap) ? closestGap : 0, wasNear, announcedSurge };
+    return { version: 1, track: track.id, position: pose.position, heading: pose.heading, runTime, partIds: installed.map(entry => entry.id), collectedIds: [...collected], gateIds: [...gateAnnounced], armorSaveArmed, armorSavesUsed, nearMissCount, closestGap: Number.isFinite(closestGap) ? closestGap : 0, wasNear, announcedSurge, shelfIds: [...shelvesTaken], basketIds: basket.goods.map((item) => item.id), powerUpIds: basket.powerUps.map((item) => item.id) };
   }
 
   /**
@@ -552,9 +711,9 @@ export function createRunSession(
       // The salvage in the kart's hold is part of the parked run; the loop has already written it, and
       // this keeps an explicit park in step with an autosaved one.
       runSaved = saveRunState(loop.snapshot(), storage);
-      notify("PARKED RUN SAVED — CONTINUE FROM THE PIT", "success");
+      notify("CART PARKED — CONTINUE FROM CUSTOMER SERVICE", "success");
     }
-    else notify("THIS BROWSER COULD NOT SAVE YOUR PARKED RUN", "warn");
+    else notify("THIS BROWSER COULD NOT SAVE YOUR PARKED CART", "warn");
   }
 
   const nextOf = (board: ReturnType<typeof medalsOf>, id: string): { medal: MedalId; text: string } | null => {
@@ -563,11 +722,11 @@ export function createRunSession(
     return next === null || def === null ? null : { medal: next.medal as MedalId, text: targetText(def.metric, next.value) };
   };
 
-  /** The run's number on this event's metric. Grudge is seconds of margin on HOBBS at the gate. */
+  /** The run's number on this event's metric. Grudge is seconds of margin on BRICK at the tills. */
   function eventValue(place: number): number {
     if (event.metric === "place") return place;
     if (event.metric === "time") return Math.round(runTime * 100) / 100;
-    if (event.metric === "sweep") return collected.size;
+    if (event.metric === "value") return Math.round(basketValue(basket));
     const hobbs = standings.snapshot().standings.find((entry) => entry.id === "rival_brick");
     if (hobbs?.finishTime != null) return Math.round((hobbs.finishTime - runTime) * 100) / 100;
     const body = opponents.bodies().find((entry) => entry.id === "rival_brick");
@@ -589,8 +748,8 @@ export function createRunSession(
     pendingMedals = board.snapshot();
     const firstTime = submission.newlyEarned.map((medal) => ({ medal: medal as MedalId, credits: event.rewards[medal as MedalId] }));
     const reward = firstTime.reduce((sum, entry) => sum + entry.credits, 0);
-    for (const entry of firstTime) pushRadio(`${entry.medal.toUpperCase()} ON ${event.label.toUpperCase()} — +${entry.credits} CR`);
-    for (const tier of submission.openedTiers) pushRadio(`${YARD_TIERS.find((entry) => entry.id === tier)?.label.toUpperCase() ?? tier} EVENTS OPEN ON THE CALENDAR`);
+    for (const entry of firstTime) pushRadio(`${entry.medal.toUpperCase()} ON ${event.label.toUpperCase()} — +$${entry.credits} STORE CREDIT`);
+    for (const tier of submission.openedTiers) pushRadio(`${YARD_TIERS.find((entry) => entry.id === tier)?.label.toUpperCase() ?? tier} EVENTS OPEN IN THE WEEKLY CIRCULAR`);
     return {
       id: event.id,
       label: event.label,
@@ -670,6 +829,7 @@ export function createRunSession(
   function viewOfCareer(): CareerView {
     if (careerView !== null && careerView.career === career && careerView.event === event && careerView.track === track) return careerView.value;
     const value: CareerView = {
+      corral: corralRows(career),
       career: {
         credits: bankOf(career).banked(),
         standing: standingOf(career).standing(DRIVER, "yard"),
@@ -739,6 +899,16 @@ export function createRunSession(
         event: view.event,
         calendar: view.calendar,
         ghost: ghostNow(),
+        corral: view.corral,
+        basket: { goods: basket.goods, powerUps: basket.powerUps, weight: loadReading(basket).weight, value: basketValue(basket), capacity: chassis.capacity, feel: loadReading(basket).feel },
+        chassis: { id: chassis.id, label: chassis.label, entityKind: chassis.entityKind, wobble: squeak() },
+        style: { points: style.snapshot().points, combo: style.snapshot().combo, comboLeft: style.snapshot().comboLeft, last: lastStyle },
+        riding,
+        boostLeft,
+        marbles: marbles.map((spill) => ({ id: spill.id, position: spill.position })),
+        shelvesTaken,
+        lastGrab,
+        bestReceipt: bestReceipts[event.id] ?? null,
       };
     },
     start() {
@@ -755,21 +925,26 @@ export function createRunSession(
           closestGap = checkpoint.closestGap;
           wasNear = checkpoint.wasNear;
           announcedSurge = checkpoint.announcedSurge;
+          shelvesTaken = new Set(checkpoint.shelfIds ?? []);
+          basket = {
+            goods: (checkpoint.basketIds ?? []).map((id) => shelfItemById(id)).filter((item): item is GoodsDef => item?.kind === "goods"),
+            powerUps: (checkpoint.powerUpIds ?? []).map((id) => shelfItemById(id)).filter((item): item is PowerUpDef => item?.kind === "power"),
+          };
           vehicle.resetTo(checkpoint.position, checkpoint.heading);
           pose = restPose(checkpoint.position, checkpoint.heading);
           // A parked build is restored undamaged: the checkpoint stores parts, not dents.
           damage.reset();
           damageEffect = damage.effect();
           rebuildTuning();
-          pushRadio("PARKED RUN RESTORED — YOUR BUILD IS STILL BOLTED ON");
+          pushRadio("PARKED CART RESTORED — YOUR SHOPPING IS STILL IN IT");
         }
         begun = true;
-        if (parkedRun === null) pushRadio("BOLT IT ON, GO GO");
+        if (parkedRun === null) pushRadio("\"THE STORE IS NOW CLOSING\" — GO GO GO");
       }
     },
     selectEvent(eventId) {
       const chosen = eventById(eventId);
-      if (chosen === null) return { ok: false, reason: "The yard runs no such event" };
+      if (chosen === null) return { ok: false, reason: "The store runs no such event" };
       if (phaseNow() === "running") return { ok: false, reason: "Finish or park the run before you change events" };
       if (!medalsOf(career).isOpen(eventId)) return { ok: false, reason: `${chosen.label} is still locked` };
       if (chosen.id === event.id) return { ok: true };
@@ -794,12 +969,26 @@ export function createRunSession(
         return { ok: false, reason: (error as Error).message };
       }
     },
+    chooseChassis(id) {
+      if (phaseNow() === "running") return { ok: false, reason: "Finish or park the run before you swap carts" };
+      try {
+        career = career.carts.owned.includes(id) ? selectCorralChassis(career, id) : buyCorralChassis(career, id);
+        careerSaved = saveCareer(career, storage);
+        if (phaseNow() === "start") {
+          chassis = chassisNow();
+          rebuildTuning();
+        }
+        return { ok: true };
+      } catch (error) {
+        return { ok: false, reason: (error as Error).message };
+      }
+    },
     restart() {
       parkedRun = null;
       saveParkedRun(null, storage);
       reset();
       begun = true;
-      pushRadio("BOLT IT ON, GO GO");
+      pushRadio("\"THE STORE IS NOW CLOSING\" — GO GO GO");
     },
     returnToTitle() { parkRun(); reset(parkedRun !== null); },
     park() { parkRun(); return parkedRun !== null; },
@@ -813,7 +1002,15 @@ export function createRunSession(
 
       // A bent frame pulls the wheel on its own; the last stage of a nose zone adds that bias here.
       const approachKmh = pose.speedKmh;
-      pose = vehicle.tick(dt, damagedAxis({ ...axis, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { jumpPressed: input.jumpPressed, plowBracing: input.plowBracing, time: runTime, ...input.effects }, groundHeightAt);
+      if (input.usePower === true) usePower();
+      riding = input.ride === true && !pose.airborne;
+      boostLeft = Math.max(0, boostLeft - dt);
+      const modifiers = combineModifiers(riding ? RIDING : undefined, boostLeft > 0 ? BOOST : undefined);
+      const bounce = pendingBounce ? STUB_HOP_SPEED + BOUNCE_HOP : undefined;
+      pendingBounce = false;
+      // The squeaky caster flutters the handle unless the wheel is fixed.
+      const steer = axis.steer + wobbleSteer(runTime, pose.speedKmh, squeak());
+      pose = vehicle.tick(dt, damagedAxis({ ...axis, steer, handbrake: axis.handbrake ?? 0 }, damageEffect), tuning, { jumpPressed: input.jumpPressed, plowBracing: input.plowBracing, time: runTime, ...(modifiers === undefined ? {} : { modifiers }), ...(bounce === undefined ? {} : { bounce }), ...input.effects }, groundHeightAt);
       if (ghostRecording) ghostRecorder.record(runTime, { position: pose.position, rotationY: pose.heading });
 
       // A barricade the build cannot clear stops the kart on the nose. One impulse per approach at the
@@ -825,12 +1022,14 @@ export function createRunSession(
         if (transitions.length > 0) {
           damageEffect = damage.effect();
           rebuildTuning();
-          notify("FRONT END FOLDED — SHE PULLS WHEN YOU STEER", "warn");
-          pushRadio(transitions[0]!.stage >= 2 ? "NOSE IS FOLDED FLAT — BABY HER HOME" : "CLIPPED THE BARRIER — FRONT END'S BENT");
+          notify("BASKET BENT — SHE PULLS WHEN YOU STEER", "warn");
+          pushRadio(transitions[0]!.stage >= 2 ? "BASKET'S A PRETZEL — GRAB A ROTISSERIE CHICKEN" : "CLIPPED THE WALL — BASKET'S BENT");
         }
       }
 
       applyPickup(input.salvageSwap === true);
+      grabShelf();
+      for (const award of style.tick(dt, { slip: pose.slip, speedKmh: pose.speedKmh, airborne: pose.airborne, riding, nearEdge: Math.abs(lateralOf(pose)) > track.def.halfWidth - EDGE_BAND, crashed: pose.blockedByGate })) awardStyle(award);
       announceGates();
       adviseStop();
       meetHazards(approachKmh);
@@ -843,15 +1042,16 @@ export function createRunSession(
       // The ring is placed on the road: every kart is measured at the road height under it, so a
       // checkpoint 26 m up the smelter still sees a kart that hopped.
       const placed: Record<string, readonly [number, number, number]> = { [PLAYER_RACER_ID]: [pose.position[0], pose.roadY ?? 0, pose.position[2]] };
-      for (const body of opponents.bodies()) placed[body.id] = [body.position[0], body.roadY, body.position[2]];
+      for (const body of opponents.bodies()) if (!body.blocker) placed[body.id] = [body.position[0], body.roadY, body.position[2]];
       standings.update(runTime, placed);
       const place = standings.placeOf(PLAYER_RACER_ID);
       if (place !== announcedPlace) {
-        pushRadio(place < announcedPlace ? `P${place} OF ${FIELD_SIZE} — TOOK HIM` : `P${place} OF ${FIELD_SIZE} — PASSED`);
+        pushRadio(place < announcedPlace ? `P${place} OF ${FIELD_SIZE} — EXCUSE ME, COMING THROUGH` : `P${place} OF ${FIELD_SIZE} — PASSED`);
         announcedPlace = place;
       }
 
       const compactorZ = compactorZAt(runTime, compactor);
+      rollMarbles(compactorZ);
       const surge = activeSurge(runTime, compactor);
       if (surge !== null && surge.id !== announcedSurge) {
         announcedSurge = surge.id;
@@ -863,7 +1063,7 @@ export function createRunSession(
       if (!wasNear && gap < NEAR_MISS_ENTER) {
         wasNear = true;
         nearMissCount += 1;
-        pushRadio("TOO CLOSE, TOO CLOSE");
+        pushRadio("THE SCRUBBER'S ON YOUR CASTERS");
       } else if (wasNear && gap > NEAR_MISS_EXIT) {
         wasNear = false;
       }
@@ -875,8 +1075,8 @@ export function createRunSession(
         const rebound = track.point(pose.route ?? "main", contact.reboundZ, lateralOf(pose));
         vehicle.resetTo([rebound.x, pose.position[1], rebound.z], pose.heading);
         pose = { ...pose, position: [rebound.x, pose.position[1], rebound.z], run: contact.reboundZ };
-        notify("ARMOR PLATE SAVED YOUR HIDE", "warn");
-        pushRadio("ARMOR PLATE TOOK THE HIT — KEEP MOVING");
+        notify("THE BASKET ARMOR TOOK THE SHUTTER", "warn");
+        pushRadio("SHUTTER BOUNCED OFF THE ARMOR — KEEP MOVING");
       } else if (contact.outcome === "crushed") {
         const settlement = loop.settle({ outcome: "lost" });
         outcome = {
@@ -896,15 +1096,30 @@ export function createRunSession(
           lost: settlement.result.lost,
           nextShift: shiftInfo(settlement.next.optionId),
           event: scoreEvent(false, standings.placeOf(PLAYER_RACER_ID)),
+          receipt: null,
+          cartValue: basketValue(basket),
+          items: basket.goods.length + basket.powerUps.length,
+          style: style.snapshot().points,
         };
         recordOutcome(settlement);
         return;
       }
 
       if (runOf(pose) >= track.exitAt) {
-        // The gate bonus is part of what the run carried, so the line is paid on the whole haul.
-        loop.carry(ESCAPE_BONUS);
+        // The checkout bonus and the cart's reward share are part of what the run carried, so the line
+        // is paid on the whole haul.
+        loop.carry(ESCAPE_BONUS + Math.round(basketValue(basket) * CART_VALUE_SHARE));
         const place = standings.placeOf(PLAYER_RACER_ID);
+        const receipt = checkoutReceipt({
+          time: runTime,
+          par: track.def.par,
+          cartValue: basketValue(basket),
+          style: style.snapshot().points,
+          place: FIELD_SIZE > 1 ? place : 0,
+          items: basket.goods.length + basket.powerUps.length,
+        });
+        if (saveBestReceipt(storage, event.id, receipt.total)) pushRadio(`NEW BEST RECEIPT ON ${event.label.toUpperCase()} — ${receipt.total} PTS`);
+        bestReceipts = { ...bestReceipts, [event.id]: Math.max(bestReceipts[event.id] ?? 0, receipt.total) };
         const line = lineReading({
           barriers: [...gateAnnounced].filter((id) => !id.endsWith(":beaten")).length,
           // Winning a race of one is not a finish worth paying for.
@@ -940,6 +1155,10 @@ export function createRunSession(
           lost: settlement.result.lost,
           nextShift: shiftInfo(settlement.next.optionId),
           event: scoreEvent(true, place),
+          receipt,
+          cartValue: basketValue(basket),
+          items: basket.goods.length + basket.powerUps.length,
+          style: style.snapshot().points,
         };
         recordOutcome(settlement);
       }

@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 import { resolveBuildingKitPart } from "@jgengine/core/buildings/buildingKit";
 import { DRIFT_SOUNDS } from "../audio";
-import { SALVAGE_FACADE_KIT } from "./facades";
+import { STORE_KIOSK_KIT } from "./facades";
 
-test("apartment-only facade parts are omitted while walls and windows keep their block", () => {
-  for (const kind of ["awning", "airConditioner", "clothesline", "shutter", "storeSign", "roofProp"] as const) {
-    expect(resolveBuildingKitPart(SALVAGE_FACADE_KIT, kind).type).toBe("omit");
+test("street-only facade parts are omitted while kiosk walls, signs, awnings and shutters keep their block", () => {
+  for (const kind of ["airConditioner", "clothesline", "roofProp"] as const) {
+    expect(resolveBuildingKitPart(STORE_KIOSK_KIT, kind).type).toBe("omit");
   }
-  for (const kind of ["wall", "window", "storefront", "roof"] as const) {
-    expect(resolveBuildingKitPart(SALVAGE_FACADE_KIT, kind).type).toBe("box");
+  for (const kind of ["wall", "window", "storefront", "roof", "awning", "storeSign", "shutter"] as const) {
+    expect(resolveBuildingKitPart(STORE_KIOSK_KIT, kind).type).not.toBe("omit");
   }
 });
 

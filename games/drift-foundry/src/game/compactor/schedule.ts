@@ -19,8 +19,8 @@ export interface CompactorPlan {
 export const COMPACTOR_BASE_SPEED = 5.6;
 
 export const COMPACTOR_SURGES: readonly CompactorSurge[] = [
-  { id: "surge_1", label: "COMPACTOR'S EATIN' ROW SIX — MOVE IT", startT: 26, endT: 38, speed: 10.5 },
-  { id: "surge_2", label: "SHE'S GUNNING THE LINE — DON'T SLOW DOWN", startT: 62, endT: 76, speed: 11.5 },
+  { id: "surge_1", label: "SCRUBBER'S FLOORED IT — THE SHUTTERS ARE COMING", startT: 26, endT: 38, speed: 10.5 },
+  { id: "surge_2", label: "\"ALL CUSTOMERS TO THE TILLS\" — DON'T SLOW DOWN", startT: 62, endT: 76, speed: 11.5 },
 ];
 
 /** The yard's usual shift: the plan every run gets unless a shift changes it. */

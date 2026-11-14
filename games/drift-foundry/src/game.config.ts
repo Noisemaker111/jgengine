@@ -15,22 +15,22 @@ import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
-  name: "Drift Foundry",
+  name: "Cleanup on Aisle 9",
   world,
   scene: {
     editorLayers,
-    // Hands the live corridor frame to the card Continue opens.
+    // Hands the live aisle frame to the card Continue opens.
     WorldOverlay: () => createElement(SceneCaptureBinding, {}),
     entityModels,
     objectModels,
-    // The corridor's far stretch draws as one merged proxy per cell.
+    // The aisle's far stretch draws as one merged proxy per cell.
     visibility: { hlod: { distance: 300, hysteresis: 30, cluster: 1 } },
   },
-  // The authored gull habitats circle the dumps; the species name is the document's, the model is the game's.
+  // The authored habitats' pigeons circle under the roof; the species name is the document's, the model is the game's.
   sceneFlockModels: flockModels,
   physics,
-  // The kart, rivals, compactor and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
-  // corridor run the same distance at 30 and 144 fps.
+  // The cart, rivals, shutters and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
+  // run the same distance at 30 and 144 fps.
   simulation: { hz: 60 },
   input: {
     ...DEFAULT_DRIVE_CODES,
@@ -38,6 +38,8 @@ export const game = defineGame({
     jumpHop: ["Space"],
     plowBrace: ["ShiftLeft", "ShiftRight"],
     salvageSwap: { hold: ["KeyE"] },
+    usePower: ["KeyF", "KeyQ"],
+    rideBar: ["KeyC"],
     restart: ["KeyR"],
     startRun: ["Enter"],
     pauseRun: ["KeyP"],
@@ -46,7 +48,7 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   lifecycle,
-  // The pit wall is drawn natively by Rune: plates, the pit sheet, the dash and the notices are the game's own.
+  // Customer service is drawn natively by Rune: signs, the receipt, the dash and the PA notices are the game's own.
   GameUI,
   uiRenderer: "rune",
   hudTheme: false,
@@ -61,7 +63,7 @@ export const game = defineGame({
           id: "restart",
           label: "Restart run",
           kind: "danger",
-          description: "Wreck the corridor run again from the start.",
+          description: "Abandon this cart and start closing time over.",
           run: (ctx) => ctx.game.commands.run("restart", {}),
         },
       ],
@@ -72,30 +74,29 @@ export const game = defineGame({
     touch: false,
   },
   capture: {
-    // The compactor catches a parked kart within seconds, and the capture keeps the sim running while
-    // models stream, so a live shot hands the wheel to the course autopilot; otherwise it films the
-    // result card of a run nobody drove.
+    // The shutters catch a parked cart within seconds, and the capture keeps the sim running while
+    // models stream, so a live shot hands the handle to the course autopilot; otherwise it films the
+    // receipt of a run nobody drove.
     play: ["startRun", { name: "run.autopilot", input: {} }],
-    // `mid-run` is the corridor driven quickly: 14 s of throttle with the pickups, gates, crusher
+    // `mid-run` is the aisle driven quickly: 14 s of throttle with the mod displays, walls, shutters
     // and rivals all live, then the autopilot keeps it driving. `result` keeps driving to the finish
-    // the gauntlet actually gives (an escape in 42 s from the stock build), so the result card
-    // carries a real line, not a number.
+    // the gauntlet actually gives, so the receipt carries a real line, not a number.
     states: {
       title: [],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
-      // The plow drop dodged and the first plow wall in the kart's face: the sign says where the blade lies.
+      // The plow display dodged and the first box wall in the cart's face: the sign says where the plow is.
       walled: ["startRun", { name: "run.stage", input: { mode: "walled" } }],
     },
     views: {
       corridor: {
-        description: "Raised three-quarter down the canyon at the canyons/flats seam — zone palettes, wall silhouettes, haul road.",
+        description: "Raised three-quarter down Aisle 9 at the snacks/frozen seam — zone kiosks, shelving runs, ceiling lights.",
         look: "0,150",
         lookFrom: "74,34,0.55",
         run: ["startRun"],
       },
       gantry: {
-        description: "The gantry run's crane legs and container stacks, framed from the corridor floor.",
+        description: "Bulk & Paint's tall shelving and pallet stacks, framed from the aisle floor.",
         look: "0,360",
         lookFrom: "52,14,0.35",
         run: ["startRun"],
@@ -112,50 +113,50 @@ export const game = defineGame({
   rendering: {
     shadows: true,
     look: "cinematic",
-    // Late golden hour behind the compactor: the sun sits low in the west, warm key, dusty horizon.
+    // Fluorescent big-box light: a high, near-white key straight down the aisles, bright cool fill.
     mood: {
-      preset: "golden",
-      sun: { azimuth: 250, elevation: 14, color: "#ffb066" },
-      horizonColor: "#ff9d3d",
+      preset: "bright",
+      sun: { azimuth: 200, elevation: 62, color: "#fff6e6" },
+      horizonColor: "#f6f2ea",
       fog: { near: 60, far: 320 },
     },
-    environmentSource: hdriEnvironment("industrial-sunset", { intensity: 0.9 }),
+    environmentSource: hdriEnvironment("interior-industrial", { intensity: 1.0 }),
     lighting: {
-      // Warm, not cool: shadows go brown, not blue, so shade stays a value step inside one hue family.
-      ambient: { color: "#7a6455", intensity: 0.28 },
-      hemisphere: { skyColor: "#a08a72", groundColor: "#6b4526", intensity: 0.68 },
+      // Indoor fill: shadows stay soft and neutral under the strip lights, never blue.
+      ambient: { color: "#e8e4dc", intensity: 0.5 },
+      hemisphere: { skyColor: "#fbf8f2", groundColor: "#c9c2b4", intensity: 0.9 },
       directional: [
         {
-          color: "#ffb066",
-          intensity: 2.6,
-          // Azimuth 250, elevation 14 at 150 m: the mood's sun, kept here so the cascades below tune its shadow.
-          position: [-137, 36, 50],
+          color: "#fff6e6",
+          intensity: 2.2,
+          // High and nearly overhead: the strip lights' key, kept here so the cascades below tune its shadow.
+          position: [-30, 140, 40],
           castShadow: true,
-          // A track runs up to 790 m, so a single ortho frustum drops contact shadows a few seconds in.
+          // A department runs up to 790 m, so a single ortho frustum drops contact shadows a few seconds in.
           cascades: 3,
           shadowMapSize: 1024,
           shadowCameraSize: 64,
           shadowMaxFar: 220,
           shadowNormalBias: 0.035,
         },
-        { color: "#9a8478", intensity: 0.3, position: [82, 38, 96] },
+        { color: "#dfe8ff", intensity: 0.35, position: [82, 60, 96] },
       ],
     },
     postProcessing: {
       toneMapping: "aces",
-      // Threshold under the hazard trim's luminance so compactor teeth, tail lights, and lamp heads
-      // are what blooms — the accents the player has to read at speed.
-      bloom: { strength: 0.34, radius: 0.6, threshold: 0.78 },
-      // The warm bleach-bypass grade stands in for the hand lift/gain: the numeric stage is neutral and the cube does the colour.
+      // Threshold under the emissive trims' luminance so ceiling tubes, screens, beacons and the
+      // checkout gantry are what blooms - the accents the player reads at speed.
+      bloom: { strength: 0.3, radius: 0.55, threshold: 0.82 },
+      // A punchy packaging grade: the cube does the colour, the numeric stage reins its saturation in.
       grade: {
-        lut: lutGrade("bleach-bypass-warm"),
+        lut: lutGrade("vivid-pop"),
         lift: [0, 0, 0],
         gain: [1, 1, 1],
         gamma: 1,
-        saturation: 1,
-        vignette: 0.18,
-        grain: 0.024,
-        chromaticAberration: 0.0016,
+        saturation: 0.88,
+        vignette: 0.12,
+        grain: 0.01,
+        chromaticAberration: 0.001,
       },
     },
   },
@@ -163,9 +164,9 @@ export const game = defineGame({
     rig: "chase",
     rigs: {
       chase: {
-        distance: 7.6,
-        height: 2.7,
-        lookHeight: 1.25,
+        distance: 7.2,
+        height: 2.9,
+        lookHeight: 1.3,
         springDamping: 6.5,
         fov: { base: 64, max: 94, speedForMax: 22 },
         shakePerSpeed: 0.022,

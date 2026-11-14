@@ -3,14 +3,15 @@ import { STANDARD_OPENING, trackDrops } from "./drops";
 import { detour, straight, turn, type TrackDef } from "./types";
 
 /**
- * Smelter Climb: up through the smelter on two long ramps and two hairpins, 26 m from the casting
- * floor to the tapping gallery. Ladles pour across the ramps on a beat. At the top, the tapping
- * floor cuts the gallery's dog-leg - through a plow wall and under one more pour.
+ * The Toy Aisle: up to the mezzanine on two long ramps and two hairpins, 26 m from the board-game
+ * floor to the ball-pit gallery. Ball blasters on the shelf tops rain foam balls across the ramps on
+ * a beat. At the top, the ball pit cuts the gallery's dog-leg - through a net wall and under one
+ * more blaster.
  */
 export const TOY_AISLE: TrackDef = {
   id: "toy-aisle",
-  label: "Smelter Climb",
-  blurb: "Two long ramps and two hairpins climb 26 m through the smelter while the ladles pour across the road.",
+  label: "Toy Aisle",
+  blurb: "Two long ramps and two hairpins climb 26 m to the mezzanine while ball blasters rain foam balls across the road.",
   origin: 60,
   start: { x: -140, z: -1700, heading: Math.PI / 2 },
   halfWidth: 9,
@@ -26,49 +27,55 @@ export const TOY_AISLE: TrackDef = {
     ...detour(-1, 45, 20, 25),
     straight(40, { rise: 3 }),
   ],
-  branches: [{ id: "ball-pit", from: 596, to: 703, halfWidth: 6, label: "TAPPING FLOOR" }],
+  branches: [{ id: "ball-pit", from: 596, to: 703, halfWidth: 6, label: "BALL PIT" }],
   hazards: [
-    { id: "pour-ramp-1", kind: "tumble", from: 225, to: 236, cycle: { period: 8, active: 3 }, label: "LADLE POURING ON THE RAMP" },
-    { id: "pour-pin-1", kind: "tumble", from: 292, to: 308, cycle: { period: 7, active: 2.5, phase: 2.5 }, label: "SPILL ON THE HAIRPIN" },
-    { id: "pour-ramp-2", kind: "tumble", from: 425, to: 436, cycle: { period: 8, active: 3, phase: 4 }, label: "LADLE POURING ON THE RAMP" },
-    { id: "pour-pin-2", kind: "tumble", from: 512, to: 528, cycle: { period: 7, active: 2.5, phase: 5.5 }, label: "SPILL ON THE HAIRPIN" },
-    { id: "pour-tap", kind: "tumble", route: "ball-pit", from: 34, to: 46, cycle: { period: 5, active: 2 }, label: "TAP HOLE OPEN" },
+    { id: "balls-ramp-1", kind: "tumble", from: 225, to: 236, cycle: { period: 8, active: 3 }, label: "BALL BLASTER ON THE RAMP" },
+    { id: "balls-pin-1", kind: "tumble", from: 292, to: 308, cycle: { period: 7, active: 2.5, phase: 2.5 }, label: "MARBLE RUN SPILLING ON THE HAIRPIN" },
+    { id: "balls-ramp-2", kind: "tumble", from: 425, to: 436, cycle: { period: 8, active: 3, phase: 4 }, label: "BALL BLASTER ON THE RAMP" },
+    { id: "balls-pin-2", kind: "tumble", from: 512, to: 528, cycle: { period: 7, active: 2.5, phase: 5.5 }, label: "MARBLE RUN SPILLING ON THE HAIRPIN" },
+    { id: "balls-pit", kind: "tumble", route: "ball-pit", from: 34, to: 46, cycle: { period: 5, active: 2 }, label: "BALL PIT ERUPTING" },
   ],
   gates: [
-    { id: "smelt_plow_moulds", requirement: "plow", at: 108, label: "MOULD STACK", radioLine: "MOULDS DOWN — START CLIMBING" },
-    { id: "smelt_jump_ramp", requirement: "jump", at: 190, label: "RAMP LIP", radioLine: "OFF THE LIP — KEEP HER CLIMBING" },
-    { id: "smelt_plow_scrap", requirement: "plow", at: 400, label: "SCRAP CHARGE", radioLine: "THROUGH THE SCRAP CHARGE — ONE MORE RAMP" },
-    { id: "smelt_jump_rail", requirement: "jump", at: 455, label: "CRANE RAIL", radioLine: "OVER THE CRANE RAIL — NEARLY AT THE TOP" },
-    { id: "smelt_plow_tap", requirement: "plow", route: "ball-pit", at: 640, label: "TAPPING WALL", radioLine: "THROUGH THE TAPPING WALL — STRAIGHT TO THE GATE" },
+    { id: "toy_plow_blocks", requirement: "plow", at: 108, label: "BLOCK-TOWER WALL", radioLine: "BLOCKS EVERYWHERE — START CLIMBING" },
+    { id: "toy_jump_skate", requirement: "jump", at: 190, label: "SKATE RAMP", radioLine: "OFF THE SKATE RAMP — KEEP HER CLIMBING" },
+    { id: "toy_plow_plush", requirement: "plow", at: 400, label: "PLUSH MOUNTAIN", radioLine: "THROUGH THE PLUSHIES — ONE MORE RAMP" },
+    { id: "toy_jump_trainset", requirement: "jump", at: 455, label: "TRAIN-SET LOOP", radioLine: "OVER THE TRAIN SET — NEARLY AT THE TOP" },
+    { id: "toy_plow_net", requirement: "plow", route: "ball-pit", at: 640, label: "BALL-PIT NET", radioLine: "THROUGH THE NET — STRAIGHT TO THE TILLS" },
   ],
   pickups: trackDrops(STANDARD_OPENING, [{ at: 245 }, { at: 360, lane: 1 }, { at: 545 }, { at: 650, lane: -1 }]),
   exitAt: 716,
   zones: [
-    { id: "smelt-floor", label: "CASTING FLOOR", radioName: "THE CASTING FLOOR", start: 0, end: 260, wallColor: "#b8481a", surface: { id: "plate", label: "CHECKER PLATE", grip: 0.99 } },
-    { id: "smelt-ramps", label: "LADLE RAMPS", radioName: "THE RAMPS", start: 260, end: 563, wallColor: "#e07a2a", surface: { id: "grit", label: "GRITTED RAMP", grip: 1.02 } },
-    { id: "smelt-gallery", label: "TAPPING GALLERY", radioName: "THE GALLERY", start: 563, end: 716, wallColor: "#ffb347", surface: { id: "dust", label: "OXIDE DUST", grip: 0.93 } },
+    { id: "toy-floor", label: "BOARD-GAME FLOOR", radioName: "BOARD GAMES", start: 0, end: 260, wallColor: "#ff5a8a", surface: { id: "foam", label: "FOAM PLAY TILES", grip: 0.99 } },
+    { id: "toy-ramps", label: "MEZZANINE RAMPS", radioName: "THE RAMPS", start: 260, end: 563, wallColor: "#ffc23a", surface: { id: "grip", label: "GRIP-TAPE RAMP", grip: 1.02 } },
+    { id: "toy-gallery", label: "BALL-PIT GALLERY", radioName: "THE GALLERY", start: 563, end: 716, wallColor: "#3fb6ff", surface: { id: "balls", label: "STRAY BALLS", grip: 0.93 } },
   ],
   bandZ: -1640,
-  ground: { low: "#1e140e", high: "#4c2e1b", waterline: "#1e140e" },
-  fog: { color: "#3d1c10", near: 35, far: 210 },
-  sky: { horizonColor: "#c2541a", zenithColor: "#1c0f0a", sunIntensity: 1.1, ambientIntensity: 0.6 },
+  ground: { low: "#f0d6e2", high: "#fff1f6", waterline: "#f0d6e2" },
+  fog: { color: "#ffe6f1", near: 45, far: 250 },
+  sky: { horizonColor: "#fff3f8", zenithColor: "#e6d2ff", sunIntensity: 1.6, ambientIntensity: 1.35 },
   baseLevel: 0,
   rivalTake: { rival_brick: ["ball-pit"] },
   par: 63,
+  stock: {
+    goods: ["teddy_bear", "rubber_duck", "game_console", "marshmallows", "chips", "headphones"],
+    powerUps: ["bouncy_balls", "marbles", "mop", "extinguisher"],
+  },
   dressing: {
-    edge: O.edgeBarrier,
-    edgeSpacing: 6,
-    lamp: O.lampSearch,
-    lampSpacing: 34,
-    scatter: [O.pipes, O.compressor, O.generator, O.propane, O.rack],
-    scatterCount: 28,
+    edge: O.edgeToyShelf,
+    edgeSpacing: 4.4,
+    lamp: O.lampCeiling,
+    lampAt: "centre",
+    tumble: O.ballBlaster,
+    lampSpacing: 18,
+    scatter: [O.plush, O.boxPile, O.endcap, O.palletStack, O.cone],
+    scatterCount: 32,
     landmarks: [
-      { object: O.furnace, at: 300, side: 34 },
-      { object: O.furnace, at: 520, side: -34 },
-      { object: O.ladle, at: 230, side: 14 },
-      { object: O.ladle, at: 430, side: -14 },
-      { object: O.ladle, at: 640, side: 30 },
-      { object: O.pumpRig, at: 60, side: -16 },
+      { object: O.ballBlaster, at: 300, side: 34 },
+      { object: O.ballBlaster, at: 520, side: -34 },
+      { object: O.deptSign, at: 30, side: 0 },
+      { object: O.plush, at: 230, side: 14 },
+      { object: O.plush, at: 430, side: -14 },
+      { object: O.bigScreen, at: 640, side: 30 },
     ],
   },
 };

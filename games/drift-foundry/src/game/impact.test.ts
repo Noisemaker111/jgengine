@@ -9,7 +9,7 @@ const frame = (runTime = 1) => ({
 
 test("real plow, landing and armor transitions emit once; holding or resetting cannot replay them", () => {
   const before = frame();
-  const after = { ...frame(1.05), clearedGateIds: new Set(["gate_canyon_plow"]) };
+  const after = { ...frame(1.05), clearedGateIds: new Set(["nine_plow_cereal"]) };
   expect(impactBursts(before, after).map(burst => burst.kind)).toEqual(["plow"]);
   expect(impactBursts(after, { ...after, runTime: 1.1 })).toEqual([]);
   expect(impactBursts(after, frame(0))).toEqual([]);

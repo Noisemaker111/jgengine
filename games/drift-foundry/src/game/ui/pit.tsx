@@ -8,12 +8,12 @@ import type { MedalId } from "../events/catalog";
 import { medalArtwork } from "./artwork";
 
 /*
- * Row Six's pit wall: gunmetal plates, hazard yellow, teal launch marks, stencilled numbers, and every
- * pane written on the pit sheet - cream paper on a hardboard clipboard.
+ * The customer-service desk: store-blue plates, sale-tag yellow, wet-floor stripes, chunky signage
+ * numbers, and every pane printed on receipt paper clipped to the blue counter.
  */
-export const YELLOW = "#f2c230", TEAL = "#5de0ce", RED = "#ff4934", INK = "#ece3cc", DIM = "#b9b4a6";
-export const STEEL = "#3a4044", GUNMETAL = "#1c2022", PAPER = "#efe7d2", PEN = "#2a2419", ORANGE = "#c8461a", HARDBOARD = "#5e3f24";
-export const STENCIL = "Saira Stencil One", BODY = "Barlow Condensed";
+export const YELLOW = "#ffd21e", TEAL = "#5de0ce", RED = "#ff3b4a", INK = "#fbf7ee", DIM = "#c6cbe0";
+export const STEEL = "#2f5fc4", GUNMETAL = "#14234a", PAPER = "#fbf8f0", PEN = "#1f2430", ORANGE = "#e8303a", HARDBOARD = "#2f6fd6";
+export const STENCIL = "Lilita One", BODY = "Nunito";
 export const FULL = { fraction: 1 } as const;
 
 export const pitTheme = {
@@ -25,17 +25,17 @@ export const pitTheme = {
     numeric: { family: STENCIL, size: 22, color: INK },
   },
   variants: {
-    /** A HUD plate welded to the dash. */
-    hud: { fill: "#1c2022e8", border: { width: 2, color: "#0c0e0f" }, padding: [8, 10, 8, 10], gap: 6 },
-    /** A stencilled steel menu plate; the yellow one is where you are. */
-    plate: { fill: STEEL, gradient: { angle: 90, stops: [[0, "#4a5155"], [0.35, "#3a4044"], [1, "#2a2f31"]] }, border: { width: 2, color: "#0c0e0f" }, padding: [6, 16, 6, 14], minHeight: 50, gap: 14, hover: "#ffffff1c", press: "#00000030" },
-    /** A hazard-yellow button on steel. */
-    action: { fill: YELLOW, border: { width: 2, color: "#0c0e0f" }, padding: [8, 14, 8, 14], minHeight: 42, hover: "#ffffff30", press: "#00000025", items: "center", justify: "center" },
-    /** A steel button on steel. */
-    quiet: { fill: STEEL, border: { width: 2, color: "#0c0e0f" }, padding: [8, 14, 8, 14], minHeight: 42, hover: "#ffffff1c", press: "#00000030", items: "center", justify: "center" },
-    /** The pit sheet: paper on the clipboard's hardboard. */
-    sheet: { fill: PAPER, border: { width: 8, color: HARDBOARD }, padding: [16, 18, 16, 18], gap: 10, shadow: { y: 14, blur: 32, color: "#00000088" } },
-    /** An ink stamp written on the pit sheet. */
+    /** A HUD plate: a navy shelf-edge price strip. */
+    hud: { fill: "#14234ae8", border: { width: 2, color: "#0b1530" }, padding: [8, 10, 8, 10], gap: 6, radius: 6 },
+    /** A store-blue aisle sign as a menu plate; the yellow one is where you are. */
+    plate: { fill: STEEL, gradient: { angle: 90, stops: [[0, "#3f74de"], [0.35, "#2f5fc4"], [1, "#24499a"]] }, border: { width: 2, color: "#0b1530" }, padding: [6, 16, 6, 14], minHeight: 50, gap: 14, hover: "#ffffff1c", press: "#00000030", radius: 6 },
+    /** A sale-tag yellow button. */
+    action: { fill: YELLOW, border: { width: 2, color: "#0b1530" }, padding: [8, 14, 8, 14], minHeight: 42, hover: "#ffffff30", press: "#00000025", items: "center", justify: "center", radius: 6 },
+    /** A blue button on blue. */
+    quiet: { fill: STEEL, border: { width: 2, color: "#0b1530" }, padding: [8, 14, 8, 14], minHeight: 42, hover: "#ffffff1c", press: "#00000030", items: "center", justify: "center", radius: 6 },
+    /** The receipt: till-roll paper on the blue customer-service counter. */
+    sheet: { fill: PAPER, border: { width: 8, color: HARDBOARD }, padding: [16, 18, 16, 18], gap: 10, shadow: { y: 14, blur: 32, color: "#00000066" }, radius: 8 },
+    /** An ink stamp printed on the receipt. */
     stamp: { fill: PEN, border: { width: 1, color: PEN }, padding: [6, 12, 6, 12], minHeight: 36, hover: "#ffffff22", press: "#00000030", items: "center", justify: "center" },
   },
   motion: { duration: 140, distance: 10, bounce: 0 },
@@ -50,14 +50,14 @@ export function Button({ onPress, quiet, ...props }: RuneViewProps & { quiet?: b
 }
 export function Stamp({ onPress, ...props }: RuneViewProps) { return <RuneAction variant="stamp" color={PAPER} {...props} {...(onPress === undefined ? {} : { run: onPress })} />; }
 
-/** A hazard band: black and yellow blocks across the full width. */
+/** A wet-floor band: black and yellow blocks across the full width. */
 export function HazardBand({ height = 8, blocks = 18 }: { height?: number; blocks?: number }) {
   return <RuneView layout="row" height={height} width={FULL} clip>{Array.from({ length: blocks }, (_, i) => <RuneView key={i} grow={1} height={height} fill={i % 2 === 0 ? "#141414" : YELLOW} />)}</RuneView>;
 }
 
-/** The factory gate's sign: stencilled steel between two hazard bands. */
+/** The store's hanging department sign: big signage letters between two wet-floor bands. */
 export function GateSign({ lines, sub, size = 56 }: { lines: readonly string[]; sub: string; size?: number }) {
-  return <RuneView variant="hud" padding={0} gap={0} fill="#2c3134">
+  return <RuneView variant="hud" padding={0} gap={0} fill="#2f6fd6">
     <HazardBand />
     <RuneView padding={[10, 18, 10, 18]} gap={2}>
       {lines.map(line => <Stencil key={line} size={size} tracking={size / 14}>{line}</Stencil>)}
@@ -67,7 +67,7 @@ export function GateSign({ lines, sub, size = 56 }: { lines: readonly string[]; 
   </RuneView>;
 }
 
-/** A sheet heading, stencilled like a crate side, with its tag on the right. */
+/** A receipt heading in signage letters, with its tag on the right. */
 export function SheetHead({ title, tag }: { title: string; tag?: ReactNode }) {
   return <Row justify="between" width={FULL}><Stencil size={24} color={ORANGE}>{title}</Stencil>{tag === undefined ? null : typeof tag === "string" ? <Label color={PEN}>{tag}</Label> : tag}</Row>;
 }
@@ -79,7 +79,7 @@ export function MedalRow({ held, size = 22 }: { held: MedalId | null; size?: num
   return <Row gap={3}>{order.map((medal, index) => <RuneGlyph key={medal} artwork={medalArtwork(medal, index <= rank)} width={size} height={size} label={`${medal}${index <= rank ? "" : " not earned"}`} />)}</Row>;
 }
 
-/** A modal pit sheet over the yard, scrolled when it outgrows the screen. */
+/** A modal receipt over the store, scrolled when it outgrows the screen. */
 export function Sheet({ children, label, back, width = 640 }: { children: ReactNode; label: string; back?: () => void; width?: number }) {
   const { width: w, height } = useRuneViewport();
   return <RuneView anchor="fill" fill="#0a0908c8" modal {...(back === undefined ? {} : { onBack: back })}>
@@ -89,7 +89,7 @@ export function Sheet({ children, label, back, width = 640 }: { children: ReactN
   </RuneView>;
 }
 
-/** Label and value on one ruled line of the pit sheet. */
+/** Label and value on one printed line of the receipt. */
 export function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return <Row justify="between" width={FULL} padding={[3, 0, 3, 0]} border={{ width: 0, color: PEN }}>
     <Label color={PEN}>{label.toUpperCase()}</Label><Text family={STENCIL} size={18} color={warn === true ? ORANGE : PEN}>{value}</Text>

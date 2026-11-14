@@ -2,20 +2,18 @@ import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
-import { TRACK_LIBRARY_CREDITS } from "./art/trackModels";
 import { ASSET_SOURCE_IDS } from "./assets";
 
-/** The yard's credits: its own art, then every asset pack the corridor uses. */
+/** The store's credits: its own art, then every asset pack the departments use. */
 export const FOUNDRY_CREDITS = mergeCredits({
-  title: "DRIFT FOUNDRY",
+  title: "CLEANUP ON AISLE 9",
   sections: [
     {
-      heading: "Original Drift Foundry art",
-      entries: [{ label: "Row Six buggy & salvage stations", detail: "Original procedural geometry by JGengine Games contributors; source in drift-foundry/scripts/author-models.mjs." }],
-    },
-    {
-      heading: "Yard track props (JGengine model library)",
-      entries: TRACK_LIBRARY_CREDITS.map((line) => ({ label: line })),
+      heading: "Original Cleanup on Aisle 9 art",
+      entries: [
+        { label: "Shopping carts, shoppers, cart mods, products and store fixtures", detail: "Original procedural geometry by JGengine Games contributors; source in drift-foundry/scripts/author-models.mjs." },
+        { label: "Store brands", detail: "Every product and label is invented for this game; no real brands appear." },
+      ],
     },
     {
       heading: "Built with",
@@ -23,4 +21,4 @@ export const FOUNDRY_CREDITS = mergeCredits({
     },
   ],
   notice: "Every pack above is used under the license it is listed with.",
-}, creditsForSourceIds(ASSET_SOURCE_IDS), { title: "DRIFT FOUNDRY", sections: creditsForLooks({ hdri: ["industrial-sunset"], lut: ["bleach-bypass-warm"], fonts: ["saira-stencil-one", "barlow-condensed"] }) });
+}, creditsForSourceIds(ASSET_SOURCE_IDS), { title: "CLEANUP ON AISLE 9", sections: creditsForLooks({ hdri: ["interior-industrial"], lut: ["vivid-pop"], fonts: ["lilita-one", "nunito"] }) });

@@ -3,14 +3,15 @@ import { STANDARD_OPENING, trackDrops } from "./drops";
 import { detour, straight, turn, type TrackDef } from "./types";
 
 /**
- * Slag River: three causeways laid across a lake of molten slag, joined by two tight hairpins. The
- * first causeway swings wide around a pour pool; the broken ladle bridge goes straight across it, if
- * the springs can clear the gap in the middle. Spurts of slag cross the causeways on a beat.
+ * Produce: three long chilled aisles laid across the juice flood from a burst cold-press tank,
+ * joined by two tight hairpins round the citrus pyramids. The first aisle swings wide round the
+ * flower stand; the salad bar goes straight across it, if the casters can clear the sneeze guard.
+ * Oranges avalanche off the pyramids and roll across the aisles on a beat.
  */
 export const PRODUCE: TrackDef = {
   id: "produce",
-  label: "Slag River",
-  blurb: "Three causeways over molten slag and two hairpins. The ladle bridge cuts the pour pool if you can jump the gap.",
+  label: "Produce",
+  blurb: "Three chilled aisles over a juice flood and two grape-slick hairpins. The salad bar cuts the corner if you can jump the sneeze guard.",
   origin: 60,
   start: { x: -150, z: 1000, heading: Math.PI / 2, elevation: 0.6 },
   halfWidth: 9,
@@ -25,53 +26,58 @@ export const PRODUCE: TrackDef = {
     turn(180, 24),
     straight(140),
   ],
-  branches: [{ id: "salad-bar", from: 123, to: 251, halfWidth: 5.5, label: "LADLE BRIDGE" }],
+  branches: [{ id: "salad-bar", from: 123, to: 251, halfWidth: 5.5, label: "SALAD BAR" }],
   hazards: [
-    { id: "spurt-pool", kind: "tumble", from: 178, to: 194, cycle: { period: 6, active: 2.4 }, label: "SLAG SPURT ON THE POOL ROAD" },
-    { id: "spurt-mid-1", kind: "tumble", from: 408, to: 420, cycle: { period: 7, active: 2.6, phase: 1 }, label: "SLAG ACROSS THE CAUSEWAY" },
-    { id: "spurt-mid-2", kind: "tumble", from: 478, to: 490, cycle: { period: 7, active: 2.6, phase: 4.5 }, label: "SLAG ACROSS THE CAUSEWAY" },
-    { id: "spurt-last", kind: "tumble", from: 640, to: 652, cycle: { period: 6, active: 2.2, phase: 2 }, label: "LAST SPURT BEFORE THE SHED" },
-    { id: "hairpin-1", kind: "spill", from: 269, to: 344, label: "SLAG-GLAZED HAIRPIN" },
-    { id: "hairpin-2", kind: "spill", from: 504, to: 580, label: "SLAG-GLAZED HAIRPIN" },
+    { id: "oranges-stand", kind: "tumble", from: 178, to: 194, cycle: { period: 6, active: 2.4 }, label: "ORANGES ROLLING ACROSS BY THE FLOWER STAND" },
+    { id: "oranges-mid-1", kind: "tumble", from: 408, to: 420, cycle: { period: 7, active: 2.6, phase: 1 }, label: "ORANGE AVALANCHE IN THE AISLE" },
+    { id: "oranges-mid-2", kind: "tumble", from: 478, to: 490, cycle: { period: 7, active: 2.6, phase: 4.5 }, label: "ORANGE AVALANCHE IN THE AISLE" },
+    { id: "oranges-last", kind: "tumble", from: 640, to: 652, cycle: { period: 6, active: 2.2, phase: 2 }, label: "LAST LEMON SLIDE BEFORE THE COOLER" },
+    { id: "hairpin-1", kind: "spill", from: 269, to: 344, label: "SQUASHED GRAPES ON THE HAIRPIN" },
+    { id: "hairpin-2", kind: "spill", from: 504, to: 580, label: "SQUASHED GRAPES ON THE HAIRPIN" },
   ],
   gates: [
-    { id: "slag_plow_crust", requirement: "plow", at: 108, label: "SLAG-CRUST WALL", radioLine: "PLOWED THE CRUST — MIND THE HEAT" },
-    { id: "slag_jump_ladle", requirement: "jump", route: "salad-bar", at: 187, label: "LADLE BRIDGE GAP", radioLine: "OVER THE LADLE GAP — THAT'S THE SHORT WAY" },
-    { id: "slag_jump_skimmer", requirement: "jump", at: 388, label: "SKIMMER RAMP", radioLine: "OVER THE SKIMMER — STAY ON THE CAUSEWAY" },
-    { id: "slag_plow_pigs", requirement: "plow", at: 455, label: "PIG-IRON STACK", radioLine: "PIG IRON SCATTERED — HOT HANDS" },
-    { id: "slag_jump_trough", requirement: "jump", at: 618, label: "COOLING TROUGH", radioLine: "CLEARED THE TROUGH — SHED'S IN SIGHT" },
-    { id: "slag_plow_shed", requirement: "plow", at: 668, label: "POUR-SHED SHUTTER", radioLine: "THROUGH THE SHUTTER — GO FOR THE GATE" },
+    { id: "produce_plow_melons", requirement: "plow", at: 108, label: "MELON-CRATE WALL", radioLine: "MELONS EVERYWHERE — MIND THE JUICE" },
+    { id: "produce_jump_saladbar", requirement: "jump", route: "salad-bar", at: 187, label: "SNEEZE-GUARD HOP", radioLine: "OVER THE SALAD BAR — THAT'S THE SHORT WAY" },
+    { id: "produce_jump_scale", requirement: "jump", at: 388, label: "PRODUCE-SCALE RAMP", radioLine: "OFF THE SCALE — 4.2 KILOS OF AIR" },
+    { id: "produce_plow_potatoes", requirement: "plow", at: 455, label: "POTATO-SACK STACK", radioLine: "POTATOES SCATTERED — HOT POTATO" },
+    { id: "produce_jump_bananas", requirement: "jump", at: 618, label: "BANANA-BOX RAMP", radioLine: "CLEARED THE BANANAS — COOLER'S IN SIGHT" },
+    { id: "produce_plow_cooler", requirement: "plow", at: 668, label: "COOLER-ROOM FLAPS", radioLine: "THROUGH THE COOLER FLAPS — GO FOR THE TILLS" },
   ],
   pickups: trackDrops(STANDARD_OPENING, [{ at: 175 }, { at: 360, lane: 1 }, { at: 525 }, { at: 600, lane: -1 }]),
   exitAt: 690,
   zones: [
-    { id: "slag-causeway", label: "SLAG CAUSEWAY", radioName: "THE CAUSEWAY", start: 0, end: 269, wallColor: "#ff6a1a", surface: { id: "crust", label: "SLAG CRUST", grip: 0.95 } },
-    { id: "slag-hairpins", label: "LADLE HAIRPINS", radioName: "THE HAIRPINS", start: 269, end: 580, wallColor: "#ff8f3a", surface: { id: "glaze", label: "GLAZED SLAG", grip: 0.92 } },
-    { id: "slag-shed", label: "POUR-SHED RUN", radioName: "THE POUR SHED", start: 580, end: 690, wallColor: "#c9541c", surface: { id: "plate", label: "STEEL PLATE", grip: 0.98 } },
+    { id: "produce-citrus", label: "CITRUS AISLE", radioName: "THE CITRUS AISLE", start: 0, end: 269, wallColor: "#ff9a1e", surface: { id: "misted", label: "MISTED TILE", grip: 0.95 } },
+    { id: "produce-grapes", label: "GRAPE HAIRPINS", radioName: "THE HAIRPINS", start: 269, end: 580, wallColor: "#8a3fd6", surface: { id: "grape", label: "GRAPE-SMEARED TILE", grip: 0.92 } },
+    { id: "produce-cooler", label: "COOLER RUN", radioName: "THE COOLER", start: 580, end: 690, wallColor: "#5fd0ff", surface: { id: "plate", label: "COOLER FLOOR", grip: 0.98 } },
   ],
   bandZ: 1030,
-  ground: { low: "#140d0a", high: "#3a2116", waterline: "#ff5a14" },
-  fog: { color: "#5a2410", near: 40, far: 240 },
-  sky: { horizonColor: "#ff4a14", zenithColor: "#2a0d06", sunIntensity: 1.5, ambientIntensity: 0.75 },
+  ground: { low: "#cfd8c4", high: "#e9efe0", waterline: "#ff9a1e" },
+  fog: { color: "#eef4e6", near: 55, far: 300 },
+  sky: { horizonColor: "#f6fbef", zenithColor: "#d9e6d2", sunIntensity: 1.7, ambientIntensity: 1.35 },
   baseLevel: -3.2,
-  // Molten, not sea: dark crust at depth, hot crests, an orange lick at the banks, little sky in it.
-  liquid: { level: -1.3, color: "#ff5a12", waveHeight: 0.08, palette: { deep: "#6a1400", crest: "#ffb238", foam: "#ff8a1e", fresnel: 0.12 } },
+  // Fresh-pressed, not sea: a pulpy orange flood with bright crests and a foamy edge.
+  liquid: { level: -1.3, color: "#ff9a1e", waveHeight: 0.06, palette: { deep: "#e0600a", crest: "#ffd27a", foam: "#fff1c9", fresnel: 0.1 } },
   rivalTake: { rival_brick: ["salad-bar"] },
   par: 50,
+  stock: {
+    goods: ["watermelon", "pumpkin", "chips", "marshmallows", "soda_case", "cereal", "potted_fern"],
+    powerUps: ["rotisserie_chicken", "marbles", "extinguisher", "mop"],
+  },
   dressing: {
-    edge: O.edgeBarrel,
-    edgeSpacing: 7,
-    lamp: O.lampSearch,
-    lampSpacing: 42,
-    scatter: [O.pipes, O.propane, O.barrelStove, O.militaryCrate],
-    scatterCount: 26,
+    edge: O.edgeProduce,
+    edgeSpacing: 4.4,
+    lamp: O.lampCeiling,
+    lampAt: "centre",
+    lampSpacing: 16,
+    scatter: [O.palletStack, O.boxPile, O.endcap, O.flowers, O.cartCorral],
+    scatterCount: 30,
     landmarks: [
-      { object: O.ladle, at: 186, side: 32 },
-      { object: O.ladle, at: 300, side: -30 },
-      { object: O.furnace, at: [170, 1040] },
-      { object: O.furnace, at: [-80, 1140] },
-      { object: O.pumpRig, at: 545, side: 30 },
-      { object: O.signalBox, at: 690, side: 13 },
+      { object: O.deptSign, at: 40, side: 0 },
+      { object: O.tumbleBin, at: 300, side: -30 },
+      { object: O.endcap, at: [170, 1040] },
+      { object: O.flowers, at: 186, side: 32 },
+      { object: O.deptSign, at: 545, side: 0 },
+      { object: O.wetFloor, at: 690, side: 7 },
     ],
   },
 };

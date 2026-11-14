@@ -21,13 +21,13 @@ function memory(seed?: (career: ReturnType<typeof newCareer>) => void): CareerSt
   return { map, getItem: (key) => map.get(key) ?? null, setItem: (key, value) => void map.set(key, value) };
 }
 
-/** A scripted run on the event's own track: `sweep` takes every drop, `take` the named shortcuts, `stall` brakes from 12 s. */
+/** A scripted run on the event's own track: `sweep` takes every mod display, `shop` every shelf grab, `take` the named shortcuts, `stall` brakes from 12 s. */
 function drive(session: RunSession, options: CourseDriveOptions = {}): void {
   driveCourse(session, options);
 }
 
 const everyTierOpen = (career: ReturnType<typeof newCareer>) => {
-  career.medals = { best: { "last-call": 1, "cart-stuffer": 12, "lights-out": 20, "grudge-brick": 9 } };
+  career.medals = { best: { "last-call": 1, "cart-stuffer": 200, "lights-out": 20, "grudge-brick": 9 } };
 };
 
 function race(eventId: string, options: CourseDriveOptions = {}) {
@@ -38,13 +38,13 @@ function race(eventId: string, options: CourseDriveOptions = {}) {
   return session.snapshot();
 }
 
-describe("yard calendar", () => {
+describe("weekly circular", () => {
   test("the authored calendar is a valid medal board and every tier holds events", () => {
     expect(() => createMedalBoard(MEDAL_BOARD)).not.toThrow();
     for (const tier of YARD_TIERS) expect(YARD_EVENTS.some((event) => event.tier === tier.id)).toBe(true);
   });
 
-  test("a new career can race Row Six only; Night Crew asks for medals first", () => {
+  test("a new career can shop the Weeknight tier only; the Late Shift asks for medals first", () => {
     const session = createRunSession(() => 0, memory());
     expect(session.selectEvent("price-check").ok).toBe(true);
     expect(session.selectEvent("lights-out")).toMatchObject({ ok: false });
@@ -53,7 +53,7 @@ describe("yard calendar", () => {
     expect(calendar.tiers[1]!.missing).toBe(4);
   });
 
-  test("events change the grid and the garage: Time Sheet races alone, Bare Metal starts on a bare chassis", () => {
+  test("events change the grid and customer service: Price Check races alone, Empty Cart starts with no mods", () => {
     const owned = (career: ReturnType<typeof newCareer>) => {
       everyTierOpen(career);
       career.ladders = { ranks: { engine: 2, front: 3, wheels: 2 } };
@@ -68,18 +68,18 @@ describe("yard calendar", () => {
     expect(Object.values(session.snapshot().installed).filter(Boolean)).toHaveLength(0);
   });
 
-  test("the night crew's crusher is closer and faster than the usual shift's", () => {
+  test("the night crew's shutters are closer and faster than the usual closing's", () => {
     const night = eventCompactor(eventById("lights-out")!, COMPACTOR_PLAN);
     for (const t of [0, 10, 30, 50]) expect(compactorZAt(t, night)).toBeGreaterThan(compactorZAt(t, COMPACTOR_PLAN) + 14);
   });
 
-  test("a four-second stall is survivable on the Salvage Run and fatal on Night Shift and Crusher Rush", () => {
+  test("a four-second stall is survivable on Last Call and fatal on Lights Out and Shutter Rush", () => {
     expect(race("last-call", { stall: 4 }).phase).toBe("won");
     expect(race("lights-out", { stall: 4 }).phase).toBe("crushed");
     expect(race("shutter-rush", { stall: 4 }).phase).toBe("crushed");
   });
 
-  test("a clean line earns bronze on the Time Sheet's slag river; gold needs the sweep and the ladle bridge", () => {
+  test("a clean line earns bronze on Price Check in Produce; gold needs the mod sweep and the salad bar", () => {
     const line = race("price-check");
     expect(line.outcome?.event.medal).toBe("bronze");
     expect(line.outcome?.event.next?.medal).toBe("silver");
@@ -107,11 +107,12 @@ describe("yard calendar", () => {
 
     session.selectEvent("cart-stuffer");
     session.start();
-    drive(session, { sweep: true });
+    drive(session, { sweep: true, shop: true });
     const opened = session.snapshot();
-    expect(opened.outcome?.event.openedTiers).toEqual(["Night Crew"]);
+    expect(opened.outcome?.event.medal).toBe("gold");
+    expect(opened.outcome?.event.openedTiers).toEqual(["Late Shift"]);
     expect(opened.calendar.tiers[1]!.open).toBe(true);
-    expect(readCareer(storage).medals.best["cart-stuffer"]).toBe(12);
+    expect(readCareer(storage).medals.best["cart-stuffer"]).toBe(opened.outcome!.cartValue);
   });
 
   test("a career saved before the calendar loads with no medals on the salvage run", () => {

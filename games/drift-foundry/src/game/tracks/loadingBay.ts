@@ -3,15 +3,16 @@ import { STANDARD_OPENING, trackDrops } from "./drops";
 import { detour, straight, turn, type TrackDef } from "./types";
 
 /**
- * The Rail Yard: a wide, fast run of right angles through the marshalling yard, crossed twice by
- * freight that does not stop for karts. The long way swings round the signal box; the shed cut goes
- * straight through the engine shed, doors and oily floor and all. On the back straight a gantry drops
- * a container into the road a little over twenty seconds in - be past it or plow it.
+ * The Warehouse Loading Bay: a wide, fast run of right angles through receiving, crossed twice by
+ * tugger trains hauling pallet carts that do not stop for shoppers. The long way swings round the
+ * dispatch office; the trailer cut drives straight through a parked semi-trailer, doors, spilled
+ * hydraulic oil and all. On the back straight a forklift drops a pallet into the lane a little over
+ * twenty seconds in - be past it or plow it.
  */
 export const LOADING_BAY: TrackDef = {
   id: "loading-bay",
-  label: "Rail Yard",
-  blurb: "Right angles through the marshalling yard, two live freight crossings and a gantry that drops a container on the late.",
+  label: "Loading Bay",
+  blurb: "Right angles through the warehouse, two live tugger-train crossings and a forklift that drops a pallet in the lane if you are late.",
   origin: 60,
   start: { x: -120, z: -1150, heading: 0 },
   halfWidth: 11,
@@ -29,47 +30,51 @@ export const LOADING_BAY: TrackDef = {
     turn(90, 40),
     straight(60),
   ],
-  branches: [{ id: "trailer-cut", from: 334, to: 489, halfWidth: 6, label: "SHED CUT" }],
+  branches: [{ id: "trailer-cut", from: 334, to: 489, halfWidth: 6, label: "TRAILER CUT" }],
   hazards: [
-    { id: "crossing-a", kind: "tugger", from: 210, to: 218, cycle: { period: 12, active: 4, phase: 5 }, label: "FREIGHT ON THE INBOUND LINE" },
-    { id: "crossing-b", kind: "tugger", from: 612, to: 620, cycle: { period: 10, active: 3.5, phase: 1 }, label: "FREIGHT ON THE MARSHALLING LINE" },
-    { id: "shed-oil", kind: "spill", route: "trailer-cut", from: 18, to: 100, label: "OIL-SOAKED SHED FLOOR" },
+    { id: "crossing-a", kind: "tugger", from: 210, to: 218, cycle: { period: 12, active: 4, phase: 5 }, label: "TUGGER TRAIN ON THE RECEIVING LANE" },
+    { id: "crossing-b", kind: "tugger", from: 612, to: 620, cycle: { period: 10, active: 3.5, phase: 1 }, label: "TUGGER TRAIN ON THE OUTBOUND LANE" },
+    { id: "trailer-oil", kind: "spill", route: "trailer-cut", from: 18, to: 100, label: "HYDRAULIC OIL IN THE TRAILER" },
   ],
   gates: [
-    { id: "rail_plow_sleepers", requirement: "plow", at: 108, label: "SLEEPER STACK", radioLine: "SLEEPERS SPLIT — WATCH THE CROSSING" },
-    { id: "rail_jump_buffer", requirement: "jump", at: 252, label: "BUFFER-STOP RAMP", radioLine: "OVER THE BUFFERS — NICE AIR" },
-    { id: "rail_plow_shed", requirement: "plow", route: "trailer-cut", at: 405, label: "ENGINE SHED DOORS", radioLine: "THROUGH THE SHED DOORS — SHORT WAY HOME" },
-    { id: "rail_plow_container", requirement: "plow", at: 598, dropsAt: 24, label: "DROPPED CONTAINER", radioLine: "CONTAINER SMASHED — THE GANTRY MISSED YOU" },
-    { id: "rail_jump_last", requirement: "jump", at: 735, label: "LAST BUFFER RAMP", radioLine: "LAST BUFFERS CLEARED — GATE'S RIGHT THERE" },
+    { id: "bay_plow_crates", requirement: "plow", at: 108, label: "CRATE STACK", radioLine: "CRATES SPLIT — WATCH THE CROSSING" },
+    { id: "bay_jump_dockplate", requirement: "jump", at: 252, label: "DOCK-PLATE RAMP", radioLine: "OFF THE DOCK PLATE — NICE AIR" },
+    { id: "bay_plow_trailer", requirement: "plow", route: "trailer-cut", at: 405, label: "TRAILER DOORS", radioLine: "THROUGH THE TRAILER — SHORT WAY HOME" },
+    { id: "bay_plow_dropped", requirement: "plow", at: 598, dropsAt: 24, label: "DROPPED PALLET", radioLine: "PALLET SMASHED — THE FORKLIFT MISSED YOU" },
+    { id: "bay_jump_last", requirement: "jump", at: 735, label: "LAST DOCK RAMP", radioLine: "LAST RAMP CLEARED — TILLS ARE RIGHT THERE" },
   ],
   pickups: trackDrops(STANDARD_OPENING, [{ at: 282 }, { at: 400, lane: 1 }, { at: 560 }, { at: 700, lane: -1 }]),
   exitAt: 748,
   zones: [
-    { id: "rail-sidings", label: "INBOUND SIDINGS", radioName: "THE SIDINGS", start: 0, end: 269, wallColor: "#8fa3b8", surface: { id: "ballast", label: "PACKED BALLAST", grip: 0.97 } },
-    { id: "rail-shed", label: "ENGINE SHED YARD", radioName: "THE SHED YARD", start: 269, end: 575, wallColor: "#c7b07a", surface: { id: "concrete", label: "SHED APRON", grip: 1 } },
-    { id: "rail-marshal", label: "MARSHALLING LINE", radioName: "THE MARSHALLING LINE", start: 575, end: 748, wallColor: "#d9d2c3", surface: { id: "asphalt", label: "YARD ROAD", grip: 1.02 } },
+    { id: "bay-receiving", label: "RECEIVING DOCK", radioName: "RECEIVING", start: 0, end: 269, wallColor: "#8fa3b8", surface: { id: "sealed", label: "SEALED CONCRETE", grip: 0.97 } },
+    { id: "bay-trailers", label: "TRAILER BAY", radioName: "THE TRAILERS", start: 269, end: 575, wallColor: "#f0c419", surface: { id: "concrete", label: "DOCK APRON", grip: 1 } },
+    { id: "bay-outbound", label: "OUTBOUND LANES", radioName: "OUTBOUND", start: 575, end: 748, wallColor: "#d9d2c3", surface: { id: "epoxy", label: "EPOXY LANES", grip: 1.02 } },
   ],
   bandZ: -870,
-  ground: { low: "#2b2824", high: "#56504a", waterline: "#2b2824" },
-  fog: { color: "#8b97a3", near: 60, far: 320 },
-  sky: { horizonColor: "#a9bccf", zenithColor: "#3d5672", sunIntensity: 2.2, ambientIntensity: 1.05 },
+  ground: { low: "#8a8f94", high: "#b8bcbf", waterline: "#8a8f94" },
+  fog: { color: "#b9c2ca", near: 60, far: 320 },
+  sky: { horizonColor: "#d2dae0", zenithColor: "#7d8b98", sunIntensity: 1.9, ambientIntensity: 1.15 },
   baseLevel: 0,
   rivalTake: { rival_brick: ["trailer-cut"], rival_twins: ["trailer-cut"] },
   par: 64,
+  stock: {
+    goods: ["kettlebell", "dog_food", "paint_can", "soda_case", "big_tv", "paper_towels", "skillet"],
+    powerUps: ["extinguisher", "marbles", "mop", "bouncy_balls", "rotisserie_chicken"],
+  },
   dressing: {
-    edge: O.edgeRail,
-    edgeSpacing: 6,
-    lamp: O.lampStreet,
-    lampSpacing: 38,
-    scatter: [O.coveredCar, O.cabinet, O.rack, O.crate, O.powerBox],
-    scatterCount: 30,
+    edge: O.edgeRacking,
+    edgeSpacing: 5,
+    lamp: O.lampCeiling,
+    lampAt: "centre",
+    lampSpacing: 24,
+    scatter: [O.palletStack, O.boxPile, O.forklift, O.cone, O.cartCorral],
+    scatterCount: 32,
     landmarks: [
-      { object: O.signalBox, at: 412, side: 40 },
-      { object: O.gantryLeg, at: 598, side: 13 },
-      { object: O.gantryLeg, at: 598, side: -13 },
-      { object: O.furnace, at: [-60, -1030] },
-      { object: O.rack, at: 140, side: 16 },
-      { object: O.generator, at: 330, side: -16 },
+      { object: O.forklift, at: 412, side: 40 },
+      { object: O.forklift, at: 598, side: 14 },
+      { object: O.deptSign, at: 30, side: 0 },
+      { object: O.palletStack, at: 140, side: 16 },
+      { object: O.boxPile, at: 330, side: -16 },
     ],
   },
 };

@@ -1,17 +1,22 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
-import { kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals } from "@jgengine/assets/generated/packs";
+import { kaykitCityBuilder, kaykitForest, kaykitSpaceBase, quaternius5LowPolyAnimals, quaterniusToonShooter } from "@jgengine/assets/generated/packs";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-const MODEL_PACKS = [kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals];
-/** Packed dirt on the yard and dark cracked asphalt on the racing line, named by the shared material library. */
-const GROUND_SOURCES = ["ambientcg-ground025", "ambientcg-asphalt012"] as const;
 /**
- * Scans behind the shared library's corridor facades (`metal/rust`, `concrete/rough`,
+ * Catalog packs the store borrows from: the garden centre's trees and shrubs and lamp posts, the
+ * conveyor slabs, stockroom cardboard and cones, and the pigeons under the roof. Everything else
+ * (carts, shoppers, shelving, products) is original geometry from `scripts/author-models.mjs`.
+ */
+const MODEL_PACKS = [kaykitCityBuilder, kaykitSpaceBase, kaykitForest, quaterniusToonShooter, quaternius5LowPolyAnimals];
+/** Terrazzo under the store and ceramic tile down the aisles, named by the shared material library. */
+const GROUND_SOURCES = ["ambientcg-terrazzo005", "ambientcg-tiles007"] as const;
+/**
+ * Scans behind the shared library's in-store kiosk facades (`plastic/matte`, `concrete/rough`,
  * `metal/corrugated`). Declared here so `bun run provision` pulls them and the credits screen names
  * their authors; the zones select them by library name, never by these ids.
  */
 const FACADE_MATERIAL_SOURCES = [
-  "ambientcg-rust007",
+  "ambientcg-plastic006",
   "ambientcg-concrete025",
   "ambientcg-corrugatedsteel009",
 ] as const;

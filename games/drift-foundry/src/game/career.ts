@@ -9,18 +9,21 @@ import { createMedalBoard, type MedalBoardState } from "@jgengine/core/progressi
 
 import { DEFAULT_EVENT_ID, eventById, MEDAL_BOARD, YARD_EVENTS } from "./events/catalog";
 
+import { CHASSIS, chassisById, DEFAULT_CHASSIS, type CartChassis, type ChassisId } from "./cart/chassis";
 import { partById, PART_SLOTS, PARTS, type DriftFoundryPartDef, type PartSlotId } from "./parts/catalog";
 
-/** The pit pays in yard credits; the same money buys the next build. */
-export const CREDITS = { id: "credits", name: "Yard credits", unit: "cr" };
+/** Customer service pays in store credit; the same money buys the next mod and the next cart. */
+export const CREDITS = { id: "credits", name: "Store credit", unit: "$" };
 
 /** One driver, so standing and money belong to the profile, not a seat list. */
 export const DRIVER = "driver";
 
-/** Credits a single swept salvage drop is worth, before the escape bonus. */
+/** Store credit a mod display is worth when you sweep it, before the checkout bonus. */
 export const SALVAGE_CREDITS = 25;
-/** Credits for bringing the buggy through the 470 m gate. */
+/** Store credit for making it through the self-checkout before the shutters close. */
 export const ESCAPE_BONUS = 100;
+/** Share of the basket's checkout value paid back as store credit: the customer-of-the-night reward. */
+export const CART_VALUE_SHARE = 0.25;
 
 /** The one price curve every ladder rank is priced from. */
 export const PART_PRICE: Curve = { kind: "power", base: 150, exponent: 1.35, round: "round", min: 120 };
@@ -29,33 +32,33 @@ export const YARD_STANDING = {
   tracks: [
     {
       id: "yard",
-      label: "Row Six",
+      label: "Aisle 9",
       initial: 0,
       min: -40,
       max: 200,
       tiers: [
         { id: "unknown", min: -40, relation: "neutral" as const },
-        { id: "known", min: 10, relation: "friendly" as const },
-        { id: "trusted", min: 25, relation: "friendly" as const },
-        { id: "yard-legend", min: 50, relation: "friendly" as const },
+        { id: "regular", min: 10, relation: "friendly" as const },
+        { id: "loyalty-card", min: 25, relation: "friendly" as const },
+        { id: "store-legend", min: 50, relation: "friendly" as const },
       ],
     },
   ],
   outcomes: [
-    { id: "escape", label: "Through the exit gate", impacts: { yard: 10 } },
-    { id: "crushed", label: "Caught by the compactor", impacts: { yard: -4 } },
+    { id: "escape", label: "Through the self-checkout", impacts: { yard: 10 } },
+    { id: "crushed", label: "Locked in by the shutters", impacts: { yard: -4 } },
   ],
 };
 
-/** Parts the yard will not sell until the driver is known well enough. */
+/** Mods customer service will not sell until you are a regular. */
 const PART_GATES: readonly GateDef[] = [
   { id: "part_plow", unlock: "pallet_plow", requires: { gte: ["standing.yard", 0] } },
-  { id: "part_treads", unlock: "knobby_casters", label: "Monster treads", requires: { gte: ["standing.yard", 12] } },
-  { id: "part_ev", unlock: "e_assist", label: "EV conversion", requires: { gte: ["standing.yard", 25] } },
-  { id: "part_armor", unlock: "bin_lid_armor", label: "Armor plating", requires: { gte: ["standing.yard", 40] } },
+  { id: "part_treads", unlock: "knobby_casters", label: "Garden-cart knobbies", requires: { gte: ["standing.yard", 12] } },
+  { id: "part_ev", unlock: "e_assist", label: "E-assist hub motor", requires: { gte: ["standing.yard", 25] } },
+  { id: "part_armor", unlock: "bin_lid_armor", label: "Bin-lid armor", requires: { gte: ["standing.yard", 40] } },
 ];
 
-/** The yard's locked shelf. Built at load, so a part id that does not exist throws here. */
+/** Customer service's locked shelf. Built at load, so a mod id that does not exist throws here. */
 export const YARD_COUNTER = createGateSet({
   gates: PART_GATES,
   catalog: { has: (id) => PARTS.some((part) => part.id === id) },
@@ -89,6 +92,8 @@ export interface CareerSave {
   event: string;
   /** The track each event ran on when its best was set; a best set on another track is dropped. */
   courses: Record<string, string>;
+  /** Carts unlocked at the cart corral, and the one the next run pushes. */
+  carts: { owned: readonly ChassisId[]; selected: ChassisId };
 }
 
 /** Every event's track today. Careers saved before the tracks ran every event on Row Six. */
@@ -118,6 +123,7 @@ export function newCareer(): CareerSave {
     medals: { best: {} },
     event: DEFAULT_EVENT_ID,
     courses: eventCourses(),
+    carts: { owned: [DEFAULT_CHASSIS], selected: DEFAULT_CHASSIS },
   };
 }
 
@@ -138,6 +144,8 @@ export function readCareer(storage?: CareerStorage): CareerSave {
       medals: createMedalBoard({ ...MEDAL_BOARD, state: medals === null ? fresh.medals : sameCourseBests(medals, data["courses"]) }).snapshot(),
       event: typeof event === "string" && eventById(event) !== null ? event : fresh.event,
       courses: fresh.courses,
+      // A career saved before the cart corral owns the standard cart only.
+      carts: readCarts(data["carts"]) ?? fresh.carts,
     };
   } catch {
     return newCareer();
@@ -188,6 +196,15 @@ function readLadders(value: unknown): UpgradeState | null {
   return fits ? { ranks } : null;
 }
 
+/** Saved carts, or null unless every id is a real chassis and the selected one is owned. */
+function readCarts(value: unknown): CareerSave["carts"] | null {
+  if (!isRecord(value) || !Array.isArray(value["owned"])) return null;
+  const owned = value["owned"].filter((id): id is ChassisId => typeof id === "string" && chassisById(id) !== null);
+  if (!owned.includes(DEFAULT_CHASSIS)) owned.unshift(DEFAULT_CHASSIS);
+  const selected = value["selected"];
+  return { owned: [...new Set(owned)], selected: typeof selected === "string" && owned.includes(selected as ChassisId) ? (selected as ChassisId) : DEFAULT_CHASSIS };
+}
+
 /** Saved medal bests, or null when there are none to keep. */
 function readMedals(value: unknown): MedalBoardState | null {
   if (!isRecord(value)) return null;
@@ -211,7 +228,7 @@ export function laddersOf(career: CareerSave) {
   return createUpgradeTree({ nodes: NODES, state: career.ladders, standing: standingOf(career) });
 }
 
-/** One rung of a slot ladder: the part, its rank and its price, plus whether the yard will sell it. */
+/** One rung of a slot ladder: the mod, its rank and its price, plus whether customer service will sell it. */
 export interface GarageRow {
   slot: PartSlotId;
   part: DriftFoundryPartDef | null;
@@ -249,13 +266,13 @@ export function garageRows(career: CareerSave): GarageRow[] {
 /** Buy the next rung of a slot ladder; throws a readable reason when the yard refuses. */
 export function buyPart(career: CareerSave, slot: PartSlotId): CareerSave {
   const row = garageRows(career).find((entry) => entry.slot === slot);
-  if (row === undefined) throw new Error(`The yard has no ${slot} ladder`);
-  if (row.owned) throw new Error(`The ${slot} ladder is fully built`);
-  if (row.locked) throw new Error(`The yard will not sell ${row.part?.label ?? slot} yet - ${row.needs ?? 0} standing needed`);
+  if (row === undefined) throw new Error(`Customer service has no ${slot} mods`);
+  if (row.owned) throw new Error(`Every ${row.part?.slotLabel.toLowerCase() ?? slot} mod is already yours`);
+  if (row.locked) throw new Error(`Customer service will not sell ${row.part?.label ?? slot} yet - ${row.needs ?? 0} loyalty needed`);
   const bank = bankOf(career);
   const ladders = laddersOf(career);
   const bought = ladders.buy(slot, DRIVER, (cost) => bank.spend(cost));
-  if (!bought.ok) throw new Error(bought.reason === "max-rank" ? `The ${slot} ladder is fully built` : `Not enough credits for ${row.part?.label ?? slot}`);
+  if (!bought.ok) throw new Error(bought.reason === "max-rank" ? `Every ${slot} mod is already yours` : `Not enough store credit for ${row.part?.label ?? slot}`);
   return { ...career, bank: bank.snapshot(), ladders: ladders.snapshot(), standing: standingOf(career).snapshot() };
 }
 
@@ -272,7 +289,34 @@ export function ownedParts(career: CareerSave): DriftFoundryPartDef[] {
   return parts;
 }
 
-/** Settle a finished run: the haul banks on an escape and is lost to the compactor. */
+/** One cart at the corral: owned, selected, or still for sale. */
+export interface CorralRow {
+  chassis: CartChassis;
+  owned: boolean;
+  selected: boolean;
+}
+
+export function corralRows(career: CareerSave): CorralRow[] {
+  return CHASSIS.map((chassis) => ({ chassis, owned: career.carts.owned.includes(chassis.id), selected: career.carts.selected === chassis.id }));
+}
+
+/** Unlock a cart at the corral and push it next; throws a readable reason when it cannot. */
+export function buyChassis(career: CareerSave, id: ChassisId): CareerSave {
+  const chassis = chassisById(id);
+  if (chassis === null) throw new Error("The corral has no such cart");
+  if (career.carts.owned.includes(id)) return { ...career, carts: { ...career.carts, selected: id } };
+  const bank = bankOf(career);
+  if (!bank.spend(chassis.price)) throw new Error(`Not enough store credit for the ${chassis.label}`);
+  return { ...career, bank: bank.snapshot(), carts: { owned: [...career.carts.owned, id], selected: id } };
+}
+
+/** Push an owned cart next run. */
+export function selectChassis(career: CareerSave, id: ChassisId): CareerSave {
+  if (!career.carts.owned.includes(id)) throw new Error(`The ${chassisById(id)?.label ?? id} is still for sale`);
+  return { ...career, carts: { ...career.carts, selected: id } };
+}
+
+/** Settle a finished run: the haul banks at the self-checkout and is lost to the shutters. */
 export function settleRun(
   career: CareerSave,
   run: { kind: "escape" | "crushed"; place: number; haul: number; medals?: MedalBoardState | undefined },

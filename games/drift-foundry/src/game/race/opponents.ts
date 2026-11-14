@@ -20,13 +20,13 @@ import { AISLE_NINE_TRACK, type Track } from "../tracks/catalog";
 import { createVehicleController, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 
 /**
- * Three yard karts that race the same authored corridor as the player. The driving itself is the
+ * The late shoppers who race the same aisles as the player (and the guard who tries to stop them). The driving itself is the
  * shared brain (`@jgengine/core/ai/driver`): `pathTargetAhead` walks the rival's line and `driveStep`
  * turns pose + goal + a `DifficultyProfile` into throttle/brake/steer for the same composed
  * `VehicleDynamics` kart the player drives. This module is the grid, the lines, and the contact rule.
  */
 
-/** The yard's three decision-quality tiers, sloppiest first. */
+/** The store's three decision-quality tiers, sloppiest first. */
 type RivalTier = "easy" | "standard" | "expert";
 
 /** How each of the yard's tiers decides: reaction delay, steering wobble and planned depth. */
@@ -85,12 +85,17 @@ export interface RivalDef {
    * track the same knots are spread evenly down the run and scaled to that road's width.
    */
   line: readonly number[];
+  /**
+   * A blocker does not race for the tills: with the player close behind it steers onto the player's
+   * lane to cut them off, and contact with it is a tackle (see `onGuardTackle`).
+   */
+  blocker?: boolean;
 }
 
 export const RIVAL_DEFS: readonly RivalDef[] = [
   {
     id: "rival_grandma",
-    name: "TALLY",
+    name: "GRANDMA JUNE",
     entityKind: "kart_rival_grandma",
     tier: "easy",
     pace: 0.9,
@@ -98,12 +103,12 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     parts: ["e_assist", "pallet_plow", "spring_casters", "wire_basket"],
     band: 1,
     grid: { x: -3.4, z: 12 },
-    // No rhythm: drifts across the haul strip gate to gate, so it sheds speed in every correction.
+    // Coupon in one hand: drifts across the aisle shelf to shelf, so she sheds speed in every correction.
     line: [0, -5, -3.4, -4.6, -3, -4.8, -3.2, -4.4, -3, 0],
   },
   {
     id: "rival_twins",
-    name: "MOSS",
+    name: "THE TWINS",
     entityKind: "kart_rival_twins",
     tier: "standard",
     pace: 0.97,
@@ -111,12 +116,12 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     parts: ["power_walker", "pallet_plow", "spring_casters", "wire_basket"],
     band: 0.8,
     grid: { x: 3.4, z: 17 },
-    // A weaver: takes the free side of each barricade, so it is often off-line and re-aiming.
+    // Two drivers, one cart, no agreement: weaves for the free side of each wall and keeps re-aiming.
     line: [0, 3, -2.4, 2.6, -3, 3.2, -2.4, 2.8, -3, 0],
   },
   {
     id: "rival_brick",
-    name: "HOBBS",
+    name: "BRICK",
     entityKind: "kart_rival_brick",
     tier: "expert",
     pace: 1,
@@ -124,10 +129,28 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     parts: ["leaf_blower", "pallet_plow", "spring_casters", "cage_basket"],
     band: 0.5,
     grid: { x: 0, z: 24 },
-    // Holds one wide outside line the whole way: fewest heading changes, so it brakes least.
+    // Leg day every day: holds one wide outside line the whole way, fewest heading changes, brakes least.
     line: [0, 5, 5, 4.6, 5, 4.8, 5, 4.8, 5, 0],
   },
 ];
+
+/**
+ * Officer Dale on his segway: not a racer but the store's last line of defence. He starts just ahead
+ * of the grid and, with you close behind, swings onto your lane to cut you off. Events opt him in.
+ */
+export const GUARD_DEF: RivalDef = {
+  id: "rival_guard",
+  name: "OFFICER DALE",
+  entityKind: "kart_rival_guard",
+  tier: "standard",
+  pace: 0.88,
+  lookahead: 8,
+  parts: ["e_assist", "pallet_plow", "spring_casters", "cage_basket"],
+  band: 0.9,
+  grid: { x: 0, z: 34 },
+  line: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  blocker: true,
+};
 
 export const RIVAL_IDS = RIVAL_DEFS.map((def) => def.id);
 
@@ -153,6 +176,10 @@ export interface RivalBody {
   speedKmh: number;
   /** Shoved off its line, or backing out of something it ground against. */
   recovering: boolean;
+  /** Spinning out after a swat or a marble spill. */
+  stunned: boolean;
+  /** Officer Dale: blocks instead of racing. */
+  blocker: boolean;
   /** Run metres along the track and the road height under the kart. */
   run: number;
   roadY: number;
@@ -169,9 +196,16 @@ export interface OpponentField {
   positions(): Record<string, readonly [number, number, number]>;
   /** Push a rival by a world-space offset - a knock from contact. False when it was out of reach. */
   knock(id: string, dx: number, dz: number): boolean;
+  /** Spin a rival out for `seconds`: off the throttle and fighting the handle (a mop swat, marbles). */
+  stun(id: string, seconds: number): boolean;
   /** Back to the grid, every driver state fresh. */
   reset(): void;
 }
+
+/** A blocker starts cutting the player off once they are this close behind. */
+const BLOCK_RANGE = 32;
+/** Seconds between two tackles from the same blocker. */
+const TACKLE_COOLDOWN = 5;
 
 /** Rivals roll past the arch and park in the run-out, so they never stop on the finish line. */
 export const RIVAL_ROLLOUT = 24;
@@ -225,6 +259,9 @@ interface Rival {
   vehicle: VehicleController;
   pose: VehicleTelemetry;
   recoverSeconds: number;
+  stunSeconds: number;
+  /** Seconds before a blocker may tackle again. */
+  tackleCooldown: number;
 }
 
 function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => number, seed: string, track: Track): Rival {
@@ -252,6 +289,8 @@ function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => nu
     vehicle: createVehicleController({ position: [grid.x, groundHeightAt(grid.x, grid.z), grid.z], heading: grid.heading }, track),
     pose: { position: [grid.x, grid.elevation, grid.z], heading: grid.heading, speedKmh: 0, slip: 0, surface: 1, airborne: false, blockedByGate: false, run: def.grid.z, lateral: def.grid.x, route: MAIN_ROUTE, roadY: grid.elevation },
     recoverSeconds: 0,
+    stunSeconds: 0,
+    tackleCooldown: 0,
   };
 }
 
@@ -299,8 +338,10 @@ export function createOpponentField(options: {
   seed?: string;
   /** Receives the player's half of a bumper-to-bumper contact, so a shove costs both karts. */
   onPlayerKnock?: (dx: number, dz: number) => void;
-  /** The track the field races; Row Six by default. */
+  /** The track the field races; Aisle 9 by default. */
   track?: Track;
+  /** A blocker caught the player: the session decides what a tackle costs. */
+  onGuardTackle?: (id: string) => void;
 } = {}): OpponentField {
   const groundHeightAt = options.groundHeightAt ?? (() => 0);
   const defs = options.defs ?? RIVAL_DEFS;
@@ -318,7 +359,10 @@ export function createOpponentField(options: {
     tick(dt, player, playerRun = player[2], time = 0) {
       const playerLateral = track.id === AISLE_NINE_TRACK.id ? player[0] : track.locate(player[0], player[2]).offset;
       for (const rival of rivals) {
-        const target = pathTargetAhead(rival.line, rival.pose.position[0], rival.pose.position[2], rival.def.lookahead);
+        const rivalRun = rival.pose.run ?? rival.pose.position[2];
+        const block = rival.def.blocker === true && rivalRun > playerRun && rivalRun - playerRun < BLOCK_RANGE;
+        const cut = block ? track.point(MAIN_ROUTE, Math.min(track.exitAt + RIVAL_ROLLOUT, rivalRun + rival.def.lookahead), playerLateral) : null;
+        const target = cut === null ? pathTargetAhead(rival.line, rival.pose.position[0], rival.pose.position[2], rival.def.lookahead) : ([cut.x, cut.z] as const);
         const goal = {
           x: target?.[0] ?? rival.pose.position[0],
           z: target?.[1] ?? rival.pose.position[2],
@@ -341,9 +385,10 @@ export function createOpponentField(options: {
           rival.rng,
           gapToCarAhead(rival, others),
         );
+        const stunned = rival.stunSeconds > 0;
         rival.pose = rival.vehicle.tick(
           dt,
-          {
+          stunned ? { throttle: 0.15, brake: 0, steer: Math.sin(time * 9 + rival.def.grid.x) * 0.8, handbrake: 1 } : {
             throttle: step.throttle,
             brake: step.brake,
             // `driveStep` returns steer as the signed heading error (ai/driver.ts:169), but the shared
@@ -359,6 +404,8 @@ export function createOpponentField(options: {
           groundHeightAt,
         );
         if (rival.recoverSeconds > 0) rival.recoverSeconds = Math.max(0, rival.recoverSeconds - dt);
+        if (rival.stunSeconds > 0) rival.stunSeconds = Math.max(0, rival.stunSeconds - dt);
+        if (rival.tackleCooldown > 0) rival.tackleCooldown = Math.max(0, rival.tackleCooldown - dt);
       }
 
       for (let index = 0; index < rivals.length; index += 1) {
@@ -368,6 +415,10 @@ export function createOpponentField(options: {
         separate({ x: player[0], z: player[2] }, { x: rival.pose.position[0], z: rival.pose.position[2] }, (dx, dz) => {
           nudge(rival, dx / 2, dz / 2);
           options.onPlayerKnock?.(-dx / 2, -dz / 2);
+          if (rival.def.blocker === true && rival.tackleCooldown === 0 && rival.stunSeconds === 0) {
+            rival.tackleCooldown = TACKLE_COOLDOWN;
+            options.onGuardTackle?.(rival.def.id);
+          }
         });
         for (let other = index + 1; other < rivals.length; other += 1) {
           const second = rivals[other]!;
@@ -391,6 +442,8 @@ export function createOpponentField(options: {
         heading: rival.pose.heading,
         speedKmh: rival.pose.speedKmh,
         recovering: rival.recoverSeconds > 0 || rival.driver.reverseRemaining > 0,
+        stunned: rival.stunSeconds > 0,
+        blocker: rival.def.blocker === true,
         run: rival.pose.run ?? rival.pose.position[2],
         roadY: rival.pose.roadY ?? 0,
       }));
@@ -404,6 +457,12 @@ export function createOpponentField(options: {
       const rival = rivals.find((entry) => entry.def.id === id);
       if (rival === undefined) return false;
       nudge(rival, dx, dz);
+      return true;
+    },
+    stun(id, seconds) {
+      const rival = rivals.find((entry) => entry.def.id === id);
+      if (rival === undefined) return false;
+      rival.stunSeconds = Math.max(rival.stunSeconds, seconds);
       return true;
     },
     reset() {

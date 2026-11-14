@@ -4,8 +4,8 @@ import { launchCue, LAUNCH_CUE_SECONDS } from "./launchCue";
 const pose = (speedKmh: number, airborne = false) => ({ speedKmh, airborne }) as { speedKmh: number; airborne: boolean };
 
 describe("launchCue", () => {
-  test("prompts the throttle while the buggy is idle at the start", () => {
-    expect(launchCue({ runTime: 0.3, pose: pose(0) })).toBe("HOLD W TO ROLL");
+  test("prompts the throttle while the cart is idle at the start", () => {
+    expect(launchCue({ runTime: 0.3, pose: pose(0) })).toBe("HOLD W TO PUSH");
   });
 
   test("clears as soon as the buggy is rolling", () => {

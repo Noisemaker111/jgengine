@@ -7,9 +7,9 @@ import { parkedRunMetres, parkedTrack, readParkedRun, type ParkedRun } from "./r
 import { browserRecordStorage, readRecords, type RunStorage } from "./run/records";
 import { runSessionStore } from "./run/session";
 
-/** The pit's one saved run. The corridor is one ladder, so the yard keeps one parked buggy. */
+/** Customer service's one saved run: the store keeps one parked cart. */
 export const YARD_SLOT = "yard";
-/** The frame and time the pit left behind, for the card Continue opens. */
+/** The frame and time customer service left behind, for the card Continue opens. */
 export const PIT_FRAME_KEY = "drift-foundry.pit-frame.v1";
 export interface PitFrame {
   thumbnail: string | null;
@@ -38,7 +38,7 @@ function writePitFrame(frame: PitFrame, storage: RunStorage | undefined = browse
   catch { return false; }
 }
 
-/** What the parked run is, in the yard's own words: where it stands, its clock, its build. */
+/** What the parked run is, in the store's own words: where it stands, its clock, its mods and basket. */
 function cardOf(parked: ParkedRun, storage: RunStorage | undefined): { name: string; meta: Record<string, string | number>; savedAt: number } {
   const frame = readPitFrame(storage);
   const career = readCareer(storage);
@@ -50,18 +50,19 @@ function cardOf(parked: ParkedRun, storage: RunStorage | undefined): { name: str
     meta: {
       run: `Run ${readRunNumber(storage)}`,
       clock: `${parked.runTime.toFixed(1)} s`,
-      build: `${parked.partIds.length} of 4 parts`,
-      gate: `${gate}% of ${parkedTrack(parked).label}`,
-      credits: `${bankOf(career).banked()} cr`,
-      standing: `${standingOf(career).standing(DRIVER, "yard")} / ${standingOf(career).tier(DRIVER, "yard").id}`,
-      records: `${records.escapes} escapes / ${records.attempts} runs`,
+      mods: `${parked.partIds.length} of 4 mods`,
+      basket: `${parked.basketIds?.length ?? 0} items`,
+      aisle: `${gate}% of ${parkedTrack(parked).label}`,
+      credit: `$${bankOf(career).banked()}`,
+      loyalty: `${standingOf(career).standing(DRIVER, "yard")} / ${standingOf(career).tier(DRIVER, "yard").id}`,
+      records: `${records.escapes} checkouts / ${records.attempts} runs`,
       ...(frame.thumbnail === null ? {} : { thumbnail: frame.thumbnail }),
     },
     savedAt: frame.savedAt,
   };
 }
 
-/** Which run the loop had open when the buggy parked; the card names it without inventing one. */
+/** Which run the loop had open when the cart parked; the card names it without inventing one. */
 function readRunNumber(storage: RunStorage | undefined): number {
   try {
     const raw = JSON.parse(storage?.getItem("drift-foundry.run.v1") ?? "null") as { run?: unknown } | null;

@@ -3,18 +3,18 @@ import type { BiomeFog, BiomeSky, TerrainColors } from "@jgengine/core/world/fea
 import { libraryFacade } from "../world/librarySurface";
 import { EXIT_Z, ZONE_A_END, ZONE_B_END } from "../run/constants";
 
-export type ZoneId = "canyons" | "flats" | "gantry";
+export type ZoneId = "snacks" | "frozen" | "bulk";
 
-/** What the yard's own ground is made of: the grip the tires find on the paved strip. */
+/** What the store's own floor is made of: the grip the casters find on the main aisle. */
 export interface ZoneSurface {
   id: string;
-  /** Reads on the HUD and in test evidence: which surface the kart is actually on. */
+  /** Reads on the HUD and in test evidence: which surface the cart is actually on. */
   label: string;
   /** Grip multiplier handed to the vehicle sim's `surfaceFriction` (1 = the reference surface). */
   grip: number;
 }
 
-/** One stretch of a track as the run reads it: what the radio calls it and the grip under the tires. */
+/** One stretch of a department as the run reads it: what the PA calls it and the grip under the casters. */
 export interface TrackZone {
   id: string;
   label: string;
@@ -23,130 +23,132 @@ export interface TrackZone {
   start: number;
   end: number;
   wallColor: string;
-  /** Yard surface under the tires - oil, concrete or gravel decide how much grip the kart gets. */
+  /** Floor under the casters - mopped vinyl, frosted tile or dusty concrete decide how much grip the cart gets. */
   surface: ZoneSurface;
 }
 
-/** A Row Six zone: a track zone that also owns the corridor's generated building rows and terrain band. */
+/**
+ * An Aisle 9 zone: a track zone that also owns the corridor's generated in-store kiosks (the
+ * pharmacy, the key-cutting booth, the café counters, shutters half down for closing) and its floor
+ * band.
+ */
 export interface ZoneDef extends TrackZone {
   id: ZoneId;
   propIds: readonly string[];
   buildingStyle: BuildingStyle;
-  /** Shared-library material painting this zone's generated corridor facades and roofs. */
+  /** Shared-library material painting this zone's generated kiosk walls and roofs. */
   facadeMaterial: string;
-  /** Facade colours for this zone's corridor walls — the per-zone read the minimap already promises. */
+  /** Kiosk colours for this zone - the per-zone read the minimap already promises. */
   palette: BuildingPaletteOverrides;
-  /** Ground palette for the zone's terrain band. */
+  /** Floor palette for the zone's terrain band. */
   ground: TerrainColors;
   fog: BiomeFog;
   sky: BiomeSky;
 }
 
-/**
- * A bay face is one `bayWidth` × `floorHeight` slot (about 1.9 m × 2.8 m at this game's footprint),
- * so its repeat is that face over the material's own world tile. Roofs are one slab per building
- * spanning the whole footprint, hence the coarser repeat.
- */
 const WALL_REPEAT: [number, number] = [1.4, 2];
 const ROOF_REPEAT: [number, number] = [10, 7];
 
+/** The store's ceiling haze: bright fluorescent white with a faint tint per section. */
+const CEILING = { horizonColor: "#f7f4ec", zenithColor: "#dfe3ea" } as const;
+
 export const ZONES: readonly ZoneDef[] = [
   {
-    id: "canyons",
-    label: "CAR-STACK CANYONS",
-    radioName: "ROW ONE",
+    id: "snacks",
+    label: "SNACKS & CEREAL",
+    radioName: "SNACKS",
     start: 0,
     end: ZONE_A_END,
-    wallColor: "#b7410e",
-    propIds: ["prop_wreck_pile", "prop_tire_wall", "prop_stripped_car", "prop_dumpster"],
-    buildingStyle: "ruin",
-    facadeMaterial: "metal/corrugated",
+    wallColor: "#ff4f5a",
+    propIds: ["prop_endcap", "prop_box_pile", "prop_pallet_stack", "prop_gondola", "prop_cart_corral"],
+    buildingStyle: "neon",
+    facadeMaterial: "plastic/matte",
     palette: {
-      wall: libraryFacade("metal/corrugated", WALL_REPEAT, "#e0c2a6"),
-      corner: libraryFacade("metal/corrugated", WALL_REPEAT, "#b89a80"),
-      roof: libraryFacade("metal/corrugated", ROOF_REPEAT, "#96795f"),
-      window: "#ffb066",
-      storefront: "#241610",
-      shutter: "#7a3a1e",
-      awning: "#b7410e",
-      storeSign: "#ff7a2b",
-      roofProp: "#c2410c",
-      guardrail: "#8a5a3a",
-      airConditioner: "#6b5140",
-      clothesline: "#d98a3d",
+      wall: libraryFacade("plastic/matte", WALL_REPEAT, "#ffd9d2"),
+      corner: libraryFacade("plastic/matte", WALL_REPEAT, "#ff6b5a"),
+      roof: libraryFacade("plastic/matte", ROOF_REPEAT, "#f2efe8"),
+      window: "#fff6c9",
+      storefront: "#2a1a1a",
+      shutter: "#b8bec6",
+      awning: "#ff3b4a",
+      storeSign: "#ffd21e",
+      roofProp: "#ff8a5a",
+      guardrail: "#ffd21e",
+      airConditioner: "#c9ccd1",
+      clothesline: "#ff8a5a",
     },
-    ground: { low: "#3a2d21", high: "#6e5136", waterline: "#3a2d21" },
-    surface: { id: "oil", label: "OIL-SLICK YARD", grip: 0.96 },
-    fog: { color: "#7a4423", near: 55, far: 300 },
-    sky: { horizonColor: "#e8802e", zenithColor: "#5e3620" },
+    ground: { low: "#d9d3c6", high: "#ece6da", waterline: "#d9d3c6" },
+    surface: { id: "vinyl", label: "FRESHLY MOPPED VINYL", grip: 0.96 },
+    fog: { color: "#f3ede2", near: 60, far: 320 },
+    sky: { ...CEILING, horizonColor: "#fbf1e6" },
   },
   {
-    id: "flats",
-    label: "APPLIANCE FLATS",
-    radioName: "ROW SIX",
+    id: "frozen",
+    label: "FROZEN FOODS",
+    radioName: "FROZEN",
     start: ZONE_A_END,
     end: ZONE_B_END,
-    wallColor: "#8d99a6",
-    propIds: ["prop_appliance_stack", "prop_scrap_heap", "prop_dumpster", "prop_stripped_car"],
-    buildingStyle: "industrial",
+    wallColor: "#5fd0ff",
+    propIds: ["prop_freezer", "prop_freezer", "prop_endcap", "prop_wet_floor", "prop_gondola_tall"],
+    buildingStyle: "coastal",
     facadeMaterial: "concrete/rough",
     palette: {
-      wall: libraryFacade("concrete/rough", WALL_REPEAT, "#d8dce0"),
-      corner: libraryFacade("concrete/rough", WALL_REPEAT, "#b2b8be"),
-      roof: libraryFacade("concrete/rough", ROOF_REPEAT, "#8f959b"),
-      window: "#8fd8e8",
-      storefront: "#2a3136",
-      shutter: "#6b757e",
-      awning: "#2f6f7a",
-      storeSign: "#3fe0d4",
-      roofProp: "#9fb3c8",
-      guardrail: "#b9c4cc",
-      airConditioner: "#8d99a6",
-      clothesline: "#cfd8dc",
+      wall: libraryFacade("concrete/rough", WALL_REPEAT, "#e6f6ff"),
+      corner: libraryFacade("concrete/rough", WALL_REPEAT, "#8fd8ff"),
+      roof: libraryFacade("concrete/rough", ROOF_REPEAT, "#eef3f6"),
+      window: "#c9f0ff",
+      storefront: "#16303d",
+      shutter: "#a9c4d4",
+      awning: "#2fa8ff",
+      storeSign: "#3fe0ff",
+      roofProp: "#9fd8ff",
+      guardrail: "#c9e9ff",
+      airConditioner: "#c9dbe6",
+      clothesline: "#9fd8ff",
     },
-    ground: { low: "#37383a", high: "#665f52", waterline: "#37383a" },
-    surface: { id: "concrete", label: "CONCRETE YARD", grip: 1 },
-    fog: { color: "#6b5c48", near: 55, far: 290 },
-    sky: { horizonColor: "#d99154", zenithColor: "#4a4239" },
+    ground: { low: "#d5e4ec", high: "#eef7fb", waterline: "#d5e4ec" },
+    surface: { id: "frost", label: "FROSTED FLOOR - ICY", grip: 0.86 },
+    fog: { color: "#e8f3f8", near: 55, far: 300 },
+    sky: { ...CEILING, horizonColor: "#eef8fd" },
   },
   {
-    id: "gantry",
-    label: "CRANE GANTRY RUN",
-    radioName: "THE GANTRY",
+    id: "bulk",
+    label: "BULK & PAINT",
+    radioName: "BULK",
     start: ZONE_B_END,
     end: EXIT_Z,
-    wallColor: "#f0c419",
-    propIds: ["prop_container_stack", "prop_crane_leg", "prop_scrap_heap", "prop_dumpster"],
+    wallColor: "#ffc23a",
+    propIds: ["prop_pallet_stack", "prop_box_pile", "prop_gondola_tall", "prop_endcap", "prop_cart_corral"],
     buildingStyle: "industrial",
-    facadeMaterial: "metal/rust",
+    facadeMaterial: "metal/corrugated",
     palette: {
-      wall: libraryFacade("metal/rust", WALL_REPEAT, "#e4d0be"),
-      corner: libraryFacade("metal/rust", WALL_REPEAT, "#c0a794"),
-      roof: libraryFacade("metal/rust", ROOF_REPEAT, "#9d8674"),
+      wall: libraryFacade("metal/corrugated", WALL_REPEAT, "#fff0c9"),
+      corner: libraryFacade("metal/corrugated", WALL_REPEAT, "#ffc23a"),
+      roof: libraryFacade("metal/corrugated", ROOF_REPEAT, "#ece4d2"),
       window: "#ffe08a",
-      storefront: "#1d1b17",
-      shutter: "#f0c419",
-      awning: "#1d1b17",
-      storeSign: "#ffd21e",
-      roofProp: "#f0c419",
-      guardrail: "#f0c419",
-      airConditioner: "#7d766a",
-      clothesline: "#f0c419",
+      storefront: "#2a2416",
+      shutter: "#c9c2b0",
+      awning: "#ff8a1e",
+      storeSign: "#ff6a1e",
+      roofProp: "#ffc23a",
+      guardrail: "#ffc23a",
+      airConditioner: "#cfc8b8",
+      clothesline: "#ffc23a",
     },
-    ground: { low: "#3a3325", high: "#6f5c3d", waterline: "#3a3325" },
-    surface: { id: "gravel", label: "GRAVEL YARD", grip: 0.93 },
-    fog: { color: "#8a6222", near: 50, far: 280 },
-    sky: { horizonColor: "#ffae44", zenithColor: "#6b4c1e" },
+    ground: { low: "#cfc8b8", high: "#e4dccb", waterline: "#cfc8b8" },
+    surface: { id: "concrete", label: "DUSTY CONCRETE", grip: 0.93 },
+    fog: { color: "#f1eadb", near: 50, far: 290 },
+    sky: { ...CEILING, horizonColor: "#fbf2de" },
   },
 ];
 
-/** The zone a run-metre mark falls in; Row Six's zones unless a track's are given. */
+/** The zone a run-metre mark falls in; Aisle 9's zones unless a track's are given. */
 export function zoneAt<Zone extends TrackZone = ZoneDef>(z: number, zones: readonly Zone[] = ZONES as unknown as readonly Zone[]): Zone {
   for (const zone of zones) if (z < zone.end) return zone;
   return zones[zones.length - 1]!;
 }
 
-/** Fraction of the run covered at run metres `z`, against the track's exit (Row Six's by default). */
+/** Fraction of the run covered at run metres `z`, against the track's exit (Aisle 9's by default). */
 export function zoneProgress(z: number, exitAt: number = EXIT_Z): number {
   return Math.min(1, Math.max(0, z / exitAt));
 }

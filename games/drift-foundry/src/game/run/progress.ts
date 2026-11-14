@@ -1,3 +1,4 @@
+import { shelfItemById } from "../cart/goods";
 import { swapPart } from "../parts/build";
 import { partById, type DriftFoundryPartDef } from "../parts/catalog";
 import { AISLE_NINE_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
@@ -21,6 +22,10 @@ export interface ParkedRun {
   closestGap: number;
   wasNear: boolean;
   announcedSurge: string | null;
+  /** Shelf grab spots already emptied, and the basket they filled: goods then power-ups, oldest first. */
+  shelfIds?: string[];
+  basketIds?: string[];
+  powerUpIds?: string[];
 }
 
 /** The track a parked run stands on; runs parked before the tracks are Row Six's. */
@@ -40,7 +45,7 @@ export function checkpointParts(run: ParkedRun): readonly DriftFoundryPartDef[] 
   return installed;
 }
 
-/** Checkpoints represent a grounded, stopped buggy, never a reconstructed moving physics state. */
+/** Checkpoints represent a grounded, stopped cart, never a reconstructed moving physics state. */
 export function readParkedRun(storage?: RunStorage): ParkedRun | null {
   try {
     const run = JSON.parse(storage?.getItem(PROGRESS_KEY) ?? "null");
@@ -61,6 +66,10 @@ export function readParkedRun(storage?: RunStorage): ParkedRun | null {
     if (new Set(categories).size !== categories.length || run.partIds.some((id: string) => !track.pickups.some(p => p.partId === id && run.collectedIds.includes(p.id)))) return null;
     if (typeof run.armorSaveArmed !== "boolean" || typeof run.wasNear !== "boolean" || !nonnegative(run.armorSavesUsed) || !Number.isInteger(run.armorSavesUsed) || !nonnegative(run.nearMissCount) || !Number.isInteger(run.nearMissCount) || !nonnegative(run.closestGap) || !(run.announcedSurge === null || typeof run.announcedSurge === "string")) return null;
     if (checkpointParts(run).length !== run.partIds.length) return null;
+    const shelfIds = new Set(track.shelves.map((spot) => spot.id));
+    if (run.shelfIds !== undefined && !ids(run.shelfIds, shelfIds)) return null;
+    const known = (value: unknown, kind: "goods" | "power") => value === undefined || (Array.isArray(value) && value.every((id) => typeof id === "string" && shelfItemById(id)?.kind === kind));
+    if (!known(run.basketIds, "goods") || !known(run.powerUpIds, "power")) return null;
     return run;
   } catch { return null; }
 }

@@ -141,7 +141,7 @@ export interface StoppedKart {
  */
 export function gateAdvice(gate: RouteGate, pickups: readonly PickupDef[], kart: StoppedKart): GateAdvice {
   if (gateSatisfied(gate, kart.tuning)) {
-    return { gateId: gate.id, kind: "run-up", call: "BACK UP AND HIT IT FASTER", sub: `Springs need ${JUMP_CLEARANCE} m of air: jump on the teal marks at speed`, partAt: null };
+    return { gateId: gate.id, kind: "run-up", call: "BACK UP AND HIT IT FASTER", sub: `Pogo casters need ${JUMP_CLEARANCE} m of air: hop on the pink arrows at speed`, partAt: null };
   }
   let behind: PickupDef | null = null;
   let crushed: PickupDef | null = null;
@@ -152,16 +152,16 @@ export function gateAdvice(gate: RouteGate, pickups: readonly PickupDef[], kart:
     if (pickup.at <= kart.crusherAt) crushed ??= pickup;
     else if (behind === null || pickup.at > behind.at) behind = pickup;
   }
-  const label = (gate.requirement === "plow" ? "plow blade" : "coil springs").toUpperCase();
+  const label = (gate.requirement === "plow" ? "pallet plow" : "pogo casters").toUpperCase();
   if (behind !== null) {
     const back = Math.max(0, Math.round(kart.run - behind.at));
-    return { gateId: gate.id, kind: "go-back", call: `NO ${label} - ${back}M BACK`, sub: "Reverse onto it before the crusher does", partAt: behind.at };
+    return { gateId: gate.id, kind: "go-back", call: `NO ${label} - ${back}M BACK`, sub: "Reverse onto the display before the shutters do", partAt: behind.at };
   }
   return {
     gateId: gate.id,
     kind: crushed !== null ? "crushed" : "gone",
-    call: crushed !== null ? `NO ${label} - THE CRUSHER HAS IT` : `NO ${label} ON THIS ROAD`,
-    sub: "This wall will not open: restart the run from Settings",
+    call: crushed !== null ? `NO ${label} - THE SHUTTERS HAVE IT` : `NO ${label} IN THIS AISLE`,
+    sub: gate.requirement === "jump" ? "A stack of bouncy balls (F) clears it once - or restart the run from Settings" : "This wall will not open: restart the run from Settings",
     partAt: null,
   };
 }

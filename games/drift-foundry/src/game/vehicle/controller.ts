@@ -52,12 +52,27 @@ export interface VehicleController {
     dt: number,
     axis: DriveAxis,
     tuning: KartTuning,
-    input: { jumpPressed: boolean; plowBracing: boolean; time?: number; marks?: TireMarks; particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void } },
+    input: {
+      jumpPressed: boolean;
+      plowBracing: boolean;
+      time?: number;
+      marks?: TireMarks;
+      particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
+      /** This tick's extra handling scales - an extinguisher boost, riding the back bar - multiplied in. */
+      modifiers?: VehicleDynamicsModifiers;
+      /** A hop at this speed (m/s) regardless of the springs - a stack of bouncy balls. */
+      bounce?: number;
+    },
     groundHeightAt: (x: number, z: number) => number,
   ): VehicleTelemetry;
   resetTo(position: readonly [number, number, number], heading: number): void;
   /** Displace the kart without costing it its momentum - a shove from another bumper. */
   shove(dx: number, dz: number): void;
+  /**
+   * Keep `factor` of the cart's speed and kick its yaw by `yawKick` rad/s, without moving it - a
+   * security guard's tackle, a spin on spilled marbles.
+   */
+  jolt(factor: number, yawKick?: number): void;
   /** Where the kart sits on the track, or `null` off a track. */
   fix(): CourseFix | null;
 }
@@ -69,6 +84,22 @@ const BRACED: VehicleDynamicsModifiers = {
   brakeScale: 1 + BRACE_ACCEL_BONUS,
   steerScale: 1 - BRACE_TURN_PENALTY,
 };
+
+/** Multiply every scale the given modifier sets together; `undefined` when none are given. */
+export function combineModifiers(...sets: readonly (VehicleDynamicsModifiers | undefined)[]): VehicleDynamicsModifiers | undefined {
+  const given = sets.filter((entry): entry is VehicleDynamicsModifiers => entry !== undefined);
+  if (given.length === 0) return undefined;
+  if (given.length === 1) return given[0];
+  const out: VehicleDynamicsModifiers = {};
+  for (const key of ["driveScale", "brakeScale", "gripScale", "steerScale", "speedLimitScale"] as const) {
+    let product: number | undefined;
+    for (const entry of given) if (entry[key] !== undefined) product = (product ?? 1) * entry[key]!;
+    if (product !== undefined) out[key] = product;
+  }
+  const thrust = given.reduce((sum, entry) => sum + (entry.thrust ?? 0), 0);
+  if (thrust !== 0) out.thrust = thrust;
+  return out;
+}
 
 /**
  * `track` lays the kart on a route course: the course's walls clamp every move, its barricades and
@@ -178,9 +209,10 @@ export function createVehicleController(
       }
 
       const braced = input.plowBracing && tuning.hasPlow;
-      if (input.jumpPressed) vehicle.jump(STUB_HOP_SPEED + tuning.jumpPower);
-      const modifiers: VehicleDynamicsModifiers | undefined =
-        feel.topSpeedScale < 1 ? { ...(braced ? BRACED : {}), speedLimitScale: (braced ? BRACED.speedLimitScale! : 1) * feel.topSpeedScale } : braced ? BRACED : undefined;
+      if (input.bounce !== undefined) vehicle.jump(input.bounce);
+      else if (input.jumpPressed) vehicle.jump(STUB_HOP_SPEED + tuning.jumpPower);
+      const hazardScale: VehicleDynamicsModifiers | undefined = feel.topSpeedScale < 1 ? { speedLimitScale: feel.topSpeedScale } : undefined;
+      const modifiers = combineModifiers(braced ? BRACED : undefined, hazardScale, input.modifiers);
 
       const drive = tickDrivableVehicle(
         vehicle,
@@ -235,6 +267,10 @@ export function createVehicleController(
       if (track !== undefined) fix = track.locate(position[0], position[2]);
     },
     shove,
+    jolt(factor, yawKick = 0) {
+      const state = vehicle.snapshot();
+      vehicle.restore({ ...state, motion: { ...state.motion, vx: state.motion.vx * factor, vz: state.motion.vz * factor, yawRate: state.motion.yawRate + yawKick } });
+    },
     fix() {
       return fix;
     },

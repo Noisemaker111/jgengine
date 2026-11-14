@@ -2,11 +2,11 @@ import { expect, test } from "bun:test";
 import { FIXTURE_STATES, runeUiFixture } from "../../../proofs/runeUiFixture";
 
 const expected: Partial<Record<(typeof FIXTURE_STATES)[number], string>> = {
-  title: "New run", continue: "parts bolted on", calendar: "Yard calendar", garage: "Pit garage", records: "Corridor records",
-  settings: "Master volume", credits: "Original Drift Foundry art", hud: "AT RISK", pause: "Back to the run",
-  "pause-garage": "Pit garage", "pause-settings": "Restart run", "settings-sheet": "Master volume", result: "BACK TO PIT",
+  title: "New run", continue: "mods fitted", calendar: "Weekly circular", corral: "Mobility Scooter Cart", garage: "Customer service", records: "Store records",
+  settings: "Master volume", credits: "Original Cleanup on Aisle 9 art", hud: "AT RISK", pause: "Back to the run",
+  "pause-garage": "Customer service", "pause-settings": "Restart run", "settings-sheet": "Master volume", result: "CUSTOMER SERVICE",
 };
-test("every Drift Foundry UI state serializes native elements at desktop and phone widths", async () => {
+test("every Cleanup on Aisle 9 UI state serializes native elements at desktop and phone widths", async () => {
   for (const [width, height] of [[1280, 720], [390, 844]] as const) {
     for (const state of FIXTURE_STATES) {
       const spec = await runeUiFixture(state, width, height);

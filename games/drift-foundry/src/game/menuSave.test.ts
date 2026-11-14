@@ -25,7 +25,7 @@ const parked: ParkedRun = {
   announcedSurge: null,
 };
 
-test("the Continue card is the parked run, in the yard's words", () => {
+test("the Continue card is the parked run, in the store's words", () => {
   const { storage, values } = memory();
   expect(saveParkedRun(parked, storage)).toBe(true);
   values.set(PIT_FRAME_KEY, JSON.stringify({ thumbnail: "data:image/jpeg;base64,AAAA", savedAt: 1_700_000_000_000 }));
@@ -36,9 +36,10 @@ test("the Continue card is the parked run, in the yard's words", () => {
   expect(card?.savedAt).toBe(1_700_000_000_000);
   expect(card?.meta).toMatchObject({
     clock: "11.7 s",
-    build: "0 of 4 parts",
-    gate: "13% of Row Six",
-    credits: "0 cr",
+    mods: "0 of 4 mods",
+    basket: "0 items",
+    aisle: "13% of Aisle 9",
+    credit: "$0",
     thumbnail: "data:image/jpeg;base64,AAAA",
   });
 });

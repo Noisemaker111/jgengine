@@ -7,6 +7,7 @@ import { ROUTE_GATES } from "../route/gates";
 import { PICKUPS } from "./pickups";
 import { createRunSession, type RunSession } from "./session";
 import { tuningFrom } from "../parts/build";
+import { loadPart } from "../cart/basket";
 import { surfaceAt } from "../vehicle/surface";
 
 const DT = 1 / 30;
@@ -99,12 +100,12 @@ describe("drift-foundry run session", () => {
     expect(snapshot.runTime).toBe(0);
   });
 
-  test("start() enters running and queues the opening pit-radio line", () => {
+  test("start() enters running and queues the closing announcement on the PA", () => {
     const session = createRunSession();
     session.start();
     const snapshot = session.snapshot();
     expect(snapshot.phase).toBe("running");
-    expect(snapshot.ticker[0]?.text).toBe("BOLT IT ON, GO GO");
+    expect(snapshot.ticker[0]?.text).toBe("\"THE STORE IS NOW CLOSING\" — GO GO GO");
   });
 
   test("the run reports a place in a four-kart field, and every rival raced the corridor", () => {
@@ -184,8 +185,8 @@ describe("drift-foundry run session", () => {
     const stopped = session.snapshot();
     expect(stopped.tuning.hasPlow).toBe(false);
     expect(stopped.gateAdvice?.gateId).toBe(wall.id);
-    expect(stopped.gateAdvice?.call).toBe(`NO PLOW BLADE - ${Math.round(stopped.run - plow.at)}M BACK`);
-    expect(stopped.ticker.filter((line) => line.text.startsWith("NO PLOW BLADE - "))).toHaveLength(1);
+    expect(stopped.gateAdvice?.call).toBe(`NO PALLET PLOW - ${Math.round(stopped.run - plow.at)}M BACK`);
+    expect(stopped.ticker.filter((line) => line.text.startsWith("NO PALLET PLOW - "))).toHaveLength(1);
 
     // Reverse with a touch of counter-steer back over the drop, then drive at the wall. The sign
     // keeps counting the metres down all the way back, and the radio does not repeat itself.
@@ -205,7 +206,7 @@ describe("drift-foundry run session", () => {
     expect(through.clearedGateIds.has(wall.id)).toBe(true);
     expect(through.phase).toBe("running");
     expect(Math.min(...counted)).toBeLessThan(4);
-    expect(through.ticker.filter((line) => line.text.startsWith("NO PLOW BLADE")).length).toBeLessThanOrEqual(1);
+    expect(through.ticker.filter((line) => line.text.startsWith("NO PALLET PLOW")).length).toBeLessThanOrEqual(1);
   });
 
   test("hitting a barricade the build cannot clear bends the nose, costs top speed and pulls the wheel", () => {
@@ -213,19 +214,22 @@ describe("drift-foundry run session", () => {
     session.start();
     const clean = session.snapshot();
     expect(clean.damage.every((zone) => zone.stage === 0)).toBe(true);
-    // Full throttle down the centreline collects the plow but never jumps: the tire stack at z=150 stops it.
+    // Full throttle down the centreline collects the plow but never jumps: the soda-pallet ramp at
+    // z=150 stops it. The driver holds the centreline against the squeaky caster's wobble.
     for (let i = 0; i < 3000 && session.snapshot().phase === "running"; i++) {
-      session.tick(DT, { throttle: 1, brake: 0, steer: 0 }, { jumpPressed: false, plowBracing: false });
+      const snap = session.snapshot();
+      session.tick(DT, { throttle: 1, brake: 0, steer: steerTowardX(snap.pose.heading, -snap.pose.position[0]) }, { jumpPressed: false, plowBracing: false });
     }
     const bent = session.snapshot();
     expect(bent.damage.some((zone) => zone.stage > 0)).toBe(true);
     // The same build undamaged, for the numbers to mean something. A stage-1 nose of two is half of
     // the zone's 5% top-end cost.
     const parts = Object.values(bent.installed).filter((part) => part !== null);
-    const undamaged = tuningFrom(parts);
+    // The same basket too: whatever the cart grabbed off the shelves on the way is part of its handling.
+    const undamaged = tuningFrom(parts, undefined, { load: loadPart({ goods: bent.basket.goods, powerUps: bent.basket.powerUps }) });
     expect(bent.tuning.topSpeed).toBeLessThan(undamaged.topSpeed);
     expect(bent.tuning.topSpeed).toBeCloseTo(undamaged.topSpeed * 0.975, 5);
-    expect(bent.ticker.some((line) => line.text.includes("FRONT END"))).toBe(true);
+    expect(bent.ticker.some((line) => line.text.includes("BASKET'S BENT"))).toBe(true);
   });
 
   test("restart clears bent metal along with the build", () => {
@@ -241,13 +245,13 @@ describe("drift-foundry run session", () => {
     expect(fresh.tuning.topSpeed).toBeCloseTo(tuningFrom([]).topSpeed, 6);
   });
 
-  test("the yard under the kart is reported per zone, so different yards really grip differently", () => {
+  test("the floor under the cart is reported per zone, so different sections really grip differently", () => {
     const session = createRunSession();
     session.start();
-    expect(session.snapshot().surface.zone.id).toBe("oil");
+    expect(session.snapshot().surface.zone.id).toBe("vinyl");
     driveStraight(session, 6);
     const later = session.snapshot();
-    expect(later.zone.id).toBe("canyons");
+    expect(later.zone.id).toBe("snacks");
     expect(later.surface.grip).toBeCloseTo(surfaceAt(later.pose.position[0], later.pose.position[2]).grip, 6);
   });
 
@@ -282,7 +286,10 @@ describe("drift-foundry run session", () => {
     expect(afterRestart.nearMissCount).toBe(0);
     expect(afterRestart.armorSavesUsed).toBe(0);
     expect(afterRestart.outcome).toBeNull();
-    expect(afterRestart.ticker[0]?.text).toBe("BOLT IT ON, GO GO");
+    expect(afterRestart.ticker[0]?.text).toBe("\"THE STORE IS NOW CLOSING\" — GO GO GO");
+    expect(afterRestart.basket.goods).toHaveLength(0);
+    expect(afterRestart.shelvesTaken.size).toBe(0);
+    expect(afterRestart.style.points).toBe(0);
   });
 
   test("driving the full route collects most debris and swaps fill every slot", () => {

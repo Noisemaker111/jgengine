@@ -29,6 +29,6 @@ describe("drift-foundry ambient life", () => {
 
   test("the credits name the sky, the grade and both fonts", () => {
     const text = JSON.stringify(FOUNDRY_CREDITS);
-    for (const needle of ["Industrial Sunset", "Bleach bypass, warm", "Saira Stencil One", "Barlow Condensed"]) expect(text).toContain(needle);
+    for (const needle of ["Industrial Workshop Foundry", "Vivid pop", "Lilita One", "Nunito"]) expect(text).toContain(needle);
   });
 });

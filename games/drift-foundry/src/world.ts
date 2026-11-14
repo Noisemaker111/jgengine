@@ -16,21 +16,21 @@ import {
 
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 
-import { SALVAGE_FACADE_KIT } from "./game/art/facades";
+import { STORE_KIOSK_KIT } from "./game/art/facades";
 import { CORRIDOR_HALF_WIDTH, EXIT_Z, HAUL_ROAD_HALF_WIDTH } from "./game/run/constants";
 import { ZONES, type ZoneDef } from "./game/zones/catalog";
 import { AISLE_NINE_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
 
-/** The racing line everywhere is dark cracked asphalt: oil-black against the packed-dirt yard. */
-const RACING_LINE_SCAN = librarySurfaceScan("asphalt/dark-cracked");
+/** The aisles everywhere are glossy ceramic tile, laid over the store's terrazzo floor. */
+const RACING_LINE_SCAN = librarySurfaceScan("tile/ceramic", { repeat: 1.2 });
 
-/** Every yard track but Row Six, each laid in its own stretch of the yard along z. */
+/** Every department but Aisle 9, each laid in its own stretch of the store along z. */
 const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
 
 /**
- * The yard holds every track at once, stacked along z (the quarry farthest north, the conveyor hall
- * farthest south) so one terrain, one sky and one set of biome bands serve them all. 800 m wide and
+ * The store holds every department at once, stacked along z (the garden centre farthest north,
+ * electronics farthest south) so one floor, one ceiling haze and one set of biome bands serve them all. 800 m wide and
  * 4.9 km long at 3 m cells stays well under the terrain's vertex ceiling.
  */
 const YARD_BOUNDS = { w: 800, d: 4900 };
@@ -64,10 +64,10 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
     road({
       path: routePath(route.points),
       width: 2 * (route.id === "main" ? track.def.pavedHalfWidth : Math.min(track.def.pavedHalfWidth, track.def.branches.find((branch) => branch.id === route.id)!.halfWidth)),
-      color: "#38322c",
+      color: "#e9e5dc",
       materials: { road: RACING_LINE_SCAN },
       markings: route.id === "main",
-      markingColor: "#e8c24a",
+      markingColor: "#2f6fd6",
       sidewalk: false,
       elevation: route.id === "main" ? 0.12 : 0.14,
     }),
@@ -86,7 +86,7 @@ function trackShoulders(track: Track): TerrainMaterialRegion[] {
   }));
 }
 
-/** Slag pools and flood water: a liquid sheet over the track's lowland, its level the track's own. */
+/** The juice flood and the koi pond: a liquid sheet over the department's lowland, its level its own. */
 function trackLiquid(track: Track): OceanEnvironmentDescriptor | null {
   const liquid = track.def.liquid;
   if (liquid === undefined) return null;
@@ -104,13 +104,13 @@ function trackLiquid(track: Track): OceanEnvironmentDescriptor | null {
   });
 }
 
-/** Haul road runs the whole corridor and a little past both ends so neither cap is a visible seam. */
+/** The main-aisle tile runs the whole corridor and a little past both ends so neither cap is a visible seam. */
 const HAUL_START_Z = -70;
 const HAUL_END_Z = EXIT_Z + 60;
 
-/** Frontage width the near wall lines: buildings front on the drivable corridor plus its shoulders. */
+/** Frontage width the near kiosk row lines: in-store kiosks front on the aisle plus its shoulders. */
 const NEAR_WALL_FRONTAGE = 76;
-/** Second row sits a block back so the corridor reads as layered depth, not a single flat facade. */
+/** Second row (the stockroom walls) sits a block back so the store reads as layered depth. */
 const FAR_WALL_FRONTAGE = 132;
 
 function zoneRoad(zone: ZoneDef): { path: readonly (readonly [number, number])[]; width: number } {
@@ -121,14 +121,14 @@ function nearWall(zone: ZoneDef): BuildingEnvironmentDescriptor {
   return building({
     count: 20,
     footprint: { w: 15, d: 11 },
-    stories: [2, 5],
+    stories: [1, 2],
     storyHeight: 3.4,
     spacing: 5,
     style: zone.buildingStyle,
     palette: zone.palette,
     seed: `drift-foundry-${zone.id}-near`,
     along: { roads: [zoneRoad(zone)], setback: 2, bothSides: true, maxLots: 20 },
-    kit: SALVAGE_FACADE_KIT,
+    kit: STORE_KIOSK_KIT,
   });
 }
 
@@ -136,7 +136,7 @@ function farWall(zone: ZoneDef): BuildingEnvironmentDescriptor {
   return building({
     count: 10,
     footprint: { w: 20, d: 14 },
-    stories: [4, 8],
+    stories: [4, 5],
     storyHeight: 3.8,
     spacing: 12,
     style: zone.buildingStyle,
@@ -148,7 +148,7 @@ function farWall(zone: ZoneDef): BuildingEnvironmentDescriptor {
       bothSides: true,
       maxLots: 10,
     },
-    kit: SALVAGE_FACADE_KIT,
+    kit: STORE_KIOSK_KIT,
   });
 }
 
@@ -164,13 +164,13 @@ function zoneBand(zone: ZoneDef): BiomeBand {
 
 export const world: WorldFeature = environment({
   terrain: terrain({
-    // Wide enough that the far wall and the yard's landmark silhouettes stand on ground rather than
-    // over the world edge, and long enough to cover the whole run plus its fog falloff.
+    // Wide enough that the stockroom walls and the store's landmarks stand on floor rather than over
+    // the world edge, and long enough to cover the whole run plus its fog falloff.
     bounds: YARD_BOUNDS,
-    // The yard's swell with every track's grade laid in: the same field the headless runs drive on.
+    // The store floor with every department's grade laid in: the same field the headless runs drive on.
     heightField: YARD_GROUND,
     cellSize: YARD_CELL,
-    colors: { low: "#1d1610", high: "#57351f", waterline: "#1d1610" },
+    colors: { low: "#d8d2c4", high: "#ebe6da", waterline: "#d8d2c4" },
     biomeBands: [...ZONES.map(zoneBand), ...LAID_TRACKS.map(trackBand)].sort((a, b) => a.z - b.z),
     materialRegions: [
       ...LAID_TRACKS.flatMap(trackShoulders),
@@ -182,20 +182,20 @@ export const world: WorldFeature = environment({
         ],
         width: CORRIDOR_HALF_WIDTH * 2 + 14,
         falloff: 16,
-        colors: { low: "#33291f", high: "#4a4036", waterline: "#33291f" },
+        colors: { low: "#e2ddd2", high: "#efebe2", waterline: "#e2ddd2" },
       },
     ],
     detail: {
-      rockColor: "#4a3421",
-      sandColor: "#4a3826",
+      rockColor: "#cfc8ba",
+      sandColor: "#ddd6c8",
       snowHeight: 400,
       detailScale: 3.2,
       macroScale: 30,
-      roughness: 0.94,
+      roughness: 0.42,
       strength: 1,
-      // `tint` well under 1 keeps the authored oil-black corridor and rust-dirt bands: at the default
-      // the map's own pale albedo wins and every zone flattens to one grey.
-      material: librarySurfaceScan("ground/packed-dirt", { repeat: 1.8, strength: 0.72, tint: 0.3 }),
+      // `tint` under 1 keeps each department's authored floor colour reading through the terrazzo
+      // chips instead of every band flattening to the scan's own grey.
+      material: librarySurfaceScan("stone/terrazzo", { repeat: 1.4, strength: 0.6, tint: 0.45 }),
     },
   }),
   roads: [
@@ -204,13 +204,13 @@ export const world: WorldFeature = environment({
         [0, HAUL_START_Z],
         [0, HAUL_END_Z],
       ],
-      // Narrower than the drivable corridor on purpose: a haul strip with textured dirt shoulders
-      // either side, rather than one untextured slab filling the near frame.
+      // Narrower than the drivable aisle on purpose: a tiled walkway with terrazzo either side, rather
+      // than one slab filling the near frame.
       width: HAUL_ROAD_HALF_WIDTH * 2,
-      color: "#453a30",
+      color: "#f2eee6",
       materials: { road: RACING_LINE_SCAN },
       markings: true,
-      markingColor: "#e8c24a",
+      markingColor: "#2f6fd6",
       sidewalk: false,
       elevation: 0.12,
     }),
@@ -219,22 +219,22 @@ export const world: WorldFeature = environment({
   water: LAID_TRACKS.map(trackLiquid).filter((entry): entry is OceanEnvironmentDescriptor => entry !== null),
   sky: sky({
     preset: "day",
-    horizonColor: "#ff9d3d",
-    zenithColor: "#8a5230",
-    sun: { azimuth: 250, elevation: 14 },
-    sunColor: "#ffb066",
-    sunIntensity: 2.6,
-    ambientIntensity: 0.95,
+    // The ceiling haze of a big-box store: warm white at eye level, a cooler grey up where the roof is.
+    horizonColor: "#f7f3ea",
+    zenithColor: "#cfd5de",
+    sun: { azimuth: 200, elevation: 62 },
+    sunColor: "#fff6e6",
+    sunIntensity: 2.2,
+    ambientIntensity: 1.25,
     // The dome tracks the camera in xz, so this only has to clear the visible terrain (±500m along
     // the run) and stay inside the camera's far plane — past it the dome is depth-clipped to black.
     radius: 520,
-    hazeStrength: 0.7,
-    sunGlowStrength: 1.5,
-    // Above 1 banks the burnt-orange horizon further up the dome; the default drops the near-black
-    // zenith straight into an eye-level frame and the dusk reads as night.
-    gradientExponent: 1.4,
-    cloudiness: 0.55,
-    fog: { color: "#c98a52", near: 60, far: 320 },
+    hazeStrength: 0.9,
+    sunGlowStrength: 0.2,
+    // Above 1 keeps the bright haze high on the dome, so the far end of an aisle fades to white, not grey.
+    gradientExponent: 1.6,
+    cloudiness: 0,
+    fog: { color: "#f1ece2", near: 60, far: 320 },
   }),
   structures: ZONES.flatMap((zone) => [nearWall(zone), farWall(zone)]),
 });

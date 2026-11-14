@@ -13,12 +13,16 @@ export interface WorldRuntime {
   lastRunTime: number;
   /** The track whose run objects are on the yard. */
   trackId: string;
-  /** Run clock of the last slag spurt burst per vent, so vents puff on a beat instead of every frame. */
+  /** Run clock of the last tumble burst per span, so the oranges and balls roll on a beat instead of every frame. */
   spurts: Map<string, number>;
+  /** Shelf grab spots already emptied this run. */
+  removedShelves: Set<string>;
+  /** Marble spills placed on the floor this run. */
+  marbles: Set<string>;
 }
 
 export function createWorldRuntime(propRows: readonly PropRow[], trackId: string): WorldRuntime {
-  return { propRows, cursor: { index: 0 }, removedMarkers: new Set<string>(), removedGates: new Set<string>(), droppedGates: new Set<string>(), lastRunTime: 0, trackId, spurts: new Map() };
+  return { propRows, cursor: { index: 0 }, removedMarkers: new Set<string>(), removedGates: new Set<string>(), droppedGates: new Set<string>(), lastRunTime: 0, trackId, spurts: new Map(), removedShelves: new Set<string>(), marbles: new Set<string>() };
 }
 
 export const worldRuntimeStore = defineStore<WorldRuntime | undefined>("worldRuntime", undefined);

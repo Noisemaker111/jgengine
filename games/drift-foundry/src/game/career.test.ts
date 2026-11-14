@@ -41,7 +41,7 @@ describe("yard career", () => {
     const escaped = settleRun(standingAt(20), { kind: "escape", place: 2, haul: 175 });
     expect(escaped.bank.banked).toBe(175);
     expect(standingOf(escaped).standing(DRIVER, "yard")).toBe(30);
-    expect(standingOf(escaped).tier(DRIVER, "yard").id).toBe("trusted");
+    expect(standingOf(escaped).tier(DRIVER, "yard").id).toBe("loyalty-card");
   });
 
   test("a win also pays the place bonus", () => {
@@ -81,9 +81,9 @@ describe("yard career", () => {
 
   test("a locked rung or an empty wallet refuses without moving anything", () => {
     const locked = { ...standingAt(0), ladders: { ranks: { engine: 2 } } };
-    expect(() => buyPart(rich(locked, 5000), "engine")).toThrow(/will not sell EV Conversion yet/);
+    expect(() => buyPart(rich(locked, 5000), "engine")).toThrow(/will not sell E-Assist Hub Motor yet/);
     const poor = rich(standingAt(0), 100);
-    expect(() => buyPart(poor, "engine")).toThrow(/Not enough credits/);
+    expect(() => buyPart(poor, "engine")).toThrow(/Not enough store credit/);
     expect(poor.bank.banked).toBe(100);
   });
 

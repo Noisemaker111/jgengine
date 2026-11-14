@@ -10,6 +10,7 @@ import {
   type RouteCourse,
 } from "@jgengine/core/roads/routeCourse";
 
+import { layShelves, type ShelfSpot } from "../cart/shelves";
 import type { PickupDef } from "../run/pickups";
 import type { RouteGate } from "../route/gates";
 import { zoneAt, type TrackZone } from "../zones/catalog";
@@ -45,6 +46,8 @@ export interface Track {
   readonly end: number;
   readonly gates: readonly RouteGate[];
   readonly pickups: readonly PickupDef[];
+  /** The department's grab spots along the shelf edge. */
+  readonly shelves: readonly ShelfSpot[];
   readonly zones: readonly TrackZone[];
   readonly spawn: { position: readonly [number, number, number]; heading: number };
   /** Run metres of a fix: main-line metres from the start line. */
@@ -132,7 +135,7 @@ export function buildTrack(def: TrackDef): Track {
     return hazard === undefined ? [] : [{ ...span, kind: hazard.kind, label: hazard.label }];
   });
 
-  return {
+  const track: Track = {
     def,
     id: def.id,
     label: def.label,
@@ -159,7 +162,10 @@ export function buildTrack(def: TrackDef): Track {
     },
     hazardSpans,
     zoneAt: (run) => zoneAt(run, def.zones),
+    shelves: [],
   };
+  // Shelves are laid on the finished track: they sit at run metres along it, clear of its gates.
+  return { ...track, shelves: layShelves(track) };
 }
 
 /** Where every kart's grid is measured from: the start line is run metre 0, the spawn 4 m past it. */

@@ -7,7 +7,8 @@ import { AISLE_NINE_TRACK, trackById, type Track } from "../tracks/catalog";
 /**
  * A scripted driver for any track, used by the tests and the medal tuning: it follows the course's
  * racing line (through the shortcuts in `take`), lifts for tight corners, hops the jump gates on its
- * route, waits for the freight at a crossing and, with `sweep`, steers onto every drop it passes.
+ * route, waits for the tugger train at a crossing, with `sweep` steers onto every mod display it
+ * passes and with `shop` onto every shelf grab.
  */
 export interface CourseDriveOptions {
   sweep?: boolean;
@@ -18,8 +19,10 @@ export interface CourseDriveOptions {
   take?: readonly string[];
   /** Give up after this many seconds of run clock. */
   limit?: number;
-  /** Ignore the crossing lights and drive into the freight. */
+  /** Ignore the crossing lights and drive into the tugger trains. */
   reckless?: boolean;
+  /** Steer onto every shelf grab spot coming up on the main line: a full basket. */
+  shop?: boolean;
 }
 
 const DT = 1 / 60;
@@ -61,7 +64,7 @@ export interface PilotFrame {
  * The scripted driver as a per-frame pilot: hand it each snapshot and it answers with the frame's
  * controls. {@link driveCourse} runs it headless; the dev build can put it behind the wheel live.
  */
-export function createCoursePilot(track: Track, options: Pick<CourseDriveOptions, "sweep" | "take" | "reckless"> = {}): (snap: SessionSnapshot) => PilotFrame {
+export function createCoursePilot(track: Track, options: Pick<CourseDriveOptions, "sweep" | "take" | "reckless" | "shop"> = {}): (snap: SessionSnapshot) => PilotFrame {
   const take = new Set(options.take ?? []);
   const line = track.course.line({ take: [...take], step: LINE_STEP });
   const routes = new Set([MAIN_ROUTE, ...take]);
@@ -75,9 +78,18 @@ export function createCoursePilot(track: Track, options: Pick<CourseDriveOptions
     cursor = nearestIndex(line, position[0], position[2], cursor);
     const look = Math.min(line.length - 1, cursor + Math.max(3, Math.round((4 + speed * 0.35) / LINE_STEP)));
     let target: CourseVec2 = line[look]!;
+    let onDrop = false;
     if (options.sweep === true) {
       const drop = track.pickups.find((p) => !snap.collectedIds.has(p.id) && p.route === routeAt(p.at) && p.at > snap.run - 4 && p.at < snap.run + 22);
-      if (drop !== undefined) target = [drop.position[0], drop.position[2]];
+      if (drop !== undefined) {
+        target = [drop.position[0], drop.position[2]];
+        onDrop = true;
+      }
+    }
+    // A mod display comes first: the walls need the plow and the casters more than the basket needs stock.
+    if (options.shop === true && !onDrop && routeAt(snap.run) === MAIN_ROUTE) {
+      const spot = track.shelves.find((s) => !snap.shelvesTaken.has(s.id) && s.at > snap.run + 1 && s.at < snap.run + 18);
+      if (spot !== undefined) target = [spot.position[0], spot.position[2]];
     }
     const steer = Math.max(-1, Math.min(1, steerToward(heading, bearing(position, target)) * 2.2));
 

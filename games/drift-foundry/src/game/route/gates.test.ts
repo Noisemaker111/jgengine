@@ -99,21 +99,21 @@ describe("advice at a barricade that will not open", () => {
   const plowDrop = PICKUPS.find((pickup) => pickup.partId === "pallet_plow")!;
   const stopped = (over: Partial<StoppedKart> = {}): StoppedKart => ({ run: plowWall.atZ, tuning: NO_PARTS, collected: new Set(), crusherAt: 0, ...over });
 
-  test("a missed plow blade still on the road is named with how far back it lies", () => {
+  test("a missed pallet plow still in the aisle is named with how far back it lies", () => {
     const advice = gateAdvice(plowWall, PICKUPS, stopped());
-    expect(advice.call).toBe(`NO PLOW BLADE - ${Math.round(plowWall.atZ - plowDrop.at)}M BACK`);
+    expect(advice.call).toBe(`NO PALLET PLOW - ${Math.round(plowWall.atZ - plowDrop.at)}M BACK`);
     expect(advice.partAt).toBe(plowDrop.at);
   });
 
-  test("a blade the crusher has rolled over is lost, and the sign says so", () => {
+  test("a plow the shutters have rolled over is lost, and the sign says so", () => {
     const advice = gateAdvice(plowWall, PICKUPS, stopped({ crusherAt: plowDrop.at + 1 }));
-    expect(advice.call).toBe("NO PLOW BLADE - THE CRUSHER HAS IT");
+    expect(advice.call).toBe("NO PALLET PLOW - THE SHUTTERS HAVE IT");
     expect(advice.partAt).toBeNull();
   });
 
-  test("a blade already swept up and shaken off is not on the road any more", () => {
+  test("a plow already swept up and shaken off is not in the aisle any more", () => {
     const advice = gateAdvice(plowWall, PICKUPS, stopped({ collected: new Set([plowDrop.id]) }));
-    expect(advice.call).toBe("NO PLOW BLADE ON THIS ROAD");
+    expect(advice.call).toBe("NO PALLET PLOW IN THIS AISLE");
     expect(advice.partAt).toBeNull();
   });
 
@@ -123,10 +123,10 @@ describe("advice at a barricade that will not open", () => {
     expect(advice.partAt).toBeNull();
   });
 
-  test("missing springs point back to the springs drop, not to any other part", () => {
+  test("missing pogo casters point back to their display, not to any other mod", () => {
     const springs = PICKUPS.find((pickup) => pickup.partId === "spring_casters")!;
     const advice = gateAdvice(jumpStack, PICKUPS, stopped({ run: jumpStack.atZ, tuning: PLOW_ONLY }));
-    expect(advice.call).toBe(`NO COIL SPRINGS - ${Math.round(jumpStack.atZ - springs.at)}M BACK`);
+    expect(advice.call).toBe(`NO POGO CASTERS - ${Math.round(jumpStack.atZ - springs.at)}M BACK`);
     expect(advice.partAt).toBe(springs.at);
   });
 });

@@ -9,6 +9,8 @@ export interface DriveInput {
   press(action: string): void;
   release(action: string): void;
   consumeJump(): boolean;
+  /** True once per press of the power-up key or pad. */
+  consumePower(): boolean;
   keyDown(code: string): string | null;
   keyUp(code: string): void;
   isDown(action: string): boolean;
@@ -20,23 +22,30 @@ export function createDriveInput(initial: ActionCodesMap = {}): DriveInput {
   let axis: DriveAxis = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
   const touchHeld = new Set<string>();
   let jump = false;
+  let power = false;
   const makeKeyboard = (bindings: ActionCodesMap) => createActionStateTracker(toActionStateBindingMap(bindings));
   let keyboard = makeKeyboard(initial);
   return {
-    reset() { axis = { throttle: 0, brake: 0, steer: 0, handbrake: 0 }; touchHeld.clear(); keyboard.reset(); jump = false; },
+    reset() { axis = { throttle: 0, brake: 0, steer: 0, handbrake: 0 }; touchHeld.clear(); keyboard.reset(); jump = false; power = false; },
     // Own keyboard capture runs on the shell's live bindings, so a rebind in settings takes effect when
     // the dialog closes, while semantic host input still supports gamepads and touch.
     refreshBindings(bindings) { this.reset(); keyboard = makeKeyboard(bindings); },
     keyDown(code) {
       const action = keyboard.handleDown(code);
       if (action === "jumpHop" && keyboard.wasPressed(action)) jump = true;
+      if (action === "usePower" && keyboard.wasPressed(action)) power = true;
       return action;
     },
     keyUp(code) { keyboard.handleUp(code); },
     isDown(action) { return keyboard.isDown(action) || touchHeld.has(action); },
-    press(action) { if (action === "jumpHop" && !touchHeld.has(action)) jump = true; touchHeld.add(action); },
+    press(action) {
+      if (action === "jumpHop" && !touchHeld.has(action)) jump = true;
+      if (action === "usePower" && !touchHeld.has(action)) power = true;
+      touchHeld.add(action);
+    },
     release(action) { touchHeld.delete(action); },
     consumeJump() { const pressed = jump; jump = false; return pressed; },
+    consumePower() { const pressed = power; power = false; return pressed; },
     sample(dt, input, active) {
       if (!active) { this.reset(); return axis; }
       const value = (action: string) => Math.max(input.value(action), this.isDown(action) ? 1 : 0);

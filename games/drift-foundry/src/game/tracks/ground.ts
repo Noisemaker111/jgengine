@@ -41,15 +41,13 @@ export function yardGround(base: (x: number, z: number) => number, tracks: reado
 export const FLAT_YARD_GROUND = yardGround(() => 0);
 
 /**
- * The yard's rolling ground under everything: a few metres of swell, the same broad low rises the
- * corridor always had, from a cheap sum of crossed waves so the terrain and every headless run agree.
+ * The store floor under everything: polished and dead level, the way a big-box slab is poured. Only
+ * the departments' own grades (the garden centre's sunken nursery, the toy aisle's mezzanine ramps,
+ * the produce juice flood) shape it, so the terrain and every headless run agree.
  */
-export function yardSwell(x: number, z: number): number {
-  const a = Math.sin(x * 0.012 + 1.3) * Math.cos(z * 0.011 - 0.4);
-  const b = Math.sin((x + z) * 0.027 + 2.1) * 0.5;
-  const c = Math.cos((x - z * 0.6) * 0.051 + 0.7) * 0.25;
-  return 1.2 * (a + b + c) / 1.75;
+export function storeFloor(): number {
+  return 0;
 }
 
-/** The ground the game renders and drives on: the swell with every track laid into it. */
-export const YARD_GROUND = yardGround(yardSwell);
+/** The ground the game renders and drives on: the store floor with every department laid into it. */
+export const YARD_GROUND = yardGround(storeFloor);

@@ -5,19 +5,19 @@ import { RIVAL_DEFS, type RivalDef } from "../race/opponents";
 import { COMPACTOR_START_Z } from "./constants";
 
 /**
- * What the next run changes. The yard is one corridor and one compactor, so a new run differs by a
- * shift somebody called in: a rival drives a tighter line, the rookie stops getting a tow, the crusher
- * starts closer, or the night crew runs the surges early. The draw itself is the engine's run loop;
- * these are the authored entries it picks from, and a results screen names the winner.
+ * What the next run changes. Every closing time differs by what the PA announces: a rival drives a
+ * tighter line, Grandma June stops getting the field's tow, the shutters start early, or the night
+ * stockers run the scrubber hard. The draw itself is the engine's run loop; these are the authored
+ * announcements it picks from, and the receipt names the winner.
  */
 
 export type ShiftId = "brick-line" | "grandma-honest" | "shutters-early" | "night-stockers";
 
-/** How one shift changes the corridor. Every field is optional, so a shift says only what it touches. */
+/** How one announcement changes the store. Every field is optional, so a shift says only what it touches. */
 export interface ShiftEffect {
   /** One rival's line, pace or catch-up band. */
   rival?: { id: string; paceScale?: number; lineScale?: number; band?: number };
-  /** Metres added to where the crusher starts; negative starts it closer. */
+  /** Metres added to where the shutters start; negative starts them closer. */
   compactorStartZ?: number;
   /** Seconds earlier every surge arrives. */
   surgeShiftT?: number;
@@ -27,20 +27,20 @@ export interface ShiftEffect {
 
 export const SHIFT_LABELS: Record<ShiftId, { label: string; hint: string }> = {
   "brick-line": {
-    label: "HOBBS SCOUTED YOUR LINE",
-    hint: "HOBBS runs it tighter and 4% harder, cutting the wobble out of his outside line.",
+    label: "\"BRICK, YOUR PROTEIN SHAKE IS READY AT AISLE 9\"",
+    hint: "BRICK runs it tighter and 4% harder, cutting the wobble out of his outside line.",
   },
   "grandma-honest": {
-    label: "TALLY GOT A TALKING-TO",
-    hint: "TALLY stops taking the field's tow: the rookie races his own build, so he holds whatever gap he earns.",
+    label: "\"COUPONS EXPIRE AT CLOSE\"",
+    hint: "Grandma June stops taking the field's tow: she races her own cart, so she holds whatever gap she earns.",
   },
   "shutters-early": {
-    label: "THE CRUSHER ROLLED OUT EARLY",
-    hint: "The compactor starts 12 m closer to the grid, so the opening sprint is already under pressure.",
+    label: "\"THE STORE IS NOW CLOSING\" - EARLY",
+    hint: "The shutters start 12 m closer to the grid, so the opening sprint is already under pressure.",
   },
   "night-stockers": {
-    label: "NIGHT CREW RAN THE SURGES",
-    hint: "Both surges come 6 s earlier and 0.6 m/s harder. The clock, not the corridor, is different.",
+    label: "\"NIGHT CREW TO THE FLOOR, PLEASE\"",
+    hint: "Both scrubber surges come 6 s earlier and 0.6 m/s harder. The clock, not the aisle, is different.",
   },
 };
 
@@ -97,7 +97,7 @@ function surgePlan(changeId: string | null): readonly CompactorSurge[] {
   }));
 }
 
-/** The crusher this run races: start line and surge schedule with the shift applied. */
+/** The shutters this run races: start line and surge schedule with the announcement applied. */
 export function compactorPlanForShift(changeId: string | null): CompactorPlan {
   const effect = effectOf(changeId);
   return {

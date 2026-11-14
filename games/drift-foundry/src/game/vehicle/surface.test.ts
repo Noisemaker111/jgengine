@@ -5,13 +5,13 @@ import { ZONES } from "../zones/catalog";
 import { surfaceAt, surfaceFrictionAt } from "./surface";
 
 const ZONE_SAMPLES: readonly (readonly [string, number])[] = [
-  ["canyons", 60],
-  ["flats", 200],
-  ["gantry", 360],
+  ["snacks", 60],
+  ["frozen", 200],
+  ["bulk", 360],
 ];
 
-describe("drift-foundry yard surfaces", () => {
-  test("the paved haul strip uses each zone's authored surface grip", () => {
+describe("Aisle 9 floor surfaces", () => {
+  test("the tiled walkway uses each zone's authored floor grip", () => {
     for (const [id, z] of ZONE_SAMPLES) {
       const zone = ZONES.find((entry) => entry.id === id)!;
       const sample = surfaceAt(0, z);
@@ -22,15 +22,16 @@ describe("drift-foundry yard surfaces", () => {
     }
   });
 
-  test("the yards really do differ: oil-slick canyons and gravel gantry grip less than concrete", () => {
-    const concrete = surfaceAt(0, 200).grip;
-    const gravel = surfaceAt(0, 360).grip;
-    const oil = surfaceAt(0, 60).grip;
-    expect(concrete).toBeGreaterThan(gravel);
-    expect(concrete).toBeGreaterThan(oil);
+  test("the sections really do differ: the frozen aisle is ice, mopped vinyl grips best, dusty concrete between", () => {
+    const vinyl = surfaceAt(0, 60).grip;
+    const ice = surfaceAt(0, 200).grip;
+    const concrete = surfaceAt(0, 360).grip;
+    expect(vinyl).toBeGreaterThan(concrete);
+    expect(concrete).toBeGreaterThan(ice);
+    expect(ice).toBeLessThan(0.9);
   });
 
-  test("the dirt shoulders outside the haul strip grip less, and the edge fades instead of stepping", () => {
+  test("the terrazzo beside the tiled walkway grips less, and the edge fades instead of stepping", () => {
     const paved = surfaceAt(0, 200);
     const edge = surfaceAt(HAUL_ROAD_HALF_WIDTH - 0.01, 200);
     const justOver = surfaceAt(HAUL_ROAD_HALF_WIDTH + 0.05, 200);

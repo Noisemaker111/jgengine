@@ -21,7 +21,7 @@ function mainGates(track: Track): Track["gates"] {
 export function raceHud(snapshot: SessionSnapshot) {
   const track = trackById(snapshot.track.id) ?? AISLE_NINE_TRACK;
   const run = snapshot.run;
-  // Only what is on the road ahead counts: a shortcut's wall is not in the way of a kart on the main line.
+  // Only what is on the aisle ahead counts: a shortcut's wall is not in the way of a cart on the main line.
   const shortcut = track.def.branches.find(branch => branch.id === snapshot.route);
   const onMyRoad = (route: string, at: number) => route === snapshot.route || (route === "main" && (shortcut === undefined || at > shortcut.to));
   const nextGate = track.gates.find(g => !snapshot.clearedGateIds.has(g.id) && g.atZ >= run - 1 && onMyRoad(g.route, g.atZ));
@@ -36,7 +36,7 @@ export function raceHud(snapshot: SessionSnapshot) {
   const replacing = offeredPart ? snapshot.installed[offeredPart.slot] : null;
   const deliberateSwap = offeredPart !== null && replacing !== null && (offeredPart.slot === "engine" || offeredPart.slot === "frame");
   const advice = snapshot.gateAdvice;
-  const call = launchCue(snapshot) ?? (advice !== null ? advice.call : jumpNow ? "JUMP NOW - SPACE" : nextGate?.requirement === "jump" ? "JUMP ON THE TEAL MARKS" : nextGate ? "KEEP THE PLOW POINTED FORWARD" : "BRING IT HOME");
+  const call = launchCue(snapshot) ?? (advice !== null ? advice.call : jumpNow ? "JUMP NOW - SPACE" : nextGate?.requirement === "jump" ? "JUMP ON THE PINK ARROWS" : nextGate ? "KEEP THE PALLET PLOW POINTED FORWARD" : "BRING IT TO THE TILLS");
   const tone: SignTone = jumpNow ? "launch" : advice !== null ? "stop" : !nextGate ? "home" : nextGate.requirement === "jump" ? "jump" : "plow";
   const gates = mainGates(track);
   return {
@@ -44,9 +44,9 @@ export function raceHud(snapshot: SessionSnapshot) {
     event: snapshot.event,
     ghost: snapshot.ghost,
     sign: {
-      eyebrow: `${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "JUMP STACK" : "PLOW WALL"}` : "EXIT GATE"} / ${Math.ceil(Math.max(0, distance))}m`,
+      eyebrow: `${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "PALLET RAMP" : "BOX WALL"}` : "SELF-CHECKOUT"} / ${Math.ceil(Math.max(0, distance))}m`,
       call,
-      sub: advice?.sub ?? nextGate?.label ?? `${track.exitAt}m escape line`,
+      sub: advice?.sub ?? nextGate?.label ?? `tills at ${track.exitAt}m`,
       tone,
     },
     installed: snapshot.installed,
@@ -62,9 +62,35 @@ export function raceHud(snapshot: SessionSnapshot) {
       cleared: gates.filter((gate) => snapshot.clearedGateIds.has(gate.id)).length,
       clearedIds: snapshot.clearedGateIds,
       atRisk: snapshot.salvageAtRisk,
-      next: snapshot.hazards.length > 0 ? snapshot.hazards[0]!.label : nextPickup ? `NEXT SALVAGE · ${partById(nextPickup.partId)?.label} · ${Math.max(0, Math.round(nextPickup.at - run))}m` : "ALL SALVAGE PASSED · EXIT AHEAD",
+      next: snapshot.hazards.length > 0 ? snapshot.hazards[0]!.label : nextPickup ? `NEXT MOD · ${partById(nextPickup.partId)?.label} · ${Math.max(0, Math.round(nextPickup.at - run))}m` : "ALL MODS PASSED · TILLS AHEAD",
     },
+    basket: {
+      items: snapshot.basket.goods.length,
+      capacity: snapshot.basket.capacity,
+      value: snapshot.basket.value,
+      weight: snapshot.basket.weight,
+      feel: snapshot.basket.feel,
+      powerUps: snapshot.basket.powerUps,
+      chassis: snapshot.chassis.label,
+      squeaky: snapshot.chassis.wobble > 0,
+    },
+    style: snapshot.style,
+    riding: snapshot.riding,
+    boosting: snapshot.boostLeft > 0,
+    pop: freshPop(snapshot),
   };
+}
+
+/** Seconds a grab or trick call stays on the HUD. */
+const POP_SECONDS = 2.2;
+
+/** The newest grab or trick call still fresh on the run clock, or `null`. */
+export function freshPop(snapshot: Pick<SessionSnapshot, "lastGrab" | "style" | "runTime">): { label: string; kind: "grab" | "style" } | null {
+  const grab = snapshot.lastGrab !== null && snapshot.runTime - snapshot.lastGrab.at < POP_SECONDS ? snapshot.lastGrab : null;
+  const style = snapshot.style.last !== null && snapshot.runTime - snapshot.style.last.at < POP_SECONDS ? snapshot.style.last : null;
+  if (grab === null && style === null) return null;
+  if (style === null || (grab !== null && grab.at > style.at)) return { label: grab!.label, kind: "grab" };
+  return { label: style.label, kind: "style" };
 }
 export type RaceHud = ReturnType<typeof raceHud>;
 
@@ -83,13 +109,14 @@ export function screenKey(snapshot: SessionSnapshot): string {
       hud.event.label, hud.event.next, hud.ghost === null, hud.sign.call, hud.sign.sub, hud.sign.tone, withoutMetres(hud.sign.eyebrow),
       PART_SLOTS.map((slot) => hud.installed[slot]?.id ?? null), hud.tag === null ? null : [hud.tag.offered.id, hud.tag.replacing.id, hud.tag.armed],
       Math.round(hud.dash.redline), hud.dash.airborne, hud.dash.bent, hud.dash.armor, hud.crusher.danger, hud.crusher.surge,
-      hud.route.length, hud.route.cleared, hud.route.atRisk]);
+      hud.route.length, hud.route.cleared, hud.route.atRisk,
+      hud.basket.items, hud.basket.capacity, hud.basket.feel, hud.basket.powerUps.map((power) => power.id), hud.basket.squeaky, hud.riding, hud.boosting]);
   }
-  // Off the road nothing moves with the kart: the pit, the pause board and the results read whole.
+  // Off the aisle nothing moves with the cart: customer service, the pause board and the receipt read whole.
   return JSON.stringify([...base, snapshot.track.id, snapshot.event.id, snapshot.career, snapshot.calendar.points, snapshot.calendar.tiers.map((tier) => tier.events.map((entry) => [entry.event.id, entry.selected, entry.medal, entry.best])),
     snapshot.parkedRun?.runTime ?? null, snapshot.records, snapshot.recordsSaved, snapshot.runsPlayed, snapshot.outcome?.time ?? null, snapshot.outcome?.kind ?? null,
     snapshot.shift?.id ?? null, Math.floor(snapshot.run), snapshot.runTime.toFixed(1), snapshot.pose.speedKmh > 1, snapshot.pose.airborne, snapshot.salvageAtRisk, snapshot.zone.label,
-    PART_SLOTS.map((slot) => snapshot.installed[slot]?.id ?? null)]);
+    PART_SLOTS.map((slot) => snapshot.installed[slot]?.id ?? null), snapshot.chassis.id, snapshot.corral.map((row) => [row.chassis.id, row.owned, row.selected]), snapshot.basket.goods.length, snapshot.bestReceipt]);
 }
 
 /** One snapshot per store write, shared by every bound leaf in a frame. */

@@ -3,14 +3,15 @@ import { STANDARD_OPENING, trackDrops } from "./drops";
 import { detour, straight, turn, type TrackDef } from "./types";
 
 /**
- * The Flooded Quarry: down a 12 m ramp into a rain-filled pit, along the wet pit floor and out up
- * the far wall. The ledge road skirts the deep pool and carries a scrap frame; the pit wade goes
- * straight through the water, shorter and slower, and leaves the frame behind.
+ * The Garden Centre: out the side doors into the rain, down a 12 m ramp past the patio sets into the
+ * sunken nursery, along the mud between the planters and out up the lumber-yard ramp. The path
+ * skirts the koi pond and carries a basket mod; the pond wade goes straight through the water,
+ * shorter and slower, and leaves the mod behind.
  */
 export const GARDEN_CENTER: TrackDef = {
   id: "garden-center",
-  label: "Flooded Quarry",
-  blurb: "Down into a rain-filled pit and out again. Wade the deep pool or take the ledge and the drop on it.",
+  label: "Garden Centre",
+  blurb: "Outdoors in the rain: down into the sunken nursery, through the mud and back up the lumber ramp. Wade the koi pond or take the path.",
   origin: 60,
   start: { x: -300, z: -2150, heading: Math.PI / 2 },
   halfWidth: 10,
@@ -29,49 +30,54 @@ export const GARDEN_CENTER: TrackDef = {
     straight(120, { rise: 12 }),
     straight(30),
   ],
-  branches: [{ id: "koi-pond", from: 459, to: 576, halfWidth: 7, label: "PIT WADE" }],
+  branches: [{ id: "koi-pond", from: 459, to: 576, halfWidth: 7, label: "KOI POND" }],
   hazards: [
-    { id: "flood-south", kind: "puddle", from: 292, to: 353, label: "STANDING WATER" },
-    { id: "flood-floor", kind: "puddle", from: 416, to: 456, label: "STANDING WATER" },
-    { id: "flood-exit", kind: "puddle", from: 579, to: 612, label: "STANDING WATER" },
-    { id: "pool", kind: "puddle", route: "koi-pond", from: 4, to: 78, push: 1, label: "DEEP POOL" },
+    { id: "mud-patio", kind: "puddle", from: 292, to: 353, label: "SPRINKLER PUDDLE" },
+    { id: "mud-nursery", kind: "puddle", from: 416, to: 456, label: "MUD BETWEEN THE PLANTERS" },
+    { id: "mud-exit", kind: "puddle", from: 579, to: 612, label: "HOSE LEFT RUNNING" },
+    { id: "pond", kind: "puddle", route: "koi-pond", from: 4, to: 78, push: 1, label: "KOI POND - SORRY, FISH" },
   ],
   gates: [
-    { id: "pit_plow_spoil", requirement: "plow", at: 108, label: "SPOIL HEAP", radioLine: "THROUGH THE SPOIL — DOWN WE GO" },
-    { id: "pit_jump_ramp", requirement: "jump", at: 200, label: "HAUL-RAMP LIP", radioLine: "OFF THE LIP — HOLD IT ON THE WET" },
-    { id: "pit_plow_pump", requirement: "plow", at: 322, label: "PUMP-PIPE WALL", radioLine: "PUMP PIPES DOWN — SPLASH ON" },
-    { id: "pit_jump_crusher", requirement: "jump", at: 596, label: "CRUSHER-FEED RAMP", radioLine: "OVER THE FEED — NOW CLIMB OUT" },
-    { id: "pit_plow_rockfall", requirement: "plow", at: 700, label: "ROCKFALL", radioLine: "THROUGH THE ROCKFALL — RIM'S UP THERE" },
-    { id: "pit_jump_rim", requirement: "jump", at: 772, label: "RIM BERM", radioLine: "OVER THE RIM — OUT OF THE PIT" },
+    { id: "garden_plow_mulch", requirement: "plow", at: 108, label: "MULCH-BAG WALL", radioLine: "MULCH EVERYWHERE — DOWN WE GO" },
+    { id: "garden_jump_pavers", requirement: "jump", at: 200, label: "PATIO-PAVER RAMP", radioLine: "OFF THE PAVERS — HOLD IT ON THE WET" },
+    { id: "garden_plow_hoses", requirement: "plow", at: 322, label: "HOSE-REEL WALL", radioLine: "HOSE REELS DOWN — SPLASH ON" },
+    { id: "garden_jump_planter", requirement: "jump", at: 596, label: "RAISED-PLANTER RAMP", radioLine: "OVER THE PLANTER — NOW CLIMB OUT" },
+    { id: "garden_plow_gnomes", requirement: "plow", at: 700, label: "GNOME ARMY", radioLine: "THROUGH THE GNOMES — THEY'LL REMEMBER THIS" },
+    { id: "garden_jump_lumber", requirement: "jump", at: 772, label: "LUMBER-STACK RAMP", radioLine: "OVER THE LUMBER — BACK INDOORS" },
   ],
   pickups: trackDrops(STANDARD_OPENING, [{ at: 300 }, { at: 518, lane: 2 }, { at: 640 }, { at: 740, lane: -1 }]),
   exitAt: 792,
   zones: [
-    { id: "pit-rim", label: "QUARRY RIM", radioName: "THE RIM", start: 0, end: 220, wallColor: "#a9a294", surface: { id: "gravel", label: "WET GRAVEL", grip: 0.93 } },
-    { id: "pit-floor", label: "FLOODED PIT FLOOR", radioName: "THE PIT", start: 220, end: 609, wallColor: "#6f8f95", surface: { id: "mud", label: "SLURRY MUD", grip: 0.88 } },
-    { id: "pit-climb", label: "HAUL-ROAD CLIMB", radioName: "THE CLIMB", start: 609, end: 792, wallColor: "#d4c29a", surface: { id: "rock", label: "BROKEN ROCK", grip: 0.96 } },
+    { id: "garden-patio", label: "OUTDOOR PATIO", radioName: "THE PATIO", start: 0, end: 220, wallColor: "#c9b38a", surface: { id: "pavers", label: "WET PAVERS", grip: 0.93 } },
+    { id: "garden-nursery", label: "SUNKEN NURSERY", radioName: "THE NURSERY", start: 220, end: 609, wallColor: "#4f9a4a", surface: { id: "mud", label: "POTTING MUD", grip: 0.88 } },
+    { id: "garden-lumber", label: "LUMBER-YARD CLIMB", radioName: "THE LUMBER YARD", start: 609, end: 792, wallColor: "#d8b47a", surface: { id: "sawdust", label: "SAWDUST", grip: 0.96 } },
   ],
   bandZ: -2250,
-  ground: { low: "#34332f", high: "#6d675d", waterline: "#3c4a4c" },
-  fog: { color: "#6c7a7c", near: 40, far: 230 },
-  sky: { horizonColor: "#7d8a8c", zenithColor: "#3a4448", sunIntensity: 1.0, ambientIntensity: 1.1 },
+  ground: { low: "#3f4a33", high: "#6f7a52", waterline: "#3c4a4c" },
+  fog: { color: "#71807d", near: 40, far: 230 },
+  sky: { horizonColor: "#8a9692", zenithColor: "#3a4448", sunIntensity: 1.0, ambientIntensity: 1.1 },
   weather: "rain",
   baseLevel: 0,
-  liquid: { level: -11.55, color: "#3d5a5e", waveHeight: 0.18, palette: { deep: "#12262a", foam: "#9fb3ad" } },
+  liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
   rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,
+  stock: {
+    goods: ["garden_gnome", "potted_fern", "pumpkin", "paint_can", "dog_food", "watermelon", "rubber_duck"],
+    powerUps: ["bouncy_balls", "mop", "extinguisher", "rotisserie_chicken"],
+  },
   dressing: {
-    edge: O.edgeBoulder,
-    edgeSpacing: 7,
-    lamp: O.lampStreet,
+    edge: O.edgeHedge,
+    edgeSpacing: 3.6,
+    lamp: O.lampGarden,
     lampSpacing: 46,
-    scatter: [O.boulder, O.rock, O.generator, O.coveredCar],
-    scatterCount: 30,
+    scatter: [O.tree, O.bush, O.flowers, O.palletStack, O.gnome],
+    scatterCount: 40,
     landmarks: [
-      { object: O.pumpRig, at: 330, side: -14 },
-      { object: O.pumpRig, at: 430, side: 14 },
-      { object: O.furnace, at: [-200, -2080] },
-      { object: O.boulder, at: 520, side: -36 },
+      { object: O.sprinkler, at: 330, side: -14 },
+      { object: O.sprinkler, at: 430, side: 14 },
+      { object: O.deptSign, at: 30, side: 0 },
+      { object: O.tree, at: 520, side: -36 },
+      { object: O.gnome, at: 700, side: 13 },
     ],
   },
 };

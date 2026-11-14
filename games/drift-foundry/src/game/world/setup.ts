@@ -7,11 +7,13 @@ import {
   EXIT_GATE_ARCH,
   GATE_BARRICADE_JUMP,
   GATE_BARRICADE_PLOW,
+  MARBLE_SPILL,
   PICKUP_STATIONS,
   JUMP_CUE,
-  PROP_YARD_LAMP,
-  PROP_YARD_TOWER,
+  PROP_AISLE_SIGN,
+  PROP_CEILING_LIGHT,
   TRACK_OBJECT,
+  shelfItemObject,
 } from "../objects/catalog";
 import { EXIT_Z, RUN_SEED } from "../run/constants";
 import { gateStanding, type RouteGate } from "../route/gates";
@@ -21,16 +23,14 @@ import { AISLE_NINE_TRACK, TRACKS, type Track } from "../tracks/catalog";
 
 const CORRIDOR_AVOID = { minX: -21, maxX: 21 };
 const PROP_COUNT_PER_ZONE = 46;
-/** Floodlights alternate sides down the corridor edge — the vertical beat that reads as speed. */
-const LAMP_SPACING_Z = 34;
-const LAMP_X = 23.5;
-/** Water towers punctuate the skyline; sparse on purpose, they are the tallest thing in the yard. */
-const TOWER_POSITIONS: readonly (readonly [number, number])[] = [
-  [-58, 74],
-  [62, 168],
-  [-64, 262],
-  [56, 352],
-  [-56, 438],
+/** Fluorescent fixture rows cross the main aisle overhead — the beat that reads as speed indoors. */
+const LAMP_SPACING_Z = 17;
+/** The giant hanging aisle markers: sparse on purpose, the thing a driver reads from far down the aisle. */
+const SIGN_POSITIONS: readonly (readonly [number, number])[] = [
+  [0, 60],
+  [0, 190],
+  [0, 330],
+  [0, 455],
 ];
 
 export interface PropRow {
@@ -51,7 +51,7 @@ function placeIdempotent(
   ctx.scene.object.place(catalogId, x, y, z, { instanceId, ...(rotation === undefined ? {} : { rotation }) });
 }
 
-/** Row Six's corridor scenery: the zone scatter, the floodlights and the water towers the crusher eats. */
+/** Aisle 9's corridor scenery: the zone clutter, the ceiling lights and the hanging signs the shutters swallow. */
 export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
   const rows: PropRow[] = [];
   for (const zone of ZONES) {
@@ -72,33 +72,33 @@ export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
       rows.push({ instanceId, z: point.z });
     });
   }
-  rows.push(...placeCorridorLamps(ctx), ...placeYardTowers(ctx));
+  rows.push(...placeCorridorLamps(ctx), ...placeAisleSigns(ctx));
   return rows.sort((a, b) => a.z - b.z);
 }
 
 function placeCorridorLamps(ctx: GameContext): PropRow[] {
   const rows: PropRow[] = [];
-  for (let index = 0, z = 18; z < EXIT_Z; z += LAMP_SPACING_Z, index += 1) {
-    const x = index % 2 === 0 ? -LAMP_X : LAMP_X;
+  for (let index = 0, z = 8; z < EXIT_Z + 20; z += LAMP_SPACING_Z, index += 1) {
     const instanceId = `lamp-${index}`;
-    placeIdempotent(ctx, PROP_YARD_LAMP, x, ctx.world.groundHeightAt(x, z), z, instanceId, x < 0 ? 0 : Math.PI);
+    placeIdempotent(ctx, PROP_CEILING_LIGHT, 0, ctx.world.groundHeightAt(0, z), z, instanceId);
     rows.push({ instanceId, z });
   }
   return rows;
 }
 
-function placeYardTowers(ctx: GameContext): PropRow[] {
-  return TOWER_POSITIONS.map(([x, z], index) => {
-    const instanceId = `tower-${index}`;
-    placeIdempotent(ctx, PROP_YARD_TOWER, x, ctx.world.groundHeightAt(x, z), z, instanceId);
+function placeAisleSigns(ctx: GameContext): PropRow[] {
+  return SIGN_POSITIONS.map(([x, z], index) => {
+    const instanceId = `aisle-sign-${index}`;
+    placeIdempotent(ctx, PROP_AISLE_SIGN, x, ctx.world.groundHeightAt(x, z), z, instanceId);
     return { instanceId, z };
   });
 }
 
 /**
- * Every other track's standing scenery, placed once for the whole yard: posts down each route edge,
- * lamps alternating sides, clutter scattered off the road, the landmarks, and the set-pieces that
- * show where each hazard is — vents beside the slag, belts in the road, signals at the crossings.
+ * Every department's standing scenery, placed once for the whole store: shelving down each route
+ * edge, ceiling lights over the aisle (or garden lamps down its edges), clutter off the course, the
+ * landmarks, and the set-pieces that show where each hazard is — orange piles and ball blasters by
+ * the tumbles, conveyors in the aisle, crossing signals at the tugger lanes, sprinklers by the mud.
  */
 export function placeTrackScenery(ctx: GameContext): number {
   let placed = 0;
@@ -115,6 +115,11 @@ export function placeTrackScenery(ctx: GameContext): number {
     const main = track.course.routes.find((route) => route.id === MAIN_ROUTE)!;
     let lamp = 0;
     for (let s = 10; s < main.length - 5; s += dressing.lampSpacing, lamp += 1) {
+      if (dressing.lampAt === "centre") {
+        const at = track.course.pointAt(MAIN_ROUTE, s, 0);
+        put(dressing.lamp, at.x, at.z, `${id}-lamp-${lamp}`, at.heading);
+        continue;
+      }
       const side = lamp % 2 === 0 ? 1 : -1;
       const at = track.course.pointAt(MAIN_ROUTE, s, side * (track.def.halfWidth + 1.6));
       put(dressing.lamp, at.x, at.z, `${id}-lamp-${lamp}`, at.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2));
@@ -156,13 +161,13 @@ export function placeTrackScenery(ctx: GameContext): number {
       const hw = centre.halfWidth;
       if (span.kind === "tumble") {
         for (const side of [1, -1]) {
-          const at = track.course.pointAt(span.route, mid, side * (hw + 2.6));
-          put(TRACK_OBJECT.slagVent, at.x, at.z, `${id}-vent-${span.id}-${side}`, at.heading);
+          const at = track.course.pointAt(span.route, mid, side * (hw + 3.2));
+          put(dressing.tumble ?? TRACK_OBJECT.tumbleBin, at.x, at.z, `${id}-vent-${span.id}-${side}`, at.heading + (side > 0 ? Math.PI : 0));
         }
       } else if (span.kind === "tugger") {
         for (const side of [1, -1]) {
           const before = track.course.pointAt(span.route, Math.max(0, span.from - 3), side * (hw + 1.4));
-          put(TRACK_OBJECT.crossing, before.x, before.z, `${id}-xing-${span.id}-${side}`, before.heading);
+          put(TRACK_OBJECT.tugCrossing, before.x, before.z, `${id}-xing-${span.id}-${side}`, before.heading + (side > 0 ? Math.PI : 0));
         }
       } else if (span.kind === "belt") {
         const band = span.offset ?? [-hw, hw];
@@ -171,12 +176,12 @@ export function placeTrackScenery(ctx: GameContext): number {
           for (let lane = 0; lane < Math.ceil(width / 8); lane += 1) {
             const offset = band[0] + 4 + lane * 8;
             const at = track.course.pointAt(span.route, s, width < 8 ? (band[0] + band[1]) / 2 : Math.min(offset, band[1] - 4));
-            put(TRACK_OBJECT.belt, at.x, at.z, `${id}-belt-${span.id}-${n}-${lane}`, at.heading, 0.02);
+            put(TRACK_OBJECT.conveyor, at.x, at.z, `${id}-belt-${span.id}-${n}-${lane}`, at.heading, 0.02);
           }
         }
       } else if (span.kind === "puddle") {
         const at = track.course.pointAt(span.route, span.from, hw + 4);
-        put(TRACK_OBJECT.pumpRig, at.x, at.z, `${id}-pump-${span.id}`, at.heading);
+        put(TRACK_OBJECT.sprinkler, at.x, at.z, `${id}-pump-${span.id}`, at.heading);
       }
     }
   }
@@ -238,6 +243,38 @@ export function placePickupMarkers(ctx: GameContext, track: Track = AISLE_NINE_T
   }
 }
 
+/** The department's stock on its grab stands, every spot full at the start of a run. */
+export function placeShelfItems(ctx: GameContext, track: Track = AISLE_NINE_TRACK): void {
+  for (const spot of track.shelves) {
+    const y = ctx.world.groundHeightAt(spot.position[0], spot.position[2]);
+    placeIdempotent(ctx, shelfItemObject(spot.item.id), spot.position[0], y, spot.position[2], `shelf-${spot.id}`, track.point(spot.route, spot.at).heading + (spot.lane > 0 ? Math.PI / 2 : -Math.PI / 2));
+  }
+}
+
+/** Take a grabbed product off its stand. */
+export function syncShelfItems(ctx: GameContext, taken: ReadonlySet<string>, removed: Set<string>, track: Track = AISLE_NINE_TRACK): void {
+  for (const spot of track.shelves) {
+    if (!taken.has(spot.id) || removed.has(spot.id)) continue;
+    removed.add(spot.id);
+    ctx.scene.object.remove(`shelf-${spot.id}`);
+  }
+}
+
+/** Marble spills on the floor: placed as they are dropped, swept away once the run forgets them. */
+export function syncMarbles(ctx: GameContext, spills: readonly { id: string; position: readonly [number, number, number] }[], placed: Set<string>): void {
+  const live = new Set(spills.map((spill) => spill.id));
+  for (const spill of spills) {
+    if (placed.has(spill.id)) continue;
+    placed.add(spill.id);
+    placeIdempotent(ctx, MARBLE_SPILL, spill.position[0], ctx.world.groundHeightAt(spill.position[0], spill.position[2]) + 0.02, spill.position[2], spill.id);
+  }
+  for (const id of [...placed]) {
+    if (live.has(id)) continue;
+    placed.delete(id);
+    ctx.scene.object.remove(id);
+  }
+}
+
 export function placeExitGate(ctx: GameContext, track: Track = AISLE_NINE_TRACK): void {
   const at = track.point(MAIN_ROUTE, track.exitAt, 0);
   placeIdempotent(ctx, EXIT_GATE_ARCH, at.x, ctx.world.groundHeightAt(at.x, at.z), at.z, "exit-gate", track === AISLE_NINE_TRACK ? undefined : at.heading);
@@ -247,13 +284,15 @@ export function placeExitGate(ctx: GameContext, track: Track = AISLE_NINE_TRACK)
 export function clearRunObjects(ctx: GameContext, track: Track): void {
   for (const gate of track.gates) removeGate(ctx, gate);
   for (const pickup of track.pickups) ctx.scene.object.remove(`marker-${pickup.id}`);
+  for (const spot of track.shelves) ctx.scene.object.remove(`shelf-${spot.id}`);
   ctx.scene.object.remove("exit-gate");
 }
 
-/** Everything one run on `track` races through: its barricades, its drops and its exit gate. */
+/** Everything one run on `track` races through: its barricades, its mod displays, its stock and its checkout. */
 export function placeRunObjects(ctx: GameContext, track: Track): void {
   placeGateBarricades(ctx, track);
   placePickupMarkers(ctx, track);
+  placeShelfItems(ctx, track);
   placeExitGate(ctx, track);
 }
 
@@ -281,13 +320,13 @@ export function syncClearedGates(ctx: GameContext, cleared: ReadonlySet<string>,
   }
 }
 
-/** Freight wagons per train, and each wagon's length. */
+/** Cart sections per tugger train, and each section's length. */
 const TRAIN_WAGONS = 5;
 const WAGON_LENGTH = 17.25;
 
 /**
- * Where the freight is on each crossing at `time`: a train long enough to fill the crossing for its
- * whole red window, rolling in before it and out after it, square across the road.
+ * Where the tugger train is on each crossing at `time`: a train long enough to fill the crossing for
+ * its whole red window, rolling in before it and out after it, square across the aisle.
  */
 export function freightWagons(track: Track, time: number): { id: string; position: [number, number, number]; rotationY: number }[] {
   const out: { id: string; position: [number, number, number]; rotationY: number }[] = [];

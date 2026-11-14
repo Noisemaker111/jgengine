@@ -2,6 +2,7 @@ import type { BiomeFog, BiomeSky, OceanPalette, TerrainColors } from "@jgengine/
 import type { CoursePiece, CourseSpanCycle, CourseVec2 } from "@jgengine/core/roads/routeCourse";
 
 import type { PartIconId } from "../parts/catalog";
+import type { TrackStock } from "../cart/shelves";
 import type { TrackZone } from "../zones/catalog";
 
 /**
@@ -13,6 +14,7 @@ import type { TrackZone } from "../zones/catalog";
  * distance it skips.
  */
 
+/** Rolling oranges or foam balls on a beat, a tugger train, a conveyor, a puddle, a slick spill. */
 export type HazardKind = "tumble" | "tugger" | "belt" | "puddle" | "spill";
 
 /** A hazard over a stretch of one route. `from`/`to` are run metres (main) or branch-local metres (a branch). */
@@ -81,6 +83,10 @@ export interface TrackDressing {
   /** Lamp object down the edges, every `lampSpacing` metres, alternating sides. */
   lamp: string;
   lampSpacing: number;
+  /** Where the lamps hang: down the edges alternating sides (default), or over the centreline. */
+  lampAt?: "edge" | "centre";
+  /** The set-piece the tumbles roll off (an orange pile by default). */
+  tumble?: string;
   /** Props scattered off the course. */
   scatter: readonly string[];
   scatterCount: number;
@@ -115,12 +121,14 @@ export interface TrackDef {
   weather?: "rain" | "snow";
   /** Ground level around the course, metres; the course rides its own elevation and banks down to this. */
   baseLevel: number;
-  /** A liquid sheet across the track's ground: slag, flood water. */
+  /** A liquid sheet across the track's ground: a juice flood, a koi pond. */
   liquid?: { level: number; color: string; waveHeight: number; palette?: OceanPalette };
   /** Branch ids each rival takes on this track. */
   rivalTake: Readonly<Record<string, readonly string[]>>;
   /** Escape time the line multiplier is judged against, seconds. */
   par: number;
+  /** The department's shelf stock: what the grab spots along the main line hold. */
+  stock?: TrackStock;
   /** Generic course dressing. Row Six omits it: the corridor keeps its own zone scatter, lamps and towers. */
   dressing?: TrackDressing;
 }

@@ -10,7 +10,7 @@ import { autopilotFrame, registerCaptureCommands } from "./game/capture";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { AISLE_NINE_TRACK, trackById, type Track } from "./game/tracks/catalog";
 import { createDriveInput } from "./game/vehicle/input";
-import { slagSpurts } from "./game/world/hazardFx";
+import { tumbleBursts } from "./game/world/hazardFx";
 import {
   clearRunObjects,
   freightWagons,
@@ -20,7 +20,9 @@ import {
   syncClearedGates,
   syncCompactorRow,
   syncDroppedGates,
+  syncMarbles,
   syncPickupMarkers,
+  syncShelfItems,
 } from "./game/world/setup";
 
 const trackOf = (session: RunSession): Track => trackById(session.snapshot().track.id) ?? AISLE_NINE_TRACK;
@@ -90,7 +92,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     placeRunObjects(ctx, track);
     worldRuntimeStore.write(ctx, createWorldRuntime(track === AISLE_NINE_TRACK ? placeZoneDressing(ctx) : world.propRows, track.id));
     input.reset();
-  } else if (session.snapshot().collectedIds.size < world.removedMarkers.size || session.snapshot().runTime < world.lastRunTime) {
+  } else if (session.snapshot().collectedIds.size < world.removedMarkers.size || session.snapshot().shelvesTaken.size < world.removedShelves.size || session.snapshot().runTime < world.lastRunTime) {
     const rows = track === AISLE_NINE_TRACK ? placeZoneDressing(ctx) : world.propRows;
     placeRunObjects(ctx, track);
     worldRuntimeStore.write(ctx, createWorldRuntime(rows, track.id));
@@ -101,11 +103,13 @@ export function onTick(ctx: GameContext, dt: number): void {
   const before = session.snapshot();
   const axis = input.sample(dt, ctx.input, before.phase === "running" && !before.paused);
   const jumpPressed = input.consumeJump() || ctx.input.justPressed("jumpHop");
+  const usePower = input.consumePower() || ctx.input.justPressed("usePower");
   const plowBracing = ctx.input.isDown("plowBrace") || input.isDown("plowBrace");
+  const ride = ctx.input.isDown("rideBar") || input.isDown("rideBar");
   const pilot = autopilotFrame(ctx, before, track);
   const effects = { marks: ctx.tireMarks, particles: ctx.particles };
   if (pilot !== null) session.tick(dt, pilot.axis, { ...pilot.input, effects });
-  else session.tick(dt, axis, { jumpPressed, plowBracing, salvageSwap: ctx.input.isDown("salvageSwap") || input.isDown("salvageSwap"), effects });
+  else session.tick(dt, axis, { jumpPressed, plowBracing, ride, usePower, salvageSwap: ctx.input.isDown("salvageSwap") || input.isDown("salvageSwap"), effects });
 
   const snapshot = session.snapshot();
   for (const burst of impactBursts(before, snapshot)) {
@@ -117,6 +121,8 @@ export function onTick(ctx: GameContext, dt: number): void {
   ctx.scene.entity.bind("racers").sync(
     [
       { id: ctx.player.userId, kind: KART_PLAYER_ENTITY, position: snapshot.pose.position, rotationY: snapshot.pose.heading, role: "player" },
+      // The cart under the shopper: its id carries the chassis, so a cart swap spawns the new body.
+      { id: `${ctx.player.userId}:cart:${snapshot.chassis.id}`, kind: snapshot.chassis.entityKind, position: snapshot.pose.position, rotationY: snapshot.pose.heading, role: "prop" as const },
       ...snapshot.rivals.map((rival) => ({
         id: rival.id,
         kind: rival.entityKind,
@@ -133,7 +139,7 @@ export function onTick(ctx: GameContext, dt: number): void {
     dt,
   );
   if (snapshot.phase === "running" && !snapshot.paused) {
-    for (const burst of slagSpurts(track, snapshot.runTime, currentWorld, snapshot.pose.position)) ctx.particles.burst(burst.config, burst.count, burst.blending);
+    for (const burst of tumbleBursts(track, snapshot.runTime, currentWorld, snapshot.pose.position)) ctx.particles.burst(burst.config, burst.count, burst.blending);
   }
 
   const ghost = snapshot.ghost?.pose ?? null;
@@ -143,17 +149,19 @@ export function onTick(ctx: GameContext, dt: number): void {
   );
 
   syncPickupMarkers(ctx, snapshot.collectedIds, currentWorld.removedMarkers, track);
+  syncShelfItems(ctx, snapshot.shelvesTaken, currentWorld.removedShelves, track);
+  syncMarbles(ctx, snapshot.marbles, currentWorld.marbles);
   ctx.scene.entity.bind("installed-upgrades").sync(upgradeBodies(ctx.player.userId, snapshot), dt);
   syncDroppedGates(ctx, track, snapshot.runTime, snapshot.clearedGateIds, currentWorld.droppedGates);
   syncClearedGates(ctx, snapshot.clearedGateIds, currentWorld.removedGates, track);
-  // Only Row Six's corridor props stand in the crusher's path; the other tracks keep their scenery.
+  // Only Aisle 9's corridor props stand in the shutters' path; the other departments keep their scenery.
   if (track === AISLE_NINE_TRACK) syncCompactorRow(ctx, snapshot.compactorZ, currentWorld.propRows, currentWorld.cursor);
   currentWorld.lastRunTime = snapshot.runTime;
 
   runSessionStore.write(ctx, session);
 }
 
-/** The crusher's wall, square across the track's road at its run mark. */
+/** The shutter and its floor scrubber, square across the department's aisle at its run mark. */
 function compactorBody(ctx: GameContext, track: Track, compactorRun: number) {
   if (track === AISLE_NINE_TRACK) {
     return { id: COMPACTOR_ENTITY, kind: COMPACTOR_ENTITY, position: [0, ctx.world.groundHeightAt(0, compactorRun), compactorRun] as [number, number, number], role: "prop" as const };

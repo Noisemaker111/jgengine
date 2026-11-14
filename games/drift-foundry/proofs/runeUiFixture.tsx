@@ -17,7 +17,7 @@ import { createDriveInput } from "../src/game/vehicle/input";
 import { GameUI } from "../src/game/ui/GameUI";
 import { menuFocus } from "../src/game/ui/PitMenu";
 
-export const FIXTURE_STATES = ["title", "continue", "calendar", "garage", "records", "settings", "credits", "hud", "pause", "pause-garage", "pause-settings", "settings-sheet", "result"] as const;
+export const FIXTURE_STATES = ["title", "continue", "calendar", "corral", "garage", "records", "settings", "credits", "hud", "pause", "pause-garage", "pause-settings", "settings-sheet", "result"] as const;
 export type NativeFixture = (typeof FIXTURE_STATES)[number];
 
 /** Real GameUI and run session, with deterministic viewport/settings inputs for native paint checks. */
@@ -59,7 +59,7 @@ function renderFixture(state: NativeFixture, width: number, height: number) {
   if (state === "result") { stageRun(ctx, "result"); setGamePhase(ctx, "ended"); }
   if (state === "settings-sheet") { stageRun(ctx, "midrun"); session.suspend(true); }
   runSessionStore.write(ctx, session);
-  menuFocus.id = state === "calendar" || state === "garage" || state === "records" || state === "settings" || state === "credits" || state === "continue" ? state
+  menuFocus.id = state === "calendar" || state === "corral" || state === "garage" || state === "records" || state === "settings" || state === "credits" || state === "continue" ? state
     : state === "pause-garage" ? "garage" : state === "pause-settings" ? "settings" : null;
   const settings: SettingsController = {
     categories: [{ id: "sound", label: "Sound", keybinds: [], rows: [

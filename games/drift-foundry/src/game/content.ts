@@ -1,14 +1,15 @@
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 import { ENTITY_CATALOG } from "./entities/catalog";
-import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, OBJECT_CATALOG, PROP_YARD_LAMP, PROP_YARD_TOWER, TRACK_OBJECT, ZONE_PROP_IDS } from "./objects/catalog";
+import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, OBJECT_CATALOG, PROP_AISLE_SIGN, PROP_CEILING_LIGHT, TRACK_OBJECT, ZONE_PROP_IDS } from "./objects/catalog";
 
 /**
- * Never moved once placed: the track dressing, the zone clutter, lamps and towers the compactor
- * clears away, and the barricades a run breaks through. Pickups and jump cues stay individual.
+ * Never moved once placed: the department dressing, Aisle 9's clutter, the ceiling lights and aisle
+ * signs the shutters swallow, and the barricades a run breaks through. Mod displays, shelf grabs,
+ * marble spills and jump cues stay individual.
  */
 const SCENERY_OBJECTS = new Set<string>([
-  EXIT_GATE_ARCH, GATE_BARRICADE_PLOW, GATE_BARRICADE_JUMP, PROP_YARD_LAMP, PROP_YARD_TOWER,
+  EXIT_GATE_ARCH, GATE_BARRICADE_PLOW, GATE_BARRICADE_JUMP, PROP_CEILING_LIGHT, PROP_AISLE_SIGN,
   ...ZONE_PROP_IDS, ...Object.values(TRACK_OBJECT),
 ]);
 

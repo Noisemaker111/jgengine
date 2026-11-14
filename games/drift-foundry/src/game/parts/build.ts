@@ -7,6 +7,7 @@ import {
   feelOf,
   withPart,
   type VehicleFeel,
+  type VehiclePart,
   type VehicleStat,
 } from "@jgengine/core/physics/vehicleParts";
 
@@ -61,8 +62,8 @@ const MIN_ACCEL = 4;
 const MIN_TURN_RATE = 0.6;
 
 /**
- * The bare chassis the salvage drops bolt onto. Every number here is authored feel for a physics kart
- * down a corridor: quick steering, soft top end, a flat road-load coast and a hop that stays short.
+ * The standard cart the mods bolt onto. Every number here is authored feel for a physics cart
+ * down an aisle: quick steering, soft top end, a flat road-load coast and a hop that stays short.
  * Grip is the shared tire curve on a light kart-sized body (1900 mm wheelbase, 1350 mm track, 450 mm
  * centre of mass), so braking or cornering hard moves a little weight without turning the corridor
  * into an ice rink.
@@ -72,7 +73,7 @@ export const BASE_HANDLING: VehicleSpec = {
   brakes: {
     abs: 1,
     brake: 9 * BRAKE_ACCEL_FACTOR,
-    // Handbrake drills the kart around loose debris: the tire lets go, the yaw still answers steer.
+    // Handbrake throws the cart round an end-cap: the tire lets go, the yaw still answers steer.
     handbrakeGrip: 0.45,
   },
   aids: { tractionControl: 0.5775, stability: 1 },
@@ -102,8 +103,14 @@ export function claimedChange(part: DriftFoundryPartDef, stat: VehicleStat): num
   return part.effects?.[stat]?.add ?? 0;
 }
 
-export function tuningFrom(parts: readonly DriftFoundryPartDef[], damage?: VehicleDamageEffectResolved): KartTuning {
-  const composed = applyVehicleParts(BASE_HANDLING, parts).spec;
+/**
+ * Compose the cart: the chassis first, the mods in install order, the basket load last, then any
+ * damage on top. `extras` are the chassis and load parts (see cart/chassis.ts and cart/basket.ts);
+ * only the mods carry route grants.
+ */
+export function tuningFrom(parts: readonly DriftFoundryPartDef[], damage?: VehicleDamageEffectResolved, extras: { chassis?: VehiclePart | null; load?: VehiclePart | null } = {}): KartTuning {
+  const stack: VehiclePart[] = [...(extras.chassis ? [extras.chassis] : []), ...parts, ...(extras.load ? [extras.load] : [])];
+  const composed = applyVehicleParts(BASE_HANDLING, stack).spec;
   const handling = finalizeHandling(damage === undefined ? composed : damagedSpec(composed, damage));
   const grants = parts.reduce(
     (total, part) => ({
