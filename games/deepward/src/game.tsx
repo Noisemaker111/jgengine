@@ -196,6 +196,7 @@ export const game = defineGame({
       nook: ["deepward.enter", "deepward.openNook"],
       burrow: ["deepward.enter"],
       "first-room": ["deepward.enter", "deepward.dev.out"],
+      "cat-tell": ["deepward.enter", "deepward.dev.cat"],
       "mid-run": ["deepward.enter", "deepward.stage"],
       report: ["deepward.enter", "deepward.dev.extract"],
       "room-counter": ["deepward.enter", { name: "deepward.dev.room", input: { template: "counter-top" } }],

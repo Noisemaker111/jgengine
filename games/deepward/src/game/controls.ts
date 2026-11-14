@@ -553,6 +553,18 @@ export function registerControls(ctx: GameContext): void {
   if (import.meta.env?.DEV) {
     ctx.game.commands.define("deepward.stage", { apply(state) { void stageMidRun(state); return state; } });
     ctx.game.commands.define("deepward.dev.out", { apply(state) { void stageMidRun(state, 0); return state; } });
+    // Dev-only: the room's Cat, a few lengths ahead and crouching, for a capture of its tell.
+    ctx.game.commands.define("deepward.dev.cat", { apply(state) {
+      void (async () => {
+        await stageMidRun(state, 0);
+        const v = viewStore.read(state), run = v.run, at = playerAt(state);
+        if (run === null || at === null) return;
+        const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw) * 24, 0, at[2] + Math.cos(yaw) * 24];
+        const cat = { ...spawnThreat({ key: `${run.room}:dev-cat`, kind: "cat", slot: { id: "dev-cat", kind: "cat", at: spot, minDepth: 0, label: "the cat" } }), mode: "crouch" as const, timer: 60, target: at, facing: yaw + Math.PI };
+        viewStore.write(state, { ...v, run: { ...run, threats: [...run.threats, cat] }, danger: 0.9 });
+      })();
+      return state;
+    } });
     ctx.game.commands.define("deepward.dev.extract", { apply(state) { void stageExtraction(state); return state; } });
     ctx.game.commands.define<{ x: number; z: number }>("deepward.dev.stand", { apply(state, input) { teleport(state, [input.x, 0, input.z]); } });
     ctx.game.commands.define<{ template: string }>("deepward.dev.room", { apply(state, input) { void stageRoom(state, input.template); return state; } });

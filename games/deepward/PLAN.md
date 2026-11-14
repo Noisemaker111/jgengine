@@ -148,8 +148,15 @@ is worth about three times one at the crack; lethal risk per room ramps from 0% 
 17% five rooms deep; the Littles' finds differ by category (Pip 60% food, Bolt 37% parts, Dot 47%
 curios). Tests: `bun run test` in the package (44); suite 16/16; flow `proofs/flows/first-night.flow.ts`.
 
-Not verified on screen. In this sandbox no Rune-UI game can be photographed (the shared capture
-broker never answered; without WebGPU the page stops on "WebGPU adapter unavailable"; with SwiftShader
-WebGPU the jg-ui wasm panics in `std::time` inside the vendored Rune). Next, on a machine with a GPU:
-capture `mid-run`, `room-counter`, `room-rug`, `room-toys`, `room-attic`, `stash`, `workbench`, `nook`
-and tune lamp intensities, fog and prop scale from what they show.
+On screen (software WebGPU capture, `apps/dev` runner, `?state=`): `proofs/look/` holds the burrow,
+the first-night kitchen with its glinting crumbs and the firefly guide, the Cat's crouch tell, the
+kitchen counter six rooms deep, the living-room rug and the night report. Visual passes so far: an
+interior light rig with no sky dome, far walls round floor-level rooms, calmer lamps, bloom and haze,
+no LUT (it turned the house orange), arrival a few paces into the room looking toward the way on,
+backed HUD text and hunter tells, the Cat dropping its head when it crouches, short find names.
+Capture states: `burrow`, `first-room`, `mid-run`, `cat-tell`, `room-counter`, `room-rug`,
+`room-toys`, `room-attic`, `report`, `stash`, `workbench`, `nook`.
+
+Next: the hunters still read as walls of fur up close (a Little's eye line is below a cat's chest),
+so consider a wider field of view or a low-angle readable silhouette; give the remaining templates
+the same pass (props crowd some doorways); the UI sheets (stash, workbench, nook) were not inspected.

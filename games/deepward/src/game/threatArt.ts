@@ -18,7 +18,7 @@ function add(parent: Object3D, mesh: Mesh, name = "", at: [number, number, numbe
   parent.add(mesh);
   return mesh;
 }
-const CAT_COATS = ["#3a3330", "#c8743a", "#8d8d92", "#2a2624"];
+const CAT_COATS = ["#c8743a", "#8d8d92", "#9a7452", "#d9cbb4"];
 
 function cat(key: string): Group {
   const g = new Group(), body = new Group(); body.name = "body"; g.add(body);
@@ -31,7 +31,7 @@ function cat(key: string): Group {
   add(head, new Mesh(new SphereGeometry(0.7, 8, 6), mat("#d88a8a")), "nose", [0, -0.9, 6.9]);
   for (const s of [-1, 1]) {
     add(head, new Mesh(new ConeGeometry(2.2, 4.5, 4), mat(coat, { rough: 1 })), "ear", [s * 3.4, 5.2, -0.5], [0, 0, -s * 0.25]);
-    add(head, new Mesh(new SphereGeometry(1.15, 12, 10), mat("#d7ff5e", { glow: 1.1, rough: 0.2 })), "eye", [s * 2.4, 1, 5.1]);
+    add(head, new Mesh(new SphereGeometry(1.15, 12, 10), mat("#d7ff5e", { glow: 1.8, rough: 0.2 })), "eye", [s * 2.4, 1, 5.1]);
     add(head, new Mesh(new BoxGeometry(0.35, 1.7, 0.3), mat("#111")), "pupil", [s * 2.4, 1, 6.15]);
     for (const w of [-1, 1]) add(head, new Mesh(new CylinderGeometry(0.05, 0.05, 6, 4), mat("#eeeeee")), "whisker", [s * 4, -1.6 + w * 0.5, 5], [0, 0, Math.PI / 2 + s * w * 0.12]);
   }
@@ -140,7 +140,8 @@ export function poseThreat(object: Group, s: ThreatState, time: number, ceiling:
       const crouch = s.mode === "crouch", pounce = s.mode === "pounce", groom = s.mode === "groom";
       if (body) { body.position.y = crouch ? -4.5 : pounce ? 6 + Math.sin(Math.max(0, s.timer) / 0.45 * Math.PI) * 10 : 0; body.rotation.x = pounce ? -0.25 : 0; body.position.x = crouch ? Math.sin(time * 18) * 0.5 : 0; }
       if (tail) tail.rotation.z = Math.sin(time * (crouch ? 10 : 2)) * (crouch ? 0.6 : 0.3);
-      if (head) head.rotation.x = groom ? 0.6 : s.mode === "listen" ? -0.2 : 0;
+      // Crouching, the head drops to the floor and the eyes lock on: at a Little's height that is the tell you see.
+      if (head) { head.rotation.x = groom ? 0.6 : s.mode === "listen" ? -0.2 : crouch ? 0.15 : 0; head.position.y = crouch ? 12 : 21; head.position.z = crouch ? 19 : 15; }
       break;
     }
     case "roomba": { const brush = object.getObjectByName("brush"); if (brush) brush.rotation.y = s.mode === "sweep" ? time * 14 : 0; break; }

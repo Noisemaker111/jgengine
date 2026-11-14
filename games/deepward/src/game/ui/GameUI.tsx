@@ -100,7 +100,7 @@ function RunHud() {
         <Button onPress={() => ctx.game.commands.run("deepward.pack", {})}>Repack / Tab</Button>
       </Frame>
     </RuneView>
-    <RuneView anchor="center" padding={[150, 0, 0, 0]} maxWidth={520} responsive={{ phone: { maxWidth: 300 } }}><Text align="center" size={phone ? 16 : 20} family="Fredoka" color={RED} text={bind(() => { const r = run(); return r === null ? "" : tellOf(r); })} /></RuneView>
+    <RuneView anchor="center" padding={[150, 0, 0, 0]} maxWidth={560} responsive={{ phone: { maxWidth: 300 } }} hidden={bind(() => { const r = run(); return r === null || tellOf(r) === ""; })}><RuneView fill="#2a0d08e6" radius={12} padding={[8, 16, 8, 16]} border={{ width: 2, color: RED }}><Text align="center" size={phone ? 16 : 20} family="Fredoka" color="#ffd2c4" text={bind(() => { const r = run(); return r === null ? "" : tellOf(r); })} /></RuneView></RuneView>
     <RuneView anchor="center"><Text size={22} color={bind(() => (run()?.hurt ?? 0) > 0 ? RED : "#fff3e0a0")}>·</Text></RuneView>
   </>;
 }
