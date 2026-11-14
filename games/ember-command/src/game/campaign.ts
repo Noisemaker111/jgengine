@@ -334,7 +334,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
   {
     mission: MAGNIFYING_GLASS,
     brief: "A giant has come to the lawn with a lens. The spot of light hunts whatever moves in the open. Keep to the shade of the clover and the flowerpot, outlast it, then finish the black ants.",
-    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    hostiles: [...BROOD_GUARD],
     waves: true,
     hazards: { ...NO_HAZARDS, beam: true },
   },

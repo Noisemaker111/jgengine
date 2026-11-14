@@ -63,7 +63,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "beam",
-    text: "The kid hunts the biggest knot of ants in the open. Hide under the giant leaves, and lure the beam onto the black nest: it burns them too.",
+    text: "The kid hunts your biggest knot of fighters in the open. Hide the whole army under the giant leaves and he gets bored and burns the black ants instead.",
     when: (f) => f.beam && f.elapsed >= 3,
   },
   {

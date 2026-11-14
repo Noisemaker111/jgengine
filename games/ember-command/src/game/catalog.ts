@@ -144,7 +144,7 @@ export const COMBATANTS = {
   }),
   brood_mound: def({
     id: "brood_mound", label: "Brood Mound", faction: "enemy", kind: "building",
-    maxHealth: 620, scale: 0.85,
+    maxHealth: 900, scale: 0.85,
   }),
 } satisfies Record<string, CombatantDef>;
 

@@ -9,6 +9,7 @@ import { resetSession, session } from "./session";
 import { systems } from "./systems";
 import { createHazardState, MOWER_FIRST, MOWER_WARNING, NO_HAZARDS } from "./hazards";
 import { YARD } from "./yardInstance";
+import { CAMPAIGN, campaignStore } from "./campaign";
 
 /**
  * The opening of the first mission, played headless with every system running and no orders given:
@@ -51,6 +52,24 @@ describe("the opening raid", () => {
     for (let t = 0; t < 130; t += 0.1) runner.step(0.1);
     expect(session.enemyWave.campId).not.toBeNull();
     expect(session.enemyWave.sent).toBeGreaterThanOrEqual(1);
+  }, 60_000);
+
+  test("in the finale, a colony hidden in the shade turns the kid's beam onto the black ants", () => {
+    resetSession();
+    const definition = defineGameDefinition({ name: "LawnOrderBoss", multiplayer: "off", world, physics, systems, loop: { onInit, onNewPlayer() {} } });
+    const runner = createHeadlessRunner({ definition, content, loop: definition.loop! });
+    campaignStore.write(runner.ctx, { won: CAMPAIGN.slice(0, 4).map((step) => step.mission.id), mode: "campaign", stores: { sugar: 0, leaf: 0 } });
+    runner.ctx.game.commands.run("match.start", {});
+    expect(session.hazards.toggles.beam).toBe(true);
+    const shade = YARD.shade.find((spot) => spot.radius >= 7.5)!;
+    for (const unit of session.units.values()) {
+      if (unit.faction !== "player" || unit.kind !== "unit") continue;
+      runner.ctx.scene.entity.setPose(unit.id, { position: [shade.x + (Math.random() - 0.5), 0, shade.z + (Math.random() - 0.5)] });
+      unit.command = { kind: "hold" };
+    }
+    for (let t = 0; t < 12; t += 0.1) runner.step(0.1);
+    // The beam's target sits on the black side of the lawn, not on the hidden colony.
+    expect(session.hazards.beam.tz).toBeLessThan(0);
   }, 60_000);
 
   test("idle red ants walk out of the mower's lane when it roars; black ants do too", () => {

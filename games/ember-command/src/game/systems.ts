@@ -266,15 +266,25 @@ function playHazardCue(ctx: GameContext, key: string): void {
   else if (key === "beamFocus:on") ctx.game.audio.play("sizzle");
 }
 
-/** Where the kid wants the beam: the biggest knot of red ants out in the open, else the red nest. */
+/** Where the kid wants the beam: the biggest knot of red fighters out in the open. */
 function beamPrey(ctx: GameContext): { x: number; z: number } | null {
   const points: { x: number; z: number }[] = [];
   for (const unit of session.units.values()) {
-    if (unit.faction !== "player") continue;
+    // The kid follows the marching army, not the chambers or the foragers trudging home.
+    if (unit.faction !== "player" || unit.kind !== "unit" || unit.catalogId === "worker") continue;
     const entity = ctx.scene.entity.get(unit.id);
     if (entity !== null) points.push({ x: entity.position[0], z: entity.position[2] });
   }
-  return densestKnot(points, YARD);
+  const red = densestKnot(points, YARD);
+  if (red !== null) return red;
+  // With the whole colony in the shade the kid gets bored and burns whatever else moves: black ants.
+  const black: { x: number; z: number }[] = [];
+  for (const unit of session.units.values()) {
+    if (unit.faction !== "enemy" || unit.kind !== "unit") continue;
+    const entity = ctx.scene.entity.get(unit.id);
+    if (entity !== null) black.push({ x: entity.position[0], z: entity.position[2] });
+  }
+  return densestKnot(black, YARD);
 }
 
 /** One hazard tick's harm to everything standing in the yard: the jet, the deck and the beam. */

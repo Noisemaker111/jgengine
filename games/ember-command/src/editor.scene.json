@@ -987,7 +987,7 @@
       },
       "label": "Shade: giant clover",
       "meta": {
-        "radius": 6.5
+        "radius": 7.5
       }
     },
     {
@@ -1000,7 +1000,7 @@
       },
       "label": "Shade: dock leaf",
       "meta": {
-        "radius": 6
+        "radius": 7
       }
     },
     {
@@ -1013,7 +1013,7 @@
       },
       "label": "Shade: flowerpot rim",
       "meta": {
-        "radius": 7
+        "radius": 8
       }
     },
     {
@@ -1026,7 +1026,7 @@
       },
       "label": "Shade: dandelion leaf",
       "meta": {
-        "radius": 6
+        "radius": 8
       }
     },
     {

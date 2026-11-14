@@ -9,7 +9,8 @@ import { distanceToSegment, inShade, type YardLayout, type YardPoint } from "./y
  * - **rain storms** roll through: everyone wades slower and scent fades six times as fast;
  * - **nightfall** comes once a day: the red colony's antennae reach barely half as far;
  * - **the Kid with the Magnifying Glass** (the finale) focuses a burning spot that hunts the densest
- *   knot of red ants out of the shade, and cooks anything it rests on, black ants included.
+ *   knot of red fighters out of the shade (or, with the colony hidden, the black ants), and cooks
+ *   anything it rests on.
  *
  * Pure, serializable data and arithmetic: `systems.ts` applies the damage and the slows, the HUD reads
  * the warnings, and `world/YardHazards.draw.ts` draws the jet, the mower and the beam.
@@ -66,7 +67,7 @@ export const NIGHT_SIGHT = 0.6;
 export const BEAM_SPEED = 4.6;
 export const BEAM_RADIUS = 4.2;
 export const BEAM_UNIT_DPS = 42;
-export const BEAM_BUILDING_DPS = 18;
+export const BEAM_BUILDING_DPS = 12;
 export const BEAM_RETARGET = 5;
 /** Every cycle the kid's hand wobbles: the beam goes out of focus (harmless) for a few seconds. */
 export const BEAM_CYCLE = 15;
