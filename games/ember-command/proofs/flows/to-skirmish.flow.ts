@@ -11,6 +11,6 @@ export default defineFlow(game, {
     const soldiers = "(() => { let n = 0; const walk = (x) => { if (x.props?.label === 'soldier unit') n += 1; x.children.forEach(walk); }; walk(window.__jgNativeUi.tree()); return n; })()";
     await f.waitForPage(`${soldiers} >= 5`, { timeoutMs: 5000, note: "the roster fills a frame after the match starts" });
     await f.expectPage(soldiers, "arrival: five soldiers on the field, not just a click that landed", 5);
-    await f.see("Lawn Order", { note: "arrival: the live-match ledger strip is up" });
+    await f.see("Red nest", { note: "arrival: the live-match pantry strip is up" });
   },
 });

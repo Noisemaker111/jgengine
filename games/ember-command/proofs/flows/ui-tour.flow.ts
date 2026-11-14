@@ -36,7 +36,7 @@ export default defineFlow(game, {
     await f.see("Marshal Mandible");
     await f.wait(1500);
     await snap("hud");
-    await tap("Build Fungus Garden", "place the Fungus Garden");
+    await tap("Dig Fungus Garden", "dig the Fungus Garden");
     await tap("Pause battle", "Orders on hold");
     await tap("Settings", "Field preferences");
     await tap("Credits", "game-icons.net");
