@@ -2,12 +2,12 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
 export default defineFlow(game, {
-  state: "race-heights",
+  state: "race-loop",
   browser: true,
   async run(f) {
-    // arrival: on the Palm Heights Climb's start line, the race running against the circuit's own rival
+    // arrival: on the Ocean Loop's start line, the race running against the circuit's own rival
     await f.waitFor((p) => p.racing === 1 && p.rivalOnScene === 1, { timeoutMs: 15000, note: "the start-line race began at the circuit's start, its rival on the road" });
-    await f.see(/racing lani park/i, { timeoutMs: 5000 });
+    await f.see(/racing tony carmine/i, { timeoutMs: 5000 });
     await f.wait(1200);
     await f.shot("circuit-start");
     // getting out of the car gives the race up, and the notice says why

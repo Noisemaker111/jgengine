@@ -20,14 +20,14 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 1 | 0 | 0 |
 | progression | 0/1 | 0 | 0 | 1 | 0 |
 | content | 0/0 | 0 | 0 | 0 | 5 |
-| racing | 3/5 | 0 | 0 | 2 | 0 |
+| racing | 5/5 | 0 | 0 | 0 | 0 |
 | open-world | 3/3 | 0 | 0 | 0 | 0 |
 | delivery | 6/6 | 0 | 0 | 0 | 0 |
-| **total** | **16/21** | 0 | 1 | 4 | 5 |
+| **total** | **18/21** | 0 | 1 | 2 | 5 |
 
 <details><summary>Every required entry</summary>
 
-Genres: open-world, racing, delivery. 16/21 proven · 1 not simulatable · 5 cut · 4 missing.
+Genres: open-world, racing, delivery. 18/21 proven · 1 not simulatable · 5 cut · 2 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -43,10 +43,10 @@ Genres: open-world, racing, delivery. 16/21 proven · 1 not simulatable · 5 cut
 | `content.recipes-reachable` | cut | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | No recipes: pizzas are menu data, not crafted items. |
 | `content.placeables-place` | cut | Every item that says it can be placed can be placed. | Nothing is placed by the player. |
 | `content.weapons-have-ammo` | cut | Every weapon that fires has obtainable ammo, or needs none. | High Tide Pizza has no weapons. |
-| `racing.drive-handling` | missing | Accelerate, brake and steer a vehicle that handles by its physics. |  |
+| `racing.drive-handling` | proven | Accelerate, brake and steer a vehicle that handles by its physics. | proofs/sim/handling.proof.ts |
 | `racing.lap-timing` | proven | Laps and checkpoints are timed. | proofs/sim/tide-rush.proof.ts |
 | `racing.opponents` | proven | Opponents race and finish in an order. | proofs/sim/tide-rush.proof.ts |
-| `racing.unlock-vehicles-tracks` | missing | Results unlock new vehicles or tracks. |  |
+| `racing.unlock-vehicles-tracks` | proven | Results unlock new vehicles or tracks. | proofs/sim/tide-rush-unlock.proof.ts |
 | `racing.crash-recover` | proven | A crash or wrong way is recoverable. | proofs/sim/tow.proof.ts |
 | `open-world.vehicle-enter-drive` | proven | Walk to a vehicle, get in and drive. | proofs/sim/scooter.proof.ts |
 | `open-world.jobs-pay` | proven | Take a job, do it, get paid. | proofs/sim/deliver-hot.proof.ts |

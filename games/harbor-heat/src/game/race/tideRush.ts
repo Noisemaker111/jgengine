@@ -19,10 +19,10 @@ export const tideRushStore = defineStore<TideRushState>("harbor.tideRush", () =>
 /** The circuits open now: the first, and the one after each circuit won. */
 export function openCircuits(won: readonly string[]): string[] {
   const open: string[] = [CIRCUIT_ORDER[0]];
-  CIRCUIT_ORDER.forEach((id, index) => {
-    const next = CIRCUIT_ORDER[index + 1];
-    if (won.includes(id) && next !== undefined && !open.includes(next)) open.push(next);
-  });
+  for (let index = 0; index < CIRCUIT_ORDER.length - 1; index += 1) {
+    if (!won.includes(CIRCUIT_ORDER[index]!)) break;
+    open.push(CIRCUIT_ORDER[index + 1]!);
+  }
   return open;
 }
 
