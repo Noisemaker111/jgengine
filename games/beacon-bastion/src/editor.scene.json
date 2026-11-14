@@ -552,7 +552,7 @@
         "maxSlope": 5,
         "edgeFalloff": 4,
         "minScale": 0.8,
-        "maxScale": 1.1,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -598,8 +598,8 @@
         "seed": "beacon-bastion-forest-sw",
         "maxSlope": 6,
         "edgeFalloff": 5,
-        "minScale": 0.9,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -653,8 +653,8 @@
         "seed": "beacon-bastion-forest-ne",
         "maxSlope": 6,
         "edgeFalloff": 5,
-        "minScale": 0.9,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -708,8 +708,8 @@
         "seed": "beacon-bastion-rock-nw",
         "maxSlope": 0,
         "edgeFalloff": 3,
-        "minScale": 0.9,
-        "maxScale": 2.2,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -763,8 +763,8 @@
         "seed": "beacon-bastion-rock-se",
         "maxSlope": 0,
         "edgeFalloff": 3,
-        "minScale": 0.9,
-        "maxScale": 2.2,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -818,8 +818,8 @@
         "seed": "beacon-muster-cairn",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -869,8 +869,8 @@
         "seed": "beacon-approach-pines",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -920,8 +920,8 @@
         "seed": "beacon-broken-watch",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -975,8 +975,8 @@
         "seed": "beacon-bend-scrub",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1026,8 +1026,8 @@
         "seed": "beacon-keep-gate-pines",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1077,8 +1077,8 @@
         "seed": "beacon-north-meadow",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1123,13 +1123,13 @@
       ],
       "label": "Horizon trees (north)",
       "meta": {
-        "density": 0.05,
+        "density": 0.03,
         "minSpacing": 5,
         "seed": "beacon-horizon-north",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1174,13 +1174,13 @@
       ],
       "label": "Horizon trees (south)",
       "meta": {
-        "density": 0.05,
+        "density": 0.03,
         "minSpacing": 5,
         "seed": "beacon-horizon-south",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1225,13 +1225,13 @@
       ],
       "label": "Horizon trees (west)",
       "meta": {
-        "density": 0.05,
+        "density": 0.03,
         "minSpacing": 5,
         "seed": "beacon-horizon-west",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {
@@ -1276,13 +1276,13 @@
       ],
       "label": "Horizon trees (east)",
       "meta": {
-        "density": 0.05,
+        "density": 0.03,
         "minSpacing": 5,
         "seed": "beacon-horizon-east",
         "maxSlope": 40,
         "edgeFalloff": 2,
-        "minScale": 0.85,
-        "maxScale": 1.9,
+        "minScale": 0.8,
+        "maxScale": 1.25,
         "jitter": 1,
         "palette": [
           {

@@ -147,7 +147,7 @@ export const game = defineGame({
       // vertically, so the default height has to clear both ends of Main Street plus the hiring
       // board at the foot; the offset centres the route in the band the HUD leaves free.
       topDown: {
-        height: 70,
+        height: 62,
         pitch: 1.08,
         yaw: Math.PI / 4,
         targetOffset: { x: -16, z: -6 },

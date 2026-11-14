@@ -13,7 +13,7 @@ const FOREST = "kaykit-forest";
  * How tall a worker stands. A little over life size: the camera sits high over the street, and a
  * barista has to read as a barista from there.
  */
-export const WORKER_HEIGHT = 2.7;
+export const WORKER_HEIGHT = 3.4;
 
 /** A worker in their work clothes: one Quaternius character per trade, in its own colours. */
 function workerPick(def: TowerDef): ModelPick {
