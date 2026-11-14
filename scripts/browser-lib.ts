@@ -164,9 +164,15 @@ export function chromeGraphicsArgs(
   const software = env["JG_CAPTURE_SOFTWARE_GL"] === "1" ||
     (env["JG_CAPTURE_SOFTWARE_GL"] !== "0" && (env["CI"] !== undefined || platform === "linux"));
   return software
-    ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
+    ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", ...SOFTWARE_WEBGPU_ARGS]
     : [...HARDWARE_GPU_ARGS];
 }
+
+/**
+ * WebGPU on a machine with no GPU: Dawn on SwiftShader's Vulkan. Every game's Rune UI draws on a
+ * WebGPU canvas, so a software capture without these flags shows only the adapter error.
+ */
+export const SOFTWARE_WEBGPU_ARGS = ["--enable-unsafe-webgpu", "--enable-features=Vulkan", "--use-vulkan=swiftshader", "--use-webgpu-adapter=swiftshader"];
 
 /** Frame clock a capture browser runs requestAnimationFrame on. */
 export type FrameClock = "capped" | "uncapped";
@@ -222,7 +228,7 @@ export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): st
     return ["--window-size=1280,720", `--window-position=${HEADED_WINDOW_POSITION}`, ...chromeGraphicsArgs()];
   }
   if (backend === "llvmpipe") {
-    return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560"];
+    return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560", ...SOFTWARE_WEBGPU_ARGS];
   }
   return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : [...HARDWARE_GPU_ARGS])];
 }
