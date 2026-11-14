@@ -12,7 +12,6 @@ import { defineGame } from "@jgengine/shell/defineGame";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
-import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { BURROW, editorLayers, physics, world } from "./world";
 import { houseAssets } from "./game/assets";
 import { canSprint, captureProbe, guideOf, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
@@ -177,9 +176,10 @@ export const game = defineGame({
     environmentSource: hdriEnvironment("night-clear", { intensity: 0.18 }),
     postProcessing: {
       toneMapping: "aces",
-      bloom: { strength: 0.32, radius: 0.45, threshold: 0.82 },
+      bloom: { strength: 0.18, radius: 0.4, threshold: 0.9 },
       ao: { radius: 2, intensity: 1.1, distanceFalloff: 6, blend: 1 },
-      grade: { vignette: 0.34, lut: lutGrade("warm-filmic") },
+      // No LUT: the warm grade turned every colour in the house orange; the lamps already carry the warmth.
+      grade: { vignette: 0.3, saturation: 1.05 },
       atmosphere: { indoor: true, fogDensity: 0.004, fogFalloff: 0.01, fogHeight: 0, fogMax: 0.3, shafts: 0, lamps: 0.6, beams: 0.2 },
     },
   },
@@ -195,6 +195,7 @@ export const game = defineGame({
       workbench: ["deepward.enter", "deepward.openWorkbench"],
       nook: ["deepward.enter", "deepward.openNook"],
       burrow: ["deepward.enter"],
+      "first-room": ["deepward.enter", "deepward.dev.out"],
       "mid-run": ["deepward.enter", "deepward.stage"],
       report: ["deepward.enter", "deepward.dev.extract"],
       "room-counter": ["deepward.enter", { name: "deepward.dev.room", input: { template: "counter-top" } }],

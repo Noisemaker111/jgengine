@@ -113,10 +113,19 @@ function threatsFor(run: Run, plan: RoomPlan): ThreatState[] {
 }
 /** Where you arrive: the entry slot coming forward, the door you left by coming back. */
 function arrivalOf(plan: RoomPlan, from: string | null): { at: Point; facing: number } {
-  const center = { x: plan.template.area.x, z: plan.template.area.z };
   const forward = from === null ? undefined : plan.forwards.find(f => f.to === from);
   const slot = forward?.slot ?? plan.entry.slot;
-  const at: Point = [slot.at[0], 0, slot.at[2]];
+  // Arrive looking across the room toward where you would go next: the way on coming in, the way
+  // back coming home. Room centres are often filled with something enormous.
+  const look = forward !== undefined ? plan.entry.slot.at : plan.forwards[0]?.slot.at ?? [plan.template.area.x, 0, plan.template.area.z];
+  const center = { x: (look[0] + plan.template.area.x) / 2, z: (look[2] + plan.template.area.z) / 2 };
+  // Step a few paces in from the door, so you arrive looking into the room, not into the doorframe.
+  const dx = center.x - slot.at[0], dz = center.z - slot.at[2], len = Math.hypot(dx, dz) || 1;
+  let at: Point = [slot.at[0], 0, slot.at[2]];
+  for (const pace of [3, 2, 1]) {
+    const x = slot.at[0] + dx / len * pace, z = slot.at[2] + dz / len * pace;
+    if (walkable(plan.template, x, z)) { at = [x, 0, z]; break; }
+  }
   return { at, facing: faceToward(at, center) };
 }
 
@@ -543,6 +552,7 @@ export function registerControls(ctx: GameContext): void {
   ctx.game.commands.define("deepward.continue", { apply(state) { void resumeRecord(state); return state; } });
   if (import.meta.env?.DEV) {
     ctx.game.commands.define("deepward.stage", { apply(state) { void stageMidRun(state); return state; } });
+    ctx.game.commands.define("deepward.dev.out", { apply(state) { void stageMidRun(state, 0); return state; } });
     ctx.game.commands.define("deepward.dev.extract", { apply(state) { void stageExtraction(state); return state; } });
     ctx.game.commands.define<{ x: number; z: number }>("deepward.dev.stand", { apply(state, input) { teleport(state, [input.x, 0, input.z]); } });
     ctx.game.commands.define<{ template: string }>("deepward.dev.room", { apply(state, input) { void stageRoom(state, input.template); return state; } });
@@ -726,7 +736,7 @@ export function storageChanged(ctx: GameContext): void {
 
 // ---------------------------------------------------------------- dev staging
 /** Dev-only: a real departure, then three real searches through the same channel a player holds, so a capture lands mid-run with a loaded pack. */
-export async function stageMidRun(ctx: GameContext): Promise<void> {
+export async function stageMidRun(ctx: GameContext, finds = 3): Promise<void> {
   await runtime(ctx).boot;
   if (viewStore.read(ctx).mode !== "run") {
     if (viewStore.read(ctx).mode !== "home" || runtime(ctx).save === null) return;
@@ -734,7 +744,7 @@ export async function stageMidRun(ctx: GameContext): Promise<void> {
     await begin(ctx);
     if (viewStore.read(ctx).mode !== "run") return;
   }
-  for (let n = 0; n < 3; n++) {
+  for (let n = 0; n < finds; n++) {
     const run = viewStore.read(ctx).run;
     if (run === null) return;
     const next = roomOf(run).loot.find(l => l.kind !== "toybox" && !run.taken.includes(l.key) && canCarry(run.pack, peekLoot(run, l), run.capacity, LITTLES[run.little]).ok && pack(run, peekLoot(run, l)) !== null);

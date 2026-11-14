@@ -143,8 +143,8 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   // The open kitchen floor: a chair, the cat's bowl, a dropped tea towel.
   chairLeg(t, -12, 9); chairLeg(t, 12, 12);
   box(t, 'chair-rail', [0, 18, 10.5], [24, 1.5, 1.5], 'wood', OAK);
-  cyl(t, 'cat-bowl', [-2, 1.8, 4], 6, 3.6, 'ceramic', '#5c8fb3', { solid: true });
-  cyl(t, 'kibble-heap', [-2, 3.8, 4], 4.5, 0.8, 'bread', '#7a4a26');
+  cyl(t, 'cat-bowl', [2, 1.8, 9], 5, 3.6, 'ceramic', '#5c8fb3', { solid: true });
+  cyl(t, 'kibble-heap', [2, 3.8, 9], 3.8, 0.8, 'bread', '#7a4a26');
   box(t, 'tea-towel', [14, 0.4, 6], [12, 0.8, 9], 'fabric', '#c45a4a', { cover: true, turn: 0.3 });
   box(t, 'tea-towel-fold', [12, 1.4, 4.5], [7, 1.4, 4], 'fabric', '#b44c3d', { solid: true, turn: 0.3 });
   box(t, 'fridge-side', [-24, 50, -6], [4, 100, 22], 'metal', '#e9ecec');

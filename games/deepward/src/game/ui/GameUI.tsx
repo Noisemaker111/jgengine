@@ -73,7 +73,7 @@ function RunHud() {
   const pulse = useMemo(() => runePulse(() => run()?.health, 200), [ctx]);
   const gear = useGameStore(c => { const r = viewStore.read(c).run; return r === null ? "" : r.pack.filter(i => defOf(i).gear !== undefined).map(i => kindOf(i)).join(","); });
   return <>
-    <RuneView anchor="top-left" safe inset={20} maxWidth={420} responsive={{ phone: { maxWidth: 230 } }} gap={4}>
+    <RuneView anchor="top-left" safe inset={20} maxWidth={440} responsive={{ phone: { maxWidth: 240 } }} gap={4} fill="#1a120dc8" radius={12} padding={[10, 14, 10, 14]}>
       <Tag color={GOLD} text={bind(() => { const r = run(); if (r === null) return ""; const p = roomOf(r); return p.depth === 0 ? "THE CRACK HOME IS HERE" : `${p.depth} ROOM${p.depth === 1 ? "" : "S"} FROM THE CRACK`; })} />
       <Heading size={phone ? 20 : 26} text={bind(() => { const r = run(); return r === null ? "" : roomOf(r).template.name; })} />
       <Text color={MUTED} text={bind(() => { const r = run(); if (r === null) return ""; const p = roomOf(r); const lit = lightsOn(r, p) ? "The light is ON. " : ""; return `${lit}${p.exits.length > 0 ? `Way out here: ${p.exits.map(e => e.label).join(", ")}.` : "No way out here: go back, or find one deeper."}`; })} />

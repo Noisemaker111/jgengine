@@ -196,9 +196,9 @@
       "id": "kitchen-cabinets-spot-bowl",
       "kind": "crumb-spot",
       "position": {
-        "x": -50,
+        "x": -52.5,
         "y": 0,
-        "z": -157.5
+        "z": -162
       },
       "label": "beside the cat bowl",
       "meta": {
@@ -225,9 +225,9 @@
       "id": "kitchen-cabinets-spot-plinth",
       "kind": "crumb-spot",
       "position": {
-        "x": -59.4,
+        "x": -59,
         "y": 0,
-        "z": -167.9
+        "z": -166.5
       },
       "label": "along the toe-kick",
       "meta": {
@@ -268,9 +268,9 @@
       "id": "kitchen-cabinets-threat-cat",
       "kind": "crumb-threat",
       "position": {
-        "x": -48.5,
+        "x": -53.2,
         "y": 0,
-        "z": -155
+        "z": -163.2
       },
       "label": "the cat",
       "meta": {
@@ -283,7 +283,7 @@
       "id": "kitchen-cabinets-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": -64,
+        "x": -61,
         "y": 0,
         "z": -163
       },
@@ -298,9 +298,9 @@
       "id": "kitchen-cabinets-threat-roomba",
       "kind": "crumb-threat",
       "position": {
-        "x": -53.8,
+        "x": -60.3,
         "y": 0,
-        "z": -152.7
+        "z": -155.6
       },
       "label": "the roomba",
       "meta": {
@@ -4910,11 +4910,11 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -57,
+        "x": -53,
         "y": 1.8,
-        "z": -161
+        "z": -156
       },
-      "radius": 6,
+      "radius": 5,
       "height": 3.6,
       "color": "#5c8fb3",
       "label": "cat-bowl",
@@ -4932,11 +4932,11 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -57,
+        "x": -53,
         "y": 3.8,
-        "z": -161
+        "z": -156
       },
-      "radius": 4.5,
+      "radius": 3.8,
       "height": 0.8,
       "color": "#7a4a26",
       "label": "kibble-heap",
