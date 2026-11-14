@@ -85,7 +85,7 @@ export function tickStashes(ctx: GameContext): void {
     if (next.length >= STASH_SPOTS.length) {
       earn(ctx, STASH_COMPLETE_BONUS, "stash-bonus");
       ctx.game.notices.push({
-        text: `Every stash on Harbor Heat bagged — $${STASH_COMPLETE_BONUS} bonus.`,
+        text: `Every stash in Mainsail bagged — $${STASH_COMPLETE_BONUS} bonus.`,
         tone: "success",
       });
     } else {

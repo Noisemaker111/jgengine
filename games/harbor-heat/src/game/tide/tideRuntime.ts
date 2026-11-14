@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { DISTRICTS } from "../world/districts";
-import { districtDepth, MAX_DEPTH, shiftOpen, stageAt, tideLevelAt, type TideStageId } from "./tide";
+import { districtDepth, MAX_DEPTH, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
 
 /**
  * The tide in the running city: the level read off the world clock, the flood sheets that rise with
@@ -147,8 +147,8 @@ function syncSheets(ctx: GameContext, level: number): void {
   }
 }
 
-/** Read the clock, raise the water, and say so when the night reaches a new stage. */
-export function tickTide(ctx: GameContext): void {
+/** Read the clock, raise the water, and say so when the night reaches a new stage; returns that stage, else null. */
+export function tickTide(ctx: GameContext): TideStage | null {
   const runtime = runtimes(ctx);
   const calendar = ctx.time.calendar();
   const hour = calendar.hour + calendar.minute / 60;
@@ -156,9 +156,8 @@ export function tickTide(ctx: GameContext): void {
   runtime.level = level;
   syncSheets(ctx, level);
   const stage = stageAt(level);
-  if (runtime.stage !== null && runtime.stage !== stage.id && stage.index > 0) {
-    ctx.game.notices.push({ text: `${stage.label.toUpperCase()} · ${stage.note}`, tone: stage.index >= 3 ? "warn" : "info" });
-  }
+  const rose = runtime.stage !== null && runtime.stage !== stage.id && stage.index > 0;
+  if (rose) ctx.game.notices.push({ text: `${stage.label.toUpperCase()} · ${stage.note}`, tone: stage.index >= 3 ? "warn" : "info" });
   runtime.stage = stage.id;
   tideStore.write(ctx, {
     level,
@@ -171,6 +170,7 @@ export function tickTide(ctx: GameContext): void {
     open: shiftOpen(hour),
     depths: Object.fromEntries(FLOOD_SHEETS.map((sheet) => [sheet.district, districtDepth(sheet.district, level)])),
   });
+  return rose ? stage : null;
 }
 
 /** Forget the sheet bookkeeping after a reload: the next tick re-places them from the clock. */

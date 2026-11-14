@@ -11,8 +11,9 @@ import { loop } from "../src/loop";
 import { content } from "../src/game/content";
 import { GameUI } from "../src/game/ui/GameUI";
 import { focusHarborVerb } from "../src/game/ui/menuFocus";
+import { OVEN, shiftStore } from "../src/game/pizza/shift";
 
-export const HARBOR_FIXTURES = ["title", "new", "bays", "settings", "credits", "hud", "drive", "phone", "pause", "pause-settings", "shop", "garage", "dialogue", "result", "result-missed"] as const;
+export const HARBOR_FIXTURES = ["title", "new", "bays", "settings", "credits", "hud", "drive", "phone", "pause", "pause-settings", "shop", "garage", "dialogue", "result", "result-missed", "shift", "books", "shift-over"] as const;
 export type HarborFixture = (typeof HARBOR_FIXTURES)[number];
 
 const TICK = 1 / 60;
@@ -53,8 +54,16 @@ async function renderFixture(state: HarborFixture, width: number, height: number
     ctx.scene.entity.stats.set(ctx.player.userId, "armor", { current: 40 });
     // Staging commands register only in a dev build: run the fixture with DEV=1.
     if (state === "hud") run("chase.stage", { mode: "chase" });
-    if (state === "drive") { run("drive.stage", { vehicle: "car_sport" }); run("radio"); }
+    if (state === "drive") { run("drive.stage", { vehicle: "car_compact" }); run("radio"); }
+    if (state === "shift") run("shift.stage", { hour: 21.6 });
+    if (state === "books" || state === "shift-over") {
+      ctx.scene.entity.setPose(ctx.player.userId, { position: [OVEN[0], ctx.world.groundHeightAt(OVEN[0], OVEN[1]), OVEN[1]] });
+    }
     tick();
+    if (state === "books") run("pizzeria.open");
+    if (state === "shift-over") {
+      shiftStore.write(ctx, { ...shiftStore.read(ctx), summary: { day: 2, delivered: 9, takings: 412, best: 96, lost: 1, quota: 360, metQuota: true, foreclosed: false, headline: "Quota made. MegaSlice's man left without a word." } });
+    }
     if (state === "phone") run("phone");
     if (state === "pause" || state === "pause-settings") run("session.pause", { paused: true });
     if (state === "shop") run("shop.open");

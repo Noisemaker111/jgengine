@@ -1,17 +1,17 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** Every Harbor Heat screen on the native Rune surface: title objects, settings, a new run, HUD, city phone and pause. */
+/** Every High Tide Pizza screen on the native Rune surface: title objects, settings, a new run, HUD, city phone and pause. */
 export default defineFlow(game, {
   browser: true,
   state: "title",
   async run(f) {
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
-    await f.see("TONIGHT ON THE COAST");
+    await f.see("TONIGHT ON THE CANALS");
     await f.shot("title");
-    await f.click("Hit the street");
-    await f.see("Courier licence");
-    await f.click("Courier name");
+    await f.click("Start a shift");
+    await f.see("Rider's licence");
+    await f.click("Rider name");
     await f.see("TYPE A NAME");
     // The licence signs from key codes (Rune has no native text field yet), so press real keys.
     for (const key of ["KeyJ", "KeyO", "KeyN"] as const) await f.press(key);
@@ -19,7 +19,7 @@ export default defineFlow(game, {
     await f.see("Jon");
     await f.shot("licence");
     await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
-    await f.click("Missions & parcels");
+    await f.click("Order book");
     await f.see("Start here");
     await f.shot("bays");
     await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
@@ -30,19 +30,19 @@ export default defineFlow(game, {
     await f.shot("title-settings-next");
     await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
     await f.click("Credits");
-    await f.see("Who made the heat");
+    await f.see("Who made the pizza");
     await f.shot("credits");
     await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
-    await f.click("Hit the street");
-    await f.click("Take the run");
-    await f.see("MAINSAIL page", { timeoutMs: 60_000 });
+    await f.click("Start a shift");
+    await f.click("Clock in at Vell's");
+    await f.see("VELL'S ORDER PAGER", { timeoutMs: 60_000 });
     await f.shot("hud");
     await f.click("Phone");
     await f.see("Taxi light");
     await f.shot("city-phone");
     await f.click("Put away");
     await f.click("Pause");
-    await f.see("Back to the coast");
+    await f.see("Back to the canals");
     await f.shot("pause");
     await f.click("Settings & controls");
     await f.see("SOUND");

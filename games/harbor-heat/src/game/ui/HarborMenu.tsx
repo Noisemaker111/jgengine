@@ -131,8 +131,8 @@ export function HarborMenu() {
     const kept = bays.filter((bay) => !bay.empty).length;
     const items: TitleItem[] = [
       { id: "continue", label: "Continue", hint: recent === null ? "No run on the board" : `${recent.name ?? recent.id}`, disabled: recent === null },
-      { id: "new", label: "Hit the street", hint: "New courier" },
-      { id: "keeps", label: "Missions & parcels", hint: `${kept} of ${bays.length} bays` },
+      { id: "new", label: "Start a shift", hint: "New rider at Vell's" },
+      { id: "keeps", label: "Order book", hint: `${kept} of ${bays.length} bays` },
       { id: "settings", label: "Settings", hint: "Sound · picture · keys" },
       { id: "credits", label: "Credits" },
     ];
@@ -170,9 +170,10 @@ function NeonSign({ small }: { small: boolean }) {
     <RuneView padding={small ? [6, 8, 6, 8] : [8, 10, 8, 10]} gap={small ? 4 : 6} fill="#0b3742" border={{ width: small ? 3 : 4, color: HH.cream }} radius={6} shadow={{ x: 6, y: 8, blur: 0, color: "#00000088" }}>
       {row}
       <RuneView items="center" gap={0} padding={small ? [0, 14, 0, 14] : [2, 24, 2, 24]}>
-        <Label color={HH.mint} text="MAINSAIL · GULF COAST" />
-        <Text family={DISPLAY} size={small ? 50 : 84} tracking={2} color={HH.amber} text="HARBOR" />
-        <Text family={DISPLAY} size={small ? 44 : 72} tracking={4} color={HH.coral} text="HEAT" />
+        <Label color={HH.mint} text="VELL'S · MAINSAIL CANALS · SINCE 1961" />
+        <Text family={DISPLAY} size={small ? 46 : 78} tracking={2} color={HH.amber} text="HIGH TIDE" />
+        <Text family={DISPLAY} size={small ? 44 : 72} tracking={4} color={HH.coral} text="PIZZA" />
+        <Label color={HH.cream} text="THE CITY FLOODS AT MIDNIGHT · THE PIZZA STAYS HOT" />
       </RuneView>
       {row}
     </RuneView>
@@ -218,7 +219,7 @@ function HarborTitle({ items, initial, detail, notice }: {
       <NeonSign small={small} />
       <RuneView width={{ fraction: 1 }} padding={small ? [8, 10, 10, 10] : [12, 16, 14, 16]} gap={small ? 4 : 6} fill="#f4f1e8" border={{ width: 3, color: "#2a2a2a" }} radius={4} label="Title menu"
         shadow={{ x: 5, y: 6, blur: 0, color: "#00000088" }}>
-        <Label color="#4a3a20" text="TONIGHT ON THE COAST" />
+        <Label color="#4a3a20" text="TONIGHT ON THE CANALS" />
         {items.map((item) => (
           <RuneAction key={item.id} label={item.label} disabled={item.disabled === true} run={() => { sound.play("confirm"); setFocused(item.id); setEntered(item.id); }}
             onFocus={() => { if (focused !== item.id) { sound.play("move"); setFocused(item.id); } }}
@@ -282,7 +283,7 @@ function Tag({ head, title, children, width }: { head: string; title: string; ch
 /** The last run's parcel tag, with the frame its courier left and the button that picks it up. */
 function ContinueTag({ slot, bayLabel, onContinue }: { slot: SaveSlotMeta | null; bayLabel: string; onContinue: () => void }) {
   return (
-    <Tag head="Mainsail express" title="Parcel tag">
+    <Tag head="Vell's Pizzeria" title="Order ticket">
       {slot === null ? (
         <RuneView gap={4}><Heading color={HH.night} text="No run on the board" /><Text color="#5a4a30" text="Take a run, then save it at the board." /></RuneView>
       ) : (
@@ -292,7 +293,7 @@ function ContinueTag({ slot, bayLabel, onContinue }: { slot: SaveSlotMeta | null
             <Heading size={28} color={HH.night} text={slot.name ?? "Courier"} />
             <Field label="Bay" value={bayLabel} />
             <Field label="On the road" value={String(slot.meta["playtime"] ?? "0m")} />
-            <Field label="Parcels" value={String(slot.meta["parcels"] ?? 0)} />
+            <Field label="Deliveries" value={String(slot.meta["parcels"] ?? 0)} />
             <Button tone="coral" onPress={onContinue}>Pick it up</Button>
           </RuneView>
         </Row>
@@ -337,7 +338,7 @@ function CourierLicence({ name, onName, bayLabel, onBegin }: { name: string; onN
   const shuffle = () => { const i = DRIVERS.indexOf(name as (typeof DRIVERS)[number]); onName(DRIVERS[(i + 1) % DRIVERS.length]!); };
   return (
     <RuneView fill="#f3e7cc" border={{ width: 3, color: HH.ink }} radius={4} shadow={{ x: 6, y: 6, blur: 0, color: "#071d25aa" }} {...(editing ? { onKey: type } : {})}>
-      <Row justify="between" padding={[6, 12, 6, 12]} fill={HH.teal}><Label color={HH.cream} text="MAINSAIL EXPRESS" /><Heading size={18} color={HH.amber} text="Courier licence" /></Row>
+      <Row justify="between" padding={[6, 12, 6, 12]} fill={HH.teal}><Label color={HH.cream} text="VELL'S PIZZERIA" /><Heading size={18} color={HH.amber} text="Rider's licence" /></Row>
       <RuneView layout={room === "stacked" ? "stack" : "row"} gap={14} padding={14} items={room === "stacked" ? "stretch" : "start"}>
         <RuneView gap={8} items="center">
         <RuneView width={120} height={150} fill="#c9d6cf" border={{ width: 2, color: HH.ink }} justify="end" items="center" clip>
@@ -348,15 +349,15 @@ function CourierLicence({ name, onName, bayLabel, onBegin }: { name: string; onN
         <RuneView padding={[2, 8, 2, 8]} border={{ width: 2, color: "#2f7a4f" }} radius={3} opacity={0.75}><Label color="#2f7a4f" text="VALID · MAINSAIL" /></RuneView>
         </RuneView>
         <RuneView gap={8} grow={1}>
-          <Label color="#5a4a30" text="COURIER NAME" />
-          <RuneAction label="Courier name" run={() => { typed.current = name; fresh.current = !editing; setEditing(!editing); }} padding={[6, 8, 6, 8]} fill={editing ? "#fffaf0" : "#ffffff80"}
+          <Label color="#5a4a30" text="RIDER NAME" />
+          <RuneAction label="Rider name" run={() => { typed.current = name; fresh.current = !editing; setEditing(!editing); }} padding={[6, 8, 6, 8]} fill={editing ? "#fffaf0" : "#ffffff80"}
             border={{ width: 2, color: editing ? HH.coral : HH.ink }} radius={2} hover="#ffffff">
             <Text family={DISPLAY} size={26} color={HH.night} text={`${name}${editing ? "_" : ""}`} />
           </RuneAction>
           <Label color={editing ? HH.coral : "#5a4a30"} text={editing ? "TYPE A NAME · ENTER TO SIGN" : "PRESS THE NAME TO SIGN IT"} />
           <Button tone="ink" onPress={shuffle}>Shuffle name</Button>
-          <Row gap={18}><Field label="Bay" value={bayLabel} /><Field label="Pays" value="Cash · cred" /></Row>
-          <Button tone="coral" onPress={() => { setEditing(false); onBegin(); }}>Take the run</Button>
+          <Row gap={18}><Field label="Bay" value={bayLabel} /><Field label="Pays" value="Cash · tips" /></Row>
+          <Button tone="coral" onPress={() => { setEditing(false); onBegin(); }}>Clock in at Vell's</Button>
         </RuneView>
       </RuneView>
     </RuneView>
@@ -381,7 +382,7 @@ function BayTags({ bays, onLoad, onNew, onClear }: { bays: readonly SaveSlotMeta
               <Heading size={22} color={HH.night} text={label} />
               <Snapshot src={slotText(bay, "thumbnail")} width={room === "wide" ? 140 : 200} />
               {bay.empty ? <Text color="#7a6a50" text="Empty bay" /> : (
-                <RuneView gap={0}><Text weight={700} color={HH.night} text={bay.name ?? "Courier"} /><Text size={13} color="#5a4a30" text={`${String(bay.meta["playtime"] ?? "0m")} · ${String(bay.meta["parcels"] ?? 0)} parcels`} /></RuneView>
+                <RuneView gap={0}><Text weight={700} color={HH.night} text={bay.name ?? "Courier"} /><Text size={13} color="#5a4a30" text={`${String(bay.meta["playtime"] ?? "0m")} · ${String(bay.meta["parcels"] ?? 0)} deliveries`} /></RuneView>
               )}
               <RuneView padding={[3, 10, 2, 10]} fill={bay.empty ? HH.teal : HH.coral} radius={2} items="center"><Text family={DISPLAY} size={16} color={HH.cream} text={bay.empty ? "Start here" : "Load"} /></RuneView>
             </RuneAction>
@@ -427,9 +428,9 @@ function TribuneCredits() {
     <RuneView fill="#efe6d2" padding={16} gap={8} shadow={{ x: 6, y: 6, blur: 0, color: "#071d25aa" }}>
       <Row justify="between"><Text family={DISPLAY} size={room === "wide" ? 30 : 22} color={ink} text="The Mainsail Tribune" /><Label color={ink} text="Late edition · Credits" /></Row>
       <RuneView height={3} fill={ink} />
-      <Heading size={26} color={ink} text="Who made the heat" />
+      <Heading size={26} color={ink} text="Who made the pizza" />
       <RuneView layout={room === "wide" ? "row" : "stack"} gap={14}>
-        <Text grow={1} size={14} color={ink} text="Harbor Heat · Mainsail dispatch: game and art direction. Original city blocks, awnings, signs, aircraft, boats, booth, towers and poster." />
+        <Text grow={1} size={14} color={ink} text="High Tide Pizza · Vell's kitchen: game and art direction. Original city blocks, awnings, signs, the family fleet, the blimp, the lighthouse, the submarine, the flood and the poster." />
         <Text grow={1} size={14} color={ink} text="Engine · JGengine: scene, save, menu." />
       </RuneView>
       <RuneView height={1} fill={ink} />
@@ -452,7 +453,7 @@ function TribuneCredits() {
 // --- Off the clock -------------------------------------------------------------------------------
 
 const HOME = [
-  { id: "resume", label: "Back to the coast" },
+  { id: "resume", label: "Back to the canals" },
   { id: "save", label: "Save progress" },
   { id: "settings", label: "Settings & controls" },
 ] as const;
@@ -482,10 +483,10 @@ function PausePhone({ onResume, onSave, notice, bayLabel, kept }: { onResume: ()
       <Row gap={48} items="center">
         {room === "wide" ? (
           <RuneView gap={10} width={360}>
-            <Label color={HH.mint} text="MAINSAIL · THE CLOCK IS STOPPED" />
+            <Label color={HH.mint} text="VELL'S · THE TIDE IS HOLDING" />
             <Display size={86} color={HH.amber} text="Off the" />
             <Display size={86} color={HH.coral} text="clock" />
-            <Text color={HH.cream} text="The city and the delivery clock wait for you." />
+            <Text color={HH.cream} text="The city, the tide and the pizza wait for you." />
             <KeyLegend items={[{ keys: ["↑", "↓"], label: "choose" }, { keys: ["Enter"], label: "select" }, { keys: ["Esc"], label: home ? "resume" : "back" }]} />
           </RuneView>
         ) : null}

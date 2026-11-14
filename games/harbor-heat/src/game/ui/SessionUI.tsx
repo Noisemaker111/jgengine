@@ -35,7 +35,7 @@ export function resultOf(notice: string, courier: CourierState): Slip {
   const total = { label: "Total", value: money(receipt?.reward ?? 0) };
   if (receipt?.won === true) {
     const condition = { label: "Cargo condition", value: `${Math.round(courier.condition ?? 100)}%` };
-    return { kind: "receipt", tone: "good", stamp: "Paid", title: "Signed. Sealed. Paid.", summary: `${route.recipient} has the parcel.`, lines: [{ label: "Deliver to", value: route.recipient }, service, condition, ...itemized, total, { label: "Street cred", value: "+15" }], actions: [{ id: "next", label: "Next parcel", primary: true }, roam, title] };
+    return { kind: "receipt", tone: "good", stamp: "Paid", title: "Signed. Sealed. Paid.", summary: `${route.recipient} has the catering.`, lines: [{ label: "Deliver to", value: route.recipient }, service, condition, ...itemized, total, { label: "Street cred", value: "+15" }], actions: [{ id: "next", label: "Next catering order", primary: true }, roam, title] };
   }
   const reason = receipt?.reason ?? null;
   const late = reason === null || /deadline|expired/i.test(reason);
@@ -43,8 +43,8 @@ export function resultOf(notice: string, courier: CourierState): Slip {
     kind: "receipt",
     tone: "bad",
     stamp: late ? "Late" : "Lost",
-    title: late ? "Missed the tide." : "Parcel lost.",
-    summary: late ? (rush ? `Too slow: the $${RUSH_BOND} bond is gone. The parcel went back to dispatch.` : "Too slow: the parcel went back to dispatch. No cash lost.") : reason,
+    title: late ? "Missed the tide." : "Catering lost.",
+    summary: late ? (rush ? `Too slow: the $${RUSH_BOND} bond is gone. The catering went back to the kitchen.` : "Too slow: the catering went back to the kitchen. No cash lost.") : reason,
     lines: [{ label: "Deliver to", value: route.recipient }, service, ...itemized, total],
     actions: [{ id: "retry", label: "Try again", primary: true }, roam, title],
   };

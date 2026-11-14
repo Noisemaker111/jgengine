@@ -57,7 +57,7 @@ describe("Mainsail's world model", () => {
     world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
     world.tick(0.3);
     expect(world.fact("marina.owner")).toBe("player");
-    expect(world.log().map((entry) => entry.text)).toContain("You took the Marina from the Carmines.");
+    expect(world.log().map((entry) => entry.text)).toContain("You took the Marina from Carmine's Crust.");
     live["turf.held"] = 1;
     world.tick(10);
     expect(world.num("fronts.takings")).toBeGreaterThanOrEqual(4.5);
@@ -97,7 +97,7 @@ describe("Mainsail's world model", () => {
     expect(turfWar.handover("turf:marina:player:carmine")).toEqual({ block: "marina", from: "player", to: "carmine" });
     expect(run.pushes.length).toBeGreaterThan(0);
     expect(run.pushes.every((place) => place === "marina")).toBe(true);
-    expect(run.world.log().map((entry) => entry.text)).toContain("The Carmines took the Marina from you.");
+    expect(run.world.log().map((entry) => entry.text)).toContain("Carmine's Crust took the Marina from you.");
     expect(run.world.num("marina.grip")).toBe(40);
   });
 

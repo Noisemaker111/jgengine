@@ -60,7 +60,8 @@ import { harborSave, holdSavesUntil, loadHarborSave, saveHarborState } from "./g
 import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { registerRadio, tickRadio } from "./game/radio/runtime";
+import { radioOf, registerRadio, tickRadio } from "./game/radio/runtime";
+import { bulletinForTide } from "./game/radio/bulletins";
 import { resetTide, tickTide } from "./game/tide/tideRuntime";
 import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game/pizza/shift";
 
@@ -347,7 +348,8 @@ function onTick(ctx: GameContext, dt: number): void {
     harborSave(ctx).touch();
   }
   tickStreaming(ctx);
-  tickTide(ctx);
+  const rose = tickTide(ctx);
+  if (rose !== null) radioOf(ctx).report(bulletinForTide(rose));
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickNightLook(ctx);

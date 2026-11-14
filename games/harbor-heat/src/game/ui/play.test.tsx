@@ -95,13 +95,13 @@ function mount(width: number, height: number) {
 }
 
 async function intoTheRun(play: ReturnType<typeof mount>) {
-  await play.press("Hit the street");
-  await play.press("Take the run");
+  await play.press("Start a shift");
+  await play.press("Clock in at Vell's");
   for (let i = 0; i < 20 && !play.started(); i += 1) await settle();
   expect(play.started()).toBe(true);
 }
 
-describe("Harbor Heat play test", () => {
+describe("High Tide Pizza play test", () => {
   test("desktop 1280x720 walks the title, the run, the phone and the pause phone", async () => {
     const play = mount(1280, 720);
     expect(play.started()).toBe(false);
@@ -113,12 +113,12 @@ describe("Harbor Heat play test", () => {
     await play.press("Back");
     await play.press("Credits");
     expect(play.find("Next page")).toBeUndefined();
-    expect(play.find("Hit the street")).toBeDefined();
+    expect(play.find("Start a shift")).toBeDefined();
     await intoTheRun(play);
     // HUD keys are on screen and the title is gone.
     expect(play.find("Phone")).toBeDefined();
     expect(play.find("Pause")).toBeDefined();
-    expect(play.find("Hit the street")).toBeUndefined();
+    expect(play.find("Start a shift")).toBeUndefined();
     // The city phone opens from its HUD key and Put away closes it.
     await play.press("Phone");
     expect(play.phone()).toBe(true);
@@ -137,7 +137,7 @@ describe("Harbor Heat play test", () => {
     await play.press("Save progress");
     expect(play.paused()).toBe(true);
     expect(memory.size).toBeGreaterThan(0);
-    await play.press("Back to the coast");
+    await play.press("Back to the canals");
     expect(play.paused()).toBe(false);
     expect(gamePhase(play.ctx)).toBe("playing");
     // P toggles the pause both ways.
@@ -158,7 +158,7 @@ describe("Harbor Heat play test", () => {
     expect(play.phone()).toBe(false);
     await play.press("Pause");
     expect(play.paused()).toBe(true);
-    await play.press("Back to the coast");
+    await play.press("Back to the canals");
     expect(play.paused()).toBe(false);
     play.tree.unmount();
   }, 60_000);

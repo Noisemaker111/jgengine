@@ -52,7 +52,7 @@ export const turfWar = defineTurfWar({
     flats: { borders: ["marina", "port"] },
   },
   sides: ["player", "carmine", "riptide"],
-  labels: { player: "you", carmine: "the Carmines", riptide: "the Riptides" },
+  labels: { player: "you", carmine: "Carmine's Crust", riptide: "Riptide Slice" },
   contestedGrip: 30,
   onTake: { player: { "locals.mood": 5 } },
   onLose: { carmine: { "carmine.mood": -30 }, riptide: { "riptide.mood": -30 } },
@@ -65,7 +65,7 @@ export const turfWar = defineTurfWar({
       chance: 0.7,
       hit: 25,
       when: { "carmine.mood": { atMost: -20 } },
-      note: "Carmine crews are pushing back into {place}.",
+      note: "Carmine's Crust riders are pushing back into {place}.",
       hook: "crewPush",
     },
     riptide_pushback: {
@@ -74,7 +74,7 @@ export const turfWar = defineTurfWar({
       every: 91,
       chance: 0.6,
       when: { "riptide.mood": { atMost: -20 } },
-      note: "Riptide crews are moving in on {place}.",
+      note: "Riptide Slice riders are moving in on {place}.",
       hook: "crewPush",
     },
     carmine_war: {
@@ -119,9 +119,9 @@ const front = (label: string, income: number, night: number) => ({
 
 export const city = defineWorldModel({
   factions: {
-    carmine: { label: "Carmine crew", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
-    riptide: { label: "Riptide crew", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
-    hhpd: { label: "HHPD", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
+    carmine: { label: "Carmine's Crust (rival pizzeria)", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
+    riptide: { label: "Riptide Slice (rival pizzeria)", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
+    hhpd: { label: "HHPD harbor patrol", facts: { mood: calm(0, 0.05, { min: -100, max: 100 }) } },
     locals: { label: "Mainsail locals", facts: { mood: calm(0, 0.08, { min: -100, max: 100 }) } },
   },
   places: {

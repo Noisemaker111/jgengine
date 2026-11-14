@@ -3,7 +3,7 @@ import type { WorldLogEntry } from "@jgengine/core/worldModel/worldModel";
 import { turfWar } from "../city";
 
 /** How the radio names each crew; the player is nobody's crew. */
-const CREW: Record<string, string> = { carmine: "the Carmines", riptide: "the Riptides" };
+const CREW: Record<string, string> = { carmine: "Carmine's Crust", riptide: "Riptide Slice" };
 const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** The three stations' wording for one story: the news desk reads it straight, Sully rants, Luna keeps it light. */
@@ -66,7 +66,7 @@ export function bulletinForLog(entry: Pick<WorldLogEntry, "kind" | "text">, plac
     if (entry.kind.endsWith("_war")) {
       return story("crew_war", 2,
         [`Gunfire in ${where} as the Carmine and Riptide crews fight over the block.`],
-        [`The Carmines and the Riptides are shooting each other in ${where}. Folks, grab popcorn. From a distance.`],
+        [`Carmine's Crust and Riptide Slice are at war in ${where} again. Folks, grab a slice. From a distance.`],
         [`Two crews going at it in ${where}. Whoever wins, steer clear tonight.`], 120);
     }
     const crew = entry.kind.includes("riptide") ? "Riptide" : "Carmine";
@@ -133,4 +133,32 @@ export function bulletinForRace(label: string, timeSec: number): RadioBulletin {
     [`Residents near the ${label} route are complaining about illegal street racing again.`, `One witness clocked the winner at ${time}.`],
     [`Street racers on the ${label} again. ${time}! I can't get to the grocery store in ${time}.`],
     [`Somebody just took the ${label} in ${time}. That's the kind of driving this station is for.`], 60);
+}
+
+/** What each station says when the tide reaches a new stage of the night. */
+export function bulletinForTide(stage: { id: string; index: number; label: string; note: string }): RadioBulletin {
+  const lines: Record<string, [string[], string[], string[]]> = {
+    wet: [
+      ["MNN flood desk: the evening tide is in at the docks. Port Carmine streets are wet."],
+      ["Water's at the docks again. Every night! Who designed this city, a fish?"],
+      ["Tide's coming in, Mainsail. Roll up your trousers and keep it locked here."],
+    ],
+    canal: [
+      ["The flood desk reports Port Carmine streets closed to cars. Water taxis and boats only."],
+      ["Port Carmine is a canal. Again. If you drove down there, you now own a submarine."],
+      ["Canal hour, lovers. The docks are a lagoon and the neon's doubled in the water."],
+    ],
+    high: [
+      ["High water warning: Mainsail Boulevard is under. Downtown streets are expected to follow."],
+      ["The boulevard is gone. My neighbour is paddling his couch past my window right now."],
+      ["High water! Boats out, scooters in, and somebody please bring me a pizza."],
+    ],
+    king: [
+      ["King tide: every district but Palm Heights is flooded. Use bridges, boats, or the air."],
+      ["King tide! The whole city's a bathtub. If you can see a pizza blimp up there, wave."],
+      ["It's the king tide, Mainsail. The city's a mirror tonight. This one's for the riders."],
+    ],
+  };
+  const [news, talk, dj] = lines[stage.id] ?? [[stage.note], [stage.note], [stage.note]];
+  return story(`tide.${stage.id}`, stage.index >= 3 ? 2 : 1, news, talk, dj, 60);
 }

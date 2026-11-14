@@ -248,7 +248,7 @@ const MNN: RadioDef["stations"][number] = {
       title: "HHPD briefing",
       artist: "Dana Okafor",
       lines: [
-        "Sergeant Dee Kalani of the Harbor Heat Police Department says patrols in Palm Heights will double this week.",
+        "Sergeant Dee Kalani of the Harbor Patrol says flood patrols in Palm Heights will double this week.",
         "She asked residents to report suspicious vehicles, and reminded drivers that a car with no doors is a suspicious vehicle.",
       ],
     },

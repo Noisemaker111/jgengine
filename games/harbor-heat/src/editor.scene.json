@@ -5986,7 +5986,7 @@
           "z": 122
         }
       ],
-      "label": "Street race checkpoints"
+      "label": "Tide Rush: Ocean Loop"
     },
     {
       "id": "race-harbor",
@@ -6033,7 +6033,7 @@
           "z": 0
         }
       ],
-      "label": "Harbor Circuit"
+      "label": "Tide Rush: Dockside Dash"
     },
     {
       "id": "race-heights",
@@ -6075,7 +6075,7 @@
           "z": -120
         }
       ],
-      "label": "Palm Heights Climb"
+      "label": "Tide Rush: Heights Hairpins"
     },
     {
       "id": "race-coast",
@@ -6122,7 +6122,7 @@
           "z": 0
         }
       ],
-      "label": "Coastline Circuit"
+      "label": "Tide Rush: Coastline Run"
     },
     {
       "id": "tl_av_w_nb_in_0",

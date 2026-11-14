@@ -31,7 +31,7 @@ function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | n
 }
 
 export const game = defineGame({
-  name: "Harbor Heat",
+  name: "High Tide Pizza",
   features: { trade: true, dialogue: true },
   assets,
   audio,
@@ -155,16 +155,19 @@ export const game = defineGame({
       "menu-bays": ["game.start", { name: "menu.driver", input: { driver: "Mara Vell" } }, "menu.saveDoc", "menu.bays"],
       "menu-new": ["menu.title"],
       chase: ["game.start", { name: "chase.stage", input: { mode: "chase" } }],
+      // `flood` (dev-only `shift.stage`): high water at the port swap dock, on the jet-ski, two boxes in the bag.
+      flood: ["game.start", { name: "shift.stage", input: { hour: 21.6 } }],
+      "king-tide": ["game.start", { name: "shift.stage", input: { hour: 23.6 } }],
       // `taxi` (dev-only `gigs.stage`): in the nearest car, taxi light on, a fare hailing at the closest kerb.
       taxi: ["game.start", { name: "gigs.stage", input: { mode: "taxi" } }],
       // Presentation states: the courier behind the wheel, at the gun counter, the garage, talking
       // to Marco, and holding a paid or missed receipt.
-      drive: ["game.start", { name: "drive.stage", input: { vehicle: "car_sport" } }],
+      drive: ["game.start", { name: "drive.stage", input: { vehicle: "car_compact" } }],
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
       // On the Palm Heights Climb's start line with the race just started against the circuit's own rival.
-      "race-heights": ["game.start", { name: "drive.stage", input: { vehicle: "car_sport" } }, { name: "race.stage", input: { route: "race-heights" } }],
+      "race-heights": ["game.start", { name: "drive.stage", input: { vehicle: "car_compact" } }, { name: "race.stage", input: { route: "race-heights" } }],
       noon: ["game.start", { name: "time.stage", input: { at: secondsAtHour(12) } }],
       night: ["game.start", { name: "time.stage", input: { at: secondsAtHour(23.3) } }],
       shop: ["game.start", "shop.open"],

@@ -1,57 +1,70 @@
 # Art direction
 
-A sun-baked coastal city at golden hour sliding into neon night: pastel stucco, palm-lined boulevards, wet asphalt, a teal bay and a sky going pink. The one game in the repo with realistic human proportions; everything around them is built to the same scale.
+HIGH TIDE PIZZA is a warm neon canal city at night. Mainsail floods every evening: the streets turn to
+black glass that doubles every sign, festoon lights sag between the lamp posts, and a red scooter with a
+top-box of pizza cuts a wake through it. The world keeps the coast's real-world scale; the family fleet is
+chunky, round and toy-bright on purpose, so the rider always reads against the wet dark.
 
 ## Reference images
-- GTA: Vice City for the pastel art-deco coast, palms and pink sunsets.
-- Crazy Taxi for bright, readable streets at speed.
-- Need for Speed: Most Wanted (2005) for the warm filtered grade and wet road shine.
-- Film: *Miami Vice* (2006) and *Drive* (2011) for sodium streetlight, neon and teal water.
+- *Kiki's Delivery Service* (1989) for the warmth of a family delivery job in a harbour town.
+- Venice's *acqua alta* nights for streets that become canals and people carrying on above the water.
+- *Crazy Taxi* for bright, readable streets at speed and one arrow, one clock.
+- *Jet Set Radio* and *Hotline Miami* night palettes for saturated neon over deep teal.
+- The original Harbor Heat coast (GTA: Vice City's pastel deco) stays underneath: the city blocks, palms
+  and facades are the same, now lived in after dark.
 
 ## World palette
-- `#f2c9a8` stucco peach: building walls, plazas.
-- `#7fd1c4` art-deco mint: trims, awnings, lifeguard huts.
-- `#155462` harbour teal: the bay, shadows on water.
-- `#ffb020` sodium amber: streetlights, HUD, cash pickups.
-- `#ff4f8b` neon pink: signs, sunset sky, nightlife.
-- `#3a3a40` asphalt: roads, wet at night.
+- `#0d3442` flood water: the canal sheets, glossy and slightly see-through.
 - `#071d25` night: sky above the neon, deep shadow.
+- `#ffcf7a` festoon warm: string-light bulbs, the oven's glow, the drop beacon.
+- `#ff4f8b` neon pink: signs, swap-dock chevrons, the jet-ski's stripe.
+- `#6ff2e0` neon teal: the shop sign's tubes, alternate festoon bulbs.
+- `#d93a2f` Vell's red: the pizza boxes, the blimp's bands, the awning stripe.
+- `#fff1d6` box cream: the boxes, the scooter's trim, the order cards.
+- `#f2c9a8` stucco peach and `#7fd1c4` deco mint: the old city underneath.
 
 ## Material language
-- Characters: Microsoft Rocketbox humans (`human/*` in the model library), the whole cast and police. Harbor Heat is the only game that keeps them.
-- Vehicles: the library `vehicle/sports-car` family and the authored bus, all at real-world scale.
-- Environment: the authored city blocks with ambientCG facade scans (`Facade018A`, `Facade019A`, `Facade020A`, `Facade006`), library `city/*`, `park/*` and `industrial/*` props, the authored palms. All real-world proportion.
-- The KayKit pieces leave: `kaykit-space-base` landers as aircraft, cargo containers, `kaykit-dungeon` banners as signs and `kaykit-city-builder` traffic lights are toy-scale and break the scale. Use library `city/*` signals, `industrial/*` containers, authored emissive signs, and a CC0 seaplane and helicopter pulled through the library's Sketchfab source.
-- Ground: ambientCG `Asphalt012` roads (wet variant at night), `Concrete034` sidewalks, `Ground033` beach, `PavingStones070` plazas.
+- The family fleet (`scripts/author-tide.mjs`): the Vespetta scooter (rounded red shell, cream top-box),
+  the cargo trike (teal frame, wooden crate of boxes), the jet-ski (amber hull with a pink waterline),
+  the motor gondola (black lacquer, gold trim, a ferro, festoon lights and an outboard) and the pizza
+  blimp (cream envelope, red bands, a glowing slice on each flank). Rival Carmine's Crust riders ride
+  the same scooter in black.
+- The shop: Vell's counter is a striped awning over a brick oven whose mouth glows, under a neon slice;
+  the street sign is a tall pole with a lit slice. Catering drops are poles with a slice in a ring.
+- The flood: one authored unit disc (`tide-water.glb`) the tide scales to each district and lifts with
+  the level; low roughness and high metalness so the HDRI and the neon reflect.
+- Landmarks: the Gull Point lighthouse (white and red bands, a lit lamp room) on the north headland, and
+  the submarine *Sardine* surfaced in the bay with its portholes lit.
+- Characters: Microsoft Rocketbox humans from the model library, as before.
+- Environment: the authored city blocks with ambientCG facade scans and library `city/*`, `park/*` props.
+  No Kenney or KayKit pieces.
 
 ## Lighting mood
-- Golden hour as the hero time (sun azimuth 260, elevation 12, key `#ffb27a`), running into a neon night through the day cycle.
-- Fill: warm sky by day; at night sodium streetlights and neon carry the city.
-- Fog `#f0b8a0` at dusk, `#0e2c38` at night, near 150, far 700.
-- HDRI: Poly Haven `small_harbour_sunset` at intensity 1.0.
-- LUT grade "neon sunset": shadows `#1e3a4a`, midtones `#f0b08a`, highlights `#ffe0c8`, saturation 1.15, contrast 1.1, tint 0.35.
+- Dusk as the opening (17:30) running into a neon night; every shift ends at midnight under the king tide.
+- Fill: sodium streetlights, festoon lights and neon carry the city; the flood doubles them.
+- Fog `#0e2c38` at night, near 150, far 700.
+- HDRI: Poly Haven `small_harbour_sunset` at intensity 1.0 for the golden opening minutes.
+- LUT grade "neon sunset", ACES, bloom 0.3 / threshold 0.85 so the emissive bulbs and tubes bloom.
 
 ## Silhouette rules
-- Palms line every boulevard: tall thin trunks with a burst top, the city's signature shape.
-- Buildings stay low and wide on the coast and rise to a tower cluster downtown, so the skyline tells you where you are.
-- Police cruisers have a light bar; every other car keeps a clean roof line.
-- Pickups and mission markers are vertical light pillars, not floor circles.
+- The rider is always a small bright shape against dark water: red scooter, amber jet-ski, cream blimp.
+- Landmarks read from across the map: the lighthouse is the tallest thing on the north coast, the blimp
+  the only thing in the sky after ten.
+- Order drops are vertical light pillars topped by a glowing box, lifted to the floor the customer leans
+  out of (door, balcony, rooftop) as the water rises.
+- Festoon lights run along every walk the camera follows; never a bare street after dark.
 
 ## UI typography
-- Display: Bangers (Google Fonts, OFL). Body: Barlow (Google Fonts, OFL). Both already ship and register with the native Rune surface; LCD readouts use Rune's mono face.
-- Rune theme: `harborTheme` in `src/game/ui/theme.ts`, accent `#ffb020` sodium amber.
-
-## Chosen look
-- `look: "cinematic"`, `mood: { preset: "golden", sun: { azimuth: 260, elevation: 12, color: "#ffb27a" }, horizonColor: "#f0b8a0", fog: { near: 150, far: 700 } }`, with the day cycle reaching `night`.
-- Environment source `{ kind: "hdri", url: <small_harbour_sunset> }`.
-- Post: ACES, bloom 0.3 / threshold 0.85 so neon blooms, screen-space reflections on wet roads at high tier, the LUT above.
+- Display: Bangers (Google Fonts, OFL). Body: Barlow (Google Fonts, OFL). LCD readouts use Rune's mono.
+- Rune theme: `harborTheme` in `src/game/ui/theme.ts`, accent `#ffb020`; the shop's books use the
+  pizzeria board look (`#7a2a20` board, cream edge).
+- The tide card: five stage pips that fill mint then flood-blue, the stage name in display type, and
+  each box as a card with a heat bar that runs oven-red to amber to cold blue below the customer's limit.
 
 ## Pass list
-1. Re-face the blank grey city blocks: facade scans, windows, awnings and roof clutter on every lot the camera sees.
-2. Remove every KayKit piece; swap in library signals, containers, authored neon signs and pulled aircraft.
-3. Dress the ground: Asphalt012 roads with lane paint, Concrete034 sidewalks, beach sand; no flat vertex-colour districts.
-4. Line boulevards with palms and streetlights; fill lots with library street props.
-5. Set the golden mood, the sunset HDRI and the neon sunset LUT.
-6. Make the night: sodium streetlights, neon signage, wet road shine.
-7. Vary the traffic with more library vehicles in the palette.
-8. Ambient life: pedestrians on sidewalks, gulls at the harbour, boats in the bay, a passing helicopter.
+1. Done: flood sheets per district, the family fleet, the shop, drops, lighthouse, submarine, festoon
+   lights, swap docks and the shop sign authored and placed.
+2. Next: a ripple/wake shader on the flood sheets (an engine water-surface feature, filed as a gap).
+3. Next: neon signs on the canal-side facades and reflections of them on the water at high tier.
+4. Next: rain on the bay that comes inland with the king tide.
+5. Next: a lit pizza-box prop on the rider's back while on foot.

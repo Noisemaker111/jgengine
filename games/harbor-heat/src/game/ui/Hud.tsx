@@ -119,12 +119,12 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
     const step = courierObjectiveStore.read(ctx);
     if (step?.step === 2) {
       const runner = ctx.scene.entity.get(THIEF);
-      return { key: "runner", eyebrow: `Parcel snatched · ${Math.round(courier.condition ?? 100)}% intact`, title: "Catch the runner", target: runner === null ? undefined : xz(runner.position), deadline: step.remaining === null ? undefined : { remaining: step.remaining, total: 60 }, hint: "Get within 3 m. Keep them alive or the parcel burns. It takes a knock every second they have it." };
+      return { key: "runner", eyebrow: `Catering snatched · ${Math.round(courier.condition ?? 100)}% intact`, title: "Catch the Crust rider", target: runner === null ? undefined : xz(runner.position), deadline: step.remaining === null ? undefined : { remaining: step.remaining, total: 60 }, hint: "Get within 3 m. Keep them upright or the pizzas hit the canal. It cools every second they have it." };
     }
     const rush = courier.service === "rush";
     const crates = cargoStore.read(ctx).carried;
     const intact = `${Math.round(courier.condition ?? 100)}% intact`;
-    const load = rush ? `Fragile parcel · ${intact}` : crates > 0 ? `Parcel + ${crates} crates · ${intact}` : `Parcel · ${intact}`;
+    const load = rush ? `Piping-hot rush · ${intact}` : crates > 0 ? `Catering + ${crates} crates · ${intact}` : `Catering · ${intact}`;
     return { key: `parcel:${courier.route}`, eyebrow: load, title: `Deliver to ${route.recipient}`, target: route.position, deadline: { remaining: courier.remaining, total: courierDeadline(route.seconds, rush) }, hint: rush ? "Stay under 35 km/h and avoid hits: damage spoils the cargo." : `${route.hint} Stop beside it to hand over. Knocks cost you a damage claim.` };
   }
   if (gig !== null) return gig;
@@ -155,10 +155,10 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
   return {
     key: "dispatch",
     eyebrow: `${offer.label} · $${offer.payout}`,
-    title: atBooth ? "Take a parcel" : "Go to the dispatch booth",
+    title: atBooth ? "Take a catering order" : "Go to Vell's counter",
     target: atBooth ? undefined : DISPATCH,
-    hint: atBooth ? undefined : "The teal booth stands on the shore path. Follow the arrow.",
-    rush: atBooth && courier.delivered > 0 ? `Fragile rush · ${courierDeadline(offer.seconds, true)} s · $${RUSH_BOND} bond` : undefined,
+    hint: atBooth ? undefined : "Vell's stands on the shore path under the neon slice. Follow the arrow.",
+    rush: atBooth && courier.delivered > 0 ? `Piping-hot rush · ${courierDeadline(offer.seconds, true)} s · $${RUSH_BOND} bond` : undefined,
   };
 }
 

@@ -29,9 +29,9 @@ function site(id: string): readonly [number, number] {
 
 export const DISPATCH = site("courier_dispatch");
 export const DELIVERY_ROUTES = [
-  { label: "Boardwalk breakfast", recipient: "Mainsail lifeguards", position: site("courier_drop_0"), seconds: 65, payout: 250, hint: "Follow the shore south. Find the coral parcel tower beside the boardwalk." },
-  { label: "Plaza night shift", recipient: "Plaza radio crew", position: site("courier_drop_1"), seconds: 95, payout: 400, hint: "Head north to the cross street, then east to the teal parcel tower." },
-  { label: "Sunset spare parts", recipient: "Sunset pit crew", position: site("courier_drop_2"), seconds: 110, payout: 500, hint: "Follow Mainsail south, then take the cross street east to the gold parcel tower." },
+  { label: "Lifeguard party platter", recipient: "Mainsail lifeguards", position: site("courier_drop_0"), seconds: 65, payout: 250, hint: "Follow the shore south. Find the coral slice beacon beside the boardwalk." },
+  { label: "Radio crew catering", recipient: "Plaza radio crew", position: site("courier_drop_1"), seconds: 95, payout: 400, hint: "Head north to the cross street, then east to the teal slice beacon." },
+  { label: "Pit crew pizza party", recipient: "Sunset pit crew", position: site("courier_drop_2"), seconds: 110, payout: 500, hint: "Follow Mainsail south, then take the cross street east to the gold slice beacon." },
 ] as const;
 
 /** The pursuer and the runner the mission tracks by id, whichever body the player is in. */
@@ -43,7 +43,7 @@ export const COURIER_HEAT_TIER = 2;
 const POLICE_TIER_FACT = "police_tier";
 
 function heatSweep() {
-  return [{ kind: "fact" as const, fact: POLICE_TIER_FACT, atLeast: COURIER_HEAT_TIER, to: "heat_sweep", message: "HHPD swept the drop while you were hot — the parcel went back to dispatch." }];
+  return [{ kind: "fact" as const, fact: POLICE_TIER_FACT, atLeast: COURIER_HEAT_TIER, to: "heat_sweep", message: "HHPD swept the drop while you were hot — the catering went back to the kitchen." }];
 }
 
 export interface CourierState {
@@ -165,7 +165,7 @@ function settleCourier(ctx: GameContext, carried: number, input: CourierSettleme
   const reward = lines.reduce((sum, line) => sum + line.amount, 0);
   if (!input.won) {
     failContraband(ctx);
-    ctx.game.feedback.cue("deny", input.reason ?? "The parcel is gone.");
+    ctx.game.feedback.cue("deny", input.reason ?? "The catering is gone.");
     return { won: false, reward, reason: input.reason ?? null, lines };
   }
   if (carried > 0) earn(ctx, carried, "courier-bonus", input.route.label);
@@ -213,7 +213,7 @@ function routeMission(route: (typeof DELIVERY_ROUTES)[number], index: number, ru
   const failLate = rush ? "cargo_late_rush" : "cargo_late";
   return {
     id: courierMissionId(index, rush),
-    title: rush ? `${route.label} — fragile rush` : route.label,
+    title: rush ? `${route.label} — piping-hot rush` : route.label,
     description: route.hint,
     start: "deliver",
     objectives: [
@@ -223,7 +223,7 @@ function routeMission(route: (typeof DELIVERY_ROUTES)[number], index: number, ru
         actor: PLAYER_ACTOR,
         marker: `courier_drop_${index}`,
         radius: 8,
-        label: `Hand the parcel to ${route.recipient}`,
+        label: `Hand the catering to ${route.recipient}`,
         timeout: courierDeadline(route.seconds, rush),
         onTimeout: failLate,
         failOn: [
@@ -243,20 +243,20 @@ function routeMission(route: (typeof DELIVERY_ROUTES)[number], index: number, ru
         escapeDistance: 26,
         escapeGrace: 4,
         escapeFail: "cargo_lost",
-        label: "Catch the runner who grabbed the parcel — alive",
+        label: "Catch the Carmine's Crust rider who grabbed the catering — alive",
         timeout: 60,
         onTimeout: "cargo_lost",
         failOn: [
           ...heatSweep(),
-          { kind: "actor-died", actor: THIEF, to: "cargo_lost", message: "The runner went down and the parcel burned with them." },
+          { kind: "actor-died", actor: THIEF, to: "cargo_lost", message: "The rider went down and the pizzas went in the canal." },
         ],
         next: "done",
       },
     ],
     fail: [
-      { id: failLate, message: rush ? "The rush deadline expired and the $60 bond is forfeited." : "The deadline expired and the parcel went back to dispatch." },
-      { id: "cargo_lost", message: "The parcel is gone." },
-      { id: "heat_sweep", message: "HHPD swept the drop while you were hot. The parcel went back to dispatch." },
+      { id: failLate, message: rush ? "The rush deadline expired and the $60 bond is forfeited." : "The deadline expired and the catering went back to the kitchen." },
+      { id: "cargo_lost", message: "The catering is gone." },
+      { id: "heat_sweep", message: "HHPD swept the drop while you were hot. The catering went back to the kitchen." },
     ],
     rewards: { economy: { cash: route.payout } },
   };
@@ -387,7 +387,7 @@ function handleMissionEvents(ctx: GameContext, events: readonly MissionEvent[]):
         const current = courierStore.read(ctx);
         courierStore.write(ctx, { ...current, handoff: Math.max(0, current.remaining) });
         spawnThief(ctx);
-        ctx.game.feedback.cue("objective", "Parcel handed over — catch the runner.");
+        ctx.game.feedback.cue("objective", "Catering handed over — and a Crust rider grabbed it! Catch them.");
       }
     } else if (event.kind === "reward") {
       applyMissionRewards(event.rewards, {
@@ -410,14 +410,14 @@ function handleMissionEvents(ctx: GameContext, events: readonly MissionEvent[]):
 function acceptRefusal(state: GameContext, input: { service?: string } | undefined) {
   const current = courierStore.read(state);
   if (courierLoop(state).phase() === "open" || courierRuntime(state).state()?.status === "active") {
-    return { reason: "already-running", message: "Finish the parcel you are already carrying." };
+    return { reason: "already-running", message: "Finish the catering you are already carrying." };
   }
-  if (!near(state, DISPATCH, 9)) return { reason: "not-at-dispatch", message: "Take a parcel from the dispatch booth." };
+  if (!near(state, DISPATCH, 9)) return { reason: "not-at-dispatch", message: "Catering orders are taken at Vell's counter." };
   if (input?.service !== "rush") return null;
   if (current.delivered < 1) return { reason: "rush-locked", message: "Complete a standard delivery first." };
-  if (groundCarId(state) === null) return { reason: "no-car", message: "Express needs a ground car. Standard parcels go on foot." };
+  if (groundCarId(state) === null) return { reason: "no-car", message: "Piping-hot rush needs wheels. Standard catering goes on foot." };
   if (state.game.economy.balance(state.player.userId, "cash") < RUSH_BOND) {
-    return { reason: "no-bond", message: `Fragile rush needs a $${RUSH_BOND} bond.` };
+    return { reason: "no-bond", message: `Piping-hot rush needs a $${RUSH_BOND} bond.` };
   }
   return null;
 }
@@ -438,7 +438,7 @@ function acceptParcel(state: GameContext, input: { service?: string } | undefine
   syncObjective(state);
   commit(state);
   loadContraband(state);
-  state.game.feedback.cue("pickup", `Parcel taken — ${route.label}, $${route.payout}.`);
+  state.game.feedback.cue("pickup", `Catering loaded — ${route.label}, $${route.payout}.`);
   void state.game.save?.checkpoint();
 }
 
@@ -457,10 +457,10 @@ export function registerCourier(ctx: GameContext): void {
   ctx.game.commands.define("courier.deliver", {
     validate(state) {
       const current = courierStore.read(state);
-      if (courierLoop(state).phase() !== "open") return { reason: "no-parcel", message: "You are not carrying a parcel." };
+      if (courierLoop(state).phase() !== "open") return { reason: "no-parcel", message: "You are not carrying any catering." };
       const mission = courierRuntime(state).state();
       if (mission === null || mission.objective !== "deliver") return { reason: "no-handoff", message: "Nothing to hand over yet." };
-      if (!near(state, routeOf(current).position, 8)) return { reason: "not-at-drop", message: "Take the parcel to the drop." };
+      if (!near(state, routeOf(current).position, 8)) return { reason: "not-at-drop", message: "Take the catering to the drop." };
       if (streetPlayOf(state).carSpeedKmh() > 8) return { reason: "moving", message: "Slow down to deliver." };
       return null;
     },
@@ -557,7 +557,7 @@ export function restoreCourier(ctx: GameContext): void {
   if (loop.phase() === "open" && (mission === null || mission.status !== "active")) {
     const route = routeOf(current);
     const settlement = courierSettlement({ payout: route.payout, rush: current.service === "rush", won: false, handoff: 0, condition: 0 });
-    loop.settle({ won: false, route, reason: "The parcel's contract was gone after the reload.", settlement });
+    loop.settle({ won: false, route, reason: "The catering order was gone after the reload.", settlement });
   }
   publishCourier(ctx, courierStore.read(ctx));
 }

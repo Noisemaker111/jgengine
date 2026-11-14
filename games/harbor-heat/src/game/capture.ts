@@ -3,6 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { harborProfile } from "./menuProfile";
 import { DAY_SECONDS } from "./clock";
+import { tickTide } from "./tide/tideRuntime";
+import { shiftStore, SWAP_DOCKS } from "./pizza/shift";
 import { focusHarborVerb } from "./ui/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
@@ -86,6 +88,32 @@ export function registerCaptureCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ mode?: StageMode }>("chase.stage", {
     apply(state, input) {
       stageChase(state, input.mode ?? "chase");
+      return state;
+    },
+  });
+  // High water at the port swap dock: the clock at `hour`, the rider on the dock's jet-ski with two
+  // hot boxes in the bag, so a capture sees the flood, the tide card and the order cards at once.
+  ctx.game.commands.define<{ hour?: number }>("shift.stage", {
+    apply(state, input) {
+      const clock = state.time.snapshot();
+      const hour = typeof input?.hour === "number" ? input.hour : 21.6;
+      state.time.hydrate({ ...clock, now: Math.floor(clock.now / DAY_SECONDS) * DAY_SECONDS + DAY_SECONDS + (hour / 24) * DAY_SECONDS });
+      tickTide(state);
+      const dock = SWAP_DOCKS.find((d) => d.id === "swap_dock_port") ?? SWAP_DOCKS[0];
+      if (dock === undefined) return state;
+      const [x, z] = dock.position;
+      state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: Math.PI * 0.75 });
+      const shift = shiftStore.read(state);
+      shiftStore.write(state, {
+        ...shift,
+        openDay: state.time.calendar().day,
+        serial: shift.serial + 2,
+        bag: [
+          { id: `o${shift.serial + 1}`, customerId: "lou_houseboat", pizzaId: "tide_pool", heat: 88, soak: 6, age: 20, par: 60 },
+          { id: `o${shift.serial + 2}`, customerId: "gus", pizzaId: "margherita", heat: 64, soak: 22, age: 41, par: 50 },
+        ],
+      });
+      state.game.commands.run("pizza.swap", {});
       return state;
     },
   });

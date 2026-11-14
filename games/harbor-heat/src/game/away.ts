@@ -24,7 +24,7 @@ const AWAY_MIN_MS = 60 * 1000;
 /** Game-clock seconds in one in-game day (`game.config.ts` time.dayLength). */
 const DAY = DAY_SECONDS;
 
-const SIDE: Record<string, string> = { player: "you", carmine: "the Carmines", riptide: "the Riptides", locals: "the locals" };
+const SIDE: Record<string, string> = { player: "you", carmine: "Carmine's Crust", riptide: "Riptide Slice", locals: "the locals" };
 
 /**
  * Let `seconds` of game time pass at once: the clock jumps, the city's world model catches up (fronts
