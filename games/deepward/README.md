@@ -15,7 +15,7 @@ The package id is still `deepward`. Run `bun --cwd=games/deepward run dev` from 
 - **Room after room.** A run is a seed. Every room is a path from the crack ("0", then "0-1" for the
   second door out of it), and the room's template, its finds, its hunters and its exits are a pure
   function of the seed and that path (`src/game/runGen.ts`). The house is built from
-  editor-authored room templates in `src/editor.scene.json` (sixteen: under the kitchen cabinets, the counter,
+  editor-authored room templates in `src/editor.scene.json` (seventeen: under the kitchen cabinets, the counter,
   the pantry shelf, under the fridge, under the bookshelf, under the couch, the living-room rug, the
   front hall, the toy corner, under the bed, the garage workbench, the attic). Deeper rooms roll
   better finds and more hunters. The seed is saved, so a reload resumes the same house.
@@ -29,10 +29,10 @@ The package id is still `deepward`. Run `bun --cwd=games/deepward run dev` from 
   Tuck the Brute carries two-handed finds without slowing. Dot the Collector sees shiny curios a
   rarity finer. Old Fennel the Night Owl keeps a longer night. Two live in the burrow; the others
   move in as it grows.
-- **Finds.** 40 kinds with flavour: food, parts, curios and gear. Gear works while it rides in your
+- **Finds.** 43 kinds with flavour: food, parts, curios and gear. Gear works while it rides in your
   pack: thimble helmet, sewing-needle spear (F), napkin parachute, paperclip grapple, button shield,
-  birthday-candle torch, rubber-band slingshot (G). Five sets (Sewing Basket, Junk Drawer, Midnight
-  Feast, Treasure Hoard, Toy Box) pay a bonus when carried home together. Size and weight are real:
+  birthday-candle torch, rubber-band slingshot (G). Six sets (Sewing Basket, Junk Drawer, Midnight
+  Feast, Treasure Hoard, Toy Box, Attic Keepsakes) pay a bonus when carried home together. Size and weight are real:
   a cheese cube or a coin needs both arms and slows you.
 - **The house hunts.** The Cat prowls, listens, stalks what it heard, crouches with a wiggle and
   pounces where you stood; hide under a towel or dodge. The Roomba sweeps lanes on a schedule and

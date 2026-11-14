@@ -51,6 +51,9 @@ export function itemMesh(kind: ItemKind): Group {
     case "cat-bell": part(g, new SphereGeometry(0.55, 14, 10), mat(c, METAL), [0, 0.55, 0]); part(g, new BoxGeometry(0.7, 0.08, 0.12), mat("#222"), [0, 0.45, 0.5]); part(g, new TorusGeometry(0.18, 0.05, 6, 12), mat(c, METAL), [0, 1.12, 0]); break;
     case "pearl": part(g, new SphereGeometry(0.45, 20, 14), mat(c, { rough: 0.08, metal: 0.2, glow: 0.15 }), [0, 0.45, 0]); break;
     case "toy-soldier": part(g, new CylinderGeometry(0.4, 0.45, 0.2, 12), mat("#3f6b45"), [0, 0.1, 0]); part(g, new BoxGeometry(0.5, 1.1, 0.35), mat(c), [0, 0.75, 0]); part(g, new SphereGeometry(0.22, 10, 8), mat("#f1c9a5"), [0, 1.45, 0]); part(g, new CylinderGeometry(0.2, 0.22, 0.35, 10), mat("#222"), [0, 1.72, 0]); break;
+    case "ornament": part(g, new SphereGeometry(0.95, 20, 14), mat(c, { rough: 0.05, metal: 0.4 }), [0, 0.95, 0]); part(g, new CylinderGeometry(0.25, 0.25, 0.3, 10), mat("#c9a24b", { rough: 0.3, metal: 0.9 }), [0, 1.95, 0]); break;
+    case "old-photo": part(g, new BoxGeometry(2, 0.04, 1.4), mat("#f2ead8", { rough: 0.6 }), [0, 0.03, 0]); part(g, new BoxGeometry(1.7, 0.05, 1.1), mat(c, { rough: 0.4 }), [0, 0.04, 0]); break;
+    case "tinsel": for (let i = 0; i < 5; i++) part(g, new TorusGeometry(0.3 + i * 0.05, 0.05, 4, 12), mat(c, { rough: 0.1, metal: 1, glow: 0.2 }), [0, 0.1 + i * 0.08, 0], [Math.PI / 2, 0, i]); break;
     case "spider-silk": part(g, new SphereGeometry(0.45, 10, 8), mat(c, { rough: 1, glow: 0.2 }), [0, 0.4, 0], [0, 0, 0], [1, 0.7, 1]); break;
     case "thimble": part(g, new CylinderGeometry(0.55, 0.7, 1.2, 18, 1, true), mat(c, METAL), [0, 0.6, 0]); part(g, new SphereGeometry(0.55, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(c, METAL), [0, 1.2, 0]); break;
     case "needle": part(g, new CylinderGeometry(0.06, 0.02, 3.2, 8), mat(c, METAL), [0, 0.12, 0], [0, 0, Math.PI / 2]); part(g, new TorusGeometry(0.1, 0.03, 6, 10), mat(c, METAL), [1.62, 0.12, 0]); break;

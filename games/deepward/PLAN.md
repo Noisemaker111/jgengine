@@ -98,8 +98,8 @@ Genres: extraction. 16/16 proven.
 `home: 1, caps: 0, stash: 0, littles: 2, zones: 2, upgrades: 1`.
 
 ### Content budget
-16 room templates in 5 zones plus the burrow; 40 item kinds (8 food, 9 parts, 14 curios, 7 gear,
-bottle caps) in 5 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights);
+17 room templates in 5 zones plus the burrow; 43 item kinds (8 food, 10 parts, 16 curios, 7 gear,
+bottle caps) in 6 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights);
 6 connector kinds; 4 exit kinds; 5 burrow upgrades, 5 recipes, 3 charts.
 
 ### Systems

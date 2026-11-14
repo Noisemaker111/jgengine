@@ -642,6 +642,35 @@ for (const m of markers as Record<string, any>[]) {
   m.x = Math.round(best[0] * 10) / 10; m.z = Math.round(best[1] * 10) / 10;
 }
 
+{
+  const w = 46, d = 30;
+  const t = template('attic-christmas', { name: 'The Christmas boxes', zone: 'attic', minDepth: 5, w, d, floor: 'darkwood', floorColor: '#54402c', flavor: 'Eleven months of the year the decorations sleep up here. Baubles big as houses glint in the dark.', dark: true });
+  for (let i = 0; i < 6; i++) box(t, 'joist', [-20 + i * 8, 0.6, 0], [3, 1.2, 38], 'wood', '#6a4e33');
+  box(t, 'xmas-box', [-12, 9, -9], [18, 18, 12], 'cardboard', '#b8323a', { solid: true });
+  box(t, 'xmas-box-lid', [-12, 18.6, -8], [18.6, 1.2, 12.6], 'cardboard', '#2f7a46', { tilt: -0.35 });
+  ball(t, 'bauble-red', [4, 4.5, -8], 4.5, 'glass', '#d23b30', { solid: true });
+  ball(t, 'bauble-gold', [12, 3.5, -10], 3.5, 'chrome', '#d4af37', { solid: true });
+  ball(t, 'bauble-blue', [-2, 3, 8], 3, 'glass', '#2f6fd1', { solid: true });
+  cyl(t, 'bauble-cap', [4, 9.3, -8], 0.9, 1.2, 'metal', BRASS);
+  for (let i = 0; i < 10; i++) ball(t, 'light-bulb', [-18 + i * 3.6, 0.7, 12 - Math.sin(i) * 2], 0.6, 'emissive', ['#ff5a4a', '#5aff7a', '#5ab4ff', '#ffd86b'][i % 4]!, { glow: 1.4 });
+  cyl(t, 'light-flex', [-2, 0.3, 12], 0.15, 36, 'plastic', '#1d3a1d', { roll: Math.PI / 2, turn: Math.PI / 2 });
+  box(t, 'tinsel-heap', [14, 1.2, 6], [10, 2.4, 8], 'dust', '#e8e2c8', { cover: true, turn: 0.4 });
+  box(t, 'photo-album', [16, 2, -2], [10, 4, 14], 'paper', '#6b2f2a', { solid: true, turn: -0.2 });
+  box(t, 'rafter', [0, 50, -19], [50, 60, 2], 'wood', '#4a3424', { tilt: 0.6 });
+  lamp(t, 'fairy', [-2, 3, 12], '#ffcf8f', 6, 40, 'a string of fairy lights still plugged in');
+  lamp(t, 'moon', [18, 30, -12], '#a8c4ff', 6, 70, 'moonlight through a gap in the tiles');
+  door(t, 'entry', 'entry', -19, 13, ['crack', 'climb'], 'along the beams');
+  door(t, 'on', 'forward', 19, 13, ['crack', 'cable', 'climb'], 'over the album');
+  exit(t, 'vent', 'vent', -20, 2, 'the heating vent');
+  spot(t, 'box', -10, -2, 'cache', 'spilling from the decorations box', { bias: 'curio' });
+  spot(t, 'tinsel', 12, 9, 'tucked', 'in the tinsel');
+  spot(t, 'album', 10, -6, 'tucked', 'behind the photo album', { bias: 'curio' });
+  spot(t, 'lights', -8, 10, 'open', 'by the fairy lights');
+  spot(t, 'bauble', 4, -2, 'open', 'reflected in a bauble', { bias: 'curio' });
+  threat(t, 'spider', 'spider', 18, 10, 5, 'a spider in the tinsel');
+  threat(t, 'trap', 'trap', 0, 2, 5, 'an old mousetrap');
+}
+
 for (const volume of volumes) session.dispatch({ type: 'addVolume', volume: volume as never });
 for (const marker of markers) {
   const result = api.handle({ method: 'add_marker', ...marker } as never);

@@ -3238,6 +3238,192 @@
         "threat": "trap",
         "minDepth": 4
       }
+    },
+    {
+      "id": "attic-christmas-lamp-fairy",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -57,
+        "y": 3,
+        "z": 287
+      },
+      "label": "a string of fairy lights still plugged in",
+      "meta": {
+        "template": "attic-christmas",
+        "color": "#ffcf8f",
+        "intensity": 6,
+        "distance": 40
+      }
+    },
+    {
+      "id": "attic-christmas-lamp-moon",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -37,
+        "y": 30,
+        "z": 263
+      },
+      "label": "moonlight through a gap in the tiles",
+      "meta": {
+        "template": "attic-christmas",
+        "color": "#a8c4ff",
+        "intensity": 6,
+        "distance": 70
+      }
+    },
+    {
+      "id": "attic-christmas-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -74,
+        "y": 0,
+        "z": 288
+      },
+      "label": "along the beams",
+      "meta": {
+        "template": "attic-christmas",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "attic-christmas-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": -36,
+        "y": 0,
+        "z": 288
+      },
+      "label": "over the album",
+      "meta": {
+        "template": "attic-christmas",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "cable",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "attic-christmas-exit-vent",
+      "kind": "crumb-exit",
+      "position": {
+        "x": -75,
+        "y": 0,
+        "z": 277
+      },
+      "label": "the heating vent",
+      "meta": {
+        "template": "attic-christmas",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "attic-christmas-spot-box",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -65,
+        "y": 0,
+        "z": 273
+      },
+      "label": "spilling from the decorations box",
+      "meta": {
+        "template": "attic-christmas",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "attic-christmas-spot-tinsel",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -43,
+        "y": 0,
+        "z": 284
+      },
+      "label": "in the tinsel",
+      "meta": {
+        "template": "attic-christmas",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "attic-christmas-spot-album",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -45,
+        "y": 0,
+        "z": 269
+      },
+      "label": "behind the photo album",
+      "meta": {
+        "template": "attic-christmas",
+        "tier": "tucked",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "attic-christmas-spot-lights",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -63,
+        "y": 0,
+        "z": 285
+      },
+      "label": "by the fairy lights",
+      "meta": {
+        "template": "attic-christmas",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "attic-christmas-spot-bauble",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -51,
+        "y": 0,
+        "z": 273
+      },
+      "label": "reflected in a bauble",
+      "meta": {
+        "template": "attic-christmas",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "attic-christmas-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": 285
+      },
+      "label": "a spider in the tinsel",
+      "meta": {
+        "template": "attic-christmas",
+        "threat": "spider",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "attic-christmas-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 277
+      },
+      "label": "an old mousetrap",
+      "meta": {
+        "template": "attic-christmas",
+        "threat": "trap",
+        "minDepth": 5
+      }
     }
   ],
   "volumes": [
@@ -11840,6 +12026,610 @@
         "cover": false,
         "turn": 0,
         "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "room-attic-christmas",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 0.5,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 23,
+        "y": 0.5,
+        "z": 15
+      },
+      "label": "The Christmas boxes",
+      "meta": {
+        "template": "attic-christmas",
+        "zone": "attic",
+        "minDepth": 5,
+        "floor": "darkwood",
+        "floorColor": "#54402c",
+        "flavor": "Eleven months of the year the decorations sleep up here. Baubles big as houses glint in the dark.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "attic-christmas-joist-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -75,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-joist-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -67,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-joist-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -59,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-joist-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -51,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-joist-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -43,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-joist-6",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -35,
+        "y": 0.6,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 19
+      },
+      "color": "#6a4e33",
+      "label": "joist",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-xmas-box-7",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -67,
+        "y": 9,
+        "z": 266
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 9,
+        "z": 6
+      },
+      "color": "#b8323a",
+      "label": "xmas-box",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "cardboard",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-xmas-box-lid-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -67,
+        "y": 18.6,
+        "z": 267
+      },
+      "halfExtents": {
+        "x": 9.3,
+        "y": 0.6,
+        "z": 6.3
+      },
+      "color": "#2f7a46",
+      "label": "xmas-box-lid",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "cardboard",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": -0.35,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-bauble-red-9",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -51,
+        "y": 4.5,
+        "z": 267
+      },
+      "radius": 4.5,
+      "color": "#d23b30",
+      "label": "bauble-red",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "glass",
+        "solid": true
+      }
+    },
+    {
+      "id": "attic-christmas-bauble-gold-10",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -43,
+        "y": 3.5,
+        "z": 265
+      },
+      "radius": 3.5,
+      "color": "#d4af37",
+      "label": "bauble-gold",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "chrome",
+        "solid": true
+      }
+    },
+    {
+      "id": "attic-christmas-bauble-blue-11",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -57,
+        "y": 3,
+        "z": 283
+      },
+      "radius": 3,
+      "color": "#2f6fd1",
+      "label": "bauble-blue",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "glass",
+        "solid": true
+      }
+    },
+    {
+      "id": "attic-christmas-bauble-cap-12",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -51,
+        "y": 9.3,
+        "z": 267
+      },
+      "radius": 0.9,
+      "height": 1.2,
+      "color": "#c9a24b",
+      "label": "bauble-cap",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-13",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -73,
+        "y": 0.7,
+        "z": 287
+      },
+      "radius": 0.6,
+      "color": "#ff5a4a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-14",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -69.4,
+        "y": 0.7,
+        "z": 285.3170580303842
+      },
+      "radius": 0.6,
+      "color": "#5aff7a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-15",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -65.8,
+        "y": 0.7,
+        "z": 285.18140514634865
+      },
+      "radius": 0.6,
+      "color": "#5ab4ff",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-16",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -62.2,
+        "y": 0.7,
+        "z": 286.7177599838803
+      },
+      "radius": 0.6,
+      "color": "#ffd86b",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-17",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -58.6,
+        "y": 0.7,
+        "z": 288.5136049906159
+      },
+      "radius": 0.6,
+      "color": "#ff5a4a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-18",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -55,
+        "y": 0.7,
+        "z": 288.91784854932627
+      },
+      "radius": 0.6,
+      "color": "#5aff7a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-19",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -51.4,
+        "y": 0.7,
+        "z": 287.55883099639783
+      },
+      "radius": 0.6,
+      "color": "#5ab4ff",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-20",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -47.8,
+        "y": 0.7,
+        "z": 285.6860268025624
+      },
+      "radius": 0.6,
+      "color": "#ffd86b",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-21",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -44.2,
+        "y": 0.7,
+        "z": 285.02128350675326
+      },
+      "radius": 0.6,
+      "color": "#ff5a4a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-bulb-22",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -40.6,
+        "y": 0.7,
+        "z": 286.1757630295165
+      },
+      "radius": 0.6,
+      "color": "#5aff7a",
+      "label": "light-bulb",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "emissive",
+        "solid": false,
+        "glow": 1.4
+      }
+    },
+    {
+      "id": "attic-christmas-light-flex-23",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -57,
+        "y": 0.3,
+        "z": 287
+      },
+      "radius": 0.15,
+      "height": 36,
+      "color": "#1d3a1d",
+      "label": "light-flex",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "plastic",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "attic-christmas-tinsel-heap-24",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -41,
+        "y": 1.2,
+        "z": 281
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 1.2,
+        "z": 4
+      },
+      "color": "#e8e2c8",
+      "label": "tinsel-heap",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "dust",
+        "solid": false,
+        "cover": true,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-photo-album-25",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -39,
+        "y": 2,
+        "z": 273
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 2,
+        "z": 7
+      },
+      "color": "#6b2f2a",
+      "label": "photo-album",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "paper",
+        "solid": true,
+        "cover": false,
+        "turn": -0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "attic-christmas-rafter-26",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 50,
+        "z": 256
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 30,
+        "z": 1
+      },
+      "color": "#4a3424",
+      "label": "rafter",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0.6,
         "roll": 0
       }
     }

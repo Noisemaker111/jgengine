@@ -14,12 +14,12 @@ export type ItemKind =
   | "crumb" | "sugar-cube" | "cheese-cube" | "raisin" | "cereal-ring" | "cookie-shard" | "peanut" | "gummy-bear"
   | "watch-battery" | "spring" | "paperclip" | "rubber-band" | "screw" | "toy-gear" | "safety-pin" | "thread-spool" | "tissue"
   | "button" | "marble" | "coin" | "bead" | "earring" | "tiny-key" | "dice" | "brick" | "crayon" | "stamp" | "sequin" | "spider-silk"
-  | "cat-bell" | "pearl" | "toy-soldier"
+  | "cat-bell" | "pearl" | "toy-soldier" | "ornament" | "old-photo" | "tinsel"
   | "thimble" | "needle" | "napkin" | "grapple" | "button-shield" | "candle" | "slingshot"
   | "bottle-cap";
 export type Category = "food" | "part" | "curio" | "gear" | "cap";
 export type GearEffect = "helmet" | "spear" | "parachute" | "grapple" | "shield" | "torch" | "slingshot";
-export type SetId = "sewing-basket" | "junk-drawer" | "midnight-feast" | "treasure-hoard" | "toy-box";
+export type SetId = "sewing-basket" | "junk-drawer" | "midnight-feast" | "treasure-hoard" | "toy-box" | "attic-keepsakes";
 
 export interface ItemKindDef {
   name: string; category: Category; w: number; h: number; mass: number; value: number; color: string;
@@ -57,6 +57,7 @@ export const ITEMS: Record<ItemKind, ItemKindDef> = {
   "toy-gear": { name: "Toy gear", category: "part", w: 1, h: 1, mass: 0.8, value: 16, color: "#e8b52b", flavor: "A plastic cog from a broken clockwork toy.", set: "toy-box", zones: ["kidroom", "attic"], minDepth: 2, weight: 1.5 },
   "safety-pin": { name: "Safety pin", category: "part", w: 2, h: 1, mass: 0.4, value: 12, color: "#cfd6da", flavor: "A clasp, a spike and a hinge in one.", set: "sewing-basket", weight: 2 },
   "thread-spool": { name: "Thread spool", category: "part", w: 1, h: 2, mass: 1.5, value: 12, color: "#4d6fb3", flavor: "A whole reel of rope. The Littles’ favourite thing.", set: "sewing-basket", weight: 2 },
+  tinsel: { name: "Tinsel", category: "part", w: 1, h: 1, mass: 0.2, value: 9, color: "#e8e2c8", flavor: "Glittering rope. Lash it to anything and it catches the light.", zones: ["attic"], weight: 1.5 },
   tissue: { name: "Tissue scrap", category: "part", w: 2, h: 2, mass: 0.2, value: 4, color: "#f4f1ea", flavor: "Light as moth wings. Becomes a parachute.", zones: ["kitchen", "kidroom", "living"], weight: 2 },
 
   button: { name: "Lost button", category: "curio", w: 1, h: 1, mass: 0.6, value: 15, color: "#6aa0c8", flavor: "Four holes, a polished rim. Makes a fine shield.", set: "sewing-basket", weight: 3 },
@@ -71,8 +72,10 @@ export const ITEMS: Record<ItemKind, ItemKindDef> = {
   stamp: { name: "Postage stamp", category: "curio", w: 1, h: 1, mass: 0.1, value: 25, color: "#c0473b", flavor: "A tiny painting of a queen. Rolls up like a rug.", set: "treasure-hoard", zones: ["living", "attic"], minDepth: 1, weight: 1 },
   sequin: { name: "Sequin", category: "curio", w: 1, h: 1, mass: 0.1, value: 9, color: "#ffd86b", flavor: "A coin-sized mirror. Catches every light in the room.", weight: 2 },
   "cat-bell": { name: "Cat's bell", category: "curio", w: 1, h: 1, mass: 0.6, value: 58, color: "#e8c547", flavor: "Lifted off the cat's own collar. Worth a fortune, and it jingles with every step.", noisy: 1.4, zones: ["living", "kitchen"], minDepth: 2, weight: 0.6 },
-  pearl: { name: "Pearl", category: "curio", w: 1, h: 1, mass: 0.4, value: 80, color: "#f4eee4", flavor: "Rolled off a broken necklace years ago. The rarest thing in the house.", zones: ["attic", "kidroom"], minDepth: 3, weight: 0.35 },
-  "toy-soldier": { name: "Toy soldier", category: "curio", w: 1, h: 2, mass: 1.2, value: 22, color: "#3f6b45", flavor: "A plastic guard frozen mid-salute. The Littles stand him at the burrow door.", zones: ["kidroom", "attic"], minDepth: 2, weight: 1.2 },
+  pearl: { name: "Pearl", category: "curio", w: 1, h: 1, mass: 0.4, value: 80, color: "#f4eee4", flavor: "Rolled off a broken necklace years ago. The rarest thing in the house.", set: "attic-keepsakes", zones: ["attic", "kidroom"], minDepth: 3, weight: 0.35 },
+  "toy-soldier": { name: "Toy soldier", category: "curio", w: 1, h: 2, mass: 1.2, value: 22, color: "#3f6b45", flavor: "A plastic guard frozen mid-salute. The Littles stand him at the burrow door.", set: "attic-keepsakes", zones: ["kidroom", "attic"], minDepth: 2, weight: 1.2 },
+  ornament: { name: "Glass bauble", category: "curio", w: 2, h: 2, mass: 2.4, value: 44, color: "#d23b30", flavor: "A tree ornament as big as a hot-air balloon. Mind it doesn't roll.", bulky: true, set: "attic-keepsakes", zones: ["attic"], minDepth: 4, weight: 1 },
+  "old-photo": { name: "Old photograph", category: "curio", w: 2, h: 1, mass: 0.2, value: 36, color: "#c8b48a", flavor: "The family, years ago, at the seaside. The Littles like to guess the names.", set: "attic-keepsakes", zones: ["attic", "living"], minDepth: 3, weight: 0.9 },
   "spider-silk": { name: "Spider silk", category: "curio", w: 1, h: 1, mass: 0.1, value: 34, color: "#eef2f5", flavor: "Stronger than thread. Taken from a spider that won’t need it.", weight: 0 },
 
   thimble: { name: "Thimble helmet", category: "gear", w: 1, h: 1, mass: 1.1, value: 30, color: "#c0c4c6", flavor: "Wear it on your head. Halves every bump and bite.", set: "sewing-basket", gear: "helmet", minDepth: 1, weight: 1 },
@@ -103,6 +106,7 @@ export const SETS: Record<SetId, { name: string; pieces: readonly ItemKind[]; bo
   "midnight-feast": { name: "Midnight Feast", pieces: ["crumb", "sugar-cube", "cheese-cube", "raisin", "cookie-shard"], bonus: 40, flavor: "Enough for a party in the walls." },
   "treasure-hoard": { name: "Treasure Hoard", pieces: ["coin", "marble", "earring", "bead", "stamp"], bonus: 120, flavor: "Shiny things, all in one heap. Dragons would be jealous." },
   "toy-box": { name: "Toy Box", pieces: ["brick", "dice", "crayon", "toy-gear"], bonus: 70, flavor: "The kid's best things, in a Little's best hiding place." },
+  "attic-keepsakes": { name: "Attic Keepsakes", pieces: ["pearl", "old-photo", "toy-soldier", "ornament"], bonus: 110, flavor: "The family's forgotten past, remembered in the walls." },
 };
 export const SET_IDS = Object.keys(SETS) as SetId[];
 
