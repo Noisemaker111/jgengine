@@ -41,6 +41,8 @@ with the published assets CLI before launching a fresh checkout; the original mo
 - **Patience and streaks.** A call left 150 s on the board walks to Carmine's Crust (the pager counts it
   down). Great drops in a row build a hot streak: +6% on the tips per drop, up to five, until a bad box.
   Every happy box also pays 15 cred (a plain one 4); the jet-ski needs cred 2, the gondola 3, the blimp 4.
+- **Tonight's special.** Each shift draws a special from the menu; every box of it pays a quarter of its
+  price again. The tide card names it.
 - **Lessons.** The first drowned engine, beached hull, stacked bag, cold box and upstairs drop each explain
   themselves once. The chart tints each flooded district and pins the oven, the swap docks and every door
   in the bag; after a hand-over the tide card shows the paid slip line by line.
