@@ -9,6 +9,15 @@ export const CRUMB_RUN_CREDITS = mergeCredits({
       heading: "Original Crumb Run artwork",
       entries: [{ label: "Crumb Run", detail: "Original giant-house rooms, the burrow, the Littles' finds, the Cat, the Roomba, the Kid, the Dog and the spider, canvas-painted surfaces and synthesized sound cues." }],
     },
+    {
+      heading: "Household models (CC0)",
+      entries: [
+        { label: "KayKit Furniture Bits", detail: "Kay Lousberg, CC0: couch, armchair, beds, rugs, lamps, books, pillows", href: "https://kaylousberg.com" },
+        { label: "Low Poly Food Pack", detail: "Quaternius, CC0: bread, jars, bottles, cutlery, plates, fruit", href: "https://quaternius.com" },
+        { label: "Fantasy Props", detail: "Quaternius, CC0: mug, books, chest, candlestick, bucket, lantern", href: "https://quaternius.com" },
+        { label: "Toon Shooter Game Kit", detail: "Quaternius, CC0: boxes, cans, tyres, shovel, pallet, papers", href: "https://quaternius.com" },
+      ],
+    },
     ...lookCredits(),
     {
       heading: "Technology",

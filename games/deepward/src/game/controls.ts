@@ -775,6 +775,20 @@ function standForCapture(ctx: GameContext): void {
   teleport(ctx, arrival.at, arrival.facing);
   resume(ctx);
 }
+/** Dev-only: a look capture's vantage, the walkable spot furthest from the room's centre, looking across it. */
+function standForOverview(ctx: GameContext): void {
+  const run = viewStore.read(ctx).run;
+  if (run === null) return;
+  const t = roomOf(run).template, a = t.area;
+  let best: Point = [a.x, 0, a.z], far = -1;
+  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
+    const x = a.x - a.w / 2 + 2 + (a.w - 4) * i / 12, z = a.z - a.d / 2 + 2 + (a.d - 4) * j / 12;
+    const d = Math.hypot(x - a.x, z - a.z);
+    if (d > far && walkable(t, x, z, 1)) { far = d; best = [x, 0, z]; }
+  }
+  teleport(ctx, best, faceToward(best, { x: a.x, z: a.z }));
+  resume(ctx);
+}
 /** Dev-only: the mid-run stage, then home through the crack, so a capture lands on the night report. */
 export async function stageExtraction(ctx: GameContext): Promise<void> {
   await stageMidRun(ctx);
@@ -803,7 +817,7 @@ export async function stageRoom(ctx: GameContext, template: string): Promise<voi
   for (let i = 0; i < 400 && queue.length > 0; i++) {
     const path = queue.shift()!;
     const plan = planRoom(runSeedOf(run), path);
-    if (plan.template.id === template) { enterRoom(ctx, viewStore.read(ctx).run!, path, null); standForCapture(ctx); return; }
+    if (plan.template.id === template) { enterRoom(ctx, viewStore.read(ctx).run!, path, null); standForOverview(ctx); return; }
     queue.push(...plan.forwards.map(f => f.to));
   }
 }

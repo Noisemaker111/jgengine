@@ -21,7 +21,9 @@ moon through the window, and two green eyes in the dark.
 - `#d7ff5e` cat-eye green and `#ff7a5c` danger red: hunters and harm.
 
 ## Material language
-- Everything is original procedural geometry built from the editor scene's authored volumes, with
+- Recognisable household props are CC0 catalog models (KayKit furniture, Quaternius food, props
+  and clutter) scaled so a Little sees a loaf as a hill and a mug as a tower.
+- Everything else is original procedural geometry built from the editor scene's authored volumes, with
   canvas-painted detail (wood grain, tile grout, rug weave, carpet pile, cardboard flutes) projected
   in world space so a chair leg and a floorboard share one grain at giant scale. No model downloads,
   never Kenney.
