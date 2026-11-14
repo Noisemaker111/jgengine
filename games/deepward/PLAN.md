@@ -157,6 +157,13 @@ backed HUD text and hunter tells, the Cat dropping its head when it crouches, sh
 Capture states: `burrow`, `first-room`, `mid-run`, `cat-tell`, `room-counter`, `room-rug`,
 `room-toys`, `room-attic`, `report`, `stash`, `workbench`, `nook`.
 
-Next: the hunters still read as walls of fur up close (a Little's eye line is below a cat's chest),
-so consider a wider field of view or a low-angle readable silhouette; give the remaining templates
-the same pass (props crowd some doorways); the UI sheets (stash, workbench, nook) were not inspected.
+Look round 4: every find stands in a coloured light column with a ring and a twinkle (gold food, blue
+parts, pink curios, green gear, red caps) and the one E takes gets an outline and lifts; CC0 household
+models at inch-high scale (KayKit couch, armchair, lamp, rug, kid's bed; Quaternius bread, mug, jars,
+cutlery, plates, chest, books, boxes, cans, tyres); props are slid out of doorways; an 82 degree view
+and soft floor shadows under the Cat and dog. Every room has a capture state, `room:<template>`.
+
+Next: room overviews still land beside a giant prop in dense rooms (dining table, rug); the Cat and dog
+are procedural (a library dog model exists but is unanimated); ten rooms have had no model pass yet
+(kitchen cabinets, under the fridge, bookshelf, front hall, under the bed, bathroom, laundry, both
+garage shelves rooms beyond a few cans); UI sheets beyond the workbench were not inspected.

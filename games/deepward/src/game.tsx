@@ -12,7 +12,7 @@ import { defineGame } from "@jgengine/shell/defineGame";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
-import { BURROW, editorLayers, physics, world } from "./world";
+import { BURROW, editorLayers, physics, ROOM_TEMPLATES, world } from "./world";
 import { houseAssets } from "./game/assets";
 import { canSprint, captureProbe, guideOf, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
@@ -204,6 +204,8 @@ export const game = defineGame({
       "room-rug": ["deepward.enter", { name: "deepward.dev.room", input: { template: "living-rug" } }],
       "room-toys": ["deepward.enter", { name: "deepward.dev.room", input: { template: "toy-shelf" } }],
       "room-attic": ["deepward.enter", { name: "deepward.dev.room", input: { template: "attic-boxes" } }],
+      // Every other room template, by id: `room:<template>`.
+      ...Object.fromEntries(ROOM_TEMPLATES.map(t => [`room:${t.id}`, ["deepward.enter", { name: "deepward.dev.room", input: { template: t.id } }]])),
     },
   },
 });
