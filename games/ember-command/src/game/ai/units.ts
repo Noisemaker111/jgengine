@@ -8,7 +8,7 @@ import { hazardSpeedFactor, inMowerLane } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
 import { YARD } from "../yardInstance";
-import { distressNear, matchRunning, playerDepot, pushFx, raiseDistress, session, type UnitRuntime } from "../session";
+import { distressNear, FLEE_SECONDS, matchRunning, playerDepot, pushFx, raiseDistress, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
@@ -179,6 +179,11 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
   const def = combatantDef(u.catalogId);
   if (def === null) return;
 
+  if (def.worker === true && (session.fleeing[u.id] ?? 0) > session.elapsed) {
+    const home = playerDepot({ x: self.position[0], z: self.position[2] });
+    if (home !== null) stepTo(ctx, dt, u, def.walkSpeed * 1.15, home.x, home.z);
+    return;
+  }
   if (u.command.kind === "gather") {
     tickGather(ctx, dt, u, self.position, def.walkSpeed);
     return;
@@ -231,7 +236,11 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
           pushFx("acid", ent.position[0], ent.position[2]);
         }
         // A bitten red ant gives off distress: idle red fighters nearby come running.
-        if (target.faction === "player") raiseDistress(ent.position[0], ent.position[2]);
+        if (target.faction === "player") {
+          raiseDistress(ent.position[0], ent.position[2]);
+          // A bitten worker drops everything and runs for the nest; its job resumes once it calms down.
+          if (combatantDef(target.catalogId)?.worker === true) session.fleeing[target.id] = session.elapsed + FLEE_SECONDS;
+        }
         // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
           raiseCombatNoise(ctx, { x: ent.position[0], z: ent.position[2] }, u.id);

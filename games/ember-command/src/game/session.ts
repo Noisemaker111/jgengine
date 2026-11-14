@@ -83,6 +83,8 @@ export interface SessionState {
   trails: TrailField;
   /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
   fx: { kind: FxKind; x: number; z: number; at: number }[];
+  /** Workers running for the nest after being bitten, with the battle second they calm down. */
+  fleeing: Record<string, number>;
   /** Black ants a Scout has tagged with marking scent, and the battle second the tag fades. */
   marked: Record<string, number>;
   /** Where red ants were bitten lately: idle fighters nearby smell it and come running. */
@@ -139,6 +141,7 @@ function fresh(): SessionState {
     acid: {},
     distress: [],
     marked: {},
+    fleeing: {},
     fx: [],
     coachSeen: [],
     trailPainted: false,
@@ -287,3 +290,6 @@ export const MARK_SECONDS = 10;
 export function isMarked(id: string): boolean {
   return (session.marked[id] ?? 0) > session.elapsed;
 }
+
+/** How long a bitten worker runs for the nest before it goes back to its job. */
+export const FLEE_SECONDS = 4;

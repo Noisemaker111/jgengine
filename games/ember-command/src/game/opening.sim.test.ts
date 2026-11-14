@@ -41,6 +41,8 @@ describe("the opening raid", () => {
     };
     expect(report).toMatchObject({ hero: true });
     expect(report.soldiers).toBeGreaterThanOrEqual(3);
+    // Bitten workers run for the nest, so the opening raid does not wipe out the colony's foragers.
+    expect(report.workers).toBeGreaterThanOrEqual(2);
     expect([...session.units.keys()].filter((id) => id.startsWith("raider_raid") || id.startsWith("major_raid"))).toEqual([]);
   }, 60_000);
 
