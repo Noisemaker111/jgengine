@@ -206,4 +206,15 @@ describe("a night at Vell's", () => {
     streetPlayOf(ctx).enterVehicle(ctx, "sub_ski");
     expect(ctx.game.commands.run("pizza.deliver", {}).status).not.toBe("rejected");
   });
+  test("each shift names a special that pays a bonus on every box of it", () => {
+    const ctx = boot();
+    at(ctx, 18.1);
+    run(ctx, 1);
+    const special = shiftStore.read(ctx).special!;
+    expect(special).toBeDefined();
+    moveTo(ctx, customerSpot("gus")!);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ id: "sp1", customerId: "gus", pizzaId: special, heat: 90, soak: 0, age: 10, par: 60 }], nextCallIn: 999 });
+    ctx.game.commands.run("pizza.deliver", {});
+    expect(shiftStore.read(ctx).lastReceipt!.lines.some((line) => line.label === "Tonight's special")).toBe(true);
+  });
 });

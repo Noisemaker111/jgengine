@@ -33,6 +33,7 @@ interface ShiftView {
   takings: number;
   quota: number;
   streak: number;
+  special: string | null;
   water: string;
   bag: { id: string; who: string; pizza: string; heat: number; soak: number; cold: number }[];
   /** The last delivery's slip while it is fresh: who, each line and the total. */
@@ -54,6 +55,7 @@ function shiftView(ctx: GameContext): ShiftView | null {
     capacity: ovenCapacity(shop),
     takings: shift.takings,
     streak: shift.streak ?? 0,
+    special: shift.special === undefined || !tide.open ? null : (pizzaById(shift.special)?.label ?? null),
     quota: nightlyQuota(shop),
     water: streetPlayOf(ctx).telemetry().water,
     slip: shift.lastReceipt !== null && ctx.time.now() - (shift.lastReceipt.at ?? -99) < 8
@@ -131,6 +133,7 @@ export function ShiftPanel() {
         <Text family={DISPLAY} size={18} tracking={0.5} color={view.stageIndex >= 3 ? "#6fd8ff" : HH.cream} text={view.stage.toUpperCase()} />
         <Text size={12} color={HH.dim} text={`water +${view.level.toFixed(1)} m`} />
       </Row>
+      {view.special === null ? null : <Text size={12} color={HH.amber} text={`Special · ${view.special}`} />}
       {view.water === "" ? null : (
         <RuneView padding={[2, 6, 2, 6]} radius={3} fill={HH.siren}><Text mono size={12} weight={700} color={HH.cream} text={view.water} /></RuneView>
       )}

@@ -11,7 +11,7 @@ import { streetPlayOf } from "../streetPlay";
 import { grantCred, PIZZA_CRED } from "../progression/cred";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
 import { waterAt } from "../tide/tideRuntime";
-import { customerById, LIGHTHOUSE_KEEPER } from "./menu";
+import { customerById, LIGHTHOUSE_KEEPER, PIZZAS, pizzaById } from "./menu";
 import { ageOrder, hottest, nextCaller, parSeconds, repStars, settleOrder, type Order, type TipLine } from "./orders";
 import {
   buyUpgrade,
@@ -53,6 +53,8 @@ export const CALL_PATIENCE = 150;
 /** Each great drop in a row adds this share to the tips, up to the cap. */
 export const STREAK_STEP = 0.06;
 export const STREAK_CAP = 5;
+/** Share of a special's price paid again on every box of it. */
+export const SPECIAL_BONUS = 0.25;
 
 export interface SwapDock {
   id: string;
@@ -124,6 +126,8 @@ export interface ShiftState {
   rivalGrip: number;
   /** Great deliveries in a row this shift: each adds to the tips until a bad one breaks it. */
   streak?: number;
+  /** Tonight's special: every box of it pays a bonus on top of the tip. */
+  special?: string;
 }
 
 export function freshShift(): ShiftState {
@@ -334,8 +338,9 @@ export function tickShift(ctx: GameContext, dt: number): void {
   let state = shiftStore.read(ctx);
   const open = shiftOpen(hourOf(ctx));
   if (open && state.openDay === null) {
-    state = { ...state, openDay: dayOf(ctx), summary: null, takings: 0, delivered: 0, best: 0, lost: 0, nextCallIn: 3, idaDue: true, streak: 0 };
-    ctx.game.notices.push({ text: "Vell's is open! Orders land at the oven window. The tide is coming in.", tone: "success" });
+    const special = PIZZAS[Math.floor(roll(dayOf(ctx) * 7 + 3) * PIZZAS.length)]?.id;
+    state = { ...state, openDay: dayOf(ctx), summary: null, takings: 0, delivered: 0, best: 0, lost: 0, nextCallIn: 3, idaDue: true, streak: 0, ...(special === undefined ? {} : { special }) };
+    ctx.game.notices.push({ text: `Vell's is open! Tonight's special: ${pizzaById(special ?? "")?.label ?? "the house pie"}. The tide is coming in.`, tone: "success" });
   } else if (!open && state.openDay !== null) {
     shiftStore.write(ctx, closeTheShift(ctx, state));
     return;
@@ -470,6 +475,13 @@ function deliverHere(ctx: GameContext): void {
     price += settled.price;
     if (settled.verdict !== "bad") good += 1;
     if (settled.verdict === "bad" || (settled.verdict === "fine" && worst === "great")) worst = settled.verdict;
+  }
+  // Tonight's special pays a quarter of its price again on every box of it.
+  const specials = handed.filter((order) => order.pizzaId === state.special);
+  if (specials.length > 0) {
+    const bonus = specials.reduce((sum, order) => sum + Math.round((pizzaById(order.pizzaId)?.price ?? 0) * SPECIAL_BONUS), 0);
+    lines.push({ label: "Tonight's special", amount: bonus });
+    total += bonus;
   }
   // A hot streak of great drops lifts the tips; a bad one ends it.
   const streak = state.streak ?? 0;
