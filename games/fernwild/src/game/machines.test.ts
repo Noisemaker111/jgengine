@@ -4,10 +4,10 @@ import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtim
 
 import { game } from "../game.config";
 import { onNewPlayer, survivorStart, systems } from "../loop";
-import { world } from "../world";
+import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { survivorView } from "./survivor";
 
@@ -17,6 +17,7 @@ function runner(): HeadlessRunner {
     name: "Wildwire (machines test)",
     multiplayer: "off",
     world,
+    time,
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,
     newGame: survivorStart,
@@ -182,3 +183,32 @@ test("an Echo Mimic copies the last trick pulled near it and turns it on you", (
   }
   expect(echoed).toBe(true);
 });
+
+test("an uploaded Ticklet told to follow rides on your shoulder", () => {
+  const g = quiet();
+  const ticklet = summon(g, "ticklet", { tamed: true, distance: 3 });
+  expect(onShoulder(g.ctx, ticklet)).toBe(false);
+  g.ui.tryInvoke("whistleFollow", {});
+  tick(g, 0.5);
+  expect(onShoulder(g.ctx, ticklet)).toBe(true);
+  g.ui.tryInvoke("whistleStay", {});
+  tick(g, 1);
+  expect(onShoulder(g.ctx, ticklet)).toBe(false);
+});
+
+test("a wild Watchwing perches still by day and takes to the night", () => {
+  const moves = (clock: number) => {
+    const g = quiet();
+    g.ui.tryInvoke("cheat", { clock });
+    tick(g, 0.1);
+    const owl = summon(g, "watchwing", { distance: 6 });
+    const start = g.ctx.scene.entity.get(owl)!.position;
+    tick(g, 4);
+    const after = g.ctx.scene.entity.get(owl)!.position;
+    return Math.hypot(after[0] - start[0], after[2] - start[2]);
+  };
+  // Noon: perched, however close you stand. Near midnight: skittish and off.
+  expect(moves(3600 * 0.5)).toBeLessThan(0.01);
+  expect(moves(3600 * 0.95)).toBeGreaterThan(1);
+});
+

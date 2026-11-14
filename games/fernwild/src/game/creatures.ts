@@ -1212,7 +1212,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
               nearby: record.stance === "aggressive" ? wildAround(ctx, world, self?.position, AGGRESSIVE_RANGE) : [],
             })!,
           } as const)
-        : creature.dormant
+        : creature.dormant || perchedByDay(ctx, creature)
           ? ({ kind: "still" } as const)
           : wildMind(ctx, world, creature, def);
     const step = world.driver.step(ctx, creature.id, mind, body(ctx, world, creature), stepDt);
@@ -1227,6 +1227,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
       if (trick !== null) events.push(trick);
     }
     if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
+    if (record !== null) rideShoulder(ctx, creature, record.command);
   }
 
   const here = owner?.position ?? null;
@@ -1256,6 +1257,45 @@ function wildMind(ctx: GameContext, world: World, creature: Creature, def: Speci
     ...(rules.length === 0 ? {} : { focus: (candidateId: string) => targetScore(rules, targetFacts(ctx, world, creature, candidateId)) }),
     ...(lightSeeker ? { lightOf: (candidateId: string) => targetFacts(ctx, world, creature, candidateId).bright } : {}),
   };
+}
+
+/** A nocturnal wild bot (Watchwing) perches still through the day, unless something hurts it. */
+function perchedByDay(ctx: GameContext, creature: Creature): boolean {
+  if (creature.tamed || botProfile(creature.species)?.nocturnal !== true || creature.lastHitBy !== null) return false;
+  const fraction = ctx.time.calendar().dayFraction;
+  return fraction >= 0.25 && fraction <= 0.78;
+}
+
+/** A shoulder bot (Ticklet) told to follow sits on the technician's right shoulder instead of walking. */
+function rideShoulder(ctx: GameContext, creature: Creature, command: CompanionCommand): void {
+  if (botProfile(creature.species)?.shoulder !== true) return;
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (command !== "follow") {
+    // Told to stay, it hops down from the shoulder to the ground where it was.
+    const self = ctx.scene.entity.get(creature.id);
+    if (self === null) return;
+    const ground = ctx.world.groundHeightAt(self.position[0], self.position[2]);
+    if (self.position[1] > ground + 0.5) {
+      ctx.scene.entity.setPose(creature.id, { position: [self.position[0], ground, self.position[2]] });
+      worldOf(ctx).roster.setHome(creature.id, [self.position[0], ground, self.position[2]]);
+    }
+    return;
+  }
+  if (me === null || ridingOf(ctx).mountOf(ctx.player.userId) !== null) return;
+  const self = ctx.scene.entity.get(creature.id);
+  if (self === null || Math.hypot(self.position[0] - me.position[0], self.position[2] - me.position[2]) > WHISTLE_RANGE) return;
+  const yaw = me.rotationY;
+  const right = 0.28;
+  ctx.scene.entity.setPose(creature.id, { position: [me.position[0] - Math.cos(yaw) * right, me.position[1] + 1.55, me.position[2] + Math.sin(yaw) * right], rotationY: yaw });
+}
+
+/** Whether a shoulder bot is riding the technician's shoulder now. */
+export function onShoulder(ctx: GameContext, id: string): boolean {
+  const creature = worldOf(ctx).creatures.get(id);
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  const self = ctx.scene.entity.get(id);
+  if (creature === undefined || me === null || self === null || botProfile(creature.species)?.shoulder !== true) return false;
+  return self.position[1] > me.position[1] + 1.2 && Math.hypot(self.position[0] - me.position[0], self.position[2] - me.position[2]) < 0.6;
 }
 
 /** The forest stands up: every dormant Rootkit within its reach of `at` wakes and hunts. */
@@ -1324,6 +1364,9 @@ function applyTrick(ctx: GameContext, world: World, creature: Creature, trick: S
       if (self !== undefined) {
         const angle = ctx.rng() * Math.PI * 2;
         moveCreature(ctx, creature.id, [self[0] + Math.sin(angle) * trick.blink, self[2] + Math.cos(angle) * trick.blink]);
+        // Where it lands is its nest: it keeps its loot there and guards it.
+        const nest = ctx.scene.entity.get(creature.id)?.position;
+        if (nest !== undefined) world.driver.setHome(creature.id, nest);
       }
       return `stole ${pick.slot.count} ${itemLabel(pick.slot.itemId)} and blinked away`;
     }

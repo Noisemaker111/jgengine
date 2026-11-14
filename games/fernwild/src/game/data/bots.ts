@@ -118,6 +118,10 @@ export interface BotProfile {
   conducted?: { radius: number; shielded: number };
   /** Ridden, it bends light around its rider: wild bots do not see you unless you hit them. */
   cloak?: true;
+  /** Uploaded and following you, it rides on your shoulder instead of walking. */
+  shoulder?: true;
+  /** Wild, it is about only at night: by day it perches still. */
+  nocturnal?: true;
   /** Uploaded and following you, it patches you up: this much health every sentry sweep (4 s) within 6 m. */
   patches?: number;
   /** Uploaded on Guard Zone, it powers every fuelled station within `radius`: they never burn out. */
@@ -132,12 +136,12 @@ const P = (temperament: Temperament, targets: readonly TargetRule[], role: strin
 export const BOTS: Readonly<Record<string, BotProfile>> = {
   // The roster: the island's signature machines.
   mowbot: P("passive", [], "A lawnmower that wandered off. Trims grass into fiber; the first bot most technicians upload."),
-  ticklet: P("pack", ["loudest", "weakest"], "Palm-sized spider drones in swarms. They latch on and drain your stamina; an uploaded one rides along and patches you up.", { trick: { kind: "drainStamina", amount: 12 }, pack: { radius: 8, per: 0.15, max: 6 }, patches: 6 }),
+  ticklet: P("pack", ["loudest", "weakest"], "Palm-sized spider drones in swarms. They latch on and drain your stamina; an uploaded one rides on your shoulder and patches you up.", { trick: { kind: "drainStamina", amount: 12 }, pack: { radius: 8, per: 0.15, max: 6 }, patches: 6, shoulder: true }),
   craneback: P("skittish", [], "A long-necked forklift. Spooks easily; rigged, it hauls more than anything its size."),
   bulldozaur: P("territorial", ["attacker", "loudest"], "A territorial tank that charges intruders. Ridden, its blade bulk-harvests wood and stone."),
   lodestone: P("pack", ["loudest", "attacker"], "Magnetic wolves. Packmates charge each other's coils, and a bite can yank a metal tool from your hand.", { trick: { kind: "disarm", chance: 0.2 }, pack: { radius: 12, per: 0.2, max: 4 } }),
   mirrorcat: P("ambush", ["weakest"], "Light-bending hunter that waits unseen and strikes whatever is weakest. Rigged, it hides its rider: an invisible scout.", { cloak: true }),
-  watchwing: P("skittish", [], "An owl-shaped sentry drone, out at night. Perched at your base on Guard Zone, it pings hostiles.", { sentry: { radius: 40 } }),
+  watchwing: P("skittish", [], "An owl-shaped sentry drone, out at night and perched still by day. Perched at your base on Guard Zone, it pings hostiles.", { sentry: { radius: 40 }, nocturnal: true }),
   arcwire: P("aggressive", ["loudest"], "River eel whose bite arcs through everything nearby, twice as hard through water. Uploaded on Guard Zone, it powers your stations.", { trick: { kind: "chain", radius: 6, share: 0.5 }, powers: { radius: 12 } }),
   klepto: P("aggressive", ["richest"], "Glitchy teleporter. Grabs one stack from your bag and blinks away to its nest.", { trick: { kind: "steal", blink: 30 } }),
   rootkit: P("ambush", ["loudest"], "Robots disguised as trees. Chop near one and the forest stands up.", { dormantUntilChop: { radius: 10 } }),
