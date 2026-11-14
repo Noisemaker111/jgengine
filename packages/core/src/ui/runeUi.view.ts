@@ -44,6 +44,26 @@ export interface RuneUiFrame {
 const DEFAULT_BASE = "/jg-ui";
 
 /**
+ * A browser can expose `navigator.gpu` with no adapter behind it (Linux Chrome without a GPU,
+ * headless capture). wgpu then takes the canvas with a WebGPU context, fails to find an adapter,
+ * and its WebGL2 fallback finds the canvas already claimed, so no UI draws at all. Hiding the empty
+ * `navigator.gpu` before mount sends wgpu straight to WebGL2. Resolves true when it hid it.
+ */
+export async function hideAdapterlessWebGpu(nav: { gpu?: { requestAdapter(): Promise<unknown> } } | undefined = globalThis.navigator as never): Promise<boolean> {
+  const gpu = nav?.gpu;
+  if (nav === undefined || gpu === undefined || gpu === null) return false;
+  let adapter: unknown = null;
+  try {
+    adapter = await gpu.requestAdapter();
+  } catch {
+    adapter = null;
+  }
+  if (adapter !== null && adapter !== undefined) return false;
+  Object.defineProperty(nav, "gpu", { value: undefined, configurable: true });
+  return true;
+}
+
+/**
  * The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from
  * `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
  */
@@ -147,6 +167,7 @@ export class RuneUi {
     }
     const mod = (await import(/* @vite-ignore */ runeBundleUrl(options.baseUrl))) as JgUiModule;
     const initialized = await mod.default();
+    await hideAdapterlessWebGpu();
     const ui = new RuneUi(canvas, mod, zIndexCss, initialized.memory);
     ui.wirePassThrough();
     window.__jgUiFrame = (payload: string) => ui.onFrame(payload);

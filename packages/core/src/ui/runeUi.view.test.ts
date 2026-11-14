@@ -28,3 +28,14 @@ test("the Rune bundle loads under the app base, so the site's /play/ runner find
     setAssetBase("/");
   }
 });
+
+test("an adapterless navigator.gpu is hidden so Rune's WebGL2 fallback gets a clean canvas", async () => {
+  const { hideAdapterlessWebGpu } = await import("./runeUi.view");
+  const empty: { gpu?: { requestAdapter(): Promise<unknown> } } = { gpu: { requestAdapter: async () => null } };
+  expect(await hideAdapterlessWebGpu(empty)).toBe(true);
+  expect(empty.gpu).toBeUndefined();
+  const real = { gpu: { requestAdapter: async () => ({ name: "gpu" }) } };
+  expect(await hideAdapterlessWebGpu(real)).toBe(false);
+  expect(real.gpu).toBeDefined();
+  expect(await hideAdapterlessWebGpu({})).toBe(false);
+});
