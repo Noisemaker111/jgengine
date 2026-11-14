@@ -3,44 +3,45 @@ import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 
 import type { CommanderPreferences } from "../preferences";
 
-/** IM Fell English SC for the hand that writes orders, Alegreya for the body, both from the font library. */
-export const GAME_FONTS = libraryFontPairing("im-fell-english-sc", "alegreya");
+/** Lilita One for the chunky seed-packet headings, Nunito for the body, both from the font library. */
+export const GAME_FONTS = libraryFontPairing("lilita-one", "nunito");
 export const DISPLAY = GAME_FONTS.display.family;
 export const BODY = GAME_FONTS.body.family;
 
-/** The war table's colours: iron-gall ink, sealing wax, brass, campaign parchment, and the two sides' inks. */
-export const INK = "#2b1d10";
-export const INK_DIM = "#5e4630";
-export const WAX = "#8e1f17";
-export const BRASS = "#c99a4a";
-export const GILT = "#e8c27a";
-export const PARCHMENT = "#efe3c6";
-export const RED_INK = "#2d5b8c";
-export const RIVAL_INK = "#a3291c";
-export const OCHRE = "#b0741c";
-export const MOSS = "#3f7a2c";
-export const LEATHER = "#4a2c19";
-export const WOOD = "#5b3b22";
-export const STONE = "#3b3530";
+/** The garden journal's colours: leaf-green ink, red-ant action, honey, sunflower, seed-packet cream,
+ * the two colonies' inks, and the leaf, soil and moss the frames are cut from. */
+export const INK = "#1f2a12";
+export const INK_DIM = "#4c5a2c";
+export const WAX = "#d9361f";
+export const BRASS = "#e0a020";
+export const GILT = "#ffe066";
+export const PARCHMENT = "#fff6d6";
+export const RED_INK = "#d42a1c";
+export const RIVAL_INK = "#4b3a66";
+export const OCHRE = "#e08a1e";
+export const MOSS = "#4caf3a";
+export const LEATHER = "#3f7a24";
+export const WOOD = "#6b4424";
+export const STONE = "#2b4a1a";
 
 type Look = Pick<CommanderPreferences, "largeText" | "highContrast" | "reducedMotion">;
 
 /**
- * Lawn Order's one Rune theme: parchment sheets, leather and wood frames, stone command tokens and
- * wax-red actions. The commander's field preferences shape it: larger text scales every named style,
+ * LAWN ORDER's one Rune theme: seed-packet cream sheets, leaf and soil frames, moss command tokens and
+ * red-ant actions. The commander's field preferences shape it: larger text scales every named style,
  * high contrast inks the sheets solid and darkens the ink, reduced motion stills every transition.
  */
 export function lawnTheme(look: Look) {
   const k = look.largeText ? 1.18 : 1;
-  const ink = look.highContrast ? "#140b04" : INK;
-  const dim = look.highContrast ? "#2b1d10" : INK_DIM;
-  const paper = look.highContrast ? "#fbf3df" : "#efe3c6f5";
+  const ink = look.highContrast ? "#0b1205" : INK;
+  const dim = look.highContrast ? "#1f2a12" : INK_DIM;
+  const paper = look.highContrast ? "#fffbea" : "#fff6d6f2";
   return {
     colors: { ink, dim, wax: WAX, brass: BRASS, gilt: GILT, paper: PARCHMENT, colony: RED_INK, rival: RIVAL_INK, track: "#00000022" },
     text: {
       body: { family: BODY, size: Math.round(15 * k), color: ink },
       small: { family: BODY, size: Math.round(13 * k), color: dim },
-      eyebrow: { family: DISPLAY, size: Math.round(12 * k), tracking: 1.4, color: look.highContrast ? "#5a0d07" : WAX },
+      eyebrow: { family: DISPLAY, size: Math.round(12 * k), tracking: 1.4, color: look.highContrast ? "#7a1408" : WAX },
       title: { family: DISPLAY, size: Math.round(28 * k), color: ink },
       wordmark: { family: DISPLAY, size: Math.round(54 * k), color: ink, tracking: 1 },
       verb: { family: DISPLAY, size: Math.round(19 * k), color: ink },
@@ -49,14 +50,14 @@ export function lawnTheme(look: Look) {
       gilt: { family: DISPLAY, size: Math.round(14 * k), color: GILT },
     },
     variants: {
-      sheet: { padding: 18, gap: 8, fill: paper, border: { width: look.highContrast ? 2 : 1, color: look.highContrast ? ink : "#5e463088" }, radius: 2, shadow: { y: 6, blur: 18, color: "#00000066" } },
-      note: { padding: [10, 12, 10, 12], gap: 5, fill: look.highContrast ? "#fbf3df" : "#efe3c6ee", border: { width: 1, color: "#5e463066" }, radius: 1, shadow: { y: 3, blur: 8, color: "#0000004d" } },
-      leather: { padding: 9, gap: 6, fill: LEATHER, border: { width: 2, color: "#2a170b" }, radius: 6, shadow: { y: 5, blur: 14, color: "#00000080" } },
-      wood: { padding: [9, 9, 8, 9], gap: 6, fill: WOOD, border: { width: 2, color: "#2f1d0f" }, radius: 4, shadow: { y: 5, blur: 14, color: "#00000080" } },
-      seal: { minHeight: 42, padding: [10, 22, 10, 22], fill: WAX, border: { width: 2, color: "#3a0b06" }, radius: 3, hover: "#ffffff22", press: "#00000033", items: "center", justify: "center" },
-      plank: { minHeight: 38, padding: [8, 16, 8, 16], fill: "#7a5230", border: { width: 1, color: "#3a2412" }, radius: 3, hover: "#ffffff1a", press: "#00000033", items: "center", justify: "center" },
-      verb: { minHeight: 34, padding: [5, 10, 5, 10], radius: 2, hover: "#8e1f171a", press: "#8e1f1733", items: "center", gap: 10 },
-      token: { width: 52, height: 52, fill: STONE, border: { width: 1, color: "#1a1612" }, radius: 5, hover: "#ffffff1a", press: "#00000040", items: "center", justify: "center" },
+      sheet: { padding: 18, gap: 8, fill: paper, border: { width: look.highContrast ? 2 : 2, color: look.highContrast ? ink : "#3f7a24aa" }, radius: 14, shadow: { y: 6, blur: 18, color: "#00000055" } },
+      note: { padding: [10, 12, 10, 12], gap: 5, fill: look.highContrast ? "#fffbea" : "#fff6d6ee", border: { width: 2, color: "#3f7a2477" }, radius: 12, shadow: { y: 3, blur: 8, color: "#00000040" } },
+      leather: { padding: 9, gap: 6, fill: LEATHER, border: { width: 3, color: "#24480f" }, radius: 16, shadow: { y: 5, blur: 14, color: "#00000066" } },
+      wood: { padding: [9, 9, 8, 9], gap: 6, fill: WOOD, border: { width: 3, color: "#3a230f" }, radius: 14, shadow: { y: 5, blur: 14, color: "#00000066" } },
+      seal: { minHeight: 42, padding: [10, 22, 10, 22], fill: WAX, border: { width: 2, color: "#6a120a" }, radius: 21, hover: "#ffffff22", press: "#00000033", items: "center", justify: "center" },
+      plank: { minHeight: 38, padding: [8, 16, 8, 16], fill: "#6b4424", border: { width: 2, color: "#3a230f" }, radius: 19, hover: "#ffffff1a", press: "#00000033", items: "center", justify: "center" },
+      verb: { minHeight: 34, padding: [5, 10, 5, 10], radius: 10, hover: "#d9361f1a", press: "#d9361f33", items: "center", gap: 10 },
+      token: { width: 52, height: 52, fill: STONE, border: { width: 2, color: "#16290c" }, radius: 12, hover: "#ffffff1a", press: "#00000040", items: "center", justify: "center" },
     },
     motion: { duration: look.reducedMotion ? 0 : 160, distance: look.reducedMotion ? 0 : 10, bounce: 0 },
   } satisfies RuneTheme;

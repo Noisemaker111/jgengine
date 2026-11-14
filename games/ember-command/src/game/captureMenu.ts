@@ -12,9 +12,9 @@ export function registerMenuCapture(ctx: GameContext): void {
   ctx.game.commands.define("menu.record", {
     apply(state) {
       void (async () => {
-        await newCampaignRecord(state, "campaign-1", "Mara Vell");
+        await newCampaignRecord(state, "campaign-1", "Myra Vell");
         state.game.commands.run("match.start", {});
-        await saveCampaignRecord(state, "Mara Vell");
+        await saveCampaignRecord(state, "Myra Vell");
         state.game.commands.run("match.title", {});
         refreshCampaignSlots();
       })();

@@ -7801,65 +7801,37 @@
         "id": "grass",
         "surface": "grass",
         "material": "foliage/grass-macro",
-        "tint": "#62802f",
+        "tint": "#5fae33",
         "tiling": 3,
         "roughness": 0.96,
-        "triplanar": true,
-        "materialMaps": {
-          "color": "/materials/ambientcg-grass004/color.jpg",
-          "normal": "/materials/ambientcg-grass004/normal.jpg",
-          "roughness": "/materials/ambientcg-grass004/roughness.jpg",
-          "ao": "/materials/ambientcg-grass004/ao.jpg",
-          "displacement": "/materials/ambientcg-grass004/displacement.jpg"
-        }
+        "triplanar": true
       },
       {
         "id": "dirt",
         "surface": "dirt",
         "material": "ground/dirt-macro",
-        "tint": "#8f6a3e",
+        "tint": "#9c7040",
         "tiling": 2,
         "roughness": 0.96,
-        "triplanar": true,
-        "materialMaps": {
-          "color": "/materials/ambientcg-ground054/color.jpg",
-          "normal": "/materials/ambientcg-ground054/normal.jpg",
-          "roughness": "/materials/ambientcg-ground054/roughness.jpg",
-          "ao": "/materials/ambientcg-ground054/ao.jpg",
-          "displacement": "/materials/ambientcg-ground054/displacement.jpg"
-        }
+        "triplanar": true
       },
       {
         "id": "gravel",
         "surface": "gravel",
-        "material": "ground/dirt",
-        "tint": "#94743f",
+        "material": "ground/packed-dirt",
+        "tint": "#a07a4e",
         "tiling": 3,
         "roughness": 0.96,
-        "triplanar": true,
-        "materialMaps": {
-          "color": "/materials/ambientcg-ground037/color.jpg",
-          "normal": "/materials/ambientcg-ground037/normal.jpg",
-          "roughness": "/materials/ambientcg-ground037/roughness.jpg",
-          "ao": "/materials/ambientcg-ground037/ao.jpg",
-          "displacement": "/materials/ambientcg-ground037/displacement.jpg"
-        }
+        "triplanar": true
       },
       {
         "id": "rock",
         "surface": "rock",
         "material": "ground/gravel",
-        "tint": "#8a8172",
+        "tint": "#9a948a",
         "tiling": 4,
         "roughness": 0.96,
-        "triplanar": true,
-        "materialMaps": {
-          "color": "/materials/ambientcg-rock035/color.jpg",
-          "normal": "/materials/ambientcg-rock035/normal.jpg",
-          "roughness": "/materials/ambientcg-rock035/roughness.jpg",
-          "ao": "/materials/ambientcg-rock035/ao.jpg",
-          "displacement": "/materials/ambientcg-rock035/displacement.jpg"
-        }
+        "triplanar": true
       }
     ]
   }

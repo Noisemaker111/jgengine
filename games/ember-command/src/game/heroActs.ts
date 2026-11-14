@@ -56,8 +56,8 @@ export interface HeroActDef {
 export const HERO_ACTS: readonly HeroActDef[] = [
   {
     id: "thunderclap",
-    label: "Thunder Clap",
-    blurb: "Mandible slams the ground, bursting every Black Ant around him.",
+    label: "Ground Slam",
+    blurb: "The Marshal slams his jaws into the soil, bowling over every black ant around him.",
     icon: "thunder",
     hotkey: "C",
     manaCost: 40,
@@ -67,8 +67,8 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   },
   {
     id: "banner",
-    label: "Banner Muster",
-    blurb: "Plant the colony banner: the whole line strikes 30% harder for 8s.",
+    label: "Rally Scent",
+    blurb: "Spray rally scent: every red ant bites 30% harder for 8s.",
     icon: "rally",
     hotkey: "4",
     manaCost: 30,
@@ -77,8 +77,8 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   },
   {
     id: "volley",
-    label: "Ember Volley",
-    blurb: "Signal the volley: every Black Ant within reach of Mandible takes a rifle burst.",
+    label: "Acid Barrage",
+    blurb: "Signal the spitters: every black ant within reach of the Marshal is drenched in acid.",
     icon: "spitter",
     hotkey: "5",
     manaCost: 35,
@@ -87,8 +87,8 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   },
   {
     id: "ward",
-    label: "Ash Ward",
-    blurb: "Smother the line in ember smoke: blows land 45% softer for 6s.",
+    label: "Chitin Ward",
+    blurb: "The column hunkers into its armour: bites land 45% softer for 6s.",
     icon: "shield",
     hotkey: "6",
     manaCost: 25,

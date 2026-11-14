@@ -24,13 +24,13 @@ export const menuFocus: { id: string | null } = { id: null };
 
 export const credits = mergeCredits({ title: "The makers of the yard", sections: [
   { heading: "Lawn Order", entries: [
-    { label: "Art direction", detail: "An autumn yard painted for the war table." },
+    { label: "Art direction", detail: "A blazing summer lawn seen from ant height." },
     { label: "JGengine", detail: "Published engine packages", href: "https://jgengine.com" },
   ] },
-  { heading: "Icons", entries: [{ label: "game-icons.net contributors", detail: "CC BY 3.0; individual credits in iconData.ts", href: "https://game-icons.net" }] },
+  { heading: "Icons", entries: [{ label: "game-icons.net contributors", detail: "CC BY 3.0, the generic verb glyphs; the colony glyphs are drawn for this game", href: "https://game-icons.net" }] },
 ] }, creditsForSourceIds(ASSET_SOURCE_IDS), {
   title: "Sky, grade and type",
-  sections: creditsForLooks({ hdri: ["dusk"], lut: ["autumn-painterly"], fonts: ["im-fell-english-sc", "alegreya"] }),
+  sections: creditsForLooks({ hdri: ["clear-noon"], lut: ["tropical-lush"], fonts: ["lilita-one", "nunito"] }),
 });
 
 export function battleTime(seconds: number): string {
@@ -43,11 +43,11 @@ interface Verb { id: string; label: string; hint?: string; disabled?: boolean; q
 function OrderList({ verbs, active, onActive, onPick }: { verbs: readonly Verb[]; active: string | null; onActive: (id: string) => void; onPick: (id: string) => void }) {
   return <RuneView gap={2} label="Orders">
     {verbs.map((verb) => <RuneAction key={verb.id} variant="verb" layout="row" label={verb.label} disabled={verb.disabled === true}
-      fill={active === verb.id ? "#8e1f1714" : "#00000000"} onFocus={() => onActive(verb.id)} onHover={(inside) => { if (inside) onActive(verb.id); }}
+      fill={active === verb.id ? "#d9361f14" : "#00000000"} onFocus={() => onActive(verb.id)} onHover={(inside) => { if (inside) onActive(verb.id); }}
       run={() => { onActive(verb.id); onPick(verb.id); }}>
       <Text textStyle="verb" color={active === verb.id ? WAX : INK} text={active === verb.id ? "›" : " "} minWidth={10} />
       <RuneView gap={0} grow={1} shrink>
-        <Text textStyle="verb" text={verb.label} {...(verb.quiet === true ? { color: "#5e4630" } : {})} />
+        <Text textStyle="verb" text={verb.label} {...(verb.quiet === true ? { color: "#4c5a2c" } : {})} />
         {verb.hint === undefined ? null : <Small text={verb.hint} />}
       </RuneView>
     </RuneAction>)}
@@ -56,9 +56,9 @@ function OrderList({ verbs, active, onActive, onPick }: { verbs: readonly Verb[]
 
 /** The order the track offers next, in the field desk's words. */
 function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: string; brief: string } {
-  if (campaign === null) return { eyebrow: "Free skirmish", title: "Raze the Black Ant Nest", brief: "No orders, no carried stores: the yard as it stands." };
+  if (campaign === null) return { eyebrow: "Free skirmish", title: "Dig out the Black Ant Nest", brief: "No orders, no carried stores: the lawn as it stands, sprinkler, mower and all." };
   const ordinal = campaignOrdinal(campaign.index - 1);
-  if (campaign.phase === "finished") return { eyebrow: "The campaign is done", title: campaign.title, brief: "Every order is answered. The black nest is ash." };
+  if (campaign.phase === "finished") return { eyebrow: "The campaign is done", title: campaign.title, brief: "Every order is answered. The black nest is an empty hole in the lawn." };
   if (campaign.phase === "cleared") return { eyebrow: `Next order · ${ordinal} of ${campaignOrdinal(campaign.total - 1)}`, title: campaign.title, brief: campaign.brief };
   if (campaign.phase === "failed") return { eyebrow: `Order ${ordinal} failed`, title: campaign.title, brief: campaign.reason ?? campaign.brief };
   return { eyebrow: `Order ${ordinal} of ${campaignOrdinal(campaign.total - 1)}`, title: campaign.title, brief: campaign.brief };
@@ -76,13 +76,13 @@ function TakeCommandSheet({ recent, campaign, onTake, width }: { recent: SaveSlo
   return <Sheet width={width} label="Take command">
     <Eyebrow text={recent === null ? order.eyebrow : `${campaignLabel(recent.id)} · kept ${recent.savedAt === undefined ? "" : relativeSavedAt(recent.savedAt)}`} />
     <Title text={recent === null ? order.title : (recent.name ?? "Commander")} />
-    {thumb === null ? null : <RuneView width={width - 36} height={Math.round((width - 36) * 0.5)} image={thumb} fit="cover" border={{ width: 1, color: "#5e463088" }} />}
+    {thumb === null ? null : <RuneView width={width - 36} height={Math.round((width - 36) * 0.5)} image={thumb} fit="cover" border={{ width: 1, color: "#4c5a2c88" }} />}
     {recent === null ? <Text text={order.brief} /> : <RecordFacts slot={recent} />}
     <SealButton run={onTake}>{recent === null ? "March out" : "Return to the field"}</SealButton>
   </Sheet>;
 }
 
-const PRESET_NAMES = ["Mara Vell", "Mandible Hollin", "Edda Thorne", "Osric Vane", "Ilse Marrow", "Tobin Reed"];
+const PRESET_NAMES = ["Myra Vell", "Formica Rufa", "Atta Thorne", "Pogo Barbatus", "Lasius Niger", "Tobin Weaver"];
 const KEY_TEXT: Record<string, string> = { Space: " ", Minus: "-", Quote: "'", Period: "." };
 /** One key code as the letter it signs: words start with a capital, the native field takes codes, not characters. */
 export function signKey(name: string, code: string): string {
@@ -105,11 +105,11 @@ function CommissionSheet({ slot, name, onName, onBegin, width }: { slot: string 
   } } : {})}>
     <Eyebrow text="Commission" />
     <Title text="A new campaign" />
-    <Text text="Five orders stand between the colony and the Black Ant Nest. The first opens with the muster." />
+    <Text text="Five orders stand between the red colony and the black ant nest. The first starts with a dropped popsicle." />
     <Small text="Commander" />
     <RuneAction label="Commander" run={() => setSigning(!signing)} minHeight={40} padding={[8, 10, 8, 10]} justify="center"
-      border={{ width: signing ? 2 : 1, color: signing ? WAX : INK }} fill="#ffffff30" hover="#2b1d1010">
-      <Text textStyle="verb" color={name === "" ? "#5e463099" : INK} text={`${name === "" ? "Sign here" : name}${signing ? "|" : ""}`} />
+      border={{ width: signing ? 2 : 1, color: signing ? WAX : INK }} fill="#ffffff30" hover="#1f2a1210">
+      <Text textStyle="verb" color={name === "" ? "#4c5a2c99" : INK} text={`${name === "" ? "Sign here" : name}${signing ? "|" : ""}`} />
     </RuneAction>
     <Row gap={8}>
       <Small grow={1} shrink text={signing ? "Type the name. Enter seals, Esc stops." : "Tap the line to sign with the keys, or draw a name."} />
@@ -123,13 +123,13 @@ function CommissionSheet({ slot, name, onName, onBegin, width }: { slot: string 
 /** The kept records as three folios, each with its last look at the field. */
 function RecordsSheet({ slots, recentId, onOpen, onNew, width }: { slots: readonly SaveSlotMeta[]; recentId: string | null; onOpen: (slot: string) => void; onNew: (slot: string) => void; width: number }) {
   return <Sheet width={width} label="Campaign records">
-    <Eyebrow text="The field desk" />
+    <Eyebrow text="The field journal" />
     <Title text="Campaign records" />
     {slots.map((slot) => {
       const thumb = slotText(slot, "thumbnail");
       return <Row key={slot.id} gap={10} padding={[8, 0, 8, 0]} border={{ width: 0, color: "#0000" }} items="center">
         <RuneView width={72} height={48} fill="#00000014" items="center" justify="center" {...(thumb === null ? {} : { image: thumb, fit: "cover" as const })}
-          border={{ width: slot.id === recentId ? 2 : 1, color: slot.id === recentId ? WAX : "#5e463088" }}>
+          border={{ width: slot.id === recentId ? 2 : 1, color: slot.id === recentId ? WAX : "#4c5a2c88" }}>
           {thumb === null ? <WaxSeal size={34} wax={slot.empty ? "#8a7a64" : WAX} emblem={slot.empty ? "star" : "ember"} /> : null}
         </RuneView>
         <RuneView gap={1} grow={1} shrink>
@@ -148,7 +148,7 @@ function SkirmishSheet({ onMarch, width }: { onMarch: () => void; width: number 
   return <Sheet width={width} label="Free skirmish">
     <Eyebrow text="No orders" />
     <Title text="Free skirmish" />
-    <Text text="The yard as it stands: a keep, a purse and the black nest across the river. No campaign track, no carried stores. Raze the black nest to win." />
+    <Text text="The lawn as it stands: the red nest, a pantry, and the black nest across the garden hose. The sprinkler, the mower, rain and night all run. Dig out the black nest to win." />
     <PlankButton run={onMarch}>Into the yard</PlankButton>
   </Sheet>;
 }
@@ -158,7 +158,7 @@ function ReportSheet({ width }: { width: number }) {
   const r = useHudSlice((h) => ({ won: h.phase === "won", elapsed: h.elapsed, waves: h.wavesSent, troops: h.playerUnits }));
   return <Sheet width={width} label="Field report">
     <Eyebrow text="Field report" />
-    <Title text={r.won ? "The yard is yours" : "The keep has fallen"} />
+    <Title text={r.won ? "The lawn is ours" : "The red nest has fallen"} />
     <Text text={r.won ? "Your Red broke the black nest. The reinforcements have been silenced." : "The Black Ants breached your walls. Gather sugar early, build a Barracks and cover the road with a Acid Mound."} />
     {([["Battle time", battleTime(r.elapsed)], ["Waves faced", String(r.waves)], ["Troops standing", String(r.troops)]] as const).map(([label, value]) =>
       <Row key={label} justify="between" padding={[3, 0, 3, 0]}><Small text={label} /><Text textStyle="number" text={value} /></Row>)}
@@ -167,7 +167,7 @@ function ReportSheet({ width }: { width: number }) {
 
 /** An ink tick-box: a switch for the keys and pad, a mark for the eye. */
 function InkSwitch({ label, hint, on, onToggle }: { label: string; hint: string; on: boolean; onToggle: () => void }) {
-  return <RuneAction label={label} role="switch" run={onToggle} layout="row" gap={10} padding={[4, 4, 4, 4]} hover="#2b1d1010" radius={2} items="center">
+  return <RuneAction label={label} role="switch" run={onToggle} layout="row" gap={10} padding={[4, 4, 4, 4]} hover="#1f2a1210" radius={2} items="center">
     <RuneView gap={0} grow={1} shrink><Text textStyle="verb" text={label} /><Small text={hint} /></RuneView>
     <RuneView width={26} height={26} border={{ width: 2, color: INK }} items="center" justify="center">
       {on ? <Text textStyle="verb" color={WAX} text="✓" /> : null}
@@ -185,7 +185,7 @@ function SettingRowView({ row }: { row: SettingsRow }) {
   return <RuneView gap={4}>
     <Row justify="between"><Text grow={1} text={row.label} /><Text textStyle="number" color={WAX} text={row.kind === "slider" ? bind(() => row.format?.(value()) ?? value().toFixed(2)) : shown} /></Row>
     {row.kind !== "slider" ? <InkButton label={row.label} run={() => adjust(1)}>{`${shown} ›`}</InkButton>
-      : <RuneAction label={row.label} height={30} fill="#2b1d1018" border={{ width: 1, color: "#2b1d1066" }} padding={[11, 0, 11, 0]} onAdjust={adjust} onDrag={(d) => {
+      : <RuneAction label={row.label} height={30} fill="#1f2a1218" border={{ width: 1, color: "#1f2a1266" }} padding={[11, 0, 11, 0]} onAdjust={adjust} onDrag={(d) => {
         if (d.cancelled) { fraction.current = (Number(row.value) - min) / Math.max(1e-6, max - min); return; }
         fraction.current = Math.max(0, Math.min(1, d.x / Math.max(1, d.width)));
         if (d.phase === "up") row.set(Math.min(max, Math.max(min, min + Math.round((value() - min) / (row.step ?? 1)) * (row.step ?? 1))));
@@ -204,7 +204,7 @@ export function FieldSettings({ ctx, width }: { ctx: GameContext; width: number 
   const toggles: [keyof Pick<CommanderPreferences, "largeText" | "highContrast" | "reducedMotion">, string, string][] = [
     ["largeText", "Larger HUD text", "Enlarge command labels and field reports."],
     ["highContrast", "High contrast", "Heavier ink and solid backings."],
-    ["reducedMotion", "Reduce UI motion", "Sheets lie still and seals stop pulsing."],
+    ["reducedMotion", "Reduce UI motion", "Cards lie still and buttons stop pulsing."],
   ];
   return <Sheet width={width} label="Field preferences" {...(armed === null ? {} : { onKey: (code: string) => {
     if (code !== "Escape") active?.keybinds.find((k) => k.action === armed)?.rebind(code);
@@ -215,7 +215,7 @@ export function FieldSettings({ ctx, width }: { ctx: GameContext; width: number 
     {toggles.map(([key, label, hint]) => <InkSwitch key={key} label={label} hint={hint} on={prefs[key]} onToggle={() => store.set({ [key]: !prefs[key] })} />)}
     <RuneView layout="grid" columns={width < 400 ? 2 : 4} gap={4}>{settings.categories.map((c) =>
       <RuneAction key={c.id} label={c.label} run={() => setChosen(c.id)} padding={[6, 8, 6, 8]} radius={2} items="center"
-        fill={c === active ? WAX : "#00000010"} border={{ width: 1, color: c === active ? "#3a0b06" : "#5e463066" }} hover="#2b1d1014">
+        fill={c === active ? WAX : "#00000010"} border={{ width: 1, color: c === active ? "#6a120a" : "#4c5a2c66" }} hover="#1f2a1214">
         <Text textStyle="small" color={c === active ? "#fbe9d6" : INK} text={c.label} />
       </RuneAction>)}</RuneView>
     {active?.rows.map((row) => <SettingRowView key={row.id} row={row} />)}
@@ -313,7 +313,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
       { id: "save", label: campaignSlotOpen ? `Save to ${openName}` : "Save the campaign", hint: "Writes the campaign, its mission and its stores" },
       { id: "settings", label: "Settings" },
       { id: "credits", label: "Credits" },
-      { id: "title", label: "Return to title", hint: "Writes the record, then back to the war table", quiet: true },
+      { id: "title", label: "Return to title", hint: "Writes the record, then back to the title", quiet: true },
     ];
     const pick = (id: string) => {
       if (id === "resume") run("match.resume");
@@ -340,10 +340,10 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
 
   const held = slots.filter((slot) => !slot.empty).length;
   const verbs: Verb[] = [
-    ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The yard is yours" : "The keep has fallen" }] : []),
+    ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The lawn is ours" : "The red nest has fallen" }] : []),
     { id: "continue", label: "Take command", hint: recent === null ? (campaign === null ? "March into a free skirmish" : `March on ${order.title}`) : `Resume ${recent.name ?? campaignLabel(recent.id)}` },
     { id: "new", label: "New campaign", hint: `Opens ${campaignLabel(newSlot)}` },
-    { id: "skirmish", label: "Free skirmish", hint: "The yard without orders" },
+    { id: "skirmish", label: "Free skirmish", hint: "The whole lawn, no orders" },
     { id: "missions", label: "Campaign records", hint: `${held} of ${slots.length} kept` },
     { id: "settings", label: "Settings", hint: "Field preferences, sound, controls" },
     { id: "credits", label: "Credits" },
@@ -362,21 +362,21 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
     : active === "settings" ? <FieldSettings ctx={ctx} width={sheetWidth} />
     : active === "credits" ? <CreditsSheet width={sheetWidth} /> : null;
   const surveyWidth = phone ? width - 32 : 420;
-  const lead = <RuneView variant="sheet" width={surveyWidth} padding={[24, 26, 26, 26]} gap={10} fill="#e6d3a8" label="Lawn Order">
+  const lead = <RuneView variant="sheet" width={surveyWidth} padding={[24, 26, 26, 26]} gap={10} fill="#fff0b8" label="Lawn Order">
     <Row justify="between" items="start">
       <RuneView gap={2}>
-        <Eyebrow text="The Highland Yard" />
-        <Text textStyle="wordmark" text="Ember" />
-        <Text textStyle="wordmark" text="Command" />
+        <Eyebrow text="An ant-colony war in the backyard" />
+        <Text textStyle="wordmark" text="LAWN" />
+        <Text textStyle="wordmark" text="ORDER" />
       </RuneView>
-      <WaxSeal size={phone ? 64 : 88} />
+      <WaxSeal size={phone ? 64 : 88} emblem="ant" />
     </Row>
     <RuneView gap={1}><Eyebrow text={order.eyebrow} /><Text textStyle="verb" text={order.title} /></RuneView>
     <OrderList verbs={verbs} active={active} onActive={setActive} onPick={pick} />
   </RuneView>;
   const foot = <Row gap={20} padding={[6, 12, 6, 12]} fill="#00000055" radius={2}>
     <Text textStyle="gilt" text={notice ?? `Service record · ${prefs.wins} victories · ${prefs.losses} defeats`} />
-    {phone ? null : <Text textStyle="gilt" color="#d8c9a8" text="↑↓ choose   Enter take" />}
+    {phone ? null : <Text textStyle="gilt" color="#e8f0c8" text="↑↓ choose   Enter take" />}
   </Row>;
   return page(lead, detail, foot);
 }

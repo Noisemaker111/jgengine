@@ -101,7 +101,7 @@ export async function saveCampaignRecord(ctx: GameContext, name?: string): Promi
   const thumbnail = await captureCampaignThumb();
   const record: CampaignRecord = {
     name: name ?? (commandProfile.name.length > 0 ? commandProfile.name : previous?.name ?? "Commander"),
-    mission: readout?.title ?? previous?.mission ?? "The Highland Yard",
+    mission: readout?.title ?? previous?.mission ?? "The Backyard",
     sugar,
     leaf,
     playtime: (previous?.playtime ?? 0) + Math.max(0, session.elapsed),

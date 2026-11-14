@@ -15,10 +15,12 @@ const SIZES = [[1280, 720], [390, 844]] as const;
 test("the HUD's command tokens and formation tabs send their orders", async () => {
   for (const [width, height] of SIZES) {
     const ui = await mount("hud", width, height);
-    await ui.press("Build Fungus Garden");
+    await ui.press("Dig Fungus Garden");
     expect(session.buildArmed, `fungus_garden armed at ${width}`).toBe("fungus_garden");
-    await ui.press("Rally Point");
+    await ui.press("Rally Scent");
     expect(session.rallyArmed, `rally armed at ${width}`).toBe(true);
+    await ui.press("Pheromone Line");
+    expect(session.trailArmed, `trail armed at ${width}`).toBe(true);
     if (width < 700) await ui.press("Show map");
     await ui.press("Wedge formation");
     expect(session.formation.kind, `wedge at ${width}`).toBe("wedge");
@@ -77,12 +79,12 @@ test("the title starts a free skirmish, and the commission signs a commander by 
 
   ui = await mount("new");
   await ui.press("Draw a name");
-  expect(ui.text()).toContain("Mara Vell");
+  expect(ui.text()).toContain("Myra Vell");
   await ui.press("Commander");
   for (const code of ["Backspace", "Backspace", "Backspace", "Backspace", "Backspace", "Backspace", "Backspace", "Backspace", "Backspace", "KeyB", "KeyR", "KeyA", "KeyM"]) await ui.key(code);
   await ui.key("Escape");
   expect(ui.text()).toContain("Bram");
-  expect(ui.text()).not.toContain("Mara Vell");
+  expect(ui.text()).not.toContain("Myra Vell");
 });
 
 test("the records sheet lists the three campaign folios with an action each", async () => {

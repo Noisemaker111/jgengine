@@ -37,9 +37,10 @@ const EMBLEM = {
   ember: '<path d="M32 17 C35 23 41 26 40 34 C39.4 39.5 35.8 43 32 43 C28.2 43 24.6 39.5 24 34 C23.4 28.6 27.4 26.4 28.6 22.4 C30 25.6 30.6 27.4 32.4 28.6 C33.6 24.8 33.6 21 32 17 Z"/><rect x="25" y="44.5" width="14" height="3" rx="1.5"/>',
   pause: '<rect x="24" y="22" width="5.5" height="20" rx="1"/><rect x="34.5" y="22" width="5.5" height="20" rx="1"/>',
   star: '<path d="M32 19 L35.2 28.4 L45 28.6 L37.2 34.6 L40 44 L32 38.4 L24 44 L26.8 34.6 L19 28.6 L28.8 28.4 Z"/>',
+  ant: '<circle cx="32" cy="20" r="5.5"/><ellipse cx="32" cy="30" rx="4" ry="5.5"/><ellipse cx="32" cy="42" rx="7.5" ry="9.5"/><path d="M28 28 L19 23 M28 31 L18 33 M28 34 L20 41 M36 28 L45 23 M36 31 L46 33 M36 34 L44 41 M30 15 L26 9 M34 15 L38 9" stroke="#000" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
 } as const;
 
-/** A ragged disc of poured wax pressed with the campaign's die, as native SVG artwork. */
+/** A ragged red seal pressed with the colony's ant, as native SVG artwork. */
 export function WaxSeal({ size = 64, wax = WAX, emblem = "ember" }: { size?: number; wax?: string; emblem?: keyof typeof EMBLEM }) {
   const art = `<g transform="scale(0.375)">`
     + `<path d="${WAX_RING}" fill="#000" fill-opacity="0.28" transform="translate(0,2.4)"/>`
@@ -65,7 +66,7 @@ export function InkBar({ value, max, color, width, height = 7, label }: {
   value: () => number; max: () => number; color: string; width: number; height?: number; label: string;
 }) {
   const inner = Math.max(0, width - 2);
-  return <RuneView width={width} height={height} fill="#00000014" border={{ width: 1, color: "#2b1d10aa" }} label={label} role="meter" padding={1}>
+  return <RuneView width={width} height={height} fill="#00000014" border={{ width: 1, color: "#1f2a12aa" }} label={label} role="meter" padding={1}>
     <RuneView height={height - 2} fill={color} width={bind(() => { const m = max(); return m > 0 ? inner * Math.max(0, Math.min(1, value() / m)) : 0; })} />
   </RuneView>;
 }
@@ -73,7 +74,7 @@ export function InkBar({ value, max, color, width, height = 7, label }: {
 /** A loose sheet pinned to the war table: every detail pane is written on one. */
 export function Sheet({ children, ...props }: RuneViewProps & { children?: ReactNode }) {
   return <RuneView variant="sheet" {...props}>
-    <RuneView anchor="top" inset={-6}><RuneView width={10} height={10} radius={5} fill={WAX} border={{ width: 1, color: "#3a0b06" }} /></RuneView>
+    <RuneView anchor="top" inset={-6}><RuneView width={10} height={10} radius={5} fill={WAX} border={{ width: 1, color: "#6a120a" }} /></RuneView>
     {children}
   </RuneView>;
 }
@@ -88,7 +89,7 @@ export function PlankButton({ children, ...props }: RuneActionProps) {
 }
 /** An ink-ruled button written on the sheet. */
 export function InkButton({ children, ...props }: RuneActionProps) {
-  return <RuneAction minHeight={34} padding={[6, 12, 6, 12]} border={{ width: 1, color: INK }} radius={2} hover="#2b1d1014" press="#2b1d1030" items="center" justify="center" {...props}>
+  return <RuneAction minHeight={34} padding={[6, 12, 6, 12]} border={{ width: 1, color: INK }} radius={2} hover="#1f2a1214" press="#1f2a1230" items="center" justify="center" {...props}>
     <Text text={String(children)} align="center" />
   </RuneAction>;
 }

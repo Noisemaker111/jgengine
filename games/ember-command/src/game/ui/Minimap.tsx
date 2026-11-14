@@ -106,8 +106,8 @@ export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
   const grid = Array.from({ length: 5 }, (_, i) => (i + 1) * (MAP_SIZE / 6));
   return <RuneView width={MAP_SIZE} height={MAP_SIZE} fill="#dccaa0" clip label="Battlefield minimap">
     <RuneView pin={[0, 0, null, null]} width={MAP_SIZE} height={MAP_SIZE / 2} fill="#a3291c14" />
-    {grid.map((at) => <RuneView key={`v${at}`} pin={[at, 0, null, null]} width={1} height={MAP_SIZE} fill="#2b1d101f" />)}
-    {grid.map((at) => <RuneView key={`h${at}`} pin={[0, at, null, null]} width={MAP_SIZE} height={1} fill="#2b1d101f" />)}
+    {grid.map((at) => <RuneView key={`v${at}`} pin={[at, 0, null, null]} width={1} height={MAP_SIZE} fill="#1f2a121f" />)}
+    {grid.map((at) => <RuneView key={`h${at}`} pin={[0, at, null, null]} width={MAP_SIZE} height={1} fill="#1f2a121f" />)}
     <RuneFor source={fog} keyBy={(run) => `${run.key}:${run.kind}:${run.w}`}>{(run) =>
       <RuneView pin={[run.x, run.y, null, null]} width={run.w} height={run.h}
         fill={FOG_INK} opacity={run.kind === "unseen" ? FOG_ALPHA.unseen * 0.8 : FOG_ALPHA.explored * 0.45} />}
