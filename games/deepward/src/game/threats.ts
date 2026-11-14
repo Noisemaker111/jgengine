@@ -24,7 +24,12 @@ export interface ThreatState {
   hits: number; seen: number; lane: number;
 }
 
-export const CAT = { prowl: 3.2, stalk: 5.2, sight: 18, cone: 150, crouch: 1.15, pounceTime: 0.45, reach: 3.4, damage: 42, groom: 3.5, stalkTo: 11 } as const;
+/**
+ * The Cat. It must hold you in sight for `notice` seconds before it commits, it locks its pounce on
+ * where you stood when it crouched (so a sideways dash dodges), and after a pounce it grooms; after a
+ * hit it is satisfied for a while.
+ */
+export const CAT = { prowl: 3.2, stalk: 5.2, sight: 15, cone: 130, notice: 0.7, crouch: 1.2, pounceTime: 0.45, reach: 3.2, damage: 40, groom: 4, satisfied: 12, stalkTo: 11 } as const;
 export const ROOMBA = { speed: 3.8, radius: 7.5, cycle: 64, active: 28, damage: 12, laneGap: 7 } as const;
 export const SPIDER = { web: 5.5, reach: 1.6, speed: 2.6, leash: 9, windup: 0.6, damage: 18, cooldown: 1.6, slow: 0.45 } as const;
 export const TRAP = { trigger: 1.15, damage: 50 } as const;
@@ -144,22 +149,27 @@ function tickCat(template: RoomTemplate, s: ThreatState, senses: Senses, dt: num
       s.facing = toward(s.at, s.target);
     }
     if (s.timer <= 0) {
-      if (s.target !== null && groundDistance(senses.at, s.target) < CAT.reach && !senses.covered) events.push({ type: "hurt", damage: CAT.damage, by: "cat", text: "The Cat's paw came down on you." });
-      s.mode = "groom"; s.timer = CAT.groom; s.target = null;
+      const hit = s.target !== null && groundDistance(senses.at, s.target) < CAT.reach && !senses.covered;
+      if (hit) events.push({ type: "hurt", damage: CAT.damage, by: "cat", text: "The Cat's paw came down on you." });
+      s.mode = "groom"; s.timer = hit ? CAT.satisfied : CAT.groom; s.target = null; s.seen = 0;
     }
     return s;
   }
   if (s.mode === "crouch") {
-    if (senses.covered) { s.mode = "prowl"; s.timer = 2; s.target = null; return s; }
-    if (spotted) { s.target = senses.at; s.facing = toward(s.at, senses.at); }
+    if (senses.covered) { s.mode = "prowl"; s.timer = 2; s.target = null; s.seen = 0; return s; }
+    // The pounce is aimed where you stood when the wiggle began: move and it lands on nothing.
     if (s.timer <= 0) { s.mode = "pounce"; s.timer = CAT.pounceTime; }
     return s;
   }
   if (s.mode === "groom") { if (s.timer <= 0) { s.mode = "prowl"; s.timer = 3; } return s; }
-  if (spotted) {
+  s.seen = spotted ? s.seen + dt : Math.max(0, s.seen - dt * 0.5);
+  if (spotted && s.seen >= CAT.notice) {
     s.target = senses.at; s.facing = toward(s.at, senses.at);
     if (groundDistance(s.at, senses.at) <= CAT.stalkTo) { s.mode = "crouch"; s.timer = CAT.crouch; events.push({ type: "cue", sound: "wiggle", at: s.at }); return s; }
     s.mode = "stalk"; s.timer = 5;
+  } else if (spotted) {
+    if (s.mode === "prowl") { s.mode = "listen"; s.timer = 0.8; }
+    s.target = senses.at;
   } else if (hears(s, senses)) {
     if (s.mode === "prowl") { s.mode = "listen"; s.timer = 0.8; }
     s.target = senses.at;
@@ -202,7 +212,7 @@ function tickRoomba(template: RoomTemplate, s: ThreatState, senses: Senses, dt: 
   events.push({ type: "vacuum", at: s.at });
   if (groundDistance(s.at, senses.at) < ROOMBA.radius && s.cooldown <= 0) {
     events.push({ type: "hurt", damage: ROOMBA.damage, by: "roomba", text: "The Roomba bowled you over and swallowed something from your pack." });
-    s.cooldown = 3;
+    s.cooldown = 5;
   }
   return s;
 }
@@ -270,7 +280,7 @@ function tickDog(template: RoomTemplate, s: ThreatState, senses: Senses, dt: num
   }
   if (groundDistance(s.at, senses.at) < DOG.reach && s.cooldown <= 0) {
     events.push({ type: "hurt", damage: DOG.damage, by: "dog", text: "The dog's nose knocked you flat." });
-    s.cooldown = 2.4;
+    s.cooldown = 5; s.stunned = 1.5; // clumsy: it bowls you over, then blunders off before it comes again
   }
   return s;
 }
