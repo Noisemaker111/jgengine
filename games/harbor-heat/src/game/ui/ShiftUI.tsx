@@ -83,8 +83,32 @@ export function ShiftPanel() {
   const view = useGameStore(shiftView, sameJson);
   const room = useRoom();
   if (view === null) return null;
-  const width = room === "stacked" ? 214 : room === "wide" ? 330 : 236;
+  const compact = room === "stacked";
+  const width = compact ? 214 : room === "wide" ? 330 : 236;
   const meter = width - 24;
+  // On an upright phone the card is two lines and a bar per box, so the wallet and the dash keep their room.
+  if (compact) {
+    return (
+      <RuneView width={width} gap={4} padding={[6, 8, 6, 8]} fill="#0c2630ee" radius={8} border={{ width: 2, color: "#06141a" }}>
+        <Row justify="between">
+          <Text family={DISPLAY} size={15} color={view.stageIndex >= 3 ? "#6fd8ff" : HH.cream} text={view.water === "" ? view.stage.toUpperCase() : view.water} />
+          <Text mono size={12} weight={700} color={HH.cream} text={view.clock} />
+        </Row>
+        <Row gap={3}>
+          {TIDE_STAGES.map((stage) => (
+            <RuneView key={stage.id} grow={1} height={5} radius={2} fill={stage.index <= view.stageIndex ? (stage.index >= 3 ? "#2fb3d9" : HH.mint) : "#173843"} />
+          ))}
+        </Row>
+        {view.bag.map((box) => (
+          <Row key={box.id} gap={6}>
+            <Text size={11} weight={700} grow={1} shrink color={HH.cream} text={box.who} />
+            <Meter value={box.heat} color={box.heat < box.cold ? "#7fb6d9" : heatColor(box.heat)} width={56} />
+            <Text size={11} weight={700} color={heatColor(box.heat)} text={`${box.heat}°`} />
+          </Row>
+        ))}
+      </RuneView>
+    );
+  }
   return (
     <RuneView width={width} gap={6} padding={[8, 10, 8, 10]} fill="#0c2630ee" radius={10} border={{ width: 2, color: "#06141a" }} shadow={{ x: 4, y: 5, blur: 0, color: "#00000066" }}>
       <Row justify="between">
@@ -206,7 +230,7 @@ export function PizzeriaBooks() {
     },
   ];
   return (
-    <PriceBoard look="pizzeria" kicker={`Vell's · since 1961 · ${"★".repeat(rep)}${"☆".repeat(5 - rep)}`} title="The Books" sub={`Rep ${rep}/5 · ${shop.goodDeliveries} happy deliveries · next star at ${nextRep}`}
+    <PriceBoard look="pizzeria" kicker="Vell's · since 1961" title="The Books" sub={`Rep ${rep}/5 · ${shop.goodDeliveries} happy deliveries · next star at ${nextRep}`}
       sections={sections} cash={cash} cred={cred} onLeave={() => commands.run("pizzeria.close", {})} aside={`Nightly quota ${money(nightlyQuota(shop))} · ${shop.shifts} shifts worked`} />
   );
 }

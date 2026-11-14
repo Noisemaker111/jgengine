@@ -4,7 +4,7 @@ import { vehicleById } from "./entities/vehicles/catalog";
 import { harborProfile } from "./menuProfile";
 import { DAY_SECONDS } from "./clock";
 import { tickTide } from "./tide/tideRuntime";
-import { shiftStore, SWAP_DOCKS } from "./pizza/shift";
+import { pizzeriaStore, shiftStore, SWAP_DOCKS } from "./pizza/shift";
 import { focusHarborVerb } from "./ui/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
@@ -103,6 +103,8 @@ export function registerCaptureCommands(ctx: GameContext): void {
       if (dock === undefined) return state;
       const [x, z] = dock.position;
       state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: Math.PI * 0.75 });
+      const shop = pizzeriaStore.read(state);
+      if (shop.oven < 2) pizzeriaStore.write(state, { ...shop, oven: 2 });
       const shift = shiftStore.read(state);
       shiftStore.write(state, {
         ...shift,

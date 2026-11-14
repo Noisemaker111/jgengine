@@ -140,7 +140,11 @@ describe("a night at Vell's", () => {
     expect(summary).not.toBeNull();
     expect(summary!.metQuota).toBe(false);
     expect(pizzeriaStore.read(ctx).shifts).toBe(1);
+    // The midnight card's Sleep works from across town: the rider rides home first.
+    moveTo(ctx, [40, -60]);
     expect(ctx.game.commands.run("shift.sleep", {}).status).not.toBe("rejected");
+    const home = ctx.scene.entity.get(ctx.player.userId)!.position;
+    expect(Math.hypot(home[0] - OVEN[0], home[2] - OVEN[1])).toBeLessThan(5);
     expect(ctx.time.calendar().hour).toBe(17);
     expect(ctx.time.calendar().minute).toBe(30);
     expect(shiftStore.read(ctx).summary).toBeNull();

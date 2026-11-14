@@ -461,12 +461,18 @@ function swapAtDock(ctx: GameContext): void {
 
 function sleepRefusal(ctx: GameContext) {
   if (shiftOpen(hourOf(ctx))) return { reason: "open", message: "The shift is on. Orders first, sleep later." };
-  if (!nearOven(ctx)) return { reason: "not-at-oven", message: "Rest at Vell's, upstairs from the oven." };
+  // From the midnight card the rider rides home first; otherwise it is the bed upstairs from the oven.
+  if (shiftStore.read(ctx).summary === null && !nearOven(ctx)) return { reason: "not-at-oven", message: "Rest at Vell's, upstairs from the oven." };
   return null;
 }
 
 /** Nap upstairs until dusk: the clock jumps to half past five and the tide is out. */
 export function sleepTillDusk(ctx: GameContext): void {
+  if (!nearOven(ctx)) {
+    streetPlayOf(ctx).exitVehicle(ctx, true);
+    const x = OVEN[0] + 2;
+    ctx.scene.entity.setPose(ctx.player.userId, { position: [x, ctx.world.groundHeightAt(x, OVEN[1]), OVEN[1]] });
+  }
   const hours = hoursUntilDusk(hourOf(ctx));
   const clock = ctx.time.snapshot();
   ctx.time.hydrate({ ...clock, now: clock.now + secondsAtHour(hours) });
@@ -615,6 +621,6 @@ export function shiftPromptLabel(ctx: GameContext, id: string): string | null {
   if (id === "shift:pizzeria.open") return "Open the shop's books";
   if (id === "shift:shift.sleep") return "Sleep upstairs till dusk";
   if (id.startsWith("shift:deliver:")) return `Hand over to ${customerById(id.slice(14))?.name ?? "the customer"}`;
-  if (id.startsWith("shift:swap:")) return "Swap vehicles at the dock";
+  if (id.startsWith("shift:swap:")) return "Swap at the dock";
   return null;
 }
