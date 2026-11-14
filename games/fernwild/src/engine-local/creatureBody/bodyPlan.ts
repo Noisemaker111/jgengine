@@ -113,7 +113,7 @@ export interface BodyFeatures {
 
 type V3 = [number, number, number];
 
-const MAT = { body: 0, belly: 1, accent: 2, eye: 3, glass: 4 } as const;
+const MAT = { body: 0, belly: 1, accent: 2, eye: 3, glass: 4, rubber: 5 } as const;
 
 class Part {
   positions: number[] = [];
@@ -149,6 +149,10 @@ class Part {
   }
   /** An axis-aligned box centred on `c` with half-extents `h`, flat-shaded. */
   box(c: V3, h: V3): this {
+    // Rounded edges: every face is a grid whose outer rows wrap round a radius, so panels catch a highlight
+    // along their edges instead of reading as hard cubes.
+    const r = Math.min(h[0], h[1], h[2]) * 0.22;
+    const steps = (half: number) => [-half, -half + r * 0.3, -half + r, half - r, half - r * 0.3, half];
     const faces: [V3, V3, V3][] = [
       [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[-1, 0, 0], [0, 1, 0], [0, 0, -1]],
@@ -157,17 +161,37 @@ class Part {
       [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
       [[0, 0, -1], [-1, 0, 0], [0, 1, 0]],
     ];
+    const axisOf = (v: V3) => (v[0] !== 0 ? 0 : v[1] !== 0 ? 1 : 2);
     for (const [n, u, v] of faces) {
-      const corner = (su: number, sv: number): V3 => [
-        c[0] + (n[0] + u[0] * su + v[0] * sv) * h[0],
-        c[1] + (n[1] + u[1] * su + v[1] * sv) * h[1],
-        c[2] + (n[2] + u[2] * su + v[2] * sv) * h[2],
-      ];
-      const a = this.vertex(corner(-1, -1), n);
-      const b = this.vertex(corner(1, -1), n);
-      const d = this.vertex(corner(1, 1), n);
-      const e = this.vertex(corner(-1, 1), n);
-      this.indices.push(a, b, d, a, d, e);
+      const nu = axisOf(u);
+      const nv = axisOf(v);
+      const su = steps(h[nu]!);
+      const sv = steps(h[nv]!);
+      const start = this.positions.length / 3;
+      for (const b of sv) {
+        for (const a of su) {
+          const q: V3 = [0, 0, 0];
+          const na = axisOf(n);
+          q[na] = n[na]! * h[na]!;
+          q[nu] = u[nu]! * a;
+          q[nv] = v[nv]! * b;
+          const inner: V3 = [0, 1, 2].map((i) => Math.max(-h[i]! + r, Math.min(h[i]! - r, q[i]!))) as V3;
+          const d = sub(q, inner);
+          const length = Math.hypot(d[0], d[1], d[2]) || 1;
+          const dir: V3 = [d[0] / length, d[1] / length, d[2] / length];
+          this.vertex([c[0] + inner[0] + dir[0] * r, c[1] + inner[1] + dir[1] * r, c[2] + inner[2] + dir[2] * r], dir);
+        }
+      }
+      const row = su.length;
+      for (let j = 0; j < sv.length - 1; j += 1) {
+        for (let i = 0; i < row - 1; i += 1) {
+          const a = start + j * row + i;
+          const bb = a + 1;
+          const d = a + row + 1;
+          const e = a + row;
+          this.indices.push(a, bb, d, a, d, e);
+        }
+      }
     }
     return this;
   }
@@ -247,6 +271,55 @@ class Rig {
   finish(): GlbNode[] {
     return this.nodes.map(({ node, parts }) => ({ ...node, primitives: [...parts.values()].map((part) => part.primitive()) }));
   }
+}
+
+/** Linear RGB multipliers: grime near the ground, rust bloom, a clean top. */
+const GRIME: V3 = [0.42, 0.38, 0.33];
+const RUST: V3 = [0.62, 0.36, 0.22];
+
+/** A cheap smooth noise over position, 0 to 1, deterministic. */
+function noise3(x: number, y: number, z: number): number {
+  const s = Math.sin(x * 3.1 + y * 1.7) * Math.cos(z * 2.3 - x * 0.9) + Math.sin(y * 4.3 + z * 1.1) * 0.5;
+  return Math.min(1, Math.max(0, s * 0.5 + 0.5));
+}
+
+/**
+ * Weather a machine's paint in vertex colours: grime darkens toward the ground, rust blooms in patches on
+ * the painted hull and trim, panels vary slightly in tone, and parts tucked low under the hull sit in shade
+ * (a poor man's ambient occlusion). Eyes, glass and rubber are left as they are.
+ */
+function weather(nodes: GlbNode[], height: number): void {
+  const restY: number[] = [];
+  nodes.forEach((node, index) => {
+    restY[index] = (node.parent >= 0 ? restY[node.parent]! : 0) + node.translation[1];
+  });
+  nodes.forEach((node, index) => {
+    node.primitives.forEach((primitive, partIndex) => {
+      if (primitive.material !== MAT.body && primitive.material !== MAT.belly && primitive.material !== MAT.accent) return;
+      const positions = primitive.positions;
+      const normals = primitive.normals;
+      const count = positions.length / 3;
+      const tone = 0.94 + 0.12 * noise3(index * 1.3, partIndex * 2.1, 0.5);
+      const colors: number[] = [];
+      for (let i = 0; i < count; i += 1) {
+        const x = positions[i * 3]!;
+        const y = positions[i * 3 + 1]! + restY[index]!;
+        const z = positions[i * 3 + 2]!;
+        const up = height > 0 ? Math.min(1, Math.max(0, y / (height * 0.45))) : 1;
+        const grime = 1 - (1 - up) * 0.6;
+        // Faces turned down under the hull read darker, as if shadowed by it.
+        const shade = 1 - Math.max(0, -normals[i * 3 + 1]!) * 0.35;
+        const rust = primitive.material === MAT.belly ? 0 : Math.max(0, noise3(x * 2.6, y * 2.6, z * 2.6) - 0.45) * 2.2;
+        for (let c = 0; c < 3; c += 1) {
+          const dirt = GRIME[c]! + (1 - GRIME[c]!) * grime;
+          const rusted = 1 + (RUST[c]! - 1) * Math.min(1, rust);
+          colors.push(Math.min(1, tone * dirt * rusted * shade));
+        }
+        colors.push(1);
+      }
+      primitive.colors = colors;
+    });
+  });
 }
 
 /**
@@ -363,8 +436,8 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
       for (const side of [-1, 1]) {
         const x = side * (torso.width / 2 + width / 2);
         // The track: a belt with rounded ends (idler and sprocket), pads along its top run.
-        rig.part(body, MAT.belly).box([x, y, 0], [width / 2, tall / 2, long / 2 - tall / 2]);
-        for (const end of [-1, 1]) rig.part(body, MAT.belly).tube([x - width / 2, y, end * (long / 2 - tall / 2)], [x + width / 2, y, end * (long / 2 - tall / 2)], tall / 2, tall / 2, 12);
+        rig.part(body, MAT.rubber).box([x, y, 0], [width / 2, tall / 2, long / 2 - tall / 2]);
+        for (const end of [-1, 1]) rig.part(body, MAT.rubber).tube([x - width / 2, y, end * (long / 2 - tall / 2)], [x + width / 2, y, end * (long / 2 - tall / 2)], tall / 2, tall / 2, 12);
         for (let pad = 0; pad < 7; pad += 1) rig.part(body, MAT.accent).box([x, y + tall / 2 + tall * 0.02, ((pad + 0.5) / 7 - 0.5) * (long - tall)], [width / 2 * 0.96, tall * 0.03, (long - tall) / 7 * 0.22]);
         // Road wheels show through the tread's flank, and the track's top run is a lighter band.
         for (let i = 0; i < 4; i += 1) {
@@ -528,6 +601,7 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   }
 
   const nodes = rig.finish();
+  if (m !== undefined) weather(nodes, centreY + torso.height / 2);
   const nodder = neckNode >= 0 ? neckNode : nodes.findIndex((node) => node.name === "head");
   const clips = gaitClips({
     body,
@@ -591,11 +665,13 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
             { name: "eye", color: "#111111", roughness: 0.3 },
           ]
         : [
-            { name: "body", color: plan.colors.body, metalness: m.metal ?? 0.55, roughness: 0.45 },
-            { name: "belly", color: plan.colors.belly ?? "#3a3d42", metalness: 0.7, roughness: 0.4 },
-            { name: "accent", color: plan.colors.accent ?? plan.colors.body, metalness: 0.35, roughness: 0.55 },
-            { name: "eye", color: m.glow, emissive: m.glow, roughness: 0.2 },
+            // Painted hull (semi-gloss over metal), bare metal under-frame and joints, worn paint on the trim.
+            { name: "body", color: plan.colors.body, metalness: Math.min(0.5, m.metal ?? 0.35), roughness: 0.55 },
+            { name: "belly", color: plan.colors.belly ?? "#3a3d42", metalness: 0.85, roughness: 0.35 },
+            { name: "accent", color: plan.colors.accent ?? plan.colors.body, metalness: 0.3, roughness: 0.6 },
+            { name: "eye", color: m.glow, emissive: m.glow, emissiveStrength: 1.6, roughness: 0.2 },
             { name: "glass", color: "#7fd3e8", emissive: "#12343c", metalness: 0.1, roughness: 0.05 },
+            { name: "rubber", color: "#1d1f21", metalness: 0, roughness: 0.95 },
           ],
     clips,
   };

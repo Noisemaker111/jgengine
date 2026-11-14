@@ -30,7 +30,8 @@ describe("robot bodies", () => {
     const triangles = (species: string) => bodyGlbModel(ROBOT_BODIES[species]!.plan).nodes.reduce((sum, node) => sum + node.primitives.reduce((n, p) => n + p.indices.length / 3, 0), 0);
     const plain = (species: string) => {
       const plan = ROBOT_BODIES[species]!.plan;
-      return bodyGlbModel({ ...plan, machine: { glow: plan.machine!.glow } }).nodes.reduce((sum, node) => sum + node.primitives.reduce((n, p) => n + p.indices.length / 3, 0), 0);
+      const { glow, boxy, joints } = plan.machine!;
+      return bodyGlbModel({ ...plan, machine: { glow, ...(boxy === undefined ? {} : { boxy }), ...(joints === undefined ? {} : { joints }) } }).nodes.reduce((sum, node) => sum + node.primitives.reduce((n, p) => n + p.indices.length / 3, 0), 0);
     };
     expect(triangles("craneback")).toBeGreaterThan(plain("craneback"));
     expect(triangles("thermite")).toBeGreaterThan(plain("thermite"));

@@ -38,6 +38,8 @@ export interface GlbMaterial {
   roughness?: number;
   metalness?: number;
   emissive?: string;
+  /** How bright the emissive glows past 1 (KHR_materials_emissive_strength), so a lamp or eye blooms. */
+  emissiveStrength?: number;
   doubleSided?: boolean;
   /** Index into {@link GlbModel.images} used as the base colour texture. */
   image?: number;
@@ -214,8 +216,10 @@ export function encodeGlb(model: GlbModel): Uint8Array {
         ...(material.image === undefined ? {} : { baseColorTexture: { index: material.image } }),
       },
       ...(material.emissive === undefined ? {} : { emissiveFactor: hexToLinear(material.emissive) }),
+      ...(material.emissiveStrength === undefined ? {} : { extensions: { KHR_materials_emissive_strength: { emissiveStrength: material.emissiveStrength } } }),
       ...(material.doubleSided === true ? { doubleSided: true } : {}),
     })),
+    ...(model.materials.some((material) => material.emissiveStrength !== undefined) ? { extensionsUsed: ["KHR_materials_emissive_strength"] } : {}),
     ...(skins.length === 0 ? {} : { skins }),
     ...(images.length === 0 ? {} : { images, textures: images.map((_, source) => ({ source, sampler: 0 })), samplers: [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }] }),
     animations,
