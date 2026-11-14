@@ -132,3 +132,19 @@ The game keeps the folder and package id `odd-orbit`; every player-facing name i
   the airlock that the applicant steps off).
 - [ ] 5. Deeper long loop: tenant-specific requests (Velvet's chandelier, Basalt's annual sentence as
   a collectible), a second station section after the deed.
+
+## Handoff
+
+- Done (committed): NO VACANCY re-theme and boarding-house systems (species, rooms/leaks/comfort,
+  rent night, reviews, reputation, move-outs, friend cover, feud sabotage, applicants, modules, deed,
+  flare/eggs/molt events, lease goals), Rooms plan + airlock slip + comfort pills, procedural tenant
+  meshes, room modules + neon sign, space mood, scene berths via the editor CLI, README and
+  art direction. Game tests: 130 pass, check-types clean (last run before the pause). Shared fix:
+  `games/shared/viteJgUiWasm.ts` strips `?import`.
+- In progress: visual verification. Browser captures (`shoot`/`drive`) returned a blank white page
+  with no controls after 90 s on a heavily loaded host; not yet known whether the game or the host is
+  at fault. A control capture of another game (drift-foundry) was started and stopped unfinished.
+- Next steps: 1) drive a control game to tell host from game; if it is the game, read the page errors
+  (suspects: the WorldOverlay Fragment with RoomModules, or the types.ts <-> boarding/boarding.ts
+  import cycle in the browser). 2) `bun run shoot odd-orbit --mode play --draft --inspect`, inspect,
+  tune darkness. 3) `bun run gen`, `bun run verify:fast`. 4) Milestone 2 (from-zero flow, suite proofs).
