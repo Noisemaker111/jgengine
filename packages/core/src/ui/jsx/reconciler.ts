@@ -38,6 +38,11 @@ export interface Host<N> {
   /** Put `node` under `parent` right before `before` (null: last). A node already there stays put. */
   place(parent: N, node: N, before: N | null): void;
   remove(parent: N, node: N): void;
+  /**
+   * `node` left the tree for good. Runs for every host node of a removed subtree, nested ones too,
+   * which `remove` (only the topmost node, detached from its container) never reaches.
+   */
+  discard?(node: N): void;
   /** Children of `parent` are final for this commit (runs after every place/remove under it). */
   childrenPlaced?(parent: N): void;
   /** One commit's host work is done. */
@@ -729,6 +734,10 @@ export class Root<N = unknown> {
       fiber.placed = [];
     }
     for (const child of fiber.children) this.teardown(child);
+    if ((fiber.kind === "host" || fiber.kind === "text") && fiber.node !== null) {
+      const node = fiber.node;
+      guard(() => this.host.discard?.(node));
+    }
     if (fiber.hooks !== null) {
       for (const cell of fiber.hooks) {
         if (cell.tag === "effect") {
