@@ -7,7 +7,7 @@ import { tick as tickQueue } from "@jgengine/core/gameplay";
 import { tickUnits } from "./ai/units";
 import { canResearch, registerCommands } from "./commands";
 import { content } from "./content";
-import { GOLD, LUMBER } from "./tuning";
+import { SUGAR, LEAF } from "./tuning";
 import { resetSession, session, type UnitRuntime } from "./session";
 import {
   ASSAULT_DMG_PER_RANK,
@@ -35,24 +35,24 @@ function health(ctx: GameContext, id: string): number {
   return ctx.scene.entity.stats.get(id, "health")?.current ?? -1;
 }
 
-/** Enemy HP left after a fixed melee exchange with a player footman at the given weapon rank. */
+/** Enemy HP left after a fixed melee exchange with a player soldier at the given weapon rank. */
 function enemyHealthAfterMelee(weaponsRank: number, ticks: number): number {
   const ctx = boot();
   resetSession();
   session.research.ranks.weapons = weaponsRank;
-  spawn(ctx, "footman", "f1", [0, 0, 0], "player", { kind: "idle" });
-  spawn(ctx, "grunt", "e1", [1.5, 0, 0], "enemy", { kind: "idle" });
+  spawn(ctx, "soldier", "f1", [0, 0, 0], "player", { kind: "idle" });
+  spawn(ctx, "raider", "e1", [1.5, 0, 0], "enemy", { kind: "idle" });
   for (let i = 0; i < ticks; i += 1) tickUnits(ctx, 0.2);
   return health(ctx, "e1");
 }
 
-/** Player HP left after a fixed melee exchange against a grunt at the given armor rank. */
+/** Player HP left after a fixed melee exchange against a raider at the given armor rank. */
 function playerHealthAfterMelee(armorRank: number, ticks: number): number {
   const ctx = boot();
   resetSession();
   session.research.ranks.armor = armorRank;
-  spawn(ctx, "footman", "f1", [0, 0, 0], "player", { kind: "idle" });
-  spawn(ctx, "grunt", "e1", [1.5, 0, 0], "enemy", { kind: "idle" });
+  spawn(ctx, "soldier", "f1", [0, 0, 0], "player", { kind: "idle" });
+  spawn(ctx, "raider", "e1", [1.5, 0, 0], "enemy", { kind: "idle" });
   for (let i = 0; i < ticks; i += 1) tickUnits(ctx, 0.2);
   return health(ctx, "f1");
 }
@@ -81,12 +81,12 @@ describe("upgrade math", () => {
     expect(factionSpeed(4.7, "player")).toBe(4.7);
   });
 
-  test("an Assault footman closes on a far enemy slower than a plain one", () => {
+  test("an Assault soldier closes on a far enemy slower than a plain one", () => {
     const reach = (assault: number): number => {
       const ctx = boot();
       resetSession();
       session.research.ranks.assault = assault;
-      spawn(ctx, "footman", "f1", [0, 0, 0], "player", { kind: "move", x: 40, z: 0 });
+      spawn(ctx, "soldier", "f1", [0, 0, 0], "player", { kind: "move", x: 40, z: 0 });
       for (let i = 0; i < 10; i += 1) tickUnits(ctx, 0.2);
       return ctx.scene.entity.get("f1")?.position[0] ?? 0;
     };
@@ -104,7 +104,7 @@ describe("research effect on real combat", () => {
     expect(enemyHealthAfterMelee(2, 12)).toBeLessThan(enemyHealthAfterMelee(0, 12));
   });
 
-  test("Iron Armor lets a footman weather a grunt longer", () => {
+  test("Iron Armor lets a soldier weather a raider longer", () => {
     expect(playerHealthAfterMelee(3, 16)).toBeGreaterThan(playerHealthAfterMelee(0, 16));
   });
 });
@@ -112,21 +112,21 @@ describe("research effect on real combat", () => {
 describe("research economy + gating", () => {
   beforeEach(() => resetSession());
 
-  test("Iron Weapons needs a Barracks, is affordable, and completes to a rank that costs gold", () => {
+  test("Iron Weapons needs a Barracks, is affordable, and completes to a rank that costs sugar", () => {
     const ctx = boot();
     registerCommands(ctx);
     // No Barracks yet → gated.
-    ctx.game.economy.grant("commander", GOLD, 1000);
-    ctx.game.economy.grant("commander", LUMBER, 1000);
+    ctx.game.economy.grant("commander", SUGAR, 1000);
+    ctx.game.economy.grant("commander", LEAF, 1000);
     expect(canResearch(ctx, "weapons")).toBe(false);
 
     // Stand a Barracks; now it can be researched.
     spawn(ctx, "barracks", "rax", [0, 0, 0], "player", { kind: "idle" });
     expect(canResearch(ctx, "weapons")).toBe(true);
 
-    const goldBefore = ctx.game.economy.balance("commander", GOLD);
+    const goldBefore = ctx.game.economy.balance("commander", SUGAR);
     ctx.game.commands.run("research.weapons", {});
-    expect(ctx.game.economy.balance("commander", GOLD)).toBeLessThan(goldBefore); // charged
+    expect(ctx.game.economy.balance("commander", SUGAR)).toBeLessThan(goldBefore); // charged
     // A second start is blocked while rank 1 is still in the queue (can't research a rank twice).
     expect(canResearch(ctx, "weapons")).toBe(false);
 
@@ -142,8 +142,8 @@ describe("research economy + gating", () => {
   test("starting one doctrine closes the other, before its first rank even finishes", () => {
     const ctx = boot();
     registerCommands(ctx);
-    ctx.game.economy.grant("commander", GOLD, 100000);
-    ctx.game.economy.grant("commander", LUMBER, 100000);
+    ctx.game.economy.grant("commander", SUGAR, 100000);
+    ctx.game.economy.grant("commander", LEAF, 100000);
     expect(canResearch(ctx, "assault")).toBe(false);
     spawn(ctx, "barracks", "rax", [0, 0, 0], "player", { kind: "idle" });
     expect(canResearch(ctx, "assault")).toBe(true);
@@ -152,9 +152,9 @@ describe("research economy + gating", () => {
     expect(upgradeRank("bulwark")).toBe(0);
     // The fork is reserved when research starts, so both cannot be queued in the same breath.
     expect(canResearch(ctx, "assault")).toBe(false);
-    const gold = ctx.game.economy.balance("commander", GOLD);
+    const sugar = ctx.game.economy.balance("commander", SUGAR);
     ctx.game.commands.run("research.assault", {});
-    expect(ctx.game.economy.balance("commander", GOLD)).toBe(gold);
+    expect(ctx.game.economy.balance("commander", SUGAR)).toBe(sugar);
     // Iron Weapons still stacks with either doctrine.
     expect(canResearch(ctx, "weapons")).toBe(true);
   });
@@ -162,8 +162,8 @@ describe("research economy + gating", () => {
   test("research stops at the rank cap", () => {
     const ctx = boot();
     registerCommands(ctx);
-    ctx.game.economy.grant("commander", GOLD, 100000);
-    ctx.game.economy.grant("commander", LUMBER, 100000);
+    ctx.game.economy.grant("commander", SUGAR, 100000);
+    ctx.game.economy.grant("commander", LEAF, 100000);
     spawn(ctx, "barracks", "rax", [0, 0, 0], "player", { kind: "idle" });
     session.research.ranks.weapons = 3; // maxRank
     expect(canResearch(ctx, "weapons")).toBe(false);

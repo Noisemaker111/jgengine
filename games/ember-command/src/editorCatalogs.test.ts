@@ -14,18 +14,18 @@ describe("editorCatalogs", () => {
 
 describe("content.entityById", () => {
   test("combatants carry a health pool that accepts damage", () => {
-    const footman = content.entityById!("footman");
-    expect(footman?.stats?.health?.max).toBeGreaterThan(0);
-    expect(footman?.receive?.damage?.order).toContain("health");
+    const soldier = content.entityById!("soldier");
+    expect(soldier?.stats?.health?.max).toBeGreaterThan(0);
+    expect(soldier?.receive?.damage?.order).toContain("health");
   });
 
   test("units move and buildings do not", () => {
-    expect(content.entityById!("footman")?.movement?.walkSpeed).toBeGreaterThan(0);
+    expect(content.entityById!("soldier")?.movement?.walkSpeed).toBeGreaterThan(0);
     expect(content.entityById!("keep_player")?.movement).toBeUndefined();
   });
 
   test("decor resolves to an inert mesh with no health", () => {
-    const mine = content.entityById!("goldmine");
+    const mine = content.entityById!("crumbs");
     expect(mine).not.toBeNull();
     expect(mine?.stats).toBeUndefined();
   });

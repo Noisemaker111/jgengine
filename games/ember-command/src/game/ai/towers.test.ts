@@ -35,8 +35,8 @@ describe("guard tower auto-fire (real context)", () => {
 
   test("fires on a hostile inside range and drains its health", () => {
     const ctx = boot();
-    place(ctx, "guard_tower", "t1", [0, 0, 0], "player", "building");
-    place(ctx, "grunt", "e1", [5, 0, 0], "enemy", "unit"); // inside range (9)
+    place(ctx, "acid_mound", "t1", [0, 0, 0], "player", "building");
+    place(ctx, "raider", "e1", [5, 0, 0], "enemy", "unit"); // inside range (9)
     const before = health(ctx, "e1");
     for (let i = 0; i < 10; i++) tickTowers(ctx, 0.2);
     expect(health(ctx, "e1")).toBeLessThan(before);
@@ -44,8 +44,8 @@ describe("guard tower auto-fire (real context)", () => {
 
   test("holds fire against a hostile out of range", () => {
     const ctx = boot();
-    place(ctx, "guard_tower", "t1", [0, 0, 0], "player", "building");
-    place(ctx, "grunt", "e1", [20, 0, 0], "enemy", "unit"); // beyond range (9)
+    place(ctx, "acid_mound", "t1", [0, 0, 0], "player", "building");
+    place(ctx, "raider", "e1", [20, 0, 0], "enemy", "unit"); // beyond range (9)
     const before = health(ctx, "e1");
     for (let i = 0; i < 10; i++) tickTowers(ctx, 0.2);
     expect(health(ctx, "e1")).toBe(before);
@@ -53,8 +53,8 @@ describe("guard tower auto-fire (real context)", () => {
 
   test("never fires on a friendly unit", () => {
     const ctx = boot();
-    place(ctx, "guard_tower", "t1", [0, 0, 0], "player", "building");
-    place(ctx, "footman", "f1", [4, 0, 0], "player", "unit");
+    place(ctx, "acid_mound", "t1", [0, 0, 0], "player", "building");
+    place(ctx, "soldier", "f1", [4, 0, 0], "player", "unit");
     const before = health(ctx, "f1");
     for (let i = 0; i < 10; i++) tickTowers(ctx, 0.2);
     expect(health(ctx, "f1")).toBe(before);
@@ -62,8 +62,8 @@ describe("guard tower auto-fire (real context)", () => {
 
   test("respects the fire cooldown — one shot, then a pause before the next", () => {
     const ctx = boot();
-    place(ctx, "guard_tower", "t1", [0, 0, 0], "player", "building"); // attackCooldown 1.1s
-    place(ctx, "grunt", "e1", [3, 0, 0], "enemy", "unit");
+    place(ctx, "acid_mound", "t1", [0, 0, 0], "player", "building"); // attackCooldown 1.1s
+    place(ctx, "raider", "e1", [3, 0, 0], "enemy", "unit");
     const start = health(ctx, "e1");
     tickTowers(ctx, 0.2); // first shot lands immediately (cooldown starts at 0)
     const afterFirst = health(ctx, "e1");
@@ -76,7 +76,7 @@ describe("guard tower auto-fire (real context)", () => {
   test("an inert building (no damage) never fires", () => {
     const ctx = boot();
     place(ctx, "keep_player", "hold", [0, 0, 0], "player", "building"); // damage 0
-    place(ctx, "grunt", "e1", [3, 0, 0], "enemy", "unit");
+    place(ctx, "raider", "e1", [3, 0, 0], "enemy", "unit");
     const before = health(ctx, "e1");
     for (let i = 0; i < 10; i++) tickTowers(ctx, 0.2);
     expect(health(ctx, "e1")).toBe(before);

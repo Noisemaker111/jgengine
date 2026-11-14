@@ -1,12 +1,12 @@
 import { createFogField, type FogBounds, type FogCells, type FogField } from "@jgengine/core/map/fog";
 
-import { SIGHT_RADIUS, SIGHT_RADIUS_BUILDING, SIGHT_RADIUS_HERO } from "./tuning";
+import { SIGHT_RADIUS, SIGHT_RADIUS_BUILDING, SIGHT_RADIUS_HERO, SIGHT_RADIUS_SCOUT } from "./tuning";
 
 /**
  * Fog of war, three states deep.
  *
  * The grid is the shared `@jgengine/core/map/fog` field — reveal-on-event cells over the
- * battlefield — used twice: one field that only ever grows (what the Vanguard has *explored*) and
+ * battlefield — used twice: one field that only ever grows (what the colony has *explored*) and
  * one that is cleared and refilled every fog tick (what it can *see right now*). A cell is
  *   visible   - inside some friendly sight radius this tick,
  *   explored  - seen before, not seen now: terrain stays drawn, dimmed,
@@ -64,8 +64,9 @@ export function enemyDrawn(fog: FogState, x: number, z: number): boolean {
   return fogLevel(fog, x, z) === "visible";
 }
 
-/** How far one catalog entry sees. Buildings light their own ground; the hero scouts furthest. */
+/** How far one catalog entry sees. Chambers sense their own ground; the Scout caste reads furthest. */
 export function sightRadiusFor(catalogId: string, kind: "unit" | "building"): number {
+  if (catalogId === "scout") return SIGHT_RADIUS_SCOUT;
   if (catalogId === "hero") return SIGHT_RADIUS_HERO;
   return kind === "building" ? SIGHT_RADIUS_BUILDING : SIGHT_RADIUS;
 }

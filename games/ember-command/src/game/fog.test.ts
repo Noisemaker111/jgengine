@@ -19,7 +19,7 @@ describe("fog of war", () => {
   test("a unit outside vision is not drawn", () => {
     const field = fog();
     refreshSight(field, [{ x: 0, z: 0, radius: SIGHT_RADIUS }]);
-    // Inside the scout's eye: visible, and a Marauder standing there is on the map.
+    // Inside the scout's eye: visible, and a Black Ant standing there is on the map.
     expect(fogLevel(field, 0, 0)).toBe("visible");
     expect(enemyDrawn(field, 0, 4)).toBe(true);
     // Beyond it, on ground never seen: nothing is drawn there.
@@ -68,7 +68,7 @@ describe("fog of war", () => {
   test("sight ranges: buildings light more ground than a line soldier, the hero scouts furthest", () => {
     expect(sightRadiusFor("hero", "unit")).toBe(SIGHT_RADIUS_HERO);
     expect(sightRadiusFor("keep_player", "building")).toBe(SIGHT_RADIUS_BUILDING);
-    expect(sightRadiusFor("footman", "unit")).toBe(SIGHT_RADIUS);
+    expect(sightRadiusFor("soldier", "unit")).toBe(SIGHT_RADIUS);
     expect(SIGHT_RADIUS_BUILDING).toBeGreaterThan(SIGHT_RADIUS);
     expect(SIGHT_RADIUS_HERO).toBeGreaterThan(SIGHT_RADIUS_BUILDING);
   });

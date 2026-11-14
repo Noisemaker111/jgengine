@@ -37,11 +37,11 @@ describe("authored skirmish scene", () => {
     }
   });
 
-  test("places gatherable gold and lumber nodes plus starting peasants", () => {
+  test("places gatherable sugar and leaf nodes plus starting workers", () => {
     const nodes = editorLayers.markers.filter((m) => isNode(catalogId(m)));
-    const peasants = editorLayers.markers.filter((m) => catalogId(m) === "peasant");
+    const workers = editorLayers.markers.filter((m) => catalogId(m) === "worker");
     expect(nodes.length).toBeGreaterThanOrEqual(3);
-    expect(peasants.length).toBeGreaterThanOrEqual(2);
+    expect(workers.length).toBeGreaterThanOrEqual(2);
   });
 
   test("enemy units carry a guard or assault stance", () => {

@@ -12,7 +12,7 @@ function distXZ(a: EntityPosition, b: EntityPosition): number {
 }
 
 /**
- * Nearest hostile within `range` for a Guard Tower, resolved through the shared auto-target policy.
+ * Nearest hostile within `range` for a Acid Mound, resolved through the shared auto-target policy.
  * Candidates are the living hostiles in range (roster-bounded, no whole-world scan); `selectAutoTarget`
  * owns the "nearest" pick so towers, units, and future emplacements share one selection seam.
  */
@@ -34,7 +34,7 @@ function chooseTarget(ctx: GameContext, tower: UnitRuntime, towerPos: EntityPosi
 }
 
 /**
- * Guard Towers auto-fire at the nearest hostile in range. A stationary emplacement is the degenerate
+ * Acid Mounds auto-fire at the nearest hostile in range. A stationary emplacement is the degenerate
  * pursuit case — no chase, no leash — so `advancePursuit` runs with an infinite `stopDistance` (an
  * acquired target is always "in reach") and owns the per-tower attack cooldown; `armPursuit` re-arms
  * it after each shot. The `resolveDamage` faction modifier stays game-side. Roster-bounded per frame.

@@ -15,8 +15,8 @@ const SIZES = [[1280, 720], [390, 844]] as const;
 test("the HUD's command tokens and formation tabs send their orders", async () => {
   for (const [width, height] of SIZES) {
     const ui = await mount("hud", width, height);
-    await ui.press("Build Farm");
-    expect(session.buildArmed, `farm armed at ${width}`).toBe("farm");
+    await ui.press("Build Fungus Garden");
+    expect(session.buildArmed, `fungus_garden armed at ${width}`).toBe("fungus_garden");
     await ui.press("Rally Point");
     expect(session.rallyArmed, `rally armed at ${width}`).toBe(true);
     if (width < 700) await ui.press("Show map");
@@ -47,7 +47,7 @@ test("the dispatch case writes the campaign record and returns to the title", as
   // The headless page has no scene capture, so the record waits out the thumbnail binding (5 s) and keeps no picture.
   for (let i = 0; i < 160 && !ui.text().includes("Orders written"); i += 1) await ui.settle().then(() => new Promise((r) => setTimeout(r, 50)));
   expect(ui.text()).toContain("Orders written to the campaign record");
-  expect(recordOfSlot(ui.ctx.game.save?.slot() ?? "campaign-1")?.gold).toBe(Math.floor(ui.ctx.game.economy.balance("commander", "gold")));
+  expect(recordOfSlot(ui.ctx.game.save?.slot() ?? "campaign-1")?.sugar).toBe(Math.floor(ui.ctx.game.economy.balance("commander", "sugar")));
   await ui.press("Return to title");
   for (let i = 0; i < 160 && !ui.text().includes("Take command"); i += 1) await ui.settle().then(() => new Promise((r) => setTimeout(r, 50)));
   expect(hudStore.get().phase).toBe("ready");

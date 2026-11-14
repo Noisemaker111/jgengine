@@ -15,8 +15,8 @@ export const WAX = "#8e1f17";
 export const BRASS = "#c99a4a";
 export const GILT = "#e8c27a";
 export const PARCHMENT = "#efe3c6";
-export const VANGUARD_INK = "#2d5b8c";
-export const MARAUDER_INK = "#a3291c";
+export const RED_INK = "#2d5b8c";
+export const RIVAL_INK = "#a3291c";
 export const OCHRE = "#b0741c";
 export const MOSS = "#3f7a2c";
 export const LEATHER = "#4a2c19";
@@ -26,17 +26,17 @@ export const STONE = "#3b3530";
 type Look = Pick<CommanderPreferences, "largeText" | "highContrast" | "reducedMotion">;
 
 /**
- * Ember Command's one Rune theme: parchment sheets, leather and wood frames, stone command tokens and
+ * Lawn Order's one Rune theme: parchment sheets, leather and wood frames, stone command tokens and
  * wax-red actions. The commander's field preferences shape it: larger text scales every named style,
  * high contrast inks the sheets solid and darkens the ink, reduced motion stills every transition.
  */
-export function emberTheme(look: Look) {
+export function lawnTheme(look: Look) {
   const k = look.largeText ? 1.18 : 1;
   const ink = look.highContrast ? "#140b04" : INK;
   const dim = look.highContrast ? "#2b1d10" : INK_DIM;
   const paper = look.highContrast ? "#fbf3df" : "#efe3c6f5";
   return {
-    colors: { ink, dim, wax: WAX, brass: BRASS, gilt: GILT, paper: PARCHMENT, vanguard: VANGUARD_INK, marauder: MARAUDER_INK, track: "#00000022" },
+    colors: { ink, dim, wax: WAX, brass: BRASS, gilt: GILT, paper: PARCHMENT, colony: RED_INK, rival: RIVAL_INK, track: "#00000022" },
     text: {
       body: { family: BODY, size: Math.round(15 * k), color: ink },
       small: { family: BODY, size: Math.round(13 * k), color: dim },
@@ -62,4 +62,4 @@ export function emberTheme(look: Look) {
   } satisfies RuneTheme;
 }
 
-export type EmberTheme = ReturnType<typeof emberTheme>;
+export type LawnTheme = ReturnType<typeof lawnTheme>;

@@ -3,11 +3,12 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";
 
-import { BARRACKS_UNITS, buildingDef, combatantDef, trainableDef } from "./catalog";
+import { BARRACKS_UNITS, buildingDef, combatantDef, missingChamber, trainableDef } from "./catalog";
 import { BUILD_CONFIG } from "./building";
 import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type FormationKind } from "./formations";
 import { TRAINING_CONFIG } from "./production";
-import { GOLD, LUMBER, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
+import { SUGAR, LEAF, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS, TRAIL_PAINT_COST, TRAIL_PAINT_MAX_LENGTH, TRAIL_PAINT_STRENGTH } from "./tuning";
+import { paintLine } from "./pheromone";
 import { raiseBuilding } from "./systems";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
@@ -28,7 +29,7 @@ function notify(ctx: GameContext, text: string, tone: NoticeTone = "info"): void
   ctx.game.notices.push({ text, tone });
 }
 
-/** "1 trooper" / "3 troops": the notice line reads a count, so pick the matching noun. */
+/** "1 ant" / "3 ants": the notice line reads a count, so pick the matching noun. */
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
@@ -91,7 +92,7 @@ export function canAffordBuilding(ctx: GameContext, type: string): boolean {
   return true;
 }
 
-/** A building may go on the player's half of the field, clear of gold/lumber nodes and other
+/** A building may go on the player's half of the field, clear of sugar/leaf nodes and other
  * buildings. Deliberately generous — this is a skirmish, not a city planner. */
 function canPlaceAt(ctx: GameContext, x: number, z: number): boolean {
   if (z < -6 || z > 44 || Math.abs(x) > 44) return false;
@@ -112,7 +113,7 @@ function canPlaceAt(ctx: GameContext, x: number, z: number): boolean {
 function placeBuilding(ctx: GameContext, type: string, x: number, z: number): boolean {
   const def = buildingDef(type);
   if (def === undefined || !canAffordBuilding(ctx, type) || !canPlaceAt(ctx, x, z)) {
-    notify(ctx, "Choose clear ground on your half of the vale, away from buildings and resource nodes.", "deny");
+    notify(ctx, "Dig on open lawn on your side of the hose, clear of other chambers and food.", "deny");
     return false;
   }
   const result = enqueue(session.buildQueue, BUILD_CONFIG, { type, x, z });
@@ -121,12 +122,12 @@ function placeBuilding(ctx: GameContext, type: string, x: number, z: number): bo
   for (const [currency, amount] of Object.entries(def.cost)) {
     ctx.game.economy.charge(ctx.player.userId, currency, amount);
   }
-  notify(ctx, `Raising ${type.replaceAll("_", " ")} — construction is underway.`, "success");
+  notify(ctx, `Digging the ${combatantDef(type)?.label ?? type.replaceAll("_", " ")}. The workers are on it.`, "success");
   ctx.game.audio.play("place", [x, 0, z]);
   return true;
 }
 
-/** Right-click order: drop an armed building, else attack a hostile / send peasants to a node / move
+/** Right-click order: drop an armed building, else attack a hostile / send workers to a node / move
  * the group into a box formation. */
 export function orderSelection(ctx: GameContext, input: OrderInput): GameContext {
   if (!matchRunning()) return ctx;
@@ -142,12 +143,18 @@ export function orderSelection(ctx: GameContext, input: OrderInput): GameContext
   if (session.rallyArmed) {
     session.rallyPoint = { x, z };
     session.rallyArmed = false;
-    notify(ctx, "Rally set. New recruits will march to this point.");
+    notify(ctx, "Rally scent set. New hatchlings will march to this point.");
+    return ctx;
+  }
+
+  if (session.trailArmed) {
+    session.trailArmed = false;
+    paintTrail(ctx, input.selection ?? [], x, z);
     return ctx;
   }
   const units = selectedPlayerUnits(input.selection ?? []);
   if (units.length === 0) {
-    notify(ctx, "Select your troops first: click a unit or drag a box around the formation.", "deny");
+    notify(ctx, "Select your ants first: click one or drag a box around the column.", "deny");
     return ctx;
   }
   const armed = session.attackMoveArmed;
@@ -155,7 +162,7 @@ export function orderSelection(ctx: GameContext, input: OrderInput): GameContext
 
   const targetId = enemyNear(ctx, x, z);
   if (targetId !== null) {
-    notify(ctx, `Attack ordered: ${count(units.length, "trooper", "troops")}.`);
+    notify(ctx, `Attack ordered: ${count(units.length, "ant", "ants")}.`);
     for (const u of units) {
       u.guardPoint = { x, z };
       u.command = { kind: "attack", targetId };
@@ -167,7 +174,7 @@ export function orderSelection(ctx: GameContext, input: OrderInput): GameContext
   if (node !== null) {
     const workers = units.filter((u) => combatantDef(u.catalogId)?.worker === true);
     const rest = units.filter((u) => combatantDef(u.catalogId)?.worker !== true);
-    notify(ctx, `Gathering ${node.resource}: ${count(workers.length, "worker", "workers")} assigned.`);
+    notify(ctx, `Foraging ${node.resource}: ${count(workers.length, "worker", "workers")} on the line.`);
     for (const u of workers) {
       // Repeating this order keeps harvest progress and the load already removed from the node.
       if (u.command.kind === "gather" && u.command.nodeId === node.id && u.command.resource === node.resource) continue;
@@ -177,14 +184,63 @@ export function orderSelection(ctx: GameContext, input: OrderInput): GameContext
     return ctx;
   }
 
-  notify(ctx, `${armed ? "Advance and engage" : "Move ordered"}: ${count(units.length, "trooper", "troops")}.`);
+  notify(ctx, `${armed ? "Advance and bite" : "March ordered"}: ${count(units.length, "ant", "ants")}.`);
   assignMoveFormation(ctx, units, x, z, armed);
   return ctx;
 }
 
 function armAttackMove(ctx: GameContext): GameContext {
-  if (matchRunning()) { session.attackMoveArmed = true; session.buildArmed = null; session.rallyArmed = false; }
+  if (matchRunning()) { session.attackMoveArmed = true; session.buildArmed = null; session.rallyArmed = false; session.trailArmed = false; }
   return ctx;
+}
+
+/** Where a painted line starts: the centre of the selected ants, or the red nest with none selected. */
+function trailStart(ctx: GameContext, selection: readonly string[]): { x: number; z: number } | null {
+  const units = selectedPlayerUnits(selection);
+  if (units.length > 0) {
+    let sx = 0;
+    let sz = 0;
+    let n = 0;
+    for (const u of units) {
+      const ent = ctx.scene.entity.get(u.id);
+      if (ent === null) continue;
+      sx += ent.position[0];
+      sz += ent.position[2];
+      n += 1;
+    }
+    if (n > 0) return { x: sx / n, z: sz / n };
+  }
+  const nest = livingUnits("player", "building").find((u) => u.catalogId === "keep_player")?.guardPoint;
+  return nest ?? null;
+}
+
+/** Paint a Pheromone Line from the selected ants (or the nest) to the clicked point, for a little sugar. */
+export function paintTrail(ctx: GameContext, selection: readonly string[], x: number, z: number): boolean {
+  if (ctx.game.economy.balance(ctx.player.userId, SUGAR) < TRAIL_PAINT_COST) {
+    notify(ctx, `A Pheromone Line costs ${TRAIL_PAINT_COST} sugar.`, "deny");
+    return false;
+  }
+  const from = trailStart(ctx, selection);
+  if (from === null) {
+    notify(ctx, "No nest and no ants selected to lay the line from.", "deny");
+    return false;
+  }
+  const cells = paintLine(session.trails, from.x, from.z, x, z, TRAIL_PAINT_STRENGTH, TRAIL_PAINT_MAX_LENGTH);
+  if (cells === 0) return false;
+  ctx.game.economy.charge(ctx.player.userId, SUGAR, TRAIL_PAINT_COST);
+  ctx.game.audio.play("scent", [x, 0, z]);
+  notify(ctx, "Pheromone Line laid: red ants run faster along it, and foragers harvest quicker where it ends.", "success");
+  return true;
+}
+
+function armTrail(ctx: GameContext): GameContext {
+  if (matchRunning()) { session.trailArmed = true; session.attackMoveArmed = false; session.buildArmed = null; session.rallyArmed = false; }
+  return ctx;
+}
+
+/** The chambers standing now, for the hatch gates. */
+function standingChambers(): Set<string> {
+  return new Set(livingUnits("player", "building").map((u) => u.catalogId));
 }
 
 /** Can the player afford `unitId` and does supply allow it? Shared by the command and the HUD gate. */
@@ -193,7 +249,7 @@ export function canTrain(ctx: GameContext, unitId: string): boolean {
   if (livingUnits("player", "building").length === 0) return false;
   const def = trainableDef(unitId);
   if (def === undefined) return false;
-  if (BARRACKS_UNITS.has(unitId) && !livingUnits("player", "building").some((u) => u.catalogId === "barracks")) return false;
+  if (missingChamber(unitId, standingChambers()) !== null) return false;
   for (const [currency, amount] of Object.entries(def.cost)) {
     if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
   }
@@ -205,17 +261,16 @@ export function canTrain(ctx: GameContext, unitId: string): boolean {
 function explainTrainRefusal(ctx: GameContext, unitId: string): string {
   const def = trainableDef(unitId);
   const label = combatantDef(unitId)?.label ?? unitId;
-  if (!matchRunning()) return "The match is not running.";
-  if (livingUnits("player", "building").length === 0) return "No buildings left to train from.";
-  if (BARRACKS_UNITS.has(unitId) && !livingUnits("player", "building").some((u) => u.catalogId === "barracks")) {
-    return `${label} needs a Barracks first.`;
-  }
+  if (!matchRunning()) return "The battle is not running.";
+  if (livingUnits("player", "building").length === 0) return "No chambers left to hatch from.";
+  const missing = missingChamber(unitId, standingChambers());
+  if (missing !== null) return `${label} needs a ${combatantDef(missing)?.label ?? missing} first.`;
   if (def !== undefined) {
     for (const [currency, amount] of Object.entries(def.cost)) {
       if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return `Not enough ${currency} for ${label}.`;
     }
   }
-  return `Supply capped: build a Farm to train another ${label}.`;
+  return `Brood room is full: dig a Fungus Garden to hatch another ${label}.`;
 }
 
 export function trainUnit(ctx: GameContext, unitId: string): GameContext {
@@ -230,19 +285,19 @@ export function trainUnit(ctx: GameContext, unitId: string): GameContext {
   for (const [currency, amount] of Object.entries(def.cost)) {
     ctx.game.economy.charge(ctx.player.userId, currency, amount);
   }
-  const trainer = BARRACKS_UNITS.has(unitId) ? "Barracks" : "Town Hall";
-  notify(ctx, `Training ${combatantDef(unitId)?.label ?? unitId} at the ${trainer}.`, "success");
+  const where = BARRACKS_UNITS.has(unitId) ? " in the Barracks Chamber" : "";
+  notify(ctx, `The queen lays a ${combatantDef(unitId)?.label ?? unitId} egg${where}.`, "success");
   return ctx;
 }
 
 function armBuild(ctx: GameContext, type: string): GameContext {
-  if (matchRunning() && canAffordBuilding(ctx, type))  { session.buildArmed = type; session.rallyArmed = false; session.attackMoveArmed = false; }
+  if (matchRunning() && canAffordBuilding(ctx, type))  { session.buildArmed = type; session.rallyArmed = false; session.attackMoveArmed = false; session.trailArmed = false; }
   return ctx;
 }
 
 /** Can the player start the next rank of `upgradeId`? One rank of an upgrade researches at a time;
  * it needs its requirement (a Barracks, and for a doctrine no rival doctrine), an unmet rank cap,
- * and the gold/lumber for the next rank. Shared by the command and the HUD gate. */
+ * and the sugar/leaf for the next rank. Shared by the command and the HUD gate. */
 export function canResearch(ctx: GameContext, upgradeId: string): boolean {
   if (!matchRunning()) return false;
   const up = upgradeDef(upgradeId);
@@ -272,7 +327,7 @@ function research(ctx: GameContext, upgradeId: string): GameContext {
 
 export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("unit.rally", { apply: (state) => {
-    if (matchRunning()) { session.rallyArmed = true; session.buildArmed = null; session.attackMoveArmed = false; }
+    if (matchRunning()) { session.rallyArmed = true; session.buildArmed = null; session.attackMoveArmed = false; session.trailArmed = false; }
     return state;
   } });
   ctx.game.commands.define("unit.hold", { apply: (state) => {
@@ -281,12 +336,12 @@ export function registerCommands(ctx: GameContext): void {
         if (combatantDef(u.catalogId)?.worker || u.command.kind === "gather") continue;
         u.command = { kind: "hold" };
       }
-      notify(state, "Army holding position. Troops attack only enemies within weapon reach.");
+      notify(state, "The column holds. Ants bite only what comes within reach.");
     }
     return state;
   } });
   ctx.game.commands.define("unit.cancel", { apply: (state) => {
-    session.buildArmed = null; session.attackMoveArmed = false; session.rallyArmed = false;
+    session.buildArmed = null; session.attackMoveArmed = false; session.rallyArmed = false; session.trailArmed = false;
     notify(state, "Order canceled.");
     return state;
   } });
@@ -298,7 +353,7 @@ export function registerCommands(ctx: GameContext): void {
       if (!matchRunning()) return state;
       const ids = livingUnits("player", "unit").map((u) => u.id);
       state.scene.entity.selection.replace(ids);
-      notify(state, `Army selected: ${count(ids.length, "trooper", "troops")}.`);
+      notify(state, `Colony selected: ${count(ids.length, "ant", "ants")}.`);
       return state;
     },
   });
@@ -313,16 +368,19 @@ export function registerCommands(ctx: GameContext): void {
       notify(
         state,
         dressed > 0
-          ? `${option.label} formation — ${count(dressed, "trooper", "troops")} re-formed around the anchor.`
+          ? `${option.label} formation — ${count(dressed, "ant", "ants")} re-formed around the anchor.`
           : `${option.label} formation — the next move order dresses the line.`,
       );
       return state;
     },
   });
   ctx.game.commands.define("unit.attackMove", { apply: armAttackMove });
-  ctx.game.commands.define("train.peasant", { apply: (state) => trainUnit(state, "peasant") });
-  ctx.game.commands.define("train.footman", { apply: (state) => trainUnit(state, "footman") });
-  ctx.game.commands.define("train.rifleman", { apply: (state) => trainUnit(state, "rifleman") });
+  ctx.game.commands.define("unit.trail", { apply: armTrail });
+  ctx.game.commands.define("train.worker", { apply: (state) => trainUnit(state, "worker") });
+  ctx.game.commands.define("train.soldier", { apply: (state) => trainUnit(state, "soldier") });
+  ctx.game.commands.define("train.spitter", { apply: (state) => trainUnit(state, "spitter") });
+  ctx.game.commands.define("train.scout", { apply: (state) => trainUnit(state, "scout") });
+  ctx.game.commands.define("train.beetle", { apply: (state) => trainUnit(state, "beetle") });
   ctx.game.commands.define<{ type: string }>("build.arm", { apply: (state, input) => armBuild(state, input.type) });
   for (const id of UPGRADE_IDS) ctx.game.commands.define(`research.${id}`, { apply: (state) => research(state, id) });
   // One verb per hero act, refused with the kit's own reason so a hotkey never fails silently.
@@ -333,11 +391,11 @@ export function registerCommands(ctx: GameContext): void {
       if (cast.ok) return state;
       const label = heroActViews(state).find((act) => act.id === input.act)?.label ?? input.act;
       const reason = cast.reason === "not-picked"
-        ? `${label} is not in Bram's kit — pick it at a level-up.`
+        ? `${label} is not in the Marshal's kit — pick it at a level-up.`
         : cast.reason === "cooldown"
           ? `${label} is still recharging.`
           : cast.reason === "no-resource"
-            ? `Not enough mana for ${label}.`
+            ? `Not enough fury for ${label}.`
             : `${label} cannot be cast right now.`;
       notify(state, reason, "deny");
       return state;
@@ -351,7 +409,7 @@ export function registerCommands(ctx: GameContext): void {
       return state;
     },
   });
-  // Dev-only: play the first muster's world reports and walk Bram to the ground, so a flow can reach
+  // Dev-only: play the first muster's world reports and walk Mandible to the ground, so a flow can reach
   // the mission's own boundary instead of a counter. The machine still decides the outcome.
   if (import.meta.env.DEV) {
     ctx.game.commands.define("campaign.capture", {
@@ -361,8 +419,8 @@ export function registerCommands(ctx: GameContext): void {
         // training events do in play: the machine drops a report no open objective counts.
         noteCampaignBuild(state, "barracks");
         tickCampaign(state, 0.2);
-        for (let footmen = 0; footmen < 4; footmen += 1) {
-          noteCampaignTrain(state, "footman");
+        for (let soldiers = 0; soldiers < 4; soldiers += 1) {
+          noteCampaignTrain(state, "soldier");
           tickCampaign(state, 0.2);
         }
         const muster = missionMarkers(editorLayers)[MUSTER_MARKER];
@@ -380,8 +438,8 @@ export function registerCommands(ctx: GameContext): void {
         const keep = livingUnits("player", "building").find((u) => u.catalogId === "keep_player")?.guardPoint;
         if (keep === undefined) return state;
         raiseBuilding(state, { type: "barracks", x: keep.x + 12, z: keep.z + 6 });
-        state.game.economy.grant(state.player.userId, GOLD, 600);
-        state.game.economy.grant(state.player.userId, LUMBER, 300);
+        state.game.economy.grant(state.player.userId, SUGAR, 600);
+        state.game.economy.grant(state.player.userId, LEAF, 300);
         if (input?.doctrine !== undefined) research(state, input.doctrine);
         return state;
       },

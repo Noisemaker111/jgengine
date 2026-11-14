@@ -14,12 +14,12 @@ import { livingUnits, session, type UnitRuntime } from "../session";
 import { MARCH_PLAN, WAVE_CYCLE } from "./waveManifest";
 
 /**
- * The Marauder war effort, driven by engine pieces instead of one scripted order:
+ * The Black Ant war effort, driven by engine pieces instead of one scripted order:
  *
  * - `waves/encounterSequence` gates the plan: scout, expand, then attack forever.
  * - `waves/encounter` authors each attack wave (composition, timing, pressure growth).
  * - `waves/pressure` reads the player's health, progress and time for the wave size.
- * - `ai/director/roles` decides which Marauder holds, which flanks and which pushes, from where the
+ * - `ai/director/roles` decides which Black Ant holds, which flanks and which pushes, from where the
  *   squad stands right now.
  * - `sensor/perception` + `ai/director/sound` let a scout find the player and a fight pull nearby
  *   patrols to the noise.
@@ -32,7 +32,7 @@ const SCOUT_SQUAD = 2;
 const ROLE_INTERVAL = 2;
 const CONTACT_RADIUS = 16;
 
-/** Sizing rule for a Marauder wave: the healthier and further ahead the player is, the larger it is. */
+/** Sizing rule for a Black Ant wave: the healthier and further ahead the player is, the larger it is. */
 const MARCH_PRESSURE: PressureRule = {
   healthWeight: 0.5,
   progressWeight: 1,
@@ -52,7 +52,7 @@ export interface EnemyWaveState {
   sent: number;
   /** Seconds of opening grace remaining before the plan starts. */
   grace: number;
-  /** The forward camp the Marauders raised, if it still stands. */
+  /** The forward camp the Black Ants raised, if it still stands. */
   campId: string | null;
   /** Units of the wave currently on the field, for role assignment. */
   waveUnits: string[];
@@ -99,7 +99,7 @@ function huntOf(): SoundHunt {
   return session.hunt;
 }
 
-/** Marks when the Marauders last laid eyes on something of the player's, in game seconds. */
+/** Marks when the Black Ants last laid eyes on something of the player's, in game seconds. */
 export function lastContactSeconds(): number {
   return session.enemyWave.contactAt;
 }
@@ -111,16 +111,16 @@ function assaultTarget(): { x: number; z: number } {
   return playerKeepPoint();
 }
 
-/** The camp a wave can muster from: the forward camp if it stands, else the home warcamp. */
+/** The camp a wave can muster from: the forward camp if it stands, else the home brood_mound. */
 function musterCamp(ctx: GameContext): { id: string; point: { x: number; z: number } } | null {
   const forward = session.enemyWave.campId;
-  const wanted = forward !== null ? [forward, "warcamp"] : ["warcamp"];
+  const wanted = forward !== null ? [forward, "brood_mound"] : ["brood_mound"];
   for (const id of wanted) {
     const entity = ctx.scene.entity.get(id);
     if (entity === null) continue;
     return { id, point: { x: entity.position[0], z: entity.position[2] } };
   }
-  const living = livingUnits("enemy", "building").find((u) => combatantDef(u.catalogId)?.id === "keep_enemy" || u.catalogId === "warcamp");
+  const living = livingUnits("enemy", "building").find((u) => combatantDef(u.catalogId)?.id === "keep_enemy" || u.catalogId === "brood_mound");
   if (living === undefined || living.guardPoint === undefined) return null;
   return { id: living.id, point: living.guardPoint };
 }
@@ -170,7 +170,7 @@ function flankPoint(target: { x: number; z: number }, from: { x: number; z: numb
   return { x: target.x - (dz / length) * offset * side, z: target.z + (dx / length) * offset * side };
 }
 
-/** Apply one duty to a Marauder as the game's own command. */
+/** Apply one duty to a Black Ant as the game's own command. */
 function commandFor(
   intent: FightIntent,
   unitId: string,
@@ -257,9 +257,9 @@ function keepHealthFraction(ctx: GameContext): number {
   return Math.max(0, stats.current) / stats.max;
 }
 
-/** The forward camp: a Marauder hold halfway to the player, so waves arrive sooner. */
+/** The forward camp: a Black Ant hold halfway to the player, so waves arrive sooner. */
 function raiseForwardCamp(ctx: GameContext): void {
-  const home = ctx.scene.entity.get("warcamp");
+  const home = ctx.scene.entity.get("brood_mound");
   const target = assaultTarget();
   if (home === null) return;
   const x = home.position[0] + (target.x - home.position[0]) * 0.45;
@@ -270,10 +270,10 @@ function raiseForwardCamp(ctx: GameContext): void {
   const spot = { x: x + (-dz / length) * 7, z: z + (dx / length) * 7 };
   const id = "warcamp_forward";
   if (ctx.scene.entity.get(id) !== null) return;
-  ctx.scene.entity.spawn("warcamp", { id, position: [spot.x, 0, spot.z], role: "npc" });
+  ctx.scene.entity.spawn("brood_mound", { id, position: [spot.x, 0, spot.z], role: "npc" });
   session.units.set(id, {
     id,
-    catalogId: "warcamp",
+    catalogId: "brood_mound",
     faction: "enemy",
     kind: "building",
     command: { kind: "idle" },
@@ -283,16 +283,16 @@ function raiseForwardCamp(ctx: GameContext): void {
   });
   session.enemyWave.campId = id;
   ctx.game.audio.play("raise", [spot.x, 0, spot.z]);
-  ctx.game.notices.push({ text: "The Marauders raise a forward camp", ttlMs: 6000 });
+  ctx.game.notices.push({ text: "The Black Ants raise a forward camp", ttlMs: 6000 });
 }
 
-/** Send the scouting party: two grunts walk the road toward the player's hold. */
+/** Send the scouting party: two raiders walk the road toward the player's hold. */
 function sendScouts(ctx: GameContext): void {
   const camp = musterCamp(ctx);
   if (camp === null) return;
   const target = assaultTarget();
   for (let index = 0; index < SCOUT_SQUAD; index += 1) {
-    const id = spawnEnemyUnit(ctx, "grunt", camp.point.x + index * 1.6, camp.point.z, {
+    const id = spawnEnemyUnit(ctx, "raider", camp.point.x + index * 1.6, camp.point.z, {
       kind: "attackMove",
       x: target.x,
       z: target.z,
@@ -332,7 +332,7 @@ function observeEnemySenses(ctx: GameContext): void {
   }
 }
 
-/** A noise the Marauders can hear: a fight, an ability, a building coming down. */
+/** A noise the Black Ants can hear: a fight, an ability, a building coming down. */
 export function raiseCombatNoise(ctx: GameContext, position: { x: number; z: number }, sourceId: string): void {
   huntOf().noise({ sourceId, position: [position.x, 0, position.z], at: session.elapsed * 1000, loudness: 1.4 });
   for (const enemy of livingUnits("enemy", "unit")) {
@@ -345,7 +345,7 @@ export function raiseCombatNoise(ctx: GameContext, position: { x: number; z: num
 }
 
 /**
- * Advance the Marauder plan and everything that hangs off it: plan phases, scouting, the forward
+ * Advance the Black Ant plan and everything that hangs off it: plan phases, scouting, the forward
  * camp, attack waves, role assignment and noise investigations.
  */
 export function tickEnemyWaves(ctx: GameContext, dt: number): void {
@@ -357,8 +357,8 @@ export function tickEnemyWaves(ctx: GameContext, dt: number): void {
     return;
   }
 
-  if (session.units.get("warcamp") !== undefined && ctx.scene.entity.get("warcamp") === null) {
-    session.units.delete("warcamp");
+  if (session.units.get("brood_mound") !== undefined && ctx.scene.entity.get("brood_mound") === null) {
+    session.units.delete("brood_mound");
   }
   const camp = musterCamp(ctx);
   if (camp === null) return;
@@ -441,7 +441,7 @@ export function waveSquad(): string[] {
   return [...session.enemyWave.waveUnits];
 }
 
-/** A camp entity the Marauders hold, for the HUD arrow. */
+/** A camp entity the Black Ants hold, for the HUD arrow. */
 export function forwardCamp(ctx: GameContext): SceneEntity | null {
   const id = session.enemyWave.campId;
   return id === null ? null : ctx.scene.entity.get(id);

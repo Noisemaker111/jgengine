@@ -8,18 +8,18 @@ import { content } from "../content";
 import { ENEMY_WAVE_FIRST_DELAY, ENEMY_WAVE_INTERVAL, ENEMY_WAVE_MAX_FIELDED } from "../tuning";
 import { livingUnits, resetSession, session } from "../session";
 import { marchTarget, nextWaveEta, planPhase, raiseCombatNoise, tickEnemyWaves, waveSquad } from "./director";
-import { MARAUDER_WAVES, WAVE_CYCLE } from "./waveManifest";
+import { RIVAL_WAVES, WAVE_CYCLE } from "./waveManifest";
 
-/** Boot a real headless context, then stand a Warcamp (enemy) and a keep (player) at either end. */
+/** Boot a real headless context, then stand a black nest (enemy) and a keep (player) at either end. */
 function boot(): GameContext {
   const definition = defineGameDefinition({ name: "EmberCommandDirectorTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "commander", isNew: true } });
 }
 
 function seedKeeps(ctx: GameContext): void {
-  ctx.scene.entity.spawn("keep_enemy", { id: "warcamp", position: [0, 0, -40], role: "npc" });
-  session.units.set("warcamp", {
-    id: "warcamp", catalogId: "keep_enemy", faction: "enemy", kind: "building",
+  ctx.scene.entity.spawn("keep_enemy", { id: "brood_mound", position: [0, 0, -40], role: "npc" });
+  session.units.set("brood_mound", {
+    id: "brood_mound", catalogId: "keep_enemy", faction: "enemy", kind: "building",
     command: { kind: "idle" }, guardPoint: { x: 0, z: -40 }, leash: 0, attackCooldown: 0,
   });
   ctx.scene.entity.spawn("keep_player", { id: "hold", position: [0, 0, 40], role: "npc" });
@@ -34,29 +34,29 @@ function run(ctx: GameContext, seconds: number): void {
   for (let t = 0; t < seconds * 2; t += 1) tickEnemyWaves(ctx, 0.5);
 }
 
-describe("marauder waves as data", () => {
-  test("the cycle escalates from a pair of grunts to Reavers, and stays bounded", () => {
-    const first = expandWave({ definition: MARAUDER_WAVES, seed: 7 }, 0);
-    const third = expandWave({ definition: MARAUDER_WAVES, seed: 7 }, 2);
-    const last = expandWave({ definition: MARAUDER_WAVES, seed: 7 }, WAVE_CYCLE - 1);
-    expect(first.map((order) => order.unit)).toEqual(["grunt", "grunt"]);
+describe("rival waves as data", () => {
+  test("the cycle escalates from a pair of raiders to Majors, and stays bounded", () => {
+    const first = expandWave({ definition: RIVAL_WAVES, seed: 7 }, 0);
+    const third = expandWave({ definition: RIVAL_WAVES, seed: 7 }, 2);
+    const last = expandWave({ definition: RIVAL_WAVES, seed: 7 }, WAVE_CYCLE - 1);
+    expect(first.map((order) => order.unit)).toEqual(["raider", "raider"]);
     expect(third.length).toBeGreaterThan(first.length);
-    expect(third.some((order) => order.unit === "reaver")).toBe(true);
+    expect(third.some((order) => order.unit === "major")).toBe(true);
     expect(last.length).toBeLessThanOrEqual(10);
   });
 
   test("pressure thickens the waves that opt in, and the same seed sends the same march", () => {
-    const plain = expandWave({ definition: MARAUDER_WAVES, seed: 7 }, 3);
-    const pressed = expandWave({ definition: MARAUDER_WAVES, seed: 7 }, 3, { countBonus: 2 });
+    const plain = expandWave({ definition: RIVAL_WAVES, seed: 7 }, 3);
+    const pressed = expandWave({ definition: RIVAL_WAVES, seed: 7 }, 3, { countBonus: 2 });
     expect(pressed.filter((order) => order.pressureAdded)).toHaveLength(2);
-    expect(expandWave({ definition: MARAUDER_WAVES, seed: 7 }, 3)).toEqual(plain);
-    expect(expandWave({ definition: MARAUDER_WAVES, seed: 8 }, 3).map((order) => order.atSeconds)).toEqual(
+    expect(expandWave({ definition: RIVAL_WAVES, seed: 7 }, 3)).toEqual(plain);
+    expect(expandWave({ definition: RIVAL_WAVES, seed: 8 }, 3).map((order) => order.atSeconds)).toEqual(
       plain.map((order) => order.atSeconds),
     );
   });
 });
 
-describe("the marauder plan (real context)", () => {
+describe("the rival plan (real context)", () => {
   beforeEach(() => resetSession());
 
   test("holds through the opening grace period, then scouts before it commits", () => {
@@ -76,8 +76,8 @@ describe("the marauder plan (real context)", () => {
     seedKeeps(ctx);
     // Put a scout's eyes on the keep at once, then walk the plan.
     session.enemyWave.grace = 0;
-    ctx.scene.entity.spawn("grunt", { id: "scout", position: [0, 0, 36], role: "npc" });
-    session.units.set("scout", { id: "scout", catalogId: "grunt", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    ctx.scene.entity.spawn("raider", { id: "scout", position: [0, 0, 36], role: "npc" });
+    session.units.set("scout", { id: "scout", catalogId: "raider", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
     session.enemyWave.scouts = ["scout"];
     run(ctx, 1);
     expect(session.enemyWave.contacted).toBe(true);
@@ -88,7 +88,7 @@ describe("the marauder plan (real context)", () => {
   test("expanding raises a forward camp, and waves muster from it", () => {
     const ctx = boot();
     seedKeeps(ctx);
-    const camp = ctx.scene.entity.get("warcamp")!;
+    const camp = ctx.scene.entity.get("brood_mound")!;
     session.enemyWave.campId = null;
     session.enemyWave.grace = 0;
     run(ctx, 50); // the scout timer runs out, then the camp goes up
@@ -96,10 +96,10 @@ describe("the marauder plan (real context)", () => {
     run(ctx, 120);
     const forward = session.enemyWave.campId;
     expect(forward === null || ctx.scene.entity.get(forward) !== null).toBe(true);
-    // Muster from the forward camp when it exists, otherwise the home warcamp.
-    const marauders = livingUnits("enemy", "unit");
-    expect(marauders.length).toBeGreaterThan(0);
-    for (const unit of marauders) {
+    // Muster from the forward camp when it exists, otherwise the home brood_mound.
+    const rivals = livingUnits("enemy", "unit");
+    expect(rivals.length).toBeGreaterThan(0);
+    for (const unit of rivals) {
       const entity = ctx.scene.entity.get(unit.id)!;
       const anchor = forward === null ? camp.position : ctx.scene.entity.get(forward)!.position;
       const near = Math.hypot(entity.position[0] - anchor[0], entity.position[2] - anchor[2]);
@@ -134,13 +134,13 @@ describe("the marauder plan (real context)", () => {
     expect(nextWaveEta()).toBeLessThanOrEqual(ENEMY_WAVE_INTERVAL);
   });
 
-  test("razing the Warcamp cuts off reinforcements", () => {
+  test("razing the black nest cuts off reinforcements", () => {
     const ctx = boot();
     seedKeeps(ctx);
     run(ctx, 120);
     expect(livingUnits("enemy", "unit").length).toBeGreaterThan(0);
-    ctx.scene.entity.despawn("warcamp");
-    session.units.delete("warcamp");
+    ctx.scene.entity.despawn("brood_mound");
+    session.units.delete("brood_mound");
     const forward = session.enemyWave.campId;
     if (forward !== null) {
       ctx.scene.entity.despawn(forward);
@@ -174,12 +174,12 @@ describe("roles and hunting on the field", () => {
     expect(commands.every((kind) => kind === "attackMove" || kind === "hold" || kind === undefined)).toBe(true);
   });
 
-  test("a fight raises a noise and nearby Marauders walk to it", () => {
+  test("a fight raises a noise and nearby Black Ants walk to it", () => {
     const ctx = boot();
     seedKeeps(ctx);
     run(ctx, 35);
-    ctx.scene.entity.spawn("grunt", { id: "p1", position: [0, 0, 38], role: "npc" });
-    session.units.set("p1", { id: "p1", catalogId: "footman", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    ctx.scene.entity.spawn("raider", { id: "p1", position: [0, 0, 38], role: "npc" });
+    session.units.set("p1", { id: "p1", catalogId: "soldier", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
     session.enemyPositions = { e1: { x: 4, z: 36 } };
     raiseCombatNoise(ctx, { x: 0, z: 38 }, "p1");
     // The memory has not been observed yet, so the hunt is admitted but not yet reporting.

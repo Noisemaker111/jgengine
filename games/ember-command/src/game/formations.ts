@@ -7,7 +7,7 @@ import { session, type UnitRuntime } from "./session";
 import { FORMATION_HOLD_TOLERANCE, FORMATION_SPACING } from "./tuning";
 
 /**
- * Marching formations for the Vanguard.
+ * Marching formations for the colony.
  *
  * Shape generation, placement and slot matching are the shared engine primitives
  * (`@jgengine/core/movement/formation`); this module owns only Ember's policy: the

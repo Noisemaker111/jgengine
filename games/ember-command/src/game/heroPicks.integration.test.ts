@@ -31,9 +31,9 @@ function spawnHero(ctx: GameContext, pos: EntityPosition = [0, 0, 0]): void {
   session.units.set(HERO_ID, { id: HERO_ID, catalogId: "hero", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
 }
 
-function spawnUnit(ctx: GameContext, id: string, catalogId: "footman" | "grunt", pos: EntityPosition): void {
+function spawnUnit(ctx: GameContext, id: string, catalogId: "soldier" | "raider", pos: EntityPosition): void {
   ctx.scene.entity.spawn(catalogId, { id, position: pos, role: "npc" });
-  const faction = catalogId === "footman" ? "player" : "enemy";
+  const faction = catalogId === "soldier" ? "player" : "enemy";
   session.units.set(id, { id, catalogId, faction, kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
 }
 
@@ -184,11 +184,11 @@ describe("the pick is campaign save data", () => {
 describe("acts do something and their cooldown gates them", () => {
   beforeEach(() => resetSession());
 
-  test("Ember Volley damages nearby Marauders, spends mana once, and refuses a second cast on cooldown", () => {
+  test("Ember Volley damages nearby Black Ants, spends mana once, and refuses a second cast on cooldown", () => {
     const ctx = boot();
     spawnHero(ctx);
-    spawnUnit(ctx, "near", "grunt", [3, 0, 0]);
-    spawnUnit(ctx, "far", "grunt", [30, 0, 0]);
+    spawnUnit(ctx, "near", "raider", [3, 0, 0]);
+    spawnUnit(ctx, "far", "raider", [30, 0, 0]);
     levelTo(ctx, 3);
     pick(ctx, "muster");
     pick(ctx, "volley");
@@ -228,29 +228,29 @@ describe("acts do something and their cooldown gates them", () => {
   test("Banner Muster raises the line's damage for 8s and then lapses", () => {
     const ctx = boot();
     spawnHero(ctx, [30, 0, 0]);
-    spawnUnit(ctx, "footman_1", "footman", [0, 0, 0]);
-    spawnUnit(ctx, "grunt_1", "grunt", [1.4, 0, 0]);
+    spawnUnit(ctx, "soldier_1", "soldier", [0, 0, 0]);
+    spawnUnit(ctx, "raider_1", "raider", [1.4, 0, 0]);
     levelTo(ctx, 2);
     pick(ctx, "muster");
 
-    const before = health(ctx, "grunt_1");
+    const before = health(ctx, "raider_1");
     tickUnits(ctx, 0.016);
-    const plainHit = before - health(ctx, "grunt_1");
+    const plainHit = before - health(ctx, "raider_1");
     expect(plainHit).toBeGreaterThan(0);
 
     resetSession();
     const buffed = boot();
     spawnHero(buffed, [30, 0, 0]);
-    spawnUnit(buffed, "footman_1", "footman", [0, 0, 0]);
-    spawnUnit(buffed, "grunt_1", "grunt", [1.4, 0, 0]);
+    spawnUnit(buffed, "soldier_1", "soldier", [0, 0, 0]);
+    spawnUnit(buffed, "raider_1", "raider", [1.4, 0, 0]);
     levelTo(buffed, 2);
     pick(buffed, "muster");
     expect(castHeroAct(buffed, "banner").ok).toBe(true);
     expect(lineMultiplier("player", "enemy")).toBeCloseTo(1.3, 5);
 
-    const buffedBefore = health(buffed, "grunt_1");
+    const buffedBefore = health(buffed, "raider_1");
     tickUnits(buffed, 0.016);
-    expect(buffedBefore - health(buffed, "grunt_1")).toBeGreaterThan(plainHit);
+    expect(buffedBefore - health(buffed, "raider_1")).toBeGreaterThan(plainHit);
 
     session.elapsed = 9;
     tickHero(buffed, 0.1);

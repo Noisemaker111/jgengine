@@ -46,12 +46,12 @@ describe("unit AI", () => {
   beforeEach(() => resetSession());
 
   test("an idle unit strikes an adjacent hostile", () => {
-    addUnit("f1", "footman", "player", { kind: "idle" });
-    addUnit("e1", "grunt", "enemy", { kind: "idle" });
+    addUnit("f1", "soldier", "player", { kind: "idle" });
+    addUnit("e1", "raider", "enemy", { kind: "idle" });
     const rec = fakeCtx(
       new Map<string, EntityPosition>([
         ["f1", [0, 0, 0]],
-        ["e1", [1.5, 0, 0]], // inside footman reach (1.9)
+        ["e1", [1.5, 0, 0]], // inside soldier reach (1.9)
       ]),
     );
     tickUnits(rec.ctx, 0.5);
@@ -59,8 +59,8 @@ describe("unit AI", () => {
   });
 
   test("an idle unit closes on a hostile that is in aggro range but out of reach", () => {
-    addUnit("f1", "footman", "player", { kind: "idle" });
-    addUnit("e1", "grunt", "enemy", { kind: "idle" });
+    addUnit("f1", "soldier", "player", { kind: "idle" });
+    addUnit("e1", "raider", "enemy", { kind: "idle" });
     const rec = fakeCtx(
       new Map<string, EntityPosition>([
         ["f1", [0, 0, 0]],
@@ -73,15 +73,15 @@ describe("unit AI", () => {
   });
 
   test("attack-move advances toward its destination when no enemy is near", () => {
-    addUnit("e1", "grunt", "enemy", { kind: "attackMove", x: 0, z: 30 });
+    addUnit("e1", "raider", "enemy", { kind: "attackMove", x: 0, z: 30 });
     const rec = fakeCtx(new Map<string, EntityPosition>([["e1", [0, 0, -30]]]));
     tickUnits(rec.ctx, 0.5);
     expect(rec.moves.some((m) => m.id === "e1")).toBe(true);
   });
 
   test("does not target a friendly unit", () => {
-    addUnit("f1", "footman", "player", { kind: "idle" });
-    addUnit("f2", "footman", "player", { kind: "idle" });
+    addUnit("f1", "soldier", "player", { kind: "idle" });
+    addUnit("f2", "soldier", "player", { kind: "idle" });
     const rec = fakeCtx(
       new Map<string, EntityPosition>([
         ["f1", [0, 0, 0]],
@@ -93,9 +93,9 @@ describe("unit AI", () => {
   });
 
   test("hold fights within reach without chasing or returning to an old guard point", () => {
-    addUnit("f1", "footman", "player", { kind: "hold" });
+    addUnit("f1", "soldier", "player", { kind: "hold" });
     session.units.get("f1")!.guardPoint = { x: 20, z: 20 };
-    addUnit("e1", "grunt", "enemy", { kind: "hold" });
+    addUnit("e1", "raider", "enemy", { kind: "hold" });
     const positions = new Map<string, EntityPosition>([["f1", [0, 0, 0]], ["e1", [6, 0, 0]]]);
     const rec = fakeCtx(positions);
     tickUnits(rec.ctx, 0.5);

@@ -1,12 +1,13 @@
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 
 /**
- * Procedural cues for the skirmish: stone set down, copper bells, war drums, and a low hall drone.
+ * Procedural cues for the backyard: soil tamped down, chitin clicks, the black ants' drumming, the
+ * sprinkler's hiss, the mower's roar, rain, the beam's sizzle, and a summer-noon insect drone.
  * Every id here is played from a real accepted action or outcome in the game source; the audio test
  * fails if a `play`/`loop` id has no entry. No asset files: the patches are synthesised on Web Audio.
  */
-export const EMBER_SOUNDS: Record<string, SoundDef> = {
-  // Stone block set on the ground: a dull knock with a short copper ring over it.
+export const LAWN_SOUNDS: Record<string, SoundDef> = {
+  // A chamber is marked out: a dull soil thump with a short chitin click over it.
   place: {
     id: "place",
     bus: "sfx",
@@ -18,7 +19,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Raised building settles and rings: a heavy triangle thump, a grit burst, a high copper note.
+  // A dug chamber opens: a heavy soil thump, a grit burst, a bright click.
   raise: {
     id: "raise",
     bus: "sfx",
@@ -31,7 +32,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // A recruit steps out of the keep: a short brass-like horn blat under a fifth.
+  // A hatchling crawls out of the nest: a short buzzing chirp under a fifth.
   muster: {
     id: "muster",
     bus: "sfx",
@@ -57,7 +58,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Blade or arrow lands: a bright grit transient over a short falling pitch.
+  // Mandibles or acid land: a bright grit transient over a short falling pitch.
   hit: {
     id: "hit",
     bus: "sfx",
@@ -70,7 +71,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // A unit falls or a building is razed: a sagging tone under a gritty tail.
+  // An ant falls or a chamber caves in: a sagging tone under a gritty tail.
   fall: {
     id: "fall",
     bus: "sfx",
@@ -83,7 +84,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Marauder war drum: two heavy strikes on the Warcamp's position as a wave musters.
+  // Black-ant drumming: two heavy gaster thumps as a wave musters (ants really do drum).
   wave: {
     id: "wave",
     bus: "sfx",
@@ -95,7 +96,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Bram's Thunder Clap: a low rolling boom with a crack of noise.
+  // The Marshal's Ground Slam: a low rolling boom with a crack of noise.
   thunder: {
     id: "thunder",
     bus: "sfx",
@@ -107,7 +108,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Banner Muster: a rising Vanguard horn over a cloth snap.
+  // Rally Scent: a rising buzz over a quick wingbeat snap.
   banner: {
     id: "banner",
     bus: "sfx",
@@ -119,7 +120,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Ember Volley: three tight rifle cracks in a row.
+  // Acid Barrage: three tight acid spits in a row.
   volley: {
     id: "volley",
     bus: "sfx",
@@ -132,7 +133,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Ash Ward: a smothered hiss of ember smoke settling over the line.
+  // Chitin Ward: a smothered hiss as the column hunkers into its armour.
   ward: {
     id: "ward",
     bus: "sfx",
@@ -144,7 +145,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Warcamp razed: a rising three-note copper fanfare.
+  // The black nest dug out: a rising three-note fanfare.
   victory: {
     id: "victory",
     bus: "sfx",
@@ -158,7 +159,7 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Keep falls: a descending three-note toll.
+  // The red nest falls: a descending three-note toll.
   defeat: {
     id: "defeat",
     bus: "sfx",
@@ -172,18 +173,87 @@ export const EMBER_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-  // Retained, non-positional hall drone under the battle: a low flat hum and stone-wind hiss.
+  // Retained, non-positional summer drone under the battle: a warm low hum, a high cicada shimmer and
+  // the breeze in the grass.
   bed: {
     id: "bed",
     bus: "sfx",
     loop: true,
     positional: false,
-    gain: 0.3,
+    gain: 0.28,
     synth: {
       voices: [
-        { kind: "tone", freq: 55, duration: 3, wave: "sine", gain: 0.5, sustain: 3 },
-        { kind: "tone", freq: 82.5, duration: 3, wave: "triangle", gain: 0.12, sustain: 3 },
-        { kind: "noise", duration: 3, filterFreq: 320, filterType: "lowpass", gain: 0.15, sustain: 3 },
+        { kind: "tone", freq: 98, duration: 3, wave: "sine", gain: 0.35, sustain: 3 },
+        { kind: "tone", freq: 3520, duration: 3, wave: "triangle", gain: 0.025, sustain: 3 },
+        { kind: "noise", duration: 3, filterFreq: 5200, filterType: "bandpass", gain: 0.05, sustain: 3 },
+        { kind: "noise", duration: 3, filterFreq: 420, filterType: "lowpass", gain: 0.12, sustain: 3 },
+      ],
+    },
+  },
+  // The sprinkler wakes: a pressurised hiss with a stuttering tick.
+  sprinkler: {
+    id: "sprinkler",
+    bus: "sfx",
+    positional: false,
+    gain: 0.6,
+    synth: {
+      voices: [
+        { kind: "noise", duration: 0.55, filterFreq: 4200, filterType: "highpass", gain: 0.35 },
+        { kind: "tone", freq: 900, duration: 0.05, wave: "square", gain: 0.12, delay: 0.1 },
+        { kind: "tone", freq: 900, duration: 0.05, wave: "square", gain: 0.12, delay: 0.3 },
+        { kind: "tone", freq: 900, duration: 0.05, wave: "square", gain: 0.12, delay: 0.5 },
+      ],
+    },
+  },
+  // The lawnmower coughs into life: a sawtooth engine roar swelling under a grinding rumble.
+  mower: {
+    id: "mower",
+    bus: "sfx",
+    positional: false,
+    gain: 0.85,
+    synth: {
+      voices: [
+        { kind: "tone", freq: 55, slideTo: 92, duration: 0.58, wave: "sawtooth", gain: 0.45 },
+        { kind: "tone", freq: 110, slideTo: 184, duration: 0.5, wave: "square", gain: 0.12, delay: 0.05 },
+        { kind: "noise", duration: 0.55, filterFreq: 300, filterType: "lowpass", gain: 0.4 },
+      ],
+    },
+  },
+  // A rain storm rolls in: a wide wash of noise with a far thunder thump.
+  rain: {
+    id: "rain",
+    bus: "sfx",
+    positional: false,
+    gain: 0.6,
+    synth: {
+      voices: [
+        { kind: "noise", duration: 0.55, filterFreq: 2400, filterType: "bandpass", gain: 0.35 },
+        { kind: "tone", freq: 48, slideTo: 32, duration: 0.4, wave: "sine", gain: 0.5, delay: 0.15 },
+      ],
+    },
+  },
+  // The lens focuses: a rising sizzle like fat in a pan.
+  sizzle: {
+    id: "sizzle",
+    bus: "sfx",
+    positional: false,
+    gain: 0.7,
+    synth: {
+      voices: [
+        { kind: "noise", duration: 0.55, filterFreq: 6000, filterType: "highpass", gain: 0.4 },
+        { kind: "tone", freq: 1400, slideTo: 2600, duration: 0.5, wave: "sine", gain: 0.08 },
+      ],
+    },
+  },
+  // A pheromone line is laid: a soft rising chime, like a scent you can hear.
+  scent: {
+    id: "scent",
+    bus: "sfx",
+    gain: 0.55,
+    synth: {
+      voices: [
+        { kind: "tone", freq: 660, slideTo: 990, duration: 0.3, wave: "sine", gain: 0.25 },
+        { kind: "tone", freq: 1320, duration: 0.25, wave: "triangle", gain: 0.1, delay: 0.08 },
       ],
     },
   },

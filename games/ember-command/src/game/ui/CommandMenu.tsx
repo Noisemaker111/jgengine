@@ -22,9 +22,9 @@ import { GILT, INK, OCHRE, WAX } from "./theme";
 /** Capture-only focus request: a shot declares which order it wants highlighted. */
 export const menuFocus: { id: string | null } = { id: null };
 
-export const credits = mergeCredits({ title: "The makers of the vale", sections: [
-  { heading: "Ember Command", entries: [
-    { label: "Art direction", detail: "An autumn vale painted for the war table." },
+export const credits = mergeCredits({ title: "The makers of the yard", sections: [
+  { heading: "Lawn Order", entries: [
+    { label: "Art direction", detail: "An autumn yard painted for the war table." },
     { label: "JGengine", detail: "Published engine packages", href: "https://jgengine.com" },
   ] },
   { heading: "Icons", entries: [{ label: "game-icons.net contributors", detail: "CC BY 3.0; individual credits in iconData.ts", href: "https://game-icons.net" }] },
@@ -56,9 +56,9 @@ function OrderList({ verbs, active, onActive, onPick }: { verbs: readonly Verb[]
 
 /** The order the track offers next, in the field desk's words. */
 function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: string; brief: string } {
-  if (campaign === null) return { eyebrow: "Free skirmish", title: "Raze the Marauder Warcamp", brief: "No orders, no carried stores: the vale as it stands." };
+  if (campaign === null) return { eyebrow: "Free skirmish", title: "Raze the Black Ant Nest", brief: "No orders, no carried stores: the yard as it stands." };
   const ordinal = campaignOrdinal(campaign.index - 1);
-  if (campaign.phase === "finished") return { eyebrow: "The campaign is done", title: campaign.title, brief: "Every order is answered. The Warcamp is ash." };
+  if (campaign.phase === "finished") return { eyebrow: "The campaign is done", title: campaign.title, brief: "Every order is answered. The black nest is ash." };
   if (campaign.phase === "cleared") return { eyebrow: `Next order · ${ordinal} of ${campaignOrdinal(campaign.total - 1)}`, title: campaign.title, brief: campaign.brief };
   if (campaign.phase === "failed") return { eyebrow: `Order ${ordinal} failed`, title: campaign.title, brief: campaign.reason ?? campaign.brief };
   return { eyebrow: `Order ${ordinal} of ${campaignOrdinal(campaign.total - 1)}`, title: campaign.title, brief: campaign.brief };
@@ -66,7 +66,7 @@ function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: 
 
 /** One kept record's line: mission, stores and playtime. */
 function RecordFacts({ slot }: { slot: SaveSlotMeta }) {
-  const facts = ([["flag", slotText(slot, "mission")], ["gold", slotText(slot, "stores")], ["stopwatch", slotText(slot, "playtime")]] as const).filter(([, v]) => v !== null);
+  const facts = ([["flag", slotText(slot, "mission")], ["sugar", slotText(slot, "stores")], ["stopwatch", slotText(slot, "playtime")]] as const).filter(([, v]) => v !== null);
   return <Row gap={12} items="center">{facts.map(([icon, value]) => <Row key={icon} gap={4}>{icon === "flag" ? null : <Glyph name={icon} size={13} color={OCHRE} />}<Small text={String(value)} /></Row>)}</Row>;
 }
 
@@ -82,7 +82,7 @@ function TakeCommandSheet({ recent, campaign, onTake, width }: { recent: SaveSlo
   </Sheet>;
 }
 
-const PRESET_NAMES = ["Mara Vell", "Bram Hollin", "Edda Thorne", "Osric Vane", "Ilse Marrow", "Tobin Reed"];
+const PRESET_NAMES = ["Mara Vell", "Mandible Hollin", "Edda Thorne", "Osric Vane", "Ilse Marrow", "Tobin Reed"];
 const KEY_TEXT: Record<string, string> = { Space: " ", Minus: "-", Quote: "'", Period: "." };
 /** One key code as the letter it signs: words start with a capital, the native field takes codes, not characters. */
 export function signKey(name: string, code: string): string {
@@ -105,7 +105,7 @@ function CommissionSheet({ slot, name, onName, onBegin, width }: { slot: string 
   } } : {})}>
     <Eyebrow text="Commission" />
     <Title text="A new campaign" />
-    <Text text="Five orders stand between the Vanguard and the Marauder Warcamp. The first opens with the muster." />
+    <Text text="Five orders stand between the colony and the Black Ant Nest. The first opens with the muster." />
     <Small text="Commander" />
     <RuneAction label="Commander" run={() => setSigning(!signing)} minHeight={40} padding={[8, 10, 8, 10]} justify="center"
       border={{ width: signing ? 2 : 1, color: signing ? WAX : INK }} fill="#ffffff30" hover="#2b1d1010">
@@ -148,8 +148,8 @@ function SkirmishSheet({ onMarch, width }: { onMarch: () => void; width: number 
   return <Sheet width={width} label="Free skirmish">
     <Eyebrow text="No orders" />
     <Title text="Free skirmish" />
-    <Text text="The vale as it stands: a keep, a purse and the Warcamp across the river. No campaign track, no carried stores. Raze the Warcamp to win." />
-    <PlankButton run={onMarch}>Into the vale</PlankButton>
+    <Text text="The yard as it stands: a keep, a purse and the black nest across the river. No campaign track, no carried stores. Raze the black nest to win." />
+    <PlankButton run={onMarch}>Into the yard</PlankButton>
   </Sheet>;
 }
 
@@ -158,8 +158,8 @@ function ReportSheet({ width }: { width: number }) {
   const r = useHudSlice((h) => ({ won: h.phase === "won", elapsed: h.elapsed, waves: h.wavesSent, troops: h.playerUnits }));
   return <Sheet width={width} label="Field report">
     <Eyebrow text="Field report" />
-    <Title text={r.won ? "The vale is yours" : "The keep has fallen"} />
-    <Text text={r.won ? "Your Vanguard broke the Warcamp. The reinforcements have been silenced." : "The Marauders breached your walls. Gather gold early, build a Barracks and cover the road with a Guard Tower."} />
+    <Title text={r.won ? "The yard is yours" : "The keep has fallen"} />
+    <Text text={r.won ? "Your Red broke the black nest. The reinforcements have been silenced." : "The Black Ants breached your walls. Gather sugar early, build a Barracks and cover the road with a Acid Mound."} />
     {([["Battle time", battleTime(r.elapsed)], ["Waves faced", String(r.waves)], ["Troops standing", String(r.troops)]] as const).map(([label, value]) =>
       <Row key={label} justify="between" padding={[3, 0, 3, 0]}><Small text={label} /><Text textStyle="number" text={value} /></Row>)}
   </Sheet>;
@@ -241,7 +241,7 @@ function CreditsSheet({ width }: { width: number }) {
 }
 
 /**
- * Ember Command's front end is the war table: the title is a weathered survey of the vale under the
+ * Lawn Order's front end is the war table: the title is a weathered survey of the yard under the
  * campaign's wax seal with the orders written down it; the pause is a leather dispatch case holding the
  * orders on hold. Every detail pane is a loose sheet pinned beside them.
  */
@@ -329,7 +329,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
         <Text text="The field is frozen. Review the plan before the next wave." />
         <OrderList verbs={verbs} active={active} onActive={setActive} onPick={pick} />
         <Row justify="between" items="end">
-          <Small grow={1} shrink text={notice ?? bind(() => `${hudStore.get().gold} gold · ${hudStore.get().lumber} lumber in the stores`)} />
+          <Small grow={1} shrink text={notice ?? bind(() => `${hudStore.get().sugar} sugar · ${hudStore.get().leaf} leaf in the stores`)} />
           <WaxSeal size={52} />
         </Row>
       </RuneView>
@@ -340,10 +340,10 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
 
   const held = slots.filter((slot) => !slot.empty).length;
   const verbs: Verb[] = [
-    ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The vale is yours" : "The keep has fallen" }] : []),
+    ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The yard is yours" : "The keep has fallen" }] : []),
     { id: "continue", label: "Take command", hint: recent === null ? (campaign === null ? "March into a free skirmish" : `March on ${order.title}`) : `Resume ${recent.name ?? campaignLabel(recent.id)}` },
     { id: "new", label: "New campaign", hint: `Opens ${campaignLabel(newSlot)}` },
-    { id: "skirmish", label: "Free skirmish", hint: "The vale without orders" },
+    { id: "skirmish", label: "Free skirmish", hint: "The yard without orders" },
     { id: "missions", label: "Campaign records", hint: `${held} of ${slots.length} kept` },
     { id: "settings", label: "Settings", hint: "Field preferences, sound, controls" },
     { id: "credits", label: "Credits" },
@@ -362,10 +362,10 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
     : active === "settings" ? <FieldSettings ctx={ctx} width={sheetWidth} />
     : active === "credits" ? <CreditsSheet width={sheetWidth} /> : null;
   const surveyWidth = phone ? width - 32 : 420;
-  const lead = <RuneView variant="sheet" width={surveyWidth} padding={[24, 26, 26, 26]} gap={10} fill="#e6d3a8" label="Ember Command">
+  const lead = <RuneView variant="sheet" width={surveyWidth} padding={[24, 26, 26, 26]} gap={10} fill="#e6d3a8" label="Lawn Order">
     <Row justify="between" items="start">
       <RuneView gap={2}>
-        <Eyebrow text="The Highland Vale" />
+        <Eyebrow text="The Highland Yard" />
         <Text textStyle="wordmark" text="Ember" />
         <Text textStyle="wordmark" text="Command" />
       </RuneView>

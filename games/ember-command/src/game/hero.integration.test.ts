@@ -27,8 +27,8 @@ function spawnHero(ctx: GameContext, pos: EntityPosition = [0, 0, 0]): void {
 }
 
 function spawnGrunt(ctx: GameContext, id: string, pos: EntityPosition): void {
-  ctx.scene.entity.spawn("grunt", { id, position: pos, role: "npc" });
-  session.units.set(id, { id, catalogId: "grunt", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+  ctx.scene.entity.spawn("raider", { id, position: pos, role: "npc" });
+  session.units.set(id, { id, catalogId: "raider", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
 }
 
 function statVal(ctx: GameContext, id: string, key: string): { current: number; max: number } | null {
@@ -85,9 +85,9 @@ describe("hero XP + leveling", () => {
   beforeEach(() => resetSession());
 
   test("XP is awarded for enemy units only, scaling with toughness", () => {
-    expect(heroXpFor("grunt")).toBeGreaterThan(0);
-    expect(heroXpFor("reaver")).toBeGreaterThan(heroXpFor("grunt"));
-    expect(heroXpFor("footman")).toBe(0); // own unit
+    expect(heroXpFor("raider")).toBeGreaterThan(0);
+    expect(heroXpFor("major")).toBeGreaterThan(heroXpFor("raider"));
+    expect(heroXpFor("soldier")).toBe(0); // own unit
     expect(heroXpFor("keep_enemy")).toBe(0); // structure
   });
 
@@ -103,7 +103,7 @@ describe("hero XP + leveling", () => {
     expect(statVal(ctx, HERO_ID, "health")!.max).toBeGreaterThan(hpBefore);
     expect(statVal(ctx, HERO_ID, "mana")!.max).toBeGreaterThan(manaBefore);
     expect(heroAttackBonus(ctx, "hero")).toBeGreaterThan(0);
-    expect(heroAttackBonus(ctx, "footman")).toBe(0); // bonus is the hero's alone
+    expect(heroAttackBonus(ctx, "soldier")).toBe(0); // bonus is the hero's alone
   });
 
   test("XP tops out at the max level", () => {

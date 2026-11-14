@@ -5,7 +5,7 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { tickUnits } from "./ai/units";
 import { registerCommands } from "./commands";
 import { content } from "./content";
-import { GOLD } from "./tuning";
+import { SUGAR } from "./tuning";
 import { initResourceField, resetSession, session } from "./session";
 import { HARVEST_SECONDS } from "./tuning";
 
@@ -15,34 +15,34 @@ function boot(): GameContext {
 }
 
 describe("worker gather economy (real context)", () => {
-  test("a peasant hauls gold from the mine back to the Town Hall and deposits it", () => {
+  test("a worker hauls sugar from the mine back to the Nest and deposits it", () => {
     const ctx = boot();
     resetSession();
 
-    // Town Hall acts as the depot.
+    // Nest acts as the depot.
     ctx.scene.entity.spawn("keep_player", { id: "hall", position: [0, 0, 0], role: "npc" });
     session.units.set("hall", { id: "hall", catalogId: "keep_player", faction: "player", kind: "building", command: { kind: "idle" }, guardPoint: { x: 0, z: 0 }, leash: 0, attackCooldown: 0 });
 
-    // A gold mine a short walk away.
-    ctx.scene.entity.spawn("goldmine", { id: "mine", position: [6, 0, 0], role: "npc" });
-    session.nodes.set("mine", { id: "mine", resource: "gold", x: 6, z: 0 });
+    // A sugar mine a short walk away.
+    ctx.scene.entity.spawn("crumbs", { id: "mine", position: [6, 0, 0], role: "npc" });
+    session.nodes.set("mine", { id: "mine", catalogId: "crumbs", resource: "sugar", x: 6, z: 0 });
     initResourceField(() => 0.5);
 
-    // A peasant ordered to gather it.
-    ctx.scene.entity.spawn("peasant", { id: "p1", position: [1, 0, 0], role: "npc" });
+    // A worker ordered to gather it.
+    ctx.scene.entity.spawn("worker", { id: "p1", position: [1, 0, 0], role: "npc" });
     session.units.set("p1", {
       id: "p1",
-      catalogId: "peasant",
+      catalogId: "worker",
       faction: "player",
       kind: "unit",
-      command: { kind: "gather", nodeId: "mine", resource: GOLD, phase: "toNode", carried: 0, timer: 0 },
+      command: { kind: "gather", nodeId: "mine", resource: SUGAR, phase: "toNode", carried: 0, timer: 0 },
       leash: 0,
       attackCooldown: 0,
     });
 
-    const before = ctx.game.economy.balance("commander", GOLD);
+    const before = ctx.game.economy.balance("commander", SUGAR);
     for (let i = 0; i < 250; i++) tickUnits(ctx, 0.1);
-    const after = ctx.game.economy.balance("commander", GOLD);
+    const after = ctx.game.economy.balance("commander", SUGAR);
 
     expect(after).toBeGreaterThan(before); // at least one full haul deposited
   });
@@ -50,8 +50,8 @@ describe("worker gather economy (real context)", () => {
   test("a depleting mine eventually stops yielding", () => {
     const ctx = boot();
     resetSession();
-    ctx.scene.entity.spawn("goldmine", { id: "mine", position: [0, 0, 0], role: "npc" });
-    session.nodes.set("mine", { id: "mine", resource: "gold", x: 0, z: 0 });
+    ctx.scene.entity.spawn("crumbs", { id: "mine", position: [0, 0, 0], role: "npc" });
+    session.nodes.set("mine", { id: "mine", catalogId: "crumbs", resource: "sugar", x: 0, z: 0 });
     initResourceField(() => 0.5);
     const field = session.resourceField!;
     let hits = 0;
@@ -65,18 +65,18 @@ describe("worker gather economy (real context)", () => {
   });
 });
 
-function gatherBoot(resource: "gold" | "lumber", workers = 1): GameContext {
+function gatherBoot(resource: "sugar" | "leaf", workers = 1): GameContext {
   const ctx = boot();
   resetSession();
   ctx.scene.entity.spawn("keep_player", { id: "hall", position: [0, 0, 0], role: "npc" });
   session.units.set("hall", { id: "hall", catalogId: "keep_player", faction: "player", kind: "building", command: { kind: "idle" }, guardPoint: { x: 0, z: 0 }, leash: 0, attackCooldown: 0 });
-  session.nodes.set("node", { id: "node", resource, x: 12, z: 0 });
-  session.nodes.set("other", { id: "other", resource, x: -12, z: 0 });
+  session.nodes.set("node", { id: "node", catalogId: resource === "sugar" ? "crumbs" : "leaves", resource, x: 12, z: 0 });
+  session.nodes.set("other", { id: "other", catalogId: resource === "sugar" ? "crumbs" : "leaves", resource, x: -12, z: 0 });
   initResourceField(() => 0.5);
   for (let i = 0; i < workers; i++) {
     const id = `worker${i}`;
-    ctx.scene.entity.spawn("peasant", { id, position: [12, 0, 0], role: "npc" });
-    session.units.set(id, { id, catalogId: "peasant", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    ctx.scene.entity.spawn("worker", { id, position: [12, 0, 0], role: "npc" });
+    session.units.set(id, { id, catalogId: "worker", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
   }
   registerCommands(ctx);
   orderNode(ctx, Array.from({ length: workers }, (_, i) => `worker${i}`));
@@ -88,7 +88,7 @@ function orderNode(ctx: GameContext, selection = ["worker0"], x = 12): void {
 }
 
 describe("repeating a worker's current gather order", () => {
-  for (const [resource, yieldAmount, budget] of [["gold", 12, 600], ["lumber", 8, 500]] as const) {
+  for (const [resource, yieldAmount, budget] of [["sugar", 12, 600], ["leaf", 8, 500]] as const) {
     test(`preserves earned ${resource} and deposits it exactly once`, () => {
       const ctx = gatherBoot(resource);
       tickUnits(ctx, 0.1);
@@ -110,7 +110,7 @@ describe("repeating a worker's current gather order", () => {
   }
 
   test("preserves partial harvest time instead of restarting work", () => {
-    const ctx = gatherBoot("gold");
+    const ctx = gatherBoot("sugar");
     tickUnits(ctx, 0.1);
     tickUnits(ctx, 1);
     const working = session.units.get("worker0")!.command;
@@ -123,7 +123,7 @@ describe("repeating a worker's current gather order", () => {
   });
 
   test("a repeated order cannot erase the last load from a depleted mine", () => {
-    const ctx = gatherBoot("gold");
+    const ctx = gatherBoot("sugar");
     // Exhaust the finite field through its public harvest API, leaving one final worker trip.
     const field = session.resourceField!;
     while (field.state("node").budget > 1) field.harvest("node", { power: 1, defaultBias: 1 });
@@ -133,16 +133,16 @@ describe("repeating a worker's current gather order", () => {
     expect(session.units.get("worker0")!.command).toMatchObject({ phase: "toDepot", carried: 12 });
     orderNode(ctx);
     for (let frame = 0; frame < 200; frame++) tickUnits(ctx, 0.1);
-    expect(ctx.game.economy.balance("commander", "gold")).toBe(12);
+    expect(ctx.game.economy.balance("commander", "sugar")).toBe(12);
     expect(session.units.get("worker0")!.command).toEqual({ kind: "idle" });
     expect(field.state("node").budget).toBe(0);
     expect(field.harvest("node", { power: 1 }).harvested).toBe(false);
   });
 
   test("preserves each worker's haul in a mixed selection while ordering soldiers", () => {
-    const ctx = gatherBoot("gold", 2);
-    ctx.scene.entity.spawn("footman", { id: "soldier", position: [0, 0, 0], role: "npc" });
-    session.units.set("soldier", { id: "soldier", catalogId: "footman", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    const ctx = gatherBoot("sugar", 2);
+    ctx.scene.entity.spawn("soldier", { id: "soldier", position: [0, 0, 0], role: "npc" });
+    session.units.set("soldier", { id: "soldier", catalogId: "soldier", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
     tickUnits(ctx, 0.1);
     tickUnits(ctx, HARVEST_SECONDS);
     const hauls = [session.units.get("worker0")!.command, session.units.get("worker1")!.command];
@@ -151,30 +151,30 @@ describe("repeating a worker's current gather order", () => {
     expect(session.units.get("worker0")!.command).toBe(hauls[0]);
     expect(session.units.get("worker1")!.command).toBe(hauls[1]);
     expect(session.units.get("soldier")!.command.kind).toBe("move");
-    for (let frame = 0; frame < 100 && ctx.game.economy.balance("commander", "gold") < 24; frame++) tickUnits(ctx, 0.1);
-    expect(ctx.game.economy.balance("commander", "gold")).toBe(24);
+    for (let frame = 0; frame < 100 && ctx.game.economy.balance("commander", "sugar") < 24; frame++) tickUnits(ctx, 0.1);
+    expect(ctx.game.economy.balance("commander", "sugar")).toBe(24);
     expect(session.resourceField!.state("node").budget).toBe(598);
   });
 
   test("a different node still replaces the gathering intent", () => {
-    const ctx = gatherBoot("gold");
+    const ctx = gatherBoot("sugar");
     tickUnits(ctx, 0.1);
     const previous = session.units.get("worker0")!.command;
     orderNode(ctx, ["worker0"], -12);
     expect(session.units.get("worker0")!.command).not.toBe(previous);
-    expect(session.units.get("worker0")!.command).toEqual({ kind: "gather", nodeId: "other", resource: "gold", phase: "toNode", carried: 0, timer: 0 });
+    expect(session.units.get("worker0")!.command).toEqual({ kind: "gather", nodeId: "other", resource: "sugar", phase: "toNode", carried: 0, timer: 0 });
   });
 
   test("a changed resource is a new intent even with the same node identity", () => {
-    const ctx = gatherBoot("gold");
+    const ctx = gatherBoot("sugar");
     tickUnits(ctx, 0.1);
-    session.nodes.get("node")!.resource = "lumber";
+    session.nodes.get("node")!.resource = "leaf";
     orderNode(ctx);
-    expect(session.units.get("worker0")!.command).toEqual({ kind: "gather", nodeId: "node", resource: "lumber", phase: "toNode", carried: 0, timer: 0 });
+    expect(session.units.get("worker0")!.command).toEqual({ kind: "gather", nodeId: "node", resource: "leaf", phase: "toNode", carried: 0, timer: 0 });
   });
 
   test("moving away still replaces a gathering intent", () => {
-    const ctx = gatherBoot("gold");
+    const ctx = gatherBoot("sugar");
     tickUnits(ctx, 0.1);
     ctx.game.commands.run("unit.order", { selection: ["worker0"], point: [0, 0, 24] });
     expect(session.units.get("worker0")!.command.kind).toBe("move");

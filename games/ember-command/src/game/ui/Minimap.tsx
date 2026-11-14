@@ -7,7 +7,7 @@ import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 
 import { enemyDrawn, fogLevel, fogSnapshot, FOG_ALPHA, type FogCellsSnapshot } from "../fog";
 import { session } from "../session";
-import { INK, MARAUDER_INK, OCHRE, BRASS, VANGUARD_INK } from "./theme";
+import { INK, RIVAL_INK, OCHRE, BRASS, RED_INK } from "./theme";
 
 export const MAP_SIZE = 168;
 const RADIUS = 48; // the battlefield is 96×96 centred on the origin, so ±48 fills the frame
@@ -15,15 +15,15 @@ const VIEW: MinimapView = { center: [0, 0], worldRadius: RADIUS, size: MAP_SIZE 
 const FOG_INK = "#3a2a18";
 
 interface Blip { color: string; radius: number; stroke: boolean }
-/** Marks per kind, in the survey's inks: the Vanguard blue, the hero brass, Marauders red, gold seams ochre. */
+/** Marks per kind, in the survey's inks: the colony blue, the hero brass, Black Ants red, sugar seams ochre. */
 const BLIP: Record<string, Blip> = {
   playerHero: { color: BRASS, radius: 3.6, stroke: true },
-  playerBuilding: { color: VANGUARD_INK, radius: 4.2, stroke: true },
-  playerUnit: { color: VANGUARD_INK, radius: 2.5, stroke: false },
-  enemyHero: { color: MARAUDER_INK, radius: 3.6, stroke: true },
-  enemyBuilding: { color: MARAUDER_INK, radius: 4.2, stroke: true },
-  enemyUnit: { color: MARAUDER_INK, radius: 2.5, stroke: false },
-  goldmine: { color: OCHRE, radius: 2.7, stroke: false },
+  playerBuilding: { color: RED_INK, radius: 4.2, stroke: true },
+  playerUnit: { color: RED_INK, radius: 2.5, stroke: false },
+  enemyHero: { color: RIVAL_INK, radius: 3.6, stroke: true },
+  enemyBuilding: { color: RIVAL_INK, radius: 4.2, stroke: true },
+  enemyUnit: { color: RIVAL_INK, radius: 2.5, stroke: false },
+  crumbs: { color: OCHRE, radius: 2.7, stroke: false },
 };
 
 export interface FogRun { key: string; x: number; y: number; w: number; h: number; kind: "unseen" | "explored" }
@@ -65,8 +65,8 @@ function tacticalDots(ctx: GameContext): Dot[] {
       if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, e.position[0], e.position[2])) continue;
       const role = unit.kind === "building" ? "Building" : unit.catalogId === "hero" ? "Hero" : "Unit";
       dots.push({ id: e.id, kind: `${unit.faction === "player" ? "player" : "enemy"}${role}` });
-    } else if (e.name === "goldmine" && fogLevel(session.fog, e.position[0], e.position[2]) !== "unseen") {
-      dots.push({ id: e.id, kind: "goldmine" });
+    } else if (e.name === "crumbs" && fogLevel(session.fog, e.position[0], e.position[2]) !== "unseen") {
+      dots.push({ id: e.id, kind: "crumbs" });
     }
   }
   return dots;
@@ -96,8 +96,8 @@ function polledSource<T>(scan: () => T[], key: (items: T[]) => string, everyMs: 
 }
 
 /**
- * The survey map: parchment with the Warcamp's half washed red, ruled squares, fog runs re-read at the
- * fog tick and blips that move at their leaves. Enemy units out of Vanguard sight have no blip.
+ * The survey map: parchment with the black nest's half washed red, ruled squares, fog runs re-read at the
+ * fog tick and blips that move at their leaves. Enemy units out of Red sight have no blip.
  */
 export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
   const fog = useMemo(() => polledSource(() => fogRuns(fogSnapshot(session.fog)),

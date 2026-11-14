@@ -14,8 +14,8 @@ import { editorLayers } from "../editorLayers";
 import {
   CAMPAIGN,
   CAMPAIGN_MISSIONS,
-  FIRST_MUSTER_ID,
-  LONG_WATCH_ID,
+  POPSICLE_CLAIM_ID,
+  HOSE_CROSSING_ID,
   campaignMarkerIds,
   campaignReadout,
   campaignRuntime,
@@ -59,7 +59,7 @@ function drain(events: readonly MissionEvent[], kind: MissionEvent["kind"]): Mis
   return events.filter((event) => event.kind === kind);
 }
 
-describe("the vale campaign is engine mission data", () => {
+describe("the yard campaign is engine mission data", () => {
   test("the authored catalog lints clean against the scene's markers", () => {
     const issues = validateMissionCatalog(CAMPAIGN_MISSIONS, { markerIds });
     expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
@@ -90,23 +90,32 @@ describe("the vale campaign is engine mission data", () => {
     }
   });
 
-  test("the teaching order starts with a build order, holds with a timer, escorts, guards a loss and chains a finale", () => {
+  test("the teaching order claims the popsicle, crosses the hose, survives the mower, raids the queen and ends on the beam", () => {
     const kinds = CAMPAIGN.map((step) => step.mission.objectives.map((objective) => objective.kind));
     expect(kinds[0]).toContain("collect");
-    expect(kinds[1]).toEqual(["survive"]);
-    expect(kinds[2]).toEqual(["reach"]);
-    expect(kinds[3]).toEqual(["reach", "survive"]);
-    expect(kinds[4]).toHaveLength(2);
-    expect(mission(CAMPAIGN[1]!.mission.id).objectives[0]!.duration).toBe(120);
+    expect(kinds[1]).toEqual(["reach"]);
+    expect(kinds[2]).toEqual(["survive"]);
+    expect(kinds[3]).toEqual(["reach", "kill"]);
+    expect(kinds[4]).toEqual(["survive", "kill"]);
+    expect(mission(CAMPAIGN[2]!.mission.id).objectives[0]!.duration).toBe(150);
+  });
+
+  test("each mission turns on the yard hazard it is about", () => {
+    expect(CAMPAIGN[0]!.hazards.sprinkler).toBe(true);
+    expect(CAMPAIGN[2]!.hazards.mower).toBe(true);
+    expect(CAMPAIGN[3]!.hazards.night).toBe(true);
+    expect(CAMPAIGN[4]!.hazards.beam).toBe(true);
+    // Only the finale brings the kid with the magnifying glass.
+    expect(CAMPAIGN.filter((step) => step.hazards.beam)).toHaveLength(1);
   });
 });
 
 describe("the missions run on the machine", () => {
-  test("First Muster counts a Barracks and four Footmen from world events, then needs Bram at the muster ground", () => {
+  test("the Popsicle Claim counts a Barracks Chamber and four Soldiers from world events, then needs the Marshal on the popsicle", () => {
     const runtime = machine();
     const def = mission(CAMPAIGN[0]!.mission.id);
     runtime.start(def.id);
-    const atMuster = markers["campaign_muster"]!;
+    const atMuster = markers["campaign_popsicle"]!;
 
     let events = runtime.tick(0.1, {
       events: [{ kind: "collect", target: "barracks" } satisfies MissionWorldEvent],
@@ -115,7 +124,7 @@ describe("the missions run on the machine", () => {
     expect(runtime.state()?.objective).toBe(objectiveId(def, 1));
 
     events = runtime.tick(0.1, {
-      events: Array.from({ length: 4 }, () => ({ kind: "collect", target: "footman" }) satisfies MissionWorldEvent),
+      events: Array.from({ length: 4 }, () => ({ kind: "collect", target: "soldier" }) satisfies MissionWorldEvent),
       actors: { [HERO_ID]: { alive: true, position: { x: 0, y: 0, z: 36 } } },
     });
     expect(runtime.state()?.objective).toBe(objectiveId(def, 2));
@@ -126,33 +135,33 @@ describe("the missions run on the machine", () => {
     });
     expect(runtime.state()?.status).toBe("completed");
     const completed = drain(events, "completed")[0];
-    expect(completed?.kind === "completed" ? completed.rewards?.economy?.gold : 0).toBe(120);
+    expect(completed?.kind === "completed" ? completed.rewards?.economy?.sugar : 0).toBe(120);
   });
 
-  test("the Long Watch is a two-minute hold whose clock the HUD can read", () => {
+  test("Mower Day is a two-and-a-half-minute hold whose clock the HUD can read", () => {
     const runtime = machine();
-    const def = mission(CAMPAIGN[1]!.mission.id);
+    const def = mission(CAMPAIGN[2]!.mission.id);
     runtime.start(def.id);
     runtime.tick(1, { actors: { [HERO_ID]: { alive: true } }, survivors: 4 });
-    expect(runtime.view()?.remaining).toBeCloseTo(119, 5);
-    const events = runtime.tick(120, { actors: { [HERO_ID]: { alive: true } }, survivors: 4 });
+    expect(runtime.view()?.remaining).toBeCloseTo(149, 5);
+    const events = runtime.tick(150, { actors: { [HERO_ID]: { alive: true } }, survivors: 4 });
     expect(runtime.state()?.status).toBe("completed");
     expect(drain(events, "completed")).toHaveLength(1);
   });
 
   test("the struggled defence fails in its named state when the line is gone", () => {
     const runtime = machine();
-    const def = mission(CAMPAIGN[1]!.mission.id);
+    const def = mission(CAMPAIGN[2]!.mission.id);
     runtime.start(def.id);
     const events = runtime.tick(1, { actors: { [HERO_ID]: { alive: true } }, survivors: 0 });
     const failed = drain(events, "failed")[0];
     expect(failed?.kind === "failed" ? failed.state : "").toBe("watch_overrun");
   });
 
-  test("Road to Mid Vale escorts Bram to the authored seam and fails if he falls", () => {
+  test("Crossing the Hose escorts the Marshal to the authored far bank and fails if he falls", () => {
     const runtime = machine();
-    const def = mission(CAMPAIGN[2]!.mission.id);
-    const seam = markers["goldmine_mid"]!;
+    const def = mission(CAMPAIGN[1]!.mission.id);
+    const seam = markers["campaign_far_bank"]!;
     runtime.start(def.id);
     let events = runtime.tick(0.1, { actors: { [HERO_ID]: { alive: true, position: { x: 0, y: 0, z: 28 } } } });
     expect(runtime.state()?.status).toBe("active");
@@ -162,34 +171,31 @@ describe("the missions run on the machine", () => {
     const second = machine();
     second.start(def.id);
     const failed = drain(second.tick(0.1, { actors: { [HERO_ID]: { alive: false } } }), "failed")[0];
-    expect(failed?.kind === "failed" ? failed.state : "").toBe("bram_waylaid");
+    expect(failed?.kind === "failed" ? failed.state : "").toBe("mandible_waylaid");
   });
 
-  test("the Thin Line breaks when a Vanguard soldier falls, and completes when none does", () => {
+  test("the Black Queen raid reaches the brood mound, then needs it dug out", () => {
     const runtime = machine();
     const def = mission(CAMPAIGN[3]!.mission.id);
-    const crossroads = markers["campaign_crossroads"]!;
-    const heroAt = { alive: true, position: { x: crossroads.x, y: 0, z: crossroads.z } };
+    const raid = markers["campaign_brood_raid"]!;
+    const heroAt = { alive: true, position: { x: raid.x, y: 0, z: raid.z } };
     runtime.start(def.id);
     runtime.tick(0.1, { actors: { [HERO_ID]: heroAt } });
     expect(runtime.state()?.objective).toBe(objectiveId(def, 1));
-
-    const failed = drain(runtime.tick(1, {
-      actors: { [HERO_ID]: heroAt },
-      survivors: 3,
-      events: [{ kind: "kill", target: "footman", tags: ["vanguard"] }],
-    }), "failed")[0];
-    expect(failed?.kind === "failed" ? failed.state : "").toBe("line_broken");
-
-    const clean = machine();
-    clean.start(def.id);
-    clean.tick(0.1, { actors: { [HERO_ID]: heroAt } });
-    const events = clean.tick(46, { actors: { [HERO_ID]: heroAt }, survivors: 4, events: [{ kind: "kill", target: "grunt", tags: ["marauder"] }] });
-    expect(clean.state()?.status).toBe("completed");
+    // Killing raiders does not count: only the brood mound does.
+    runtime.tick(1, { actors: { [HERO_ID]: heroAt }, events: [{ kind: "kill", target: "raider", tags: ["rival"] }] });
+    expect(runtime.state()?.status).toBe("active");
+    const events = runtime.tick(1, { actors: { [HERO_ID]: heroAt }, events: [{ kind: "kill", target: "brood_mound", tags: ["rival"] }] });
+    expect(runtime.state()?.status).toBe("completed");
     expect(drain(events, "completed")).toHaveLength(1);
+
+    const lost = machine();
+    lost.start(def.id);
+    const failed = drain(lost.tick(0.1, { actors: { [HERO_ID]: { alive: false } } }), "failed")[0];
+    expect(failed?.kind === "failed" ? failed.state : "").toBe("mandible_fell");
   });
 
-  test("the finale chains weather-the-push into razing the Warcamp", () => {
+  test("the finale chains outlasting the beam into digging out the black nest", () => {
     const runtime = machine();
     const def = mission(CAMPAIGN[4]!.mission.id);
     runtime.start(def.id);
@@ -198,7 +204,7 @@ describe("the missions run on the machine", () => {
     const events = runtime.tick(0.1, {
       actors: { [HERO_ID]: { alive: true } },
       survivors: 5,
-      events: [{ kind: "kill", target: "keep_enemy", tags: ["marauder"] }],
+      events: [{ kind: "kill", target: "keep_enemy", tags: ["rival"] }],
     });
     expect(runtime.state()?.status).toBe("completed");
     expect(runtime.view()?.step).toBe(2);
@@ -208,7 +214,7 @@ describe("the missions run on the machine", () => {
 
 describe("the campaign track", () => {
   const progress = (won: string[], mode: CampaignProgress["mode"] = "campaign"): CampaignProgress =>
-    ({ won, mode, stores: { gold: 0, lumber: 0 } });
+    ({ won, mode, stores: { sugar: 0, leaf: 0 } });
 
   test("missions are offered in order and skipped once won", () => {
     expect(nextCampaignStep(progress([]))?.mission.id).toBe(CAMPAIGN[0]!.mission.id);
@@ -218,9 +224,9 @@ describe("the campaign track", () => {
     expect(nextCampaignStep(progress([], "skirmish"))).toBeNull();
   });
 
-  test("the vale's stores are the purse the next battle opens with", () => {
-    expect(campaignStores(progress([]))).toEqual({ gold: 0, lumber: 0 });
-    expect(campaignStores({ ...progress([]), stores: { gold: 280, lumber: 100 } })).toEqual({ gold: 280, lumber: 100 });
+  test("the yard's stores are the purse the next battle opens with", () => {
+    expect(campaignStores(progress([]))).toEqual({ sugar: 0, leaf: 0 });
+    expect(campaignStores({ ...progress([]), stores: { sugar: 280, leaf: 100 } })).toEqual({ sugar: 280, leaf: 100 });
   });
 });
 
@@ -246,18 +252,18 @@ describe("the field desk reads the machine", () => {
 
   test("campaign progress is written into the world snapshot, so a save carries it", () => {
     const first = boot();
-    campaignStore.write(first, { won: [CAMPAIGN[0]!.mission.id], mode: "campaign", stores: { gold: 120, lumber: 40 } });
+    campaignStore.write(first, { won: [CAMPAIGN[0]!.mission.id], mode: "campaign", stores: { sugar: 120, leaf: 40 } });
     const snapshot = first.state();
     const second = boot();
     second.hydrate(snapshot);
     expect(campaignStore.read(second).won).toEqual([CAMPAIGN[0]!.mission.id]);
-    expect(campaignStore.read(second).stores).toEqual({ gold: 120, lumber: 40 });
+    expect(campaignStore.read(second).stores).toEqual({ sugar: 120, leaf: 40 });
     expect(nextCampaignStep(campaignStore.read(second))?.mission.id).toBe(CAMPAIGN[1]!.mission.id);
   });
 
   test("the readout reports the live objective and its clock", () => {
     const ctx = boot();
-    campaignStore.write(ctx, { won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } });
+    campaignStore.write(ctx, { won: [], mode: "campaign", stores: { sugar: 0, leaf: 0 } });
     const readout = campaignReadout(ctx);
     expect(readout?.brief).toBe(CAMPAIGN[0]!.brief);
     expect(readout?.steps).toBe(CAMPAIGN[0]!.mission.objectives.length);
@@ -268,28 +274,28 @@ describe("the field desk reads the machine", () => {
     setupSkirmish(ctx);
     ctx.game.commands.run("match.start", {});
     expect(hudStore.get().campaign?.phase).toBe("live");
-    expect(hudStore.get().campaign?.missionId).toBe(FIRST_MUSTER_ID);
+    expect(hudStore.get().campaign?.missionId).toBe(POPSICLE_CLAIM_ID);
 
     const restage = () => setupSkirmish(ctx);
     noteCampaignBuild(ctx, "barracks");
     tickCampaign(ctx, 0.2, restage);
-    expect(campaignRuntime(ctx).state()?.objective).toBe("muster_footmen");
+    expect(campaignRuntime(ctx).state()?.objective).toBe("muster_soldiers");
 
     for (let i = 0; i < 4; i += 1) {
-      noteCampaignTrain(ctx, "footman");
+      noteCampaignTrain(ctx, "soldier");
       tickCampaign(ctx, 0.2, restage);
     }
     expect(campaignRuntime(ctx).state()?.objective).toBe("march_muster");
 
-    const muster = markers["campaign_muster"]!;
+    const muster = markers["campaign_popsicle"]!;
     ctx.scene.entity.setPose(HERO_ID, { position: [muster.x, ctx.world.groundHeightAt(muster.x, muster.z), muster.z] });
     tickCampaign(ctx, 0.2, restage);
 
-    expect(campaignStore.read(ctx).won).toContain(FIRST_MUSTER_ID);
-    expect(campaignStore.read(ctx).stores).toEqual({ gold: 120, lumber: 40 });
+    expect(campaignStore.read(ctx).won).toContain(POPSICLE_CLAIM_ID);
+    expect(campaignStore.read(ctx).stores).toEqual({ sugar: 120, leaf: 40 });
     const card = hudStore.get().campaign;
     expect(card?.phase).toBe("cleared");
-    expect(card?.missionId).toBe(LONG_WATCH_ID);
+    expect(card?.missionId).toBe(HOSE_CROSSING_ID);
     expect(card?.index).toBe(2);
   });
 
@@ -299,10 +305,10 @@ describe("the field desk reads the machine", () => {
     ctx.game.commands.run("match.start", {});
     ctx.scene.entity.despawn(HERO_ID);
     tickCampaign(ctx, 0.2, () => setupSkirmish(ctx));
-    // Mission I's build phase only fails with the keep; the hero's fall shows up on the march.
+    // Mission I's dig phase only fails with the nest; the hero's fall shows up on the march.
     expect(campaignRuntime(ctx).state()?.status).toBe("active");
     const card = hudStore.get().campaign;
-    expect(card?.missionId).toBe(FIRST_MUSTER_ID);
+    expect(card?.missionId).toBe(POPSICLE_CLAIM_ID);
     expect(card?.objective).toBe(CAMPAIGN[0]!.mission.objectives[0]!.label ?? "");
   });
 });

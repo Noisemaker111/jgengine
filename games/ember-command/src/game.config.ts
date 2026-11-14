@@ -5,31 +5,38 @@ import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { editorCatalogs } from "./editorCatalogs";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { EMBER_SOUNDS } from "./game/audio";
+import { LAWN_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
 import { entityModels, flockModels, scatterModels } from "./game/models";
 import { isPlayerSelectable } from "./game/session";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
-import { EmberCommandWorldOverlay } from "./game/world/WorldOverlay";
+import { LawnOrderWorldOverlay } from "./game/world/WorldOverlay";
+import { renderEntity } from "./game/world/renderEntity";
+import "./game/world/yardKinds.draw";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
-  name: "Ember Command",
+  name: "LAWN ORDER",
   assets,
   world,
   physics,
   input: {
-    // RTS command card laid out like the console grid (1 2 3 R · B G T F · Z X C V). No movement actions:
+    // RTS command card laid out like the console grid (1 2 3 9 0 · R P · B G T U Y F · Z X C V). No movement actions:
     // there is no avatar, and the "rts" camera rig owns WASD/arrow panning, edge-scroll and zoom.
-    trainPeasant: ["Digit1"],
-    trainFootman: ["Digit2"],
-    trainRifleman: ["Digit3"],
+    trainWorker: ["Digit1"],
+    trainSoldier: ["Digit2"],
+    trainSpitter: ["Digit3"],
+    trainScout: ["Digit9"],
+    trainBeetle: ["Digit0"],
+    layTrail: ["KeyP"],
     attackMove: ["KeyR"],
     buildBarracks: ["KeyB"],
-    buildFarm: ["KeyG"],
-    buildTower: ["KeyT"],
+    buildGarden: ["KeyG"],
+    buildMound: ["KeyT"],
+    buildNursery: ["KeyU"],
+    buildGranary: ["KeyY"],
     rally: ["KeyF"],
     hold: ["KeyV"],
     formationLine: ["KeyL"],
@@ -48,7 +55,7 @@ export const game = defineGame({
     heroPickFirst: ["Digit7"],
     heroPickSecond: ["Digit8"],
   },
-  audio: { sounds: EMBER_SOUNDS },
+  audio: { sounds: LAWN_SOUNDS },
   server: { mode: "single" },
   save: "none",
   // Offline whole-world save, written only at campaign beats (mission start, win, loss) so a battle
@@ -59,7 +66,7 @@ export const game = defineGame({
   systems,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
-  // The war table draws on one native Rune surface: its own typed theme, no shell HUD theme or DOM kit.
+  // The garden-journal HUD draws on one native Rune surface: its own typed theme, no shell HUD theme or DOM kit.
   hudTheme: false,
   uiRenderer: "rune",
   controls: {
@@ -67,7 +74,8 @@ export const game = defineGame({
   // pressable token, so the derived touch buttons would only repeat them over the field.
     touch: {
       hidden: [
-        "trainPeasant", "trainFootman", "trainRifleman", "attackMove", "buildBarracks", "buildFarm", "buildTower", "rally", "hold",
+        "trainWorker", "trainSoldier", "trainSpitter", "trainScout", "trainBeetle", "layTrail", "attackMove", "buildBarracks", "buildGarden", "buildMound",
+        "buildNursery", "buildGranary", "rally", "hold",
         "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "researchAssault", "researchBulwark", "heroAbility",
         "heroMuster", "heroVolley", "heroWard", "heroPickFirst", "heroPickSecond",
       ],
@@ -80,13 +88,16 @@ export const game = defineGame({
   },
   scene: {
     entityModels,
-    // Authored map dressing (war-road ribbon + forest ring) renders from the document; units, keeps,
-  // and props spawn as entities in onInit, so object placement stays off — no double render.
+    // Ants, beetles, wasps and the dug chambers are stylized procedural meshes (no ant models exist in
+    // the catalog): each caste reads from its silhouette, team colour on the gaster and the head.
+    renderEntity,
+    // Authored yard dressing (the hose, patio stones, grass forests, clover and flowers) renders from the
+    // document; ants, nests and food spawn as entities in onInit, so object placement stays off.
     editorLayers,
     editorCatalogs,
-    // Faction-coloured health bars (green Vanguard / red Marauders) live in the world overlay so
-  // friend/foe reads at a glance — the shell's built-in world bars are always red.
-    WorldOverlay: EmberCommandWorldOverlay,
+    // Faction-coloured health bars, the pheromone trails and the yard hazards (sprinkler jet, mower,
+    // rain and the magnifying-glass beam) live in the world overlay.
+    WorldOverlay: LawnOrderWorldOverlay,
   },
   // The three views a reviewer asks about, pinned to authored markers so they frame the same thing
   // after the map moves — `bun run shoot ember-command --view keep-enemy`.
@@ -109,17 +120,17 @@ export const game = defineGame({
     },
     views: {
       "keep-player": {
-        description: "The Vanguard keep and its opening formation.",
+        description: "The red colony's nest and its opening column.",
         look: "@marker:keep_player",
         lookFrom: "22,10",
       },
       "keep-enemy": {
-        description: "The Marauder warcamp — the objective the run is scored on.",
+        description: "The Black Ant Nest — the objective the run is scored on.",
         look: "@marker:keep_enemy",
         lookFrom: "22,10",
       },
       hero: {
-        description: "Close on Bram, for hero model and health-bar work.",
+        description: "Close on Marshal Mandible, for hero model and health-bar work.",
         look: "@entity:hero",
         lookFrom: "10,4",
       },
@@ -132,23 +143,23 @@ export const game = defineGame({
     // Soft shadows read well but are the dominant cost under software WebGL; a single 1024 map keeps
   // the look affordable. Real-GPU play is nowhere near this budget.
     shadows: true,
-    // Late autumn afternoon: the dusk sky at 0.7 for fill, the warm south-west key, a parchment-haze map edge,
-    // and the autumn painterly cube standing in for the hand lift and gain.
-    mood: { preset: "golden", sun: { azimuth: 225, elevation: 30, color: "#ffc98a" }, horizonColor: "#d8c9a8", fog: { near: 90, far: 220 } },
-    environmentSource: hdriEnvironment("dusk", { intensity: 0.7 }),
+    // A blazing suburban summer noon seen from ant height: a high white-gold sun, a clear sky for fill,
+    // a soft green-gold haze where the lawn runs off past the fence, and the lush cube for saturation.
+    mood: { preset: "bright", sun: { azimuth: 150, elevation: 58, color: "#fff1c4" }, horizonColor: "#cfe9b0", fog: { near: 95, far: 230 } },
+    environmentSource: hdriEnvironment("clear-noon", { intensity: 0.9 }),
     postProcessing: {
       toneMapping: "aces",
-      exposure: 0.68,
+      exposure: 0.74,
       aa: "smaa",
       bloom: { strength: 0.22, radius: 0.5, threshold: 0.92 },
       ao: { intensity: 1.2 },
       grade: {
-        lut: lutGrade("autumn-painterly"),
+        lut: lutGrade("tropical-lush"),
         lift: [0, 0, 0],
         gain: [1, 1, 1],
         gamma: 1,
         saturation: 1,
-        vignette: 0.2,
+        vignette: 0.24,
         grain: 0.01,
       },
     },

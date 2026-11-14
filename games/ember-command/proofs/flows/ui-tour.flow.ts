@@ -33,10 +33,10 @@ export default defineFlow(game, {
     const snap = async (name: string) => { await f.wait(2000); await f.shot(name); };
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
     await f.waitForPage("window.__jgNativeUi?.point('Pause battle') != null", { timeoutMs: 60000, note: "the live battle offers its pause seal" });
-    await f.see("Bram the Bold");
+    await f.see("Marshal Mandible");
     await f.wait(1500);
     await snap("hud");
-    await tap("Build Farm", "place the Farm");
+    await tap("Build Fungus Garden", "place the Fungus Garden");
     await tap("Pause battle", "Orders on hold");
     await tap("Settings", "Field preferences");
     await tap("Credits", "game-icons.net");
@@ -48,13 +48,13 @@ export default defineFlow(game, {
     await tap("Commander", "Type the name");
     for (const key of ["KeyB", "KeyR", "KeyA", "KeyM"] as const) await f.press(key);
     await f.press("Escape");
-    await f.see("Bram");
+    await f.see("Mandible");
     await tap("Settings", "Larger HUD text");
     await tap("Larger HUD text", "✓");
     await f.wait(800);
     await f.page("window.__jgNativeUi.press('Larger HUD text')");
     await tap("Credits", "game-icons.net");
-    await tap("Free skirmish", "Raze the Marauder Warcamp");
+    await tap("Free skirmish", "Raze the Black Ant Nest");
     await f.waitForPage("window.__jgNativeUi?.point('Pause battle') != null", { timeoutMs: 30000, note: "the skirmish battle offers its pause seal" });
     await f.wait(1500);
   },

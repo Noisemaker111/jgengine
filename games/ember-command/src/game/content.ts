@@ -5,7 +5,7 @@ import { combatantDef, DECOR, isNode } from "./catalog";
 import { HERO_ID, HERO_STAT_SEED } from "./hero";
 
 /**
- * Resolves an entity's runtime definition from the Ember Command roster. Combatants carry a `health`
+ * Resolves an entity's runtime definition from the Lawn Order roster. Combatants carry a `health`
  * pool and accept `damage` into it (that pairing is what drives the shell's world health bars and
  * the melee `effect("damage", …)` calls). Decorative props resolve as inert meshes — no health,
  * so no bar and nothing to kill. Positions come from the scene, never from here.

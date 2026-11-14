@@ -59,7 +59,7 @@ export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
     blurb: `+${WEAPON_DMG_PER_RANK} dmg`,
     maxRank: 3,
     requires: atBarracks,
-    cost: (have) => ({ gold: 90 + have * 70, lumber: 40 + have * 30 }),
+    cost: (have) => ({ sugar: 90 + have * 70, leaf: 40 + have * 30 }),
     researchSeconds: (have) => 18 + have * 8,
     effect: (stat, rank) => (stat === "dealt" ? { source: "Iron Weapons", op: "add", value: rank * WEAPON_DMG_PER_RANK } : null),
   },
@@ -69,7 +69,7 @@ export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
     blurb: `-${ARMOR_REDUCE_PER_RANK} dmg taken`,
     maxRank: 3,
     requires: atBarracks,
-    cost: (have) => ({ gold: 80 + have * 70, lumber: 50 + have * 30 }),
+    cost: (have) => ({ sugar: 80 + have * 70, leaf: 50 + have * 30 }),
     researchSeconds: (have) => 18 + have * 8,
     effect: (stat, rank) => (stat === "taken" ? { source: "Iron Armor", op: "add", value: -rank * ARMOR_REDUCE_PER_RANK } : null),
   },
@@ -79,7 +79,7 @@ export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
     blurb: `+${ASSAULT_DMG_PER_RANK} dmg, slower`,
     maxRank: 2,
     requires: doctrine("bulwark"),
-    cost: (have) => ({ gold: 120 + have * 90, lumber: 40 + have * 40 }),
+    cost: (have) => ({ sugar: 120 + have * 90, leaf: 40 + have * 40 }),
     researchSeconds: (have) => 22 + have * 10,
     effect: (stat, rank) => {
       if (stat === "dealt") return { source: "Assault Doctrine", op: "add", value: rank * ASSAULT_DMG_PER_RANK };
@@ -93,7 +93,7 @@ export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
     blurb: `-${BULWARK_GUARD_PER_RANK} dmg taken, -${BULWARK_DULL_PER_RANK} dealt`,
     maxRank: 2,
     requires: doctrine("assault"),
-    cost: (have) => ({ gold: 100 + have * 90, lumber: 60 + have * 40 }),
+    cost: (have) => ({ sugar: 100 + have * 90, leaf: 60 + have * 40 }),
     researchSeconds: (have) => 22 + have * 10,
     effect: (stat, rank) => {
       if (stat === "taken") return { source: "Bulwark Doctrine", op: "add", value: -rank * BULWARK_GUARD_PER_RANK };
@@ -177,7 +177,7 @@ export function rankContributions(rankOf: (id: UpgradeId) => number, stat: Resea
   return out;
 }
 
-/** Every finished rank's contribution to `stat` for `faction`; the Marauders do not research. */
+/** Every finished rank's contribution to `stat` for `faction`; the Black Ants do not research. */
 export function researchContributions(faction: Faction, stat: ResearchStat): StatContribution[] {
   return faction === "player" ? rankContributions(upgradeRank, stat) : [];
 }

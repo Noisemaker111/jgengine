@@ -17,11 +17,11 @@ import { HERO_DMG_PER_LEVEL } from "../hero";
 import { Eyebrow, Glyph, hud, InkBar, Row, Small, Text, useHudSlice } from "./kit";
 import { MAP_SIZE, TacticalMinimap } from "./Minimap";
 import { ROSTER_METRICS, rosterFit, rosterPage } from "./rosterPage";
-import { GILT, MARAUDER_INK, MOSS, OCHRE, VANGUARD_INK, WAX } from "./theme";
+import { GILT, RIVAL_INK, MOSS, OCHRE, RED_INK, WAX } from "./theme";
 
-const BUILD_LABELS: Record<string, string> = { barracks: "Barracks", farm: "Farm", guard_tower: "Guard Tower" };
-const UNIT_ICON: Record<string, string> = { footman: "helm", rifleman: "rifleman", peasant: "peasant" };
-const isWorker = (unit: ArmyUnit) => unit.kind === "peasant";
+const BUILD_LABELS: Record<string, string> = { barracks: "Barracks", fungus_garden: "Fungus Garden", acid_mound: "Acid Mound" };
+const UNIT_ICON: Record<string, string> = { soldier: "helm", spitter: "spitter", worker: "worker" };
+const isWorker = (unit: ArmyUnit) => unit.kind === "worker";
 
 /** Mission clock as the field desk writes it: whole minutes and seconds. */
 export function orderClock(seconds: number): string {
@@ -47,13 +47,13 @@ function KeepGauge({ name, hp, max, color, warn, phoneGauge }: { phoneGauge: boo
 function Ledger({ phone }: { phone: boolean }) {
   const food = () => { const h = hud(); return `${h.foodUsed}${h.foodReserved ? `+${h.foodReserved}` : ""}/${h.foodCap}`; };
   return <RuneView variant="note" layout={phone ? "grid" : "row"} {...(phone ? { columns: 3 } : {})} gap={phone ? 8 : 16} items="center" label="Ledger">
-    <LedgerEntry icon="gold" value={() => String(hud().gold)} label="gold" />
-    <LedgerEntry icon="lumber" value={() => String(hud().lumber)} label="lumber" />
+    <LedgerEntry icon="sugar" value={() => String(hud().sugar)} label="sugar" />
+    <LedgerEntry icon="leaf" value={() => String(hud().leaf)} label="leaf" />
     <LedgerEntry icon="food" value={food} warn={() => { const h = hud(); return h.foodUsed + h.foodReserved >= h.foodCap; }} label="food" />
-    <KeepGauge phoneGauge={phone} name="Warcamp" hp={() => hud().enemyKeepHp} max={() => hud().enemyKeepMax} color={MARAUDER_INK} />
-    <KeepGauge phoneGauge={phone} name="Ember Command" hp={() => hud().playerKeepHp} max={() => hud().playerKeepMax} color={VANGUARD_INK}
+    <KeepGauge phoneGauge={phone} name="black nest" hp={() => hud().enemyKeepHp} max={() => hud().enemyKeepMax} color={RIVAL_INK} />
+    <KeepGauge phoneGauge={phone} name="Lawn Order" hp={() => hud().playerKeepHp} max={() => hud().playerKeepMax} color={RED_INK}
       warn={() => { const h = hud(); return h.playerKeepMax > 0 && h.playerKeepHp / h.playerKeepMax < 0.4; }} />
-    <Row gap={5} tooltip="Marauder reinforcements: the wave count and the seconds until the next one lands">
+    <Row gap={5} tooltip="Black Ant reinforcements: the wave count and the seconds until the next one lands">
       <Glyph name="skull" size={18} color={bind(() => (hud().nextWaveIn <= 10 ? WAX : "#5e4630"))} />
       <RuneView gap={0}>
         <Small text={bind(() => `Wave ${hud().wavesSent}`)} />
@@ -85,44 +85,44 @@ function OrdersNote({ width }: { width: number }) {
       </Row> : null}
       {shape.count > 0 ? <Row>
         <RuneLabel textStyle="number" value={bind(() => `${hud().campaign?.counted ?? 0} / ${hud().campaign?.count ?? 0}`)} />
-        <InkBar value={() => hud().campaign?.counted ?? 0} max={() => hud().campaign?.count ?? 1} color={VANGUARD_INK} width={width - 90} label="order progress" />
+        <InkBar value={() => hud().campaign?.counted ?? 0} max={() => hud().campaign?.count ?? 1} color={RED_INK} width={width - 90} label="order progress" />
       </Row> : null}
     </> : <>
       <Eyebrow text={shape === null ? "Free skirmish" : `Next order · ${campaignOrdinal(shape.index - 1)}`} />
-      <Text textStyle="verb" text={shape === null ? "Raze the Marauder Warcamp" : shape.title} />
+      <Text textStyle="verb" text={shape === null ? "Raze the Black Ant Nest" : shape.title} />
     </>}
   </RuneView>;
 }
 
 type Tone = "ready" | "active" | "locked";
-const CHIP_WORD: Record<string, string> = { gold: "gold", lumber: "lumber", food: "food", mana: "mana", stopwatch: "cooldown" };
+const CHIP_WORD: Record<string, string> = { sugar: "sugar", leaf: "leaf", food: "food", mana: "mana", stopwatch: "cooldown" };
 interface Tip { title: string; desc: string; chips: { icon: string; text: string }[] }
 
-function costFoot(gold?: number, lumber?: number): string {
-  return [gold ? String(gold) : "", lumber ? `·${lumber}` : ""].filter(Boolean).join("");
+function costFoot(sugar?: number, leaf?: number): string {
+  return [sugar ? String(sugar) : "", leaf ? `·${leaf}` : ""].filter(Boolean).join("");
 }
-function costChips(gold?: number, lumber?: number): Tip["chips"] {
-  return [...(gold ? [{ icon: "gold", text: String(gold) }] : []), ...(lumber ? [{ icon: "lumber", text: String(lumber) }] : [])];
+function costChips(sugar?: number, leaf?: number): Tip["chips"] {
+  return [...(sugar ? [{ icon: "sugar", text: String(sugar) }] : []), ...(leaf ? [{ icon: "leaf", text: String(leaf) }] : [])];
 }
 export function trainTone(h: HudSnapshot, id: TrainableId): Tone {
   const t = TRAINABLE[id];
   if (h.phase !== "playing") return "locked";
   if (BARRACKS_UNITS.has(id) && !h.hasBarracks) return "locked";
-  if ((t.cost.gold ?? 0) > h.gold || (t.cost.lumber ?? 0) > h.lumber) return "locked";
+  if ((t.cost.sugar ?? 0) > h.sugar || (t.cost.leaf ?? 0) > h.leaf) return "locked";
   return h.foodUsed + h.foodReserved + COMBATANTS[id].food <= h.foodCap ? "ready" : "locked";
 }
 function buildTone(h: HudSnapshot, type: BuildingId): Tone {
   if (h.buildArmed === type) return "active";
   const b = BUILDINGS[type];
   if (h.phase !== "playing") return "locked";
-  return (b.cost.gold ?? 0) <= h.gold && (b.cost.lumber ?? 0) <= h.lumber ? "ready" : "locked";
+  return (b.cost.sugar ?? 0) <= h.sugar && (b.cost.leaf ?? 0) <= h.leaf ? "ready" : "locked";
 }
 function researchTone(h: HudSnapshot, id: UpgradeId): Tone {
   const up = UPGRADES[id], { rank, have, unlocked } = h.research[id];
   if (have > rank) return "active";
   if (h.phase !== "playing" || !unlocked || have >= up.maxRank) return "locked";
   const c = up.cost(rank);
-  return (c.gold ?? 0) <= h.gold && (c.lumber ?? 0) <= h.lumber ? "ready" : "locked";
+  return (c.sugar ?? 0) <= h.sugar && (c.leaf ?? 0) <= h.leaf ? "ready" : "locked";
 }
 /** A doctrine whose rival was chosen reads as closed, not just unaffordable. */
 const RIVAL_DOCTRINE: Partial<Record<UpgradeId, UpgradeId>> = { assault: "bulwark", bulwark: "assault" };
@@ -132,7 +132,7 @@ function researchFoot(h: HudSnapshot, id: UpgradeId): string {
   if (have > rank) return "…";
   const rival = RIVAL_DOCTRINE[id];
   if (rival !== undefined && h.research[rival].have > 0) return "closed";
-  return costFoot(up.cost(rank).gold, up.cost(rank).lumber);
+  return costFoot(up.cost(rank).sugar, up.cost(rank).leaf);
 }
 const RESEARCH_DESC: Record<UpgradeId, string> = {
   weapons: `+${WEAPON_DMG_PER_RANK} damage to your whole army per rank.`,
@@ -165,22 +165,22 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
   const acts: string[] = useHudSlice((h) => h.heroActs.map((a) => a.id));
   const p = { setTip, size };
   const train = (id: TrainableId, key: string, desc: string) => <Slot {...p} icon={id} hotkey={key} command={{ name: `train.${id}` }} tone={() => trainTone(hud(), id)}
-    foot={() => (BARRACKS_UNITS.has(id) && !hud().hasBarracks ? "locked" : costFoot(TRAINABLE[id].cost.gold, TRAINABLE[id].cost.lumber))}
-    tip={() => ({ title: `Train ${id[0]!.toUpperCase()}${id.slice(1)}`, desc, chips: costChips(TRAINABLE[id].cost.gold, TRAINABLE[id].cost.lumber) })} />;
+    foot={() => (BARRACKS_UNITS.has(id) && !hud().hasBarracks ? "locked" : costFoot(TRAINABLE[id].cost.sugar, TRAINABLE[id].cost.leaf))}
+    tip={() => ({ title: `Train ${id[0]!.toUpperCase()}${id.slice(1)}`, desc, chips: costChips(TRAINABLE[id].cost.sugar, TRAINABLE[id].cost.leaf) })} />;
   const build = (type: BuildingId, icon: string, key: string, title: string, desc: string, extra: Tip["chips"] = []) => <Slot {...p} icon={icon} hotkey={key}
-    command={{ name: "build.arm", input: { type } }} tone={() => buildTone(hud(), type)} foot={() => costFoot(BUILDINGS[type].cost.gold, BUILDINGS[type].cost.lumber)}
-    tip={() => ({ title, desc, chips: [...costChips(BUILDINGS[type].cost.gold, BUILDINGS[type].cost.lumber), ...extra] })} />;
+    command={{ name: "build.arm", input: { type } }} tone={() => buildTone(hud(), type)} foot={() => costFoot(BUILDINGS[type].cost.sugar, BUILDINGS[type].cost.leaf)}
+    tip={() => ({ title, desc, chips: [...costChips(BUILDINGS[type].cost.sugar, BUILDINGS[type].cost.leaf), ...extra] })} />;
   const research = (id: UpgradeId, icon: string, key: string) => <Slot {...p} icon={icon} hotkey={key} command={{ name: `research.${id}` }}
     tone={() => researchTone(hud(), id)} foot={() => researchFoot(hud(), id)} badge={() => { const r = hud().research[id].rank; return r > 0 ? String(r) : ""; }}
-    tip={() => { const up = UPGRADES[id], rank = hud().research[id].rank, c = up.cost(rank); return { title: `${up.label} — L${rank}/${up.maxRank}`, desc: RESEARCH_DESC[id], chips: costChips(c.gold, c.lumber) }; }} />;
+    tip={() => { const up = UPGRADES[id], rank = hud().research[id].rank, c = up.cost(rank); return { title: `${up.label} — L${rank}/${up.maxRank}`, desc: RESEARCH_DESC[id], chips: costChips(c.sugar, c.leaf) }; }} />;
   const act = (id: string) => {
     const view = () => hud().heroActs.find((a) => a.id === id);
-    if (!acts.includes(id)) return <Slot {...p} icon="thunder" hotkey="·" foot={() => "—"} tone={() => "locked"} tip={() => ({ title: "Hero act", desc: "Bram's acts appear here once he takes the field.", chips: [] })} />;
+    if (!acts.includes(id)) return <Slot {...p} icon="thunder" hotkey="·" foot={() => "—"} tone={() => "locked"} tip={() => ({ title: "Hero act", desc: "Mandible's acts appear here once he takes the field.", chips: [] })} />;
     const first = view()!;
     return <Slot {...p} icon={first.icon} hotkey={first.hotkey} command={{ name: "hero.act", input: { act: id } }}
       tone={() => { const a = view(); return a === undefined || !a.owned || !a.ready ? "locked" : "ready"; }}
       foot={() => { const a = view(); return a === undefined || !a.owned ? "—" : a.ready ? "ready" : `${a.remaining}s`; }}
-      tip={() => { const a = view() ?? first; return { title: a.owned ? a.label : `${a.label} — not in Bram's kit`, desc: a.owned ? a.blurb : `${a.blurb} Take it at a level-up to add it to the command board.`, chips: a.owned ? [{ icon: "mana", text: String(a.manaCost) }, { icon: "stopwatch", text: `${a.cooldownSeconds}s` }] : [] }; }} />;
+      tip={() => { const a = view() ?? first; return { title: a.owned ? a.label : `${a.label} — not in Mandible's kit`, desc: a.owned ? a.blurb : `${a.blurb} Take it at a level-up to add it to the command board.`, chips: a.owned ? [{ icon: "mana", text: String(a.manaCost) }, { icon: "stopwatch", text: `${a.cooldownSeconds}s` }] : [] }; }} />;
   };
   const playing = () => hud().phase === "playing";
   return <RuneView gap={6} items="end">
@@ -190,14 +190,14 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
       <Text textStyle="number" color={OCHRE} text={bind(() => (held.tip?.chips ?? []).map((c) => `${c.text} ${CHIP_WORD[c.icon] ?? c.icon}`).join("  ·  "))} />
     </RuneView>
     <RuneView variant="leather" layout="grid" columns={columns} gap={4}>
-      {train("peasant", "1", "Worker — mines gold, cuts lumber, and raises buildings.")}
-      {train("footman", "2", "Frontline screen. Deals 50% more damage to armored Reavers; holds raiders away from rifles. Requires a Barracks.")}
-      {train("rifleman", "3", "Full firepower beyond 3m; weak at close range and against armored Reavers. Strong against the warcamp. Requires a Barracks.")}
+      {train("worker", "1", "Worker — mines sugar, cuts leaf, and raises buildings.")}
+      {train("soldier", "2", "Frontline screen. Deals 50% more damage to armored Majors; holds raiders away from rifles. Requires a Barracks.")}
+      {train("spitter", "3", "Full firepower beyond 3m; weak at close range and against armored Majors. Strong against the brood_mound. Requires a Barracks.")}
       <Slot {...p} icon="attackMove" hotkey="R" command={{ name: "unit.attackMove" }} tone={() => (!playing() ? "locked" : hud().attackMoveArmed ? "active" : "ready")}
         tip={() => ({ title: "Attack-Move", desc: "Arm, then right-click a destination — the group fights anything it meets on the way.", chips: [] })} />
-      {build("barracks", "barracks", "B", "Build Barracks", "Unlocks Footman & Rifleman and enables research.")}
-      {build("farm", "farm", "G", "Build Farm", `Raises your food (supply) cap by ${BUILDINGS.farm.supply}.`, [{ icon: "food", text: `+${BUILDINGS.farm.supply}` }])}
-      {build("guard_tower", "tower", "T", "Build Guard Tower", "Auto-fires on Marauders that stray into range.")}
+      {build("barracks", "barracks", "B", "Build Barracks", "Unlocks Soldier & Spitter and enables research.")}
+      {build("fungus_garden", "fungus_garden", "G", "Build Fungus Garden", `Raises your food (supply) cap by ${BUILDINGS.fungus_garden.supply}.`, [{ icon: "food", text: `+${BUILDINGS.fungus_garden.supply}` }])}
+      {build("acid_mound", "tower", "T", "Build Acid Mound", "Auto-fires on Black Ants that stray into range.")}
       <Slot {...p} icon="rally" hotkey="F" command={{ name: "unit.rally" }} tone={() => (!playing() ? "locked" : hud().rallyArmed ? "active" : "ready")}
         tip={() => ({ title: "Rally Point", desc: "Arm, then right-click where new recruits should gather.", chips: [] })} />
       {research("weapons", "weapons", "Z")}
@@ -211,7 +211,7 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
       <Slot {...p} icon="medal" hotkey="·" foot={() => "kit"} badge={() => (hud().heroKit.length > 0 ? String(hud().heroKit.length) : "")}
         tone={() => (hud().heroKit.length > 0 ? "active" : "locked")}
         tip={() => { const kit = hud().heroKit; return kit.length === 0
-          ? { title: "Field kit", desc: "Bram's kit is empty. Every level-up offers two picks: an act for the command board or an item he carries.", chips: [] }
+          ? { title: "Field kit", desc: "Mandible's kit is empty. Every level-up offers two picks: an act for the command board or an item he carries.", chips: [] }
           : { title: `Field kit — ${kit.length} pick${kit.length === 1 ? "" : "s"}`, desc: kit.map((k) => `${k.label}: ${k.blurb}`).join("  ·  "), chips: [] }; }} />
       {research("assault", "attackMove", "N")}
       {research("bulwark", "shield", "M")}
@@ -219,7 +219,7 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
   </RuneView>;
 }
 
-/** Bram's card: a medallion with his level, ink bars for health, mana and experience, and his stat line. */
+/** Mandible's card: a medallion with his level, ink bars for health, mana and experience, and his stat line. */
 function HeroCard({ ctx, width }: { ctx: GameContext; width: number }) {
   const barWidth = Math.max(60, width - 24 - 58 - 64);
   const stat = (id: string) => ctx.scene.entity.stats.get("hero", id);
@@ -241,10 +241,10 @@ function HeroCard({ ctx, width }: { ctx: GameContext; width: number }) {
       </RuneView>
     </RuneView>
     <RuneView gap={3} grow={1}>
-      <Text textStyle="verb" text="Bram the Bold" />
-      {bar("health", MOSS, "Bram's health", Math.ceil)}
-      {bar("mana", VANGUARD_INK, "Bram's mana", Math.floor)}
-      <InkBar value={() => stat("xp")?.current ?? 0} max={() => stat("xp")?.max ?? 1} color={OCHRE} height={4} width={barWidth + 64} label="Bram's experience" />
+      <Text textStyle="verb" text="Marshal Mandible" />
+      {bar("health", MOSS, "Mandible's health", Math.ceil)}
+      {bar("mana", RED_INK, "Mandible's mana", Math.floor)}
+      <InkBar value={() => stat("xp")?.current ?? 0} max={() => stat("xp")?.max ?? 1} color={OCHRE} height={4} width={barWidth + 64} label="Mandible's experience" />
       <Row gap={12}>
         <Row gap={3}><Glyph name="weapons" size={14} color="#5e4630" /><Small text={bind(() => String(dmg()))} label="damage" /></Row>
         <Row gap={3}><Glyph name="shield" size={14} color="#5e4630" /><Small text={bind(() => String(armor()))} label="armor" /></Row>
@@ -258,7 +258,7 @@ function HeroCard({ ctx, width }: { ctx: GameContext; width: number }) {
 function ArmyRow({ rowWidth }: { rowWidth: number }) {
   const troops = useHudSlice((h) => h.army.filter((u) => !isWorker(u)).map((u) => ({ id: u.id, kind: u.kind })));
   const [requested, setRequested] = useState(0);
-  if (troops.length === 0) return <Small text="No troops afield — train Footmen (2)" />;
+  if (troops.length === 0) return <Small text="No troops afield — train Soldiers (2)" />;
   const fit = rosterFit(troops.length, rowWidth);
   const view = rosterPage(troops.length, fit.pageSize, requested);
   const ratio = (id: string) => { const u = hud().army.find((a) => a.id === id); return u === undefined || u.max <= 0 ? 0 : Math.max(0, Math.min(1, u.hp / u.max)); };
@@ -270,7 +270,7 @@ function ArmyRow({ rowWidth }: { rowWidth: number }) {
       tooltip={u.kind}>
       <RuneView width={ROSTER_METRICS.crest} height={ROSTER_METRICS.crest - 6} radius={(ROSTER_METRICS.crest - 6) / 2} fill="#3b3530" items="center" justify="center"
         border={bind(() => ({ width: 2, color: ratio(u.id) < 0.35 ? WAX : "#1a1612" }))}>
-        <Glyph name={UNIT_ICON[u.kind] ?? "footman"} size={18} />
+        <Glyph name={UNIT_ICON[u.kind] ?? "soldier"} size={18} />
       </RuneView>
       <InkBar value={() => ratio(u.id)} max={() => 1} color={MOSS} height={4} width={ROSTER_METRICS.crest} label={`${u.kind} health`} />
     </RuneView>)}
@@ -284,7 +284,7 @@ function HeroPanel({ ctx, width }: { ctx: GameContext; width: number }) {
     <HeroCard ctx={ctx} width={width} />
     <Row justify="between">
       <Small text={bind(() => `Afield · ${hud().army.filter((u) => !isWorker(u)).length}`)} />
-      <Row gap={4} label="workers"><Glyph name="peasant" size={14} color="#5e4630" /><Small text={bind(() => String(hud().army.filter(isWorker).length))} /></Row>
+      <Row gap={4} label="workers"><Glyph name="worker" size={14} color="#5e4630" /><Small text={bind(() => String(hud().army.filter(isWorker).length))} /></Row>
       <RuneAction command={{ name: "unit.selectArmy" }} label="Select the whole army" disabled={bind(() => hud().army.length === 0 || hud().phase !== "playing")}
         layout="row" gap={6} padding={[3, 8, 3, 8]} border={{ width: 1, color: "#2b1d10" }} radius={2} hover="#2b1d1014" items="center">
         <Text text="Take all" /><Text textStyle="small" text="H" />
@@ -318,12 +318,12 @@ function MapPanel({ ctx }: { ctx: GameContext }) {
   </RuneView>;
 }
 
-/** The level-up writ: two picks, an act for the command board or an item Bram carries. */
+/** The level-up writ: two picks, an act for the command board or an item Mandible carries. */
 function LevelUpWrit({ width }: { width: number }) {
   const offer = useHudSlice((h) => (h.heroOffer !== null && h.phase === "playing" ? h.heroOffer : null));
   if (offer === null) return null;
   return <RuneView anchor="center" variant="sheet" width={width} gap={10} label="Level-up writ">
-    <Row justify="between"><Eyebrow text={`Bram reaches level ${offer.level}`} /><Small text="Choose one" /></Row>
+    <Row justify="between"><Eyebrow text={`Mandible reaches level ${offer.level}`} /><Small text="Choose one" /></Row>
     {offer.options.map((option, index) => {
       const disabled = !option.allocatable || option.taken;
       return <RuneAction key={option.id} command={{ name: "hero.pick", input: { id: option.id } }} disabled={disabled} label={`${option.label} — ${option.kind === "active" ? "act" : "item"}`}
@@ -336,7 +336,7 @@ function LevelUpWrit({ width }: { width: number }) {
         </RuneView>
       </RuneAction>;
     })}
-    <Small text="Picks are kept with the campaign: Bram carries them into the next mission." />
+    <Small text="Picks are kept with the campaign: Mandible carries them into the next mission." />
   </RuneView>;
 }
 
@@ -351,7 +351,7 @@ function ModeBanner() {
 }
 
 /**
- * The war table's HUD: the ledger and pinned orders along the top, the survey map, Bram's card and the
+ * The war table's HUD: the ledger and pinned orders along the top, the survey map, Mandible's card and the
  * command board along the bottom, and the wax seal top right. Order reports and refusals come from
  * the engine notice feed, drawn by GameUI.
  */

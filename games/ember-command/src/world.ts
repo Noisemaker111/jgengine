@@ -8,35 +8,36 @@ export const world: EnvironmentWorldFeature = environment({
   sculpt: editorLayers.terrain,
   clearings: clearanceZonesFrom(editorLayers),
   terrain: terrain({
-    // Far wider than the 92 m playable box so the RTS camera sees highland past the edge, not sky.
+    // Far wider than the 92 m playable box so the RTS camera sees more lawn past the edge, not sky.
     bounds: { w: 260, d: 260 },
-    height: 2.6,
-    frequency: 0.045,
-    octaves: 4,
-    seed: "ember-command-vale",
+    // A mown lawn is nearly flat to us; to an ant it still rolls in soft hummocks.
+    height: 1.1,
+    frequency: 0.05,
+    octaves: 3,
+    seed: "lawn-order-backyard",
     segments: 240,
-    material: "highland",
-    colors: { low: "#6f7a3a", high: "#8a8a42", waterline: "#3d5a4a" },
-    // Push snow off-world so the detail shader reads as pure grass → rock relief.
+    material: "grass",
+    colors: { low: "#4f9a2c", high: "#7cc23c", waterline: "#2f6f3a" },
+    // Snow is pushed off-world so the detail shader reads as lawn → bare soil → pebbly patches.
     detail: {
-      rockColor: "#6b6157",
-      sandColor: "#8a7a5a",
-      rockSlopeStart: 0.58,
+      rockColor: "#8a6a4a",
+      sandColor: "#a07a4e",
+      rockSlopeStart: 0.62,
       snowHeight: 400,
-      detailScale: 3,
-      macroScale: 26,
-      roughness: 0.95,
-      strength: 0.45,
-      // ambientCG scans: Grass004 meadow under the autumn tint, Ground054 dirt road for the war road, Rock035 on cliffs.
+      detailScale: 2.4,
+      macroScale: 22,
+      roughness: 0.9,
+      strength: 0.5,
+      // Macro scans for an ant's-eye ground: grass blades as big as the ants, packed soil on the paths.
       surfaces: {
-        ground: libraryTerrainSurface("foliage/grass-dry", { tile: 4, tint: 0.55 }),
-        sand: libraryTerrainSurface("ground/dirt-road", { tile: 3, tint: 0.6 }),
-        rock: libraryTerrainSurface("ground/cliff", { tile: 6 }),
+        ground: libraryTerrainSurface("foliage/grass-macro", { tile: 3, tint: 0.35 }),
+        sand: libraryTerrainSurface("ground/dirt-macro", { tile: 3, tint: 0.45 }),
+        rock: libraryTerrainSurface("ground/gravel", { tile: 4 }),
       },
     },
   }),
   // Colours, sun and haze come from the game's `mood`.
-  sky: sky({ preset: "day", hazeStrength: 0.4, sunGlowStrength: 0.5 }),
+  sky: sky({ preset: "day", hazeStrength: 0.3, sunGlowStrength: 0.7 }),
 });
 
 export const physics: PhysicsConfig = { gravity: -24 };

@@ -15,7 +15,7 @@ export function onInit(ctx: GameContext): void {
 }
 
 /**
- * Bring the vale campaign back from the session save. A checkpoint holds a whole mid-battle world;
+ * Bring the yard campaign back from the session save. A checkpoint holds a whole mid-battle world;
  * the campaign carries its track and its stores across, so the field is restaged fresh and the
  * offered mission is re-offered rather than resumed half-played. If the player already took command
  * before the load landed (a capture boot, a fast click), keep that battle and only adopt the track.
@@ -35,7 +35,7 @@ async function resumeCampaign(ctx: GameContext): Promise<void> {
   refreshCampaignSlots();
 }
 
-/** @internal No avatar — Ember Command is a commander-view RTS, so a joining player controls the army. */
+/** @internal No avatar — Lawn Order is a commander-view RTS, so a joining player controls the army. */
 export function onNewPlayer(_ctx: GameContext): void {}
 
 /** @internal Command-card hotkeys mirror the buttons without conflicting with camera panning. */
@@ -48,12 +48,17 @@ export function onTick(ctx: GameContext, _dt: number): void {
   if (ctx.input.justPressed("formationWedge")) ctx.game.commands.run("unit.formation", { kind: "wedge" });
   if (ctx.input.justPressed("formationColumn")) ctx.game.commands.run("unit.formation", { kind: "column" });
   if (ctx.input.justPressed("selectArmy")) ctx.game.commands.run("unit.selectArmy", {});
-  if (ctx.input.justPressed("trainPeasant")) ctx.game.commands.run("train.peasant", {});
-  if (ctx.input.justPressed("trainFootman")) ctx.game.commands.run("train.footman", {});
-  if (ctx.input.justPressed("trainRifleman")) ctx.game.commands.run("train.rifleman", {});
+  if (ctx.input.justPressed("trainWorker")) ctx.game.commands.run("train.worker", {});
+  if (ctx.input.justPressed("trainSoldier")) ctx.game.commands.run("train.soldier", {});
+  if (ctx.input.justPressed("trainSpitter")) ctx.game.commands.run("train.spitter", {});
+  if (ctx.input.justPressed("trainScout")) ctx.game.commands.run("train.scout", {});
+  if (ctx.input.justPressed("trainBeetle")) ctx.game.commands.run("train.beetle", {});
+  if (ctx.input.justPressed("layTrail")) ctx.game.commands.run("unit.trail", {});
   if (ctx.input.justPressed("buildBarracks")) ctx.game.commands.run("build.arm", { type: "barracks" });
-  if (ctx.input.justPressed("buildFarm")) ctx.game.commands.run("build.arm", { type: "farm" });
-  if (ctx.input.justPressed("buildTower")) ctx.game.commands.run("build.arm", { type: "guard_tower" });
+  if (ctx.input.justPressed("buildGarden")) ctx.game.commands.run("build.arm", { type: "fungus_garden" });
+  if (ctx.input.justPressed("buildMound")) ctx.game.commands.run("build.arm", { type: "acid_mound" });
+  if (ctx.input.justPressed("buildNursery")) ctx.game.commands.run("build.arm", { type: "nursery" });
+  if (ctx.input.justPressed("buildGranary")) ctx.game.commands.run("build.arm", { type: "granary" });
   if (ctx.input.justPressed("researchWeapons")) ctx.game.commands.run("research.weapons", {});
   if (ctx.input.justPressed("researchArmor")) ctx.game.commands.run("research.armor", {});
   if (ctx.input.justPressed("researchAssault")) ctx.game.commands.run("research.assault", {});

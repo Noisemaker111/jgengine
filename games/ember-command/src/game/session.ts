@@ -8,13 +8,15 @@ import { createEncounterState } from "@jgengine/core/waves/encounterSequence";
 import { evaluatePressure } from "@jgengine/core/waves/pressure";
 
 import type { EnemyWaveState } from "./ai/director";
-import { MARAUDER_WAVES, MARCH_PLAN } from "./ai/waveManifest";
+import { RIVAL_WAVES, MARCH_PLAN } from "./ai/waveManifest";
 
 import type { BuildSpec } from "./building";
-import { combatantDef, type CombatantKind } from "./catalog";
-import { createFogState, type FogState } from "./fog";
+import { combatantDef, nodeDef, type CombatantKind } from "./catalog";
+import { createFogState, FOG_BOUNDS, type FogState } from "./fog";
+import { createHazardState, NO_HAZARDS, type HazardState } from "./hazards";
+import { createTrailField, type TrailField } from "./pheromone";
 import type { FormationState } from "./formations";
-import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, type Faction } from "./tuning";
+import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, TRAIL_CELL, type Faction } from "./tuning";
 import type { ResearchSpec } from "./upgrades";
 import type { HeroActsRuntime } from "./heroActs";
 
@@ -42,6 +44,8 @@ export interface UnitRuntime {
 
 export interface NodeInfo {
   id: string;
+  /** The node's catalog id (`crumbs`, `popsicle`, `leaves`): its budget and haul come from there. */
+  catalogId: string;
   resource: string;
   x: number;
   z: number;
@@ -58,7 +62,7 @@ export interface SessionState {
   nodes: Map<string, NodeInfo>;
   /** Depletion/respawn bookkeeping for those nodes; built once the scene is read. */
   resourceField: ResourceNodeField | null;
-  /** The Town Hall's timed unit-training queue. */
+  /** The Nest's timed unit-training queue. */
   production: WorkQueueState<UnitTrainingSpec, UnitReservation>;
   /** Buildings under construction. */
   buildQueue: WorkQueueState<BuildSpec, undefined>;
@@ -66,23 +70,29 @@ export interface SessionState {
   research: { ranks: Record<string, number>; queue: WorkQueueState<ResearchSpec, undefined> };
   /** A building catalog id armed for placement; the next right-click drops it. */
   buildArmed: string | null;
-  /** Supply cap the player's buildings provide (Town Hall + farms). */
+  /** Supply cap the player's buildings provide (Nest + gardens). */
   supplyCap: number;
   /** Set by the Attack-Move verb; consumed by the next right-click order. */
   attackMoveArmed: boolean;
+  /** Set by the Pheromone Line verb; the next right-click paints a trail from the nest to that point. */
+  trailArmed: boolean;
+  /** The colony's scent grid (see `pheromone.ts`). */
+  trails: TrailField;
+  /** The yard's clocks: sprinkler, mower, rain, night and the magnifying glass (see `hazards.ts`). */
+  hazards: HazardState;
   /** The marching shape and the anchor the army holds around it (see `formations.ts`). */
   formation: FormationState;
-  /** What the Vanguard has explored and what it can see right now (see `fog.ts`). */
+  /** What the colony has explored and what it can see right now (see `fog.ts`). */
   fog: FogState;
-  /** The Marauder plan, its attack waves and the scouting/role bookkeeping. */
+  /** The Black Ant plan, its attack waves and the scouting/role bookkeeping. */
   enemyWave: EnemyWaveState;
-  /** The Marauders' eyes and ears, shared by every enemy unit. Built on the first plan tick. */
+  /** The Black Ants' eyes and ears, shared by every enemy unit. Built on the first plan tick. */
   senses: PerceptionService | null;
-  /** Noise investigations: a fight pulls nearby Marauders to it. */
+  /** Noise investigations: a fight pulls nearby Black Ants to it. */
   hunt: SoundHunt | null;
   /** Where every living enemy unit stood on the last director tick, so a noise can find its neighbours. */
   enemyPositions: Record<string, { x: number; z: number }>;
-  /** Bram's battle runtime — act cooldowns, timed line buffs and the live pick tree. Built on first
+  /** Mandible's battle runtime — act cooldowns, timed line buffs and the live pick tree. Built on first
    * use and dropped with the session, so a restaged battle starts with fresh cooldowns. */
   heroActs: HeroActsRuntime | null;
   over: boolean;
@@ -106,13 +116,16 @@ function fresh(): SessionState {
     buildArmed: null,
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,
+    trailArmed: false,
+    trails: createTrailField(FOG_BOUNDS, TRAIL_CELL),
+    hazards: createHazardState(NO_HAZARDS),
     formation: { kind: "line", anchor: { x: 0, z: 0 }, facing: 0, members: [], offsets: {} },
     fog: createFogState(FOG_CELL),
     enemyWave: {
       // Started on the first plan tick, after the opening grace, so the scout phase's enter event
       // reaches the director instead of being spent while no world exists yet.
       plan: createEncounterState(MARCH_PLAN),
-      encounter: createEncounter({ definition: MARAUDER_WAVES, seed: 7 }),
+      encounter: createEncounter({ definition: RIVAL_WAVES, seed: 7 }),
       sent: 0,
       grace: ENEMY_WAVE_FIRST_DELAY,
       campId: null,
@@ -157,11 +170,10 @@ export function reservedSupply(): number {
 export function initResourceField(rng?: () => number): void {
   session.resourceField = createResourceNodeField({
     ...(rng === undefined ? {} : { rng }),
-    nodes: Array.from(session.nodes.values()).map((n) => ({
-      id: n.id,
-      budget: n.resource === "gold" ? 600 : 500,
-      resources: [{ kind: n.resource, amount: n.resource === "gold" ? 12 : 8 }],
-    })),
+    nodes: Array.from(session.nodes.values()).map((n) => {
+      const def = nodeDef(n.catalogId);
+      return { id: n.id, budget: def?.budget ?? 500, resources: [{ kind: n.resource, amount: def?.load ?? 8 }] };
+    }),
   });
 }
 

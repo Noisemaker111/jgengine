@@ -3,7 +3,11 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
-import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
+import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS, HOSE_SLOW, TRAIL_HARVEST_BONUS, TRAIL_HAUL_DEPOSIT, TRAIL_SPEED_BONUS } from "../tuning";
+import { hazardSpeedFactor } from "../hazards";
+import { deposit, scentAt, trailSpeedFactor } from "../pheromone";
+import { onHose } from "../yard";
+import { YARD } from "../yardInstance";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
@@ -31,9 +35,23 @@ function faceToward(ctx: GameContext, id: string, from: EntityPosition, tx: numb
   ctx.scene.entity.setPose(id, { position: from, rotationY: Math.atan2(dx, dz) });
 }
 
+/**
+ * How the yard changes an ant's pace where it stands: red ants run faster on their own scent, rain and
+ * the sprinkler's jet slow everyone, and climbing the garden hose anywhere but a crossing is a crawl.
+ * Wasps fly, so only the weather touches them.
+ */
+export function yardPace(catalogId: string, faction: "player" | "enemy", x: number, z: number): number {
+  let pace = hazardSpeedFactor(session.hazards, YARD, x, z);
+  if (faction === "player") pace *= trailSpeedFactor(scentAt(session.trails, x, z), TRAIL_SPEED_BONUS);
+  if (catalogId !== "wasp" && onHose(YARD, x, z)) pace *= HOSE_SLOW;
+  return pace;
+}
+
 /** Every unit step: a soldier marches at its side's researched pace; workers keep their own. */
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
-  const pace = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
+  const base = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
+  const at = ctx.scene.entity.get(u.id)?.position;
+  const pace = at === undefined ? base : base * yardPace(u.catalogId, u.faction, at[0], at[2]);
   ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed: pace, dt, face: true });
 }
 
@@ -48,7 +66,7 @@ function isPreferred(prefers: "worker" | "building" | undefined, target: UnitRun
 
 /**
  * The hostile (unit or building) within `radius` this unit goes for: the nearest, except that what it
- * prefers counts as nearer, so a raider leaves the soldier beside it for the peasant down the road.
+ * prefers counts as nearer, so a raider leaves the soldier beside it for the worker down the road.
  * Bounded by roster size.
  */
 export function acquireTarget(ctx: GameContext, u: UnitRuntime, self: EntityPosition, radius: number): string | null {
@@ -77,7 +95,7 @@ function hostileTarget(ctx: GameContext, u: UnitRuntime, targetId: string): Unit
   return t;
 }
 
-/** The gold-miner / lumberjack loop: walk to the node, work, haul the load to the Town Hall, deposit,
+/** The sugar-miner / lumberjack loop: walk to the node, work, haul the load to the Nest, deposit,
  * repeat. Composed from move steps + a resource-node harvest; the carried load rides the command. */
 function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPosition, walkSpeed: number): void {
   if (u.command.kind !== "gather") return;
@@ -91,7 +109,8 @@ function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPo
     }
     if (distToPoint(self, node.x, node.z) <= HARVEST_RANGE) {
       cmd.phase = "harvest";
-      cmd.timer = HARVEST_SECONDS;
+      // A node the colony has scented is quicker work: the line knows the way in and out.
+      cmd.timer = HARVEST_SECONDS * (1 - TRAIL_HARVEST_BONUS * scentAt(session.trails, node.x, node.z));
       faceToward(ctx, u.id, self, node.x, node.z);
     } else {
       stepTo(ctx, dt, u, walkSpeed, node.x, node.z);
@@ -114,7 +133,8 @@ function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPo
     return;
   }
 
-  // toDepot
+  // toDepot — a laden forager scents every step of the way home, so busy routes become trails.
+  deposit(session.trails, self[0], self[2], TRAIL_HAUL_DEPOSIT * dt);
   const depot = playerDepot({ x: self[0], z: self[2] });
   if (depot === null) {
     u.command = { kind: "idle" };
@@ -181,7 +201,7 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
         const amount = resolved * lineMultiplier(u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
-        // A fight is loud: the Marauders' own ears hear it through the shared hearing owner.
+        // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
           raiseCombatNoise(ctx, { x: ent.position[0], z: ent.position[2] }, u.id);
         }

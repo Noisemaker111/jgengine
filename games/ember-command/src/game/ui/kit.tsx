@@ -22,7 +22,7 @@ export const hud = (): HudSnapshot => hudStore.get();
 /** A game-icons.net glyph (512 units) scaled into the native 24-unit icon box and tinted. */
 export function Glyph({ name, size = 20, color = GILT, ...props }: { name: string; size?: number; color?: Live<string> } & Omit<RuneElementProps, "color" | "size">) {
   const inner = ICON_SVG[name];
-  if (inner === undefined) throw new Error(`Unknown Ember Command glyph: ${name}`);
+  if (inner === undefined) throw new Error(`Unknown Lawn Order glyph: ${name}`);
   return <RuneGlyph size={size} color={color} artwork={`<g transform="scale(0.046875)">${inner}</g>`} {...props} />;
 }
 

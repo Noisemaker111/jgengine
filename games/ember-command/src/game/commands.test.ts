@@ -33,11 +33,11 @@ function lastNotice(ctx: GameContext): Notice | undefined {
 }
 
 function addPlayerUnit(id: string): void {
-  session.units.set(id, { id, catalogId: "footman", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+  session.units.set(id, { id, catalogId: "soldier", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
 }
 
 function addEnemy(id: string): void {
-  session.units.set(id, { id, catalogId: "grunt", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+  session.units.set(id, { id, catalogId: "raider", faction: "enemy", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
 }
 
 describe("right-click order routing", () => {
@@ -80,27 +80,27 @@ describe("right-click order routing", () => {
     expect(session.units.get("e1")!.command.kind).toBe("idle");
   });
 
-  test("right-clicking a resource node sends a peasant to gather it", () => {
-    session.units.set("w1", { id: "w1", catalogId: "peasant", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
-    session.nodes.set("mine", { id: "mine", resource: "gold", x: 10, z: 10 });
+  test("right-clicking a resource node sends a worker to gather it", () => {
+    session.units.set("w1", { id: "w1", catalogId: "worker", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    session.nodes.set("mine", { id: "mine", catalogId: "crumbs", resource: "sugar", x: 10, z: 10 });
     const ctx = ctxWith(new Map<string, EntityPosition>([["w1", [0, 0, 0]]]));
     orderSelection(ctx, { selection: ["w1"], point: [10, 0, 10] });
     const command = session.units.get("w1")!.command;
     expect(command.kind).toBe("gather");
-    expect(command.kind === "gather" && command.resource).toBe("gold");
+    expect(command.kind === "gather" && command.resource).toBe("sugar");
   });
 
   test("an accepted gather order reports the assignment", () => {
-    session.units.set("w1", { id: "w1", catalogId: "peasant", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
-    session.nodes.set("mine", { id: "mine", resource: "gold", x: 10, z: 10 });
+    session.units.set("w1", { id: "w1", catalogId: "worker", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    session.nodes.set("mine", { id: "mine", catalogId: "crumbs", resource: "sugar", x: 10, z: 10 });
     const ctx = ctxWith(new Map<string, EntityPosition>([["w1", [0, 0, 0]]]));
     orderSelection(ctx, { selection: ["w1"], point: [10, 0, 10] });
-    expect(lastNotice(ctx)?.text).toBe("Gathering gold: 1 worker assigned.");
+    expect(lastNotice(ctx)?.text).toBe("Foraging sugar: 1 worker on the line.");
   });
 
-  test("a footman right-clicking a node just moves (cannot gather)", () => {
+  test("a soldier right-clicking a node just moves (cannot gather)", () => {
     addPlayerUnit("f1");
-    session.nodes.set("mine", { id: "mine", resource: "gold", x: 10, z: 10 });
+    session.nodes.set("mine", { id: "mine", catalogId: "crumbs", resource: "sugar", x: 10, z: 10 });
     const ctx = ctxWith(new Map<string, EntityPosition>([["f1", [0, 0, 0]]]));
     orderSelection(ctx, { selection: ["f1"], point: [10, 0, 10] });
     expect(session.units.get("f1")!.command.kind).toBe("move");
@@ -111,23 +111,23 @@ describe("base building", () => {
   beforeEach(() => resetSession());
 
   test("an armed right-click on a valid spot queues construction and charges", () => {
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
     session.buildArmed = "barracks";
     orderSelection(ctx, { selection: [], point: [10, 0, 10] });
     expect(activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length).toBe(1);
     expect(session.buildArmed).toBeNull();
-    expect(ctx.game.economy.balance("commander", "gold")).toBeLessThan(500);
+    expect(ctx.game.economy.balance("commander", "sugar")).toBeLessThan(500);
   });
 
-  test("a bare right-click with nothing selected says to select troops", () => {
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
+  test("a bare right-click with nothing selected says to select ants", () => {
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
     orderSelection(ctx, { point: [10, 0, 10] });
-    expect(lastNotice(ctx)?.text).toStartWith("Select your troops first");
+    expect(lastNotice(ctx)?.text).toStartWith("Select your ants first");
     expect(lastNotice(ctx)?.tone).toBe("deny");
   });
 
   test("the selection-less secondary right-click still places an armed building", () => {
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
     session.buildArmed = "barracks";
     orderSelection(ctx, { point: [10, 0, 10] });
     expect(activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length).toBe(1);
@@ -135,45 +135,45 @@ describe("base building", () => {
   });
 
   test("placement is rejected in the enemy half", () => {
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
-    session.buildArmed = "farm";
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
+    session.buildArmed = "fungus_garden";
     orderSelection(ctx, { selection: [], point: [0, 0, -30] });
     expect(activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length).toBe(0);
-    expect(session.buildArmed).toBe("farm"); // keep the tool armed for a retry
+    expect(session.buildArmed).toBe("fungus_garden"); // keep the tool armed for a retry
   });
 
   test("construction reserves its footprint before a building appears", () => {
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
-    session.buildArmed = "farm";
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
+    session.buildArmed = "fungus_garden";
     orderSelection(ctx, { selection: [], point: [10, 0, 10] });
-    session.buildArmed = "farm";
+    session.buildArmed = "fungus_garden";
     orderSelection(ctx, { selection: [], point: [11, 0, 10] });
     expect(activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length).toBe(1);
-    expect(session.buildArmed).toBe("farm");
+    expect(session.buildArmed).toBe("fungus_garden");
   });
 
-  test("queued recruits reserve supply and paused orders cannot spend gold", () => {
+  test("queued recruits reserve supply and paused orders cannot spend sugar", () => {
     session.units.set("hall", { id: "hall", catalogId: "keep_player", faction: "player", kind: "building", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
     session.supplyCap = 1;
-    const result = enqueue(session.production, TRAINING_CONFIG, { unitId: "peasant" });
-    if (!result.ok) throw new Error("Failed to queue a peasant");
+    const result = enqueue(session.production, TRAINING_CONFIG, { unitId: "worker" });
+    if (!result.ok) throw new Error("Failed to queue a worker");
     session.production = result.state;
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
-    expect(canTrain(ctx, "peasant")).toBe(false);
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
+    expect(canTrain(ctx, "worker")).toBe(false);
     session.paused = true;
-    session.buildArmed = "farm";
+    session.buildArmed = "fungus_garden";
     orderSelection(ctx, { selection: [], point: [10, 0, 10] });
-    expect(ctx.game.economy.balance("commander", "gold")).toBe(500);
+    expect(ctx.game.economy.balance("commander", "sugar")).toBe(500);
     expect(activeJobs(session.buildQueue).length).toBe(0);
   });
 
-  test("Footman/Rifleman need a Barracks; Peasant does not", () => {
+  test("Soldier/Spitter need a Barracks; Worker does not", () => {
     session.units.set("hall", { id: "hall", catalogId: "keep_player", faction: "player", kind: "building", command: { kind: "idle" }, guardPoint: { x: 0, z: 0 }, leash: 0, attackCooldown: 0 });
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
-    expect(canTrain(ctx, "peasant")).toBe(true);
-    expect(canTrain(ctx, "footman")).toBe(false);
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
+    expect(canTrain(ctx, "worker")).toBe(true);
+    expect(canTrain(ctx, "soldier")).toBe(false);
     session.units.set("br", { id: "br", catalogId: "barracks", faction: "player", kind: "building", command: { kind: "idle" }, guardPoint: { x: 5, z: 5 }, leash: 0, attackCooldown: 0 });
-    expect(canTrain(ctx, "footman")).toBe(true);
+    expect(canTrain(ctx, "soldier")).toBe(true);
   });
 });
 
@@ -185,30 +185,30 @@ describe("order and train feedback", () => {
 
   test("a refused train order explains itself as a deny notice", () => {
     addKeep();
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 10 });
-    trainUnit(ctx, "peasant");
-    expect(lastNotice(ctx)).toMatchObject({ text: "Not enough gold for Peasant.", tone: "deny" });
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 10 });
+    trainUnit(ctx, "worker");
+    expect(lastNotice(ctx)).toMatchObject({ text: "Not enough sugar for Worker Ant.", tone: "deny" });
   });
 
-  test("a footman without a Barracks is told what it needs", () => {
+  test("a soldier without a Barracks is told what it needs", () => {
     addKeep();
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500, lumber: 500 });
-    trainUnit(ctx, "footman");
-    expect(lastNotice(ctx)?.text).toBe("Footman needs a Barracks first.");
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500, leaf: 500 });
+    trainUnit(ctx, "soldier");
+    expect(lastNotice(ctx)?.text).toBe("Soldier Ant needs a Barracks Chamber first.");
   });
 
   test("an accepted train order confirms what is training and where", () => {
     addKeep();
-    const ctx = ctxWith(new Map<string, EntityPosition>(), { gold: 500 });
-    trainUnit(ctx, "peasant");
-    expect(lastNotice(ctx)?.text).toBe("Training Peasant at the Town Hall.");
+    const ctx = ctxWith(new Map<string, EntityPosition>(), { sugar: 500 });
+    trainUnit(ctx, "worker");
+    expect(lastNotice(ctx)?.text).toBe("The queen lays a Worker Ant egg.");
   });
 
   test("order notices count units with the right noun", () => {
     addPlayerUnit("f1");
     const ctx = ctxWith(new Map<string, EntityPosition>([["f1", [0, 0, 0]]]));
     orderSelection(ctx, { selection: ["f1"], point: [10, 0, 10] });
-    expect(lastNotice(ctx)?.text).toBe("Move ordered: 1 trooper.");
+    expect(lastNotice(ctx)?.text).toBe("March ordered: 1 ant.");
   });
 });
 

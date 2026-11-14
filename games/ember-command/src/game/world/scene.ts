@@ -5,18 +5,19 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { editorLayers } from "../../editorLayers";
 import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
-import { flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
+import { activeCampaignStep, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
+import { createHazardState, SKIRMISH_HAZARDS } from "../hazards";
 import { grantHeroXp, heroXpFor } from "../hero";
 import { loadHeroPicks } from "../heroActs";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
-import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
+import { SUGAR, LEAF, STARTING_SUGAR, STARTING_LEAF } from "../tuning";
 import { initResourceField, resetSession, session, type UnitRuntime } from "../session";
 import { recordOutcome } from "../preferences";
 
 const wiredContexts = new WeakSet<GameContext>();
 
-/** Retained id of the hall drone (sound id `bed` in audio.ts); live at full gain, silent while paused. */
+/** Retained id of the summer drone (sound id `bed` in audio.ts); live at full gain, silent while paused. */
 const BED_LOOP = "bed";
 
 const GUARD_LEASH = 16;
@@ -51,7 +52,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     setGamePhase(ctx, "ended");
     ctx.game.audio.stopLoop(BED_LOOP);
     ctx.game.audio.play("victory");
-    // The finale's last objective is the Warcamp falling; the clock is already stopped, so the
+    // The finale's last objective is the black nest falling; the clock is already stopped, so the
     // machine is flushed with a zero tick instead of waiting for a frame that will not run.
     flushCampaign(ctx);
     return;
@@ -71,10 +72,10 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
   }
   ctx.game.audio.play("fall", event.position);
   if (def.faction === "enemy" && def.kind === "unit") {
-    if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, def.bounty);
+    if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, SUGAR, def.bounty);
     grantHeroXp(ctx, heroXpFor(event.catalogId)); // the hero champions the kill
   }
-  // A razed Farm lowers the supply cap.
+  // A razed Fungus Garden lowers the supply cap.
   const supply = buildingDef(event.catalogId)?.supply;
   if (def.faction === "player" && def.kind === "building" && supply !== undefined) {
     session.supplyCap = Math.max(0, session.supplyCap - supply);
@@ -82,27 +83,27 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
 }
 
 /** The opening instruction, held long enough to read before the first order lands. */
-export const OPENING_NOTICE = "Select your workers and right-click a gold seam or logging camp.";
+export const OPENING_NOTICE = "Select your workers and right-click the cookie crumbs or a leaf pile. P lays a pheromone trail.";
 const OPENING_NOTICE_MS = 12_000;
 
 /** Spawn the authored roster + resource nodes, wire economy + win/lose, and register the RTS commands. */
 export function setupSkirmish(ctx: GameContext): void {
   for (const entity of ctx.scene.entity.list()) ctx.scene.entity.despawn(entity.id);
-  for (const resource of [GOLD, LUMBER]) {
+  for (const resource of [SUGAR, LEAF]) {
     const amount = ctx.game.economy.balance(ctx.player.userId, resource);
     if (amount > 0) ctx.game.economy.charge(ctx.player.userId, resource, amount);
   }
   resetSession();
   session.started = false;
   hudStore.reset();
-  hudStore.set({ phase: "ready", gold: STARTING_GOLD, lumber: STARTING_LUMBER });
+  hudStore.set({ phase: "ready", sugar: STARTING_SUGAR, leaf: STARTING_LEAF });
   // The field desk always has an offer: the next campaign mission, or nothing in a free skirmish.
   syncCampaignHud(ctx);
   setGamePhase(ctx, "menu");
   ctx.time.pause();
   ctx.game.audio.stopLoop(BED_LOOP);
-  ctx.game.economy.grant(ctx.player.userId, GOLD, STARTING_GOLD);
-  ctx.game.economy.grant(ctx.player.userId, LUMBER, STARTING_LUMBER);
+  ctx.game.economy.grant(ctx.player.userId, SUGAR, STARTING_SUGAR);
+  ctx.game.economy.grant(ctx.player.userId, LEAF, STARTING_LEAF);
 
   const rallyOnPlayer = playerKeepPoint();
 
@@ -125,8 +126,8 @@ export function setupSkirmish(ctx: GameContext): void {
         attackCooldown: 0,
       };
       if (def.kind === "building") {
-        // Every building carries a guard point: for the player it is the peasants' depot anchor, and
-        // for the Marauders it is the camp a wave musters from (the director reads `guardPoint`).
+        // Every building carries a guard point: for the player it is the workers' depot anchor, and
+        // for the Black Ants it is the camp a wave musters from (the director reads `guardPoint`).
         unit.guardPoint = { x: pos[0], z: pos[2] };
       }
       if (def.kind === "unit" && def.faction === "enemy") {
@@ -145,7 +146,7 @@ export function setupSkirmish(ctx: GameContext): void {
     const node = nodeDef(catalogId);
     if (node !== undefined) {
       ctx.scene.entity.spawn(catalogId, { id: marker.id, position: pos, role: "npc", rotationY: marker.rotationY ?? 0 });
-      session.nodes.set(marker.id, { id: marker.id, resource: node.resource, x: pos[0], z: pos[2] });
+      session.nodes.set(marker.id, { id: marker.id, catalogId, resource: node.resource, x: pos[0], z: pos[2] });
       continue;
     }
 
@@ -171,6 +172,9 @@ export function setupSkirmish(ctx: GameContext): void {
       state.game.audio.setLoop(BED_LOOP, { gain: 1 });
       // The campaign's next mission opens with the match; a free skirmish starts bare.
       startCampaignMission(state);
+      // The yard's clocks start with the battle: the mission picks which run, a free skirmish runs all
+      // but the magnifying glass. The beam warms up over the middle of the lawn.
+      session.hazards = createHazardState(activeCampaignStep(state)?.hazards ?? SKIRMISH_HAZARDS, { x: 0, z: 0 });
     }
     return state;
   } });
@@ -200,7 +204,7 @@ export function setupSkirmish(ctx: GameContext): void {
     return state;
   } });
   ctx.game.commands.define("match.title", { apply: (state) => { setupSkirmish(state); return state; } });
-  // Field desk: run the vale without the campaign track, or start the campaign over from mission I.
+  // Field desk: run the yard without the campaign track, or start the campaign over from mission I.
   ctx.game.commands.define("match.skirmish", { apply: (state) => {
     setCampaignMode(state, "skirmish");
     setupSkirmish(state);

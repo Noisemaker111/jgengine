@@ -23,7 +23,7 @@ import type { Faction } from "./tuning";
 import { factionDamage } from "./upgrades";
 
 /**
- * Bram's acts and the field kit he carries between battles.
+ * Mandible's acts and the field kit he carries between battles.
  *
  * Three engine seams do the work; Ember supplies the content and the effect of each act:
  * - `@jgengine/core/combat/abilityKit` owns charge/cooldown/mana gating per act (`cast` refuses a
@@ -31,7 +31,7 @@ import { factionDamage } from "./upgrades";
  * - `@jgengine/core/stats/statModifiers` owns the timed line buffs the banner and the ward ride
  *   (`addSource` with an expiry, resolved on read);
  * - `@jgengine/core/talents/talents` owns the picks (points, one rank per pick, the ability and stat
- *   resolution), and `heroPicks.ts` owns the offers this vale makes.
+ *   resolution), and `heroPicks.ts` owns the offers this yard makes.
  *
  * Battle state (cooldowns, buffs, the live tree) rides `session` and dies with the battle; the picked
  * ranks are the only hero state the campaign save keeps.
@@ -47,9 +47,9 @@ export interface HeroActDef {
   /** Mana the cast spends. */
   manaCost: number;
   cooldownSeconds: number;
-  /** Radius around Bram the act reaches, in metres. Line acts affect the whole Vanguard line. */
+  /** Radius around Mandible the act reaches, in metres. Line acts affect the whole Red line. */
   radius: number;
-  /** True for the act Bram starts every battle with; the rest are picked at a level-up. */
+  /** True for the act Mandible starts every battle with; the rest are picked at a level-up. */
   baseline?: boolean;
 }
 
@@ -57,7 +57,7 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   {
     id: "thunderclap",
     label: "Thunder Clap",
-    blurb: "Bram slams the ground, bursting every Marauder around him.",
+    blurb: "Mandible slams the ground, bursting every Black Ant around him.",
     icon: "thunder",
     hotkey: "C",
     manaCost: 40,
@@ -68,7 +68,7 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   {
     id: "banner",
     label: "Banner Muster",
-    blurb: "Plant the Vanguard banner: the whole line strikes 30% harder for 8s.",
+    blurb: "Plant the colony banner: the whole line strikes 30% harder for 8s.",
     icon: "rally",
     hotkey: "4",
     manaCost: 30,
@@ -78,8 +78,8 @@ export const HERO_ACTS: readonly HeroActDef[] = [
   {
     id: "volley",
     label: "Ember Volley",
-    blurb: "Signal the volley: every Marauder within reach of Bram takes a rifle burst.",
-    icon: "rifleman",
+    blurb: "Signal the volley: every Black Ant within reach of Mandible takes a rifle burst.",
+    icon: "spitter",
     hotkey: "5",
     manaCost: 35,
     cooldownSeconds: 14,
@@ -144,7 +144,7 @@ export function heroRuntime(): HeroActsRuntime {
   return runtime;
 }
 
-/** Acts Bram can cast: the baseline act he always has, plus whatever his picks grant. */
+/** Acts Mandible can cast: the baseline act he always has, plus whatever his picks grant. */
 export function ownedActs(): ReadonlySet<string> {
   const owned = new Set<string>();
   for (const act of HERO_ACTS) if (act.baseline === true) owned.add(act.id);
@@ -152,7 +152,7 @@ export function ownedActs(): ReadonlySet<string> {
   return owned;
 }
 
-/** Bram's current mana, or 0 when he is not on the field. */
+/** Mandible's current mana, or 0 when he is not on the field. */
 export function heroMana(ctx: GameContext): number {
   const mana = ctx.scene.entity.stats.get(HERO_ID, "mana");
   return mana === null ? 0 : Math.max(0, mana.current);
@@ -164,7 +164,7 @@ export function manaRegenPerSecond(): number {
 }
 
 /**
- * Damage scale for one hit: the banner and the zeal pick lift the Vanguard's blows, the ward and the
+ * Damage scale for one hit: the banner and the zeal pick lift the colony's blows, the ward and the
  * signet soften blows that land on it. Everything else resolves at 1, so research and matchups keep
  * owning their own numbers.
  */
@@ -224,7 +224,7 @@ export function heroActReady(ctx: GameContext, id: string): boolean {
 export type HeroActRefusal = AbilityCastReason | "not-picked";
 export type HeroActCast = { ok: true; act: HeroActDef } | { ok: false; reason: HeroActRefusal };
 
-/** Burst every Marauder body inside `radius` of Bram. Bodies only: keeps and camps are siege work. */
+/** Burst every Black Ant body inside `radius` of Mandible. Bodies only: keeps and camps are siege work. */
 function burst(ctx: GameContext, radius: number, base: number): number {
   const hero = ctx.scene.entity.get(HERO_ID);
   if (hero === null) return 0;
@@ -249,7 +249,7 @@ function lineBuff(sourceId: string, stat: HeroLineStat, multiply: number, second
 }
 
 /**
- * Cast one of Bram's acts. The kit refuses a cooling or unaffordable slot before anything happens, and
+ * Cast one of Mandible's acts. The kit refuses a cooling or unaffordable slot before anything happens, and
  * only an accepted cast spends mana and starts the recharge.
  */
 export function castHeroAct(ctx: GameContext, id: string): HeroActCast {
@@ -293,7 +293,7 @@ export interface HeroOfferOption {
   blurb: string;
   icon: string;
   kind: HeroPickDef["kind"];
-  /** Already in Bram's kit (a campaign card can re-offer a pick a later battle already took). */
+  /** Already in Mandible's kit (a campaign card can re-offer a pick a later battle already took). */
   taken: boolean;
   /** Whether the model would accept this pick right now. */
   allocatable: boolean;
@@ -336,11 +336,11 @@ export function chooseHeroPick(ctx: GameContext, id: string): boolean {
   heroPickStore.write(ctx, pickedRanks(runtime.picks));
   const def = HERO_PICKS.find((node) => node.id === id);
   ctx.game.audio.play("muster");
-  ctx.game.notices.push({ text: `${def?.label ?? id} joins Bram's kit.`, tone: "success", ttlMs: 7000 });
+  ctx.game.notices.push({ text: `${def?.label ?? id} joins Mandible's kit.`, tone: "success", ttlMs: 7000 });
   return true;
 }
 
-/** The picks Bram carries into this battle, for the command card's kit line. */
+/** The picks Mandible carries into this battle, for the command card's kit line. */
 export function carriedHeroPicks(): readonly HeroPickDef[] {
   return carriedPicks(heroRuntime().picks);
 }

@@ -4,7 +4,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import type { StatModifierSet } from "@jgengine/core/stats/statModifiers";
 
 /**
- * Bram's field kit: the picks a level-up offers, authored as engine talent nodes.
+ * Mandible's field kit: the picks a level-up offers, authored as engine talent nodes.
  *
  * `@jgengine/core/talents/talents` owns the model (points, prerequisites, ranks, grants, the stat and
  * ability resolution) and `talentTreeViewFrom` owns the render view the choice card reads. What Ember
@@ -27,14 +27,14 @@ export interface HeroPickDef extends TalentNodeDef<HeroPickStat> {
   act?: string;
 }
 
-/** The Vanguard's picks, in the order the campaign offers them. Ids are save data: never rename one. */
+/** The colony's picks, in the order the campaign offers them. Ids are save data: never rename one. */
 export const HERO_PICKS: readonly HeroPickDef[] = [
   {
     id: "muster",
     kind: "active",
     act: "banner",
     label: "Banner Muster",
-    blurb: "Plant the Vanguard banner: the line strikes 30% harder for 8s.",
+    blurb: "Plant the colony banner: the line strikes 30% harder for 8s.",
     icon: "rally",
     branch: "standard",
     maxRank: 1,
@@ -45,8 +45,8 @@ export const HERO_PICKS: readonly HeroPickDef[] = [
     kind: "active",
     act: "volley",
     label: "Ember Volley",
-    blurb: "Signal the volley and every Marauder around Bram takes a rifle burst.",
-    icon: "rifleman",
+    blurb: "Signal the volley and every Black Ant around Mandible takes a rifle burst.",
+    icon: "spitter",
     branch: "standard",
     maxRank: 1,
     grantsAbilities: ["volley"],
@@ -76,7 +76,7 @@ export const HERO_PICKS: readonly HeroPickDef[] = [
     id: "draught",
     kind: "passive",
     label: "Kindling Draught",
-    blurb: "Bram's flask: +2 mana per second, so his acts come back sooner.",
+    blurb: "Mandible's flask: +2 mana per second, so his acts come back sooner.",
     icon: "mana",
     branch: "kit",
     maxRank: 1,
@@ -85,8 +85,8 @@ export const HERO_PICKS: readonly HeroPickDef[] = [
   {
     id: "standard",
     kind: "passive",
-    label: "Vanguard Standard",
-    blurb: "+40 maximum health. Bram carries the standard into every battle.",
+    label: "Red Standard",
+    blurb: "+40 maximum health. Mandible carries the standard into every battle.",
     icon: "helm",
     branch: "kit",
     maxRank: 1,

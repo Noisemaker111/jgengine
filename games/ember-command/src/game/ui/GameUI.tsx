@@ -12,17 +12,17 @@ import { preferences } from "../preferences";
 import { CommandMenu, FieldSettings } from "./CommandMenu";
 import { RtsHud } from "./Hud";
 import { Text, WaxSeal, useHudSlice } from "./kit";
-import { emberTheme, GAME_FONTS, WAX } from "./theme";
+import { lawnTheme, GAME_FONTS, WAX } from "./theme";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
-/** Ember Command's war table on one native Rune surface: the field HUD, the front end and the notice feed. */
+/** Lawn Order's war table on one native Rune surface: the field HUD, the front end and the notice feed. */
 export function GameUI() {
   const ctx = useGameContext();
   const settings = useSettings();
   const store = preferences(ctx);
   const prefs = useSyncExternalStore(store.subscribe, store.get, store.get);
-  const theme = useMemo(() => emberTheme(prefs), [prefs.largeText, prefs.highContrast, prefs.reducedMotion]);
+  const theme = useMemo(() => lawnTheme(prefs), [prefs.largeText, prefs.highContrast, prefs.reducedMotion]);
   const phase = useHudSlice((h) => h.phase);
   const { width, height } = useRuneViewport();
   const [mapOpen, setMapOpen] = useState(false);

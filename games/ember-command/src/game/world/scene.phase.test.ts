@@ -65,12 +65,12 @@ describe("ember-command run phase", () => {
     ctx.game.commands.run("match.pause", {});
     expect(gamePhase(ctx)).toBe("paused");
     expect(ctx.time.isPaused()).toBe(true);
-    expect(canTrain(ctx, "peasant")).toBe(false);
+    expect(canTrain(ctx, "worker")).toBe(false);
     ctx.game.commands.run("match.resume", {});
-    expect(canTrain(ctx, "peasant")).toBe(true);
-    ctx.game.economy.grant("p1", "gold", 1000);
+    expect(canTrain(ctx, "worker")).toBe(true);
+    ctx.game.economy.grant("p1", "sugar", 1000);
     ctx.game.commands.run("match.restart", {});
-    expect(ctx.game.economy.balance("p1", "gold")).toBe(250);
+    expect(ctx.game.economy.balance("p1", "sugar")).toBe(250);
     expect(ctx.scene.entity.list().length).toBe(startingRoster);
     expect(gamePhase(ctx)).toBe("playing");
     const wins = preferences(ctx).get().wins;

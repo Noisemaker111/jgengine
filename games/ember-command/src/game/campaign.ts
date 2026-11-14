@@ -24,10 +24,11 @@ import { grantHeroXp, HERO_ID, MISSION_XP, OBJECTIVE_XP } from "./hero";
 import { heroPickStore } from "./heroPicks";
 import { hudStore } from "./hudStore";
 import { session } from "./session";
-import { GOLD, LUMBER } from "./tuning";
+import { SUGAR, LEAF } from "./tuning";
+import { NO_HAZARDS, type HazardToggles } from "./hazards";
 
 /**
- * The vale campaign: five missions that teach the skirmish in order, run by the engine's mission
+ * The yard campaign: five missions that teach the skirmish in order, run by the engine's mission
  * machine (`@jgengine/core/mission`). This module is adoption, not a runtime —
  *
  * - the objective graphs, fail states and rewards are {@link MissionDef} data;
@@ -35,52 +36,52 @@ import { GOLD, LUMBER } from "./tuning";
  * - `missionMarkers` reads the authored waypoints out of `editor.scene.json`;
  * - `defendMission` / `escortMission` build the copies of hold-and-escort the engine already ships.
  *
- * What Ember owns is the campaign track (which mission is next, and the stores carried between
- * battles), the world reports the machine judges (build completions, unit losses, the Warcamp
- * falling) and the field-desk voice. See `harbor-heat/src/game/jobs/courier.ts` and
+ * What LAWN ORDER owns is the campaign track (which mission is next, and the stores carried between
+ * battles), the world reports the machine judges (chambers dug, ants lost, the black nest dug
+ * out) and the field-journal voice. See `harbor-heat/src/game/jobs/courier.ts` and
  * `scrap-signal/src/game/mast.ts` for the two earlier adopters.
  */
 
 /** The authored waypoints the campaign reads out of the scene document. */
-export const MUSTER_MARKER = "campaign_muster";
-export const CROSSROADS_MARKER = "campaign_crossroads";
-/** The mid-vale seam marker the escort runs to (an authored landmark, not campaign furniture). */
-export const ENTREPOT_MARKER = "goldmine_mid";
+export const MUSTER_MARKER = "campaign_popsicle";
+export const CROSSROADS_MARKER = "campaign_brood_raid";
+/** The far bank of the garden hose, where the crossing escort runs to. */
+export const ENTREPOT_MARKER = "campaign_far_bank";
 
 /** Tracked actors the objectives name. */
 const PLAYER_KEEP = "keep_player";
 
 /** Mission ids, in campaign order. */
-export const FIRST_MUSTER_ID = "m1_first_muster";
-export const LONG_WATCH_ID = "m2_long_watch";
-export const MID_VALE_ROAD_ID = "m3_mid_vale_road";
-export const THIN_LINE_ID = "m4_thin_line";
-export const EMBER_VERDICT_ID = "m5_ember_verdict";
+export const POPSICLE_CLAIM_ID = "m1_popsicle_claim";
+export const HOSE_CROSSING_ID = "m2_crossing_the_hose";
+export const MOWER_DAY_ID = "m3_mower_day";
+export const BLACK_QUEEN_RAID_ID = "m4_raid_the_black_queen";
+export const MAGNIFYING_GLASS_ID = "m5_magnifying_glass";
 
-/** The named fail states every mission that can lose the vale shares. */
-const BRAM_FELL = { id: "bram_fell", message: "Bram the Bold fell, and the Vanguard broke with him." } as const;
-const KEEP_FELL = { id: "keep_fallen", message: "The Ember Keep fell and the vale went dark." } as const;
+/** The named fail states every mission that can lose the yard shares. */
+const MANDIBLE_FELL = { id: "mandible_fell", message: "Marshal Mandible fell, and the column scattered into the grass." } as const;
+const KEEP_FELL = { id: "keep_fallen", message: "The red nest was dug out, and the queen fled into the dark." } as const;
 export const KEEP_FAIL_ID = KEEP_FELL.id;
 
-/** The keep falling ends every mission. */
+/** The nest falling ends every mission. */
 function keepFails(): readonly MissionFailCondition[] {
   return [{ kind: "actor-died", actor: PLAYER_KEEP, to: KEEP_FELL.id, message: KEEP_FELL.message }];
 }
 
-/** Bram and the keep: used where the hero is the point of the objective (a march, a line). */
-function valeFails(): readonly MissionFailCondition[] {
+/** The Marshal and the nest: used where the hero is the point of the objective (a march, a raid). */
+function yardFails(): readonly MissionFailCondition[] {
   return [
-    { kind: "actor-died", actor: HERO_ID, to: BRAM_FELL.id, message: BRAM_FELL.message },
+    { kind: "actor-died", actor: HERO_ID, to: MANDIBLE_FELL.id, message: MANDIBLE_FELL.message },
     ...keepFails(),
   ];
 }
 
-/** Declare the keep's fail state on a mission the engine composed, so its reason is authored here. */
+/** Declare the nest's fail state on a mission the engine composed, so its reason is authored here. */
 function withKeepFail(def: MissionDef): MissionDef {
   return { ...def, fail: [...(def.fail ?? []), KEEP_FELL] };
 }
 
-/** Replace a composed mission's fail wording with Ember's own voice ("the position was overrun"). */
+/** Replace a composed mission's fail wording with the colony's own voice. */
 function withFailMessages(def: MissionDef, messages: Readonly<Record<string, string>>): MissionDef {
   return {
     ...def,
@@ -91,25 +92,25 @@ function withFailMessages(def: MissionDef, messages: Readonly<Record<string, str
   };
 }
 
-/** Authored labels replace the composition's derived placeholders ("Escort hero to goldmine_mid"). */
+/** Authored labels replace the composition's derived placeholders ("Escort hero to campaign_far_bank"). */
 function relabel(def: MissionDef, labels: Readonly<Record<string, string>>): MissionDef {
   return { ...def, objectives: def.objectives.map((objective) => labels[objective.id] === undefined ? objective : { ...objective, label: labels[objective.id] }) };
 }
 
-const MUSTER_REWARD: MissionRewards = { economy: { [GOLD]: 120, [LUMBER]: 40 } };
-const WATCH_REWARD: MissionRewards = { economy: { [GOLD]: 160, [LUMBER]: 60 } };
-const ROAD_REWARD: MissionRewards = { economy: { [GOLD]: 200, [LUMBER]: 80 } };
-const LINE_REWARD: MissionRewards = { economy: { [GOLD]: 240, [LUMBER]: 100 } };
-const VERDICT_REWARD: MissionRewards = { economy: { [GOLD]: 400, [LUMBER]: 150 } };
+const MUSTER_REWARD: MissionRewards = { economy: { [SUGAR]: 120, [LEAF]: 40 } };
+const WATCH_REWARD: MissionRewards = { economy: { [SUGAR]: 160, [LEAF]: 60 } };
+const ROAD_REWARD: MissionRewards = { economy: { [SUGAR]: 200, [LEAF]: 80 } };
+const LINE_REWARD: MissionRewards = { economy: { [SUGAR]: 240, [LEAF]: 100 } };
+const VERDICT_REWARD: MissionRewards = { economy: { [SUGAR]: 400, [LEAF]: 150 } };
 
 /**
- * Mission I — the build order. Report a finished Barracks and four trained Footmen as `collect`
- * world events, then walk Bram to the muster ground so the mission cannot be won on a counter.
+ * Mission I — the build order. Report a dug Barracks Chamber and four hatched Soldiers as `collect`
+ * world events, then march the Marshal to the dropped popsicle so it cannot be won on a counter.
  */
-export const FIRST_MUSTER: MissionDef = {
-  id: FIRST_MUSTER_ID,
-  title: "First Muster",
-  description: "The vale has one keep, and it is yours. Raise a Barracks, put four Footmen in the line, then take Bram to the muster ground.",
+export const POPSICLE_CLAIM: MissionDef = {
+  id: POPSICLE_CLAIM_ID,
+  title: "The Popsicle Claim",
+  description: "Somebody dropped a strawberry popsicle on the lawn. Dig a Barracks Chamber, hatch four Soldiers, and plant the Marshal on the sugar before the black ants smell it.",
   start: "raise_barracks",
   objectives: [
     {
@@ -118,21 +119,21 @@ export const FIRST_MUSTER: MissionDef = {
       count: 1,
       counter: "barracks",
       match: { kind: "collect", target: "barracks" },
-      label: "Raise a Barracks on the vale floor",
+      label: "Dig a Barracks Chamber",
       timeout: 420,
       onTimeout: "muster_stalled",
-      // While the muster is at home, losing Bram costs you the hero, not the mission: the march is
-      // where he is the point of the order.
+      // While the colony is at home, losing the Marshal costs you the hero, not the mission: the march
+      // is where he is the point of the order.
       failOn: keepFails(),
-      next: "muster_footmen",
+      next: "muster_soldiers",
     },
     {
-      id: "muster_footmen",
+      id: "muster_soldiers",
       kind: "collect",
       count: 4,
-      counter: "footman",
-      match: { kind: "collect", target: "footman" },
-      label: "Muster four Footmen at the Barracks",
+      counter: "soldier",
+      match: { kind: "collect", target: "soldier" },
+      label: "Hatch four Soldier Ants",
       timeout: 420,
       onTimeout: "muster_stalled",
       failOn: keepFails(),
@@ -143,68 +144,68 @@ export const FIRST_MUSTER: MissionDef = {
       kind: "reach",
       actor: HERO_ID,
       marker: MUSTER_MARKER,
-      radius: 8,
-      label: "March Bram to the muster ground",
+      radius: 9,
+      label: "March Marshal Mandible onto the popsicle",
       timeout: 180,
       onTimeout: "muster_stalled",
-      failOn: valeFails(),
+      failOn: yardFails(),
       next: "done",
     },
   ],
   fail: [
-    BRAM_FELL,
+    MANDIBLE_FELL,
     KEEP_FELL,
-    { id: "muster_stalled", message: "The muster stalled: the vale grew tired of waiting for its line." },
+    { id: "muster_stalled", message: "The popsicle melted into the soil while the colony dithered." },
   ],
   rewards: MUSTER_REWARD,
 };
 
 /**
- * Mission II — the defence, composed by the engine's `defendMission`: one `survive` objective, its
- * `minSurvivors` gate as the fail condition, and the duration ticking down in the HUD.
+ * Mission III — the defence, composed by the engine's `defendMission`: hold the nest for two and a half
+ * minutes while black-ant waves come and the lawnmower makes its pass down the lane.
  */
-export const LONG_WATCH: MissionDef = withFailMessages(withKeepFail(defendMission({
-  id: LONG_WATCH_ID,
-  title: "The Long Watch",
-  description: "The drums are on the war-road. Hold the keep for two minutes and let the Marauders break on your wall.",
-  seconds: 120,
+export const MOWER_DAY: MissionDef = withFailMessages(withKeepFail(defendMission({
+  id: MOWER_DAY_ID,
+  title: "Mower Day",
+  description: "It is Saturday. The black ants are marching, the mower is fuelled, and the sky is grey. Hold the nest for two and a half minutes and stay out of the lane.",
+  seconds: 150,
   minSurvivors: 1,
   failState: "watch_overrun",
-  label: "Hold the keep through the Marauder drums",
+  label: "Hold the nest through the raids, and clear the mower lane",
   rewards: WATCH_REWARD,
 })), {
-  watch_overrun: "The last Vanguard soldier at the keep went down, and the drums rolled through the gate.",
+  watch_overrun: "The last soldier at the nest went down, and the black ants poured into the tunnels.",
 });
 
 /**
- * Mission III — the escort, composed by the engine's `escortMission`: Bram has to reach the mid-vale
- * seam alive, with a deadline and a named fail state for being waylaid.
+ * Mission II — the escort, composed by the engine's `escortMission`: the Marshal must reach the far
+ * bank of the garden hose alive. Climbing the rubber is a crawl; the two crossings are not.
  */
-export const MID_VALE_ROAD: MissionDef = relabel(
+export const HOSE_CROSSING: MissionDef = relabel(
   withFailMessages(withKeepFail(escortMission({
-    id: MID_VALE_ROAD_ID,
-    title: "Road to Mid Vale",
-    description: "The mid-vale seam is unworked and the road is not ours. Walk Bram up it before the Marauders close the way.",
+    id: HOSE_CROSSING_ID,
+    title: "Crossing the Hose",
+    description: "The garden hose cuts the lawn like a green river. Get the Marshal over it to the far bank: use a crossing, mind the sprinkler, lay a trail if you have to.",
     escortee: HERO_ID,
     destination: ENTREPOT_MARKER,
     radius: 8,
     timeoutSeconds: 240,
-    failState: "bram_waylaid",
+    failState: "mandible_waylaid",
     rewards: ROAD_REWARD,
   })), {
-    bram_waylaid: "Bram was cut down on the war-road, and the mid-vale seam stayed unworked.",
+    mandible_waylaid: "The Marshal never made the far bank of the hose.",
   }),
-  { escort_deliver: "Escort Bram up the war-road to the mid-vale seam" },
+  { escort_deliver: "Escort Marshal Mandible over the hose to the far bank" },
 );
 
 /**
- * Mission IV — the line that must not break. Reach the crossroads, then hold it: a single Vanguard
- * soldier falling fails the mission, reported to the machine as a `kill` event tagged `vanguard`.
+ * Mission IV — the raid. March on the black colony's brood mound under cover of night, then dig it
+ * out: the black queen lays her eggs there, and without it the black waves thin.
  */
-export const THIN_LINE: MissionDef = {
-  id: THIN_LINE_ID,
-  title: "The Thin Line",
-  description: "Six soldiers and a hero. Take the crossroads and hold it without losing one of them.",
+export const BLACK_QUEEN_RAID: MissionDef = {
+  id: BLACK_QUEEN_RAID_ID,
+  title: "Raid the Black Queen",
+  description: "The black queen lays her eggs in the brood mound past the patio. Night is coming. March the Marshal there and dig it out.",
   start: "reach_crossroads",
   objectives: [
     {
@@ -212,42 +213,42 @@ export const THIN_LINE: MissionDef = {
       kind: "reach",
       actor: HERO_ID,
       marker: CROSSROADS_MARKER,
-      radius: 10,
-      label: "March the line to the crossroads",
-      timeout: 150,
-      onTimeout: "line_broken",
-      failOn: valeFails(),
-      next: "hold_line",
+      radius: 12,
+      label: "March the Marshal to the black colony's brood mound",
+      timeout: 200,
+      onTimeout: "raid_stalled",
+      failOn: yardFails(),
+      next: "raze_brood",
     },
     {
-      id: "hold_line",
-      kind: "survive",
-      duration: 45,
-      label: "Hold the crossroads for 45s without losing a soldier",
-      failOn: [
-        ...valeFails(),
-        { kind: "event", match: { kind: "kill", tags: ["vanguard"] }, to: "line_broken", message: "A Vanguard soldier fell, and the line broke where they stood." },
-        { kind: "left-area", actor: HERO_ID, marker: CROSSROADS_MARKER, radius: 18, to: "line_broken", message: "Bram left the crossroads and the line lost its centre." },
-      ],
+      id: "raze_brood",
+      kind: "kill",
+      count: 1,
+      counter: "brood_mound",
+      match: { kind: "kill", target: "brood_mound" },
+      label: "Dig out the Brood Mound",
+      timeout: 240,
+      onTimeout: "raid_stalled",
+      failOn: yardFails(),
       next: "done",
     },
   ],
   fail: [
-    BRAM_FELL,
+    MANDIBLE_FELL,
     KEEP_FELL,
-    { id: "line_broken", message: "The thin line broke: the vale cannot spare another soldier." },
+    { id: "raid_stalled", message: "Dawn came and the raid was still knocking at the brood mound." },
   ],
   rewards: LINE_REWARD,
 };
 
 /**
- * Mission V — the finale, two chained objectives: weather the last push, then raze the Warcamp. The
- * mission machine chains them with `next`; the Warcamp's death is reported as a `kill` world event.
+ * Mission V — the boss. The Kid with the Magnifying Glass has found the lawn. Outlast the first minute
+ * under the beam (shade is safety), then dig out the Black Ant Nest while the spot hunts the colony.
  */
-export const EMBER_VERDICT: MissionDef = {
-  id: EMBER_VERDICT_ID,
-  title: "The Ember Verdict",
-  description: "This is the last push the Marauders have. Weather it, then take the war to their Warcamp and end it.",
+export const MAGNIFYING_GLASS: MissionDef = {
+  id: MAGNIFYING_GLASS_ID,
+  title: "The Kid with the Magnifying Glass",
+  description: "A shadow falls over the lawn, then a terrible point of light. Hide in the shade, outlast the beam, and finish the black ants while the kid hunts you both.",
   start: "weather_the_push",
   objectives: [
     {
@@ -256,7 +257,7 @@ export const EMBER_VERDICT: MissionDef = {
       duration: 60,
       minSurvivors: 1,
       minSurvivorsFail: "verdict_lost",
-      label: "Weather the last Marauder push",
+      label: "Outlast the beam: keep the colony in the shade",
       failOn: keepFails(),
       next: "raze_warcamp",
     },
@@ -264,67 +265,74 @@ export const EMBER_VERDICT: MissionDef = {
       id: "raze_warcamp",
       kind: "kill",
       count: 1,
-      counter: "warcamp",
+      counter: "keep_enemy",
       match: { kind: "kill", target: "keep_enemy" },
-      label: "Raze the Marauder Warcamp",
+      label: "Dig out the Black Ant Nest under the beam",
       failOn: keepFails(),
       next: "done",
     },
   ],
   fail: [
-    BRAM_FELL,
+    MANDIBLE_FELL,
     KEEP_FELL,
-    { id: "verdict_lost", message: "The Vanguard had nothing left to hold the vale with." },
+    { id: "verdict_lost", message: "The beam found the last of the colony in the open." },
   ],
   rewards: VERDICT_REWARD,
 };
 
-/** One campaign step: the mission plus the field-desk brief and the world it is fought in. */
+/** One campaign step: the mission plus the field-journal brief and the yard it is fought in. */
 export interface CampaignStep {
   mission: MissionDef;
-  /** The field desk's brief, in Ember's voice, shown before the mission. */
+  /** The field journal's brief, in the colony's voice, shown before the mission. */
   brief: string;
   /** Authored hostile markers standing when the mission opens; the rest are stood down. */
   hostiles: readonly string[];
-  /** Whether the Marauder wave director musters during this mission. */
+  /** Whether the black-ant wave director musters during this mission. */
   waves: boolean;
+  /** Which of the yard's clocks run during this mission. */
+  hazards: HazardToggles;
 }
 
-/** The opening assault group authored in the scene (stance: assault). */
-const STANDING_RAID = ["grunt_raid_1", "grunt_raid_2", "reaver_raid_1"] as const;
-/** The Warcamp's guard detail authored in the scene (stance: guard). */
-const WARCAMP_GUARD = ["grunt_guard_1", "grunt_guard_2", "grunt_guard_3", "reaver_guard_1"] as const;
+/** The opening raiding party authored in the scene (stance: assault). */
+const STANDING_RAID = ["raider_raid_1", "raider_raid_2", "major_raid_1"] as const;
+/** The black nest's guard detail authored in the scene (stance: guard). */
+const BROOD_GUARD = ["raider_guard_1", "raider_guard_2", "raider_guard_3", "major_guard_1"] as const;
 
 export const CAMPAIGN: readonly CampaignStep[] = [
   {
-    mission: FIRST_MUSTER,
-    brief: "The vale remembers the first bell. Raise a Barracks, put four Footmen in the line, and stand Bram on the muster ground before the drums find you.",
-    hostiles: [...STANDING_RAID, ...WARCAMP_GUARD],
+    mission: POPSICLE_CLAIM,
+    brief: "A popsicle fell from the sky and the whole lawn can smell it. Dig a Barracks Chamber, hatch four Soldiers, and stand the Marshal on the sugar. Watch the sprinkler.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
     waves: false,
+    hazards: { ...NO_HAZARDS, sprinkler: true },
   },
   {
-    mission: LONG_WATCH,
-    brief: "The Marauders have found the road and they will not stop for a wall. Two minutes, commander. Hold the keep and let them break on it.",
+    mission: HOSE_CROSSING,
+    brief: "The garden hose runs across the lawn like a river of green rubber. Climbing it is a crawl; the two crossings are not. Get the Marshal over to the far bank.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    waves: false,
+    hazards: { ...NO_HAZARDS, sprinkler: true },
+  },
+  {
+    mission: MOWER_DAY,
+    brief: "Saturday morning. The black ants are coming, the clouds are low, and somewhere a mower coughs into life. Hold the nest for two and a half minutes, and nobody stands in the lane.",
     hostiles: [...STANDING_RAID],
     waves: true,
+    hazards: { ...NO_HAZARDS, mower: true, rain: true },
   },
   {
-    mission: MID_VALE_ROAD,
-    brief: "The mid-vale seam is unworked, and the road to it belongs to nobody yet. Walk Bram up it while the Vanguard clears the way.",
-    hostiles: [...STANDING_RAID, ...WARCAMP_GUARD],
+    mission: BLACK_QUEEN_RAID,
+    brief: "The black queen's eggs lie in the brood mound past the patio. Night is falling and the antennae grow short. March the Marshal there and dig it out.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
     waves: false,
+    hazards: { ...NO_HAZARDS, night: true, sprinkler: true },
   },
   {
-    mission: THIN_LINE,
-    brief: "Six soldiers and a hero on the crossroads. Hold it for forty-five seconds and bring every one of them home.",
-    hostiles: [...STANDING_RAID, ...WARCAMP_GUARD],
-    waves: false,
-  },
-  {
-    mission: EMBER_VERDICT,
-    brief: "This is everything they have left. Weather the push, then take the war to the Warcamp and burn the drums for good.",
-    hostiles: [...STANDING_RAID, ...WARCAMP_GUARD],
+    mission: MAGNIFYING_GLASS,
+    brief: "A giant has come to the lawn with a lens. The spot of light hunts whatever moves in the open. Keep to the shade of the clover and the flowerpot, outlast it, then finish the black ants.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
     waves: true,
+    hazards: { ...NO_HAZARDS, beam: true },
   },
 ];
 
@@ -339,22 +347,22 @@ export type CampaignMode = "campaign" | "skirmish";
 export interface CampaignProgress {
   /** Mission ids won, in the order they were won. */
   won: readonly string[];
-  /** What the field desk runs: the campaign, or a free skirmish on the same vale. */
+  /** What the field desk runs: the campaign, or a free skirmish on the same yard. */
   mode: CampaignMode;
-  /** The vale's stores: mission pay banked by the campaign and spent opening the next battle. */
-  stores: { gold: number; lumber: number };
+  /** The yard's stores: mission pay banked by the campaign and spent opening the next battle. */
+  stores: { sugar: number; leaf: number };
 }
 
-export const campaignStore = defineStore<CampaignProgress>("ember.campaign", () => ({ won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } }));
+export const campaignStore = defineStore<CampaignProgress>("ember.campaign", () => ({ won: [], mode: "campaign", stores: { sugar: 0, leaf: 0 } }));
 /** The mission machine's serializable position, written with the rest of the world on a checkpoint. */
 export const campaignMissionStore = defineStore<MissionRuntimeSnapshot | null>("ember.campaign.mission", null);
 
-/** Gold and lumber the won missions carry into the next battle. */
-export function campaignStores(progress: CampaignProgress): { gold: number; lumber: number } {
+/** Sugar and leaf the won missions carry into the next battle. */
+export function campaignStores(progress: CampaignProgress): { sugar: number; leaf: number } {
   return progress.stores;
 }
 
-/** The next mission in campaign order: the first one not yet won, or null once the vale is held. */
+/** The next mission in campaign order: the first one not yet won, or null once the yard is held. */
 export function nextCampaignStep(progress: CampaignProgress): CampaignStep | null {
   if (progress.mode !== "campaign") return null;
   return CAMPAIGN.find((step) => !progress.won.includes(step.mission.id)) ?? null;
@@ -387,7 +395,7 @@ export interface CampaignReadout {
   status: MissionStatus;
   outcome: string | null;
   reason: string | null;
-  stores: { gold: number; lumber: number };
+  stores: { sugar: number; leaf: number };
 }
 
 /* -------------------------------------------------------------------------------------------- */
@@ -403,7 +411,7 @@ const runtimes = perContext((ctx: GameContext) =>
   createMissionRuntime({
     missions: CAMPAIGN_MISSIONS,
     markers: authoredMarkers(),
-    // Ember's ground rises under the authored flat waypoints; the machine's horizontal test is why
+    // The lawn rises under the authored flat waypoints; the machine's horizontal test is why
     // the 8 m default tolerance is enough and no marker has to be lifted by hand.
     markerProximity: { plane: "horizontal" },
     devtoolsName: "ember-command campaign",
@@ -424,7 +432,7 @@ export interface CampaignSettlementInput {
 
 /**
  * A campaign mission is a session on the shared loop: it opens when the field desk starts it, carries
- * the pay the vale's stores will receive, and its boundary banks that pay or loses it with the order.
+ * the pay the yard's stores will receive, and its boundary banks that pay or loses it with the order.
  */
 const sessions = perContext((ctx: GameContext) => {
   const loop = createSessionLoop<never, CampaignSettlementInput, { banked: boolean }>({
@@ -457,28 +465,28 @@ export function markStoresRestored(ctx: GameContext): void {
 }
 
 /**
- * Report a death the mission machine may judge: a Vanguard soldier falling (the `vanguard` tag the
- * thin-line fail reads) and anything the Vanguard kills, including the Warcamp. Tagged so `match`
+ * Report a death the mission machine may judge: a Red soldier falling (the `colony` tag the
+ * thin-line fail reads) and anything the colony kills, including the black nest. Tagged so `match`
  * filters can tell whose blood it is.
  */
 export function noteCampaignDeath(ctx: GameContext, catalogId: string): void {
   const def = combatantDef(catalogId);
   if (def === null) return;
   if (def.faction === "player") {
-    if (def.kind === "unit" && def.worker !== true) pendingEvents(ctx).push({ kind: "kill", target: catalogId, tags: ["vanguard"] });
+    if (def.kind === "unit" && def.worker !== true) pendingEvents(ctx).push({ kind: "kill", target: catalogId, tags: ["colony"] });
     return;
   }
-  pendingEvents(ctx).push({ kind: "kill", target: catalogId, tags: ["marauder"] });
+  pendingEvents(ctx).push({ kind: "kill", target: catalogId, tags: ["rival"] });
 }
 
 /** A finished building, counted by the build-order objective. */
 export function noteCampaignBuild(ctx: GameContext, building: string): void {
-  pendingEvents(ctx).push({ kind: "collect", target: building, by: "vanguard", tags: ["built"] });
+  pendingEvents(ctx).push({ kind: "collect", target: building, by: "colony", tags: ["built"] });
 }
 
 /** A trained recruit, counted by the muster objective. */
 export function noteCampaignTrain(ctx: GameContext, unit: string): void {
-  pendingEvents(ctx).push({ kind: "collect", target: unit, by: "vanguard", tags: ["trained"] });
+  pendingEvents(ctx).push({ kind: "collect", target: unit, by: "colony", tags: ["trained"] });
 }
 
 function actorFact(ctx: GameContext, id: string): MissionActorFact {
@@ -487,7 +495,7 @@ function actorFact(ctx: GameContext, id: string): MissionActorFact {
   return { alive: true, position: { x: entity.position[0], y: entity.position[1], z: entity.position[2] } };
 }
 
-/** Everything the active objective can read: the keeps, the hero and every living Vanguard body. */
+/** Everything the active objective can read: the keeps, the hero and every living Red body. */
 function tickInput(ctx: GameContext, events: readonly MissionWorldEvent[]): MissionTickInput {
   const actors: Record<string, MissionActorFact> = {
     [HERO_ID]: actorFact(ctx, HERO_ID),
@@ -510,7 +518,7 @@ export function activeCampaignStep(ctx: GameContext): CampaignStep | null {
   return CAMPAIGN.find((step) => step.mission.id === state.missionId) ?? null;
 }
 
-/** Whether the Marauder wave director runs now. A campaign step says so; a free skirmish always does. */
+/** Whether the Black Ant wave director runs now. A campaign step says so; a free skirmish always does. */
 export function campaignWavesRunning(ctx: GameContext): boolean {
   const step = activeCampaignStep(ctx);
   return step === null ? true : step.waves;
@@ -518,12 +526,12 @@ export function campaignWavesRunning(ctx: GameContext): boolean {
 
 /**
  * Stand the authored hostiles the mission does not use back down, so each battlefield reads as its
- * own scenario out of the same vale. Placement stays authored; this only picks who is on duty.
+ * own scenario out of the same yard. Placement stays authored; this only picks who is on duty.
  */
 function stageHostiles(ctx: GameContext, hostiles: readonly string[]): void {
   const standing = new Set(hostiles);
   for (const unit of [...session.units.values()]) {
-    // Only bodies stand down: the Marauder Warcamp and any forward camp are always in the fight.
+    // Only bodies stand down: the Black Ant Nest and any forward camp are always in the fight.
     if (unit.faction !== "enemy" || unit.kind !== "unit" || standing.has(unit.id)) continue;
     ctx.scene.entity.despawn(unit.id);
     session.units.delete(unit.id);
@@ -533,8 +541,8 @@ function stageHostiles(ctx: GameContext, hostiles: readonly string[]): void {
 /** Pay the stores the won missions carry, on top of the opening purse. */
 function grantCarriedStores(ctx: GameContext): void {
   const stores = campaignStores(campaignStore.read(ctx));
-  if (stores.gold > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, stores.gold);
-  if (stores.lumber > 0) ctx.game.economy.grant(ctx.player.userId, LUMBER, stores.lumber);
+  if (stores.sugar > 0) ctx.game.economy.grant(ctx.player.userId, SUGAR, stores.sugar);
+  if (stores.leaf > 0) ctx.game.economy.grant(ctx.player.userId, LEAF, stores.leaf);
 }
 
 const ROMAN = ["I", "II", "III", "IV", "V"] as const;
@@ -557,7 +565,7 @@ export function campaignReadout(ctx: GameContext): CampaignReadout | null {
   const index = Math.max(0, CAMPAIGN.indexOf(shown));
   const ended = view !== null && !live && view.missionId === shown.mission.id;
   // A win advances the track, so the finished mission is no longer the offered one: read it as
-  // "cleared" rather than "ready" so the field desk can say the vale holds.
+  // "cleared" rather than "ready" so the field desk can say the yard holds.
   const cleared = view !== null && !live && view.status === "completed" && view.missionId !== shown.mission.id;
   // The loop owns whether a mission is open; the machine still owns how far its objectives got.
   const loop = campaignSession(ctx);
@@ -580,7 +588,7 @@ export function campaignReadout(ctx: GameContext): CampaignReadout | null {
   return {
     phase,
     missionId: shown.mission.id,
-    title: finished && offered === null ? "The vale is yours" : shown.mission.title,
+    title: finished && offered === null ? "The lawn is ours" : shown.mission.title,
     brief: shown.brief,
     index: index + 1,
     total: CAMPAIGN.length,
@@ -640,15 +648,15 @@ export function checkpointCampaign(ctx: GameContext): void {
 }
 
 /**
- * Bank a mission's pay into the vale's stores through the engine's reward appliers. The field is
- * restaged after a win, so gold left in the battle economy would be discarded; the campaign purse is
+ * Bank a mission's pay into the yard's stores through the engine's reward appliers. The field is
+ * restaged after a win, so sugar left in the battle economy would be discarded; the campaign purse is
  * what the next battle opens with, and a mission only pays once.
  */
-/** What a mission's authored reward table pays in the vale's two currencies. */
+/** What a mission's authored reward table pays in the yard's two currencies. */
 function missionPayTotal(rewards: MissionRewards | null | undefined): number {
   if (rewards === null || rewards === undefined) return 0;
   let total = 0;
-  applyMissionRewards(rewards, { grantEconomy: (currencyId, amount) => { if (currencyId === GOLD || currencyId === LUMBER) total += amount; } });
+  applyMissionRewards(rewards, { grantEconomy: (currencyId, amount) => { if (currencyId === SUGAR || currencyId === LEAF) total += amount; } });
   return total;
 }
 
@@ -656,7 +664,7 @@ function bankMissionRewards(ctx: GameContext, missionId: string, rewards: Missio
   if (campaignStore.read(ctx).won.includes(missionId)) return;
   applyMissionRewards(rewards, {
     grantEconomy: (currencyId, amount) => {
-      if (currencyId !== GOLD && currencyId !== LUMBER) return;
+      if (currencyId !== SUGAR && currencyId !== LEAF) return;
       const progress = campaignStore.read(ctx);
       const stores = { ...progress.stores, [currencyId]: progress.stores[currencyId] + amount };
       campaignStore.write(ctx, { ...progress, stores });
@@ -670,12 +678,12 @@ function finishCampaignStep(ctx: GameContext, restage?: () => void): void {
   const progress = campaignStore.read(ctx);
   const won = progress.won.includes(state.missionId) ? progress.won : [...progress.won, state.missionId];
   campaignStore.write(ctx, { ...progress, won });
-  // The mission itself pays Bram: a cleared order is the hero's work as much as a kill is.
+  // The mission itself pays Mandible: a cleared order is the hero's work as much as a kill is.
   grantHeroXp(ctx, MISSION_XP);
   const step = CAMPAIGN.find((entry) => entry.mission.id === state.missionId);
   ctx.game.audio.play("victory");
   ctx.game.notices.push({
-    text: step === undefined ? "Mission complete." : `${step.mission.title} is won. The vale's stores go with you.`,
+    text: step === undefined ? "Mission complete." : `${step.mission.title} is won. The granary stores go with you.`,
     tone: "success",
     ttlMs: 8000,
   });
@@ -686,7 +694,7 @@ function finishCampaignStep(ctx: GameContext, restage?: () => void): void {
 
 function failCampaignStep(ctx: GameContext, state: string, reason: string, restage?: () => void): void {
   // Prefer the authored copy for the named fail state over the machine's generated reason
-  // ("survivors below 1"), so the field desk always speaks in Ember's voice.
+  // ("survivors below 1"), so the field desk always speaks in the colony's voice.
   const mission = campaignRuntime(ctx).state()?.missionId;
   const authored = mission === undefined ? undefined : campaignRuntime(ctx).mission(mission)?.fail?.find((entry) => entry.id === state)?.message;
   ctx.game.audio.play("defeat");
@@ -700,7 +708,7 @@ function handleCampaignEvents(ctx: GameContext, events: readonly MissionEvent[],
   for (const event of events) {
     if (event.kind === "objective") {
       ctx.game.audio.play("wave");
-      // An objective reached pays XP, so the campaign's orders level Bram, not only its kills.
+      // An objective reached pays XP, so the campaign's orders level Mandible, not only its kills.
       grantHeroXp(ctx, OBJECTIVE_XP);
       ctx.game.notices.push({ text: event.label, ttlMs: 7000 });
     } else if (event.kind === "reward") {
@@ -740,14 +748,14 @@ export function tickCampaign(ctx: GameContext, dt: number, restage?: () => void)
 }
 
 /**
- * The Warcamp falling is reported in the death handler, which pauses the match in the same call, so
+ * The black nest falling is reported in the death handler, which pauses the match in the same call, so
  * the finale's last objective is flushed with a zero-length tick before the clock stops.
  */
 export function flushCampaign(ctx: GameContext, restage?: () => void): void {
   tickCampaign(ctx, 0, restage);
 }
 
-/** A lost keep ends the match; land the mission in its named state before the screen changes. */
+/** A lost nest ends the match; land the mission in its named state before the screen changes. */
 export function failCampaignOnKeepLost(ctx: GameContext): void {
   const runtime = campaignRuntime(ctx);
   const state = runtime.state();
@@ -768,7 +776,7 @@ export function restoreCampaign(ctx: GameContext): void {
   syncCampaignHud(ctx);
 }
 
-/** Switch to a free skirmish (same vale, no mission track) or back to the campaign. */
+/** Switch to a free skirmish (same yard, no mission track) or back to the campaign. */
 export function setCampaignMode(ctx: GameContext, mode: CampaignMode): void {
   campaignStore.write(ctx, { ...campaignStore.read(ctx), mode });
   campaignRuntime(ctx).abandon();
@@ -777,7 +785,7 @@ export function setCampaignMode(ctx: GameContext, mode: CampaignMode): void {
 
 /** Wipe the track and offer mission I again. A new campaign starts with a hero who has picked nothing. */
 export function resetCampaignProgress(ctx: GameContext): void {
-  campaignStore.write(ctx, { won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } });
+  campaignStore.write(ctx, { won: [], mode: "campaign", stores: { sugar: 0, leaf: 0 } });
   campaignRuntime(ctx).abandon();
   campaignMissionStore.clear(ctx);
   heroPickStore.clear(ctx);

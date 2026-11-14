@@ -5,7 +5,7 @@ import type { StatCatalog } from "@jgengine/core/scene/entityStats";
 import { combatantDef } from "./catalog";
 
 /**
- * Bram the Bold — the Vanguard hero. He carries a mana pool, earns XP from Marauder kills and from
+ * Marshal Mandible — the colony hero. He carries a mana pool, earns XP from Black Ant kills and from
  * cleared objectives, and levels up to offer a field-kit pick. Mana, XP, and level live on the hero
  * *entity* stat pools (so the HUD reads them reactively via `useEntityStat`); his acts, their
  * cooldowns and the picks themselves live in `heroActs.ts`, which owns the engine seams for them.
@@ -85,7 +85,7 @@ function onHeroLevelUp(ctx: GameContext): void {
   }
 }
 
-/** Award XP for a Marauder kill or a cleared objective; returns the number of levels gained. */
+/** Award XP for a Black Ant kill or a cleared objective; returns the number of levels gained. */
 export function grantHeroXp(ctx: GameContext, amount: number): number {
   if (amount <= 0 || ctx.scene.entity.get(HERO_ID) === null) return 0;
   return heroTrack.grantXp(heroAccess(ctx), HERO_ID, amount, () => onHeroLevelUp(ctx));

@@ -5,7 +5,7 @@ import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.
 import { campaignReadout, campaignStore, resetCampaignProgress, restoreCampaign, setCampaignMode } from "./campaign";
 import { hudStore } from "./hudStore";
 import { session } from "./session";
-import { GOLD, LUMBER } from "./tuning";
+import { SUGAR, LEAF } from "./tuning";
 import { setupSkirmish } from "./world/scene";
 
 /** The three campaign records; the labels are the field desk's own words for them. */
@@ -15,8 +15,8 @@ export const CAMPAIGN_LABEL: Record<string, string> = { "campaign-1": "Campaign 
 export interface CampaignRecord {
   name: string;
   mission: string;
-  gold: number;
-  lumber: number;
+  sugar: number;
+  leaf: number;
   playtime: number;
   savedAt: number;
   thumbnail: string | null;
@@ -71,7 +71,7 @@ export function refreshCampaignSlots(): void {
       meta: {
         playtime: playtimeLabel(record.playtime),
         mission: record.mission,
-        stores: `${record.gold} gold · ${record.lumber} lumber`,
+        stores: `${record.sugar} sugar · ${record.leaf} leaf`,
         ...(record.thumbnail === null ? {} : { thumbnail: record.thumbnail }),
       },
     });
@@ -96,14 +96,14 @@ export async function saveCampaignRecord(ctx: GameContext, name?: string): Promi
   const slot = ctx.game.save?.slot() ?? CAMPAIGN_SLOTS[0];
   const readout = campaignReadout(ctx);
   const previous = recordOfSlot(slot);
-  const gold = Math.floor(ctx.game.economy.balance(ctx.player.userId, GOLD));
-  const lumber = Math.floor(ctx.game.economy.balance(ctx.player.userId, LUMBER));
+  const sugar = Math.floor(ctx.game.economy.balance(ctx.player.userId, SUGAR));
+  const leaf = Math.floor(ctx.game.economy.balance(ctx.player.userId, LEAF));
   const thumbnail = await captureCampaignThumb();
   const record: CampaignRecord = {
     name: name ?? (commandProfile.name.length > 0 ? commandProfile.name : previous?.name ?? "Commander"),
-    mission: readout?.title ?? previous?.mission ?? "The Highland Vale",
-    gold,
-    lumber,
+    mission: readout?.title ?? previous?.mission ?? "The Highland Yard",
+    sugar,
+    leaf,
     playtime: (previous?.playtime ?? 0) + Math.max(0, session.elapsed),
     savedAt: Date.now(),
     thumbnail: thumbnail ?? previous?.thumbnail ?? null,
@@ -117,7 +117,7 @@ export async function saveCampaignRecord(ctx: GameContext, name?: string): Promi
 }
 
 /**
- * Open a campaign record: load the world, restage the vale, put the saved stores and track back,
+ * Open a campaign record: load the world, restage the yard, put the saved stores and track back,
  * and leave the field desk offering the mission it reached.
  */
 export async function loadCampaignRecord(ctx: GameContext, slot: string): Promise<boolean> {
@@ -126,20 +126,20 @@ export async function loadCampaignRecord(ctx: GameContext, slot: string): Promis
   if (save.slot() !== slot && !(await save.switchSlot(slot))) return false;
   const record = recordOfSlot(slot);
   if (record === null) return false;
-  const gold = ctx.game.economy.balance(ctx.player.userId, GOLD);
-  const lumber = ctx.game.economy.balance(ctx.player.userId, LUMBER);
+  const sugar = ctx.game.economy.balance(ctx.player.userId, SUGAR);
+  const leaf = ctx.game.economy.balance(ctx.player.userId, LEAF);
   const progress = campaignStore.read(ctx);
   setupSkirmish(ctx);
-  // setupSkirmish opens the vale at its starting purse; the record's own stores are what Continue
+  // setupSkirmish opens the yard at its starting purse; the record's own stores are what Continue
   // carries, so they replace that opening purse exactly.
-  ctx.game.economy.charge(ctx.player.userId, GOLD, ctx.game.economy.balance(ctx.player.userId, GOLD));
-  ctx.game.economy.charge(ctx.player.userId, LUMBER, ctx.game.economy.balance(ctx.player.userId, LUMBER));
-  if (gold > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, gold);
-  if (lumber > 0) ctx.game.economy.grant(ctx.player.userId, LUMBER, lumber);
+  ctx.game.economy.charge(ctx.player.userId, SUGAR, ctx.game.economy.balance(ctx.player.userId, SUGAR));
+  ctx.game.economy.charge(ctx.player.userId, LEAF, ctx.game.economy.balance(ctx.player.userId, LEAF));
+  if (sugar > 0) ctx.game.economy.grant(ctx.player.userId, SUGAR, sugar);
+  if (leaf > 0) ctx.game.economy.grant(ctx.player.userId, LEAF, leaf);
   campaignStore.write(ctx, progress);
   restoreCampaign(ctx);
   commandProfile.name = record.name;
-  hudStore.set({ phase: "ready", gold, lumber });
+  hudStore.set({ phase: "ready", sugar, leaf });
   return true;
 }
 

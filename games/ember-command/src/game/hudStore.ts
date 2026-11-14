@@ -9,6 +9,19 @@ import { UPGRADE_IDS, type UpgradeId } from "./upgrades";
 
 export type MatchPhase = "ready" | "playing" | "paused" | "won" | "lost";
 
+/** The yard's clocks as the weather strip reads them; "none" when the battle does not run that hazard. */
+export interface HazardView {
+  sprinkler: "none" | "off" | "on";
+  mower: "none" | "idle" | "warning" | "crossing";
+  /** Whole seconds to the next mower pass, or null without a mower. */
+  mowerIn: number | null;
+  rain: boolean;
+  night: boolean;
+  /** 0 daylight .. 1 full dark, in 0.05 steps so the HUD tint never re-renders per frame. */
+  dark: number;
+  beam: "none" | "blurred" | "focused";
+}
+
 /** One live entry in the army row: a player combat unit with its current health. */
 export interface ArmyUnit {
   id: string;
@@ -17,7 +30,7 @@ export interface ArmyUnit {
   max: number;
 }
 
-/** One pick Bram carries: the command card's kit line and the choice card's option copy. */
+/** One pick Mandible carries: the command card's kit line and the choice card's option copy. */
 export interface HeroKitEntry {
   id: string;
   label: string;
@@ -31,8 +44,8 @@ export interface HudSnapshot {
   foodReserved: number;
   rallyArmed: boolean;
   phase: MatchPhase;
-  gold: number;
-  lumber: number;
+  sugar: number;
+  leaf: number;
   foodUsed: number;
   foodCap: number;
   playerUnits: number;
@@ -44,18 +57,23 @@ export interface HudSnapshot {
   attackMoveArmed: boolean;
   /** The marching shape the command card highlights: line, wedge or column. */
   formation: FormationKind;
-  /** Marauder reinforcement pressure: waves mustered so far, and whole seconds to the next one. */
+  /** Black Ant reinforcement pressure: waves mustered so far, and whole seconds to the next one. */
   wavesSent: number;
   nextWaveIn: number;
-  /** What the Marauder plan is doing: scouting, expanding or attacking. */
-  marauderPhase: string;
-  /** The pressure tier the Marauder waves are sized at, 0..2. */
-  marauderTier: number;
-  /** Units currently queued/training at the Town Hall, and the active job's 0..1 progress. */
+  /** What the Black Ant plan is doing: scouting, expanding or attacking. */
+  rivalPhase: string;
+  /** The pressure tier the Black Ant waves are sized at, 0..2. */
+  rivalTier: number;
+  /** Units currently queued/training at the Nest, and the active job's 0..1 progress. */
   producing: number;
   trainProgress: number;
-  /** A Barracks exists (unlocks Footman/Rifleman), and any building armed for placement. */
+  /** A Barracks Chamber exists (unlocks Soldier/Spitter), a Nursery (unlocks the Tank Beetle), and any chamber armed for placement. */
   hasBarracks: boolean;
+  hasNursery: boolean;
+  /** The Pheromone Line verb is armed: the next right-click paints a trail. */
+  trailArmed: boolean;
+  /** Sprinkler, mower, rain, night and the magnifying glass. */
+  hazards: HazardView;
   buildArmed: string | null;
   building: number;
   /** Research per upgrade (achieved rank, achieved+pending "have", requirement met), plus jobs in the queue. */
@@ -68,7 +86,7 @@ export interface HudSnapshot {
   heroKit: HeroKitEntry[];
   /** Live roster of the player's fielded combat units (for the army row). */
   army: ArmyUnit[];
-  /** The vale campaign: the objective card's mission, its clock and the field desk's offer. */
+  /** The yard campaign: the objective card's mission, its clock and the field desk's offer. */
   campaign: CampaignReadout | null;
 }
 
@@ -77,8 +95,8 @@ const initial: HudSnapshot = {
   foodReserved: 0,
   rallyArmed: false,
   phase: "playing",
-  gold: 0,
-  lumber: 0,
+  sugar: 0,
+  leaf: 0,
   foodUsed: 0,
   foodCap: 0,
   playerUnits: 0,
@@ -91,11 +109,14 @@ const initial: HudSnapshot = {
   formation: "line",
   wavesSent: 0,
   nextWaveIn: 0,
-  marauderPhase: "scouting",
-  marauderTier: 0,
+  rivalPhase: "scouting",
+  rivalTier: 0,
   producing: 0,
   trainProgress: 0,
   hasBarracks: false,
+  hasNursery: false,
+  trailArmed: false,
+  hazards: { sprinkler: "none", mower: "none", mowerIn: null, rain: false, night: false, dark: 0, beam: "none" },
   buildArmed: null,
   building: 0,
   research: {
@@ -154,8 +175,8 @@ function campaignChanged(a: CampaignReadout | null, b: CampaignReadout | null): 
     a.outcome !== b.outcome ||
     a.reason !== b.reason ||
     a.index !== b.index ||
-    a.stores.gold !== b.stores.gold ||
-    a.stores.lumber !== b.stores.lumber
+    a.stores.sugar !== b.stores.sugar ||
+    a.stores.leaf !== b.stores.leaf
   );
 }
 
@@ -190,6 +211,12 @@ function offerChanged(a: HeroOffer | null, b: HeroOffer | null): boolean {
     || a.options[1].taken !== b.options[1].taken;
 }
 
+/** The weather strip redraws on a beat, never on the per-second mower countdown alone. */
+function hazardsChanged(a: HazardView, b: HazardView): boolean {
+  return a.sprinkler !== b.sprinkler || a.mower !== b.mower || a.mowerIn !== b.mowerIn || a.rain !== b.rain
+    || a.night !== b.night || a.dark !== b.dark || a.beam !== b.beam;
+}
+
 let snapshot: HudSnapshot = initial;
 const listeners = new Set<() => void>();
 
@@ -200,8 +227,8 @@ function changed(next: HudSnapshot): boolean {
     p.foodReserved !== next.foodReserved ||
     p.rallyArmed !== next.rallyArmed ||
     p.phase !== next.phase ||
-    p.gold !== next.gold ||
-    p.lumber !== next.lumber ||
+    p.sugar !== next.sugar ||
+    p.leaf !== next.leaf ||
     p.foodUsed !== next.foodUsed ||
     p.foodCap !== next.foodCap ||
     p.playerUnits !== next.playerUnits ||
@@ -212,11 +239,14 @@ function changed(next: HudSnapshot): boolean {
     p.formation !== next.formation ||
     p.wavesSent !== next.wavesSent ||
     p.nextWaveIn !== next.nextWaveIn ||
-    p.marauderPhase !== next.marauderPhase ||
-    p.marauderTier !== next.marauderTier ||
+    p.rivalPhase !== next.rivalPhase ||
+    p.rivalTier !== next.rivalTier ||
     p.producing !== next.producing ||
     Math.abs(p.trainProgress - next.trainProgress) > 0.02 ||
     p.hasBarracks !== next.hasBarracks ||
+    p.hasNursery !== next.hasNursery ||
+    p.trailArmed !== next.trailArmed ||
+    hazardsChanged(p.hazards, next.hazards) ||
     p.buildArmed !== next.buildArmed ||
     p.building !== next.building ||
     researchChanged(p.research, next.research) ||

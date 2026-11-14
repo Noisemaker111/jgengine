@@ -33,7 +33,7 @@ function ctxWith(positions: Map<string, EntityPosition>): GameContext {
 function addPlayerUnit(id: string): UnitRuntime {
   const unit: UnitRuntime = {
     id,
-    catalogId: "footman",
+    catalogId: "soldier",
     faction: "player",
     kind: "unit",
     command: { kind: "idle" },

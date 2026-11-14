@@ -59,10 +59,10 @@ export async function mountEmberUi(state: NativeFixture, width = 1280, height = 
   if (!hadWindow) Object.defineProperty(globalThis, "window", { configurable: true, value: { addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true } });
   resetSession();
   hudStore.reset();
-  const ctx = createGameContext({ definition: defineGameDefinition({ name: "Ember Command native UI proof", multiplayer: "off" }), content, player: { userId: "commander", isNew: true } });
+  const ctx = createGameContext({ definition: defineGameDefinition({ name: "Lawn Order native UI proof", multiplayer: "off" }), content, player: { userId: "commander", isNew: true } });
   setupSkirmish(ctx);
   ctx.game.commands.run("match.start", {});
-  hudStore.set({ gold: 340, lumber: 120, foodUsed: 7, foodCap: 10, nextWaveIn: 24, wavesSent: 2 });
+  hudStore.set({ sugar: 340, leaf: 120, foodUsed: 7, foodCap: 10, nextWaveIn: 24, wavesSent: 2 });
   if (state === "levelup") {
     const [a, b] = HERO_PICKS.map((pick) => ({ id: pick.id, label: pick.label, blurb: pick.blurb, icon: pick.icon, kind: pick.kind, taken: false, allocatable: true }));
     hudStore.set({ heroOffer: { level: 2, options: [a!, b!] } });
@@ -78,7 +78,7 @@ export async function mountEmberUi(state: NativeFixture, width = 1280, height = 
   tree.render(<GameProvider context={ctx}><SettingsControllerProvider controller={settings}><RuneViewport width={width} height={height}><GameUI /></RuneViewport></SettingsControllerProvider></GameProvider>);
   const surface = () => {
     const root = container.children[0];
-    if (root?.tag !== "rune-surface") throw new Error("Ember Command did not mount a direct native surface");
+    if (root?.tag !== "rune-surface") throw new Error("Lawn Order did not mount a direct native surface");
     return root;
   };
   const visible = () => visibleNativeNodes(surface());
@@ -129,7 +129,7 @@ if (import.meta.main) {
   const output = process.argv[3];
   if (state === undefined || output === undefined) throw new Error("usage: bun games/ember-command/proofs/runeUiFixture.tsx <state> <out.json> [width height]");
   const known: readonly string[] = NATIVE_FIXTURES;
-  if (!known.includes(state)) throw new Error(`Unknown Ember Command UI state: ${state}`);
+  if (!known.includes(state)) throw new Error(`Unknown Lawn Order UI state: ${state}`);
   const spec = await runeUiFixture(state as NativeFixture, Number(process.argv[4] ?? 1280), Number(process.argv[5] ?? 720)); // type-escape: state was checked against the fixture vocabulary above
   await writeFile(output, JSON.stringify(spec));
 }

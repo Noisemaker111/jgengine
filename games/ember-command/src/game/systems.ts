@@ -15,7 +15,25 @@ import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore, type ResearchView } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
-import { GOLD, INCOME_TRICKLE, LUMBER } from "./tuning";
+import { SUGAR, INCOME_TRICKLE, LEAF, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
+import {
+  advanceHazards,
+  BEAM_BUILDING_DPS,
+  BEAM_UNIT_DPS,
+  densestKnot,
+  inSprinklerJet,
+  MOWER_BUILDING_DAMAGE,
+  MOWER_UNIT_DAMAGE,
+  mowerEta,
+  nightSightFactor,
+  SPRINKLER_DPS,
+  underBeam,
+  underMower,
+  type HazardEvent,
+} from "./hazards";
+import { decayTrails, washTrails } from "./pheromone";
+import { onPatio } from "./yard";
+import { YARD } from "./yardInstance";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 
@@ -32,7 +50,7 @@ function keepStat(ctx: GameContext, faction: "player" | "enemy"): { current: num
   return stat === null ? { current: 0, max: 1 } : { current: Math.max(0, Math.round(stat.current)), max: stat.max };
 }
 
-/** Spawn a freshly-trained unit at the Town Hall's muster point and walk it onto the field. */
+/** Spawn a freshly-trained unit at the Nest's muster point and walk it onto the field. */
 function spawnTrained(ctx: GameContext, unitId: string): void {
   const keepUnit = livingUnits("player", "building")[0];
   if (keepUnit === undefined) return;
@@ -69,7 +87,7 @@ const aiSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The Marauder AI director: musters escalating reinforcement waves from the enemy Warcamp. */
+/** The Black Ant AI director: musters escalating reinforcement waves from the enemy black nest. */
 const enemyAiSystem: SystemDefinition = defineSystem({
   id: "ember-command.enemyAi",
   tick: { type: "frame", stage: "ai" },
@@ -88,19 +106,23 @@ const formationSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The Vanguard's eyes this tick: every living friendly unit and building, hero furthest. */
+/** The colony's eyes this tick: every living friendly unit and building, hero furthest. */
 function playerSightSources(ctx: GameContext): SightSource[] {
   const eyes: SightSource[] = [];
   for (const unit of session.units.values()) {
     if (unit.faction !== "player") continue;
     const entity = ctx.scene.entity.get(unit.id);
     if (entity === null) continue;
-    eyes.push({ x: entity.position[0], z: entity.position[2], radius: sightRadiusFor(unit.catalogId, unit.kind) });
+    // Night shortens every antenna; a patio stone is high ground that lengthens it again.
+    const x = entity.position[0];
+    const z = entity.position[2];
+    const ground = unit.kind === "unit" && onPatio(YARD, x, z) ? PATIO_SIGHT_BONUS : 1;
+    eyes.push({ x, z, radius: sightRadiusFor(unit.catalogId, unit.kind) * nightSightFactor(session.hazards) * ground });
   }
   return eyes;
 }
 
-/** Marauder units are drawn only inside Vanguard sight; warcamps and keeps stay on the map as known
+/** Black Ant units are drawn only inside Red sight; warcamps and keeps stay on the map as known
  * landmarks. The entity `hidden` flag is engine render-only (stealth cloaks), so positions, AI and
  * damage keep working for units the player cannot see. */
 function applyEnemyFog(ctx: GameContext): void {
@@ -113,7 +135,7 @@ function applyEnemyFog(ctx: GameContext): void {
   }
 }
 
-/** Fog of war: refill the visible grid from friendly eyes (explored only grows) and hide Marauders
+/** Fog of war: refill the visible grid from friendly eyes (explored only grows) and hide Black Ants
  * outside it. Runs at 5 Hz — the minimap repaints on the same clock, so nothing lags a frame behind. */
 const fogSystem: SystemDefinition = defineSystem({
   id: "ember-command.fog",
@@ -134,7 +156,7 @@ const heroSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Advance the Town Hall training queue; each completed job spawns and musters a unit. */
+/** Advance the Nest training queue; each completed job spawns and musters a unit. */
 const productionSystem: SystemDefinition = defineSystem({
   id: "ember-command.production",
   tick: { type: "frame", stage: "combat" },
@@ -149,7 +171,7 @@ const productionSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Raise a finished building at its placed spot; a Farm lifts the supply cap. */
+/** Raise a finished building at its placed spot; a Fungus Garden lifts the supply cap. */
 export function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
   const def = combatantDef(spec.type);
   if (def === null) return;
@@ -200,7 +222,7 @@ const researchSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Guard Towers auto-fire at the nearest hostile within range (shared pursuit + auto-target). */
+/** Acid Mounds auto-fire at the nearest hostile within range (shared pursuit + auto-target). */
 const towerSystem: SystemDefinition = defineSystem({
   id: "ember-command.towers",
   tick: { type: "frame", stage: "combat" },
@@ -209,13 +231,97 @@ const towerSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** A slow gold trickle so a stalled economy can still recover a little. */
+/** What each yard beat says on the notice feed, and the cue it plays. */
+const HAZARD_NOTICES: Record<string, { text: string; tone?: "info" | "deny" | "success" }> = {
+  "sprinkler:on": { text: "The sprinkler hisses awake: stay out of the jet, it washes trails away." },
+  "sprinkler:off": { text: "The sprinkler sputters off. The lawn steams." },
+  mowerWarning: { text: "Engine roar! The lawnmower is coming down its lane: clear the cut.", tone: "deny" },
+  mowerStart: { text: "The mower is crossing. Anything in the lane is mulch.", tone: "deny" },
+  mowerDone: { text: "The mower has passed. The lane is clear, and very short." },
+  "rain:on": { text: "Rain storm! Every ant wades slower and scent washes off fast." },
+  "rain:off": { text: "The storm passes. Lay the trails again." },
+  "night:on": { text: "Nightfall. The colony's antennae reach barely half as far." },
+  "night:off": { text: "Dawn over the lawn." },
+  "beamFocus:on": { text: "The lens focuses: get into the shade!", tone: "deny" },
+  "beamFocus:off": { text: "The kid's hand wobbles. The beam blurs, for now." },
+};
+
+function hazardKey(event: HazardEvent): string {
+  return "on" in event ? `${event.kind}:${event.on ? "on" : "off"}` : event.kind;
+}
+
+/** The cue each loud beat plays. */
+function playHazardCue(ctx: GameContext, key: string): void {
+  if (key === "sprinkler:on") ctx.game.audio.play("sprinkler");
+  else if (key === "mowerWarning") ctx.game.audio.play("mower");
+  else if (key === "rain:on") ctx.game.audio.play("rain");
+  else if (key === "beamFocus:on") ctx.game.audio.play("sizzle");
+}
+
+/** Where the kid wants the beam: the biggest knot of red ants out in the open, else the red nest. */
+function beamPrey(ctx: GameContext): { x: number; z: number } | null {
+  const points: { x: number; z: number }[] = [];
+  for (const unit of session.units.values()) {
+    if (unit.faction !== "player") continue;
+    const entity = ctx.scene.entity.get(unit.id);
+    if (entity !== null) points.push({ x: entity.position[0], z: entity.position[2] });
+  }
+  return densestKnot(points, YARD);
+}
+
+/** One hazard tick's harm to everything standing in the yard: the jet, the deck and the beam. */
+function applyHazardHarm(ctx: GameContext, dt: number): void {
+  const hz = session.hazards;
+  for (const unit of [...session.units.values()]) {
+    const entity = ctx.scene.entity.get(unit.id);
+    if (entity === null) continue;
+    const x = entity.position[0];
+    const z = entity.position[2];
+    let amount = 0;
+    if (underMower(hz, YARD, x, z)) amount += unit.kind === "building" ? MOWER_BUILDING_DAMAGE * dt : MOWER_UNIT_DAMAGE;
+    if (unit.kind === "unit" && unit.catalogId !== "wasp" && inSprinklerJet(hz, YARD, x, z)) amount += SPRINKLER_DPS * dt;
+    if (underBeam(hz, YARD, x, z)) amount += (unit.kind === "building" ? BEAM_BUILDING_DPS : BEAM_UNIT_DPS) * dt;
+    if (amount > 0) ctx.scene.entity.effect({ from: "yard", to: unit.id, effect: "damage", via: { amount } });
+  }
+}
+
+/** The yard's clocks: advance them, announce their beats, and let them hurt whoever stands in the way. */
+const hazardSystem: SystemDefinition = defineSystem({
+  id: "ember-command.hazards",
+  tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) {
+    if (!matchRunning()) return;
+    const prey = session.hazards.toggles.beam ? beamPrey(ctx) : null;
+    for (const event of advanceHazards(session.hazards, YARD, dt, prey)) {
+      const key = hazardKey(event);
+      const notice = HAZARD_NOTICES[key];
+      if (notice === undefined) continue;
+      ctx.game.notices.push({ text: notice.text, tone: notice.tone ?? "info", ttlMs: 6000 });
+      playHazardCue(ctx, key);
+    }
+    applyHazardHarm(ctx, dt);
+  },
+});
+
+/** Scent fades on its own, far faster in rain, and the sprinkler's jet washes out what it lands on. */
+const trailSystem: SystemDefinition = defineSystem({
+  id: "ember-command.trails",
+  tick: { type: "interval", every: 0.25 },
+  update(_ctx) {
+    if (!matchRunning()) return;
+    const hz = session.hazards;
+    decayTrails(session.trails, 0.25, TRAIL_HALF_LIFE, hz.rain.on ? TRAIL_RAIN_DECAY : 1);
+    if (hz.sprinkler.on) washTrails(session.trails, (x, z) => inSprinklerJet(hz, YARD, x, z));
+  },
+});
+
+/** A slow sugar trickle so a stalled economy can still recover a little. */
 const incomeSystem: SystemDefinition = defineSystem({
   id: "ember-command.income",
   tick: { type: "interval", every: 1 },
   update(ctx) {
     if (!matchRunning()) return;
-    ctx.game.economy.grant(ctx.player.userId, GOLD, INCOME_TRICKLE);
+    ctx.game.economy.grant(ctx.player.userId, SUGAR, INCOME_TRICKLE);
   },
 });
 
@@ -244,8 +350,8 @@ const hudSystem: SystemDefinition = defineSystem({
       elapsed: Math.floor(session.elapsed),
       foodReserved: reservedSupply(),
       rallyArmed: session.rallyArmed,
-      gold: Math.floor(ctx.game.economy.balance(ctx.player.userId, GOLD)),
-      lumber: Math.floor(ctx.game.economy.balance(ctx.player.userId, LUMBER)),
+      sugar: Math.floor(ctx.game.economy.balance(ctx.player.userId, SUGAR)),
+      leaf: Math.floor(ctx.game.economy.balance(ctx.player.userId, LEAF)),
       foodUsed: usedSupply(),
       foodCap: session.supplyCap,
       playerUnits: livingUnits("player", "unit").length,
@@ -258,11 +364,22 @@ const hudSystem: SystemDefinition = defineSystem({
       formation: session.formation.kind,
       wavesSent: session.enemyWave.sent,
       nextWaveIn: Math.max(0, Math.ceil(nextWaveEta())),
-      marauderPhase: planPhase(),
-      marauderTier: session.enemyWave.tier,
+      rivalPhase: planPhase(),
+      rivalTier: session.enemyWave.tier,
       producing: active.length + queuedJobs(session.production).length,
       trainProgress: active.length > 0 ? jobProgress(active[0]!) : 0,
       hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
+      hasNursery: livingUnits("player", "building").some((u) => u.catalogId === "nursery"),
+      trailArmed: session.trailArmed,
+      hazards: {
+        sprinkler: session.hazards.toggles.sprinkler ? (session.hazards.sprinkler.on ? "on" : "off") : "none",
+        mower: session.hazards.toggles.mower ? session.hazards.mower.phase : "none",
+        mowerIn: (() => { const eta = mowerEta(session.hazards, YARD); return eta === null ? null : Math.ceil(eta); })(),
+        rain: session.hazards.rain.on,
+        night: session.hazards.dark >= 0.5,
+        dark: Math.round(session.hazards.dark * 20) / 20,
+        beam: session.hazards.toggles.beam ? (session.hazards.beam.focused ? "focused" : "blurred") : "none",
+      },
       buildArmed: session.buildArmed,
       building: activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length,
       research: researchViews(),
@@ -276,7 +393,7 @@ const hudSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The vale campaign's mission machine: objective timers, world reports and the next mission. Runs
+/** The yard campaign's mission machine: objective timers, world reports and the next mission. Runs
  * in the last frame stage so a finished mission can restage the field after every gameplay system
  * has had its beat. */
 const campaignSystem: SystemDefinition = defineSystem({
@@ -298,6 +415,8 @@ export const systems: readonly SystemDefinition[] = [
   constructionSystem,
   researchSystem,
   towerSystem,
+  hazardSystem,
+  trailSystem,
   incomeSystem,
   hudSystem,
   campaignSystem,
