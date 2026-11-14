@@ -218,7 +218,7 @@ export function beetleGeometry(palette: BugPalette): BugBody {
       ((i === 1) === (side === 1) ? legsA : legsB).push(...leg);
     }
   });
-  return { body: scaled(merge(pieces), 1.25), legsA: scaled(merge(legsA), 1.25), legsB: scaled(merge(legsB), 1.25), ride: 0 };
+  return { body: scaled(merge(pieces), 1.7), legsA: scaled(merge(legsA), 1.7), legsB: scaled(merge(legsB), 1.7), ride: 0 };
 }
 
 /** The paper wasp: yellow-and-black striped abdomen, narrow waist, stinger, and a pair of glassy wings. */
@@ -263,11 +263,11 @@ export function waspGeometry(): BugBody {
   right.rotateY(-0.5);
   right.translate(0.36, 0.62, -0.08);
   return {
-    body: scaled(merge(pieces), 1.4),
-    legsA: scaled(merge(legsA), 1.4),
-    legsB: scaled(merge(legsB), 1.4),
+    body: scaled(merge(pieces), 1.9),
+    legsA: scaled(merge(legsA), 1.9),
+    legsB: scaled(merge(legsB), 1.9),
     ride: 1.6,
-    wings: scaled(merge([tint(left, "#e8f6ff"), tint(right, "#e8f6ff")]), 1.4),
+    wings: scaled(merge([tint(left, "#e8f6ff"), tint(right, "#e8f6ff")]), 1.9),
   };
 }
 
@@ -516,13 +516,13 @@ export function decorGeometry(kind: DecorKind): THREE.BufferGeometry {
 /* ------------------------------------------------------------------------------------------- */
 
 const ANT_SHAPES: Record<string, { palette: BugPalette; shape: BugShape }> = {
-  worker: { palette: RED_ANT, shape: { size: 1.7, headScale: 1, gasterScale: 1, legScale: 1, antennaScale: 1, mandible: 1, gasterCurl: 0 } },
-  scout: { palette: RED_ANT, shape: { size: 1.8, headScale: 0.85, gasterScale: 0.75, legScale: 1.45, antennaScale: 1.7, mandible: 0.8, gasterCurl: 0, glowTips: true } },
-  soldier: { palette: RED_ANT, shape: { size: 1.95, headScale: 1.55, gasterScale: 1.05, legScale: 1.05, antennaScale: 1, mandible: 2.2, gasterCurl: 0 } },
-  spitter: { palette: RED_ANT, shape: { size: 1.9, headScale: 1.05, gasterScale: 1.45, legScale: 1.05, antennaScale: 1, mandible: 1, gasterCurl: 0.75, acidSac: true } },
-  hero: { palette: RED_ANT, shape: { size: 2.1, headScale: 1.6, gasterScale: 1.15, legScale: 1.1, antennaScale: 1.2, mandible: 2.4, gasterCurl: 0.1, crest: true } },
-  raider: { palette: BLACK_ANT, shape: { size: 1.85, headScale: 1.15, gasterScale: 1, legScale: 1.05, antennaScale: 1, mandible: 1.4, gasterCurl: 0 } },
-  major: { palette: BLACK_ANT, shape: { size: 2.1, headScale: 1.8, gasterScale: 1.15, legScale: 1.1, antennaScale: 0.9, mandible: 2.6, gasterCurl: 0 } },
+  worker: { palette: RED_ANT, shape: { size: 2.3, headScale: 1, gasterScale: 1, legScale: 1, antennaScale: 1, mandible: 1, gasterCurl: 0 } },
+  scout: { palette: RED_ANT, shape: { size: 2.4, headScale: 0.85, gasterScale: 0.75, legScale: 1.45, antennaScale: 1.7, mandible: 0.8, gasterCurl: 0, glowTips: true } },
+  soldier: { palette: RED_ANT, shape: { size: 2.7, headScale: 1.55, gasterScale: 1.05, legScale: 1.05, antennaScale: 1, mandible: 2.2, gasterCurl: 0 } },
+  spitter: { palette: RED_ANT, shape: { size: 2.6, headScale: 1.05, gasterScale: 1.45, legScale: 1.05, antennaScale: 1, mandible: 1, gasterCurl: 0.75, acidSac: true } },
+  hero: { palette: RED_ANT, shape: { size: 2.6, headScale: 1.6, gasterScale: 1.15, legScale: 1.1, antennaScale: 1.2, mandible: 2.4, gasterCurl: 0.1, crest: true } },
+  raider: { palette: BLACK_ANT, shape: { size: 2.5, headScale: 1.15, gasterScale: 1, legScale: 1.05, antennaScale: 1, mandible: 1.4, gasterCurl: 0 } },
+  major: { palette: BLACK_ANT, shape: { size: 2.8, headScale: 1.8, gasterScale: 1.15, legScale: 1.1, antennaScale: 0.9, mandible: 2.6, gasterCurl: 0 } },
 };
 
 const bodyCache = new Map<string, BugBody>();

@@ -21,7 +21,7 @@ export const ORDER_TARGET_RADIUS = 3.0;
 /** Right-click within this of a resource node sends selected workers to harvest it. */
 export const NODE_ORDER_RADIUS = 4.5;
 /** Grid spacing between formation slots when a group is ordered to a point. */
-export const FORMATION_SPACING = 2.3;
+export const FORMATION_SPACING = 3;
 /** A member further than this from its held slot walks back to it (outside ARRIVE_RADIUS so units at
  * post never jitter between "arrived" and "returning"). */
 export const FORMATION_HOLD_TOLERANCE = 2.6;

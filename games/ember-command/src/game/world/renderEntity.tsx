@@ -16,7 +16,20 @@ const BODY_MATERIAL = new THREE.MeshStandardMaterial({ vertexColors: true, rough
 const CHAMBER_MATERIAL = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
 const SHINY_MATERIAL = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.18, metalness: 0.1 });
 const WING_MATERIAL = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.1, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false });
-const LOAD_GEOMETRY = new THREE.DodecahedronGeometry(0.22, 0);
+const LOAD_GEOMETRY = new THREE.DodecahedronGeometry(0.3, 0);
+// A team ring on the lawn under every walker: sunflower for the red colony, violet for the black
+// ants and their wasps, so a column reads at any zoom and friend from foe at a glance.
+const TEAM_RING = (() => {
+  const g = new THREE.RingGeometry(0.78, 1, 28);
+  g.rotateX(-Math.PI / 2);
+  return g;
+})();
+const TEAM_RING_MATERIAL = {
+  player: new THREE.MeshBasicMaterial({ color: "#ffd23f", transparent: true, opacity: 0.85, depthWrite: false }),
+  enemy: new THREE.MeshBasicMaterial({ color: "#b18cff", transparent: true, opacity: 0.85, depthWrite: false }),
+};
+/** How wide each walker's team ring is, by caste. */
+const RING_RADIUS: Record<string, number> = { worker: 1.2, scout: 1.25, soldier: 1.45, spitter: 1.4, hero: 1.9, beetle: 2.2, raider: 1.35, major: 1.6, wasp: 1.5 };
 const LOAD_MATERIALS: Record<string, THREE.MeshStandardMaterial> = {
   sugar: new THREE.MeshStandardMaterial({ color: "#f3c25c", roughness: 0.6, emissive: "#5a3a00", emissiveIntensity: 0.25 }),
   leaf: new THREE.MeshStandardMaterial({ color: "#6cbf3a", roughness: 0.7 }),
@@ -51,7 +64,7 @@ export function bugDraw(ctx: GameContext | null, entity: SceneEntity): EngineDra
   root.scale.setScalar(scale);
   let last: [number, number] | null = null;
   let stride = phase;
-  let parts: { trunk: THREE.Group; legsA: THREE.Mesh; legsB: THREE.Mesh; wings: THREE.Mesh | null; load: THREE.Mesh } | null = null;
+  let parts: { trunk: THREE.Group; legsA: THREE.Mesh; legsB: THREE.Mesh; wings: THREE.Mesh | null; load: THREE.Mesh; ring: THREE.Mesh } | null = null;
 
   if (body === null) {
     const geometry = staticBodyFor(kind);
@@ -68,12 +81,17 @@ export function bugDraw(ctx: GameContext | null, entity: SceneEntity): EngineDra
     const legsB = meshOf(body.legsB, BODY_MATERIAL);
     const wings = body.wings === undefined ? null : new THREE.Mesh(body.wings, WING_MATERIAL);
     const load = new THREE.Mesh(LOAD_GEOMETRY, LOAD_MATERIALS["sugar"]);
-    load.position.set(0, 0.5, 1.75);
+    load.position.set(0, 0.7, 2.35);
+    const ring = new THREE.Mesh(TEAM_RING, TEAM_RING_MATERIAL.player);
+    ring.scale.setScalar(RING_RADIUS[kind] ?? 1.3);
+    ring.position.y = 0.06;
+    ring.visible = false;
+    root.add(ring);
     load.visible = false;
     trunk.add(bodyMesh, legsA, legsB, load);
     if (wings !== null) trunk.add(wings);
     root.add(trunk);
-    parts = { trunk, legsA, legsB, wings, load };
+    parts = { trunk, legsA, legsB, wings, load, ring };
   }
 
   return {
@@ -84,6 +102,11 @@ export function bugDraw(ctx: GameContext | null, entity: SceneEntity): EngineDra
       if (parts === null || ctx === null) return;
       const live = ctx.scene.entity.get(entity.id);
       if (live === null) return;
+      const faction = session.units.get(entity.id)?.faction;
+      if (faction !== undefined) {
+        parts.ring.visible = true;
+        parts.ring.material = TEAM_RING_MATERIAL[faction];
+      }
       const x = live.position[0];
       const z = live.position[2];
       const moved = last === null ? 0 : Math.hypot(x - last[0], z - last[1]);
