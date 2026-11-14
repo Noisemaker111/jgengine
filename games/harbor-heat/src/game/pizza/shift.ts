@@ -202,7 +202,7 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   return { ...state, serial, board: [...state.board, call], nextCallIn: interval, idaDue: caller.id === LIGHTHOUSE_KEEPER ? false : state.idaDue };
 }
 
-const splashClock = perContext(() => ({ t: 0 }));
+const splashClock = perContext(() => ({ t: 0, n: 0 }));
 
 /** Spray off the wheels or the hull while the boxes are soaking, so the soak meter has a cause on screen. */
 function splash(ctx: GameContext, soak: number, dt: number): void {
@@ -213,7 +213,8 @@ function splash(ctx: GameContext, soak: number, dt: number): void {
   const from = riderPosition(ctx);
   if (from === null) return;
   ctx.scene.entity.vfx({ kind: "spark", color: 0x9fe8ff, from: [from[0], from[1] + 0.2, from[2]], radius: Math.min(2.2, 0.8 + soak * 0.15) });
-  ctx.game.audio.play("water_splash", from);
+  clock.n += 1;
+  if (clock.n % 3 === 0) ctx.game.audio.play("water_splash", from);
 }
 
 /** Every box cools; water, spray and wading soak it; the blimp's altitude chills it. */
@@ -438,6 +439,12 @@ function deliverRefusal(ctx: GameContext) {
   const state = shiftStore.read(ctx);
   if (state.bag.length === 0) return { reason: "empty-bag", message: "Nothing in the bag." };
   if (customerHere(ctx, state) === null) return { reason: "not-here", message: "Take the box to the customer's door." };
+  const here = customerHere(ctx, state)!;
+  if (customerById(here)?.waterOnly === true) {
+    const driving = streetPlayOf(ctx).drivingVehicleId();
+    const medium = driving === null ? null : vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium;
+    if (medium !== "water" && medium !== "air") return { reason: "water-only", message: "The conning tower is out in the bay. Come alongside by jet-ski, gondola or blimp." };
+  }
   if (streetPlayOf(ctx).carSpeedKmh() > HANDOFF_SPEED) return { reason: "moving", message: "Slow down to hand it over." };
   return null;
 }

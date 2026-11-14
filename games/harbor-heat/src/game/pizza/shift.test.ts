@@ -195,4 +195,15 @@ describe("a night at Vell's", () => {
     ctx.game.commands.run("pizza.deliver", {});
     expect(shiftStore.read(ctx).streak).toBe(0);
   });
+  test("the submarine only takes boxes from a boat or the blimp", () => {
+    const ctx = boot();
+    at(ctx, 20);
+    const spot = customerSpot("captain_brine")!;
+    moveTo(ctx, spot);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ id: "s1", customerId: "captain_brine", pizzaId: "pineapple_sub", heat: 90, soak: 0, age: 5, par: 60 }], nextCallIn: 999 });
+    expect(ctx.game.commands.run("pizza.deliver", {}).status).toBe("rejected");
+    ctx.scene.entity.spawn("car_sport", { id: "sub_ski", position: [spot[0], -0.4, spot[1]], role: "prop" });
+    streetPlayOf(ctx).enterVehicle(ctx, "sub_ski");
+    expect(ctx.game.commands.run("pizza.deliver", {}).status).not.toBe("rejected");
+  });
 });
