@@ -1,70 +1,71 @@
-# Scrap Signal
+# JUNK DRAWER
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **6/20 proven · 14 missing** · `jgengine suite scrap-signal`
+Game suite: **9/20 proven · 11 missing** · `jgengine suite scrap-signal`
 <!-- /suite-score -->
 
-A first-person looter-shooter across Ferralon: pick Gunk, Nyx or Cipher, clear six levelled zones, roll
-guns off what you kill, and finish at the Foundry Heart. Runs on engine source; start
-it with `bun --cwd=games/scrap-signal run dev` from the repository root.
+A first-person looter-shooter in Maple Hollow, a sprawling, overgrown suburb after the appliances
+took a bad firmware update and revolted. Every weapon is household junk with a trigger bolted on,
+and every weapon has a personality that talks to you. Pick Marge, Dex or Pip, clear six
+neighbourhoods of Roombas, lawnmowers, smart fridges and garage doors, merge your junk at Hank's
+workbench, and unplug Mother Router. Runs on engine source; start it with
+`bun --cwd=games/scrap-signal run dev` from the repository root. The folder and package id stay
+`scrap-signal`.
 
 ## Design checklist
 
-Read from `src/game/{characters,progression,handroll,quests,world}`, `src/loop.ts` and `src/game.config.ts`.
-Numbers are what the build does now.
+Read from `src/game/{handroll,combat,characters,progression,quests,world,items}`, `src/loop.ts` and
+`src/game.config.ts`. Numbers are what the build does now.
 
-- **Core loop.** Travel between six zones — Rustflat Waste (level 1), Breakwater Shelf (4), Coretown (8),
-  Split-Ridge Pass (12), Glasswind Flats (17), Cores Blight (24) — killing camps, opening red and ammo
-  chests, and spending cash and cores at Rigg, Sparx, Bolt and the black market. Kills roll guns at the
-  zone's level, and eight main quests plus two side quests carry the level curve.
-- **Progression — three systems.**
-  - Level 1–30. XP needs 90 × level^1.75; each level grants +8 max health and one talent point (29
-    by the cap). The base character is 90 health and 60 shield.
-  - Talents. Three characters × three branches × nine nodes, ranks 5/5/1, gated at 5 and 10 points
-    in a branch. Recalibrate on the talent screen refunds every point for $75 × level.
-  - Gear. Five rarities multiply damage ×1 / 1.15 / 1.35 / 1.6 / 2 at weights 100 / 45 / 18 / 6 / 1.4,
-    and item level scales damage ×1.13 per level. Elites drop at 55–65%, bosses at 100%, and the Foundry
-    Heart drops three guaranteed legendaries.
-  - Perks. Rare guns roll 1 of 12 behaviour perks (Rampage, Kill Clip, Subsistence, Triple Tap, Outlaw,
-    Firefly, Leech, Shield Siphon, Overcharge, Contagion, Opening Shot, Last Word), epics 1–2. Each of the
-    18 named legendaries carries a red-text signature (Sixgun: every 6th shot crits) plus a 50% rolled
-    perk. Perks run on the engine's triggered-rules seam and show on the pickup scan, the field stash
-    and as live buff stamps under the magazine.
-  - Boss farming. Each of the four bosses has two named legendaries at 22% on top of its normal drop:
-    Captain Rusk (Sixgun, Vandal), Wreck-Maw (Sledgehammer, Chatterbox), The Foreman (Piledriver,
-    Flakcannon), Foundry Heart (Starfall, Ashfall). The card names the boss under the signature.
-  - Overdrive (endgame). Once the Rustflat Front is cleared, the wreck's console runs it again as a
-    20-tier ladder. Each tier lifts the crews one level per two tiers plus +6% health and +3% damage, and
-    rolls 0–3 of 11 mutators (Frenzied, Juggernaut, Plated, Stripped, Volatile Cores, Swarm, Ion Storm,
-    Self-Repair, Elite Escort, and the boons Glass and Bounty); re-tuning them costs 4 cores. Bronze is a
-    clear, silver and gold are times (150 + 6 × tier s, 80 + 4 × tier s); medals are worth 1/2/3 points
-    and open tiers ahead. A 12 s clock runs between waves and N calls the next one early. Clears pay
-    cash, cores, XP and loot up to five levels above yours; from tier IV the Foreman drops a legendary.
-    Leaving the ring for 8 s, bleeding out or reloading mid-run loses it.
-  - Balance bot. `src/game/rift/balance.test.ts` plays whole runs through the real front and damage
-    model with a level-12 reclaimer who stands at the wreck and shoots. Five runs per cell, clears and
-    median time: green T1 3/5 116 s, T5+ 0/5; blue T5 1–3/5; purple T8 2/5; legendary T8 3–5/5, T10 2–3/5,
-    T13+ mostly 0/5. Its tests hold that shape: greens never gold T1, gear opens the middle, the top holds.
-- **Failure states.** Health hitting zero starts a 12-second Emergency Reserve at walking speed; a kill
-  during that window power-surges you back with 40% health and half shield, which makes fighting the way
-  out. Expiry reconstructs you at the last discovered travel station for 7% of your cash. The chassis is
-  kept on the field through a lethal hit (`onDeath.keep`), so the window always has a body to revive. Going down
-  inside the Dead Air relay contract fails the contract, not the save.
-- **Minute 5 → hour 5.** At 5:00 you are five bruisers into Rustflat Waste with the starter pistol. Hour
-  five is around level 8–12 in Coretown, three to six talent points spent, Captain Rusk down and the
-  first legendary in the hotbar.
-- **References it is chasing.**
-  - *Borderlands 2* — feel: guns with names, makers and attitudes; density: camps of six to ten, not a
-    battlefield; UI: rarity beams on the ground and a comparison card on pickup.
-  - *Destiny 2* — feel: shooting and ability uptime that carry a fight; density: patrol spaces with
-    occasional event spikes; UI: a mission tracker that never covers the reticle.
-  - *Diablo III* — feel: power growth you can feel per level; density: elite packs with a readable
-    modifier; UI: a skill grid and loot comparison that work with the game still running.
-- **Gap to target.** Overdrive scales to your level, so levels 25–30 now have a ladder to climb and
-  respec makes a second build worth trying, but the world itself still ends at Cores Blight (level 24),
-  the ladder has one arena (the Rustflat wreck), and there is no set gear or leaderboard to chase.
+- **Core loop.** Travel between six neighbourhoods — Crabgrass Court (level 1), Sprinkler Heights
+  (4), the Maple Court cul-de-sac (8), Strip Mall Ridge (12), the Fairways (17), the Smart Home
+  Estates (24) — clearing yards of rogue appliances, opening toy chests and recycling bins, and
+  spending cash and spare parts at Nana's porch, Hank's garage and workbench, and the swap meet.
+  Kills roll junk at the neighbourhood's level; eight story errands plus the neighbours' side jobs
+  carry the level curve.
+- **Junk weapons.** A weapon is a **body** and a **mod**, rolled on the engine's item generation seam:
+  - Bodies: Staple Gun (semi-auto), Nail Gun (full-auto), Leaf Blower (a spread of gravel), Garden
+    Hose (a held stream), Microwave (a slow charged long shot), Toaster (lobbed bursting toast),
+    Vacuum (short range; every hit drags the target toward you), Fire Extinguisher (a foam cone that
+    chills and slows).
+  - Mods: Duct Tape (tighter spread), Extension Cord (+40% range), Batteries (fire rate, magazine),
+    Glitter (always loaded with glitter: glittered targets take double from other weapons and attack
+    slower), Cinder Block (+30% damage, never elemental), Rubber Bands (half-time reloads),
+    Firecrackers (every shot explodes), Laundry Basket (huge hopper, sloppy).
+  - Condition: Busted, Used, Like New, Mint, Heirloom (damage ×1 / 1.15 / 1.35 / 1.6 / 2). Rare and
+    better roll 1-2 behaviour perks; each of the 22 heirlooms has a backstory line and a red-text
+    signature, two per boss to farm.
+  - Loads: hot sauce melts plastic, bleach eats steel, static shorts force fields, fizz explodes.
+- **Personalities.** Every weapon is one of seven, derived from its id on its own stream, each with a
+  perk, a quirk and lines for pickup, reload, kills, switching away, low ammo, jamming and merging,
+  shown in a speech bubble over the ammo plate with a live mood readout:
+  Grumpy (+20% damage, reloads 25% slower), Cheerful (kills heal 5%, -8% damage), Paranoid (shots
+  bend onto a threat within 7°, 15% of shots spend an extra round), Dramatic (the last 30% of the
+  magazine hits 40% harder, slower reloads), Philosophical (every sixth shot free, fires 12%
+  slower), Clingy (+3% damage per 4 s held up to +30%; switch away and the other weapons deal 10%
+  less for 5 s), Competitive (+8% per kill up to 5 while it stays out; switch away and it sulks, jamming
+  for 2.5 s when you come back).
+- **The workbench.** Hank's bench on the cul-de-sac shelves junk, salvages it (cash by level and
+  condition, spare parts for Like New and better) and merges two weapons: body and voice from the
+  first, mod from the second, the better condition, and two of a condition step up one. A merge costs
+  $30 × level and a spare part and tops out at Mint: heirlooms are inherited, not made.
+- **Progression — three systems.** Level 1–30 (XP needs 90 × level^1.75, +8 max health and a skill
+  point per level). Skill trees: three tinkerers × three branches × nine nodes, ranks 5/5/1, gated
+  at 5 and 10 points; a reset costs $75 × level. Junk, as above.
+- **Failure states.** Health at zero starts a 12-second Last Gasp at walking speed; a kill in that
+  window makes a comeback with 40% health and half shield. Expiry patches you up at the last bus stop
+  you found for 7% of your cash.
+- **Endgame.** The Block Party: once the Front Lawn is cleared, its speaker runs a 20-tier ladder of
+  mutators (Frenzied, Juggernauts, Steel-Cased, Cheap Plastic, Lithium Batteries, Bluetooth Pairing,
+  Power Outage, Self-Repair, Elite Escort, Glass Cannons, Coupon Day) with medal times; the HOA
+  President drops heirlooms from tier IV.
+- **Look.** Hostiles are procedural appliances with angry red LED eyes (`src/game/world/applianceModel.ts`);
+  the viewmodel builds each weapon from its parts with googly eyes (`src/game/world/junkModel.ts`);
+  hedges, maples, driveway cars, moving boxes, curbside sofas, giant lawn flamingos, yard-sale signs and
+  telephone poles dress the yards under a clear summer sky.
+- **Gap to target.** The ground plan is still the earlier layout re-dressed; houses, fences and
+  cul-de-sacs authored in the editor are the next pass (PLAN milestone 8).
 
-Loop proof: to-overdrive, to-front (each flow boots its own state: `overdrive` is the console with seven tiers cleared, then the console's own start button opens tier VIII and the run card goes live; `boss` is the front's last wave with the Foreman on the field, where the flow turns a quarter off him and back onto his heading and asserts his health dropped)
-
-The whole-world save restores character, talents, quests, inventory and economy; `src/game/saveCompatibility.ts`
-handles the legacy identifiers. Run `bun run check-types` and `bun run test` here after changes.
+Internal ids keep their earlier names (zones, enemies, families, rarities, NPCs) as the save, scene and
+proof identity; every player-facing name comes from display fields. `src/game/save.ts` maps guns
+saved with an old maker onto its mod. Run `bun run check-types` and `bun run test` here after changes.

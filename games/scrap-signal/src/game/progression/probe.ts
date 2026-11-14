@@ -16,7 +16,7 @@ import { talentRanksStore } from "../stores";
 import { discoveryStore } from "./discovery";
 import { openWeaponSlots, unlockCount } from "./unlocks";
 
-/** Every gun model: each maker's take on each family, each named legendary, and each quest-reward unique. */
+/** Every weapon model: each mod on each body, each heirloom, and each neighbour's quest-reward unique. */
 export const GUN_MODEL_COUNT =
   MANUFACTURERS.length * FAMILY_BASES.length + Object.values(LEGENDARY_NAMES).flat().length + UNIQUE_GUNS.length;
 
@@ -134,6 +134,9 @@ export function depthProbe(ctx: GameContext) {
     health: stat("health"),
     skillPoints: stat("skillPoints"),
     gunsHeld: hotbar.filter((slot) => slot !== null).length,
+    heldSlot: session.selectedSlot(),
+    heldPower: hitPower(hotbar[session.selectedSlot()]?.itemId ?? ""),
+    cores: ctx.game.economy.balance(userId, "cores"),
     heldAmmo: heldAmmo(ctx),
     gunsWithAmmo: gunsWithAmmo(ctx),
     magFill: magFill(ctx),

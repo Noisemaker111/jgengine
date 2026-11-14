@@ -1,6 +1,6 @@
 # scrap-signal plan
 
-Brief: a Borderlands-like looter-shooter with a thought-out loop and hours of content, modelled on how Borderlands 2's first hours work.
+Brief: JUNK DRAWER, a looter-shooter in a sprawling, overgrown suburb after the appliances revolted. Every weapon is assembled from household junk, and every weapon has a personality that talks to you. (Redesigned from an earlier Borderlands-like brief into its own game; the user approved the direction: "just do it, be really creative".)
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 ## Suite score
@@ -16,13 +16,13 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 0 | 0 | 1 | 0 |
 | content | 0/5 | 0 | 0 | 5 | 0 |
-| shooter | 3/4 | 0 | 0 | 1 | 0 |
-| loot | 1/4 | 0 | 0 | 3 | 0 |
-| **total** | **6/20** | 0 | 0 | 14 | 0 |
+| shooter | 4/4 | 0 | 0 | 0 | 0 |
+| loot | 3/4 | 0 | 0 | 1 | 0 |
+| **total** | **9/20** | 0 | 0 | 11 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: shooter, looter. 6/20 proven · 14 missing.
+Genres: shooter, looter. 9/20 proven · 11 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -41,10 +41,10 @@ Genres: shooter, looter. 6/20 proven · 14 missing.
 | `shooter.aim-fire-hit` | proven | Aim, fire, and hurt an enemy. | proofs/sim/aim-fire-hit.proof.ts |
 | `shooter.reload-ammo` | proven | Weapons run dry and reload from carried ammo. | proofs/sim/reload.proof.ts |
 | `shooter.enemy-threat` | proven | Enemies find the player and hurt them. | proofs/sim/enemy-threat.proof.ts |
-| `shooter.weapon-swap` | missing | Switch between carried weapons. |  |
+| `shooter.weapon-swap` | proven | Switch between carried weapons. | proofs/sim/weapon-swap.proof.ts |
 | `loot.drops-rarity` | missing | Defeated enemies and containers drop loot of varied rarity. |  |
-| `loot.gear-upgrade` | missing | Equipping better gear changes the player's numbers. |  |
-| `loot.vendor-or-salvage` | missing | Unwanted loot sells or salvages into something useful. |  |
+| `loot.gear-upgrade` | proven | Equipping better gear changes the player's numbers. | proofs/sim/workbench-merge.proof.ts |
+| `loot.vendor-or-salvage` | proven | Unwanted loot sells or salvages into something useful. | proofs/sim/workbench-salvage.proof.ts |
 | `loot.build-choices` | proven | Perks or skills let the player shape a build. | proofs/sim/skill-spend.proof.ts |
 
 </details>
@@ -52,42 +52,43 @@ Genres: shooter, looter. 6/20 proven · 14 missing.
 
 ## Direction
 
-- References: Borderlands 2 (its opening hours: start unarmed, a guide robot, a chest with a plain pistol, quests one at a time from people, rolled guns from makers, a hub town with a vendor and a bank, a boss per act, "fight for your life"); Destiny 2 (gunfeel, a tracker that never covers the reticle); Diablo III (power you feel per level, loot you compare in the field).
-- Faithfulness: inspired by. Borderlands 2's structure and pacing, Scrap Signal's own world (Ferralon), makers, numbers and names.
-- Breadth in: first-person shooting, three characters with skill trees, XP and levels to 30, rolled guns (maker, family, element, parts, rarity, perks), element weaknesses, quests from NPCs, story gates between zones, a hub with vendors, a black market and a bank, a boss per act, second wind, side activities (signal mast, relay contract), Overdrive as the endgame.
-- Out: co-op, vehicles, a second campaign, class mods and relics, a level cap past 30.
-- Look and controls: first person, mouse and keyboard on desktop, the existing Ferralon desert art and rig HUD. Solo.
-- Length: about 5 hours to finish the story and side quests, then Overdrive. A sitting is one zone or one act (30-60 minutes).
-- Teaching: Bolt, a guide robot, gives the first quests and says what each new thing is the first time it matters; hints blend into the crash site and Rustflat Waste.
-- Done scenario: from a new game, talk to Bolt, open the crash chest, take the plain pistol, clear the brats, learn a skill, beat Old Tusk and walk the opened road to Breakwater Shelf.
-- Player promise: every kill can drop a better gun, and every level makes you stronger in a way you chose.
-- Pillars: loot you want to read; power you chose; a world that opens in order.
-- Anti-pillars: no handing out late-game kit at the start; no quest dump; no menu-only progress.
-- Falsifier: if a new player has a second gun, three quests or an elemental weapon before the first fight, the opening is broken.
+- References: Saturday-morning cartoons and *Toy Story* (household things with big personalities); the looter-shooter loop of reading a drop and keeping the better one; Destiny 2 (gunfeel, a tracker that never covers the reticle); Diablo III (power you feel per level, loot you compare in the field). Its own game, not modelled on any one shooter.
+- Faithfulness: original. JUNK DRAWER's world (Maple Hollow), weapons, enemies, numbers and names are its own.
+- The pitch: the appliances took a bad firmware update and revolted. A sprawling, overgrown suburb is held by rogue Roombas, lawnmowers, sprinkler turrets, smart fridges, garage doors and delivery drones. The last neighbours hold one cul-de-sac. Every weapon left is household junk with a trigger bolted on, and **every weapon has a personality that talks to you**.
+- Breadth in: first-person shooting; weapons built from a **Body** (staple gun, nail gun, leaf blower, garden hose, microwave, toaster, vacuum, fire extinguisher), a **Mod** (duct tape, extension cord, batteries, glitter, cinder block, rubber bands, firecrackers, laundry basket) and a **Personality** (Grumpy, Cheerful, Paranoid, Dramatic, Philosophical, Clingy, Competitive) with a perk, a quirk and voice lines; **Condition** in place of rarity (Busted, Used, Like New, Mint, Heirloom, heirlooms with a backstory); element loads (hot sauce, static, bleach, fizz, glitter); three tinkerers with skill trees; XP and levels to 30; quests from the neighbours; six neighbourhoods opened by the story; Hank's garage workbench to shelve, salvage and merge weapons; a boss per act; the Last Gasp comeback; side activities (the dish watch, the radio contract); the Block Party ladder as the endgame.
+- Out: co-op, vehicles, a second campaign, class mods, a level cap past 30, voiced audio (the weapons speak in speech bubbles).
+- Look and controls: first person, mouse and keyboard on desktop; a bright suburban afternoon, overgrown lawns, colourful junk, every weapon visibly built from its parts with googly eyes. Solo.
+- Length: about 5 hours to finish the story and side quests, then the Block Party. A sitting is one neighbourhood or one act (30-60 minutes).
+- Teaching: DING, a video doorbell that defected, gives the first errands and says what each new thing is the first time it matters; the fridge-magnet notes blend into Crabgrass Court. The weapons teach themselves: each one introduces itself when picked up.
+- Done scenario: from a new game, talk to DING, open the school bus's toy chest, take the cheerful busted staple gun, mow down the push mowers, learn a skill, beat Big Mulch, walk the opened road to Sprinkler Heights, and merge two weapons at Hank's bench.
+- Player promise: every kill can drop a better piece of junk, every piece of junk is somebody, and every level makes you stronger in a way you chose.
+- Pillars: junk you want to read (and listen to); power you chose; a suburb that opens in order.
+- Anti-pillars: no late-game kit at the start; no quest dump; no menu-only progress; no personality that is only flavour (each one changes how you play it).
+- Falsifier: if a new player has a second weapon, three errands or an element-loaded weapon before the first fight, or cannot say what their weapon's personality does after ten minutes, the opening is broken.
 
 ## Design brief
 
-- Core loop: shoot a camp of scrapjacks and beasts, read the guns they drop, keep the better one
-- Session loop: take one quest from an NPC, finish it in its zone, turn it in, level up and spend the skill point
-- Long loop: three acts across six zones from Rustflat Waste (level 1) to Cores Blight (level 24), each opened by the story and ended by a boss, with rarer guns and a fuller skill tree on the way, then Overdrive
-- Second 0: crashed and unarmed at the bus wreck with Bolt in sight, so the first verbs are walking and talking, and the first gun is earned from a chest
-- Onboarding: Bolt says what each thing is the first time it matters, and hints sit in the crash site; nothing is taught from a menu
+- Core loop: clear a yard of rogue appliances, read the junk they drop (body, mod, condition, personality), keep the one you like, and listen to it complain
+- Session loop: take one errand from a neighbour, finish it in its neighbourhood, turn it in, level up, spend the skill point, and salvage or merge the spare junk at Hank's bench
+- Long loop: three acts across six neighbourhoods from Crabgrass Court (level 1) to the Smart Home Estates (level 24), each opened by the story and ended by a boss (Big Mulch, the Leaf Blower King, the Compactor, Mother Router), with better condition junk and a fuller skill tree on the way, then the Block Party
+- Second 0: stranded and empty-handed by the overturned school bus with DING in sight, so the first verbs are walking and talking, and the first weapon is earned from a toy chest
+- Onboarding: DING says what each thing is the first time it matters, the notes sit on the fridge-magnet board, and every weapon explains itself on its card and in its own voice; nothing is taught from a menu
 - Pace: something new every 2 minutes
-- Longest cycle: 60 minutes, one act from its first quest to its boss
+- Longest cycle: 60 minutes, one act from its first errand to its boss
 - Minutes to see everything: 300
 
 ### First 10 minutes
 
-- 0:00 crashed and unarmed by the bus wreck; teaches walking and talking to Bolt with E
-- 0:15 Bolt gives My First Gun; teaches opening the crash chest and picking up; unlocks the first weapon slot with a plain common pistol
-- 0:45 back to Bolt, who gives Target Practice; teaches aiming, shooting and reloading on the bruiser brats
+- 0:00 stranded and empty-handed by the school bus; teaches walking and talking to DING with E
+- 0:15 DING gives Junk Drawer; teaches opening the toy chest and picking up; unlocks the first weapon slot with a busted, cheerful staple gun that introduces itself
+- 0:45 back to DING, who gives Target Practice; teaches aiming, shooting and reloading on the push mowers, and that the weapon talks when it reloads and kills
 - 2:00 level 2; unlocks the skill tree and teaches spending the first point with K
-- 2:30 Bolt gives Bruiser Bash; teaches armour and the element chart on the bruisers by the convoy
-- 4:00 level 3; unlocks green (uncommon) and elemental guns; teaches comparing a drop before taking it
-- 5:00 Bolt gives Old Tusk, the crash site's mini-boss; teaches the second wind (kill while down to get back up)
-- 7:00 Old Tusk down; unlocks the second weapon slot and a guaranteed green gun
-- 8:00 Bolt gives Road to the Shelf; unlocks the Breakwater Shelf gate and its fast-travel station
-- 9:30 Breakwater Shelf, level 4; teaches new enemies (husk drones, scav drones) and fast travel
+- 2:30 DING gives Lawn Order; teaches the element chart (hot sauce melts plastic) on the lawnmower brutes by the driveway
+- 4:00 level 3; unlocks Used (uncommon) and element-loaded junk; teaches comparing a drop's body, mod and personality before taking it
+- 5:00 DING gives Big Mulch, the crash site's riding-mower boss; teaches the Last Gasp (kill while down to make a comeback)
+- 7:00 Big Mulch down; unlocks the second weapon slot (and the first switch-away complaint) and a guaranteed Used drop
+- 8:00 DING gives Up the Hill; unlocks the Sprinkler Heights gate and its bus stop
+- 9:30 Sprinkler Heights, level 4; teaches new appliances (Roombas, sprinkler turrets) and the bus route
 
 ### Start state
 
@@ -107,7 +108,7 @@ Genres: shooter, looter. 6/20 proven · 14 missing.
 | --- | --- |
 | quests | 48 |
 | enemies | 32 |
-| guns | 66 |
+| guns | 114 |
 | skills | 27 |
 | zones | 6 |
 
@@ -122,31 +123,39 @@ Genres: shooter, looter. 6/20 proven · 14 missing.
 | skills | skillsLearned |
 | economy | cash |
 
-The kinds are counted from the game's data: `quests` is every quest in the catalog; `enemies` every enemy type a zone, camp or boss spawns; `guns` every gun model (a maker and a family) plus every named legendary; `skills` the active character's skill-tree nodes; `zones` the six zones. A kind's `Seen` is what the player has accepted, killed, held, learned or entered.
+The kinds are counted from the game's data: `quests` is every errand in the catalog; `enemies` every appliance type a neighbourhood, camp or boss spawns; `guns` every weapon model (each mod on each body: 8 × 8) plus the 22 heirlooms and the 28 neighbours' quest-reward uniques; `skills` the active tinkerer's skill-tree nodes; `zones` the six neighbourhoods. A kind's `Seen` is what the player has accepted, killed, held, learned or entered.
+
+Internal ids keep their earlier names (zone `rustflat_waste`, enemy `husk`, family `pistol`, rarity `legendary`, NPC `bolt`, ...): they are the save, scene and proof identity. Every name a player reads comes from the display fields.
 
 ## Features
 
-- unarmed start — no weapon, no quest at second 0; Bolt in sight
-- quest givers — NPCs offer one quest at a time and take it back when it is done
-- starter chest — the first quest's chest holds a plain common pistol
-- XP and levels — kills and quests pay XP; each level gives health and one skill point
-- skill tree — three characters × three branches × nine nodes with real choices and a paid respec
-- rolled guns — maker, family, element, parts and perks, named from their parts
-- rarity by level — green from level 3, blue 6, purple 12, legendary 18
-- element weaknesses — flesh burns, armour corrodes, shields short out; shown on the target
-- hub — Coretown with a gun vendor, a medic, the black market and a bank
-- bank — guns kept in Coretown across the run
-- zone gates — each zone opens with a story quest and shows its enemy level
-- bosses — one per act: Captain Rusk, Wreck-Maw, the Foundry Heart, plus Old Tusk at the crash site
-- side quests — given by the hub's NPCs, the signal mast and the relay contract
-- second wind — down at zero health, a kill gets you back up
-- onboarding hints — Bolt's lines and field notes blended into the crash site, one hint at a time
-- quest marker — a pin over the tracked objective, an edge arrow with the distance when it is off screen
-- ammo for what you carry — kills drop ammo for the carried gun that is emptiest
-- ammo crates — a pack per carried gun, empty a while after opening, then restocked; one stands in each boss yard
-- camp fights — camp enemies carry four times their listed health and shield (`ENEMY_TOUGHNESS`, the one dial), so a camp is a fight you read; bosses and Overdrive crews keep their own numbers; a cleared camp refills after four minutes away
-- local breeds and named targets — each zone's own variants mixed into its camps, and named elites behind side quests, some dropping uniques
-- the Rustflat Front — the convoy wreck's two crews wake only after Old Tusk is down
+- empty-handed start — no weapon, no errand at second 0; DING in sight
+- quest givers — DING, Nana Pruitt, Hank and Mr. Fenwick offer one errand at a time and take it back when it is done
+- starter chest — the first errand's toy chest holds a busted, rubber-banded, cheerful staple gun
+- junk weapons — `src/game/handroll/guns.ts`: eight bodies (each with its own way of shooting: the vacuum drags targets in, the extinguisher chills and slows), eight mods (duct tape stabilises, the extension cord adds range, batteries add fire rate, glitter dazzles), rolled on the engine's item generation seam
+- condition — Busted, Used, Like New, Mint, Heirloom in place of rarity; 22 heirlooms, each with a backstory line and a red-text signature perk, two per boss to farm
+- personalities — `src/game/handroll/personality.ts` (model) and `src/game/combat/personalityRuntime.ts` (live): seven personalities, each with a perk, a quirk and lines for pickup, reload, kills, switching away, low ammo, jamming and merging. Grumpy +20% damage / slow reloads; Cheerful heals on kills / hits softer; Paranoid bends shots onto the nearest threat / twitches an extra round; Dramatic's finale hits 40% harder / slow reloads; Philosophical's every sixth shot is free / fires slower; Clingy builds damage while held / guilt-trips the other guns when you switch; Competitive stacks per kill / sulks and jams when you switch back to it
+- weapon chatter — the held weapon's lines in a speech bubble over the ammo plate, a live mood readout (ATTACHED +18%, STREAK x3, SULKING, FINALE)
+- weapons built from parts — `src/game/world/junkModel.ts`: the viewmodel is the body, the mod strapped on, googly eyes whose brows say the personality, rust scuffs or a lit trim for the condition
+- garage workbench — `src/game/items/vault.ts`, `src/game/handroll/merge.ts`: shelve junk, salvage it into cash and spare parts, merge two weapons (body and voice from one, mod from the other; two of a condition step up; a merge tops out at Mint)
+- rogue appliances — `src/game/world/applianceModel.ts` through the shell's `renderEntity`: Roombas, sprinkler turrets, smart fridges, delivery drones, push and riding mowers, garage-door crushers, smart speakers and soundbars, and the bosses (Big Mulch, the Leaf Blower King, the Compactor, the HOA President, Mother Router), every one with angry red LED eyes
+- XP and levels — kills and errands pay XP; each level gives health and one skill point
+- skill tree — three tinkerers (Marge the Yard-Sale Queen, Dex the Kitchen Chemist, Pip the Paper-Route Kid) × three branches × nine nodes with a paid reset
+- element loads — plastic melts under hot sauce, steel under bleach, force fields short out under static; shown on the target
+- hub — the cul-de-sac with Nana's first-aid porch, Hank's garage and workbench, and the swap meet
+- neighbourhood gates — each opens with a story errand and shows its level
+- bosses — one per act: the Leaf Blower King, the Compactor, Mother Router, plus Big Mulch at the crash site
+- side errands — the neighbours' jobs, the dish watch and the radio contract
+- Last Gasp — down at zero health, a kill makes a comeback
+- onboarding hints — DING's lines and fridge-magnet notes blended into Crabgrass Court
+- quest marker — a pin over the tracked objective, an edge arrow with the distance off screen
+- ammo for what you carry — kills drop ammo (staples, nails, gravel, water, kernels, bread) for the emptiest carried weapon
+- recycling bins — a pack per carried weapon, restocked a while after opening
+- camp fights — camp appliances carry four times their listed health (`ENEMY_TOUGHNESS`); a cleared yard refills after four minutes away
+- local breeds and named targets — each neighbourhood's own appliance variants, and named elites behind side errands
+- the Front Lawn — the moving truck's two gangs wake only after Big Mulch is down
+- Block Party — the endgame ladder on the Front Lawn, 20 tiers of mutators
+- the suburb's look — hedges, overgrown maples, driveway cars, moving boxes, curbside sofas, giant lawn flamingos, yard-sale signs and telephone poles (`src/game/world/yardProps.tsx`); overgrown lawns, asphalt streets, a clear summer sky
 - from-zero proof — a new game played for ten minutes through real input
 
 ## Engine coverage
@@ -156,23 +165,33 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 | quest givers | `@jgengine/core/mission/quest` (`QuestDef.giver`, `turnIn`, `requires`, `rewards.quests`) | covered |
 | XP and levels | `@jgengine/core/progression/leveling` | covered |
 | skill tree | `@jgengine/core/progression/skillTree` | covered |
-| rolled guns | `@jgengine/core/item/itemgen`, `@jgengine/core/loot/lootGen` | covered |
-| rarity by level | `@jgengine/core/progression/gates` (`createGateSet`) | partial: the game reads its own rarity table through the gate set |
-| element weaknesses | `@jgengine/core/combat/damage/damageRuntime` resistance chart | covered |
-| hub vendors | `@jgengine/core/economy/transactionLedger` | covered |
-| bank | `@jgengine/core/inventory/inventoryModel` | covered: a named inventory the hub terminal opens |
-| zone gates | `@jgengine/core/progression/gates` | covered |
+| junk weapons | `@jgengine/core/item/itemgen`, `@jgengine/core/loot/lootGen` | covered |
+| personality perks | `@jgengine/core/rules/triggeredRules` for the perk seam; the mood rules are game-local | partial: see Gaps |
+| condition by level | `@jgengine/core/progression/gates` (`createGateSet`) | partial: the game reads its own rarity table through the gate set |
+| element loads | `@jgengine/core/combat/damage/damageRuntime` resistance chart | covered |
+| hub vendors and workbench | `@jgengine/core/economy/transactionLedger`, `@jgengine/core/inventory/inventoryModel` | covered |
+| neighbourhood gates | `@jgengine/core/progression/gates` | covered |
 | bosses | `@jgengine/core/ai/phaseLadder` | covered |
-| second wind | `@jgengine/core/combat/downed` | covered |
+| Last Gasp | `@jgengine/core/combat/downed` | covered |
+| procedural appliances | the shell's `renderEntity` / `renderObject` overrides | covered |
 | onboarding hints | `@jgengine/core/onboarding/onboardingSystem` (blended style) and `OnboardingHud` | covered |
-| quest marker | `@jgengine/core/map/waypointMarkers.view` | covered: the game picks the point, the engine draws the pin and edge arrow |
+| quest marker | `@jgengine/core/map/waypointMarkers.view` | covered |
 | from-zero proof | `@jgengine/core/play/headlessFlow.draw` | covered |
+
+## Gaps
+
+- A timed move-speed and attack-interval scale on an enemy (chilled by the extinguisher, dazzled by glitter) lives game-local in `src/game/combat/soak.ts`, read by the enemy attack step. One adopter; the second game that slows or blinds an enemy moves it into `packages/core/src/combat/` as a status modifier the AI reads.
+- Weapon voice lines (event → personality → rate-limited line) live game-local in `src/game/combat/personalityRuntime.ts`. The seam is a generic "barks" runtime (`packages/core/src/dialogue/`) keyed by event and speaker; the second game with talking items moves it upstream.
+- The world's terrain seed, ids and authored placements are still the old desert layout re-dressed: neighbourhood-scale suburban streets and houses are a pass through the editor (`editor.scene.json`), not done here.
 
 ## Milestones
 
 - [x] 1. Design brief.
-- [x] 2. The opening: unarmed start, Bolt gives quests one at a time, the crash chest's plain pistol, quests turned in to their giver, Old Tusk as act 1's boss, zones closed until their story quest, rarity tiers and the skill tree opening with level, weapon slots opening with the story.
-- [x] 3. Gates: element weakness on the target, a bank in Coretown in place of the field stash.
-- [x] 4. Content to the budget: quests, enemy types, gun parts and gun models as data.
-- [x] 5. From-zero proof: ten minutes from a new game through real input; Scrap Signal off the known-failing list.
+- [x] 2. The opening: empty-handed start, DING gives errands one at a time, the toy chest's busted staple gun, errands turned in to their giver, Big Mulch as act 1's boss, neighbourhoods closed until their story errand, condition tiers and the skill tree opening with level, weapon slots opening with the story.
+- [x] 3. Gates: element loads on the target, Hank's workbench shelf in place of a field stash.
+- [x] 4. Content to the budget: errands, appliance types, bodies, mods, heirlooms and uniques as data.
+- [x] 5. From-zero proof: ten minutes from a new game through real input.
 - [x] 6. Onboarding hints in the crash site through the engine onboarding system.
+- [x] 7. Junk Drawer: bodies, mods and condition; seven personalities with perks, quirks and voice lines; weapons built from parts on screen; the workbench's salvage and merge; procedural appliances; the suburban look and text.
+- [ ] 8. The suburb in the editor: houses, fences, driveways and cul-de-sacs authored in `editor.scene.json` over the six neighbourhoods.
+- [ ] 9. Personality depth: a weapon remembers its kills across saves and gains a line per milestone; heirlooms speak their backstory on pickup.

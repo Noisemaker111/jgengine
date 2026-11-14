@@ -42,6 +42,27 @@
         "loot.build-choices"
       ],
       "ok": true
+    },
+    {
+      "file": "proofs/sim/weapon-swap.proof.ts",
+      "proves": [
+        "shooter.weapon-swap"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/workbench-merge.proof.ts",
+      "proves": [
+        "loot.gear-upgrade"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/workbench-salvage.proof.ts",
+      "proves": [
+        "loot.vendor-or-salvage"
+      ],
+      "ok": true
     }
   ],
   "data": []

@@ -58,9 +58,9 @@ function buildGun(gun: GunDef): { group: Group; flash: Group; muzzleZ: number; d
 /**
  * The air the player stands in. Dust density, drift, and colour come from the zone's one air
  * description — the same numbers driving the wind bed — so a gust is heard and seen at once, and
- * the Blight's violet reactor ash reads as a different place from Rustflat's sand.
+ * the Estates' violet Wi-Fi haze reads as a different place from Crabgrass Court's pollen.
  */
-function FerralonAir() {
+function SuburbAir() {
   const ctx = useGameContext();
   const host = useEngineHost();
   const [air, setAir] = useState(() => airAt(null));
@@ -109,13 +109,13 @@ function FerralonAir() {
   );
 }
 
-export function FerralonWorldOverlay() {
+export function SuburbWorldOverlay() {
   return (
     <>
       <SceneCaptureBinding />
-      <FerralonAir />
+      <SuburbAir />
       <SalvageRelay />
-      <FerralonViewmodel />
+      <JunkViewmodel />
       <QuestMarker />
     </>
   );
@@ -207,7 +207,7 @@ function viewmodelDraw(get: () => { ctx: GameContext; gun: GunDef | undefined })
   };
 }
 
-export function FerralonViewmodel() {
+export function JunkViewmodel() {
   const ctx = useGameContext();
   const gunId = equippedGun();
   const gun = gunId === null ? undefined : gunById(gunId);

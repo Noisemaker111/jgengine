@@ -27,7 +27,7 @@ import { RELAY } from "./game/relay";
 import { FRONT_SITE } from "./game/encounters/front";
 import { GameUI } from "./game/ui/GameUI";
 import { entityModels, objectModels } from "./game/world/models";
-import { FerralonWorldOverlay } from "./game/world/Viewmodel";
+import { SuburbWorldOverlay } from "./game/world/Viewmodel";
 import { renderEntity } from "./game/world/ApplianceMesh";
 import { renderObject } from "./game/world/yardProps";
 import { NPCS } from "./game/quests/catalog";
@@ -262,7 +262,7 @@ export const game = defineGame({
     // Giant lawn flamingos, yard-sale signs and telephone poles are primitive-built too.
     renderObject,
     objectModels,
-    WorldOverlay: FerralonWorldOverlay,
+    WorldOverlay: SuburbWorldOverlay,
     // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its
   // health through the wall.
     worldHealthBars: { roles: ["enemy"], occlude: true },
