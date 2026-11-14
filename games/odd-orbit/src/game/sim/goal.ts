@@ -2,7 +2,7 @@ import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { FURNITURE, FURNITURE_BY_ID, type FurnitureRole } from "../objects/catalog";
 import type { HouseholdState } from "../session/types";
 import { nextBill, RATION_BUNDLE } from "./economy";
-import { boardingOf, roomOf, tenantComfort } from "../boarding/boarding";
+import { boardingOf, roomOf, tenantComfort, vacantRooms } from "../boarding/boarding";
 import { SPECIES } from "../boarding/species";
 
 /** Rations at or below this count make the pantry the household's most urgent need. */
@@ -30,6 +30,10 @@ export function dayGoal(state: HouseholdState, objects: readonly SceneObject[]):
   if (boarding.applicant !== null) return `Next: ${SPECIES[boarding.applicant.species].name} is buzzing at the airlock — interview them.`;
   const miserable = state.order.find((id) => roomOf(state, id) !== null && tenantComfort(state, id).score < 30);
   if (miserable !== undefined) return `Next: ${state.members[miserable]!.name} is miserable — fix their room in the Rooms plan.`;
+  const leaky = state.order.find((id) => roomOf(state, id) !== null && tenantComfort(state, id).reasons.some((r) => r.factor === "leak"));
+  if (leaky !== undefined) return `Next: ${state.members[leaky]!.name} can smell next door's air — swap rooms or seal the wall (Rooms).`;
+  const fixture = state.order.find((id) => roomOf(state, id) === null);
+  if (fixture !== undefined && vacantRooms(state).length > 0) return `Next: a room stands empty — give ${state.members[fixture]!.name} a door, or wait for an applicant.`;
   const bill = Math.round(nextBill(state, objects));
   if (!hasWorkStation) return "Next: furnish a Gig Terminal so a tenant can earn toward the bills.";
   if (state.credits < bill) return `Next: find ${Math.round(bill - state.credits)} more credits before the ${bill}-credit docking bill.`;

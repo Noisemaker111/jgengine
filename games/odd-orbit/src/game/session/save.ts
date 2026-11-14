@@ -64,7 +64,7 @@ export interface OrbitSave {
  * error, so a misspelled field cannot silently read `undefined`.
  */
 type SavedField =
-  | "admitted" | "applicant" | "asked" | "atmosphere" | "boarding" | "climate" | "deedOwed" | "departed" | "flareUntil"
+  | "admitted" | "applicant" | "basaltSpokeDay" | "nextBarkAt" | "asked" | "atmosphere" | "boarding" | "climate" | "deedOwed" | "departed" | "flareUntil"
   | "gravity" | "grumbles" | "light" | "nextApplicantAt" | "noisyUntil" | "reputation" | "reviews" | "rooms" | "sealed"
   | "settings" | "shuttered" | "slot" | "species" | "stars" | "tenantId" | "text"
   | "accounts" | "action" | "actionUntil" | "answered" | "assignedByPlayer" | "behaviors" | "bloomCrop" | "bodyPlan"
@@ -169,6 +169,7 @@ function validBoarding(b: unknown, order: string[], now: number): boolean {
     if (room.tenantId !== null && (typeof room.tenantId !== "string" || !order.includes(room.tenantId) || let_.has(room.tenantId))) return false;
     if (room.tenantId !== null) let_.add(room.tenantId);
   }
+  if ((b.nextBarkAt !== undefined && !number(b.nextBarkAt, 0, MAX_TIME)) || (b.basaltSpokeDay !== undefined && !integer(b.basaltSpokeDay, 0, 1_000_000))) return false;
   if (!number(b.reputation, 0, 100) || !number(b.deedOwed, 0, 1_000_000) || !number(b.nextApplicantAt, 0, MAX_TIME) || !number(b.flareUntil, 0, now + 210 * 2) || !integer(b.admitted, 0, 10_000)) return false;
   if (!object(b.grumbles) || !Object.entries(b.grumbles).every(([id, n]) => order.includes(id) && integer(n, 0, 99))) return false;
   if (!object(b.noisyUntil) || !Object.entries(b.noisyUntil).every(([id, until]) => /^room:\d$/.test(id) && number(until, 0, now + 210 * 2))) return false;

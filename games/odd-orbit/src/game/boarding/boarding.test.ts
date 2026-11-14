@@ -15,7 +15,7 @@ import { simulateHousehold } from "../sim/simulate";
 import { metricValue } from "../sim/charter";
 import { nextBill } from "../sim/economy";
 import {
-  acceptApplicant, addTenant, advanceApplicants, boardingOf, buyModule, DEED_PRICE, driftNeighbours, FIXTURE_COMFORT, moveTenant,
+  acceptApplicant, addTenant, advanceBarks, BARK_GAP, advanceApplicants, boardingOf, buyModule, DEED_PRICE, driftNeighbours, FIXTURE_COMFORT, moveTenant,
   noVacancy, payDeed, roomOf, sealRoom, settleBoardingNight, tenantComfort, tuneRoom,
 } from "./boarding";
 import { comfortIn, effectiveRoom, idealSettings, neighbourSlots, rentShare, starsFor, type HouseView } from "./rooms";
@@ -303,5 +303,23 @@ describe("the live house", () => {
     expect(state.members["alien:0"]).toBeUndefined();
     expect(ctx.scene.entity.get("alien:0")).toBeNull();
     expect(validOrbitSave(captureOrbitSave(ctx))).toBe(true);
+  });
+});
+
+describe("tenants speak up", () => {
+  test("a tenant says their worst complaint in their own voice, and Old Basalt only once a day", () => {
+    const state = house();
+    addTenant(state, "basalt", 0);
+    const said: string[] = [];
+    const feed = { push: (n: { text: string }) => { said.push(n.text); } };
+    for (let t = 0; t < BARK_GAP * 6; t += 1) advanceBarks(state, t, feed);
+    expect(said).toHaveLength(1);
+    expect(said[0]).toStartWith("Old Basalt: “...");
+    const glorp = house();
+    addTenant(glorp, "glorp", 0);
+    const lines: string[] = [];
+    advanceBarks(glorp, 0, { push: (n) => { lines.push(n.text); } });
+    advanceBarks(glorp, BARK_GAP, { push: (n) => { lines.push(n.text); } });
+    expect(lines.at(-1)).toContain(SPECIES.glorp.lines.complaint.air);
   });
 });

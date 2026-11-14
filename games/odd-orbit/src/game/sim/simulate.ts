@@ -17,7 +17,7 @@ import { creditAmount, PANTRY_CAP, settleHouseholdDay } from "./economy";
 import { FLEX_AFTER_SHIFTS, householdPhase, SHIFT_SECONDS, shiftIsOpen, shiftWindow } from "./schedule";
 import { stationShortfall } from "./goal";
 import {
-  advanceApplicants, driftNeighbours, expireBoarding, roomOf, settleBoardingNight, tenantComfort,
+  advanceApplicants, advanceBarks, driftNeighbours, expireBoarding, roomOf, settleBoardingNight, tenantComfort,
 } from "../boarding/boarding";
 import { AIRLOCK, BERTH_SIZE, berthPose } from "../boarding/layout";
 import {
@@ -249,6 +249,7 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
   advanceIncidents(state, objects, now, dt, ctx.game.notices);
   expireBoarding(state, now);
   advanceApplicants(state, now, ctx.game.notices);
+  advanceBarks(state, now, ctx.game.notices);
   driftNeighbours(state, now, dt);
   for (const id of state.order) {
     for (const other of book.partnersOf(id)) {

@@ -51,6 +51,10 @@ export interface BoardingState {
   departed: SpeciesId[];
   /** Tenants who have moved in since the house opened (for the lease). */
   admitted: number;
+  /** When the next tenant says something out loud; absent in saves from before tenants spoke up. */
+  nextBarkAt?: number;
+  /** The day Old Basalt last spoke: one sentence a day, no more. */
+  basaltSpokeDay?: number;
 }
 
 export const STARTING_REPUTATION = 50;
@@ -479,6 +483,39 @@ export function rejectApplicant(state: HouseholdState, now: number, notices: Pic
 /** Give the fixture (Pip-9) a door: it becomes a tenant on the spot. */
 export function isFixture(state: HouseholdState, tenantId: string): boolean {
   return roomOf(state, tenantId) === null;
+}
+
+/** Game seconds between tenants speaking up in the notice feed. */
+export const BARK_GAP = DAY_LENGTH * 0.22;
+
+/**
+ * Every so often one tenant says what is on their mind, in their own voice: a happy line when the
+ * room suits them, their worst complaint when it does not, the cupboard line for a fixture. Old
+ * Basalt says one sentence a day. Picks rotate through the roster so nobody hogs the feed.
+ */
+export function advanceBarks(state: HouseholdState, now: number, notices: Pick<NoticeFeed, "push">): string | null {
+  const boarding = boardingOf(state);
+  boarding.nextBarkAt ??= now + BARK_GAP * 0.5;
+  if (now < boarding.nextBarkAt || state.order.length === 0) return null;
+  boarding.nextBarkAt = now + BARK_GAP;
+  const turn = Math.floor(now / BARK_GAP);
+  for (let k = 0; k < state.order.length; k++) {
+    const id = state.order[(turn + k) % state.order.length]!;
+    const member = state.members[id]!;
+    const species = speciesOfMember(member);
+    if (species === "basalt" && boarding.basaltSpokeDay === state.day) continue;
+    const def = SPECIES[species];
+    const comfort = tenantComfort(state, id, now);
+    const line = roomOf(state, id) === null
+      ? pickLine(def.lines.unhappy, turn)
+      : comfort.score >= 55 ? pickLine(def.lines.happy, turn) : (comfort.reasons[0]?.text || pickLine(def.lines.unhappy, turn));
+    if (line.length === 0) continue;
+    if (species === "basalt") boarding.basaltSpokeDay = state.day;
+    const text = `${member.name}: “${line}”`;
+    notices.push({ text, tone: comfort.score >= 55 ? "info" : "warn" });
+    return text;
+  }
+  return null;
 }
 
 export function expireBoarding(state: HouseholdState, now: number): void {
