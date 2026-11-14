@@ -66,7 +66,7 @@ export const NIGHT_SIGHT = 0.6;
 /** The beam: how fast the lens drags the spot, how wide it burns, how hard, and its focus rhythm. */
 export const BEAM_SPEED = 4.6;
 export const BEAM_RADIUS = 4.2;
-export const BEAM_UNIT_DPS = 42;
+export const BEAM_UNIT_DPS = 30;
 export const BEAM_BUILDING_DPS = 12;
 export const BEAM_RETARGET = 5;
 /** Every cycle the kid's hand wobbles: the beam goes out of focus (harmless) for a few seconds. */

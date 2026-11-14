@@ -132,7 +132,20 @@ export function anchorFormation(ctx: GameContext, units: readonly UnitRuntime[],
 
   const offsets = formationOffsets(formation.kind, units.length);
   const slots = formationSlots(formation.kind, { x, z }, facing, units.length);
-  const assignment = assignFormationSlots(from, slots);
+  const assignment = [...assignFormationSlots(from, slots)];
+  // The Marshal takes the slot nearest the clicked point: he goes where the commander points, and the
+  // column forms around him (a march order for the Marshal is never lost in a wide formation).
+  const heroIndex = units.findIndex((u) => u.catalogId === "hero");
+  if (heroIndex >= 0 && slots.length > 0) {
+    let nearest = 0;
+    for (let s = 1; s < slots.length; s += 1) {
+      if (Math.hypot(slots[s]![0] - x, slots[s]![1] - z) < Math.hypot(slots[nearest]![0] - x, slots[nearest]![1] - z)) nearest = s;
+    }
+    const holder = assignment.findIndex((slot) => slot === nearest);
+    const heroSlot = assignment[heroIndex] ?? heroIndex;
+    if (holder >= 0) assignment[holder] = heroSlot;
+    assignment[heroIndex] = nearest;
+  }
 
   formation.anchor = { x, z };
   formation.facing = facing;

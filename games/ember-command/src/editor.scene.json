@@ -1020,13 +1020,13 @@
       "id": "shade_home",
       "kind": "poi",
       "position": {
-        "x": 11,
+        "x": 3,
         "y": 0,
-        "z": 30
+        "z": 29
       },
-      "label": "Shade: dandelion leaf",
+      "label": "Shade: dandelion leaf over the nest",
       "meta": {
-        "radius": 8
+        "radius": 9
       }
     },
     {

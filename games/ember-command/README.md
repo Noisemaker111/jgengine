@@ -20,7 +20,7 @@ are what the build does now.
   the yard clocks it is about:
   1. **The Popsicle Claim** (build order; sprinkler). Dig a Barracks Chamber, hatch four Soldiers,
      march Marshal Mandible onto the dropped popsicle. Fails `muster_stalled`, `keep_fallen`, `mandible_fell`.
-  2. **Crossing the Hose** (escort; sprinkler). The Marshal reaches the hose's far bank in 240 s;
+  2. **Crossing the Hose** (escort; sprinkler). The Marshal reaches the hose's far bank in 180 s while the opening raid marches on the nest;
      `mandible_waylaid`.
   3. **Mower Day** (timed defence; mower, rain). Hold the nest 150 s under black-ant raids;
      `watch_overrun`.
@@ -67,7 +67,7 @@ are what the build does now.
 - **The yard.** Sprinkler on the hose's end: 18 s of spray every 46 s, a sweeping jet that slows
   (×0.45) and batters (6/s). Lawnmower: a 9 s warning, then a deck that kills any ant in its lane every
   150 s. Rain every 210 s for 38 s (everyone ×0.8). Night from 165 to 230 s of each 240 s day (sight
-  ×0.6). The beam: 42/s to anything it rests on, blurred 3.5 s of every 15, never through shade. The
+  ×0.6). The beam: 30/s to any ant it rests on, blurred 3.5 s of every 15, never through shade. The
   garden hose is a crawl (×0.35) except at its two crossings; patio stones are high ground (sight ×1.35).
 - **Progression.** Brood room (supply) from the nest and Fungus Gardens; instincts researched in the
   Barracks (Mandibles and Chitin, three ranks each; Swarm or Turtle, a fork); the Marshal levels 1–5,

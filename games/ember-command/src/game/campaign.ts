@@ -189,7 +189,7 @@ export const HOSE_CROSSING: MissionDef = relabel(
     escortee: HERO_ID,
     destination: ENTREPOT_MARKER,
     radius: 8,
-    timeoutSeconds: 240,
+    timeoutSeconds: 180,
     failState: "mandible_waylaid",
     rewards: ROAD_REWARD,
   })), {
@@ -316,7 +316,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
   {
     mission: HOSE_CROSSING,
     brief: "The garden hose runs across the lawn like a river of green rubber. Climbing it is a crawl; the two crossings are not, and the black ants hold both. Break one, or climb where they are not looking.",
-    hostiles: [...CROSSING_GUARD, ...BROOD_GUARD],
+    hostiles: [...CROSSING_GUARD, ...STANDING_RAID, ...BROOD_GUARD],
     waves: false,
     wasps: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
