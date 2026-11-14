@@ -15482,9 +15482,9 @@
       "id": "deep_water_player_spawn",
       "kind": "creature_spawn",
       "position": {
-        "x": 237.6,
+        "x": 269.0,
         "y": -5,
-        "z": 1422.5
+        "z": 1610.0
       },
       "label": "Deep water",
       "meta": {

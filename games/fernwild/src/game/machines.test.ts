@@ -235,10 +235,13 @@ test("a wild Thermite Beetle lies burrowed with only its shell showing, and burs
 });
 
 test("Lampjaws spawn and stay in deep water off the beaches; Arcwires spawn in the rivers and swim them", () => {
-  // A fresh game: the zones near the start fill on the first step, the deep water off the beach among them.
   const g = runner();
   tick(g, 0.1);
   const zone = (prefix: string) => markersOfKind(editorLayers, "creature_spawn").find((marker) => marker.id.startsWith(prefix))!;
+  // The deep water off the first beach lies past the herds that wake at the start: swim out towards it.
+  const deep = zone("deep_water_player_spawn");
+  g.ui.tryInvoke("cheat", { teleport: [deep.position.x, deep.position.z - 120, 0] });
+  for (let i = 0; i < 20; i += 1) tick(g, 0.5);
   const anglers = g.ctx.scene.entity.list().filter((entity) => entity.name === "lampjaw");
   expect(anglers.length).toBeGreaterThan(0);
   tick(g, 10);
