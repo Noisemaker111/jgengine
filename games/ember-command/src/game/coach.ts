@@ -38,7 +38,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "trail",
-    text: "Tip: press P, then right-click: a Pheromone Line from your selected ants. Red ants run up to 40% faster on scent.",
+    text: "Tip: press P, then right-click: a Pheromone Line from your selected ants. Red ants run up to 40% faster on scent — but black raiders can smell it too.",
     when: (f) => f.elapsed >= 25 && f.scented && !f.trailPainted,
   },
   {

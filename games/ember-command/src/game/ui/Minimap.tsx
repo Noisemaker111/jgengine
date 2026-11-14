@@ -7,15 +7,17 @@ import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 
 import { enemyDrawn, fogLevel, fogSnapshot, FOG_ALPHA, type FogCellsSnapshot } from "../fog";
 import { session } from "../session";
+import { YARD } from "../yardInstance";
+import { hudStore } from "../hudStore";
 import { INK, RIVAL_INK, OCHRE, BRASS, RED_INK } from "./theme";
 
 export const MAP_SIZE = 168;
 const RADIUS = 48; // the battlefield is 96×96 centred on the origin, so ±48 fills the frame
 const VIEW: MinimapView = { center: [0, 0], worldRadius: RADIUS, size: MAP_SIZE };
-const FOG_INK = "#3a2a18";
+const FOG_INK = "#1d2a10";
 
 interface Blip { color: string; radius: number; stroke: boolean }
-/** Marks per kind, in the survey's inks: the colony blue, the hero brass, Black Ants red, sugar seams ochre. */
+/** Marks per kind: the red colony, the Marshal in honey, the black ants in violet, sugar in ochre, leaf in green. */
 const BLIP: Record<string, Blip> = {
   playerHero: { color: BRASS, radius: 3.6, stroke: true },
   playerBuilding: { color: RED_INK, radius: 4.2, stroke: true },
@@ -24,6 +26,8 @@ const BLIP: Record<string, Blip> = {
   enemyBuilding: { color: RIVAL_INK, radius: 4.2, stroke: true },
   enemyUnit: { color: RIVAL_INK, radius: 2.5, stroke: false },
   crumbs: { color: OCHRE, radius: 2.7, stroke: false },
+  popsicle: { color: "#ff3d6e", radius: 4, stroke: true },
+  leaves: { color: "#2f7a1c", radius: 2.7, stroke: false },
 };
 
 export interface FogRun { key: string; x: number; y: number; w: number; h: number; kind: "unseen" | "explored" }
@@ -56,6 +60,34 @@ const round = (v: number) => Math.round(v * 10) / 10;
 
 interface Dot { id: string; kind: string }
 
+/** The authored yard, projected once: hose beads, patio slabs and the mower's lane band. */
+const HOSE_DOTS = (() => {
+  const out: { key: string; x: number; y: number }[] = [];
+  const pts = YARD.hose?.points ?? [];
+  for (let i = 1; i < pts.length; i += 1) {
+    const a = pts[i - 1]!, b = pts[i]!;
+    const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 2.2);
+    for (let s = 0; s < steps; s += 1) {
+      const t = s / steps;
+      const at = projectToMinimap([a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t], VIEW);
+      if (at.x >= 0 && at.x <= MAP_SIZE && at.y >= 0 && at.y <= MAP_SIZE) out.push({ key: `h${i}:${s}`, x: round(at.x), y: round(at.y) });
+    }
+  }
+  return out;
+})();
+const PATIO_RECTS = YARD.patios.map((slab, i) => {
+  const a = projectToMinimap([slab.x - slab.halfX, slab.z - slab.halfZ], VIEW);
+  const b = projectToMinimap([slab.x + slab.halfX, slab.z + slab.halfZ], VIEW);
+  return { key: `p${i}`, x: round(Math.min(a.x, b.x)), y: round(Math.min(a.y, b.y)), w: round(Math.abs(b.x - a.x)), h: round(Math.abs(b.y - a.y)) };
+});
+const LANE = (() => {
+  const lane = YARD.mowerLane;
+  if (lane === null) return null;
+  const top = projectToMinimap([0, lane.from.z - lane.halfWidth], VIEW);
+  const bottom = projectToMinimap([0, lane.from.z + lane.halfWidth], VIEW);
+  return { y: round(Math.min(top.y, bottom.y)), h: round(Math.abs(bottom.y - top.y)) };
+})();
+
 /** Every blip the map may show now: friendly and sighted enemy units, buildings and surveyed seams. */
 function tacticalDots(ctx: GameContext): Dot[] {
   const dots: Dot[] = [];
@@ -65,8 +97,8 @@ function tacticalDots(ctx: GameContext): Dot[] {
       if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, e.position[0], e.position[2])) continue;
       const role = unit.kind === "building" ? "Building" : unit.catalogId === "hero" ? "Hero" : "Unit";
       dots.push({ id: e.id, kind: `${unit.faction === "player" ? "player" : "enemy"}${role}` });
-    } else if (e.name === "crumbs" && fogLevel(session.fog, e.position[0], e.position[2]) !== "unseen") {
-      dots.push({ id: e.id, kind: "crumbs" });
+    } else if ((e.name === "crumbs" || e.name === "popsicle" || e.name === "leaves") && fogLevel(session.fog, e.position[0], e.position[2]) !== "unseen") {
+      dots.push({ id: e.id, kind: e.name });
     }
   }
   return dots;
@@ -96,16 +128,21 @@ function polledSource<T>(scan: () => T[], key: (items: T[]) => string, everyMs: 
 }
 
 /**
- * The survey map: parchment with the black nest's half washed red, ruled squares, fog runs re-read at the
- * fog tick and blips that move at their leaves. Enemy units out of Red sight have no blip.
+ * The lawn map: green with the black colony's half washed violet, the hose, the patio stones and the
+ * mower's lane (flashing red while it warns), fog runs re-read at the fog tick and blips that move at
+ * their leaves. Enemy units out of the colony's sight have no blip.
  */
 export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
   const fog = useMemo(() => polledSource(() => fogRuns(fogSnapshot(session.fog)),
     (runs) => runs.map((r) => `${r.key}${r.kind[0]}${r.w}`).join(","), 200), []);
   const dots = useMemo(() => polledSource(() => tacticalDots(ctx), (list) => list.map((d) => d.id + d.kind).join(","), 150), [ctx]);
   const grid = Array.from({ length: 5 }, (_, i) => (i + 1) * (MAP_SIZE / 6));
-  return <RuneView width={MAP_SIZE} height={MAP_SIZE} fill="#dccaa0" clip label="Battlefield minimap">
-    <RuneView pin={[0, 0, null, null]} width={MAP_SIZE} height={MAP_SIZE / 2} fill="#a3291c14" />
+  return <RuneView width={MAP_SIZE} height={MAP_SIZE} fill="#6fb83a" clip label="Battlefield minimap">
+    <RuneView pin={[0, 0, null, null]} width={MAP_SIZE} height={MAP_SIZE / 2} fill="#4b3a6622" />
+    {PATIO_RECTS.map((r) => <RuneView key={r.key} pin={[r.x, r.y, null, null]} width={r.w} height={r.h} fill="#d8d2c4" radius={2} />)}
+    {LANE === null ? null : <RuneView pin={[0, LANE.y, null, null]} width={MAP_SIZE} height={LANE.h} fill="#ff3b2f"
+      opacity={bind(() => { const m = hudStore.get().hazards.mower; return m === "warning" ? 0.55 : m === "crossing" ? 0.7 : m === "idle" ? 0.16 : 0; })} />}
+    {HOSE_DOTS.map((d) => <RuneView key={d.key} pin={[d.x - 1.6, d.y - 1.6, null, null]} width={3.2} height={3.2} radius={1.6} fill="#1f6e2a" />)}
     {grid.map((at) => <RuneView key={`v${at}`} pin={[at, 0, null, null]} width={1} height={MAP_SIZE} fill="#1f2a121f" />)}
     {grid.map((at) => <RuneView key={`h${at}`} pin={[0, at, null, null]} width={MAP_SIZE} height={1} fill="#1f2a121f" />)}
     <RuneFor source={fog} keyBy={(run) => `${run.key}:${run.kind}:${run.w}`}>{(run) =>

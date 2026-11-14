@@ -43,6 +43,9 @@ function faceToward(ctx: GameContext, id: string, from: EntityPosition, tx: numb
 export function yardPace(catalogId: string, faction: "player" | "enemy", x: number, z: number): number {
   let pace = hazardSpeedFactor(session.hazards, YARD, x, z);
   if (faction === "player") pace *= trailSpeedFactor(scentAt(session.trails, x, z), TRAIL_SPEED_BONUS);
+  // Black raiders can smell the red colony's trails too, and run them at half the bonus: a trail is a
+  // road into your base as well as out of it.
+  else if (catalogId === "raider") pace *= trailSpeedFactor(scentAt(session.trails, x, z), TRAIL_SPEED_BONUS / 2);
   if (catalogId !== "wasp" && onHose(YARD, x, z)) pace *= HOSE_SLOW;
   return pace;
 }
