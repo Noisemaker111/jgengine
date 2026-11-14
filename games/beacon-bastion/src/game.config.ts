@@ -1,8 +1,11 @@
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/gameKit";
+import { withSceneSet } from "@jgengine/core/editor/sceneSet";
 
-import { editorLayers } from "./editorLayers";
+import { bindScene, editorLayers } from "./editorLayers";
+import { sceneSet, type MapId } from "./maps";
+import { rebindPath } from "./game/world/path";
 import { assets } from "./game/assets";
 import { BEACON_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
@@ -16,12 +19,14 @@ import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { BeaconBastionWorldOverlay } from "./game/world/WorldOverlay";
 import { loop } from "./loop";
-import { physics, world } from "./world";
+import { physics, rebindWorld, world } from "./world";
 
 /** The hiring board's first ten workers take the number keys; the rest are a click away. */
 const HOTKEYED = Math.min(10, TOWER_IDS.length);
 
-export const game = defineGame({
+/** The game for the live map: everything read from the scene document is read fresh each build. */
+function createGame() {
+  return defineGame({
   name: "Do Not Disturb",
   assets,
   world,
@@ -160,6 +165,20 @@ export const game = defineGame({
     },
   },
 });
+}
 
+/** Point every live binding at one map: its document, then its ground, then its roads and plots. */
+function applyScene(id: MapId): void {
+  bindScene(id);
+  rebindWorld();
+  rebindPath();
+}
 
-
+/**
+ * The game on the engine scene set: the shell mounts the live map's build and, when the title's map
+ * button switches maps, rebuilds on the new one (scene, terrain, roads, plots) without a page reload.
+ */
+export const game = withSceneSet(sceneSet, (id) => {
+  applyScene(id as MapId);
+  return createGame();
+});

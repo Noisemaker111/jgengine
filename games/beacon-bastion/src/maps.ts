@@ -1,8 +1,13 @@
+import { createSceneSet } from "@jgengine/core/editor/sceneSet";
+
+import sceneJson from "./editor.scene.json";
+import downtownJson from "./downtown.scene.json";
+
 /**
- * The streets a day can be worked on. Each map is its own scene document (roads, plots, buildings,
- * scatter, terrain) and the town's world model is built from that map's plots when the game loads,
- * so a map is chosen before boot: `?map=<id>` in the URL, else the last map the player picked.
- * Picking another map stores the choice and reloads, the way a different level loads.
+ * The streets a day can be worked on, as the engine's scene set: each map is its own scene document
+ * (roads, plots, buildings, scatter, terrain). Picking another map switches the set, and the shell
+ * rebuilds the game for that map in place (`withSceneSet` in `game.config.ts`): no page reload.
+ * Edit a map with the editor CLI's `--scene <file>`.
  */
 export type MapId = "main-street" | "downtown";
 
@@ -21,42 +26,38 @@ export const MAP_IDS: readonly MapId[] = ["main-street", "downtown"];
 
 const STORAGE_KEY = "do-not-disturb:map";
 
-function isMapId(value: unknown): value is MapId {
-  return typeof value === "string" && (MAP_IDS as readonly string[]).includes(value);
-}
-
-/** The map this boot runs: the URL's `?map=`, else the stored pick, else Main Street. */
-export function resolveActiveMap(): MapId {
+/** A map pinned for this boot: headless runs set `DND_MAP`, a capture or a link sets `?map=`. */
+function pinnedMap(): string | null {
   try {
-    // Headless runs (balance sims, staged captures) pick a map with DND_MAP=<id>.
     const fromEnv = typeof process === "undefined" ? undefined : process.env?.["DND_MAP"];
-    if (isMapId(fromEnv)) return fromEnv;
-    const search = typeof location === "undefined" ? "" : location.search;
-    const fromUrl = new URLSearchParams(search).get("map");
-    if (isMapId(fromUrl)) return fromUrl;
-    const stored = typeof localStorage === "undefined" ? null : localStorage.getItem(STORAGE_KEY);
-    if (isMapId(stored)) return stored;
+    if (typeof fromEnv === "string" && fromEnv !== "") return fromEnv;
+    return typeof location === "undefined" ? null : new URLSearchParams(location.search).get("map");
   } catch {
-    // Storage can be blocked (private windows, previews): Main Street it is.
+    return null;
   }
-  return "main-street";
 }
 
-export const ACTIVE_MAP: MapId = resolveActiveMap();
+export const sceneSet = createSceneSet<MapId>({
+  scenes: {
+    "main-street": { label: MAPS["main-street"].label, document: sceneJson, file: "editor.scene.json" },
+    downtown: { label: MAPS.downtown.label, document: downtownJson, file: "downtown.scene.json" },
+  },
+  defaultId: "main-street",
+  initial: pinnedMap(),
+  storage: {
+    read: () => (typeof localStorage === "undefined" ? null : localStorage.getItem(STORAGE_KEY)),
+    write: (id) => {
+      if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, id);
+    },
+  },
+});
 
-/**
- * Choose the map the next day runs on. The same map changes nothing; another one is stored and the
- * page reloads onto it (dropping any `?map=` that would pin the old one). Returns whether it reloads.
- */
+/** The map the town is on right now. */
+export function activeMap(): MapId {
+  return sceneSet.active();
+}
+
+/** Switch the town to another map: the shell rebuilds the game on it. Returns whether it switched. */
 export function chooseMap(id: MapId): boolean {
-  if (id === ACTIVE_MAP) return false;
-  try {
-    localStorage.setItem(STORAGE_KEY, id);
-    const url = new URL(location.href);
-    url.searchParams.set("map", id);
-    location.replace(url.toString());
-    return true;
-  } catch {
-    return false;
-  }
+  return sceneSet.select(id);
 }

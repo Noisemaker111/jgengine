@@ -64,6 +64,18 @@ describe("every map is a complete, playable street", () => {
     });
   }
 
+  test("switching maps rebuilds the game on the other street in place: roads, plots and spawn follow", async () => {
+    const { game } = await import("../../game.config");
+    const path = await import("./path");
+    const mainSpawn = path.SPAWN_POINT;
+    const downtownGame = game.scenes.build("downtown");
+    expect(downtownGame).not.toBe(game);
+    expect([path.SPAWN_POINT[0], path.SPAWN_POINT[2]]).toEqual([-40, -18]);
+    expect(path.BUILD_PLOTS.find((plot) => plot.id === "plot-1")!.position[0]).toBe(-30);
+    game.scenes.build("main-street");
+    expect([path.SPAWN_POINT[0], path.SPAWN_POINT[2]]).toEqual([mainSpawn[0], mainSpawn[2]]);
+  });
+
   test("the downtown grid is a different street: its roads run square and enter from two sides", () => {
     const main = road(DOCS.downtown!, "creep-path"), flank = road(DOCS.downtown!, "creep-path-flank");
     for (const points of [main, flank]) {

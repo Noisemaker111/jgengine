@@ -20,7 +20,7 @@ import { authoredEditorDocument, decodeEditorDocument, type EditorDocument } fro
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
 import { loadGameCatalogs } from "./loadGameCatalogs.ts";
-import { loadGameLayers } from "./loadGameLayers.ts";
+import { loadGameLayers, loadGameSceneFile } from "./loadGameLayers.ts";
 import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
 import { loadRpcPayload, type RpcPayloadSource } from "./rpcPayload.ts";
 import { runEditorMcpStdio } from "./stdioServer.ts";
@@ -32,8 +32,10 @@ function printHelp(): void {
   --game <id>          game id under games/ (default the-robots)
   --port <n>           HTTP bridge port (default 17373)
   --rpc '<json>'       run an RPC and exit; repeat to run several in order on one session
+  --scene <file>       work on another of the game's scene documents (a map or level), e.g.
+                       downtown.scene.json under games/<id>/src/ (default editor.scene.json)
   --save               after a successful --rpc/--rpc-file batch, write the session document
-                       back to games/<id>/src/editor.scene.json
+                       back to games/<id>/src/<scene file>
   --stdio              MCP JSON-RPC over stdin/stdout
   --tools              list MCP tool names
   --serve              keep the localhost HTTP bridge up (default when no --rpc/--rpc-file/--stdio)
@@ -43,6 +45,8 @@ function printHelp(): void {
 /** Parsed CLI flags for the headless editor control plane. */
 export type EditorCliOptions = {
   gameId: string;
+  /** The scene document under the game's `src/`; `editor.scene.json` unless `--scene` names another. */
+  sceneFile: string;
   port: number;
   rpcSources: RpcPayloadSource[];
   save: boolean;
@@ -57,6 +61,7 @@ export type EditorCliOptions = {
  */
 export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
   let gameId = "the-robots";
+  let sceneFile = DEFAULT_SCENE_FILE;
   let port = 17373;
   const rpcSources: RpcPayloadSource[] = [];
   let save = false;
@@ -66,6 +71,7 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!;
     if (arg === "--game") gameId = argv[++i] ?? gameId;
+    else if (arg === "--scene") sceneFile = argv[++i] ?? sceneFile;
     else if (arg === "--port") port = Number(argv[++i] ?? port);
     else if (arg === "--rpc") {
       const value = argv[++i];
@@ -89,7 +95,15 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
     } else if (arg === "--serve") serve = true;
   }
 
-  return { gameId, port, rpcSources, save, serve, stdio };
+  return { gameId, sceneFile, port, rpcSources, save, serve, stdio };
+}
+
+/** The scene document a game ships by default. */
+export const DEFAULT_SCENE_FILE = "editor.scene.json";
+
+/** Whether a `--scene` value names a scene document file directly under the game's `src/`. @internal */
+export function validSceneFile(file: string): boolean {
+  return /^[A-Za-z0-9_-]+(\.scene)?\.json$/.test(file) && file.endsWith(".scene.json");
 }
 
 /** Result of a `--save` write-back: the path written and how many derived entries it left out, or why nothing was written. */
@@ -101,7 +115,8 @@ export type SaveSceneResult = { ok: true; saved: string; derivedSkipped: number 
  * the GUI's Ctrl+S round-trip identically. Refuses invalid documents before writing or inventing a game directory.
  * @internal
  */
-export function saveSceneDocument(gameId: string, document: EditorDocument, gamesRoot?: string): SaveSceneResult {
+export function saveSceneDocument(gameId: string, document: EditorDocument, gamesRoot?: string, sceneFile: string = DEFAULT_SCENE_FILE): SaveSceneResult {
+  if (!validSceneFile(sceneFile)) return { ok: false, error: `--save: "${sceneFile}" is not a scene document file name (want <name>.scene.json)` };
   const root = gamesRoot ?? fileURLToPath(new URL("../../../../games/", import.meta.url));
   const srcDir = join(root, gameId, "src");
   if (!existsSync(srcDir)) return { ok: false, error: `--save: no src directory for game "${gameId}" at ${srcDir}` };
@@ -109,7 +124,7 @@ export function saveSceneDocument(gameId: string, document: EditorDocument, game
   if (!decoded.ok) {
     return { ok: false, error: `--save: invalid editor document: ${decoded.errors.map((error) => `${error.path} ${error.message}`).join("; ")}` };
   }
-  const path = join(srcDir, "editor.scene.json");
+  const path = join(srcDir, sceneFile);
   const authored = authoredEditorDocument(decoded.document);
   writeFileSync(path, `${JSON.stringify(authored.document, null, 2)}\n`);
   return { ok: true, saved: path, derivedSkipped: authored.derivedSkipped };
@@ -127,7 +142,11 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const { gameId, port, rpcSources, save, serve, stdio } = parseEditorCliArgs(argv);
+  const { gameId, sceneFile, port, rpcSources, save, serve, stdio } = parseEditorCliArgs(argv);
+  if (!validSceneFile(sceneFile)) {
+    console.error(`--scene: "${sceneFile}" is not a scene document file name (want <name>.scene.json)`);
+    return 1;
+  }
 
   if (save && rpcSources.length === 0) {
     console.error("--save applies to a --rpc/--rpc-file batch; nothing to persist without one");
@@ -139,7 +158,10 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
+  const [layers, catalogs] = await Promise.all([
+    sceneFile === DEFAULT_SCENE_FILE ? loadGameLayers(gameId) : loadGameSceneFile(gameId, sceneFile),
+    loadGameCatalogs(gameId),
+  ]);
   if (!layers.ok) {
     console.error(
       `invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`,
@@ -184,7 +206,7 @@ async function main(argv: string[]): Promise<number> {
       }
     }
     if (save) {
-      const result = saveSceneDocument(gameId, session.getState().document);
+      const result = saveSceneDocument(gameId, session.getState().document, undefined, sceneFile);
       console.log(JSON.stringify(result, null, 2));
       if (!result.ok) {
         dispose();

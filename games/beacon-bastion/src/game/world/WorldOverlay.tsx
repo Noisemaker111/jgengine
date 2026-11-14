@@ -30,8 +30,6 @@ import { useEffect } from "@jgengine/core/ui/jsx";
 import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
-/** Where the side street opens. */
-const FLANK_GATE = ROUTES[FLANK_POINT_KEY]![0]!;
 import { plotShapes } from "./plotShapes";
 import { rangeRingBand } from "./rangeRing";
 import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -468,7 +466,7 @@ export function BeaconBastionWorldOverlay() {
     <>
       <SceneCaptureBinding />
       <SpawnGate at={SPAWN_POINT} />
-      {HAS_FLANK ? <SpawnGate at={FLANK_GATE} facing={Math.PI / 2} /> : null}
+      {HAS_FLANK ? <SpawnGate at={ROUTES[FLANK_POINT_KEY]![0]!} facing={Math.PI / 2} /> : null}
       <BuildPlots />
       <BuildSites />
       <InspectedTower />

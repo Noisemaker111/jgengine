@@ -44,3 +44,17 @@ export async function loadGameLayers(gameId: string): Promise<LoadGameLayersResu
   }
   return decodeGameLayers(resolved);
 }
+
+/**
+ * One of a game's other scene documents (a second map), read straight from `games/<id>/src/<file>`
+ * rather than through its `editorLayers` module, which names only the live scene.
+ */
+export async function loadGameSceneFile(gameId: string, file: string): Promise<LoadGameLayersResult> {
+  const scene = new URL(`../../../../games/${gameId}/src/${file}`, import.meta.url);
+  if (!existsSync(scene)) return { ok: false, errors: [{ path: "$", message: `no scene document ${file} for game "${gameId}"` }] };
+  try {
+    return decodeGameLayers(JSON.parse(await readFile(scene, "utf8")) as unknown);
+  } catch (error) {
+    return { ok: false, errors: [{ path: "$", message: error instanceof Error ? error.message : String(error) }] };
+  }
+}

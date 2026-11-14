@@ -24,7 +24,7 @@ import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { ACTIVE_MAP, type MapId } from "../maps";
+import { activeMap, type MapId } from "../maps";
 
 /** The streets a player can keep. One document per street, all inside the shared save document (slot ids keep their first names). */
 export const KEEP_SLOTS = ["keep", "ward", "beacon"] as const;
@@ -102,7 +102,7 @@ export function captureDefense(ctx: GameContext): DefenseSave {
     })),
     countdown: session.countdown.snapshot(),
     parcels: [...session.parcels],
-    map: ACTIVE_MAP,
+    map: activeMap(),
     abilities: session.abilities.state(),
   };
 }

@@ -6,7 +6,7 @@ import { join } from "node:path";
 
 import { createEmptyEditorDocument, normalizeEditorLayers, withDerivedEditorLayers, type EditorEnvironment } from "@jgengine/core/editor/index";
 
-import { parseEditorCliArgs, saveSceneDocument } from "./cli";
+import { parseEditorCliArgs, saveSceneDocument, validSceneFile } from "./cli";
 
 const cliEntry = join(import.meta.dir, "cli.ts");
 const repoRoot = join(import.meta.dir, "../../../..");
@@ -87,6 +87,29 @@ describe("parseEditorCliArgs", () => {
   test("--save is off by default and set by the flag", () => {
     expect(parseEditorCliArgs(["--rpc", '{"method":"scene_summary"}']).save).toBe(false);
     expect(parseEditorCliArgs(["--rpc", '{"method":"scene_summary"}', "--save"]).save).toBe(true);
+  });
+});
+
+describe("--scene: a game's other scene documents", () => {
+  test("parses the scene file, defaults to editor.scene.json, and refuses anything but a sibling *.scene.json", () => {
+    expect(parseEditorCliArgs(["--game", "demo"]).sceneFile).toBe("editor.scene.json");
+    expect(parseEditorCliArgs(["--game", "demo", "--scene", "downtown.scene.json"]).sceneFile).toBe("downtown.scene.json");
+    expect(validSceneFile("downtown.scene.json")).toBe(true);
+    expect(validSceneFile("../other/editor.scene.json")).toBe(false);
+    expect(validSceneFile("notes.json")).toBe(false);
+  });
+
+  test("saves into the named scene file and leaves the default scene alone", () => {
+    const root = mkdtempSync(join(tmpdir(), "editor-cli-scene-"));
+    const src = join(root, "demo", "src");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(src, "editor.scene.json"), "main scene bytes\n");
+    const document = createEmptyEditorDocument();
+    document.markers.push({ id: "spawn", kind: "player_spawn", position: { x: 1, y: 0, z: 2 } });
+    expect(saveSceneDocument("demo", document, root, "downtown.scene.json")).toMatchObject({ ok: true });
+    expect(JSON.parse(readFileSync(join(src, "downtown.scene.json"), "utf8")).markers[0].id).toBe("spawn");
+    expect(readFileSync(join(src, "editor.scene.json"), "utf8")).toBe("main scene bytes\n");
+    expect(saveSceneDocument("demo", document, root, "../escape.scene.json").ok).toBe(false);
   });
 });
 

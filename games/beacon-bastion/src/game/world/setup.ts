@@ -15,11 +15,11 @@ import { BUILDING_MARKERS } from "../../editorLayers";
 import { BUILDING_PLAN, buildingEntity } from "../models";
 
 /** The town hall at the end of Main Street turns its door to the street that leads to it. */
-const TOWN_HALL_FACING = (() => {
+function townHallFacing(): number {
   const end = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 1]!;
   const before = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 2] ?? end;
   return Math.atan2(before[0] - end[0], before[2] - end[2]);
-})();
+}
 import { payBounty, registerWaveCommands, spawnRaider, transformOnDeath } from "../waves/director";
 import { registerCaptureCommands } from "../capture";
 import { legacy, chooseRelic, openingKeep, startDefense } from "../waves/legacy";
@@ -56,7 +56,7 @@ export function restartDefense(ctx: GameContext): void {
   // The engine loop opens the defense and adopts the relic it carries.
   startDefense(ctx);
   resetKeep(ctx, openingKeep(ctx));
-  ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop", rotationY: TOWN_HALL_FACING });
+  ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop", rotationY: townHallFacing() });
   ctx.time.play();
   setGamePhase(ctx, "playing");
 }

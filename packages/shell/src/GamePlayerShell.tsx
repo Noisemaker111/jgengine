@@ -10,6 +10,7 @@ import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengin
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import type { PlayableSceneSwitch } from "@jgengine/core/editor/sceneSet";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { actionContextStack, activeActionCodes, bindingOverrides as gameBindingOverrides, rebindAction as rebindGameAction, setBindingOverrides as seedGameBindingOverrides } from "@jgengine/core/game/controlGate";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -109,12 +110,36 @@ export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/terrain/terrain";
 
+type GamePlayerShellProps = {
+  playable: PlayableGame;
+  multiplayer?: ShellMultiplayer | null;
+  poster?: boolean;
+  onContextReady?: ((ctx: GameContext) => void) | undefined;
+};
+
+const NO_SCENE_SUBSCRIBE = () => () => {};
+
 /**
  * The shell body `GameHost` renders after resolving multiplayer. Hosts that resolve their own
  * sessions (the dev runner) render it directly; games mount through `GameHost`.
+ *
+ * A playable carrying a scene set (`withSceneSet`) is rebuilt for the live scene: when the game calls
+ * `set.select(id)`, the shell builds that scene's playable and remounts on it, so the scene document,
+ * its terrain and everything the game derives from it come up fresh without a page reload.
  * @internal
  */
-export function GamePlayerShell({
+export function GamePlayerShell(props: GamePlayerShellProps) {
+  const switcher = (props.playable as { scenes?: PlayableSceneSwitch<PlayableGame> }).scenes;
+  const first = useRef(switcher?.set.active() ?? "");
+  const active = useSyncExternalStore(switcher?.set.subscribe ?? NO_SCENE_SUBSCRIBE, () => switcher?.set.active() ?? "", () => first.current);
+  const playable = useMemo(
+    () => (switcher === undefined || active === first.current ? props.playable : switcher.build(active)),
+    [switcher, active, props.playable],
+  );
+  return <ScenePlayerShell key={active} {...props} playable={playable} />;
+}
+
+function ScenePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,
   poster = false,
