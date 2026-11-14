@@ -42,7 +42,7 @@ describe("jgengine sync", () => {
       config.engine = config.engine.filter((name) => name !== "editor");
     });
     const writes = planSync(dir, standalone);
-    expect(writes.map((write) => write.path).sort()).toEqual(["AGENTS.md", "index.html", "package.json", "src/index.css", "src/index.tsx", "src/main.tsx"]);
+    expect(writes.map((write) => write.path).sort()).toEqual(["index.html", "package.json", "src/index.css", "src/index.tsx", "src/main.tsx"]);
     applySync(dir, writes);
     expect(readFileSync(join(dir, "index.html"), "utf8")).toContain("<title>Renamed Probe</title>");
     const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { dependencies: Record<string, string> };

@@ -709,7 +709,9 @@ export function GameUI() {
 `;
 };
 
-const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent briefing
+const engineBriefingMd = (variant: TemplateVariant) => `# JGengine — engine briefing
+
+This file is engine-owned and rewritten by \`npx jgengine sync\`; do not edit it. Game-specific rules go in the \`AGENTS.md\` above this folder.
 
 You are in a **JGengine** game project. JGengine is a pure-TypeScript game engine SDK on npm (\`@jgengine/core\`, \`react\`, \`shell\`, …). Site: https://jgengine.com · source: https://github.com/Noisemaker111/jgengine
 
@@ -783,6 +785,35 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Play & test from the CLI: \`bun run drive\` (\`npx jgengine drive\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels; \`--right-click-at\` for right-click orders), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
+/** The game-root agent file: short, game-owned, points at the game's README/PLAN and the engine's file. */
+const agentsMd = (name: string) => `# ${name} — agent guide
+
+Look in \`README.md\` for the game being built here (and \`PLAN.md\` for its plan and milestones). Keep both current as the game changes.
+
+This game is built on **JGengine**. The engine's rules, how to find shipped capabilities and how to report engine gaps are in \`jgengine/AGENTS.md\` (engine-owned, kept current by \`npx jgengine sync\`; do not edit it). Skills: \`.claude/skills/jgengine/SKILL.md\`.
+
+Add this game's own rules below.
+`;
+
+/**
+ * The engine-owned file in `jgengine/`. A standalone game gets the full engine briefing, since it has
+ * no monorepo around it; an in-repo game gets a short pointer to the monorepo's root `AGENTS.md`.
+ */
+const jgengineAgentsMd = (variant: TemplateVariant) =>
+  variant === "standalone"
+    ? engineBriefingMd(variant)
+    : `# JGengine — pointer
+
+This game is built on **JGengine**, a TypeScript game framework. This file is engine-owned and rewritten by \`jgengine sync\`; do not edit it.
+
+- Rules: the monorepo's root \`AGENTS.md\` and this game's \`PLAN.md\`.
+- UI is JSX on the engine's own runtime, not React. Every game draws through Rune (\`uiRenderer: "rune"\`).
+- 3D is plain three.js on the engine's frame loop.
+- Find a shipped capability before building one: \`bun run find <words>\`.
+- World content lives in \`src/editor.scene.json\`, authored through the editor (F2+E), not in code.
+- Skills: \`.claude/skills/jgengine/SKILL.md\` routes to the right one.
+`;
+
 const artDirectionMd = `# Art direction
 
 ## Reference images
@@ -814,6 +845,7 @@ export {
   editorLayersTestFor,
   editorLayersTs,
   grownEditorLayersTs,
+  jgengineAgentsMd,
   editorSceneJson,
   gameAssetsTs,
   gameConfigTs,

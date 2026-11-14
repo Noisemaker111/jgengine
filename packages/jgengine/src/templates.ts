@@ -17,6 +17,7 @@ import {
   editorLayersTs,
   editorSceneJson,
   grownEditorLayersTs,
+  jgengineAgentsMd,
   STARTER_ENVIRONMENT,
   gameAssetsTs,
   gameConfigTs,
@@ -122,8 +123,9 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
       ? []
       : [
           { path: ".gitignore", contents: gitignore },
-          { path: "AGENTS.md", contents: agentsMd(name, variant) },
+          { path: "AGENTS.md", contents: agentsMd(name) },
         ]),
+    { path: "jgengine/AGENTS.md", contents: jgengineAgentsMd(variant) },
     { path: "src/index.css", contents: indexCss(variant, editor) },
     { path: "src/style.css", contents: styleCss },
     { path: "src/art-direction.md", contents: artDirectionMd },

@@ -13,8 +13,8 @@ import { applyCatalogSync, planCatalogSync, readWorkspaceCatalog } from "./works
  */
 export const TEMPLATE_SHARED_FILES = [
   ".gitignore",
-  "AGENTS.md",
   "index.html",
+  "jgengine/AGENTS.md",
   "src/index.css",
   "src/index.tsx",
   "src/main.tsx",
@@ -175,7 +175,7 @@ const SYNC_USAGE = `usage: jgengine sync [dir...] [--check]
 
   Brings games up to this jgengine's engine version and makes each match its jgengine.json: the
   @jgengine packages in package.json, its template's shared files and scripts (wiring, page,
-  AGENTS.md, shoot/drive). Run at a workspace
+  jgengine/AGENTS.md, shoot/drive). Run at a workspace
   root it also moves the @jgengine pins in the root's Bun catalogs, then syncs every workspace game.
   When versions move it prints the release notes in between: Migrate steps first, oldest release
   first. Run a newer CLI (npx jgengine@latest sync) to move to a newer engine.
