@@ -67,14 +67,14 @@ Numbers are what the build does now.
 - **Session loop (one sitting).** One shift is six real minutes (the day is `DAY_SECONDS` = 1440 s, so
   18:00 to 24:00 is 360 s). The tide rises through five stages, so the same order is a scooter run at
   18:30 and a jet-ski or blimp run at 23:00. The shift closes against MegaSlice's quota.
-- **Long loop (hours).** Tips buy the kitchen: ovens 1,200 / 3,000 / 6,500 (capacity 1→4, calls every
-  30→15 s, boxes leave at 92→100°), toppings 900 / 2,400 / 5,200 (tips ×1.25 / 1.5 / 1.8), bags 700 /
-  2,000 (cooling ×0.72 / 0.5). Reputation stars (0–5 at 4, 10, 18, 30, 45 happy deliveries) unlock
+- **Long loop (hours).** Tips buy the kitchen: ovens 900 / 2,400 / 5,500 (capacity 1→4, calls every
+  30→15 s, boxes leave at 92→100°), toppings 700 / 1,800 / 4,500 (tips ×1.25 / 1.5 / 1.8), bags 500 /
+  1,500 (cooling ×0.72 / 0.5). Reputation stars (0–5 at 4, 10, 18, 30, 45 happy deliveries) unlock
   customers: Theo the DJ and Ida at the lighthouse at 1, the bridge club and the rooftop wedding at 2,
   Captain Brine's submarine at 3. Vehicles from the lot: scooter 600, cargo trike 1,500, jet-ski 3,200,
-  motor gondola 5,000, pizza blimp 9,000. The note starts at 12,000.
-- **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (150 + 80 a shift worked, up to
-  1,400) takes 12 off; a short one adds 18. At 100% MegaSlice calls the note in: +1,500 debt and the
+  motor gondola 5,000, night bus 7,000, pizza blimp 7,500. The note starts at 7,000.
+- **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (140 + 25 a shift worked, up to
+  190 + 120 per oven past the first) takes 12 off; a short one adds 18. At 100% MegaSlice calls the note in: +1,500 debt and the
   pressure resets to 55. Every 250 paid off eases it by 1. Paying the note off saves the shop for good.
 - **Customers with personality.** Gus at the dock office (first to flood), the Okafor twins' night-market
   stall (two at once), Lou's houseboat at Harbor View, DJ Theo at the Neon Tide studio, Signora Ro's bridge

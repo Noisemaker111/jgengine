@@ -6,7 +6,7 @@ import { content } from "../content";
 import { secondsAtHour, DAY_SECONDS } from "../clock";
 import { streetPlayOf } from "../streetPlay";
 import { tickTide, waterAt, FLOOD_SHEETS } from "../tide/tideRuntime";
-import { buyUpgrade } from "./pizzeria";
+import { buyUpgrade, STARTING_DEBT, UPGRADES } from "./pizzeria";
 import { CALL_PATIENCE, customerSpot, OVEN, SHOP_BLIMP, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
 
 function boot() {
@@ -159,7 +159,7 @@ describe("a night at Vell's", () => {
     expect(pizzeriaStore.read(ctx).oven).toBe(2);
     expect(ctx.game.commands.run("pizzeria.pay", { amount: pizzeriaStore.read(ctx).debt }).status).not.toBe("rejected");
     expect(pizzeriaStore.read(ctx).saved).toBe(true);
-    expect(cash(ctx)).toBe(start - 1200 - 12000);
+    expect(cash(ctx)).toBe(start - UPGRADES.oven.tiers[1]!.cost - STARTING_DEBT);
   });
   test("a call left on the board too long walks to a rival, and the first stack teaches the risk once", () => {
     const ctx = boot();

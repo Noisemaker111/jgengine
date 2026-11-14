@@ -199,7 +199,7 @@ const CAR_SPECS: readonly CarSpec[] = [
   { id: "car_coupe", label: "Verve", body: "#f2c9a8", cabin: "#26292f", price: 0, massKg: 1300, engineForce: 13000, brakeForce: 15000, tireGrip: 1.0, comHeight: 0.5, trackWidth: 1.58, wheelbase: 2.5, topSpeed: 44, handbrakeGrip: 0.25, collisionRadius: 1.4 },
   { id: "car_cop", label: "Canal Warden cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 13800, brakeForce: 15500, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 40, handbrakeGrip: 0.26, collisionRadius: 1.4 },
   { id: "car_suv", label: "Motor gondola", body: "#15161c", cabin: "#d6a64a", price: 5000, massKg: 620, engineForce: 3100, brakeForce: 2700, tireGrip: 0.62, comHeight: 0.45, trackWidth: 1.2, wheelbase: 4.4, topSpeed: 15, handbrakeGrip: 0.3, collisionRadius: 1.6, maxAngle: 0.42, gears: GEARS_SUV, hull: true },
-  { id: "car_bus", label: "Islander night bus", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, gears: GEARS_BUS, redlineRpm: 4600 },
+  { id: "car_bus", label: "Islander night bus", body: "#e0a53c", cabin: "#2a2d34", price: 7000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, gears: GEARS_BUS, redlineRpm: 4600 },
 ];
 
 const AIR_DENSITY = 1.225;
@@ -270,7 +270,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     label: "Pizza blimp",
     body: "#fff0d2",
     cabin: "#d93a2f",
-    price: 9000,
+    price: 7500,
     collisionRadius: 2.6,
     medium: "air",
     dynamics: {

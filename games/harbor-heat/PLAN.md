@@ -126,7 +126,7 @@ Genres: open-world, racing, delivery. 20/21 proven · 1 not simulatable · 5 cut
 
 ### Start state
 
-Cash 250, no vehicle owned but the family scooter at the kerb, oven/toppings/bag tier 1, debt 12,000,
+Cash 250, no vehicle owned but the family scooter at the kerb, oven/toppings/bag tier 1, debt 7,000,
 MegaSlice pressure 20, reputation 0, clock 17:30, tide out.
 
 ### Content budget
@@ -202,16 +202,21 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 
 ## Handoff
 
-- Done: milestones 1–4 and the depth rounds: the chart, lessons, requests, streaks, specials, sounds,
-  the tide's ten-minute tell, twelve customers, the five-chapter story with three set-piece nights, the
-  tow, the Tide Rush ladder. The crime layer and all combat code are deleted; HHPD is the Canal Wardens.
-- Proof: `bun run test games/harbor-heat` (216 tests; suite 18/21 proven, all six delivery entries);
+- Done: milestones 1–6 and the depth rounds: the chart, lessons, requests, streaks, specials, sounds,
+  the tide's warning, twelve customers, the five-chapter story with three set-piece nights, the tow,
+  the Tide Rush ladder, the King-tide blimp line (rooftops take boxes only from the air or a boat), and
+  the jet-ski and gondola on the engine's boat model (planing, wake, bounce off walls). The crime layer
+  and all combat code are deleted; HHPD is the Canal Wardens.
+- Balance: `src/game/pizza/career.ts` plays a whole career on paper with the game's own numbers (call
+  timeline, board, patience, tide, tips, chapter cash, quota, note). A steady rider saves the shop on
+  night 19 (about two hours) with all eight chapters and no foreclosure; a rider at 70% pace on night 31
+  with one. That run set the note to 7,000, cut the kitchen prices, and tied the quota ceiling to the
+  oven tier (the old 150 + 80 a night quota could not be met by anyone and spiralled into foreclosures).
+- Proof: `bun run test games/harbor-heat` (225 tests; suite 20/21 proven, 1 not simulatable, 5 cut);
   `bun run drive harbor-heat --flow from-zero` passes headless. check-types and gen clean. verify:fast
-  passes everything it can run here; asset provisioning fails on the sandbox proxy (403), so its boot
-  probe never runs.
+  passes everything it can run here; asset provisioning fails on the sandbox proxy (403).
 - Screens: Rune UI PNGs in `proofs/high-tide/` (from before the depth rounds). No 3D screenshot: this
   sandbox has no GPU for headless Chrome. Capture `--state flood` and `--state king-tide` on a machine
-  with one, and re-render the UI fixtures (`shift`, `books`, `shift-over`) to check the new card lines.
-- Still missing in the suite: onboarding.find-features and progression.runway (needs a content sheet).
-  The long-play browser flow was not re-run. Next milestones: 5 (blimp line, rooftop-only drops) and
-  6 (planing boats, flood ripples).
+  with one.
+- Not done: flood ripples on the water surface (engine gap in Gaps), the long-play browser flow was not
+  re-run, and the sim's travel speeds are estimates: check them against a real recorded shift.

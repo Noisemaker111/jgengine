@@ -116,7 +116,7 @@ describe("the family pizzeria", () => {
 
   test("missing quota lets MegaSlice lean in until it calls the note; paying it off saves the shop", () => {
     let shop = freshPizzeria();
-    expect(nightlyQuota(shop)).toBe(150);
+    expect(nightlyQuota(shop)).toBe(140);
     const good = closeShift(shop, 500);
     expect(good.metQuota).toBe(true);
     expect(good.state.pressure).toBeLessThan(shop.pressure);

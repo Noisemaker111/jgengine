@@ -30,9 +30,9 @@ export const UPGRADES: Readonly<Record<UpgradeKind, UpgradeTrack>> = {
     blurb: "Another oven: one more box per run and orders land faster.",
     tiers: [
       { label: "Nonna's old brick oven", cost: 0 },
-      { label: "Second deck oven", cost: 1200 },
-      { label: "Wood-fired dome", cost: 3000 },
-      { label: "Twin conveyor line", cost: 6500 },
+      { label: "Second deck oven", cost: 900 },
+      { label: "Wood-fired dome", cost: 2400 },
+      { label: "Twin conveyor line", cost: 5500 },
     ],
   },
   toppings: {
@@ -41,9 +41,9 @@ export const UPGRADES: Readonly<Record<UpgradeKind, UpgradeTrack>> = {
     blurb: "Better toppings: every tip is bigger.",
     tiers: [
       { label: "Tinned and trusty", cost: 0 },
-      { label: "Market basil & buffalo", cost: 900 },
-      { label: "Truffle & hot honey", cost: 2400 },
-      { label: "Nonna's secret sauce", cost: 5200 },
+      { label: "Market basil & buffalo", cost: 700 },
+      { label: "Truffle & hot honey", cost: 1800 },
+      { label: "Nonna's secret sauce", cost: 4500 },
     ],
   },
   bag: {
@@ -52,8 +52,8 @@ export const UPGRADES: Readonly<Record<UpgradeKind, UpgradeTrack>> = {
     blurb: "A better bag: boxes stay hot for longer.",
     tiers: [
       { label: "Cardboard and hope", cost: 0 },
-      { label: "Quilted thermal bag", cost: 700 },
-      { label: "Heated insulated box", cost: 2000 },
+      { label: "Quilted thermal bag", cost: 500 },
+      { label: "Heated insulated box", cost: 1500 },
     ],
   },
 };
@@ -95,7 +95,7 @@ export interface PizzeriaState {
   paid?: number;
 }
 
-export const STARTING_DEBT = 12000;
+export const STARTING_DEBT = 7000;
 
 export function freshPizzeria(): PizzeriaState {
   return { oven: 1, toppings: 1, bag: 1, debt: STARTING_DEBT, pressure: 20, shifts: 0, goodDeliveries: 0, deliveries: 0, foreclosures: 0, saved: false };
@@ -138,10 +138,19 @@ export function payDebt(state: PizzeriaState, amount: number): PizzeriaState {
   return { ...state, debt, paid: (state.paid ?? 0) + paid, saved: state.saved || debt === 0, pressure: debt === 0 ? 0 : Math.max(0, state.pressure - Math.floor(paid / 250)) };
 }
 
-/** The tips a shift must bring in to keep MegaSlice back: it climbs with each night worked. */
+/**
+ * The takings a shift must bring in to keep MegaSlice back. It climbs with each night worked, and its
+ * ceiling rises with the kitchen: the bigger the shop, the more the chain expects it to make.
+ */
 export function nightlyQuota(state: PizzeriaState): number {
-  return Math.min(1400, 150 + state.shifts * 80);
+  return Math.min(QUOTA_CEILING_BASE + QUOTA_CEILING_PER_OVEN * (state.oven - 1), QUOTA_START + state.shifts * QUOTA_STEP);
 }
+
+/** The first night's quota, its nightly climb, and the ceiling for each oven tier past the first. */
+export const QUOTA_START = 140;
+export const QUOTA_STEP = 25;
+export const QUOTA_CEILING_BASE = 190;
+export const QUOTA_CEILING_PER_OVEN = 120;
 
 export interface ShiftClose {
   state: PizzeriaState;
