@@ -29,10 +29,10 @@ import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperame
 import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
-import { drainSurvivorStamina, heldItem, strikeHarvestable } from "./survivor";
+import { drainSurvivorStamina, heldItem, nearestHarvestable, strikeHarvestable } from "./survivor";
 import { depositInto, homeBox } from "./base";
 import { climateAt } from "./climate";
-import { biteProfile, loadShare } from "./data/tameWork";
+import { biteProfile, loadShare, TAME_GATHER } from "./data/tameWork";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
 import { SWIM_DEPTH, SWIM_SLOW, SWIMMERS } from "./data/swim";
 import { SEA_LEVEL } from "../world";
@@ -91,6 +91,8 @@ interface Creature {
   scrapped: number;
   /** A Rootkit standing still as a tree until the forest is disturbed. */
   dormant: boolean;
+  /** Its Harvest chip is in: on Guard Zone it works the nearest node of its specialty into its own inventory. */
+  harvesting: boolean;
 }
 
 /** ARK's tamed levelling: the level it was tamed at, levels gained since, XP into the next, points spent. */
@@ -164,6 +166,8 @@ interface World {
   pinged: Map<string, number>;
   /** Seconds to each sentry's next sweep. */
   sweep: number;
+  /** Seconds to the harvesters' next swing. */
+  harvestIn: number;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -254,6 +258,7 @@ const worldOf = perContext((ctx: GameContext): World => {
     stormsEnded: false,
     pinged: new Map(),
     sweep: 0,
+    harvestIn: 0,
   };
 });
 
@@ -472,6 +477,7 @@ export function spawnCreature(
     traits: [...(options.traits ?? [])],
     scrapped: 0,
     dormant: botProfile(species)?.dormantUntilChop !== undefined && options.genes === undefined,
+    harvesting: false,
   };
   const health = maxHealth(creature);
   creature.stamina = statOf(creature, "stamina");
@@ -1110,6 +1116,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
 
   events.push(...tickStorm(ctx, world));
   tickSentries(ctx, world, dt);
+  tickHarvesters(ctx, world, dt);
   const mine = [ctx.player.userId, ...world.roster.list(ctx.player.userId).map((record) => record.id)];
   const threats = threatsTo(world, mine);
   for (const creature of world.creatures.values()) {
@@ -1425,6 +1432,63 @@ export function sendHome(ctx: GameContext): number {
   const distance = at === undefined ? 0 : Math.round(Math.hypot(box.at[0] - at[0], box.at[2] - at[2]));
   ctx.game.notices.push({ text: `The ${defOf(creature).label} flew ${delivered} stack${delivered === 1 ? "" : "s"} home, ${distance} m, and waits by the box`, tone: "success" });
   return delivered;
+}
+
+/** Seconds between a Harvest chip's swings, metres it ranges from its post. */
+const HARVEST_EVERY = 3;
+const HARVEST_RANGE = 14;
+
+/** Slot the Harvest chip in or out of the bot whose inventory is open. */
+export function toggleHarvest(ctx: GameContext): void {
+  const creature = viewed(ctx);
+  if (creature === null || !creature.tamed || TAME_GATHER[creature.species] === undefined) return;
+  creature.harvesting = !creature.harvesting;
+  if (creature.harvesting) {
+    const entity = ctx.scene.entity.get(creature.id);
+    worldOf(ctx).roster.command(creature.id, "stay");
+    if (entity !== null) worldOf(ctx).roster.setHome(creature.id, [entity.position[0], entity.position[1], entity.position[2]]);
+  }
+  ctx.game.notices.push({ text: creature.harvesting ? `Harvest chip in: the ${defOf(creature).label} works the ground around this spot` : "Harvest chip out", tone: "success" });
+}
+
+/**
+ * Every bot running a Harvest chip on Guard Zone walks to the nearest node of its best resource near its
+ * post and works it into its own inventory, until it is loaded to its weight.
+ */
+function tickHarvesters(ctx: GameContext, world: World, dt: number): void {
+  world.harvestIn -= dt;
+  if (world.harvestIn > 0) return;
+  world.harvestIn = HARVEST_EVERY;
+  for (const creature of world.creatures.values()) {
+    const tool = TAME_GATHER[creature.species];
+    if (!creature.harvesting || tool === undefined || !creature.tamed || creature.dead || world.roster.get(creature.id)?.command !== "stay") continue;
+    if (ridingOf(ctx).riderOf(creature.id) !== null || loadOf(creature).moveMultiplier <= 0) continue;
+    const self = ctx.scene.entity.get(creature.id);
+    const home = world.driver.state(creature.id)?.home;
+    if (self === null || home === undefined) continue;
+    const wanted = Object.entries(tool.biases ?? {}).sort((a, b) => b[1] - a[1]).map(([kind]) => kind);
+    let node: [number, number, number] | null = null;
+    for (const kind of wanted) {
+      node = nearestHarvestable(ctx, home, HARVEST_RANGE, "strike", kind) ?? nearestHarvestable(ctx, home, HARVEST_RANGE, "pick", kind);
+      if (node !== null) break;
+    }
+    if (node === null) continue;
+    // It works from beside the node, then reaches in.
+    const away = Math.atan2(self.position[0] - node[0], self.position[2] - node[2]);
+    const reach = defOf(creature).radius + 1.2;
+    if (Math.hypot(self.position[0] - node[0], self.position[2] - node[2]) > reach) moveCreature(ctx, creature.id, [node[0] + Math.sin(away) * (reach - 0.4), node[2] + Math.cos(away) * (reach - 0.4)]);
+    const from = ctx.scene.entity.get(creature.id)?.position ?? self.position;
+    const facing = Math.atan2(node[0] - from[0], node[2] - from[2]);
+    const granted = strikeHarvestable(ctx, from, facing, reach + 0.6, tool, statOf(creature, "melee"));
+    if (granted === null) continue;
+    for (const grant of granted) {
+      const whole = Math.floor(grant.amount + ctx.rng());
+      if (whole <= 0) continue;
+      const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, grant.kind, whole);
+      if (put.status === "ok") creature.inventory = put.state;
+    }
+    ctx.game.playEntityAnimation(creature.id, "attack");
+  }
 }
 
 /** A creature's traits (quirks and glitches), empty for none or an unknown id. */
@@ -1846,6 +1910,8 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     }),
     scrapped: creature.scrapped,
     courier: botProfile(creature.species)?.courier === true,
+    harvester: TAME_GATHER[creature.species] !== undefined,
+    harvesting: creature.harvesting,
     dormant: creature.dormant,
     overclocked: !creature.tamed && world.storm,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
@@ -2084,6 +2150,7 @@ export function creaturesSave(ctx: GameContext) {
         creature.traits ??= [];
         creature.scrapped ??= 0;
         creature.dormant ??= false;
+        creature.harvesting ??= false;
         creature.stamina ??= statOf(creature, "stamina");
         return [creature.id, creature];
       }));

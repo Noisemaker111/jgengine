@@ -201,6 +201,12 @@ export function CreaturePanel(): ReactNode {
           </Row>
         </RuneView>
       ) : null}
+      {card.tamed && card.harvester ? (
+        <Row gap={6}>
+          <Small color={INK} grow={1} shrink text={card.harvesting ? "Harvest chip: working the ground around its post into its inventory" : "Harvest chip: on Guard Zone it gathers its specialty by itself"} />
+          <Button picked={card.harvesting} command={{ name: "toggleHarvest" }}>{card.harvesting ? "Harvest: on" : "Harvest: off"}</Button>
+        </Row>
+      ) : null}
       {card.tamed && card.courier ? (
         <Row gap={6}>
           <Small color={INK} grow={1} shrink text="Courier: load it, and it flies the cargo to your nearest storage box." />

@@ -11,6 +11,8 @@ const berries = (bias: number): Record<string, number> => Object.fromEntries(BER
  * hatchet draws stone at 2.2 every 0.9 s; a Rollgrinder at 12 every 1.4 s).
  */
 export const TAME_GATHER: Readonly<Record<string, ToolProfile>> = {
+  // A Mowbot trims bushes and grass for fiber and thatch: its Harvest chip's whole job.
+  mowbot: { power: 1, biases: { fiber: 6, thatch: 3, mejoberry: 0.5 }, defaultBias: 0 },
   thermite: { power: 1.5, biases: { metal: 10, flint: 10, crystal: 6, obsidian: 6, stone: 0.5 }, defaultBias: 0 },
   rollgrinder: { power: 1.5, biases: { stone: 12, flint: 0.3 }, defaultBias: 0 },
   sawbeaver: { power: 1.5, biases: { wood: 10, thatch: 1 }, defaultBias: 0 },

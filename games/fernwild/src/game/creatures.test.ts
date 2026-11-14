@@ -384,3 +384,25 @@ test("a ridden Watchwing lifts a mowbot beside it and lets it go, but is too sma
   tick(runner, 0.1);
   expect(airliftView(runner.ctx).holding).toBeNull();
 });
+
+test("a Mowbot running its Harvest chip on Guard Zone trims the bushes around its post into its own inventory", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  const me = runner.ctx.scene.entity.get(runner.userId)!.position;
+  const bush = nearestHarvestable(runner.ctx, me, 300, "pick", "fiber")!;
+  expect(bush).not.toBeNull();
+  runner.ui.tryInvoke("cheat", { teleport: [bush[0] + 4, bush[2], -Math.PI / 2] });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { summon: { species: "mowbot", level: 1, distance: 2, tamed: true } });
+  tick(runner, 0.1);
+  const mowbot = creaturesView(runner.ctx).aimed!;
+  expect(mowbot.species).toBe("mowbot");
+  expect(mowbot.harvester).toBe(true);
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("toggleHarvest", {});
+  runner.ui.tryInvoke("closeCreature", {});
+  expect(creatureCard(runner.ctx, mowbot.id)!.harvesting).toBe(true);
+  tick(runner, 20);
+  const carried = creatureCard(runner.ctx, mowbot.id)!.inventory.reduce((sum, slot) => sum + (slot?.itemId === "fiber" ? slot.count : 0), 0);
+  expect(carried).toBeGreaterThan(0);
+});
