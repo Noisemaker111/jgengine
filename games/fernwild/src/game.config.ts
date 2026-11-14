@@ -191,7 +191,7 @@ const SNOW_KINDS = new Set(["rhinodrill", "timberjack", "fangsaw", "coilsheep", 
 const COAST_KINDS = new Set(["mowbot", "craneback", "puckbot", "sirenhorn", "sparkspitter", "bumperbot", "klepto", "ramjack"]);
 
 export const game = defineGame({
-  name: "Fernwild",
+  name: "Wildwire",
   simulation: { hz: 60 },
   rendering: {
     look: "cinematic",

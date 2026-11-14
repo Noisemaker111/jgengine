@@ -260,7 +260,7 @@ function BossBar(): ReactNode {
     return (
       <Panel items="center" gap={4} fill="#0c0f0dcc" padding={[8, 14, 8, 14]}>
         <Text weight={700} color={GREEN} text={`${phase.tier} Hivemind summoned`} />
-        <Small color={INK} text={bind(() => `The portal opens in ${seconds()} s · stand within ${PORTAL_RANGE} m of the Green Obelisk with your tames`)} />
+        <Small color={INK} text={bind(() => `The portal opens in ${seconds()} s · stand within ${PORTAL_RANGE} m of the Green Obelisk with your bots`)} />
       </Panel>
     );
   }
@@ -306,7 +306,7 @@ function Onboarding(): ReactNode {
   }, same);
   if (runtime === null || view === null) return null;
   return (
-    <RuneView gap={5} maxWidth={280} fill="#0b141899" radius={6} padding={10} responsive={{ phone: { maxWidth: 200, padding: 8 } }} label="Survivor's path">
+    <RuneView gap={5} maxWidth={280} fill="#0b141899" radius={6} padding={10} responsive={{ phone: { maxWidth: 200, padding: 8 } }} label="Technician's path">
       <Tag color={GOLD} text={view.title} />
       {view.steps.map((step) => (
         <Row key={step.id} gap={6} items="start">
@@ -352,7 +352,7 @@ function Prompt(): ReactNode {
     if (creatures.riding !== null) return { kind: "none" as const };
     const aimed = creatures.aimed;
     if (aimed !== null) {
-      const use = aimed.dead ? (aimed.inventory.some((slot) => slot !== null) ? "E · Access inventory · Hit to carve" : "Hit to carve meat and hide") : aimed.tamed ? (aimed.saddled ? "E · Ride" : "E · Access inventory") : aimed.taming?.unconscious === true ? "E · Access inventory" : null;
+      const use = aimed.dead ? (aimed.inventory.some((slot) => slot !== null) ? "E · Access inventory · Hit to carve" : "Hit to carve biogel and salvage") : aimed.tamed ? (aimed.saddled ? "E · Ride" : "E · Access inventory") : aimed.taming?.unconscious === true ? "E · Access inventory" : null;
       return { kind: "creature" as const, card: cardShape(aimed), use };
     }
     const base = baseView(c);

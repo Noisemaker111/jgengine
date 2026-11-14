@@ -129,7 +129,7 @@ function freshEngrams(): UnlockPoints {
 
 /** Know an engram without spending points: how the new game hands out the level-1 ones. */
 export function learnFree(ctx: GameContext, engramId: string): void {
-  if (engramDef(engramId) === null) throw new Error(`fernwild: no engram "${engramId}"`);
+  if (engramDef(engramId) === null) throw new Error(`fernwild: no schematic "${engramId}"`);
   survivorOf(ctx).engrams.spend(engramId, 0);
 }
 
@@ -160,7 +160,7 @@ export function grantXp(ctx: GameContext, amount: number): void {
   const survivor = survivorOf(ctx);
   const before = survivorLevel(ctx);
   track.grantXp(ctx.scene.entity.stats, ctx.player.userId, amount, (reached) => {
-    ctx.game.notices.push({ text: `Level ${reached}! A stat point and ${survivor.engrams.grantForLevel(reached)} engram points to spend.`, tone: "success" });
+    ctx.game.notices.push({ text: `Level ${reached}! A stat point and ${survivor.engrams.grantForLevel(reached)} schematic points to spend.`, tone: "success" });
   });
   if (survivorLevel(ctx) !== before) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Level up!", kind: "pickup" });
 }
@@ -558,7 +558,7 @@ export function learn(ctx: GameContext, engramId: string): void {
     return;
   }
   const spent = survivor.engrams.spend(engram.id, engram.points);
-  if (!spent.ok) ctx.game.notices.push({ text: spent.reason === "insufficient-points" ? "Not enough engram points" : "Already learned", tone: "deny" });
+  if (!spent.ok) ctx.game.notices.push({ text: spent.reason === "insufficient-points" ? "Not enough schematic points" : "Already learned", tone: "deny" });
   else ctx.game.notices.push({ text: `Learned ${itemLabel(engram.recipe.outputs[0]!.itemId)}`, tone: "success" });
 }
 

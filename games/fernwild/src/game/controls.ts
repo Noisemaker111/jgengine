@@ -16,9 +16,9 @@ export const CONTROLS: readonly (readonly [string, string])[] = [
   ["Space", "Jump"],
   ["Mouse", "Look"],
   ["Left click", "Punch, chop or mine with what is in hand"],
-  ["E", "Pick bushes and stones, drink; open a downed or tamed creature, ride, get off"],
-  ["T / U", "Whistle your tames to follow / stay"],
-  ["I", "Inventory, crafting, stats and engrams"],
+  ["E", "Pick bushes and stones, drink; open a downed or uploaded bot, ride, get off"],
+  ["T / U", "Whistle your bots to follow / stay"],
+  ["I", "Inventory, crafting, stats and schematics"],
   ["V", "First / third person"],
   ["H", "Show the numbers under the vital icons"],
   ["1 - 0", "Equip a hotbar tool or eat hotbar food"],
@@ -27,24 +27,24 @@ export const CONTROLS: readonly (readonly [string, string])[] = [
 
 /** The title screen's briefing, in the order a fresh survivor meets it. */
 export const BRIEFING: readonly string[] = [
-  "You wake on a beach with nothing.",
-  "Punch trees for thatch and wood, pick bushes for fiber and berries, gather stones from the ground.",
-  "Craft a stone pick, level up, and spend engram points on new recipes.",
-  "Club a creature unconscious, put its food in its inventory, and it is yours. Saddle it to ride.",
-  "Eat and drink before hunger and thirst take your health.",
+  "A century ago the colony was abandoned with its fabricators running. The machines kept printing, repairing and rewriting each other.",
+  "You wash up on the south beach, a lone technician with a multitool and a pocket of fuses.",
+  "Punch trees for thatch and wood, pick bushes for fiber and berries, gather stones; craft tools and spend schematic points.",
+  "Drain a bot with a club or EMP arrows until it shuts down, then jack in: feed it firmware or biogel while the upload holds. Rig it to ride.",
+  "Eat and drink before hunger and thirst take your health, and park your bots under a roof on Signal Storm nights.",
 ];
 
 const creditLines = (): CreditsEntry[] =>
   [
-    "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
-    "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
+    "Wildwire: robot-taming survival on a feral machine island. Inspired by the creature-survival genre.",
+    "Robots: built in code from the engine body-plan builder. Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
     "Cloth texture: ambientCG (Fabric 007), CC0.",
     ...libraryModelCredits(TOOL_MODELS),
     ...itemIconCredits(),
   ].map((label) => ({ label }));
 
 export const CREDITS: CreditsDocument = mergeCredits(
-  { sections: [{ heading: "Fernwild", entries: [{ label: "Fernwild — made with JGengine." }] }, { heading: "Models and icons", entries: creditLines() }] },
+  { sections: [{ heading: "Wildwire", entries: [{ label: "Wildwire — made with JGengine." }] }, { heading: "Models and icons", entries: creditLines() }] },
   creditsForSourceIds(BODY_SOURCE_IDS),
   { sections: lookCredits() },
 );

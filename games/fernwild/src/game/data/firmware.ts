@@ -16,7 +16,7 @@ export type FirmwareTier = (typeof FIRMWARE_TIERS)[number];
 export const EGG_SIZES = ["xs", "s", "m", "l", "xl"] as const;
 export type EggSize = (typeof EGG_SIZES)[number];
 
-export const EGG_LABEL: Readonly<Record<EggSize, string>> = { xs: "Extra Small Egg", s: "Small Egg", m: "Medium Egg", l: "Large Egg", xl: "Extra Large Egg" };
+export const EGG_LABEL: Readonly<Record<EggSize, string>> = { xs: "Extra Small Core", s: "Small Core", m: "Medium Core", l: "Large Core", xl: "Extra Large Core" };
 export const FIRMWARE_LABEL: Readonly<Record<FirmwareTier, string>> = { basic: "Basic Firmware", simple: "Simple Firmware", regular: "Regular Firmware", superior: "Superior Firmware", exceptional: "Exceptional Firmware" };
 
 export const eggItem = (size: EggSize): string => `egg_${size}`;

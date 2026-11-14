@@ -6,7 +6,7 @@ import type { TameStat } from "./species";
 /** "h:mm" or "Nd h:mm", as the ARK wiki writes its breeding times, in seconds. */
 function time(text: string): number {
   const match = /^(?:(\d+)d )?(\d+):(\d\d)$/.exec(text);
-  if (match === null) throw new Error(`breeding time ${text}`);
+  if (match === null) throw new Error(`forging time ${text}`);
   return Number(match[1] ?? 0) * 86_400 + Number(match[2]) * 3600 + Number(match[3]) * 60;
 }
 

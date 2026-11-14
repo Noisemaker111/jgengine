@@ -17,7 +17,7 @@ test("title pages open from their buttons, mirror the menu pane, and Back return
   for (const [width, height] of SIZES) {
     const ui = await mountRuneUi("title", width, height);
     try {
-      for (const [verb, pane, shows] of [["Controls", "controls", "Whistle your tames to follow / stay"], ["Settings", "settings", "Master volume"], ["Credits", "credits", "Fernwild — made with JGengine."]] as const) {
+      for (const [verb, pane, shows] of [["Controls", "controls", "Whistle your bots to follow / stay"], ["Settings", "settings", "Master volume"], ["Credits", "credits", "Fernwild — made with JGengine."]] as const) {
         await ui.press(verb);
         expect(menuPane(ui.ctx), `${verb} at ${width}`).toBe(pane);
         expect(ui.text()).toContain(shows);

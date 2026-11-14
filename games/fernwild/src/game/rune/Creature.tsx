@@ -36,12 +36,12 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
   const ctx = useGameContext();
   const live = () => read() ?? card;
   const taming = card.taming;
-  const status = card.dead ? " · Dead" : card.tamed ? " · Tamed" : taming?.unconscious === true ? " · Unconscious" : "";
+  const status = card.dead ? " · Dead" : card.tamed ? " · Uploaded" : taming?.unconscious === true ? " · Offline" : "";
   return (
     <RuneView gap={4} width={220} label={card.label}>
       <Text weight={700} size={14} color={INK} text={`${card.label} · ${card.sex === "female" ? "female" : "male"} · Lvl ${card.level}${status}`} />
       {card.imprint > 0 || card.mutations > 0 ? (
-        <Small color={INK} text={[card.imprint > 0 ? `Imprinted ${Math.round(card.imprint * 100)}%` : "", card.mutations > 0 ? `${card.mutations} mutation${card.mutations === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")} />
+        <Small color={INK} text={[card.imprint > 0 ? `Imprinted ${Math.round(card.imprint * 100)}%` : "", card.mutations > 0 ? `${card.mutations} glitch${card.mutations === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")} />
       ) : null}
       {card.dead ? null : <Meter label="Health" value={() => live().health.value} max={() => live().health.max} color="#d8483f" />}
       {card.tamed && !card.dead ? <Meter label="Stamina" value={() => live().stamina.value} max={() => live().stamina.max} color="#e7c84a" /> : null}
@@ -53,7 +53,7 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
       {taming !== null && taming.unconscious ? (
         <>
           <Meter label="Taming" value={() => Math.round((live().taming?.progress ?? 0) * 100)} max={() => 100} color="#7ad06a" />
-          <Small color={INK} text={bind(() => `Taming effectiveness ${Math.round((live().taming?.effectiveness ?? 0) * 100)}%`)} />
+          <Small color={INK} text={bind(() => `Upload integrity ${Math.round((live().taming?.effectiveness ?? 0) * 100)}%`)} />
         </>
       ) : null}
     </RuneView>
@@ -65,9 +65,9 @@ function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }):
   return (
     <RuneView gap={3}>
       {growth.maxed ? (
-        <Small color={INK} text={`Tamed at level ${growth.tamedAt} · +${growth.gained} levels, the most it can gain`} />
+        <Small color={INK} text={`Uploaded at level ${growth.tamedAt} · +${growth.gained} levels, the most it can gain`} />
       ) : (
-        <Meter label={`Tamed at ${growth.tamedAt} · +${growth.gained} levels · XP`} value={() => growth.xp} max={() => growth.xpNext} color="#7ad06a" />
+        <Meter label={`Uploaded at ${growth.tamedAt} · +${growth.gained} levels · XP`} value={() => growth.xp} max={() => growth.xpNext} color="#7ad06a" />
       )}
       {growth.unspent > 0 ? <Text size={12} weight={700} color={GOOD} text={`▲ ${growth.unspent} point${growth.unspent === 1 ? "" : "s"} to spend`} /> : null}
       {growth.stats.map((stat) => (
@@ -110,11 +110,11 @@ function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
         <Meter label={() => { const b = baby(); return b === null ? "" : `${b.stage[0]!.toUpperCase()}${b.stage.slice(1)} · grown in ${clock(b.secondsLeft)}`; }} value={() => Math.round((baby()?.matured ?? 0) * 100)} max={() => 100} color="#6fb7c9" />
         <Meter label="Imprinting" value={() => Math.round((baby()?.imprint ?? 0) * 100)} max={() => 100} color="#e58fd0" />
         <Small color={INK} text={bind(() => { const b = baby(); return b === null ? "" : b.wants === null ? `Next wants care in ${clock(b.nextCare)}` : `Wants: ${b.wants}`; })} />
-        <Small text="It eats meat or berries you put in its inventory, faster while small." />
+        <Small text="It eats biogel or berries you put in its inventory, faster while small." />
       </RuneView>
     );
   }
-  if (!card.breeds) return <Small text="This kind does not breed." />;
+  if (!card.breeds) return <Small text="This kind does not forge." />;
   return (
     <RuneView gap={4}>
       <Row gap={8}>
@@ -133,7 +133,7 @@ function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
   if (best === undefined) return "It eats nothing you can give it.";
   const plain = rest.filter((item) => !item.startsWith("firmware_"));
-  return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it tames best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
+  return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it uploads best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
 }
 
 const STANCE_LINE = { passive: "Never fights", neutral: "Fights back, and joins your fights", aggressive: "Attacks anything near" } as const;
@@ -156,12 +156,12 @@ export function CreaturePanel(): ReactNode {
         <RuneView gap={2}>
           <Small color={INK} text={bind(() => { const t = read()?.taming; return t == null ? "" : t.eating === null ? hungryLine(t.foods) : `Eats ${itemLabel(t.eating)} in ${t.nextMeal}s.`; })} />
           {taming.unconscious ? <Small color={INK} text={bind(() => `Wakes in ${clock(read()?.taming?.wakesIn ?? 0)} unless you keep it under.`)} /> : null}
-          <Small text="Keep its torpor up with Narcoberries or Narcotics: put them in, then Feed." />
+          <Small text="Keep its discharge up with Narcoberries or Drain Spikes: put them in, then Feed." />
         </RuneView>
       ) : null}
       {card.saddle !== null && card.tamed ? (
         <Row>
-          <Small color={INK} grow={1} shrink text={`Saddle: ${card.saddled ? itemLabel(card.saddle) : `none — needs a ${itemLabel(card.saddle)}`}`} />
+          <Small color={INK} grow={1} shrink text={`Rig: ${card.saddled ? itemLabel(card.saddle) : `none — needs a ${itemLabel(card.saddle)}`}`} />
           {card.saddled ? <Button command={{ name: "unsaddle" }}>Remove</Button> : null}
         </Row>
       ) : null}

@@ -15,7 +15,7 @@ export const TAME_GATHER: Readonly<Record<string, ToolProfile>> = {
   rollgrinder: { power: 1.5, biases: { stone: 12, flint: 0.3 }, defaultBias: 0 },
   sawbeaver: { power: 1.5, biases: { wood: 10, thatch: 1 }, defaultBias: 0 },
   timberjack: { power: 1.5, biases: { wood: 8, thatch: 1 }, defaultBias: 0 },
-  bulldozaur: { power: 1, biases: { ...berries(6), fiber: 0.5 }, defaultBias: 0 },
+  bulldozaur: { power: 1.5, biases: { wood: 6, stone: 6, thatch: 1 }, defaultBias: 0 },
   platebacker: { power: 1, biases: { ...berries(4), thatch: 4 }, defaultBias: 0 },
   hoover: { power: 1.5, biases: { ...berries(6), thatch: 4, wood: 2 }, defaultBias: 0 },
   highrise: { power: 1.5, biases: { ...berries(5), thatch: 4, wood: 2 }, defaultBias: 0 },

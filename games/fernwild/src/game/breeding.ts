@@ -6,6 +6,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { BAG, HOTBAR } from "./bags";
 import { climateAt } from "./climate";
+import { rollGlitch } from "./data/bots";
 import { aimedCreature, creatureAlive, genesOf, setImprint, spawnBaby, tames, viewedCreature, type CreatureGenes, type Lineage, type StatSource } from "./creatures";
 import {
   breedingOf,
@@ -82,7 +83,9 @@ const label = (species: string) => speciesDef(species)?.label ?? species;
 
 function bringIntoWorld(ctx: GameContext, species: string, at: readonly [number, number, number], genes: CreatureGenes): void {
   const nursery = nurseryOf(ctx);
-  const id = spawnBaby(ctx, species, [at[0], at[2]], genes, NEWBORN_SIZE);
+  // A forged bot with a fresh mutation rolls a glitch: good, bad or just weird.
+  const glitch = rollGlitch(genes.lineage?.mutated.length ?? 0, ctx.rng);
+  const id = spawnBaby(ctx, species, [at[0], at[2]], genes, NEWBORN_SIZE, glitch === null ? [] : [glitch]);
   if (id === null) return;
   nursery.field.raise(id, species, ctx.time.now());
   setTameFood(ctx, id, NEWBORN_FOOD);
@@ -104,33 +107,33 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
       ctx.game.notices.push({ text: carries ? `Your ${label(event.species)} is pregnant` : `Your ${label(event.species)}s mated`, tone: "success" });
     } else if (event.type === "laid") {
       const band = incubationBand(event.egg.species)?.join("–") ?? "";
-      ctx.game.notices.push({ text: `A fertilized ${label(event.egg.species)} egg was laid. Keep it ${band} °C`, tone: "success" });
+      ctx.game.notices.push({ text: `A fertilized ${label(event.egg.species)} core was laid. Keep it ${band} °C`, tone: "success" });
     }
   }
   for (const event of nursery.field.tick(now, dt, (at) => climateAt(ctx, at).temperature, ctx.rng)) {
     if (event.type === "hatched") {
       bringIntoWorld(ctx, event.egg.species, event.egg.at, event.egg.offspring);
-      ctx.game.notices.push({ text: `A baby ${label(event.egg.species)} hatched!`, tone: "success" });
+      ctx.game.notices.push({ text: `A newbuild ${label(event.egg.species)} booted!`, tone: "success" });
     } else if (event.type === "eggLost") {
       const band = incubationBand(event.egg.species);
       const temperature = climateAt(ctx, event.egg.at).temperature;
       const tooCold = band !== null && temperature < band[0];
-      ctx.game.notices.push({ text: `A ${label(event.egg.species)} egg was too ${tooCold ? "cold" : "hot"} and is lost`, tone: "deny" });
+      ctx.game.notices.push({ text: `A ${label(event.egg.species)} core was too ${tooCold ? "cold" : "hot"} and is lost`, tone: "deny" });
     } else if (event.type === "born") {
       // A mother who died carrying takes her baby with her.
       const mother = all.find((tame) => tame.id === event.mother);
       if (mother === undefined) continue;
       bringIntoWorld(ctx, event.species, mother.at, event.offspring);
-      ctx.game.notices.push({ text: `A baby ${label(event.species)} was born!`, tone: "success" });
+      ctx.game.notices.push({ text: `A newbuild ${label(event.species)} was born!`, tone: "success" });
     } else if (event.type === "wants") {
       const baby = nursery.field.offspringOf(event.offspring);
       if (event.care === "walk") nursery.walked.delete(event.offspring);
-      ctx.game.notices.push({ text: `Your baby ${label(baby?.species ?? "")} wants ${event.care === "feed" ? itemLabel(favouriteFood(baby?.species ?? "")) : `a ${event.care}`}`, tone: "info" });
+      ctx.game.notices.push({ text: `Your newbuild ${label(baby?.species ?? "")} wants ${event.care === "feed" ? itemLabel(favouriteFood(baby?.species ?? "")) : `a ${event.care}`}`, tone: "info" });
     } else if (event.type === "grown") {
       ctx.scene.entity.update(event.offspring, { size: 1 });
       setFoodPace(ctx, event.offspring, 1);
       nursery.walked.delete(event.offspring);
-      ctx.game.notices.push({ text: `Your bred tame is fully grown, ${Math.round(event.bond * 100)}% imprinted`, tone: "success" });
+      ctx.game.notices.push({ text: `Your bred bot is fully grown, ${Math.round(event.bond * 100)}% imprinted`, tone: "success" });
     }
   }
   for (const baby of nursery.field.offspring()) {
@@ -161,7 +164,7 @@ function giveCare(ctx: GameContext, id: string, kind: string): void {
   const isBaby = nursery.field.offspringOf(id);
   if (isBaby === null) return;
   setImprint(ctx, id, isBaby.bond);
-  ctx.scene.entity.floatText({ instanceId: id, text: `Imprinting ${Math.round(isBaby.bond * 100)}%`, kind: "pickup" });
+  ctx.scene.entity.floatText({ instanceId: id, text: `Calibrating ${Math.round(isBaby.bond * 100)}%`, kind: "pickup" });
 }
 
 /** The baby in front of the survivor, close enough to cuddle or feed. */
@@ -194,7 +197,7 @@ export function careForBaby(ctx: GameContext): void {
 export function breedingPrompts(ctx: GameContext): PositionedPrompt[] {
   const near = babyInReach(ctx);
   if (near === null || (near.baby.wants !== "cuddle" && near.baby.wants !== "feed")) return [];
-  const text = near.baby.wants === "cuddle" ? `Cuddle the baby ${label(near.baby.species)}` : `Feed the baby ${label(near.baby.species)} ${itemLabel(favouriteFood(near.baby.species))}`;
+  const text = near.baby.wants === "cuddle" ? `Cuddle the newbuild ${label(near.baby.species)}` : `Feed the newbuild ${label(near.baby.species)} ${itemLabel(favouriteFood(near.baby.species))}`;
   return [{ id: `baby:${near.baby.id}`, position: { x: near.at[0], z: near.at[2] }, priority: 3, prompt: proximityPrompt({ radius: CARE_REACH + 1, display: keybind("interact", text), invoke: command("careForBaby") }) }];
 }
 

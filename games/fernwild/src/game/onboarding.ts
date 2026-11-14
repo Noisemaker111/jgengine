@@ -70,7 +70,7 @@ function nearestCave(ctx: GameContext, from: OnboardingPoint, within: number): O
  */
 export const FIRST_DAY: OnboardingConfig<GameContext> = {
   id: "first-day",
-  title: "Survivor's path",
+  title: "Technician's path",
   style: "teaching-area",
   area: (ctx) => startArea(ctx),
   steps: [
@@ -99,7 +99,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "hatchet",
       text: "Learn and craft a Stone Hatchet",
-      detail: "Levels give engram points. Press I, open Engrams and learn the Stone Hatchet, then craft it: 1 flint, 1 wood, 10 thatch. The pick gets flint from rocks.",
+      detail: "Levels give schematic points. Press I, open Schematics and learn the Stone Hatchet, then craft it: 1 flint, 1 wood, 10 thatch. The pick gets flint from rocks.",
       target: { kind: "rock", within: 120 },
       done: { when: (ctx, userId) => held(ctx, userId, "stone_hatchet") >= 1 },
       grants: { xp: { amount: 10 } },
@@ -107,7 +107,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "berries",
       text: "Pick berries",
-      detail: "Press E on bushes. Berries keep you fed, and plant-eaters tame on them.",
+      detail: "Press E on bushes. Berries keep you fed, and plant-eaters bot on them.",
       target: { kind: "bush", within: 120 },
       done: { progress: (ctx, userId) => heldAny(ctx, userId, BERRIES), count: 12 },
     },
@@ -120,8 +120,8 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "tame",
-      text: "Tame a mowbot",
-      detail: "Punch a mowbot until it sleeps (torpor), then press E and put berries in its inventory. It eats on its own clock; hitting it again lowers the taming effectiveness.",
+      text: "Bot a mowbot",
+      detail: "Punch a mowbot until it sleeps (discharge), then press E and put berries in its inventory. It eats on its own clock; hitting it again lowers the upload integrity.",
       target: { kind: "mowbot", within: 250 },
       done: { when: (ctx) => creaturesView(ctx).tamed >= 1 },
       grants: { xp: { amount: 40 } },
@@ -136,7 +136,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "campfire",
       text: "Build a Campfire",
-      detail: "Learn it in Engrams, craft it (12 thatch, 1 flint, 16 stone, 2 wood), put it on the hotbar, then click to place it. A hatchet gets the most stone from a rock. It warms you at night.",
+      detail: "Learn it in Schematics, craft it (12 thatch, 1 flint, 16 stone, 2 wood), put it on the hotbar, then click to place it. A hatchet gets the most stone from a rock. It warms you at night.",
       inArea: false,
       target: { kind: "rock", within: 120 },
       done: { when: (ctx) => piecesBuilt(ctx, "campfire") >= 1 },
@@ -144,16 +144,16 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "meat",
-      text: "Hunt for meat",
-      detail: "Kill a mowbot, puckbot or craneback, then keep hitting the body: the pick takes meat, the hatchet hide.",
+      text: "Hunt for biogel",
+      detail: "Kill a mowbot, puckbot or craneback, then keep hitting the body: the pick takes biogel, the hatchet salvage.",
       inArea: false,
       target: { kind: "prey", within: 300 },
       done: { when: (ctx, userId) => heldAny(ctx, userId, ["biogel", "gel_ration"]) >= 1 },
     },
     {
       id: "cook",
-      text: "Cook meat on the campfire",
-      detail: "Stand by your campfire, press I and cook the raw meat. Cooked meat fills you and heals; raw meat makes you sick.",
+      text: "Cook biogel on the campfire",
+      detail: "Stand by your campfire, press I and cook the raw biogel. Cooked biogel fills you and heals; raw biogel makes you sick.",
       inArea: false,
       done: { when: (ctx, userId) => held(ctx, userId, "gel_ration") >= 1 },
       grants: { xp: { amount: 15 } },
@@ -184,14 +184,14 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "saddle",
-      text: "Learn the Craneback Saddle",
-      detail: "At level 5 the Craneback Saddle opens in Engrams. A Craneback carries more than you and can be ridden.",
+      text: "Learn the Craneback Rig",
+      detail: "At level 5 the Craneback Rig opens in Schematics. A Craneback carries more than you and can be ridden.",
       inArea: false,
       done: { when: (ctx) => knowsEngram(ctx, "craneback_rig") },
     },
     {
       id: "craneback",
-      text: "Tame a Craneback",
+      text: "Bot a Craneback",
       detail: "Knock it out and feed it berries. It is skittish: it runs when hit, so stay on it.",
       inArea: false,
       target: { kind: "craneback", within: 1500 },
@@ -200,8 +200,8 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "ride",
-      text: "Saddle and ride your Craneback",
-      detail: "Craft the saddle, put it in your Craneback's inventory, then press E on it to climb on.",
+      text: "Rig and ride your Craneback",
+      detail: "Craft the rig, put it in your Craneback's inventory, then press E on it to climb on.",
       inArea: false,
       done: { when: (ctx) => creaturesView(ctx).riding?.species === "craneback" },
       grants: { xp: { amount: 20 } },
@@ -209,15 +209,15 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "note",
       text: "Read an explorer note",
-      detail: "Survivors before you left notes at the island's landmarks. Each one you read adds to your dossier and gives experience.",
+      detail: "Technicians before you left notes at the island's landmarks. Each one you read adds to your dossier and gives experience.",
       inArea: false,
       target: { kind: "note", within: 4000 },
       done: { when: (ctx) => dossierView(ctx).notes.seen >= 1 },
     },
     {
       id: "drain_spike",
-      text: "Make narcotics",
-      detail: "At level 6 learn the Mortar and Pestle and Narcotic: 5 narcoberries and 1 spoiled meat. Narcotics keep a big creature asleep while it eats.",
+      text: "Make drain spikes",
+      detail: "At level 6 learn the Mortar and Pestle and Drain Spike: 5 narcoberries and 1 spoiled biogel. Drain Spikes keep a big bot asleep while it eats.",
       inArea: false,
       done: { when: (ctx, userId) => held(ctx, userId, "drain_spike") >= 1 },
       grants: { xp: { amount: 30 } },
@@ -225,14 +225,14 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "club",
       text: "Craft a Wooden Club",
-      detail: "At level 8 the club opens: it knocks creatures out far faster than fists.",
+      detail: "At level 8 the club opens: it drain bots far faster than fists.",
       inArea: false,
       done: { when: (ctx, userId) => held(ctx, userId, "wooden_club") >= 1 },
     },
     {
       id: "lodestone",
-      text: "Tame a Lodestone",
-      detail: "Lodestones bite back. Club it down, keep it under with narcotics, and feed it raw meat.",
+      text: "Bot a Lodestone",
+      detail: "Lodestones bite back. Club it down, keep it under with drain spikes, and feed it raw biogel.",
       inArea: false,
       target: { kind: "lodestone", within: 1500 },
       done: { when: (ctx) => tamedA(ctx, "lodestone") },
@@ -259,7 +259,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "hivemind",
       text: "Defeat the Hivemind",
-      detail: "Pay the tribute at the Green Obelisk's terminal and bring your strongest tames: everyone within 30 m goes to her lair.",
+      detail: "Pay the tribute at the Green Obelisk's terminal and bring your strongest bots: everyone within 30 m goes to her lair.",
       inArea: false,
       ...(GREEN_OBELISK === undefined ? {} : { target: { at: [GREEN_OBELISK.position.x, GREEN_OBELISK.position.y, GREEN_OBELISK.position.z] as const } }),
       done: { when: (ctx, userId) => heldAny(ctx, userId, TROPHIES) >= 1 },

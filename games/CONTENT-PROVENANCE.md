@@ -34,9 +34,7 @@ Hold the Line, Fernwild and Apex Nights were first generated from one-sentence i
 | Game | Pack (folder under `public/models/imported/`) | Author | License |
 | --- | --- | --- | --- |
 | Hold the Line, Apex Nights | KayKit City Builder Bits (`kaykit-city-builder`): buildings, cars, water tower, dumpster | Kay Lousberg | CC0 1.0 |
-| Hold the Line, Fernwild | Quaternius Stylized Nature (`quaternius-stylized-nature`): trees, pines, bushes, ferns, rocks, pebbles, grass | Quaternius | CC0 1.0 |
-| Fernwild | Quaternius animated animals and dinosaurs (`creatures/velociraptor.glb`, `trex`, `triceratops`, `stegosaurus`, `parasaurolophus`, `apatosaurus`, `wolf`, `stag`, `horse`, `sheep`, `yeti`, `spider`, `frog`, `snake`), from poly.pizza | Quaternius | CC0 1.0 |
-| Fernwild | Poly by Google animals (the other `creatures/*.glb`), rigged by the engine's `autoRig` at bake time; fire salamander by madtrollstudio. Every file's title and page: `games/fernwild/src/game/data/creatureModels.ts` | Poly by Google, madtrollstudio | CC-BY 3.0 |
+| Hold the Line, Wildwire (`fernwild`) | Quaternius Stylized Nature (`quaternius-stylized-nature`): trees, pines, bushes, ferns, rocks, pebbles, grass | Quaternius | CC0 1.0 |
 
 ## Bundled fonts
 

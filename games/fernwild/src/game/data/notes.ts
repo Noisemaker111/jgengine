@@ -20,7 +20,7 @@ export const NOTES: readonly NoteDef[] = [
   { at: "obelisk_green", title: "Ilse's page, day 12", text: "The green pillar hums over the jungle. Its foot has a panel with three empty sockets. It wants the glowing things from the caves." },
   { at: "peak_craggs_island", title: "Bram's log, first entry", text: "Built a thatch hut on the Craggs. The first storm took the roof. Wood walls next, and a door that shuts." },
   { at: "peak_dead_island", title: "Bram's log, the dead island", text: "Nothing grows here and the big ones swim out at night. If you can see this page from the water, turn back." },
-  { at: "cave_central_cave", title: "Bram's log, the deep cave", text: "Central cave. It goes down and down. Bring a saddle-broken mount and a lot of meat. Bring friends." },
+  { at: "cave_central_cave", title: "Bram's log, the deep cave", text: "Central cave. It goes down and down. Bring a rig-broken mount and a lot of biogel. Bring friends." },
   { at: "peak_weathertop", title: "Bram's log, Weathertop", text: "From up here you see the whole island: the redwoods, the swamp, the snow. The higher you go, the meaner the animals get." },
   { at: "cave_swamp_cave", title: "Bram's log, the swamp", text: "Leeches in the water, snakes in the roots. The cave under the swamp keeps something the green pillar wants." },
   { at: "peak_red_peak", title: "Nadia's notebook: red rock", text: "Metal glints in the red rock up here. A stone pick barely scratches it, but it is the only metal I have found." },

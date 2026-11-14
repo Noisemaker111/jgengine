@@ -729,7 +729,7 @@ function lie(ctx: GameContext, id: string, down: boolean): void {
 
 function knockOut(ctx: GameContext, creature: Creature): void {
   lie(ctx, creature.id, true);
-  ctx.game.notices.push({ text: `The ${defOf(creature).label} is knocked out. Put food in its inventory.`, tone: "success" });
+  ctx.game.notices.push({ text: `The ${defOf(creature).label} is shut down. Put food in its inventory.`, tone: "success" });
 }
 
 function kill(ctx: GameContext, creature: Creature): void {
@@ -882,8 +882,8 @@ function makeTame(ctx: GameContext, creature: Creature): void {
 }
 
 /** A bred baby: hatched or born beside `at`, the survivor's from the first moment. Returns its id. */
-export function spawnBaby(ctx: GameContext, species: string, at: readonly [number, number], genes: CreatureGenes, size: number): string | null {
-  const id = spawnCreature(ctx, species, at, { genes, size });
+export function spawnBaby(ctx: GameContext, species: string, at: readonly [number, number], genes: CreatureGenes, size: number, traits: readonly string[] = []): string | null {
+  const id = spawnCreature(ctx, species, at, { genes, size, traits });
   if (id !== null) tameSummoned(ctx, id, false);
   return id;
 }
@@ -1486,7 +1486,7 @@ export function whistle(ctx: GameContext, order: CompanionCommand | CompanionSta
     if (order === "stay") world.roster.setHome(record.id, [entity.position[0], entity.position[1], entity.position[2]]);
     heard += 1;
   }
-  ctx.game.notices.push({ text: heard === 0 ? "No tames in earshot" : `${heard} ${HEARD[order]}`, tone: heard === 0 ? "deny" : "success" });
+  ctx.game.notices.push({ text: heard === 0 ? "No bots in earshot" : `${heard} ${HEARD[order]}`, tone: heard === 0 ? "deny" : "success" });
 }
 
 /** The E prompt for creatures, outranking a bush behind them. */
@@ -1525,7 +1525,7 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   if (taming?.awakeTame === true) {
     const food = world.taming.nextFood(creature.species, survivorSupply(ctx));
     const label = taming.belly > 0 ? `Not hungry (${Math.ceil(taming.belly / world.tamingSpeed)} s)` : food === null ? `Wants ${itemLabel(world.taming.foods(creature.species)[0] ?? "food")}` : `Feed ${itemLabel(food)}`;
-    return prompt(creature.id, `${label} · tamed ${Math.round(taming.progress * 100)}%`);
+    return prompt(creature.id, `${label} · uploaded ${Math.round(taming.progress * 100)}%`);
   }
   return [];
 }
@@ -1655,13 +1655,13 @@ export function giveToCreature(ctx: GameContext, from: string, slot: number): vo
   const def = defOf(creature);
   if (itemDef(stack.itemId)?.kind === "saddle") {
     if (!creature.tamed || def.saddle !== stack.itemId) {
-      ctx.game.notices.push({ text: creature.tamed ? `That saddle does not fit a ${def.label}` : "Tame it first", tone: "deny" });
+      ctx.game.notices.push({ text: creature.tamed ? `That rig does not fit a ${def.label}` : "Upload it first", tone: "deny" });
       return;
     }
     if (creature.saddled) return;
     ctx.player.inventory.take(from, stack.itemId, 1);
     creature.saddled = true;
-    ctx.game.notices.push({ text: `Saddled. E to ride the ${def.label}.`, tone: "success" });
+    ctx.game.notices.push({ text: `Rigged. E to ride the ${def.label}.`, tone: "success" });
     return;
   }
   const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, stack.itemId, stack.count);

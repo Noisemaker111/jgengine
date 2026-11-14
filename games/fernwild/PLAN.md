@@ -1,6 +1,6 @@
-# fernwild plan
+# fernwild plan (Wildwire)
 
-Brief: ARK: Survival Evolved 1:1
+Brief: Wildwire, an ARK-style survival game where every creature is a robot: a lone technician on a feral machine island drains, uploads, rigs and forges wild machines.
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 ## Suite score
@@ -107,14 +107,57 @@ Genres: creature-survival. 67/67 proven.
 
 ## Design brief
 
+Premise: a century ago an automated colony was abandoned with its fabricators running. Robots kept
+printing, repairing and rewriting each other; the island became a wild machine ecosystem with evolved
+instincts. You wash up as a lone technician with a multitool and a pocket of fuses.
+
 - Core loop: hit a tree, a rock or a bush, see "+3 Thatch", fill the bag, craft the next tool that gathers faster.
-- Session loop: reach the next tame or build: a mowbot by minute 5, a campfire and cooked meat by 10, a thatch hut by 15, a saddled craneback by 20.
-- Long loop: levels and engram points open 79 engrams (stone, thatch, wood, stone building, saddles, narcotics, the club); tames level 88 times past taming; breeding stacks stats over generations; caves give the three artifacts; the Hivemind at the green obelisk is the gate.
-- Second 0: you wake on the south beach with nothing but the Stone Pick and Torch engrams known, because ARK starts you with bare hands so the first tree teaches the whole game.
-- Onboarding: the Survivor's path, top left, one step at a time with a star on the map at its target; it teaches each system by doing it once, and locks nothing after the first craft.
+- Session loop: reach the next upload or build: a Mowbot by minute 5, a campfire and a gel ration by 10, a thatch hut by 15, a rigged Craneback by 20.
+- Long loop: levels and schematic points open the recipes; uploaded bots level 88 times; forging stacks stats and rolls glitches over generations; caves give the data shards; the Hivemind at the green obelisk is the gate; Signal Storms (from night 6) push you to roof your base.
+- Second 0: you wake on the south beach with nothing but the Stone Pick and Torch schematics known.
+- Onboarding: the Technician's path, top left, one step at a time with a star on the map at its target.
 - Pace: something new every 5 minutes.
-- Longest cycle: 60 minutes, ARK's day and night.
+- Longest cycle: 60 minutes, a day and night; a storm night every few nights.
 - Minutes to see everything: 1500
+
+### Machine systems (Wildwire's mapping)
+
+| Genre beat | Wildwire | Where |
+| --- | --- | --- |
+| Torpor | Discharge: club hits, slingshot stones, EMP arrows drain a bot's battery; drain spikes keep it flat | `data/taming.ts`, `knockoutTaming.ts` |
+| Taming food | Firmware cores (5 tiers) and biogel/berries; a sloppy upload leaves a quirk | `data/firmware.ts`, `data/bots.ts` `rollQuirk` |
+| Breeding | Forging: cores cure at temperature, newbuilds mix stats, a fresh mutation rolls a glitch | `breeding.ts`, `data/bots.ts` `GLITCHES` |
+| Creature food | Charge: drains faster in rain (rust) and hard sun (heat), refuels from inventory | `tameHunger.ts`, `data/bots.ts` `chargeDrain` |
+| Night | Signal Storms: wild bots Overclocked, exposed bots may revert | `creatures.ts` `tickStorm`, `data/bots.ts` |
+| Stances | Behaviour chips: Follow, Guard Zone, Passive, Escort, Aggressive | `data/bots.ts` `CHIPS` |
+| Temperaments | Passive, Skittish, Territorial, Aggressive, Pack, Ambush, Retaliator; eye glow shows which | `data/bots.ts` |
+| Targeting | loudest, brightest, richest, weakest, machines, attacker, biggest, scored into the core creature driver's `focus` | `creatures.ts` `wildMind` |
+| Saddles | Rigs | `data/species.ts` |
+| Meat, hide | Biogel, salvage | `data/items.ts` |
+
+### Roster status
+
+| Bot | Built | Not yet |
+| --- | --- | --- |
+| Mowbot | passive first upload | Harvest chip farming near base |
+| Ticklet | pack, stamina-drain bite | shoulder pet that patches armour |
+| Craneback | skittish forklift mount, heavy carry | crane build helper |
+| Bulldozaur | territorial charger mount | bulk-harvest bite (still berries) |
+| Lodestone | pack buff, magnetic disarm | |
+| Mirrorcat | ambush, targets the weakest | invisible scout when uploaded |
+| Watchwing | skittish flyer mount; Guard Zone sentry pings | nocturnal schedule |
+| Arcwire | chain lightning, doubled in water; swimmer mount | base power |
+| Klepto | steals a stack and blinks away | a visible nest of stolen goods |
+| Rootkit | dormant until chopping nearby | tree-shaped body |
+| Thermite Beetle | metal-ore gatherer mount | burrowing, ingot mining |
+| Homer | flyer mount, airlift, light loads | flying a stack home |
+| Echo Mimic | copies the last trick used near it | |
+| Choir Drone | aura: other wild bots near hit harder | conductor-first mechanic |
+| Lampjaw | ambush, drawn to light, glowing lure body | deep-water only |
+| Hoover Leviathan | retaliator giant | mobile base platform |
+| Scrapper Rex | hunts other machines, grows on kills | |
+| The Hivemind | boss at the green obelisk (the old arena) | puppeting uploaded bots |
+| The Root Server | storms end through `endStorms` | the cave-bottom boss encounter itself |
 
 ### First 10 minutes
 
@@ -158,7 +201,7 @@ Genres: creature-survival. 67/67 proven.
 | survival | drinks |
 | taming | tamed |
 
-### Fernwild against ARK, beat by beat
+### History: Fernwild against ARK, beat by beat
 
 What each of ARK's beats is, what Fernwild did when this plan was written (played from a new game for 20 minutes), and what changed.
 

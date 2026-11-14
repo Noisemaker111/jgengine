@@ -32,7 +32,7 @@ const BODY_MODELS: Record<string, ModelConfig> = resolveModelPlan(
 
 function survivorModel(id: string): ModelConfig {
   const model = BODY_MODELS[id];
-  if (model === undefined) throw new Error(`fernwild: survivor body "${id}" is missing from the Quaternius modular packs`);
+  if (model === undefined) throw new Error(`fernwild: technician body "${id}" is missing from the Quaternius modular packs`);
   return model;
 }
 

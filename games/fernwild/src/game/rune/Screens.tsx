@@ -78,7 +78,7 @@ function Carried({ give = null }: { give?: Give }): ReactNode {
   const { width } = useRuneViewport();
   const phone = width < 600;
   const worn = useGameStore((c) => liveSurvivor(c).worn, same);
-  const hint = give === "giveCreature" ? "Click an item to give it to the creature." : give === "storePut" ? "Click an item to put it in the box." : "Click moves an item between inventory and hotbar; drag to rearrange. Number keys use or equip hotbar items.";
+  const hint = give === "giveCreature" ? "Click an item to give it to the bot." : give === "storePut" ? "Click an item to put it in the box." : "Click moves an item between inventory and hotbar; drag to rearrange. Number keys use or equip hotbar items.";
   return (
     <Panel width={phone ? 370 : 400}>
       <Row justify="between">
@@ -159,7 +159,7 @@ function Survivor(): ReactNode {
           <RuneAction variant={shape.points > 0 ? "picked" : "action"} width={26} height={24} minHeight={24} padding={0} label={`Level ${stat.label}`} disabled={shape.points <= 0} command={{ name: "levelStat", input: { stat: stat.id } }}>+</RuneAction>
         </Row>
       ))}
-      <Small text={bind(() => `${v().temperature}°C · ${v().comfort} · Torpor ${Math.floor(v().torpor.value)} / ${v().torpor.max}`)} />
+      <Small text={bind(() => `${v().temperature}°C · ${v().comfort} · Discharge ${Math.floor(v().torpor.value)} / ${v().torpor.max}`)} />
       <Small size={11} text="Click armour in your bag to wear it; click a worn piece to take it off." />
     </Panel>
   );
@@ -220,7 +220,7 @@ function Dossier(): ReactNode {
   return (
     <RuneView layout={phone ? "stack" : "row"} gap={10} items="start">
       <Panel width={phone ? 370 : 520} label="Dossier">
-        <Row justify="between"><Tag text="Dossier" /><Small color={INK} text={`${met}/${pages.species.length} met · ${tamed}/${tamable} tamed`} /></Row>
+        <Row justify="between"><Tag text="Dossier" /><Small color={INK} text={`${met}/${pages.species.length} met · ${tamed}/${tamable} uploaded`} /></Row>
         <RuneView layout="grid" columns={phone ? 3 : 4} gap={4} scroll maxHeight={phone ? 260 : 420}>
           {pages.species.map((entry) => (
             <RuneView key={entry.id} padding={[4, 6, 4, 6]} radius={3} fill={entry.tamed ? "#1f3a2a" : "#161f22"} border={{ width: 1, color: entry.met ? HEAD : "#6fb7c922" }} opacity={entry.met ? 1 : 0.5}>
@@ -259,7 +259,7 @@ function Engrams(): ReactNode {
   return (
     <Panel width={phone ? 370 : 760}>
       {lockedBy === null ? null : <Text size={13} color={GOLD} text={`Learning opens after: ${lockedBy}`} />}
-      <Row justify="between"><Tag text="Engrams" /><Text size={13} text={`${view.points} engram points · level ${view.level}`} /></Row>
+      <Row justify="between"><Tag text="Schematics" /><Text size={13} text={`${view.points} schematic points · level ${view.level}`} /></Row>
       <RuneView layout="grid" columns={phone ? 3 : 6} gap={4}>
         {Array.from({ length: pages }, (_, index) => <Button key={index} picked={index === page} minHeight={26} padding={[2, 6, 2, 6]} label={band(index)} run={() => setPage(index)}><Small color={INK} weight={600} text={band(index)} /></Button>)}
       </RuneView>
@@ -316,12 +316,12 @@ function ObeliskPanel(): ReactNode {
   return (
     <Panel width={phone ? 370 : 760} fill="#0f1d17ee" border={{ width: 1, color: `${GREEN}66` }} gap={12} label="Green Obelisk">
       <Text size={18} weight={700} color={GREEN} text="Green Obelisk · Hivemind Prime" />
-      <Small color={INK} text="Offer the tribute to open a portal to her lair. Everyone within range goes through when it opens, tames too." />
+      <Small color={INK} text="Offer the tribute to open a portal to her lair. Everyone within range goes through when it opens, bots too." />
       <RuneView layout={phone ? "stack" : "row"} gap={10} items="stretch">
         {view.tiers.map((tier) => (
           <RuneView key={tier.id} grow={1} fill="#00000088" radius={4} padding={10} gap={6}>
             <Text weight={700} text={tier.label} />
-            <Small color={tier.levelOk ? GOOD : BAD} text={`Survivor level ${tier.minLevel}`} />
+            <Small color={tier.levelOk ? GOOD : BAD} text={`Technician level ${tier.minLevel}`} />
             {tier.tribute.map((entry) => (
               <Row key={entry.item} gap={6}>
                 <ItemIcon itemId={entry.item} size={28} />

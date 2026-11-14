@@ -117,7 +117,7 @@ export function summonHivemind(ctx: GameContext, tierId: string): void {
     return;
   }
   setScreen(ctx, null);
-  ctx.game.notices.push({ text: `${tier.label} Hivemind summoned. The portal opens in ${Math.round(hiveOf(ctx).arena.secondsLeft(ctx.time.now()) ?? 0)} seconds: stay near the obelisk with your tames.`, tone: "success" });
+  ctx.game.notices.push({ text: `${tier.label} Hivemind summoned. The portal opens in ${Math.round(hiveOf(ctx).arena.secondsLeft(ctx.time.now()) ?? 0)} seconds: stay near the obelisk with your bots.`, tone: "success" });
 }
 
 /** What the terminal screen lists: each difficulty, its level and tribute against what the survivor carries. */
@@ -242,7 +242,7 @@ export function tickHivemind(ctx: GameContext, dt: number): void {
       const companions = event.party["companion"] ?? [];
       for (const id of companions) slayCreature(ctx, id);
       clearLair(ctx, hive);
-      ctx.game.notices.push({ text: companions.length > 0 ? `The Hivemind won. ${companions.length} tames left in her lair are lost.` : "The Hivemind won.", tone: "deny" });
+      ctx.game.notices.push({ text: companions.length > 0 ? `The Hivemind won. ${companions.length} bots left in her lair are lost.` : "The Hivemind won.", tone: "deny" });
     } else if (event.type === "returned") {
       const obelisk = greenObelisk(ctx);
       for (const entry of event.returns) {

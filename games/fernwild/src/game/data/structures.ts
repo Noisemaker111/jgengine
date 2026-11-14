@@ -148,7 +148,7 @@ export const TIER_COLORS: Record<TierId, string> = { thatch: "#c9a85a", wood: "#
 const piece = (id: string, label: string, shape: string, tier: TierId, health: number, level: number, points: number, cost: Record<string, number>, weight: number, note: string): StructureDef => ({ id, label, shape, tier, health, level, points, cost, weight, note });
 
 export const STRUCTURES: readonly StructureDef[] = [
-  piece("campfire", "Campfire", "campfire", "station", 100, 2, 3, { thatch: 12, flint: 1, stone: 16, wood: 2 }, 4, "Cooks meat and keeps you warm."),
+  piece("campfire", "Campfire", "campfire", "station", 100, 2, 3, { thatch: 12, flint: 1, stone: 16, wood: 2 }, 4, "Cooks biogel and keeps you warm."),
   // ARK's Small Storage Box: fifteen slots of things kept at home.
   piece("storage_box", "Storage Box", "storage_box", "station", 400, 4, 6, { wood: 25, thatch: 20, fiber: 10 }, 4, "Holds 15 stacks. E opens it."),
   // ARK's Small Crop Plot (level and cost approx): a seed, water and fertilizer grow a crop picked again and again.
@@ -156,15 +156,15 @@ export const STRUCTURES: readonly StructureDef[] = [
   // ARK's Preserving Bin: food kept in it goes off far slower (level and cost approx).
   piece("preserving_bin", "Preserving Bin", "preserving_bin", "station", 400, 9, 9, { stone: 30, wood: 30, thatch: 30, fiber: 20 }, 10, "Keeps 6 stacks of food fresh four times as long. E opens it."),
   // ARK's Hide Sleeping Bag: wake on it once after death, and it is used up.
-  piece("bedroll", "Hide Sleeping Bag", "bedroll", "station", 100, 4, 3, { salvage: 15, fiber: 15 }, 2, "A one-time respawn point: die and you wake here, once."),
+  piece("bedroll", "Bedroll", "bedroll", "station", 100, 4, 3, { salvage: 15, fiber: 15 }, 2, "A one-time respawn point: die and you wake here, once."),
   piece("thatch_foundation", "Thatch Foundation", "foundation", "thatch", 2400, 4, 3, { thatch: 20, wood: 6, fiber: 15 }, 6, "The floor every hut starts from."),
   piece("thatch_wall", "Thatch Wall", "wall", "thatch", 1600, 4, 3, { thatch: 10, wood: 2, fiber: 7 }, 4, "Snaps to a foundation edge."),
   piece("thatch_doorframe", "Thatch Doorframe", "doorframe", "thatch", 2400, 4, 3, { thatch: 8, wood: 6, fiber: 6 }, 4, "A wall with a door gap."),
   piece("thatch_door", "Thatch Door", "door", "thatch", 1600, 4, 3, { thatch: 7, fiber: 4 }, 4, "Fits a doorframe. E opens it."),
   piece("thatch_ceiling", "Thatch Ceiling", "ceiling", "thatch", 1600, 4, 3, { thatch: 15, wood: 4, fiber: 10 }, 4, "A roof over walls."),
-  piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, salvage: 15 }, 12, "Grinds sparkpowder and narcotics."),
+  piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, salvage: 15 }, 12, "Grinds sparkpowder and drain spikes."),
   // ARK's Cooking Pot (level and points approximate): where eggs become firmware.
-  piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks firmware from an egg and food: the bait creatures tame fastest on."),
+  piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks firmware from an core and food: the bait bots bot fastest on."),
   // ARK's Refining Forge (level, points and cost approx): fed wood, it smelts metal ore into ingots.
   piece("refining_forge", "Refining Forge", "refining_forge", "station", 1000, 16, 12, { stone: 125, flint: 5, salvage: 65, wood: 20, fiber: 40 }, 30, "Smelts metal ore into ingots while it burns. E feeds it wood."),
   piece("wooden_foundation", "Wooden Foundation", "foundation", "wood", 15000, 11, 6, { wood: 80, thatch: 20, fiber: 15 }, 4, "Fists and stone tools can't break it."),

@@ -64,11 +64,11 @@ export function Creator({ begin, back }: { begin: () => void; back: () => void }
   const mapSize = phone ? Math.min(340, width - 40) : 438;
   const span = bake.mapBounds.maxX - bake.mapBounds.minX;
   return (
-    <RuneView anchor="fill" radial={{ center: [0.5, 0.4], radius: [0.8, 0.8], stops: [[0.3, "#00000000"], [1, "#000000aa"]] }} label="Create your survivor">
+    <RuneView anchor="fill" radial={{ center: [0.5, 0.4], radius: [0.8, 0.8], stops: [[0.3, "#00000000"], [1, "#000000aa"]] }} label="Create your technician">
       <RuneView anchor="center" maxHeight={height - 16} scroll padding={phone ? 8 : 24}>
         <RuneView layout={phone ? "stack" : "row"} gap={18} items="start">
           <Panel width={phone ? Math.min(370, width - 16) : 330} gap={12}>
-            <Tag text="Create your survivor" />
+            <Tag text="Create your technician" />
             <RuneView gap={4}>
               <Small text="Name" />
               <Row gap={6}>
@@ -87,7 +87,7 @@ export function Creator({ begin, back }: { begin: () => void; back: () => void }
               <HeightSlider value={look.height} set={(h) => choose({ height: h })} />
               <Small width={40} align="right" color={INK} text={`${Math.round(look.height * 100)}%`} />
             </Row>
-            <Small text="Body and height show on your survivor in the world as you choose." />
+            <Small text="Body and height show on your technician in the world as you choose." />
           </Panel>
           <Panel width={phone ? Math.min(370, width - 16) : 470} gap={10}>
             <Tag text="Choose where you wake" />

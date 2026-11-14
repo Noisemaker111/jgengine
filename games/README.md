@@ -29,7 +29,7 @@ owns the discovery, upstream implementation, adoption and verification workflow.
 | Deepward | `deepward` | First-person extraction slice: salvage, pack, return and bank |
 | Harbor Heat | `harbor-heat` | Coastal courier and crew adventure |
 | Drift Foundry | `drift-foundry` | Physics racer |
-| Fernwild | `fernwild` | Dinosaur taming and survival |
+| Wildwire | `fernwild` | Robot-taming survival on a feral machine island |
 | LLMville | `llmville` | Shared-world AI-lab tycoon on a Convex backend (accounts, multiplayer); production still deploys from its old repo |
 
 See [the genre roadmap](./CLASSICS.md) for planned mechanics and [content provenance](./CONTENT-PROVENANCE.md) for source and asset attribution.

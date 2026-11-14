@@ -4,9 +4,9 @@ import { FIXTURES, runeUiFixture } from "../../../proofs/runeUiFixture";
 
 const EXPECT: Partial<Record<(typeof FIXTURES)[number], string>> = {
   title: "New game",
-  controls: "Whistle your tames to follow / stay",
+  controls: "Whistle your bots to follow / stay",
   settings: "Master volume",
-  credits: "Fernwild — made with JGengine.",
+  credits: "Wildwire — made with JGengine.",
   creator: "Choose where you wake",
   hud: "Island",
   inventory: "Crafting",

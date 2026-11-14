@@ -64,6 +64,8 @@ describe("charge, rust and storms", () => {
   });
 
   test("storms come on some nights only, dusk to dawn", () => {
+    // A new technician gets five calm nights before the first broadcast.
+    for (let night = 1; night <= 5; night += 1) expect(stormNight(night)).toBe(false);
     const nights = Array.from({ length: 30 }, (_, i) => stormNight(i + 1));
     expect(nights.some(Boolean)).toBe(true);
     expect(nights.every(Boolean)).toBe(false);

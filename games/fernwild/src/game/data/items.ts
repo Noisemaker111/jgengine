@@ -138,7 +138,7 @@ export const ITEMS: readonly ItemDef[] = [
   resource("stone", "Stone", 0.5, 100, "Broken rock. A hatchet on boulders gets plenty."),
   resource("flint", "Flint", 0.05, 100, "Sharp stone flakes. A pick on boulders gets plenty."),
   resource("fiber", "Fiber", 0.01, 300, "Plant fiber pulled from bushes by hand."),
-  resource("salvage", "Hide", 0.01, 200, "Skin from a carcass."),
+  resource("salvage", "Salvage", 0.01, 200, "Plating, wire and servos stripped from a wreck."),
   resource("metal", "Metal", 1, 300, "Raw ore from the glinting rocks high in the mountains."),
   resource("metal_ingot", "Metal Ingot", 1, 200, "Smelted from metal ore in a lit refining forge. Metal tools are made of it."),
   resource("obsidian", "Obsidian", 1, 100, "Black volcanic glass from the volcano and the high cliffs."),
@@ -146,30 +146,30 @@ export const ITEMS: readonly ItemDef[] = [
   resource("oil", "Oil", 0.2, 100, "Thick black oil from the dark rocks on the frozen shore."),
   resource("sparkpowder", "Sparkpowder", 0.01, 100, "Ground flint and stone that lights fires."),
   resource("mejoberry_seed", "Mejoberry Seed", 0.01, 100, "Picked from berry bushes now and then. Plant it in a crop plot."),
-  resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled meat and thatch. A crop plot's crop grows only while it has some."),
+  resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled biogel and thatch. A crop plot's crop grows only while it has some."),
   // ARK's cave artifacts: one on a pedestal at the end of each cave, back half an hour after it is taken.
-  resource("artifact_clever", "Artifact of the Clever", 1, 1, "A glowing relic from the deepest chamber of the central cave; the island's guardian wants it."),
-  resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave. The Hivemind never asks for it; hive gauntlets are made with it."),
-  resource("artifact_hunter", "Artifact of the Hunter", 1, 1, "A glowing relic from the deepest chamber of the lower south cave; the island's guardian wants it."),
-  resource("artifact_devourer", "Artifact of the Devourer", 1, 1, "A glowing relic from the deepest chamber of the north-east cave. The Hivemind never asks for it; hive treads are made with it."),
-  resource("artifact_pack", "Artifact of the Pack", 1, 1, "A glowing relic from the deepest chamber of the upper south cave. The Hivemind never asks for it; hive greaves are made with it."),
-  resource("artifact_massive", "Artifact of the Massive", 1, 1, "A glowing relic from the deepest chamber of the lava cave; the island's guardian wants it."),
-  resource("artifact_immune", "Artifact of the Immune", 1, 1, "A glowing relic from the deepest chamber of the swamp cave. The Hivemind never asks for it; hive gauntlets are made with it."),
-  resource("artifact_strong", "Artifact of the Strong", 1, 1, "A glowing relic from the deepest chamber of the snow cave. The Hivemind never asks for it; hive greaves are made with it."),
+  resource("artifact_clever", "Data Shard: Clever", 1, 1, "A glowing colony data shard from the deepest chamber of the central cave; the island's guardian wants it."),
+  resource("artifact_skylord", "Data Shard: Skylord", 1, 1, "A glowing colony data shard from the deepest chamber of the north-west cave. The Hivemind never asks for it; hive gauntlets are made with it."),
+  resource("artifact_hunter", "Data Shard: Hunter", 1, 1, "A glowing colony data shard from the deepest chamber of the lower south cave; the island's guardian wants it."),
+  resource("artifact_devourer", "Data Shard: Devourer", 1, 1, "A glowing colony data shard from the deepest chamber of the north-east cave. The Hivemind never asks for it; hive treads are made with it."),
+  resource("artifact_pack", "Data Shard: Pack", 1, 1, "A glowing colony data shard from the deepest chamber of the upper south cave. The Hivemind never asks for it; hive greaves are made with it."),
+  resource("artifact_massive", "Data Shard: Massive", 1, 1, "A glowing colony data shard from the deepest chamber of the lava cave; the island's guardian wants it."),
+  resource("artifact_immune", "Data Shard: Immune", 1, 1, "A glowing colony data shard from the deepest chamber of the swamp cave. The Hivemind never asks for it; hive gauntlets are made with it."),
+  resource("artifact_strong", "Data Shard: Strong", 1, 1, "A glowing colony data shard from the deepest chamber of the snow cave. The Hivemind never asks for it; hive greaves are made with it."),
   // The Hivemind's tribute trophies, found on the bodies of the creatures that carry them, and what she leaves.
-  resource("homer_beacon", "Homer Talon", 2, 100, "Found on a dead Homer. The Hivemind's Beta and Alpha tribute asks for them."),
-  resource("arcwire_coil", "Arcwire Skin", 2, 100, "Found on a dead Arcwire. The Hivemind's Beta and Alpha tribute asks for them."),
-  resource("hoover_turbine", "Sauropod Vertebra", 2, 100, "Found on a dead Hoover Leviathan or Pylon Walker. The Hivemind's Beta and Alpha tribute asks for them."),
-  resource("coilcobra_capacitor", "Coilcobra Venom", 2, 100, "Found on a dead Coilcobra. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("homer_beacon", "Homer Homing Beacon", 2, 100, "Found on a dead Homer. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("arcwire_coil", "Arcwire Coil", 2, 100, "Found on a dead Arcwire. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("hoover_turbine", "Hoover Turbine", 2, 100, "Found on a dead Hoover Leviathan or Pylon Walker. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("coilcobra_capacitor", "Coilcobra Capacitor", 2, 100, "Found on a dead Coilcobra. The Hivemind's Beta and Alpha tribute asks for them."),
   resource("element", "Element", 0.1, 100, "Strange glowing matter the guardians leave behind. The element pick and hive gear are made with it."),
-  resource("hive_flag", "Spider Flag", 2, 1, "A banner of the Hivemind, for whoever beat her. Hive greaves are sewn from it."),
+  resource("hive_flag", "Hive Banner", 2, 1, "A banner of the Hivemind, for whoever beat her. Hive greaves are sewn from it."),
   resource("hivemind_trophy_gamma", "Gamma Hivemind Trophy", 5, 1, "Proof you beat the Gamma Hivemind. Hive greaves are made around it."),
   resource("hivemind_trophy_beta", "Beta Hivemind Trophy", 5, 1, "Proof you beat the Beta Hivemind. Hive gauntlets are made around it."),
   resource("hivemind_trophy_alpha", "Alpha Hivemind Trophy", 5, 1, "Proof you beat the Alpha Hivemind. Hive treads are made around it."),
-  { id: "biogel", label: "Raw Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Edible, barely. Cook it on a campfire." },
-  { id: "prime_biogel", label: "Raw Prime Meat", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "The best cut. Scavengers tame fastest on it." },
-  { id: "gel_ration", label: "Cooked Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
-  { id: "soured_gel", label: "Spoiled Meat", kind: "consumable", weight: 0.1, stack: 50, consume: { food: 5, health: -10, torpor: 25 }, note: "Rotten. Good for making narcotics." },
+  { id: "biogel", label: "Raw Biogel", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Protein gel from a wreck's reserve tank. The colony printed it to eat; the bots learned to run on it. Heat it on a campfire." },
+  { id: "prime_biogel", label: "Prime Biogel", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "Rich gel from a big machine's core tank. Scavenger bots upload fastest on it." },
+  { id: "gel_ration", label: "Gel Ration", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
+  { id: "soured_gel", label: "Soured Gel", kind: "consumable", weight: 0.1, stack: 50, consume: { food: 5, health: -10, torpor: 25 }, note: "Gone sour and conductive. Ground into drain spikes." },
   berry("mejoberry", "Mejoberry", { food: 1.5, water: 0.2 }, "A sweet berry plant-eaters love."),
   berry("amarberry", "Amarberry", { food: 1.5, water: 0.2 }, "A common red berry."),
   berry("azulberry", "Azulberry", { food: 1.5, water: 0.2 }, "A common blue berry."),
@@ -177,9 +177,9 @@ export const ITEMS: readonly ItemDef[] = [
   berry("narcoberry", "Narcoberry", { food: 1.5, torpor: 8 }, "Makes the eater drowsy."),
   berry("stimberry", "Stimberry", { food: 1.5, water: -5, torpor: -7.5 }, "Wakes the eater up and dries them out."),
   // Wild eggs (ARK's unfertilized eggs): edible, but worth more cooked into firmware.
-  ...EGG_SIZES.map((size): ItemDef => ({ id: eggItem(size), label: EGG_LABEL[size], kind: "consumable", weight: 0.5, stack: 100, consume: { food: 10, health: -2 }, note: "Laid by a wild creature. Cook it into firmware in a cooking pot." })),
-  ...FIRMWARE_TIERS.map((tier): ItemDef => ({ id: firmwareItem(tier), label: FIRMWARE_LABEL[tier], kind: "consumable", weight: 0.1, stack: 100, consume: { food: 30 }, note: "Taming food. Creatures of this tier and below tame fastest and cleanest on it." })),
-  { id: "drain_spike", label: "Narcotic", kind: "consumable", weight: 0.1, stack: 100, consume: { health: -5, torpor: 40 }, note: "Force-fed to a sleeping creature to keep it under." },
+  ...EGG_SIZES.map((size): ItemDef => ({ id: eggItem(size), label: EGG_LABEL[size], kind: "consumable", weight: 0.5, stack: 100, consume: { food: 10, health: -2 }, note: "A spare core shed by a wild bot. Flash it into firmware in a cooking pot." })),
+  ...FIRMWARE_TIERS.map((tier): ItemDef => ({ id: firmwareItem(tier), label: FIRMWARE_LABEL[tier], kind: "consumable", weight: 0.1, stack: 100, consume: { food: 30 }, note: "Firmware: bots of this tier and below bot fastest and cleanest on it." })),
+  { id: "drain_spike", label: "Drain Spike", kind: "consumable", weight: 0.1, stack: 100, consume: { health: -5, torpor: 40 }, note: "Jacked into a downed bot's port to keep its battery flat." },
   { id: "stimulant", label: "Stimulant", kind: "consumable", weight: 0.1, stack: 100, consume: { stamina: 30, water: -10, torpor: -40 }, note: "Wakes the eater fast." },
   {
     id: "stone_pick", label: "Stone Pick", kind: "tool", weight: 1, stack: 1, note: "Thatch from trees, flint from rocks, ore from metal, obsidian, crystal and oil rocks.",
@@ -204,7 +204,7 @@ export const ITEMS: readonly ItemDef[] = [
     tool: { durability: 300, gather: { power: 4, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, biogel: 1.4, salvage: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 30, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
   {
-    id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
+    id: "wooden_club", label: "Grounding Club", kind: "tool", weight: 1, stack: 1, note: "An insulated cudgel: every hit knocks charge out of a bot.",
     // ARK's club lands about 3.75x its damage as torpor: a level-1 lodestone (180 torpor) sleeps in 9 hits, a
     // craneback (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
     tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, hits: [{ vital: "torpor", amount: 20 }], stamina: 6, cooldown: 0.9 },
@@ -223,34 +223,34 @@ export const ITEMS: readonly ItemDef[] = [
   // the cold out, and past the Hivemind her trophies, flag and Element, with the five artifacts her tribute never
   // asks for, make hive gear that widens the comfortable band at both ends.
   { id: "snow_mask", label: "Snow Mask", kind: "armor", weight: 1, stack: 1, wear: { slot: "head", heatC: 1, coldC: 6 }, note: "Crystal lenses in thick salvage: the peaks' cold and glare stay out. Double-click to wear it." },
-  { id: "oilskin_coat", label: "Oilskin Coat", kind: "armor", weight: 3, stack: 1, wear: { slot: "torso", heatC: 3, coldC: 7 }, note: "Hide sealed with oil: the frozen shore's wind runs off it. Double-click to wear it." },
+  { id: "oilskin_coat", label: "Oilskin Coat", kind: "armor", weight: 3, stack: 1, wear: { slot: "torso", heatC: 3, coldC: 7 }, note: "Salvage sealed with oil: the frozen shore's wind runs off it. Double-click to wear it." },
   { id: "hive_greaves", label: "Hive Greaves", kind: "armor", weight: 4, stack: 1, wear: { slot: "legs", heatC: 6, coldC: 6 }, note: "Built round the Gamma Hivemind's trophy. Double-click to wear it." },
   { id: "hive_gauntlets", label: "Hive Gauntlets", kind: "armor", weight: 2, stack: 1, wear: { slot: "hands", heatC: 6, coldC: 6 }, note: "Built round the Beta Hivemind's trophy. Double-click to wear it." },
   { id: "hive_treads", label: "Hive Treads", kind: "armor", weight: 3, stack: 1, wear: { slot: "feet", heatC: 8, coldC: 8 }, note: "Built round the Alpha Hivemind's trophy. Double-click to wear it." },
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
   {
-    id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones from the bag. Knocks small creatures out from a few metres away.",
+    id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones from the bag. Knocks small bots out from a few metres away.",
     tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, doses: [{ vital: "torpor", amount: 25 }] } } } },
   },
   // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
   // range. A level-1 lodestone (180 torpor) sleeps on two tranq arrows. Numbers approx.
   {
-    id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then obsidian, then stone arrows.",
+    id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: EMP arrows first, then obsidian, then stone arrows.",
     tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { emp_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, obsidian_arrow: { damage: 40, doses: [{ vital: "torpor", amount: 5 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
   },
   // ARK's bola: thrown, it wraps a creature's legs and holds it still for a while; the biggest shrug it off.
   // The bola in hand is its own ammo. Hold time approx.
   {
-    id: "bola", label: "Bola", kind: "tool", weight: 0.5, stack: 10, note: "Throw it to tangle a creature's legs and hold it still. Too small for the biggest.",
+    id: "bola", label: "Mag Bola", kind: "tool", weight: 0.5, stack: 10, note: "Magnet weights on a cable: clamps a bot's legs and holds it still. Too small for the biggest.",
     tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 25, ammo: { bola: { damage: 0, doses: [{ vital: "held", amount: 15 }] } } } },
   },
   { id: "stone_arrow", label: "Stone Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A flint-tipped arrow for the bow." },
-  { id: "emp_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in drain_spike: knocks creatures out from range." },
+  { id: "emp_arrow", label: "EMP Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow with a capacitor head: its pulse drains a bot's battery from range." },
   { id: "obsidian_arrow", label: "Obsidian Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A volcanic-glass head that cuts deeper than flint. The bow fires it before stone arrows." },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
   ...Object.values(SPECIES).flatMap((def): ItemDef[] =>
-    def.saddle === null ? [] : [{ id: def.saddle, label: `${def.label} Saddle`, kind: "saddle", weight: Math.max(4, Math.round(def.weight.base / 40)), stack: 1, note: `Lets you ride a tamed ${def.label}.` }],
+    def.saddle === null ? [] : [{ id: def.saddle, label: `${def.label} Rig`, kind: "saddle", weight: Math.max(4, Math.round(def.weight.base / 40)), stack: 1, note: `A harness rig: lets you ride an uploaded ${def.label}.` }],
   ),
 ];
 
