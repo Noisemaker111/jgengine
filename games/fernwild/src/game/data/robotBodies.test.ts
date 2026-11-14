@@ -35,4 +35,20 @@ describe("robot bodies", () => {
     expect(triangles("craneback")).toBeGreaterThan(plain("craneback"));
     expect(triangles("thermite")).toBeGreaterThan(plain("thermite"));
   });
+
+  test("machine parts move: a Choir's rotor spins in every clip, a tracked bot's wheels roll only on the move, antennae sway", () => {
+    const tracksOn = (species: string, clipName: string, prefix: string) => {
+      const model = bodyGlbModel(ROBOT_BODIES[species]!.plan);
+      const nodes = new Set(model.nodes.flatMap((node, index) => (node.name.startsWith(prefix) ? [index] : [])));
+      return model.clips.find((clip) => clip.name === clipName)!.tracks.filter((track) => nodes.has(track.node)).length;
+    };
+    expect(tracksOn("choir", "Idle", "rotor")).toBe(1);
+    expect(tracksOn("choir", "Run", "rotor")).toBe(1);
+    expect(tracksOn("bulldozaur", "Idle", "wheel_")).toBe(0);
+    expect(tracksOn("bulldozaur", "Walk", "wheel_")).toBe(8);
+    expect(tracksOn("mowbot", "Idle", "antenna_")).toBe(1);
+    expect(tracksOn("scrapper", "Walk", "saw")).toBe(1);
+    expect(tracksOn("choir", "Death", "rotor")).toBe(0);
+  });
 });
+

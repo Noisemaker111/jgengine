@@ -260,6 +260,9 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   const root = rig.add("creature", -1, [0, 0, 0]);
   const body = rig.add("body", root, [0, centreY, 0]);
   const limbs: GaitLimb[] = [];
+  /** Machine parts that move on their own in every clip: rotors and saws spin, wheels roll, antennae sway. */
+  const spinners: { node: number; axis: V3; turnsPerSecond: number; rolls?: boolean }[] = [];
+  const swayers: { node: number; axis: V3; degrees: number; pulse?: number }[] = [];
   const swaying: { node: number; phase: number; amp: number }[] = [];
 
   // Trunk, belly and back features.
@@ -305,7 +308,10 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   if (m?.rotor !== undefined) {
     const top = torso.height * 0.5;
     rig.part(body, MAT.belly).tube([0, top, 0], [0, top + m.rotor * 0.35, 0], torso.width * 0.05, torso.width * 0.05, 6);
-    rig.part(body, MAT.accent).ellipsoid([0, top + m.rotor * 0.35, 0], [m.rotor, m.rotor * 0.04, m.rotor], 14, 3);
+    const rotor = rig.add("rotor", body, [0, top + m.rotor * 0.35, 0]);
+    rig.part(rotor, MAT.accent).ellipsoid([0, 0, 0], [m.rotor, m.rotor * 0.03, m.rotor], 14, 3);
+    rig.part(rotor, MAT.belly).box([0, m.rotor * 0.04, 0], [m.rotor * 1.02, m.rotor * 0.02, m.rotor * 0.08]).box([0, m.rotor * 0.04, 0], [m.rotor * 0.08, m.rotor * 0.02, m.rotor * 1.02]);
+    spinners.push({ node: rotor, axis: [0, 1, 0], turnsPerSecond: 3 });
   }
 
   // Legs.
@@ -350,13 +356,19 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
       const long = torso.length * 0.95;
       for (const side of [-1, 1]) {
         const x = side * (torso.width / 2 + width / 2);
-        rig.part(body, MAT.belly).box([x, y, 0], [width / 2, tall / 2, long / 2]);
+        // The track: a belt with rounded ends (idler and sprocket), pads along its top run.
+        rig.part(body, MAT.belly).box([x, y, 0], [width / 2, tall / 2, long / 2 - tall / 2]);
+        for (const end of [-1, 1]) rig.part(body, MAT.belly).tube([x - width / 2, y, end * (long / 2 - tall / 2)], [x + width / 2, y, end * (long / 2 - tall / 2)], tall / 2, tall / 2, 12);
+        for (let pad = 0; pad < 7; pad += 1) rig.part(body, MAT.accent).box([x, y + tall / 2 + tall * 0.02, ((pad + 0.5) / 7 - 0.5) * (long - tall)], [width / 2 * 0.96, tall * 0.03, (long - tall) / 7 * 0.22]);
         // Road wheels show through the tread's flank, and the track's top run is a lighter band.
         for (let i = 0; i < 4; i += 1) {
           const z = (i / 3 - 0.5) * long * 0.8;
-          rig.part(body, MAT.accent).tube([x - side * width * 0.52, y, z], [x + side * width * 0.52, y, z], tall * 0.34, tall * 0.34, 10);
+          const wheel = rig.add(`wheel_${side < 0 ? "l" : "r"}${i}`, body, [x, y, z]);
+          rig.part(wheel, MAT.accent).tube([-side * width * 0.4, 0, 0], [side * width * 0.62, 0, 0], tall * 0.36, tall * 0.36, 12);
+          // A hub spoke on the outer face shows the wheel turning.
+          rig.part(wheel, MAT.belly).box([side * width * 0.64, 0, 0], [width * 0.03, tall * 0.32, tall * 0.07]);
+          spinners.push({ node: wheel, axis: [1, 0, 0], turnsPerSecond: 0.8, rolls: true });
         }
-        rig.part(body, MAT.body).box([x, y + tall / 2, 0], [width / 2 + 0.01, tall * 0.06, long / 2 + 0.01]);
       }
     }
     if (m.grille !== undefined && m.grille > 0) {
@@ -421,20 +433,35 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
     if (f.beak === true) rig.part(headNode, MAT.accent).cone([0, -hh * 0.05, hl * 0.65], [0, -hh * 0.2, hl * (0.75 + snout)], hh * 0.3);
     else if (snout > 0) rig.part(headNode, MAT.body).tube([0, -hh * 0.08, hl * 0.5], [0, -hh * 0.14, hl * (0.6 + snout)], hh * 0.36, hh * 0.24);
   }
-  if (m?.cyclops === true) rig.part(headNode, MAT.eye).ellipsoid([0, hh * 0.16, hl * (boxy ? 0.79 : 0.7)], [hh * 0.2, hh * 0.2, hh * 0.08], 10, 6);
-  else if (boxy) for (const side of [-1, 1]) rig.part(headNode, MAT.eye).box([side * hw * 0.24, hh * 0.16, hl * 0.79], [hw * 0.12, hh * 0.08, hl * 0.02]);
-  else for (const side of [-1, 1]) rig.part(headNode, MAT.eye).ellipsoid([side * hw * 0.38, hh * 0.18, hl * 0.48], [hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13)], 6, 4);
+  // A machine's eyes sit on their own node so they can pulse.
+  const eyeAt: V3 = [0, hh * 0.16, hl * (boxy ? 0.79 : m?.cyclops === true ? 0.7 : 0.48)];
+  const eyes = m === undefined ? headNode : rig.add("eyes", headNode, eyeAt);
+  const eyeOffset = (p: V3): V3 => (m === undefined ? p : [p[0] - eyeAt[0], p[1] - eyeAt[1], p[2] - eyeAt[2]]);
+  if (m !== undefined) swayers.push({ node: eyes, axis: [0, 0, 0], degrees: 0, pulse: 0.14 });
+  if (m?.cyclops === true) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([0, hh * 0.16, hl * (boxy ? 0.79 : 0.7)]), [hh * 0.2, hh * 0.2, hh * 0.08], 10, 6);
+  else if (boxy) for (const side of [-1, 1]) rig.part(eyes, MAT.eye).box(eyeOffset([side * hw * 0.24, hh * 0.16, hl * 0.79]), [hw * 0.12, hh * 0.08, hl * 0.02]);
+  else for (const side of [-1, 1]) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([side * hw * 0.38, hh * 0.18, hl * 0.48]), [hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13)], 6, 4);
   if (m?.antennae !== undefined) {
     const spots = m.antennae.count === 1 ? [0] : [-1, 1];
     for (const side of spots) {
       const foot: V3 = [side * hw * 0.3, hh * 0.45, hl * 0.25];
-      const tip: V3 = [foot[0] + side * m.antennae.length * 0.25, foot[1] + m.antennae.length, foot[2] - m.antennae.length * 0.3];
-      rig.part(headNode, MAT.belly).tube(foot, tip, hh * 0.035, hh * 0.02, 5);
-      rig.part(headNode, MAT.eye).ellipsoid(tip, [hh * 0.07, hh * 0.07, hh * 0.07], 6, 4);
+      const antenna = rig.add(`antenna_${side < 0 ? "l" : side > 0 ? "r" : "c"}`, headNode, foot);
+      const tip: V3 = [side * m.antennae.length * 0.25, m.antennae.length, -m.antennae.length * 0.3];
+      rig.part(antenna, MAT.belly).tube([0, 0, 0], tip, hh * 0.035, hh * 0.02, 5);
+      rig.part(antenna, MAT.eye).ellipsoid(tip, [hh * 0.07, hh * 0.07, hh * 0.07], 6, 4);
+      swayers.push({ node: antenna, axis: [0, 0, 1], degrees: 9 });
     }
   }
   if (m?.drill !== undefined) rig.part(headNode, MAT.accent).cone([0, -hh * 0.1, hl * (0.75 + snout)], [0, -hh * 0.1, hl * (0.75 + snout) + m.drill], hh * 0.28, 8);
-  if (m?.saw !== undefined) rig.part(headNode, MAT.accent).ellipsoid([0, -hh * 0.2, hl * (0.7 + snout) + m.saw * 0.4], [hh * 0.04, m.saw, m.saw], 16, 4);
+  if (m?.saw !== undefined) {
+    const saw = rig.add("saw", headNode, [0, -hh * 0.2, hl * (0.7 + snout) + m.saw * 0.4]);
+    rig.part(saw, MAT.accent).ellipsoid([0, 0, 0], [hh * 0.04, m.saw, m.saw], 16, 4);
+    for (let tooth = 0; tooth < 8; tooth += 1) {
+      const angle = (tooth / 8) * Math.PI * 2;
+      rig.part(saw, MAT.belly).box([0, Math.sin(angle) * m.saw * 1.02, Math.cos(angle) * m.saw * 1.02], [hh * 0.05, m.saw * 0.08, m.saw * 0.08]);
+    }
+    spinners.push({ node: saw, axis: [1, 0, 0], turnsPerSecond: 2 });
+  }
   if (m?.forks !== undefined) for (const side of [-1, 1]) rig.part(headNode, MAT.belly).box([side * hw * 0.25, -hh * 0.55, hl * 0.6 + m.forks * 0.5], [hw * 0.06, hh * 0.04, m.forks * 0.5]);
   if (f.horns !== undefined) {
     if (f.horns.count !== 2) rig.part(headNode, MAT.accent).cone([0, hh * 0.15, hl * (0.6 + snout * 0.7)], [0, hh * 0.15 + f.horns.length * 0.8, hl * (0.6 + snout * 0.7) + f.horns.length * 0.4], hh * 0.16);
@@ -492,6 +519,46 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
     height: centreY + torso.height / 2,
     fallen: Math.max(torso.width / 2, torso.height * 0.35),
   });
+
+  // Machine parts move in every clip but the death: rotors and saws spin, wheels roll faster at a run, antennae sway.
+  for (const clip of clips) {
+    if (clip.name === "Death" || (spinners.length === 0 && swayers.length === 0)) continue;
+    const duration = Math.max(0.5, ...clip.tracks.flatMap((track) => track.times));
+    const pace = clip.name === "Run" ? 2.2 : clip.name === "Walk" ? 1 : 0;
+    for (const spinner of spinners) {
+      const rate = spinner.rolls === true ? spinner.turnsPerSecond * pace : spinner.turnsPerSecond;
+      const turns = Math.round(rate * duration);
+      if (turns === 0) continue;
+      const keys = turns * 8;
+      const times = Array.from({ length: keys + 1 }, (_, k) => (k / keys) * duration);
+      const values = times.map((_, k) => {
+        const angle = (k / keys) * turns * Math.PI * 2;
+        const sin = Math.sin(angle / 2);
+        return [spinner.axis[0] * sin, spinner.axis[1] * sin, spinner.axis[2] * sin, Math.cos(angle / 2)] as const;
+      });
+      clip.tracks.push({ node: spinner.node, path: "rotation", times, values });
+    }
+    for (const swayer of swayers) {
+      const keys = 8;
+      if (swayer.pulse !== undefined) {
+        // Eyes swell and settle like a charge indicator, twice a clip.
+        const times = Array.from({ length: keys + 1 }, (_, k) => (k / keys) * duration);
+        const values = times.map((_, k) => {
+          const grow = 1 + swayer.pulse! * (0.5 - 0.5 * Math.cos((k / keys) * Math.PI * 4));
+          return [grow, grow, grow] as const;
+        });
+        clip.tracks.push({ node: swayer.node, path: "scale", times, values });
+        continue;
+      }
+      const times = Array.from({ length: keys + 1 }, (_, k) => (k / keys) * duration);
+      const values = times.map((_, k) => {
+        const angle = deg(swayer.degrees * (clip.name === "Idle" ? 0.6 : 1)) * Math.sin((k / keys) * Math.PI * 2);
+        const sin = Math.sin(angle / 2);
+        return [swayer.axis[0] * sin, swayer.axis[1] * sin, swayer.axis[2] * sin, Math.cos(angle / 2)] as const;
+      });
+      clip.tracks.push({ node: swayer.node, path: "rotation", times, values });
+    }
+  }
 
   return {
     nodes,

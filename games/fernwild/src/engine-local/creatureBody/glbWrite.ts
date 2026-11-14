@@ -58,7 +58,7 @@ export interface GlbImage {
 /** One animated property of one node: keyframe times in seconds and a value per key. */
 export interface GlbTrack {
   node: number;
-  path: "rotation" | "translation";
+  path: "rotation" | "translation" | "scale";
   times: number[];
   values: (readonly number[])[];
 }
