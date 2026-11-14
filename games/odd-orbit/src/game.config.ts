@@ -1,6 +1,6 @@
 import { ambientFauna } from "./game/ambientFauna";
 import { defineGame } from "@jgengine/shell/defineGame";
-import { createElement } from "@jgengine/core/ui/jsx";
+import { createElement, Fragment } from "@jgengine/core/ui/jsx";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -11,6 +11,7 @@ import { content } from "./game/content";
 import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
+import { RoomModules } from "./game/render/RoomModules";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
@@ -18,7 +19,7 @@ import { householdStore } from "./game/session/store";
 import { DAY_LENGTH, physics, terrainField, world } from "./world";
 
 export const game = defineGame({
-  name: "Odd Orbit",
+  name: "NO VACANCY",
   world,
   physics,
   input: {
@@ -34,8 +35,9 @@ export const game = defineGame({
   loop,
   GameUI,
   scene: {
-    // Hands the live habitat frame to the save card's thumbnail request.
-    WorldOverlay: () => createElement(SceneCaptureBinding, {}),
+    // The boarding house's modules and neon sign are drawn from the room model; the capture binding
+    // hands the live frame to the save card's thumbnail request.
+    WorldOverlay: () => createElement(Fragment, {}, createElement(RoomModules, {}), createElement(SceneCaptureBinding, {})),
     editorLayers,
     objectModels,
     renderEntity,
@@ -56,7 +58,7 @@ export const game = defineGame({
     hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
   },
   capture: {
-    // "New household" is `orbit.new`; the boot screen is a real menu, so a play capture has to open it.
+    // "Open the house" is `orbit.new`; the boot screen is a real menu, so a play capture has to open it.
     play: ["orbit.new"],
     // `mid-shift` (dev-only `household.stage`) runs the household forward to the moment somebody is
     // at a station on paid work: the roster, concerns and shift readout are a lived morning, not a
@@ -79,47 +81,48 @@ export const game = defineGame({
         const member = state.members[id];
         if (member !== undefined && member.action.kind === "use" && member.action.goal === "work") working += 1;
       }
-      return { day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1 };
+      const boarding = state.boarding;
+      return {
+        day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1,
+        rooms: boarding?.rooms.length ?? 0, housed: boarding?.rooms.filter((room) => room.tenantId !== null).length ?? 0,
+        reputation: Math.round(boarding?.reputation ?? 0), applicant: boarding?.applicant == null ? 0 : 1, deed: Math.round(boarding?.deedOwed ?? 0),
+      };
     },
   },
   rendering: {
     lighting: {
-      // A warm low key against a cool lilac fill: with the fill as bright as the key everything
-      // flattened into one pink wash and the cream living floor never read as cream.
-      ambient: { color: "#9c8fbf", intensity: 0.32 },
-      hemisphere: { skyColor: "#b9a2dc", groundColor: "#3a3150", intensity: 0.45 },
-      // Azimuth 135, elevation 16 at 60 m: the mood's sun, kept here so it casts the shadows.
-      directional: [{ color: "#ffdca6", intensity: 2.3, position: [-42, 16.5, 42], castShadow: true }],
+      // Deep space: almost no ambient, a cool violet fill from the station's running lights and one
+      // hard white key from the star, so the rooms' own pastel lamps carry the colour.
+      ambient: { color: "#5a4f8a", intensity: 0.22 },
+      hemisphere: { skyColor: "#6d5fb0", groundColor: "#120f1f", intensity: 0.35 },
+      directional: [{ color: "#fff1d6", intensity: 1.7, position: [-30, 34, 22], castShadow: true }],
     },
-    // Dusk-moon presentation: the world owns its sky, so "cinematic" only fills the unset post stack
-  // (IBL + tone-map/bloom/AO/grade). Lighting above is authored explicitly and wins.
+    // The station sits in black space; "cinematic" fills the unset post stack (IBL, tone-map, bloom,
+    // AO, grade). Lighting above is authored explicitly and wins.
     look: "cinematic",
-    // Permanent pastel dusk: sun low and peach, lilac fill, a hazy lilac fog.
     mood: {
-      preset: "dusk",
-      sun: { azimuth: 135, elevation: 16, color: "#ffdca6" },
-      skyColor: "#393850",
-      horizonColor: "#d8b8dd",
-      fog: { near: 160, far: 700 },
+      preset: "night",
+      sun: { azimuth: 125, elevation: 48, color: "#fff1d6" },
+      skyColor: "#05040c",
+      horizonColor: "#2a2150",
+      fog: { near: 120, far: 520 },
     },
-    environmentSource: hdriEnvironment("lilac-dusk", { intensity: 0.6 }),
+    environmentSource: hdriEnvironment("night-clear", { intensity: 0.35 }),
     postProcessing: {
       toneMapping: "aces",
-      exposure: 0.9,
+      exposure: 1,
       aa: "smaa",
-      // Soft glow on the luminous green gardens and amber Yield console without bleeding the lilac stone.
-      bloom: { strength: 0.3, radius: 0.6, threshold: 0.92 },
-      // Contact creases under furniture and beside the habitat walls, kept modest for the draw budget.
+      // The neon sign, comfort lamps and portholes should bloom against the dark hull.
+      bloom: { strength: 0.55, radius: 0.55, threshold: 0.82 },
       ao: { radius: 1.2, intensity: 1.6, distanceFalloff: 2.6 },
-      // The pastel dusk cube does the colour; the numeric stage stays neutral.
       grade: {
-        lut: lutGrade("pastel-dusk"),
+        lut: lutGrade("pastel"),
         lift: [0, 0, 0],
         gain: [1, 1, 1],
         gamma: 1,
-        saturation: 1,
-        vignette: 0.26,
-        grain: 0.008,
+        saturation: 1.05,
+        vignette: 0.34,
+        grain: 0.01,
       },
     },
   },
@@ -129,8 +132,8 @@ export const game = defineGame({
     lens: { frustum: { far: 1200 } },
     rigs: {
       rts: {
-        start: { x: 0, z: 0 },
-        height: 19,
+        start: { x: 0, z: -5 },
+        height: 21,
         pitch: 1.0,
         yaw: 0,
         targetOffset: { y: terrainField.sampleHeight(0, 0) },

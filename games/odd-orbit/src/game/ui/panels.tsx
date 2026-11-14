@@ -19,10 +19,14 @@ import { FURNITURE, FURNITURE_BY_ID } from "../objects/catalog";
 import { traitsOf } from "../traits";
 import { nextBill, RATION_BUNDLE, RELIEF, PANTRY_CAP } from "../sim/economy";
 import { HULL_PATCH_COST, repairCost } from "../sim/events";
+import { roomOf, speciesOfMember, tenantComfort } from "../boarding/boarding";
+import { comfortWord } from "../boarding/rooms";
+import { SPECIES } from "../boarding/species";
+import { comfortTint } from "./rooms";
 import { ENAMEL, Fine, Heading, Icon, INK, Meter, MOOD_COLORS, NEED_COLORS, NEED_ICON, Plate, Row, Swatch, Tag, Text, WARN, creditsText } from "./kit";
 
 type Command = (name: string, data?: Record<string, unknown>) => unknown;
-const CARE = [{ goal: "hunger", label: "Nourish", detail: "Uses 1 ration" }, { goal: "energy", label: "Rest", detail: "Lowers stress" }, { goal: "fun", label: "Play", detail: "Lowers stress" }] as const;
+const CARE = [{ goal: "hunger", label: "Snack", detail: "Uses 1 ration" }, { goal: "energy", label: "Nap", detail: "Lowers stress" }, { goal: "fun", label: "Play", detail: "Lowers stress" }] as const;
 
 function Section({ title }: { title: string }) { return <Heading size={16} padding={[8, 0, 0, 0]}>{title}</Heading>; }
 
@@ -41,14 +45,20 @@ function inspectorView(household: HouseholdState, objects: readonly SceneObject[
   const book = householdBook(household);
   const company = member.action.kind === "wander" && member.action.company !== undefined ? household.members[member.action.company]?.name : undefined;
   const mood = moodOfNeeds(member.needs);
+  const species = SPECIES[speciesOfMember(member)];
+  const room = roomOf(household, id);
+  const comfort = tenantComfort(household, id, now);
   return {
+    title: species.title,
+    room: room === null ? null : room.slot + 1,
+    comfort: { score: Math.round(comfort.score), word: comfortWord(comfort.score), line: room === null ? species.lines.unhappy[0]! : comfort.reasons[0]?.text || species.lines.happy[household.day % species.lines.happy.length]! },
     id, name: member.name, job: member.job, plan: member.bodyPlan, lifestyle: member.lifestyle,
     mood: { tier: mood.tier, face: mood.face, label: mood.label },
     goal: activeGoalLabel(member, company),
     traits: traitsOf(member).map(trait => ({ id: trait.id, label: trait.label, blurb: trait.blurb })),
     feverHours: (member.illUntil ?? 0) > now ? Math.ceil(((member.illUntil ?? 0) - now) / 210 * 24) : null,
     recovering: member.recovering,
-    progressLine: `${progress.career.label} · ${RUNG_NAMES[progress.rung - 1]} (rung ${progress.rung}/3) · household standing ${progress.have}`,
+    progressLine: `${progress.career.label} · ${RUNG_NAMES[progress.rung - 1]} (rung ${progress.rung}/3) · house standing ${progress.have}`,
     payLine: `Yield ${yieldPay.masteryLabel} · pay x${yieldPay.factor.toFixed(2)} on a console. Bloom ${bloomPay.masteryLabel} · pay x${bloomPay.factor.toFixed(2)} on a planter${bloomPay.rations > 0 ? `, +${bloomPay.rations} ration${bloomPay.rations === 1 ? "" : "s"}` : ""}.`,
     posts: postRows(household, member).map(row => ({
       id: row.career.id, label: row.career.label, current: row.current, open: row.open,
@@ -67,7 +77,7 @@ function inspectorView(household: HouseholdState, objects: readonly SceneObject[
     crop,
     cropLocked: member.shiftProgress > 0 || member.harvestToday > 0,
     crops: (["pantry", "export"] as const).map(choice => ({ choice, output: bloomHarvestIn(view, member, choice, false) })),
-    paidReason: !hasPaidStation ? `Add a ${member.lifestyle === "bloom" ? "Bloom Planter" : "Yield Console"} with Furnish` : member.recovering ? "Recover before paid work" : member.shiftDay === household.day ? "Today's paid shift is finished or missed" : !shiftIsOpen(member, now) ? `Paid window: ${scheduleLabel(member)}` : null,
+    paidReason: !hasPaidStation ? `Add a ${member.lifestyle === "bloom" ? "Hydro Tray" : "Gig Terminal"} with Furnish` : member.recovering ? "Recover before paid work" : member.shiftDay === household.day ? "Today's paid shift is finished or missed" : !shiftIsOpen(member, now) ? `Paid window: ${scheduleLabel(member)}` : null,
     shiftLabel: yieldShiftLabel(member, waitingForStation(household, member, objects)),
     reward,
     yieldValue: yieldShiftValue(household, member),
@@ -76,7 +86,7 @@ function inspectorView(household: HouseholdState, objects: readonly SceneObject[
   };
 }
 
-/** A being's care card: mood, traits, needs, post and mastery, direct care, rhythm, shift and bonds. */
+/** A tenant's card: room and comfort, mood, traits, needs, day job, direct care, rhythm, shift and bonds. */
 export function Inspector() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -88,9 +98,14 @@ export function Inspector() {
   const shiftSeconds = () => { const m = member(); return m === undefined ? 0 : m.lifestyle === "yield" ? m.workToday : m.shiftProgress; };
   const run = (name: string, input: Record<string, unknown>) => () => commands.run(name, input);
   return <>
-    <Row gap={10}><Swatch plan={card.plan} size={52} /><RuneView grow={1} gap={2}><Heading>{card.name}</Heading><Fine>{card.job}</Fine></RuneView>
+    <Row gap={10}><Swatch plan={card.plan} size={52} /><RuneView grow={1} shrink gap={2}><Heading>{card.name}</Heading><Fine size={12}>{card.title}</Fine></RuneView>
       <Plate tone="cream" radius={99} minHeight={34} padding={[4, 10, 4, 10]} label="Close member care" onPress={run("member.select", { id: null })}><Icon name="cross" size={14} /></Plate></Row>
     <Row gap={6}><Text weight={700} color={MOOD_COLORS[card.mood.tier] ?? INK}>{`${card.mood.face} ${card.mood.label}`}</Text><Fine grow={1} shrink>{card.goal}</Fine></Row>
+    <RuneView fill={card.room === null ? "#d8d0e6" : comfortTint(card.comfort.score)} radius={10} border={{ width: 2, color: "#2a1733" }} padding={[6, 10, 6, 10]} gap={2} label="Room and comfort">
+      <Text weight={700}>{card.room === null ? "No room yet · lives in the broom cupboard" : `Room ${card.room} · ${card.comfort.word} · comfort ${card.comfort.score}`}</Text>
+      <Fine size={12} color={INK}>{`“${card.comfort.line}”`}</Fine>
+    </RuneView>
+    <Fine size={12}>Open Rooms to move them or retune their room. Comfort sets the rent they pay and the review they write.</Fine>
     <Row gap={5} label="Traits">{card.traits.map(trait => <RuneView key={trait.id} fill={ENAMEL.lilac} radius={99} border={{ width: 1.5, color: INK }} padding={[2, 10, 2, 10]} tooltip={trait.blurb}><Text size={13} weight={700}>{trait.label}</Text></RuneView>)}</Row>
     <Fine>{card.traits.map(trait => trait.blurb).join(" ")}</Fine>
     {card.feverHours !== null ? <Text color={WARN}>{`Fever: no paid work and rest drains faster for another ${card.feverHours} hours.`}</Text> : null}
@@ -99,14 +114,14 @@ export function Inspector() {
     {NEEDS.map(need => <Row key={need} gap={8}><Icon name={NEED_ICON[need]} size={14} color={NEED_COLORS[need]} /><Text size={13} width={90}>{NEED_DEFS[need].label}</Text>
       <Meter label={NEED_DEFS[need].label} value={() => member()?.needs[need] ?? 0} color={bind(() => (member()?.needs[need] ?? 0) < 30 ? "#ff6b7d" : NEED_COLORS[need])} width={150} />
       <Text size={13} weight={700} text={bind(() => String(Math.round(Math.max(0, Math.min(100, member()?.needs[need] ?? 0)))))} /></Row>)}
-    <Section title="Post & mastery" />
+    <Section title="Day job & mastery" />
     <Fine>{card.progressLine}</Fine>
     <Fine>{card.payLine}</Fine>
     <RuneView layout="grid" columns={2} gap={6} label="Posts">{card.posts.map(row => <Plate key={row.id} on={row.current} disabled={row.current || !row.open} layout="stack" gap={1} items="start" onPress={run("member.career", { id, career: row.id })}><Text weight={700} size={14}>{row.label}</Text><Fine size={12}>{row.note}</Fine></Plate>)}</RuneView>
     <Plate tone="butter" disabled={!card.canPromote} onPress={run("member.promote", { id })}>{card.promoteLabel}</Plate>
     {card.concern ? <Text role="status" color={WARN}>{card.concern}</Text> : null}
-    <Fine>A shift raises mastery and household standing. Rungs cost standing, never credits; a Bloom Master adds a ration to every harvest.</Fine>
-    <Section title="Care now" />
+    <Fine>A shift raises mastery and house standing. Rungs cost standing, never credits; a Hydro Master adds a ration to every harvest.</Fine>
+    <Section title="Look after them" />
     <RuneView layout="grid" columns={3} gap={6} label="Direct care">{card.care.map(action => <Plate key={action.goal} tone="mint" disabled={action.disabled} layout="stack" gap={1} items="start" onPress={run("member.direct", { id, goal: action.goal === "fun" ? "play" : action.goal })}><Text weight={700} size={14}>{action.label}</Text><Fine size={11}>{action.reason}</Fine></Plate>)}</RuneView>
     <Section title="Daily rhythm" />
     <Fine>{card.rhythm}</Fine>
@@ -114,18 +129,18 @@ export function Inspector() {
     {card.canChange ? null : <Fine>Today’s paid shift is committed. Change rhythm tomorrow.</Fine>}
     {card.lifestyle === "bloom" ? <>
       <Section title="Choose today's crop" />
-      <RuneView layout="grid" columns={2} gap={6} label="Bloom crop">{card.crops.map(({ choice, output }) => <Plate key={choice} on={crop === choice} disabled={card.cropLocked && crop !== choice} layout="stack" gap={1} items="start" onPress={run("member.bloomCrop", { id, crop: choice })}><Text weight={700} size={14}>{choice === "pantry" ? "Pantry crop" : "Export crop"}</Text><Fine size={12}>{`${output.rations} rations · ${output.credits} credits`}</Fine></Plate>)}</RuneView>
+      <RuneView layout="grid" columns={2} gap={6} label="Bloom crop">{card.crops.map(({ choice, output }) => <Plate key={choice} on={crop === choice} disabled={card.cropLocked && crop !== choice} layout="stack" gap={1} items="start" onPress={run("member.bloomCrop", { id, crop: choice })}><Text weight={700} size={14}>{choice === "pantry" ? "Galley crop" : "Export crop"}</Text><Fine size={12}>{`${output.rations} rations · ${output.credits} credits`}</Fine></Plate>)}</RuneView>
       <Fine>{`Export trades 3 rations for 12 extra credits. Friends tending nearby add 1 ration and 12 credits. ${card.cropLocked ? "Crop committed until tomorrow." : "Choose before tending starts."}`}</Fine>
     </> : null}
-    <Plate tone="pink" disabled={paidReason !== null || shiftLabel !== null} onPress={run("member.direct", { id, goal: card.lifestyle === "bloom" ? "tend" : "work" })}>{shiftLabel ?? (card.lifestyle === "bloom" ? `Tend ${crop} crop · ${reward.rations} rations + ${reward.credits} credits` : `Start Yield shift · earn up to ${card.yieldValue} credits`)}</Plate>
+    <Plate tone="pink" disabled={paidReason !== null || shiftLabel !== null} onPress={run("member.direct", { id, goal: card.lifestyle === "bloom" ? "tend" : "work" })}>{shiftLabel ?? (card.lifestyle === "bloom" ? `Tend ${crop} crop · ${reward.rations} rations + ${reward.credits} credits` : `Start a gig shift · earn up to ${card.yieldValue} credits`)}</Plate>
     <Fine>{paidReason ?? (shiftLabel !== null ? "Shift under way. Care needs can interrupt it." : "20 seconds at the station. Care needs can interrupt your shift.")}</Fine>
     <Row gap={8} label="Shift progress"><Text size={13} width={110}>Shift progress</Text><Meter value={() => (shiftSeconds() / SHIFT_SECONDS) * 100} color="#8fdcb8" width={150} /><Text size={13} weight={700} text={bind(() => `${Math.round(shiftSeconds())} / ${SHIFT_SECONDS}s`)} /></Row>
     <Fine text={bind(() => `Today: ${(member()?.workToday ?? 0).toFixed(0)} seconds worked · ${card.harvestToday} rations grown`)} />
-    <Plate onPress={run("member.release", { id })}>{`Release direction · let ${card.name.split(" ")[0]} choose`}</Plate>
+    <Plate onPress={run("member.release", { id })}>{`Stop directing · let ${card.name} choose`}</Plate>
     <Section title="Relationships" />
-    <Fine>Conversations ease stress. Two stressed beings may dispute instead.</Fine>
+    <Fine>Chats ease stress; two stressed tenants bicker instead. Neighbours drift apart when one's air or noise leaks into the other's room, and closer when the wall is kind. Friends cover a short rent cheque; feuding neighbours bang on the wall.</Fine>
     {card.bonds.map(bond => <Row key={bond.id} gap={8}><RuneView grow={1} gap={0}><Text weight={700} size={14}>{bond.name}</Text><Fine size={12}>{`${bond.word} · ${bond.value}`}</Fine></RuneView><Plate tone="sky" label={`Talk with ${bond.name}`} onPress={run("member.socialize", { id, withId: bond.id })}>Talk</Plate></Row>)}
-    <Fine>Select a furnishing in the habitat to direct this being. A Bond Ring used alone can only restore Social to 55.</Fine>
+    <Fine>Select a furnishing in the commons to send this tenant there. A Lounge Sofa used alone can only restore Company to 55.</Fine>
   </>;
 }
 
@@ -138,7 +153,7 @@ export function BuildPalette({ onChoose }: { onChoose: () => void }) {
   const [managing, setManaging] = useState(false);
   const credits = () => householdStore.read(ctx).credits;
   return <>
-    <Heading size={18}>Make room for life</Heading>
+    <Heading size={18}>Furnish the commons</Heading>
     <Fine>Pick one, then tap open floor. Each piece adds to the nightly bill.</Fine>
     <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={8}>
       {FURNITURE.map((def) => <Plate key={def.id} on={buildTool === def.id} disabled={bind(() => credits() < def.cost)} opacity={bind(() => credits() < def.cost ? 0.5 : 1)} layout="stack" gap={3} items="start" justify="start" label={def.name}
@@ -174,9 +189,9 @@ export function PantryLedger({ command }: { command: Command }) {
   const { canBuy, canRelief } = ledger;
   return <>
     <RuneView gap={4} padding={[4, 0, 4, 0]}>
-      <Line label="Earned today" value={bind(() => creditsText(householdStore.read(ctx).dayIncome))} />
+      <Line label="Taken in today" value={bind(() => creditsText(householdStore.read(ctx).dayIncome))} />
       <Line label="Grown today" value={`${ledger.dayHarvest} rations`} />
-      <Line label="Due at midnight" value={String(ledger.bill)} />
+      <Line label="Docking bill at midnight" value={String(ledger.bill)} />
       <Line label="In the jar" value={creditsText(ledger.credits)} />
       {ledger.debt > 0 ? <Row justify="between"><Text size={14} color={WARN}>Debt carried</Text><Text size={14} weight={700} color={WARN}>{creditsText(ledger.debt)}</Text></Row> : null}
     </RuneView>
@@ -188,7 +203,7 @@ export function PantryLedger({ command }: { command: Command }) {
     {ledger.broken.length > 0 || ledger.hullLeak ? <>
       <Section title="Repairs" />
       {ledger.broken.map(({ id, catalogId, affordable }) => <Plate key={id} tone="butter" disabled={!affordable} onPress={() => command("household.repair", { id })}>{`Mend the ${FURNITURE_BY_ID[catalogId]?.name ?? "furnishing"} · ${repairCost(catalogId)} credits`}</Plate>)}
-      {ledger.hullLeak ? <Plate tone="butter" disabled={!ledger.canPatch} onPress={() => command("household.patchHull")}>{`Patch the torpor wing · ${HULL_PATCH_COST} credits`}</Plate> : null}
+      {ledger.hullLeak ? <Plate tone="butter" disabled={!ledger.canPatch} onPress={() => command("household.patchHull")}>{`Patch the nap-pod seam · ${HULL_PATCH_COST} credits`}</Plate> : null}
       <Fine>Broken furnishings stand idle and an inspector fines a habitat in disrepair.</Fine>
     </> : null}
     <Tag padding={[6, 0, 0, 0]}>{`PANTRY ${ledger.pantry} / ${PANTRY_CAP}`}</Tag>

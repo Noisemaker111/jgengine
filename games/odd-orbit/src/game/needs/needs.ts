@@ -11,10 +11,10 @@ export interface NeedDef {
 }
 
 export const NEED_DEFS: Record<NeedId, NeedDef> = {
-  hunger: { id: "hunger", label: "Nourish", icon: "🍲", decayPerDay: 118 },
-  energy: { id: "energy", label: "Rest", icon: "🌙", decayPerDay: 82 },
-  social: { id: "social", label: "Bond", icon: "🫧", decayPerDay: 74 },
-  fun: { id: "fun", label: "Play", icon: "✨", decayPerDay: 90 },
+  hunger: { id: "hunger", label: "Snack", icon: "🍲", decayPerDay: 118 },
+  energy: { id: "energy", label: "Sleep", icon: "🌙", decayPerDay: 82 },
+  social: { id: "social", label: "Company", icon: "🫧", decayPerDay: 74 },
+  fun: { id: "fun", label: "Fun", icon: "✨", decayPerDay: 90 },
 };
 
 /** The day a being starts with; the shared agent's need set takes these as its start values. */

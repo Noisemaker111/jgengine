@@ -5,6 +5,7 @@ import { DAY_LENGTH } from "../../world";
 import { FURNITURE_BY_ID } from "../objects/catalog";
 import type { NoticeFeed } from "@jgengine/core/notifications/notices";
 import { noteEvent, type HouseholdState } from "../session/types";
+import { roomRunningCost, type RoomState } from "../boarding/rooms";
 
 export const CREDIT_CURRENCY: CurrencyDefinition = { id: "credits", name: "Credits", decimals: 2 };
 export const HABITAT_UPKEEP = 80;
@@ -24,19 +25,23 @@ export function createHouseholdEconomy(now = 0): ResourceLedger {
   });
 }
 
-/** Base habitat rent per night in each charter term; the Authority raises it as the charter runs. */
-export const TERM_RENT = [HABITAT_UPKEEP, 130, 190, 260] as const;
+/** The station's base docking fee per night in each lease term; the Dockmaster raises it as the lease runs. */
+export const TERM_RENT = [HABITAT_UPKEEP, 170, 250, 330] as const;
 
-export function rentFor(state: Pick<HouseholdState, "charter">): number {
+/** Tonight's docking fee: the lease term's rate, or nothing once the house owns its section outright. */
+export function rentFor(state: Pick<HouseholdState, "charter" | "boarding">): number {
+  if (state.boarding !== undefined && state.boarding.deedOwed <= 0) return 0;
   return TERM_RENT[Math.min(TERM_RENT.length - 1, Math.max(0, state.charter?.term ?? 0))]!;
 }
 
-export function dailyUpkeep(objects: readonly SceneObject[], rent: number = HABITAT_UPKEEP): number {
-  return rent + objects.reduce((sum, obj) => sum + (FURNITURE_BY_ID[obj.catalogId]?.runningCost ?? 0), 0);
+/** The docking fee, each furnishing's running cost and each module's own draw. */
+export function dailyUpkeep(objects: readonly SceneObject[], rent: number = HABITAT_UPKEEP, rooms: readonly RoomState[] = []): number {
+  return rent + objects.reduce((sum, obj) => sum + (FURNITURE_BY_ID[obj.catalogId]?.runningCost ?? 0), 0)
+    + rooms.reduce((sum, room) => sum + roomRunningCost(room), 0);
 }
 
 export function nextBill(state: HouseholdState, objects: readonly SceneObject[]): number {
-  return dailyUpkeep(objects, rentFor(state)) + Math.min(state.debt, 40);
+  return dailyUpkeep(objects, rentFor(state), state.boarding?.rooms ?? []) + Math.min(state.debt, 40);
 }
 
 /** Settle any due midnight bills. Returns the closed day's income when a new day began, else null. */
@@ -52,7 +57,7 @@ export function settleHouseholdDay(state: HouseholdState, objects: readonly Scen
     policies: [(txn) => {
       const repayment = Math.min(remainingDebt, 40);
       remainingDebt = creditAmount(remainingDebt - repayment);
-      return [{ ...txn, amount: dailyUpkeep(objects, rentFor(state)) + repayment }];
+      return [{ ...txn, amount: dailyUpkeep(objects, rentFor(state), state.boarding?.rooms ?? []) + repayment }];
     }],
     maxCyclesPerRule: 7,
   });
@@ -64,7 +69,7 @@ export function settleHouseholdDay(state: HouseholdState, objects: readonly Scen
   state.economy.accounts["household"] = { credits: state.credits };
   if (!newDay) {
     if (state.lastDay !== null) state.lastDay.bill = creditAmount(state.lastDay.bill + bill);
-    noteEvent(state, notices, `Outstanding habitat bills ${Math.round(bill)}${state.debt > 0 ? ` · debt ${Math.round(state.debt)}` : " paid"}.`, state.debt > 0 ? "info" : "success");
+    noteEvent(state, notices, `Outstanding station bills ${Math.round(bill)}${state.debt > 0 ? ` · debt ${Math.round(state.debt)}` : " paid"}.`, state.debt > 0 ? "info" : "success");
     return null;
   }
   const missed = state.order.reduce((sum, id) => {
@@ -72,7 +77,7 @@ export function settleHouseholdDay(state: HouseholdState, objects: readonly Scen
     return sum + (m !== undefined && (m.lifestyle === "yield" ? m.workToday < 20 : m.harvestToday === 0) ? 1 : 0);
   }, 0);
   state.lastDay = { day: state.day, income: creditAmount(state.dayIncome), harvest: state.dayHarvest, bill, missed };
-  noteEvent(state, notices, `Day ${state.day + 1}: earned ${Math.round(state.dayIncome)}, harvested ${state.dayHarvest} rations; habitat bill ${Math.round(bill)}${state.debt > 0 ? ` · debt ${Math.round(state.debt)}` : " paid"}.`, state.debt > 0 ? "info" : "success");
+  noteEvent(state, notices, `Day ${state.day + 1}: took in ${Math.round(state.dayIncome)}, grew ${state.dayHarvest} rations; docking bill ${Math.round(bill)}${state.debt > 0 ? ` · debt ${Math.round(state.debt)}` : " paid"}.`, state.debt > 0 ? "info" : "success");
   const closedIncome = state.dayIncome;
   state.day = today;
   state.dayIncome = 0;

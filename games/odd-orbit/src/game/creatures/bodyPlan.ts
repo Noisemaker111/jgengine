@@ -1,8 +1,11 @@
 import { seededRng } from "@jgengine/core/random/rng";
 
-export type CreatureBodyShape ="blob" | "tall" | "round" | "insectoid";
+/** The seven tenant silhouettes, plus the generic shapes older households were generated with. */
+export type CreatureBodyShape = "blob" | "mist" | "insectoid" | "twin" | "rock" | "robot" | "balloon" | "tall" | "round";
 
-export const BODY_SHAPES: readonly CreatureBodyShape[] = ["blob", "tall", "round", "insectoid"];
+export const BODY_SHAPES: readonly CreatureBodyShape[] = ["blob", "mist", "insectoid", "twin", "rock", "robot", "balloon", "tall", "round"];
+/** The shapes the old procedural generator drew from. */
+const GENERATED_SHAPES: readonly CreatureBodyShape[] = ["blob", "tall", "round", "insectoid"];
 
 export interface AlienBodyPlan {
   shape: CreatureBodyShape;
@@ -24,7 +27,7 @@ function range(rng: () => number, lo: number, hi: number): number {
 
 export function generateBodyPlan(seed: string): AlienBodyPlan {
   const rng = seededRng(seed);
-  const shape = pick(rng, BODY_SHAPES);
+  const shape = pick(rng, GENERATED_SHAPES);
   const size = Math.round(range(rng, 0.7, 1.55) * 100) / 100;
   const limbCount =
     shape === "insectoid"

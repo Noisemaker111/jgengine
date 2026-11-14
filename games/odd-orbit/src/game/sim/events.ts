@@ -11,6 +11,8 @@ import { hasTrait, stressFactor } from "../traits";
 import { DAY_LENGTH } from "../../world";
 import { charterOf } from "./charter";
 import { creditAmount, PANTRY_CAP } from "./economy";
+import { boardingOf, roomOf, tenantComfort } from "../boarding/boarding";
+import { SHUTTER_COST } from "../boarding/rooms";
 
 /** Game seconds a transmission waits for an answer before the household takes its default. */
 export const ANSWER_SECONDS = 45;
@@ -71,7 +73,7 @@ function afford(credits: number) {
 }
 
 function needTrait(trait: Parameters<typeof hasTrait>[1], word: string) {
-  return (state: HouseholdState) => (members(state).some((m) => hasTrait(m, trait)) ? null : `Needs a ${word} being`);
+  return (state: HouseholdState) => (members(state).some((m) => hasTrait(m, trait)) ? null : `Needs a ${word} tenant`);
 }
 
 function traitHolder(state: HouseholdState, trait: Parameters<typeof hasTrait>[1]): MemberState | null {
@@ -128,34 +130,84 @@ function shiftOpinion(state: HouseholdState, a: string, b: string, delta: number
   syncBook(state, book);
 }
 
-/** The household's incident book: four boons, two offers and eight kinds of trouble. */
+/** Tenants of these species can lay a surprise clutch. */
+const EGG_LAYERS = new Set(["glorp", "krrt", "velvet"]);
+
+function speciesHolder(state: HouseholdState, species: string): MemberState | null {
+  return members(state).find((m) => m.species === species) ?? null;
+}
+
+/** The front desk's book: boons, offers and the trouble a boarding house in orbit attracts. */
 export const INCIDENTS: readonly IncidentDef[] = [
   {
-    id: "comet", cost: 0, weight: 1, cooldownSeconds: DAY_LENGTH * 2, title: "A comet passes", tone: "success",
-    text: () => "A comet lit the dome. The whole household felt lighter.",
+    id: "comet", cost: 0, weight: 1, cooldownSeconds: DAY_LENGTH * 2, title: "Aurora over the station", tone: "success",
+    text: () => "The station drifted through a magnetic aurora. Every porthole went pink and green; the whole house felt lighter.",
     auto: (state) => { for (const m of members(state)) bumpNeed(m, "fun", 14); },
   },
   {
-    id: "cache", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH * 2, title: "Ration crystals", tone: "success",
+    id: "cache", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH * 2, title: "Lost-and-found crate", tone: "success",
     pick: (state, _o, rng) => ({ memberId: randomMember(state, rng), otherId: null, objId: null, objCatalog: null }),
-    text: (state, inc) => `${named(state, inc.memberId)} found a cache of ration crystals: +3 rations.`,
+    text: (state, inc) => `${named(state, inc.memberId)} opened the lost-and-found crate and found three rations nobody claimed.`,
     auto: (state) => { state.pantry = Math.min(PANTRY_CAP, state.pantry + 3); },
   },
   {
-    id: "signal", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH, title: "A friendly signal", tone: "success",
+    id: "signal", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH, title: "A postcard from home", tone: "success",
     pick: (state, _o, rng) => ({ memberId: randomMember(state, rng), otherId: null, objId: null, objCatalog: null }),
-    text: (state, inc) => `${named(state, inc.memberId)} sent out a signal and got a warm reply.`,
+    text: (state, inc) => `A postcard from home came through the mail tube for ${named(state, inc.memberId)}. They read it six times.`,
     auto: (state, inc) => { const m = inc.memberId === null ? undefined : state.members[inc.memberId]; if (m) { bumpNeed(m, "social", 22); stress(m, -10); } },
   },
   {
-    id: "trader", cost: 0, weight: 1.2, cooldownSeconds: DAY_LENGTH * 1.5, title: "A trader's skiff docks", tone: "info",
+    id: "flare", cost: 14, weight: 1.1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 0.4, title: "Solar flare warning", tone: "warn",
+    when: (r) => r.state.incident == null && boardingOf(r.state).rooms.some((room) => !room.shuttered && room.tenantId !== null),
+    text: () => "The station's star is throwing a tantrum. For six hours every unshuttered room goes bright and hot.",
+    choices: [
+      { id: "shutters", label: "Shutter every room", detail: (s) => `${unshuttered(s) * SHUTTER_COST} credits for ${unshuttered(s)} rooms, kept for good`, blocked: (s) => afford(unshuttered(s) * SHUTTER_COST)(s),
+        apply: (s) => { const n = unshuttered(s); spend(s, n * SHUTTER_COST); for (const room of boardingOf(s).rooms) room.shuttered = true; return `Flare shutters went up on ${n} rooms.`; } },
+      { id: "ride", label: "Ride it out", detail: () => "Rooms bright and a step hotter for 6 hours", apply: (s, _i, now) => { boardingOf(s).flareUntil = now + HOUR * 6; return "The flare washed through the portholes. Krrt is not amused."; } },
+    ],
+    fallback: "ride",
+  },
+  {
+    id: "eggs", cost: 12, weight: 0.9, cooldownSeconds: DAY_LENGTH * 3, after: DAY_LENGTH * 1.2, title: "A surprise egg clutch", tone: "info",
+    when: (r) => r.state.incident == null && members(r.state).some((m) => EGG_LAYERS.has(m.species ?? "") && roomOf(r.state, m.id) !== null),
+    pick: (state, _o, rng) => { const id = randomMember(state, rng, (m) => EGG_LAYERS.has(m.species ?? "") && roomOf(state, m.id) !== null); return id === null ? null : { memberId: id, otherId: null, objId: null, objCatalog: null }; },
+    text: (s, inc) => `${named(s, inc.memberId)} laid a clutch of eggs in their room overnight. They are humming. The eggs, that is.`,
+    choices: [
+      { id: "keep", label: "Let them keep the clutch", detail: () => "Parent delighted (-25 stress); their room a step louder for a day",
+        apply: (s, inc, now) => { const m = inc.memberId ? s.members[inc.memberId] : undefined; const room = m ? roomOf(s, m.id) : null; if (m) { stress(m, -25); bumpNeed(m, "fun", 20); } if (room) boardingOf(s).noisyUntil[room.id] = now + DAY_LENGTH; boardingOf(s).reputation = Math.min(100, boardingOf(s).reputation + 3); return `${named(s, inc.memberId)} is nesting. The neighbours can hear the humming.`; } },
+      { id: "creche", label: "Book the station crèche", detail: () => "40 credits; parent +10 stress", blocked: afford(40),
+        apply: (s, inc) => { spend(s, 40); const m = inc.memberId ? s.members[inc.memberId] : undefined; if (m) stress(m, 10); return "The eggs went to the station crèche with a little hat each."; } },
+    ],
+    fallback: "keep",
+  },
+  {
+    id: "molt", cost: 16, weight: 1, cooldownSeconds: DAY_LENGTH * 2.5, after: DAY_LENGTH * 0.8, title: "Krrt molted in the bathroom", tone: "warn",
+    when: (r) => r.state.incident == null && speciesHolder(r.state, "krrt") !== null && r.objects.some((o) => o.catalogId === "sleep_pod" && !(r.state.hazards?.broken ?? []).includes(o.instanceId)),
+    pick: (state, objects) => {
+      const pod = objects.find((o) => o.catalogId === "sleep_pod" && !(state.hazards?.broken ?? []).includes(o.instanceId));
+      const krrt = speciesHolder(state, "krrt");
+      if (pod === undefined || krrt === null) return null;
+      breakObject(state, pod.instanceId);
+      return { memberId: krrt.id, otherId: null, objId: pod.instanceId, objCatalog: pod.catalogId };
+    },
+    text: (s, inc) => `${named(s, inc.memberId)} molted in the shared ${brokenName(s, inc)}. There is a whole second ${named(s, inc.memberId)} in there, empty and crunchy. Nobody can nap until it is cleared.`,
+    choices: [
+      { id: "clean", label: "Hire the station cleaners", detail: () => "25 credits", blocked: afford(25), apply: (s, inc) => { spend(s, 25); if (inc.objId) repairObject(s, inc.objId); return "The cleaners took the shed shell away in a very large bag."; } },
+      { id: "handy", label: "Ask the handy tenant", detail: () => "The handy tenant loses 35 rest", blocked: needTrait("handy", "Handy"),
+        apply: (s, inc) => { const m = traitHolder(s, "handy"); if (m) bumpNeed(m, "energy", -35); if (inc.objId) repairObject(s, inc.objId); return `${m?.name ?? "A handy tenant"} cleared the molt and kept a leg as a souvenir.`; } },
+      { id: "leave", label: "Leave it for now", detail: () => "Clean it later from Pantry & bills", apply: (s, inc) => `The ${brokenName(s, inc)} stays crunchy for now.` },
+    ],
+    fallback: "leave",
+  },
+  {
+    id: "trader", cost: 0, weight: 1.2, cooldownSeconds: DAY_LENGTH * 1.5, title: "A galley trader docks", tone: "info",
     when: (r) => r.state.incident == null,
-    text: () => "A trader's skiff is at the airlock with crates of rations and an eye on the pantry.",
+    text: () => "A trader's skiff is at the airlock with crates of rations and an eye on your galley.",
     choices: [
       { id: "buy", label: "Buy 8 rations", detail: () => "40 credits", blocked: (s) => afford(40)(s) ?? (s.pantry + 8 > PANTRY_CAP ? "No pantry room" : null),
         apply: (s) => { spend(s, 40); s.pantry += 8; return "Bought 8 rations for 40 credits."; } },
       { id: "haggle", label: "Haggle (Thrifty)", detail: () => "8 rations for 28 credits", blocked: (s) => needTrait("thrifty", "Thrifty")(s) ?? afford(28)(s) ?? (s.pantry + 8 > PANTRY_CAP ? "No pantry room" : null),
-        apply: (s) => { spend(s, 28); s.pantry += 8; return `${traitHolder(s, "thrifty")?.name ?? "A thrifty being"} haggled 8 rations down to 28 credits.`; } },
+        apply: (s) => { spend(s, 28); s.pantry += 8; return `${traitHolder(s, "thrifty")?.name ?? "A thrifty tenant"} haggled 8 rations down to 28 credits.`; } },
       { id: "sell", label: "Sell 5 rations", detail: () => "+40 credits", blocked: (s) => (s.pantry >= 5 ? null : "Needs 5 rations"),
         apply: (s) => { s.pantry -= 5; s.credits = creditAmount(s.credits + 40); return "Sold 5 rations for 40 credits."; } },
       { id: "decline", label: "Wave it off", detail: () => "Nothing changes", apply: () => "The skiff drifted on." },
@@ -163,43 +215,43 @@ export const INCIDENTS: readonly IncidentDef[] = [
     fallback: "decline",
   },
   {
-    id: "overtime", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH, title: "Overtime offered", tone: "info",
+    id: "overtime", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH, title: "Overtime on the docks", tone: "info",
     when: (r) => r.state.incident == null,
-    text: () => "The Authority will pay for an extra night of console work. The Yield rhythm would carry it.",
+    text: () => "The docks will pay for an extra night of gig work. The gig-shift tenants would carry it.",
     choices: [
-      { id: "accept", label: "Take the overtime", detail: (s) => `+110 credits; ${members(s).filter((m) => m.lifestyle === "yield").length} Yield beings +22 stress, -20 rest`,
-        apply: (s) => { s.credits = creditAmount(s.credits + 110); s.dayIncome = creditAmount(s.dayIncome + 110); for (const m of members(s)) if (m.lifestyle === "yield") { stress(m, 22); bumpNeed(m, "energy", -20); } return "The Yield rhythm worked a night of overtime: +110 credits."; } },
-      { id: "decline", label: "Turn it down", detail: () => "Nothing changes", apply: () => "The household kept its evening." },
+      { id: "accept", label: "Take the overtime", detail: (s) => `+110 credits; ${members(s).filter((m) => m.lifestyle === "yield").length} gig tenants +22 stress, -20 rest`,
+        apply: (s) => { s.credits = creditAmount(s.credits + 110); s.dayIncome = creditAmount(s.dayIncome + 110); for (const m of members(s)) if (m.lifestyle === "yield") { stress(m, 22); bumpNeed(m, "energy", -20); } return "The gig tenants worked a night on the docks: +110 credits."; } },
+      { id: "decline", label: "Turn it down", detail: () => "Nothing changes", apply: () => "The house kept its evening." },
     ],
     fallback: "decline",
   },
   {
-    id: "dust", cost: 12, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 0.6, title: "Dust storm", tone: "warn",
+    id: "dust", cost: 12, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 0.6, title: "Spore drift", tone: "warn",
     when: (r) => r.state.incident == null && r.objects.some((o) => o.catalogId === "bloom_planter"),
-    text: () => "A dust front is rolling over the dome. Planters left open will lose part of the next harvests.",
+    text: () => "A cloud of wild spores is drifting down the station's air ducts. Open hydro trays will lose part of the next harvests.",
     choices: [
-      { id: "seal", label: "Seal the planters", detail: () => "30 credits", blocked: afford(30), apply: (s) => { spend(s, 30); return "The planters were sealed in time."; } },
-      { id: "endure", label: "Let it blow", detail: () => "Bloom harvests -1 ration for a day", apply: (s, _i, now) => { hazards(s).dustUntil = now + DAY_LENGTH; return "Dust settled in the planters: harvests are thinner for a day."; } },
+      { id: "seal", label: "Cover the trays", detail: () => "30 credits", blocked: afford(30), apply: (s) => { spend(s, 30); return "The hydro trays were covered in time."; } },
+      { id: "endure", label: "Let it drift", detail: () => "Hydro harvests -1 ration for a day", apply: (s, _i, now) => { hazards(s).dustUntil = now + DAY_LENGTH; return "Spores settled in the trays: harvests are thinner for a day."; } },
     ],
     fallback: "endure",
   },
   {
-    id: "brownout", cost: 18, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH, title: "Brownout", tone: "warn",
+    id: "brownout", cost: 18, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH, title: "Station brownout", tone: "warn",
     when: (r) => r.state.incident == null && r.objects.some((o) => o.catalogId === "work_console"),
-    text: () => "The grid is browning out. Without backup cells the Yield Consoles go dark for four hours.",
+    text: () => "The station grid is browning out. Without backup cells the Gig Terminals go dark for four hours.",
     choices: [
-      { id: "cells", label: "Buy backup cells", detail: () => "45 credits", blocked: afford(45), apply: (s) => { spend(s, 45); return "Backup cells kept the consoles lit."; } },
-      { id: "dark", label: "Wait it out", detail: () => "Consoles pay nothing for 4 hours", apply: (s, _i, now) => { hazards(s).consolesOfflineUntil = now + HOUR * 4; return "The Yield Consoles went dark for four hours."; } },
+      { id: "cells", label: "Buy backup cells", detail: () => "45 credits", blocked: afford(45), apply: (s) => { spend(s, 45); return "Backup cells kept the terminals lit."; } },
+      { id: "dark", label: "Wait it out", detail: () => "Terminals pay nothing for 4 hours", apply: (s, _i, now) => { hazards(s).consolesOfflineUntil = now + HOUR * 4; return "The Gig Terminals went dark for four hours."; } },
     ],
     fallback: "dark",
   },
   {
-    id: "spoilage", cost: 15, weight: 1, cooldownSeconds: DAY_LENGTH * 2, title: "Pantry mould", tone: "warn",
+    id: "spoilage", cost: 15, weight: 1, cooldownSeconds: DAY_LENGTH * 2, title: "Galley mould", tone: "warn",
     when: (r) => r.state.incident == null && r.state.pantry >= 6,
-    text: (s) => `Mould has crept into the pantry. Left alone it takes ${spoiled(s)} of ${s.pantry} rations.`,
+    text: (s) => `Something fuzzy has moved into the galley. (Not Glorp.) Left alone it takes ${spoiled(s)} of ${s.pantry} rations.`,
     choices: [
       { id: "stasis", label: "Stasis treatment", detail: () => "30 credits", blocked: afford(30), apply: (s) => { spend(s, 30); return "Stasis treatment saved the pantry."; } },
-      { id: "spot", label: "Sort it early (Thrifty)", detail: () => "Lose 1 ration", blocked: needTrait("thrifty", "Thrifty"), apply: (s) => { s.pantry = Math.max(0, s.pantry - 1); return `${traitHolder(s, "thrifty")?.name ?? "A thrifty being"} sorted the crates; one ration lost.`; } },
+      { id: "spot", label: "Sort it early (Thrifty)", detail: () => "Lose 1 ration", blocked: needTrait("thrifty", "Thrifty"), apply: (s) => { s.pantry = Math.max(0, s.pantry - 1); return `${traitHolder(s, "thrifty")?.name ?? "A thrifty tenant"} sorted the crates; one ration lost.`; } },
       { id: "toss", label: "Throw out the spoiled", detail: (s) => `Lose ${spoiled(s)} rations`, apply: (s) => { const n = spoiled(s); s.pantry = Math.max(0, s.pantry - n); return `${n} rations went to the recycler.`; } },
     ],
     fallback: "toss",
@@ -207,19 +259,19 @@ export const INCIDENTS: readonly IncidentDef[] = [
   {
     id: "traveller", cost: 14, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 0.5, title: "A stranded traveller", tone: "info",
     when: (r) => r.state.incident == null && r.state.pantry >= 4,
-    text: () => "A stranded traveller asks for four rations to reach the next ring.",
+    text: () => "A stranded traveller at the airlock asks for four rations to reach the next ring.",
     choices: [
-      { id: "share", label: "Share 4 rations", detail: () => "Everyone +10 bond; kind beings glad", blocked: (s) => (s.pantry >= 4 ? null : "Needs 4 rations"),
-        apply: (s) => { s.pantry -= 4; for (const m of members(s)) { bumpNeed(m, "social", 10); if (hasTrait(m, "kind")) { bumpNeed(m, "fun", 20); stress(m, -12); } } return "The traveller left with four rations and a story about this household."; } },
-      { id: "refuse", label: "Refuse", detail: () => "Kind beings +22 stress", apply: (s) => { for (const m of members(s)) if (hasTrait(m, "kind")) stress(m, 22); return "The airlock stayed shut."; } },
+      { id: "share", label: "Share 4 rations", detail: () => "Everyone +10 company; kind tenants glad", blocked: (s) => (s.pantry >= 4 ? null : "Needs 4 rations"),
+        apply: (s) => { s.pantry -= 4; for (const m of members(s)) { bumpNeed(m, "social", 10); if (hasTrait(m, "kind")) { bumpNeed(m, "fun", 20); stress(m, -12); } } boardingOf(s).reputation = Math.min(100, boardingOf(s).reputation + 2); return "The traveller left with four rations and a story about this house."; } },
+      { id: "refuse", label: "Refuse", detail: () => "Kind tenants +22 stress", apply: (s) => { for (const m of members(s)) if (hasTrait(m, "kind")) stress(m, 22); return "The airlock stayed shut."; } },
     ],
     fallback: "refuse",
   },
   {
-    id: "quarrel", cost: 16, weight: 1.1, cooldownSeconds: DAY_LENGTH * 1.5, after: DAY_LENGTH, title: "A quarrel", tone: "warn",
+    id: "quarrel", cost: 16, weight: 1.1, cooldownSeconds: DAY_LENGTH * 1.5, after: DAY_LENGTH, title: "A row in the hallway", tone: "warn",
     when: (r) => r.state.incident == null && quarrelPair(r.state) !== null,
     pick: (state) => { const pair = quarrelPair(state); return pair === null ? null : { memberId: pair[0], otherId: pair[1], objId: null, objCatalog: null }; },
-    text: (s, inc) => `${named(s, inc.memberId)} and ${named(s, inc.otherId)} are quarrelling over whose turn it is.`,
+    text: (s, inc) => `${named(s, inc.memberId)} and ${named(s, inc.otherId)} are rowing in the hallway over whose turn it is in the bathroom.`,
     choices: [
       { id: "meal", label: "Shared meal", detail: () => "2 rations; their opinion +14", blocked: (s) => (s.pantry >= 2 ? null : "Needs 2 rations"),
         apply: (s, inc) => { s.pantry -= 2; if (inc.memberId && inc.otherId) shiftOpinion(s, inc.memberId, inc.otherId, 14); return `${named(s, inc.memberId)} and ${named(s, inc.otherId)} made up over a shared meal.`; } },
@@ -229,14 +281,14 @@ export const INCIDENTS: readonly IncidentDef[] = [
     fallback: "cool",
   },
   {
-    id: "fever", cost: 22, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 1.5, title: "A fever", tone: "warn",
+    id: "fever", cost: 22, weight: 1, cooldownSeconds: DAY_LENGTH * 2, after: DAY_LENGTH * 1.5, title: "Space flu", tone: "warn",
     when: (r) => r.state.incident == null,
-    pick: (state, _o, rng) => { const id = randomMember(state, rng, (m) => (m.illUntil ?? 0) <= 0); return id === null ? null : { memberId: id, otherId: null, objId: null, objCatalog: null }; },
-    text: (s, inc) => `${named(s, inc.memberId)} is running a fever.`,
+    pick: (state, _o, rng) => { const id = randomMember(state, rng, (m) => (m.illUntil ?? 0) <= 0 && m.species !== "pip" && m.species !== "basalt"); return id === null ? null : { memberId: id, otherId: null, objId: null, objCatalog: null }; },
+    text: (s, inc) => `${named(s, inc.memberId)} has space flu and is sneezing in three colours.`,
     choices: [
       { id: "medicine", label: "Buy medicine", detail: () => "45 credits", blocked: afford(45), apply: (s, inc) => { spend(s, 45); return `${named(s, inc.memberId)} took medicine and is on the mend.`; } },
       { id: "rest", label: "Rest it off", detail: () => "No paid work for a day; rest drains faster; +15 stress",
-        apply: (s, inc, now) => { const m = inc.memberId ? s.members[inc.memberId] : undefined; if (m) { m.illUntil = now + DAY_LENGTH; stress(m, 15); } return `${named(s, inc.memberId)} is sick for a day.`; } },
+        apply: (s, inc, now) => { const m = inc.memberId ? s.members[inc.memberId] : undefined; if (m) { m.illUntil = now + DAY_LENGTH; stress(m, 15); } return `${named(s, inc.memberId)} is off sick for a day.`; } },
     ],
     fallback: "rest",
   },
@@ -250,12 +302,12 @@ export const INCIDENTS: readonly IncidentDef[] = [
       breakObject(state, target.instanceId);
       return { memberId: null, otherId: null, objId: target.instanceId, objCatalog: target.catalogId };
     },
-    text: (s, inc) => `A micrometeor punched through the dome and wrecked the ${brokenName(s, inc)}. It is out of service.`,
+    text: (s, inc) => `A micrometeor punched through the commons and wrecked the ${brokenName(s, inc)}. It is out of service.`,
     choices: [
       { id: "repair", label: "Repair now", detail: (s, inc) => `${repairOf(inc)} credits`, blocked: (s, inc) => afford(repairOf(inc))(s),
         apply: (s, inc) => { spend(s, repairOf(inc)); if (inc.objId) repairObject(s, inc.objId); return `The ${brokenName(s, inc)} is mended.`; } },
-      { id: "handy", label: "Mend it (Handy)", detail: () => "The handy being loses 35 rest", blocked: needTrait("handy", "Handy"),
-        apply: (s, inc) => { const m = traitHolder(s, "handy"); if (m) bumpNeed(m, "energy", -35); if (inc.objId) repairObject(s, inc.objId); return `${m?.name ?? "A handy being"} patched the ${brokenName(s, inc)} by hand.`; } },
+      { id: "handy", label: "Mend it (Handy)", detail: () => "The handy tenant loses 35 rest", blocked: needTrait("handy", "Handy"),
+        apply: (s, inc) => { const m = traitHolder(s, "handy"); if (m) bumpNeed(m, "energy", -35); if (inc.objId) repairObject(s, inc.objId); return `${m?.name ?? "A handy tenant"} patched the ${brokenName(s, inc)} by hand.`; } },
       { id: "leave", label: "Leave it broken", detail: () => "Repair later from Pantry & bills", apply: (s, inc) => `The ${brokenName(s, inc)} stays broken for now.` },
     ],
     fallback: "leave",
@@ -263,26 +315,33 @@ export const INCIDENTS: readonly IncidentDef[] = [
   {
     id: "hullLeak", cost: 40, weight: 0.8, cooldownSeconds: DAY_LENGTH * 4, after: DAY_LENGTH * 6, title: "Hull leak", tone: "deny",
     when: (r) => r.state.incident == null && !(r.state.hazards?.hullLeak ?? false),
-    text: () => "A seam in the torpor wing is hissing. Pods rest beings half as fast until it is patched.",
+    text: () => "A seam by the nap pods is hissing. Pods rest tenants half as fast until it is patched.",
     choices: [
       { id: "patch", label: "Patch the seam", detail: () => "70 credits", blocked: afford(70), apply: (s) => { spend(s, 70); return "The seam is patched."; } },
-      { id: "handy", label: "Patch it (Handy)", detail: () => "The handy being loses 35 rest", blocked: needTrait("handy", "Handy"),
-        apply: (s) => { const m = traitHolder(s, "handy"); if (m) bumpNeed(m, "energy", -35); return `${m?.name ?? "A handy being"} sealed the seam.`; } },
-      { id: "leave", label: "Live with it", detail: () => "Pods at half speed; patch later from Pantry & bills", apply: (s) => { hazards(s).hullLeak = true; return "The torpor wing hisses on."; } },
+      { id: "handy", label: "Patch it (Handy)", detail: () => "The handy tenant loses 35 rest", blocked: needTrait("handy", "Handy"),
+        apply: (s) => { const m = traitHolder(s, "handy"); if (m) bumpNeed(m, "energy", -35); return `${m?.name ?? "A handy tenant"} sealed the seam.`; } },
+      { id: "leave", label: "Live with it", detail: () => "Pods at half speed; patch later from Pantry & bills", apply: (s) => { hazards(s).hullLeak = true; return "The nap pods hiss on."; } },
     ],
     fallback: "leave",
   },
   {
-    id: "inspection", cost: 26, weight: 0.9, cooldownSeconds: DAY_LENGTH * 3, after: DAY_LENGTH * 4, title: "Authority inspection", tone: "info",
+    id: "inspection", cost: 26, weight: 0.9, cooldownSeconds: DAY_LENGTH * 3, after: DAY_LENGTH * 4, title: "Station inspector", tone: "info",
     when: (r) => r.state.incident == null,
-    text: (s) => inspectionPasses(s) ? "An Authority inspector walked the habitat and found it in order: +40 credits." : "An Authority inspector found debt or broken furnishings: a 50-credit fine.",
+    text: (s) => inspectionPasses(s) ? "A station inspector with a clipboard walked every corridor and found the house in order: +40 credits and a good word to the station." : "A station inspector found debt, broken fittings or a miserable tenant: a 50-credit fine and a sniff.",
     auto: (s) => {
-      if (inspectionPasses(s)) s.credits = creditAmount(s.credits + 40);
-      else if (s.credits >= 50) spend(s, 50);
-      else s.debt = creditAmount(s.debt + 50);
+      if (inspectionPasses(s)) { s.credits = creditAmount(s.credits + 40); boardingOf(s).reputation = Math.min(100, boardingOf(s).reputation + 5); }
+      else {
+        boardingOf(s).reputation = Math.max(0, boardingOf(s).reputation - 5);
+        if (s.credits >= 50) spend(s, 50);
+        else s.debt = creditAmount(s.debt + 50);
+      }
     },
   },
 ];
+
+function unshuttered(state: HouseholdState): number {
+  return boardingOf(state).rooms.filter((room) => !room.shuttered).length;
+}
 
 const INCIDENT_BY_ID: Record<string, IncidentDef> = Object.fromEntries(INCIDENTS.map((def) => [def.id, def]));
 
@@ -291,7 +350,8 @@ export function incidentDef(id: string): IncidentDef | undefined {
 }
 
 function inspectionPasses(state: HouseholdState): boolean {
-  return state.debt <= 0 && (state.hazards?.broken.length ?? 0) === 0 && !(state.hazards?.hullLeak ?? false);
+  const miserable = state.order.some((id) => roomOf(state, id) !== null && tenantComfort(state, id).score < 30);
+  return state.debt <= 0 && (state.hazards?.broken.length ?? 0) === 0 && !(state.hazards?.hullLeak ?? false) && !miserable;
 }
 
 function spoiled(state: HouseholdState): number {
@@ -356,7 +416,7 @@ export function advanceIncidents(state: HouseholdState, objects: readonly SceneO
     return;
   }
   state.incident = pending;
-  noteEvent(state, notices, `Transmission: ${def.title}. ${def.text(state, pending)}`, def.tone);
+  noteEvent(state, notices, `Front desk: ${def.title}. ${def.text(state, pending)}`, def.tone);
 }
 
 /** Answer the waiting transmission; `choiceId` null takes its default. Returns false when refused. */
@@ -402,7 +462,7 @@ export function dusty(state: HouseholdState, now: number): boolean {
   return (state.hazards?.dustUntil ?? 0) > now;
 }
 
-/** How fast a Torpor Pod rests a being: half while the hull leaks. */
+/** How fast a Nap Pod rests a tenant: half while the hull leaks. */
 export function restFactor(state: HouseholdState): number {
   return state.hazards?.hullLeak === true ? 0.5 : 1;
 }

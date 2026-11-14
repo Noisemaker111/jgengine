@@ -10,6 +10,8 @@ import { createHouseholdEconomy } from "../sim/economy";
 import type { NeedId } from "../needs/needs";
 import type { TraitId } from "../traits";
 import type { StorytellerState } from "@jgengine/core/ai/director/storyteller";
+import type { SpeciesId } from "../boarding/species";
+import { createBoarding, type BoardingState } from "../boarding/boarding";
 
 export type MemberAction =
   | { kind: "idle" }
@@ -29,6 +31,8 @@ export type Lifestyle = (typeof LIFESTYLES)[number];
 export interface MemberState {
   id: string;
   name: string;
+  /** Which of the seven kinds of tenant this is; absent only in saves from before the boarding house. */
+  species?: SpeciesId;
   bodyPlan: AlienBodyPlan;
   job: string;
   /** The shared agent's need values, saved as plain numbers the HUD and the loop both read. */
@@ -146,6 +150,8 @@ export interface HouseholdState {
   story?: StorytellerState;
   incident?: PendingIncident | null;
   hazards?: HabitatHazards;
+  /** The boarding house: rooms, reputation, the airlock queue and the deed. */
+  boarding?: BoardingState;
 }
 
 export function createCharter(): CharterState {
@@ -187,6 +193,7 @@ export function createHousehold(seed: string): HouseholdState {
     charter: createCharter(),
     incident: null,
     hazards: createHazards(),
+    boarding: createBoarding(),
   };
 }
 

@@ -1,25 +1,36 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { generateBodyPlan } from "../creatures/bodyPlan";
-import { makeNamer } from "../creatures/names";
 import { ALIEN_KIND } from "../entities/aliens/catalog";
-import { type CareerId } from "../careers";
 import { householdStore } from "../session/store";
-import { createHousehold, pairKey, type HouseholdState, type Lifestyle, type MemberState } from "../session/types";
-import { emptyNeeds } from "../needs/needs";
-import { householdBook, resetAgents, resetBook, syncBook } from "../agents";
-import { rollTraits } from "../traits";
+import { createHousehold, pairKey, type HouseholdState } from "../session/types";
+import { householdBook, resetAgents, resetBook } from "../agents";
 import { createHouseholdEconomy } from "./economy";
 import { SCENE_PLACEMENTS } from "../../editorLayers";
+import { createBoarding, createTenantMember } from "../boarding/boarding";
+import { STARTING_TENANTS, SPECIES, type SpeciesId } from "../boarding/species";
+import { AIRLOCK, berthPose } from "../boarding/layout";
+import type { AlienBodyPlan } from "../creatures/bodyPlan";
 
-const MEMBER_COUNT = 4;
-const SPAWN_RING = 3.5;
+/**
+ * Opening night at NO VACANCY: four modules bolted on, Krrt and Glorp sharing a wall they should
+ * not share, Sister Fog drifting in the third room, one room empty and Pip-9 still in the broom
+ * cupboard hoping to be asked.
+ */
+const OPENING_ROOMS: Partial<Record<SpeciesId, number>> = { krrt: 0, glorp: 1, fog: 2 };
 
-/** Starting posts alternate within each rhythm, so the household opens with both ladders in use. */
-const STARTING_POSTS: Record<Lifestyle, readonly CareerId[]> = {
-  yield: ["Signal-keeper", "Tinkerer"],
-  bloom: ["Botanist", "Forager"],
-};
+/** Spawn a tenant's body: in their room, or at the airlock when they have none. */
+export function spawnTenantBody(ctx: GameContext, id: string, bodyPlan: AlienBodyPlan, slot: number | null): void {
+  const at = slot === null ? { x: AIRLOCK.x + 1.5, z: AIRLOCK.z + 1.6 } : berthPose(slot);
+  const y = ctx.world.groundHeightAt(at.x, at.z);
+  ctx.scene.entity.spawn(ALIEN_KIND, {
+    id,
+    position: [at.x, y, at.z],
+    role: "npc",
+    rotationY: 0,
+    meta: { bodyPlan },
+    onExisting: "replace",
+  });
+}
 
 export function setupWorld(ctx: GameContext): void {
   const current = householdStore.read(ctx);
@@ -29,6 +40,7 @@ export function setupWorld(ctx: GameContext): void {
   const state = createHousehold(current.seed);
   state.day = ctx.time.calendar().day;
   state.economy = createHouseholdEconomy(ctx.time.now());
+  state.boarding = createBoarding(ctx.time.now());
 
   for (const placement of SCENE_PLACEMENTS) {
     const y = ctx.world.groundHeightAt(placement.x, placement.z);
@@ -39,49 +51,18 @@ export function setupWorld(ctx: GameContext): void {
     });
   }
 
-  const namer = makeNamer(state.seed);
-  for (let i = 0; i < MEMBER_COUNT; i++) {
+  STARTING_TENANTS.forEach((species, i) => {
     const id = `alien:${i}`;
-    const lifestyle: Lifestyle = i % 2 === 0 ? "yield" : "bloom";
-    const posts = STARTING_POSTS[lifestyle];
-    const job = posts[Math.floor(i / 2) % posts.length]!;
-    const bodyPlan = generateBodyPlan(`${state.seed}:${i}`);
-    const angle = (i / MEMBER_COUNT) * Math.PI * 2;
-    const x = Math.cos(angle) * SPAWN_RING;
-    const z = Math.sin(angle) * SPAWN_RING;
-    const y = ctx.world.groundHeightAt(x, z);
-    ctx.scene.entity.spawn(ALIEN_KIND, {
-      id,
-      position: [x, y, z],
-      role: "npc",
-      rotationY: angle,
-      meta: { bodyPlan },
-      onExisting: "replace",
-    });
-    const member: MemberState = {
-      id,
-      name: namer(),
-      bodyPlan,
-      job,
-      needs: emptyNeeds(),
-      action: { kind: "idle" },
-      assignedByPlayer: false,
-      actionUntil: 0,
-      lifestyle,
-      stress: 0,
-      recovering: false,
-      workToday: 0,
-      harvestToday: 0,
-      shiftProgress: 0,
-      shiftDay: -1,
-      completedShifts: 0,
-      missedShifts: 0,
-      concern: null,
-      traits: rollTraits(`${state.seed}:${i}`),
-    };
+    const member = createTenantMember(id, species);
+    const slot = OPENING_ROOMS[species] ?? null;
+    spawnTenantBody(ctx, id, member.bodyPlan, slot);
     state.members[id] = member;
     state.order.push(id);
-  }
+    if (slot !== null) state.boarding!.rooms[slot]!.tenantId = id;
+  });
+  // Glorp brought its own swamp.
+  state.boarding.rooms[1]!.settings = { ...state.boarding.rooms[1]!.settings, atmosphere: "methane", climate: "hot" };
+  state.boarding.rooms[2]!.settings = { ...state.boarding.rooms[2]!.settings, climate: "cold", light: "dark" };
 
   seedRelationships(state);
   householdStore.write(ctx, state);
@@ -100,3 +81,4 @@ function seedRelationships(state: HouseholdState): void {
   }
 }
 
+export { SPECIES };

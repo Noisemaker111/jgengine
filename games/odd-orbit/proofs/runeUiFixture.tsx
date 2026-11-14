@@ -14,10 +14,10 @@ import { GameUI } from "../src/game/ui/GameUI";
 import { menuFocus } from "../src/game/ui/menu";
 import { drawerFocus } from "../src/game/ui/GameUI";
 
-export const ORBIT_FIXTURES = ["title", "new", "households", "guide", "settings", "credits", "hud", "member", "furnish", "pantry", "transmission", "review", "paused", "pause-save", "pause-settings", "settings-sheet"] as const;
+export const ORBIT_FIXTURES = ["title", "new", "households", "guide", "settings", "credits", "hud", "member", "furnish", "pantry", "rooms", "applicant", "transmission", "review", "paused", "pause-save", "pause-settings", "settings-sheet"] as const;
 export type OrbitFixture = (typeof ORBIT_FIXTURES)[number];
 
-/** Real GameUI over real Odd Orbit state, with deterministic viewport/settings inputs for native paint checks. */
+/** Real GameUI over real NO VACANCY state, with deterministic viewport/settings inputs for native paint checks. */
 export async function runeUiFixture(state: OrbitFixture, width = 1280, height = 720) {
   const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const memory = new Map<string, string>();
@@ -40,15 +40,16 @@ function renderFixture(state: OrbitFixture, width: number, height: number) {
   const menu = ["title", "new", "households", "guide", "settings", "credits"].includes(state);
   menuFocus.id = state === "title" ? null : state === "households" ? "careers" : state === "pause-save" ? "save" : state === "pause-settings" ? "settings" : menu ? state : null;
   if (!menu) {
-    ctx.game.commands.run("orbit.new", { name: "The Moonwells" });
+    ctx.game.commands.run("orbit.new", { name: "The Docking Arms" });
     stageHousehold(ctx, "shift");
   }
   // The staged week-long runs take seconds each; the slip and the letter only read these fields.
   if (state === "transmission") householdStore.update(ctx, (s) => ({ ...s, incident: { id: "trader", memberId: null, otherId: null, objId: null, objCatalog: null, deadline: ctx.time.now() + 20 } }));
   if (state === "review") householdStore.update(ctx, (s) => ({ ...s, charter: { ...s.charter!, review: { term: 0, met: ["Earn 400 credits", "Keep the pantry stocked"], missed: ["Answer two transmissions"], grant: 120, strike: false, outcome: "active" } } }));
+  if (state === "applicant") householdStore.update(ctx, (s) => ({ ...s, incident: null, boarding: { ...s.boarding!, applicant: { species: "velvet", deadline: ctx.time.now() + 60, asked: [0] } } }));
   if (state === "member") householdStore.update(ctx, (s) => ({ ...s, selectedMemberId: s.order[0] ?? null }));
   if (state === "paused" || state === "pause-save" || state === "pause-settings") ctx.game.commands.run("orbit.pause", {});
-  drawerFocus.id = state === "furnish" ? "build" : state === "pantry" ? "ledger" : null;
+  drawerFocus.id = state === "furnish" ? "build" : state === "pantry" ? "ledger" : state === "rooms" ? "rooms" : null;
   const settings: SettingsController = {
     categories: [
       { id: "sound", label: "Sound", keybinds: [], rows: [
@@ -64,7 +65,7 @@ function renderFixture(state: OrbitFixture, width: number, height: number) {
   const tree = new Root(nativeTreeHost(() => {}), container, "fixture", false);
   tree.render(<GameProvider context={ctx}><SettingsControllerProvider controller={settings}><RuneViewport width={width} height={height}><GameUI /></RuneViewport></SettingsControllerProvider></GameProvider>);
   const surface = container.children[0];
-  if (surface?.tag !== "rune-surface") throw new Error("Odd Orbit did not mount a direct native surface");
+  if (surface?.tag !== "rune-surface") throw new Error("NO VACANCY did not mount a direct native surface");
   const unused = () => { throw new Error("headless sampling must not bind slots"); };
   const sink: RuneTreeSink = { setSpec: unused, bindNumber: unused, writeNumber: unused, bindText: unused };
   const spec = nativeSpec(surface, sink, true);
@@ -79,7 +80,7 @@ if (import.meta.main) {
   const output = process.argv[3];
   if (state === undefined || output === undefined) throw new Error("usage: bun games/odd-orbit/proofs/runeUiFixture.tsx <state> <out.json> [width height]");
   const fixture = ORBIT_FIXTURES.find((name) => name === state);
-  if (fixture === undefined) throw new Error(`Unknown Odd Orbit UI state: ${state}`);
+  if (fixture === undefined) throw new Error(`Unknown NO VACANCY UI state: ${state}`);
   const spec = await runeUiFixture(fixture, Number(process.argv[4] ?? 1280), Number(process.argv[5] ?? 720));
   await writeFile(output, JSON.stringify(spec));
 }

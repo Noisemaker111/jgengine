@@ -19,7 +19,7 @@ describe("yieldShiftLabel", () => {
   });
 
   test("shows the walk to the console once a shift is directed", () => {
-    expect(yieldShiftLabel(member({ action: { kind: "seek", goal: "work", objId: "starter:work_console" } }))).toBe("Heading to Yield Console");
+    expect(yieldShiftLabel(member({ action: { kind: "seek", goal: "work", objId: "starter:work_console" } }))).toBe("Heading to the Gig Terminal");
   });
 
   test("counts down the remaining shift seconds at the console", () => {

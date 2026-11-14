@@ -1,10 +1,11 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import { findLibraryMaterial, libraryMaterialMaps } from "@jgengine/assets/catalogs/materialLibrary";
-import { kaykitFurniture, kaykitSpaceBase, quaterniusStylizedNature, quaterniusTexturedCuteMonsterPack } from "@jgengine/assets/generated/packs";
+import { kaykitFurniture, kaykitSpaceBase, quaterniusStylizedNature } from "@jgengine/assets/generated/packs";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
-const MODEL_PACKS = [quaterniusTexturedCuteMonsterPack, quaterniusStylizedNature, kaykitFurniture, kaykitSpaceBase];
+/** Tenants are procedural (see render/TenantMesh); the packs dress the station and the commons. */
+const MODEL_PACKS = [quaterniusStylizedNature, kaykitFurniture, kaykitSpaceBase];
 
 /** Preferred CC0 packs — pull + reindex to light up MODEL_PLAN ids. */
 export const assets: AssetCatalog = buildCatalog({

@@ -3,8 +3,8 @@ import { DAY_LENGTH } from "../../world";
 import type { Lifestyle, MemberState } from "../session/types";
 
 export const LIFESTYLES: ReadonlyArray<{ id: Lifestyle; label: string; window: string; blurb: string }> = [
-  { id: "yield", label: "Yield career", window: "08–14", blurb: "20 seconds at a console earns 100 credits. Buy rations and leave time to recover." },
-  { id: "bloom", label: "Bloom keeper", window: "14–18", blurb: "20 seconds tending a pantry or export crop earns food and credits. Friends improve the harvest." },
+  { id: "yield", label: "Gig shift", window: "08–14", blurb: "20 seconds at the Gig Terminal earns 100 credits toward the bills. Leave time to recover." },
+  { id: "bloom", label: "Hydro shift", window: "14–18", blurb: "20 seconds at a Hydro Tray grows food and credits. Friends improve the harvest." },
 ];
 export const SHIFT_SECONDS = 20;
 export const FLEX_AFTER_SHIFTS = 3;
@@ -34,7 +34,7 @@ export function shiftIsOpen(member: MemberState, now: number): boolean {
 
 export function scheduleLabel(member: MemberState): string {
   const { start, end } = shiftWindow(member);
-  return `${member.lifestyle === "yield" ? "Yield" : "Bloom"} ${String(start).padStart(2, "0")}–${end}${member.completedShifts >= FLEX_AFTER_SHIFTS ? " · flex" : ""}`;
+  return `${member.lifestyle === "yield" ? "Gig" : "Hydro"} ${String(start).padStart(2, "0")}–${end}${member.completedShifts >= FLEX_AFTER_SHIFTS ? " · flex" : ""}`;
 }
 
 export function shiftSeconds(_member: MemberState): number { return SHIFT_SECONDS; }
@@ -43,7 +43,7 @@ export function shiftSeconds(_member: MemberState): number { return SHIFT_SECOND
 export function yieldShiftLabel(member: MemberState, waiting = false): string | null {
   if (member.lifestyle !== "yield") return null;
   const { action } = member;
-  if (action.kind === "seek" && action.goal === "work") return waiting ? "Waiting for a free Yield Console" : "Heading to Yield Console";
+  if (action.kind === "seek" && action.goal === "work") return waiting ? "Waiting for a free Gig Terminal" : "Heading to the Gig Terminal";
   if (action.kind === "use" && action.goal === "work") return `On shift · ${Math.max(0, Math.ceil(SHIFT_SECONDS - member.workToday))}s left`;
   return null;
 }

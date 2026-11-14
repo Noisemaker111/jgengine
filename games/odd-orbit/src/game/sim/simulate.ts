@@ -17,6 +17,10 @@ import { creditAmount, PANTRY_CAP, settleHouseholdDay } from "./economy";
 import { FLEX_AFTER_SHIFTS, householdPhase, SHIFT_SECONDS, shiftIsOpen, shiftWindow } from "./schedule";
 import { stationShortfall } from "./goal";
 import {
+  advanceApplicants, driftNeighbours, expireBoarding, roomOf, settleBoardingNight, tenantComfort,
+} from "../boarding/boarding";
+import { AIRLOCK, BERTH_SIZE, berthPose } from "../boarding/layout";
+import {
   bloomHarvestIn, careerView, MASTERY_LABEL, rungProgressIn, STATION_NAME,
   yieldRateIn, type CareerView,
 } from "../careers";
@@ -69,9 +73,26 @@ function nearestForRole(ctx: GameContext, state: HouseholdState, member: MemberS
   return best;
 }
 
-function moveMember(ctx: GameContext, id: string, target: [number, number, number], speed: number, dt: number): number {
+/**
+ * The rooms sit behind the common room's north wall; everyone but Sister Fog goes round through the
+ * airlock instead of through the wall.
+ */
+function viaAirlock(ctx: GameContext, id: string, from: readonly number[], target: [number, number, number]): [number, number, number] {
+  const entity = ctx.scene.entity.get(id);
+  const plan = (entity?.meta as { bodyPlan?: { shape?: string } } | null)?.bodyPlan;
+  if (plan?.shape === "mist") return target;
+  const side = from[2]! < AIRLOCK.z ? -1 : 1;
+  const targetSide = target[2] < AIRLOCK.z ? -1 : 1;
+  if (side === targetSide) return target;
+  if (Math.abs(from[0]! - AIRLOCK.x) > 0.8) return [AIRLOCK.x, target[1], AIRLOCK.z + side * 1.3];
+  return [AIRLOCK.x, target[1], AIRLOCK.z - side * 1.3];
+}
+
+function moveMember(ctx: GameContext, id: string, goal: [number, number, number], speed: number, dt: number): number {
   const from = positionOf(ctx, id);
   if (from === null) return Infinity;
+  const target = viaAirlock(ctx, id, from, goal);
+  const remaining = target === goal ? 0 : Math.hypot(goal[0] - target[0], goal[2] - target[2]);
   const dx = target[0] - from[0];
   const dz = target[2] - from[2];
   const dist = Math.hypot(dx, dz);
@@ -79,7 +100,7 @@ function moveMember(ctx: GameContext, id: string, target: [number, number, numbe
   if (next !== null) ctx.scene.entity.setPose(id, {
     position: [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]], rotationY: Math.atan2(dx, dz), dt,
   });
-  return dist;
+  return dist + remaining;
 }
 
 function hashId(id: string): number {
@@ -115,7 +136,7 @@ function finishShift(ctx: GameContext, state: HouseholdState, member: MemberStat
   const levelUp = mastery !== undefined && mastery.previousTier !== mastery.tier;
   const tierId = view.standing.tier(member.id, station).id;
   const level = levelUp ? ` ${STATION_NAME[station]} mastery now ${MASTERY_LABEL[tierId] ?? "I"}.` : "";
-  noteEvent(state, ctx.game.notices, `${member.name} finished a ${station === "yield" ? "Yield" : "Bloom"} shift.${level}`, "success");
+  noteEvent(state, ctx.game.notices, `${member.name} finished a ${station === "yield" ? "gig" : "hydro"} shift.${level}`, "success");
   const progress = rungProgressIn(view, member);
   if (progress.canPromote) {
     noteEvent(state, ctx.game.notices, `${member.name}'s ${progress.career.label} ${progress.nextLabel} rung is open (${progress.have} standing).`, "success");
@@ -138,7 +159,7 @@ function closeMissedShift(ctx: GameContext, state: HouseholdState, member: Membe
   view.standing.apply(member.id, "missed");
   state.standing = view.standing.snapshot();
   member.stress = clampNeed(member.stress + 12 * stressFactor(member));
-  concern(ctx, state, member, member.lifestyle === "yield" ? "Yield window closed; unfinished work earned only partial pay" : "Bloom window closed; no harvest today");
+  concern(ctx, state, member, member.lifestyle === "yield" ? "Gig window closed; unfinished work earned only partial pay" : "Hydro window closed; no harvest today");
 }
 
 const MAX_FRAME_SIM_SECONDS = 10;
@@ -168,7 +189,7 @@ export function simulateHousehold(ctx: GameContext, dt: number): void {
   for (let i = 1; i <= steps; i++) stepHousehold(ctx, step, now - simulated + step * i);
   if (dt > simulated) {
     const state = householdStore.read(ctx);
-    noteEvent(state, ctx.game.notices, "An unattended interval passed: needs continued to decay and paid shifts were missed. Habitat bills remain due.", "info");
+    noteEvent(state, ctx.game.notices, "The front desk was unattended: needs kept falling and paid shifts were missed. Docking bills remain due.", "info");
     householdStore.write(ctx, { ...state });
   }
 }
@@ -177,6 +198,11 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
   const state = householdStore.read(ctx);
   if (state.order.length === 0) return;
   const objects = ctx.scene.object.list();
+  // Rent night comes first: a tenant who packs up tonight is gone before the day's shifts are closed.
+  if (Math.floor(now / DAY_LENGTH) > state.day && state.economy.cursors["upkeep"]!.nextDueSeconds <= now) {
+    const night = settleBoardingNight(state, now, ctx.game.notices);
+    for (const id of night.movedOut) ctx.scene.entity.despawn(id);
+  }
   const view = careerView(state);
   if (Math.floor(now / DAY_LENGTH) > state.day) {
     for (const id of state.order) closeMissedShift(ctx, state, state.members[id]!, state.day * DAY_LENGTH + DAY_LENGTH - 0.001, view);
@@ -199,6 +225,9 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
     syncMember(member, ctx.rng);
     const urgent = member.needs.hunger < 18 || member.needs.energy < 18;
     member.stress = clampNeed(member.stress + (urgent ? 1.2 * stressFactor(member) : -0.035) * dt);
+    // A miserable room wears a tenant down; a delightful one lets them unwind.
+    const comfort = tenantComfort(state, member.id, now).score;
+    member.stress = clampNeed(member.stress + (comfort < 30 ? 0.22 * stressFactor(member) : comfort >= 80 ? -0.06 : 0) * dt);
     if (!member.recovering && member.stress >= 80) {
       member.recovering = true;
       releaseMember(member);
@@ -218,6 +247,9 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
   }
   stepSocialPairs(ctx, state, now, dt, book);
   advanceIncidents(state, objects, now, dt, ctx.game.notices);
+  expireBoarding(state, now);
+  advanceApplicants(state, now, ctx.game.notices);
+  driftNeighbours(state, now, dt);
   for (const id of state.order) {
     for (const other of book.partnersOf(id)) {
       if (id >= other) continue;
@@ -263,7 +295,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
     if (action.goal === "work" || isTending) {
       const open = shiftIsOpen(member, now) && (action.goal !== "work" || member.lifestyle === "yield");
       if (action.goal === "work" && consolesOffline(state, now)) {
-        concern(ctx, state, member, "Consoles are dark in the brownout");
+        concern(ctx, state, member, "Gig Terminals are dark in the brownout");
         releaseMember(member);
         return;
       }
@@ -271,7 +303,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
         if (action.goal === "work") { releaseMember(member); return; }
       }
       if (action.goal === "work" && (member.needs.energy < 35 || member.needs.hunger < 35 || member.needs.fun < 22 || member.needs.social < 22)) {
-        concern(ctx, state, member, "Too depleted for paid work; nourish, rest and reconnect");
+        concern(ctx, state, member, "Too worn out for paid work; snack, nap and catch up with someone");
         releaseMember(member);
         return;
       }
@@ -287,7 +319,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
         member.action = { kind: "use", goal: action.goal, objId: action.objId };
         member.concern = null;
         if (action.goal === "hunger") {
-          if (state.pantry <= 0) { concern(ctx, state, member, "Pantry empty — buy rations, tend Blooms or request relief"); releaseMember(member); return; }
+          if (state.pantry <= 0) { concern(ctx, state, member, "Pantry empty — buy rations, tend the hydro trays or ask the food bank"); releaseMember(member); return; }
           state.pantry -= 1;
         }
       }
@@ -368,13 +400,13 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
   if (member.recovering && !availability.energy && member.needs.energy < 60) {
     agent.needs.refill("energy", 1.5 * dt);
     member.stress = clampNeed(member.stress - 0.65 * dt);
-    concern(ctx, state, member, "Resting outside; a Torpor Pod would recover faster");
+    concern(ctx, state, member, "Napping on the floor; a Nap Pod would recover faster");
     return;
   }
   if (desire.kind === "need" || desire.kind === "work") {
     const role = desire.kind === "work" ? "work" : desire.goal;
     if (role === "hunger" && state.pantry === 0) {
-      concern(ctx, state, member, "Pantry empty — buy rations, tend Blooms or request relief");
+      concern(ctx, state, member, "Pantry empty — buy rations, tend the hydro trays or ask the food bank");
       return;
     }
     const obj = nearestForRole(ctx, state, member, objects, role, bloomTime && role === "fun" ? "bloom_planter" : undefined);
@@ -397,10 +429,17 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
         member.action = { kind: "wander", x: company.x, z: company.z, company: company.company };
         member.actionUntil = now + 8;
       } else {
+        const home = roomOf(state, member.id);
         const angle = (hashId(member.id) % 360) * Math.PI / 180 + member.actionUntil;
-        const r = 6 + (hashId(member.id) % 9);
-        member.action = { kind: "wander", x: Math.cos(angle) * r, z: Math.sin(angle) * r };
-        member.actionUntil = now + 4 + (hashId(member.id) % 4);
+        if (home !== null) {
+          // Off duty, a tenant potters about their own room.
+          const berth = berthPose(home.slot);
+          member.action = { kind: "wander", x: berth.x + Math.cos(angle) * BERTH_SIZE.w * 0.25, z: berth.z + Math.sin(angle) * BERTH_SIZE.d * 0.25 };
+        } else {
+          const r = 4 + (hashId(member.id) % 5);
+          member.action = { kind: "wander", x: Math.cos(angle) * r, z: Math.sin(angle) * r };
+        }
+        member.actionUntil = now + 5 + (hashId(member.id) % 4);
       }
     }
     if (member.action.kind === "wander") moveMember(ctx, member.id, [member.action.x, 0, member.action.z], speed * 0.6, dt);
@@ -481,13 +520,13 @@ function stepSocialPairs(ctx: GameContext, state: HouseholdState, now: number, d
     }
     const warmth = (bondFactor(a) + bondFactor(b)) / 2;
     const outcome = book.socialise(a.id, b.id, { familiarity: 0.02 * dt, opinion: (tense ? -3 : 4 * warmth) * dt });
-    if (tense && a.concern !== "Signals clashed; rest before reconnecting") {
-      concern(ctx, state, a, "Signals clashed; rest before reconnecting");
-      b.concern = "Signals clashed; rest before reconnecting";
+    if (tense && a.concern !== "Words were had; rest before trying again") {
+      concern(ctx, state, a, "Words were had; rest before trying again");
+      b.concern = "Words were had; rest before trying again";
     }
     for (const milestone of outcome.crossed) {
       ctx.game.audio.play("bond");
-      noteEvent(state, ctx.game.notices, `${a.name} & ${b.name} ${milestone.id === "friends" ? "became friends; tending Blooms together now yields more" : milestone.id === "bonded" ? "formed a lifelong bond" : "grew closer"}.`, "success");
+      noteEvent(state, ctx.game.notices, `${a.name} & ${b.name} ${milestone.id === "friends" ? "became friends; tending hydro trays together now yields more" : milestone.id === "bonded" ? "formed a lifelong bond" : "grew closer"}.`, "success");
     }
   }
 }
@@ -498,15 +537,15 @@ export function activeGoalLabel(member: MemberState, companyName?: string): stri
   const action = member.action;
   switch (action.kind) {
     case "idle": return member.concern ?? "Idling";
-    case "wander": return companyName === undefined ? "Strolling the habitat" : `Keeping ${companyName} company`;
-    case "seek": return action.goal === "work" ? "Heading to Yield shift" : `Seeking ${goalWord(action.goal)}`;
-    case "use": return action.goal === "work" ? `Yield shift ${Math.floor(member.workToday)}/${SHIFT_SECONDS}s` : goalWord(action.goal);
-    case "social": return member.concern === "Signals clashed; rest before reconnecting" ? "Signals clashing" : "Trading signals together";
+    case "wander": return companyName === undefined ? "Pottering about" : `Keeping ${companyName} company`;
+    case "seek": return action.goal === "work" ? "Heading to a gig shift" : `Off to ${goalWord(action.goal).toLowerCase()}`;
+    case "use": return action.goal === "work" ? `Gig shift ${Math.floor(member.workToday)}/${SHIFT_SECONDS}s` : goalWord(action.goal);
+    case "social": return member.concern === "Words were had; rest before trying again" ? "Bickering" : "Chatting in the lounge";
   }
 }
 
 function goalWord(goal: NeedId): string {
-  return ({ hunger: "Nourishing", energy: "Resting", social: "Bonding", fun: "Playing / tending" } as const)[goal];
+  return ({ hunger: "Snacking", energy: "Napping", social: "Hanging out", fun: "Playing / tending" } as const)[goal];
 }
 
 

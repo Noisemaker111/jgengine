@@ -32,7 +32,7 @@ describe("transmissions", () => {
     const logs = [2.5, 1 / 30].map((frame) => {
       const ctx = boot();
       const log: string[] = [];
-      ctx.game.notices.onPush((n) => { if (n.text.startsWith("Transmission:")) log.push(`${Math.floor(householdStore.read(ctx).story!.elapsed)} ${n.text.split(".")[0]}`); });
+      ctx.game.notices.onPush((n) => { if (n.text.startsWith("Front desk:")) log.push(`${Math.floor(householdStore.read(ctx).story!.elapsed)} ${n.text.split(".")[0]}`); });
       while (ctx.time.now() < DAY_LENGTH * 3) simulateHousehold(ctx, ctx.time.advance(frame));
       return log;
     });

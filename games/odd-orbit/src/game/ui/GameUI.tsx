@@ -14,6 +14,7 @@ import { householdStore } from "../session/store";
 import { orbitSession } from "../session/lifecycle";
 import { CharterNote, FridgeMagnets, HouseClock, RosterPanel, TermLetter, TransmissionSlip } from "./hud";
 import { BuildPalette, Inspector, PantryLedger } from "./panels";
+import { ApplicantSlip, RoomsPanel } from "./rooms";
 import { HouseSettings, OrbitMenu, type OrbitPreferences } from "./menu";
 import { ENAMEL, Heading, Icon, INK, Paper, Plate, RIM, Row, Text, Veil, orbitThemeFor } from "./kit";
 
@@ -25,20 +26,21 @@ function readPreferences(): OrbitPreferences {
   catch { return { calm: false, contrast: false }; }
 }
 
-type Drawer = "build" | "ledger" | null;
+type Drawer = "build" | "ledger" | "rooms" | null;
 /** Capture-only request: a shot declares which habitat drawer it wants open. */
 export const drawerFocus: { id: Drawer } = { id: null };
 
 /**
- * The habitat HUD as the household's own kitchen: the wall clock top-left, the fridge door
- * top-right, the beings as magnets down the left and a tray of three tools at the foot.
+ * The front desk of NO VACANCY: the wall clock top-left, the ledger magnets top-right, the tenants
+ * as key-tags down the left and a tray of tools at the foot — furnish the commons, plan the rooms,
+ * stock the galley, read the handbook. Applicants buzz in at the top.
  */
 export function GameUI() {
   const ctx = useGameContext();
   const { commands } = useGame();
   const settings = useSettings();
   const { width, height } = useRuneViewport(), phone = width < 600;
-  const household = useStore(householdStore, (s) => ({ selectedMemberId: s.selectedMemberId, buildTool: s.buildTool, transmission: s.incident != null && s.charter?.review == null, pantryLow: s.pantry < 4 }));
+  const household = useStore(householdStore, (s) => ({ selectedMemberId: s.selectedMemberId, buildTool: s.buildTool, transmission: s.incident != null && s.charter?.review == null, applicant: s.boarding?.applicant != null && s.incident == null && s.charter?.review == null, pantryLow: s.pantry < 4 }));
   const session = useStore(orbitSession, (s) => ({ screen: s.screen }));
   const [drawer, setDrawer] = useState<Drawer>(drawerFocus.id);
   const [preferences, setPreferences] = useState(readPreferences);
@@ -62,10 +64,11 @@ export function GameUI() {
   }, [ctx, commands]);
   // A selected being takes the side panel; a drawer opened afterwards replaces it, as the DOM habitat did.
   useEffect(() => { if (household.selectedMemberId !== null) setDrawer(null); }, [household.selectedMemberId]);
-  const sheet: "build" | "ledger" | "member" | null = drawer ?? (household.selectedMemberId !== null ? "member" : null);
+  const sheet: "build" | "ledger" | "rooms" | "member" | null = drawer ?? (household.selectedMemberId !== null ? "member" : null);
   const sheetW = phone ? width - 16 : 380;
   const sheetH = phone ? Math.round(height * 0.56) : height - 300;
-  const sheetTitle = sheet === "build" ? "Furnishings catalogue" : sheet === "ledger" ? "Pantry & bills" : null;
+  const sheetTitle = sheet === "build" ? "Furnish the commons" : sheet === "ledger" ? "Pantry & bills" : sheet === "rooms" ? "Rooms plan" : null;
+  const sheetBody = () => sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : sheet === "rooms" ? <RoomsPanel /> : <Inspector />;
 
   return <RuneRoot context={ctx} theme={theme}>
     {modal ? null : <RuneView anchor="fill">
@@ -77,12 +80,13 @@ export function GameUI() {
         <FridgeMagnets compact={phone} />
         {sheet === null ? <CharterNote compact={phone} /> : null}
         {sheet !== null && !phone ? <SidePanel title={sheetTitle} width={sheetW} height={sheetH} close={() => { setDrawer(null); if (sheet === "member") command("member.select", { id: null }); }}>
-          {sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : <Inspector />}
+          {sheetBody()}
         </SidePanel> : null}
       </RuneView>
       {household.transmission ? <RuneView anchor="top" safe inset={phone ? 150 : 16}><TransmissionSlip width={phone ? width - 20 : 460} /></RuneView> : null}
+      {household.applicant && sheet === null ? <RuneView anchor="top" safe inset={phone ? 150 : 16}><ApplicantSlip width={phone ? width - 20 : 440} /></RuneView> : null}
       {sheet !== null && phone ? <RuneView anchor="bottom" safe inset={84}><SidePanel title={sheetTitle} width={sheetW} height={sheetH} close={() => { setDrawer(null); if (sheet === "member") command("member.select", { id: null }); }}>
-        {sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : <Inspector />}
+        {sheetBody()}
       </SidePanel></RuneView> : null}
       <RuneView anchor="bottom" safe inset={phone ? 12 : 18} gap={8} items="center">
         <RuneView gap={6} items="center" maxWidth={phone ? width - 20 : 560} hidden={phone && sheet !== null}>
@@ -92,7 +96,8 @@ export function GameUI() {
           <Text size={14}>Tap open floor to place it.</Text>
           <Plate tone="coral" minHeight={32} padding={[4, 12, 4, 12]} onPress={() => command("build.cancel")}>Cancel</Plate>
         </Row> : null}
-        <Row gap={phone ? 8 : 12} label="Habitat tools">
+        <Row gap={phone ? 6 : 12} label="Front desk tools">
+          <Tool tone="pink" icon="key" label="Rooms" on={drawer === "rooms"} onPress={() => setDrawer(drawer === "rooms" ? null : "rooms")} />
           <Tool tone="butter" icon="hammer" label="Furnish" on={drawer === "build"} onPress={() => setDrawer(drawer === "build" ? null : "build")} />
           <Tool tone={household.pantryLow ? "coral" : "mint"} icon="bread" label={household.pantryLow ? "Pantry !" : "Pantry"} on={drawer === "ledger"} onPress={() => setDrawer(drawer === "ledger" ? null : "ledger")} />
           <Tool tone="lilac" icon="tome" label="Handbook" on={false} onPress={() => command("orbit.pause")} />
@@ -106,16 +111,16 @@ export function GameUI() {
 }
 
 function Tool({ tone, icon, label, on, onPress }: { tone: keyof typeof ENAMEL; icon: Parameters<typeof Icon>[0]["name"]; label: string; on: boolean; onPress: () => void }) {
-  return <Plate tone={tone} on={on} radius={20} minHeight={56} minWidth={96} padding={[6, 14, 6, 14]} gap={2} layout="stack" items="center" justify="center" label={label} onPress={onPress}>
+  return <Plate tone={tone} on={on} radius={20} minHeight={56} minWidth={84} padding={[6, 12, 6, 12]} gap={2} layout="stack" items="center" justify="center" label={label} onPress={onPress}>
     <Icon name={icon} size={22} /><Text size={13} weight={700} color={INK}>{label}</Text>
   </Plate>;
 }
 
 function SidePanel({ title, width, height, close, children }: { title: string | null; width: number; height: number; close: () => void; children: ReactNode }) {
-  return <Paper width={width} maxHeight={height} padding={0} gap={0} onBack={close} label={title ?? "Member care"}>
+  return <Paper width={width} maxHeight={height} padding={0} gap={0} onBack={close} label={title ?? "Tenant card"}>
     {title === null ? null : <Row padding={[10, 10, 8, 14]} gap={8} fill={ENAMEL.butter} radius={12} border={{ width: 0, color: RIM }}>
-      <Icon name={title.startsWith("Furnish") ? "hammer" : "bread"} size={20} /><Heading size={17} grow={1}>{title}</Heading>
-      <Plate tone="cream" radius={99} minHeight={32} padding={[4, 9, 4, 9]} label="Close habitat panel" onPress={close}><Icon name="cross" size={13} /></Plate>
+      <Icon name={title.startsWith("Furnish") ? "hammer" : title.startsWith("Rooms") ? "key" : "bread"} size={20} /><Heading size={17} grow={1}>{title}</Heading>
+      <Plate tone="cream" radius={99} minHeight={32} padding={[4, 9, 4, 9]} label="Close panel" onPress={close}><Icon name="cross" size={13} /></Plate>
     </Row>}
     <RuneView scroll maxHeight={height - (title === null ? 0 : 52)} padding={14} gap={8}>{children}</RuneView>
   </Paper>;

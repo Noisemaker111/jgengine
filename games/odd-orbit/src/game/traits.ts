@@ -36,16 +36,16 @@ export interface TraitDef {
 
 export const TRAITS: Record<TraitId, TraitDef> = {
   hearty: { id: "hearty", label: "Hearty eater", blurb: "Hunger drains 30% faster.", decay: { hunger: 1.3 } },
-  nightOwl: { id: "nightOwl", label: "Night owl", blurb: "Rest drains 25% slower; Yield shifts cost 20% more stress.", decay: { energy: 0.75 }, stressGain: 1.2 },
-  industrious: { id: "industrious", label: "Industrious", blurb: "Yield pays 15% more; stress builds 25% faster.", yieldPay: 1.15, stressGain: 1.25, excludes: ["playful"] },
-  greenFingered: { id: "greenFingered", label: "Green-fingered", blurb: "Every Bloom harvest gives one more ration." , harvestBonus: 1 },
-  gregarious: { id: "gregarious", label: "Gregarious", blurb: "Bond drains 30% faster; friendships grow 50% faster.", decay: { social: 1.3 }, bondRate: 1.5, excludes: ["loner"] },
-  loner: { id: "loner", label: "Loner", blurb: "Bond drains 40% slower; friendships grow 40% slower.", decay: { social: 0.6 }, bondRate: 0.6, excludes: ["gregarious"] },
+  nightOwl: { id: "nightOwl", label: "Night owl", blurb: "Sleep drains 25% slower; gig shifts cost 20% more stress.", decay: { energy: 0.75 }, stressGain: 1.2 },
+  industrious: { id: "industrious", label: "Industrious", blurb: "Gig shifts pay 15% more; stress builds 25% faster.", yieldPay: 1.15, stressGain: 1.25, excludes: ["playful"] },
+  greenFingered: { id: "greenFingered", label: "Green-fingered", blurb: "Every hydro harvest gives one more ration." , harvestBonus: 1 },
+  gregarious: { id: "gregarious", label: "Gregarious", blurb: "Company drains 30% faster; friendships grow 50% faster.", decay: { social: 1.3 }, bondRate: 1.5, excludes: ["loner"] },
+  loner: { id: "loner", label: "Loner", blurb: "Company drains 40% slower; friendships grow 40% slower.", decay: { social: 0.6 }, bondRate: 0.6, excludes: ["gregarious"] },
   anxious: { id: "anxious", label: "Anxious", blurb: "Stress builds 40% faster.", stressGain: 1.4, excludes: ["serene"] },
   serene: { id: "serene", label: "Serene", blurb: "Stress builds 40% slower.", stressGain: 0.6, excludes: ["anxious"] },
-  playful: { id: "playful", label: "Playful", blurb: "Play drains 30% faster; play sheds stress twice as fast.", decay: { fun: 1.3 }, playRelief: 1.25, excludes: ["industrious"] },
-  kind: { id: "kind", label: "Kind-hearted", blurb: "Glad when the household helps a stranger; hurt when it refuses." },
-  handy: { id: "handy", label: "Handy", blurb: "Can mend a broken furnishing for free, at the cost of rest." },
+  playful: { id: "playful", label: "Playful", blurb: "Fun drains 30% faster; play sheds stress twice as fast.", decay: { fun: 1.3 }, playRelief: 1.25, excludes: ["industrious"] },
+  kind: { id: "kind", label: "Kind-hearted", blurb: "Glad when the house helps a stranger; hurt when it refuses." },
+  handy: { id: "handy", label: "Handy", blurb: "Can mend a broken furnishing for free, at the cost of sleep." },
   thrifty: { id: "thrifty", label: "Thrifty", blurb: "Can haggle a trader down; spots spoilage early." },
 };
 

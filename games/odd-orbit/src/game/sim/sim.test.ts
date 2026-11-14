@@ -142,7 +142,8 @@ describe("simulation loop", () => {
   test("a completed directed shift earns its bounded daily pay", () => {
     const ctx = boot();
     const before = householdStore.read(ctx);
-    const id = before.order[0]!;
+    // Pip-9 works gig shifts with no pay trait, so the shift pays its plain wage.
+    const id = before.order.find((tenant) => before.members[tenant]!.species === "pip")!;
     const member = before.members[id]!;
     member.action = { kind: "use", goal: "work", objId: "starter:work_console" };
     member.assignedByPlayer = true;

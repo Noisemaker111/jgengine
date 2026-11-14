@@ -14,7 +14,8 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
 
 /** Habitat walls and decor are placed from the authored scene and never sold, moved or used; furnishings are bought, sold and used. */
 /** Decor is dressing, not a body: a rug or a lamp has no collision body, so it never stands in a household member's way. */
-const DECOR_IDS = new Set(DECOR.map((def) => def.id));
+/** The airlock is a doorway: tenants walk through it between the commons and the corridor of rooms. */
+const DECOR_IDS = new Set([...DECOR.map((def) => def.id), "hab_gate"]);
 const SCENERY_OBJECTS = new Set([...DECOR.map((def) => def.id), ...STRUCTURE.map((def) => def.id)]);
 
 function objectById(catalogId: string): GameContextObjectEntry | null {

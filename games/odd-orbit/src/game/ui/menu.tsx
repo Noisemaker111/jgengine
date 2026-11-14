@@ -26,11 +26,11 @@ import { CREAM_TEXT, ENAMEL, type EnamelTone, Fine, FULL, Heading, Icon, INK, NI
 export const menuFocus: { id: string | null } = { id: null };
 
 /** The art direction's sky and grade, named once; the credits list them. */
-export const LOOKS_USED = { hdri: ["lilac-dusk"], lut: ["pastel-dusk"] } as const;
+export const LOOKS_USED = { hdri: ["night-clear"], lut: ["pastel"] } as const;
 
 const credits = mergeCredits({
   sections: [
-    { heading: "Original game art", entries: [{ label: "Odd Orbit", detail: "Original plan-derived household portraits and habitat interface." }] },
+    { heading: "Original game art", entries: [{ label: "NO VACANCY", detail: "Original procedural tenant figures, room modules, neon sign, portraits and front-desk interface." }] },
     { heading: "Engine", entries: [{ label: "JG Engine", detail: "Apache-2.0", href: "https://github.com/Noisemaker111/jgengine" }, { label: "Rune / Three.js", detail: "MIT" }] },
     { heading: "Fonts", entries: [
       { label: "Comfortaa — Johan Aakerlund", detail: "OFL-1.1", href: "https://fonts.google.com/specimen/Comfortaa" },
@@ -43,16 +43,17 @@ export interface OrbitPreferences { calm: boolean; contrast: boolean }
 type Prefs = { preferences: OrbitPreferences; onPreference: (key: keyof OrbitPreferences, value: boolean) => void };
 
 const GUIDE: readonly { icon: GameIconName; title: string; line: string }[] = [
-  { icon: "hourglass", title: "Share the day", line: "Yield works 08–14 for credits. Bloom tends 14–18 for rations. Three shifts open 08–18." },
-  { icon: "buffArrow", title: "Grow a post", line: "Every shift earns standing. Rungs open at 3 and 9 standing; promote from a being's card." },
-  { icon: "bread", title: "Keep a pantry", line: "Meals use rations: six cost 36 credits. The habitat bill lands at midnight." },
-  { icon: "feather", title: "Make room to rest", line: "Work raises stress. Burnout stops pay until Nourish and Rest pass 50." },
-  { icon: "heart", title: "Build bonds", line: "Friends keep each other company. A bonded pair never works apart." },
+  { icon: "key", title: "Who goes next to whom", line: "Each room has its own air, gravity, warmth and light. Walls leak gas, noise, heat and mist into the room next door unless sealed." },
+  { icon: "star", title: "Comfort is rent", line: "On rent night each tenant pays by comfort and writes a review. Three miserable nights and they pack up. Reviews make reputation." },
+  { icon: "heart", title: "Friends and feuds", line: "Kind walls make friends, who cover short rent. Leaky walls make feuds, and feuding neighbours bang on the wall all night." },
+  { icon: "hand", title: "The airlock", line: "While a room stands empty, applicants buzz. Ask three questions, then let them in or turn them away. Pip-9 would like a door too." },
+  { icon: "hourglass", title: "Day jobs", line: "Gig shifts 08–14 earn credits; hydro shifts 14–18 grow rations. The docking bill lands at midnight." },
+  { icon: "flag", title: "Own the section", line: "Keep the Dockmaster's lease, dock more modules as reputation grows, and pay off the deed so the fees stop for good." },
 ];
 
 function GuidePage() {
   return <RuneView gap={10}>
-    <Heading>Caring for a strange household</Heading>
+    <Heading>Running a boarding house in orbit</Heading>
     {GUIDE.map((step) => <Row key={step.title} gap={10} items="start">
       <RuneView width={34} height={34} radius={17} fill={ENAMEL.butter} border={{ width: 2, color: RIM }} justify="center" items="center"><Icon name={step.icon} size={18} /></RuneView>
       <RuneView grow={1} shrink gap={1}><Text weight={700}>{step.title}</Text><Fine>{step.line}</Fine></RuneView>
@@ -79,7 +80,7 @@ export function HouseSettings({ preferences, onPreference }: Prefs) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [armed, setArmed] = useState<string | null>(null);
   const category = settings.categories.find((c) => c.id === chosen) ?? settings.categories[0] ?? null;
-  if (category === null) return <Fine>This house has no settings to change.</Fine>;
+  if (category === null) return <Fine>The front desk has no settings to change.</Fine>;
   const first = category.id === settings.categories[0]?.id;
   return <RuneView gap={10} {...(armed === null ? {} : { onKey: (code: string) => { if (code !== "Escape") category.keybinds.find((k) => k.action === armed)?.rebind(code); setArmed(null); } })}>
     <RuneView layout="grid" columns={4} responsive={{ phone: { columns: 2 } }} gap={5} label="Settings pages">
@@ -129,7 +130,7 @@ function Slider({ row }: { row: SettingsRow }) {
 }
 
 /** Letters, digits and space typed onto the moving-in card while it is armed; Enter moves in, Escape stops. */
-const SUGGESTED = ["The Moonwells", "The Pebblesons", "The Quill-Ottos", "The Driftmoss", "The Halcyons"];
+const SUGGESTED = ["The Docking Arms", "Hotel Perigee", "The Last Lamp", "Spoke Seven Rooms", "The Vented Swan"];
 function keyChar(code: string): string | null {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
   if (/^Digit\d$/.test(code)) return code.slice(5);
@@ -149,14 +150,14 @@ function NameCard({ name, setName, submit }: { name: string; setName: (next: (na
     if (c !== null) setName((n) => n.length >= 40 ? n : n + (n === "" || n.endsWith(" ") ? c.toUpperCase() : c));
   };
   return <RuneView gap={4} {...(armed ? { onKey: type } : {})}>
-    <Tag>HOUSEHOLD NAME</Tag>
+    <Tag>HOUSE NAME</Tag>
     <Row gap={6}>
-      <RuneAction label="Household name" grow={1} minHeight={40} padding={[8, 12, 8, 12]} radius={10} fill="#ffffff" border={{ width: armed ? 3 : 2, color: armed ? "#c2477f" : RIM }} run={() => setArmed(!armed)}>
+      <RuneAction label="House name" grow={1} minHeight={40} padding={[8, 12, 8, 12]} radius={10} fill="#ffffff" border={{ width: armed ? 3 : 2, color: armed ? "#c2477f" : RIM }} run={() => setArmed(!armed)}>
         <Text color={name === "" ? "#9a8aa0" : INK}>{name === "" ? (armed ? "Type a name…" : "The ...") : armed ? `${name}|` : name}</Text>
       </RuneAction>
       <Plate tone="sky" minHeight={40} label="Suggest a name" onPress={() => setName((n) => SUGGESTED[(SUGGESTED.indexOf(n) + 1) % SUGGESTED.length]!)}><Icon name="star" size={16} /></Plate>
     </Row>
-    <Fine size={12}>{armed ? "Typing: Enter moves in, Esc stops." : "Tap the card to type, or the star for a name."}</Fine>
+    <Fine size={12}>{armed ? "Typing: Enter opens the house, Esc stops." : "Tap the card to type, or the star for a name."}</Fine>
   </RuneView>;
 }
 
@@ -184,8 +185,8 @@ function Polaroid({ slot, onOpen, onNew, onClear }: { slot: SaveSlotMeta; onOpen
 type Loader = (label: string, work: () => Promise<unknown>) => Promise<void>;
 
 /**
- * Odd Orbit's front end. The title is the habitat's porch: the house sign, the verbs as enamel door
- * plates and a paper note for whichever plate is open. Pause is the household handbook.
+ * NO VACANCY's front end. The title is the front desk: the neon sign, the verbs as enamel key tags
+ * and a paper note for whichever tag is open. Pause is the landlord's handbook.
  */
 export function OrbitMenu(props: Prefs) {
   const session = useStore(orbitSession);
@@ -218,44 +219,44 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
   const emptySlot = slots.find((slot) => slot.empty)?.id ?? ORBIT_SLOTS[0];
   const kept = slots.filter((slot) => !slot.empty).length;
   const plates: PlateDef[] = [
-    { id: "continue", label: "Continue", icon: "arrowRight", tone: "mint", disabled: recent === null, hint: recent === null ? "Nobody lives here yet" : (recent.name ?? orbitSlotLabel(recent.id)) },
-    { id: "new", label: "Move in", icon: "key", tone: "pink", hint: `Into ${orbitSlotLabel(emptySlot)}` },
-    { id: "careers", label: "Households", icon: "pin", tone: "butter", hint: `${kept} of ${slots.length} kept` },
-    { id: "guide", label: "Field guide", icon: "eye", tone: "sky", hint: "Shifts, posts, bonds" },
+    { id: "continue", label: "Continue", icon: "arrowRight", tone: "mint", disabled: recent === null, hint: recent === null ? "No house open yet" : (recent.name ?? orbitSlotLabel(recent.id)) },
+    { id: "new", label: "Open the house", icon: "key", tone: "pink", hint: `Into ${orbitSlotLabel(emptySlot)}` },
+    { id: "careers", label: "Houses", icon: "pin", tone: "butter", hint: `${kept} of ${slots.length} kept` },
+    { id: "guide", label: "Landlord's guide", icon: "eye", tone: "sky", hint: "Rooms, rent, tenants" },
     { id: "settings", label: "Settings", icon: "gear", tone: "lilac", hint: "Sound, picture, keys" },
     { id: "credits", label: "Credits", icon: "star", tone: "cream" },
   ];
   const openCareer = (slot: string) => whileLoading("Opening the front door", async () => { if (!openOrbitSlot(ctx, slot)) setNotice(`${orbitSlotLabel(slot)} is empty.`); else setName(orbitProfile.name); });
-  const startCareer = () => void whileLoading("Moving the household in", async () => { newOrbitSlot(ctx, emptySlot, name); });
+  const startCareer = () => void whileLoading("Switching on the sign", async () => { newOrbitSlot(ctx, emptySlot, name); });
   const choose = (id: string) => { setActive(id); if (id === "careers") refreshOrbitSlots(); if (phone) setSheet(true); };
 
   const note = (() => {
     if (active === "continue") {
       const saved = recent === null ? null : readOrbitSave(undefined, recent.id).save;
       const member = saved === null ? null : workingMember(saved.household);
-      if (recent === null || saved === null) return <RuneView gap={8}><Heading>Nobody lives here yet</Heading><Text>{session.saveStatus === "damaged" ? "The saved household is unreadable. Moving in replaces it." : session.saveStatus === "unavailable" ? "This browser cannot keep a household." : "Move a household in, work a shift, then save from the handbook."}</Text></RuneView>;
+      if (recent === null || saved === null) return <RuneView gap={8}><Heading>No house open yet</Heading><Text>{session.saveStatus === "damaged" ? "The saved house is unreadable. Opening a new one replaces it." : session.saveStatus === "unavailable" ? "This browser cannot keep a house." : "Open the house, settle your first tenants, then save from the handbook."}</Text></RuneView>;
       return <RuneView gap={8}>
         <Thumb thumb={slotText(recent, "thumbnail")} width={phone ? 300 : 320} height={phone ? 168 : 180} />
         <Heading>{recent.name ?? orbitSlotLabel(recent.id)}</Heading>
         <Row gap={6}><Stamp icon="hourglass" text={String(recent.meta["day"] ?? "")} /><Stamp icon="coin" text={`${saved.household.credits}`} /><Stamp icon="bread" text={`${saved.household.pantry}`} /></Row>
-        <Text>{member === null ? "Saved between shifts." : `${member.name} is on the ${member.lifestyle === "yield" ? "Yield" : "Bloom"} shift.`}</Text>
+        <Text>{member === null ? "Saved between shifts." : `${member.name} is on the ${member.lifestyle === "yield" ? "gig" : "hydro"} shift.`}</Text>
         <Plate tone="mint" onPress={() => void openCareer(recent.id)}><Icon name="arrowRight" size={18} /><Text weight={700}>Open the door</Text></Plate>
       </RuneView>;
     }
     if (active === "new") return <RuneView gap={10}>
-      <Heading>Moving-in card</Heading>
+      <Heading>Opening night</Heading>
       <NameCard name={name} setName={setName} submit={startCareer} />
-      <Row gap={6}><Stamp icon="coin" text="640" /><Stamp icon="bread" text="12" /><Stamp icon="heart" text="4 beings" /></Row>
+      <Row gap={6}><Stamp icon="coin" text="640" /><Stamp icon="bread" text="12" /><Stamp icon="heart" text="4 tenants" /></Row>
       <Fine>{`Into ${orbitSlotLabel(emptySlot)}.`}</Fine>
-      <Plate tone="pink" label="Move in now" onPress={startCareer}><Icon name="key" size={18} /><Text weight={700}>Move in</Text></Plate>
+      <Plate tone="pink" label="Open the house now" onPress={startCareer}><Icon name="key" size={18} /><Text weight={700}>Switch on the sign</Text></Plate>
     </RuneView>;
     if (active === "careers") return <RuneView gap={10}>
-      <Heading>Households</Heading>
+      <Heading>Houses</Heading>
       <RuneView layout="row" gap={8} responsive={{ phone: { layout: "grid", columns: 2 } }}>
         {slots.map((slot) => <Polaroid key={slot.id} slot={slot} onOpen={() => void openCareer(slot.id)} onNew={() => newOrbitSlot(ctx, slot.id, name)}
-          onClear={() => void whileLoading("Clearing the household", async () => { window.localStorage.removeItem(orbitSlotKey(slot.id)); refreshOrbitSlots(); setNotice(`${orbitSlotLabel(slot.id)} is clear.`); })} />)}
+          onClear={() => void whileLoading("Clearing the house", async () => { window.localStorage.removeItem(orbitSlotKey(slot.id)); refreshOrbitSlots(); setNotice(`${orbitSlotLabel(slot.id)} is clear.`); })} />)}
       </RuneView>
-      <Fine>Hold the cross to clear a household.</Fine>
+      <Fine>Hold the cross to clear a house.</Fine>
     </RuneView>;
     if (active === "guide") return <GuidePage />;
     if (active === "settings") return <RuneView gap={8}><Heading>Settings</Heading><HouseSettings preferences={preferences} onPreference={onPreference} /></RuneView>;
@@ -264,13 +265,13 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
 
   const showNote = !phone || sheet;
   const noteWidth = phone ? width - 24 : Math.min(520, width - 420);
-  return <RuneView anchor="fill" padding={phone ? [16, 12, 16, 12] : [40, 48, 40, 48]} gap={16} layout={phone ? "stack" : "row"} items={phone ? "stretch" : "center"} justify={phone ? "start" : "center"} {...(phone && sheet ? { onBack: () => setSheet(false) } : {})} label="Odd Orbit">
+  return <RuneView anchor="fill" padding={phone ? [16, 12, 16, 12] : [40, 48, 40, 48]} gap={16} layout={phone ? "stack" : "row"} items={phone ? "stretch" : "center"} justify={phone ? "start" : "center"} {...(phone && sheet ? { onBack: () => setSheet(false) } : {})} label="NO VACANCY">
     {phone && sheet ? null : <RuneView gap={14} width={phone ? width - 24 : 340} minWidth={phone ? width - 24 : 340} items={phone ? "center" : "start"}>
       <Paper width={FULL} tint={ENAMEL.cream} radius={28} border={{ width: 3, color: RIM }} padding={phone ? [14, 22, 12, 22] : [20, 30, 16, 30]} gap={2} items="center">
-        <Text family="Comfortaa" weight={700} size={phone ? 42 : 54} color={INK} width={FULL} align="center">Odd Orbit</Text>
-        <Fine color="#8a4a6f" size={13}>a home for four strange beings</Fine>
+        <Text family="Comfortaa" weight={700} size={phone ? 40 : 52} color="#ff5fa8" width={FULL} align="center">NO VACANCY</Text>
+        <Fine color="#8a4a6f" size={13}>a boarding house bolted to a space station</Fine>
       </Paper>
-      <RuneView gap={8} width={phone ? width - 48 : 300} label="Front door">
+      <RuneView gap={8} width={phone ? width - 48 : 300} label="Front desk">
         {plates.map((plate) => <Plate key={plate.id} tone={plate.tone} on={active === plate.id} disabled={plate.disabled === true} justify="start" minHeight={phone ? 46 : 44} label={plate.label}
           onPress={() => { if (plate.id === "continue" && recent !== null && active === "continue") void openCareer(recent.id); else choose(plate.id); }}>
           <RuneView width={28} height={28} radius={14} fill="#ffffff80" justify="center" items="center"><Icon name={plate.icon} size={18} /></RuneView>
@@ -283,13 +284,13 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
       {phone ? <Plate tone="plum" label="Porch" onPress={() => setSheet(false)}><Icon name="arrowLeft" size={16} color={CREAM_TEXT} /><Text weight={700} color={CREAM_TEXT}>Porch</Text></Plate> : null}
       <Paper width={FULL} padding={22} maxHeight={phone ? height - 110 : height - 120}><RuneView scroll maxHeight={phone ? height - 154 : height - 164} gap={10}>{note}</RuneView></Paper>
     </RuneView> : null}
-    <RuneView anchor="bottom" safe inset={10}><Fine color={NIGHT_DIM}>{notice ?? `${orbitSlotLabel(session.slot)} · ${household.credits} credits · ${household.pantry} rations · ${household.beings} beings`}</Fine></RuneView>
+    <RuneView anchor="bottom" safe inset={10}><Fine color={NIGHT_DIM}>{notice ?? `${orbitSlotLabel(session.slot)} · ${household.credits} credits · ${household.pantry} rations · ${household.beings} tenants`}</Fine></RuneView>
   </RuneView>;
 }
 
 interface Chapter { id: string; label: string; icon: GameIconName; page: string }
 
-/** The pause menu: the household handbook, open to today's page. */
+/** The pause menu: the landlord's handbook, open to today's page. */
 function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLoading: Loader }) {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -308,9 +309,9 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const [leaf, setLeaf] = useState(menuFocus.id !== null && phone);
   const slotLabel = orbitSlotLabel(session.slot);
   const chapters: Chapter[] = [
-    { id: "resume", label: "Back to the household", icon: "arrowLeft", page: "1" },
+    { id: "resume", label: "Back to the front desk", icon: "arrowLeft", page: "1" },
     { id: "save", label: `Save to ${slotLabel}`, icon: "pin", page: "2" },
-    { id: "guide", label: "Field guide", icon: "eye", page: "3" },
+    { id: "guide", label: "Landlord's guide", icon: "eye", page: "3" },
     { id: "settings", label: "Settings", icon: "gear", page: "8" },
     { id: "credits", label: "Credits", icon: "star", page: "12" },
     { id: "title", label: "Save & step outside", icon: "key", page: "—" },
@@ -319,8 +320,8 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const confirm = (id: string) => {
     setActive(id);
     if (id === "resume") close();
-    else if (id === "save") void whileLoading("Writing the household down", async () => { const written = await saveOrbitSlot(ctx); setNotice(written ? `Written into ${slotLabel}` : "This browser could not keep the household"); });
-    else if (id === "title") void whileLoading("Writing the household down", async () => { await saveOrbitSlot(ctx); commands.run("orbit.title", {}); });
+    else if (id === "save") void whileLoading("Writing up the ledger", async () => { const written = await saveOrbitSlot(ctx); setNotice(written ? `Written into ${slotLabel}` : "This browser could not keep the house"); });
+    else if (id === "title") void whileLoading("Writing up the ledger", async () => { await saveOrbitSlot(ctx); commands.run("orbit.title", {}); });
     if (phone && id !== "resume" && id !== "title") setLeaf(true);
   };
   const time = useGameCalendar((c) => `${String(Math.floor(c.hour)).padStart(2, "0")}:${String(c.minute).padStart(2, "0")}`);
@@ -329,8 +330,8 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
     if (active === "guide") return <GuidePage />;
     if (active === "settings") return <RuneView gap={8}><Heading>Settings</Heading><HouseSettings preferences={preferences} onPreference={onPreference} /></RuneView>;
     if (active === "credits") return <CreditsPage />;
-    if (active === "save") return <RuneView gap={8}><Heading>Write today down</Heading><Text>{`The household, its beings and their shift go into ${slotLabel}.`}</Text>{notice ? <Text weight={700} color="#c2477f">{notice}</Text> : null}</RuneView>;
-    if (active === "title") return <RuneView gap={8}><Heading>Step outside</Heading><Text>The handbook saves the household, then you are back on the porch.</Text></RuneView>;
+    if (active === "save") return <RuneView gap={8}><Heading>Write today down</Heading><Text>{`The house, its tenants and their rooms go into ${slotLabel}.`}</Text>{notice ? <Text weight={700} color="#c2477f">{notice}</Text> : null}</RuneView>;
+    if (active === "title") return <RuneView gap={8}><Heading>Step outside</Heading><Text>The handbook saves the house, then you are back at the front desk.</Text></RuneView>;
     return <RuneView gap={8}>
       <Heading>Everyone is waiting</Heading>
       {household.roll.map((m) => <Row key={m.id} gap={10}><Swatch plan={m.plan} size={34} /><Text weight={700} grow={1}>{m.name}</Text><Fine>{m.mood}</Fine></Row>)}
@@ -341,7 +342,7 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const pageW = phone ? width - 24 : Math.min(440, (width - 120) / 2);
   const pageH = phone ? height - 100 : Math.min(600, height - 110);
   const showLeft = !phone || !leaf, showRight = !phone || leaf;
-  return <RuneView anchor="fill" justify="center" items="center" gap={10} onBack={phone && leaf ? () => setLeaf(false) : close} label="The household is paused">
+  return <RuneView anchor="fill" justify="center" items="center" gap={10} onBack={phone && leaf ? () => setLeaf(false) : close} label="The house is paused">
     <RuneView layout="row" gap={4} fill="#5a2e22" radius={12} padding={phone ? 8 : 12} border={{ width: 2, color: "#24110a" }} shadow={{ y: 10, blur: 30, color: "#0008" }}>
       {showLeft ? <Paper width={pageW} height={pageH} radius={6} border={{ width: 0, color: RIM }} padding={phone ? 16 : 24} gap={8} shadow={{ y: 0, blur: 0, color: "#0000" }}>
         <Tag>{`HOUSEHOLD HANDBOOK · ${slotLabel.toUpperCase()}`}</Tag>

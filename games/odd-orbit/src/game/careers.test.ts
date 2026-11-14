@@ -42,6 +42,8 @@ function workShift(ctx: GameContext, id: string): void {
   member.needs = { hunger: 95, energy: 95, social: 95, fun: 95 };
   member.job = "Signal-keeper";
   member.lifestyle = "yield";
+  // Pay traits (Krrt is Industrious) would hide the mastery step this measures.
+  member.traits = ["kind", "handy"];
   member.workToday = 0;
   member.shiftDay = -1;
   // A shift is one session a day on the shared loop: reset it the way a new day would.
@@ -114,8 +116,9 @@ test("ten shifts at a station pay more than three", () => {
 test("a bonded pair's refusal to split overrides a career assignment", () => {
   const ctx = boot();
   const state = householdStore.read(ctx);
+  // Krrt and Pip-9 both work gig shifts; a Hydro-gardener post would split them.
   const a = state.members["alien:0"]!;
-  const b = state.members["alien:2"]!;
+  const b = state.members["alien:3"]!;
   state.relationships[pairKey(a.id, b.id)] = 97;
   state.familiarity[pairKey(a.id, b.id)] = 0.9;
   householdStore.write(ctx, { ...state, members: { ...state.members } });
@@ -138,7 +141,7 @@ test("a post gates the other station until the cross-trained rung pays cover", (
   member.lifestyle = "bloom";
   householdStore.write(ctx, { ...state, members: { ...state.members } });
   ctx.game.commands.run("member.direct", { id: member.id, goal: "tend" });
-  expect(member.concern).toContain("cannot cover the Bloom Planter");
+  expect(member.concern).toContain("cannot cover the Hydro Tray");
 
   state.standing = { records: { [member.id]: { orbit: 4 } } };
   householdStore.write(ctx, { ...state, members: { ...state.members } });

@@ -13,8 +13,8 @@ import type { BloomCrop, HouseholdState, Lifestyle, MemberState } from "./sessio
 /** The household's two paid stations. A post is native to one of them, or to both. */
 export type StationKind = "yield" | "bloom";
 
-export const STATION_LABEL: Record<StationKind, string> = { yield: "Yield Console", bloom: "Bloom Planter" };
-export const STATION_NAME: Record<StationKind, string> = { yield: "Yield", bloom: "Bloom" };
+export const STATION_LABEL: Record<StationKind, string> = { yield: "Gig Terminal", bloom: "Hydro Tray" };
+export const STATION_NAME: Record<StationKind, string> = { yield: "Gig", bloom: "Hydro" };
 
 /** A post is one of the household's existing jobs; the ladder is what the job grows into. */
 export type CareerId = (typeof JOBS)[number];
@@ -40,12 +40,12 @@ export interface CareerDef {
  * never credits, so a shift is the only wage that opens a ladder.
  */
 export const CAREERS: readonly CareerDef[] = [
-  { id: "Botanist", label: "Botanist", station: "bloom", postGate: 0, native: [1, 1.15, 1.35], cover: [0, 0.9, 1], rations: [0, 0, 1], blurb: "Tends the planter. A Master Botanist adds a ration to every harvest." },
-  { id: "Signal-keeper", label: "Signal-keeper", station: "yield", postGate: 0, native: [1, 1.15, 1.35], cover: [0, 0.9, 1], rations: [0, 0, 0], blurb: "The console post. Adept Signal-keepers may cover the planter between shifts." },
-  { id: "Forager", label: "Forager", station: "bloom", postGate: 3, native: [1, 1.1, 1.25], cover: [0, 0.85, 0.95], rations: [0, 1, 1], blurb: "Turns the planter toward food instead of credits." },
-  { id: "Tinkerer", label: "Tinkerer", station: "yield", postGate: 6, native: [1, 1.1, 1.25], cover: [0, 0.85, 0.95], rations: [0, 0, 0], blurb: "Keeps the consoles earning through small repairs." },
-  { id: "Archivist", label: "Archivist", station: "yield", postGate: 10, native: [1, 1.2, 1.4], cover: [0, 0.9, 1], rations: [0, 0, 0], blurb: "The best console wage in the habitat, for a household with standing." },
-  { id: "Warden", label: "Warden", station: "either", postGate: 14, native: [0.9, 1, 1.1], cover: [0.9, 1, 1.1], rations: [0, 0, 1], blurb: "Covers either station from the first rung, at a steadier wage." },
+  { id: "Botanist", label: "Hydro-gardener", station: "bloom", postGate: 0, native: [1, 1.15, 1.35], cover: [0, 0.9, 1], rations: [0, 0, 1], blurb: "Tends the hydro tray. A Master Hydro-gardener adds a ration to every harvest." },
+  { id: "Signal-keeper", label: "Switchboard", station: "yield", postGate: 0, native: [1, 1.15, 1.35], cover: [0, 0.9, 1], rations: [0, 0, 0], blurb: "Takes station calls at the gig terminal. An Adept may cover the hydro tray between shifts." },
+  { id: "Forager", label: "Scavenger", station: "bloom", postGate: 3, native: [1, 1.1, 1.25], cover: [0, 0.85, 0.95], rations: [0, 1, 1], blurb: "Turns the hydro tray toward food instead of credits." },
+  { id: "Tinkerer", label: "Fixer", station: "yield", postGate: 6, native: [1, 1.1, 1.25], cover: [0, 0.85, 0.95], rations: [0, 0, 0], blurb: "Takes the dock repair gigs that pay a little better." },
+  { id: "Archivist", label: "Ledger-keeper", station: "yield", postGate: 10, native: [1, 1.2, 1.4], cover: [0, 0.9, 1], rations: [0, 0, 0], blurb: "The best gig wage on the station, for a house with standing." },
+  { id: "Warden", label: "Night porter", station: "either", postGate: 14, native: [0.9, 1, 1.1], cover: [0.9, 1, 1.1], rations: [0, 0, 1], blurb: "Covers either station from the first rung, at a steadier wage." },
 ];
 
 const CAREER_BY_ID = new Map(CAREERS.map((career) => [career.id, career]));
@@ -77,11 +77,11 @@ export const MASTERY_PAY_PER_LEVEL = 0.05;
 /** One standing ledger serves mastery (per station) and the post ladder (household). */
 export const ORBIT_STANDING = {
   tracks: [
-    { id: "yield", label: "Yield mastery", initial: 0, min: 0, max: 999, tiers: MASTERY_TIERS },
-    { id: "bloom", label: "Bloom mastery", initial: 0, min: 0, max: 999, tiers: MASTERY_TIERS },
+    { id: "yield", label: "Gig mastery", initial: 0, min: 0, max: 999, tiers: MASTERY_TIERS },
+    { id: "bloom", label: "Hydro mastery", initial: 0, min: 0, max: 999, tiers: MASTERY_TIERS },
     {
       id: "orbit",
-      label: "Household standing",
+      label: "House standing",
       initial: 0,
       min: -99,
       max: 999,
@@ -94,8 +94,8 @@ export const ORBIT_STANDING = {
     },
   ],
   outcomes: [
-    { id: "shift:yield", label: "Worked a Yield shift", impacts: { yield: 1, orbit: 1 } },
-    { id: "shift:bloom", label: "Worked a Bloom shift", impacts: { bloom: 1, orbit: 1 } },
+    { id: "shift:yield", label: "Worked a gig shift", impacts: { yield: 1, orbit: 1 } },
+    { id: "shift:bloom", label: "Worked a hydro shift", impacts: { bloom: 1, orbit: 1 } },
     { id: "missed", label: "Missed a paid shift", impacts: { orbit: -1 } },
   ],
 } as const;

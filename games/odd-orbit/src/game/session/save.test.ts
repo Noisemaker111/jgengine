@@ -110,7 +110,7 @@ test("bounded needs, relationships, economy, schedules and world reject atomical
     const before = captureOrbitSave(first);
     const bad = structuredClone(before); change(bad);
     expect(validOrbitSave(bad)).toBe(false);
-    expect(() => restoreOrbitSave(first, bad)).toThrow("Invalid Odd Orbit save");
+    expect(() => restoreOrbitSave(first, bad)).toThrow("Invalid NO VACANCY save");
     expect(captureOrbitSave(first)).toEqual(before);
   }
 });
@@ -141,7 +141,7 @@ test("a long unattended gap does not burst transmissions on return", () => {
   const notices: string[] = [];
   ctx.game.notices.onPush(notice => notices.push(notice.text));
   simulateHousehold(ctx, ctx.time.advance(210 * 3));
-  expect(notices.filter(text => text.startsWith("Transmission:")).length).toBeLessThanOrEqual(1);
+  expect(notices.filter(text => text.startsWith("Front desk:")).length).toBeLessThanOrEqual(1);
   const story = householdStore.read(ctx).story!;
   expect(story.elapsed).toBeLessThanOrEqual(11);
   expect(validOrbitSave(captureOrbitSave(ctx))).toBe(true);

@@ -14,6 +14,8 @@ import type { HouseholdState } from "./session/types";
 import { charterGrade, charterOf, TERM_DAYS, TERMS } from "./sim/charter";
 import { incidentDef, repairCost } from "./sim/events";
 import { setupWorld } from "./sim/setup";
+import { boardingOf, moduleBlocker, moveTenant, nextModulePrice, roomOf, tenantComfort, tuneCost, vacantRooms } from "./boarding/boarding";
+import { ROOM_SLOTS } from "./boarding/rooms";
 import { simulateHousehold } from "./sim/simulate";
 
 /**
@@ -95,9 +97,58 @@ function count(ctx: GameContext, catalogId: string): number {
   return ctx.scene.object.list().filter((o) => o.catalogId === catalogId).length;
 }
 
+/** Total comfort of everyone with a room: what a landlord shuffling key-tags tries to raise. */
+function houseComfort(state: HouseholdState): number {
+  return state.order.reduce((sum, id) => sum + (roomOf(state, id) === null ? 0 : tenantComfort(state, id).score), 0);
+}
+
+/**
+ * The landlord's half of a careful player: interview and let in whoever buzzes while a room is free,
+ * try every swap and keep the ones that raise the house's comfort, retune and seal rooms when the
+ * jar allows, dock a module when the station agrees, and give Pip-9 the next free door.
+ */
+function landlord(ctx: GameContext, reserve: number): void {
+  let state = householdStore.read(ctx);
+  const boarding = boardingOf(state);
+  if (boarding.applicant !== null && vacantRooms(state).length > 0) {
+    for (const question of [0, 1, 2]) ctx.game.commands.run("applicant.ask", { question });
+    ctx.game.commands.run("applicant.accept", { slot: vacantRooms(state)[0]!.slot });
+  }
+  state = householdStore.read(ctx);
+  const pip = state.order.find((id) => roomOf(state, id) === null);
+  if (pip !== undefined && boardingOf(state).applicant === null && vacantRooms(state).length > 0 && Math.floor(ctx.time.now()) % 30 === 0) {
+    ctx.game.commands.run("room.move", { id: pip, slot: vacantRooms(state)[0]!.slot });
+  }
+  const hour = Math.floor(((ctx.time.now() % DAY_LENGTH) / DAY_LENGTH) * 24 * 2);
+  if (Math.floor(((ctx.time.now() - 0.5) % DAY_LENGTH) / DAY_LENGTH * 24 * 2) === hour) return;
+  state = householdStore.read(ctx);
+  const housed = state.order.filter((id) => roomOf(state, id) !== null);
+  for (const a of housed) for (const b of housed) {
+    if (a >= b) continue;
+    const trial = structuredClone(state);
+    const target = roomOf(trial, b)!.slot;
+    if (moveTenant(trial, a, target) !== null) continue;
+    if (houseComfort(trial) > houseComfort(householdStore.read(ctx)) + 8) ctx.game.commands.run("room.move", { id: a, slot: target });
+  }
+  for (const room of boardingOf(householdStore.read(ctx)).rooms) {
+    const s = householdStore.read(ctx);
+    if (room.tenantId === null) continue;
+    const comfort = tenantComfort(s, room.tenantId);
+    const cost = tuneCost(s, room.slot);
+    if (comfort.score < 80 && cost > 0 && s.credits >= cost + reserve) ctx.game.commands.run("room.tune", { slot: room.slot });
+    if (comfort.reasons.some((r) => r.factor === "leak") && !room.sealed && householdStore.read(ctx).credits >= 60 + reserve) ctx.game.commands.run("room.seal", { slot: room.slot });
+  }
+  state = householdStore.read(ctx);
+  const { price } = nextModulePrice(state);
+  for (let slot = 0; slot < ROOM_SLOTS; slot++) {
+    if (moduleBlocker(state, slot) === null && state.credits >= price + reserve * 2) { ctx.game.commands.run("room.buy", { slot }); break; }
+  }
+}
+
 function steward(ctx: GameContext): void {
   let state = householdStore.read(ctx);
   answer(ctx, state);
+  landlord(ctx, 140 + charterOf(state).term * 60);
   state = householdStore.read(ctx);
   if (state.pantry <= 8 && state.credits >= 36 + 60) ctx.game.commands.run("household.rations", {});
   for (const id of state.order) {
@@ -138,7 +189,7 @@ function runCharter(policy: Policy): RunSummary {
   let maxDebt = 0;
   let incidents = 0;
   let seq = -1;
-  ctx.game.notices.onPush((n) => { if (n.text.startsWith("Transmission:")) incidents += 1; });
+  ctx.game.notices.onPush((n) => { if (n.text.startsWith("Front desk:")) incidents += 1; });
   let answered = 0;
   while (ctx.time.now() < end) {
     // Every player reads the term letter: it holds a waiting transmission's clock until dismissed.

@@ -19,6 +19,11 @@ function boot(): GameContext {
   registerCommands(ctx);
   ctx.game.commands.define("orbit.checkpoint", { apply() {} });
   setGamePhase(ctx, "playing");
+  // These cases test the day-job layer on its own: the tenants all carry the same two neutral traits
+  // and no modules are docked yet, so rent night, module fees and wall comfort add nothing.
+  const state = householdStore.read(ctx);
+  for (const id of state.order) state.members[id]!.traits = ["kind", "handy"];
+  state.boarding!.rooms = [];
   return ctx;
 }
 
@@ -186,8 +191,8 @@ describe("reciprocal trust", () => {
     const before = state.relationships[pairKey(a.id,b.id)]!;
     advance(ctx, 2);
     expect(householdStore.read(ctx).relationships[pairKey(a.id,b.id)]!).toBeLessThan(before);
-    expect(a.concern).toContain("clashed");
-    expect(b.concern).toContain("clashed");
+    expect(a.concern).toContain("Words were had");
+    expect(b.concern).toContain("Words were had");
   });
 });
 
@@ -278,7 +283,7 @@ test("an unattended gap skips paid activity while preserving bills and need cons
   expect(state.credits).toBe(before - 194);
   expect(state.dayIncome).toBe(0);
   expect(state.order.every(id => state.members[id]!.recovering)).toBe(true);
-  expect(notices.some(text => text.includes("unattended interval"))).toBe(true);
+  expect(notices.some(text => text.includes("front desk was unattended"))).toBe(true);
 });
 
 test("unpaid upkeep becomes debt without deleting the household; later savings repay it", () => {
@@ -352,11 +357,11 @@ test("starting a Yield shift from the inspector journals it and shows the shift 
   ctx.game.commands.run("member.lifestyle", { id:member.id, lifestyle:"yield" });
   expect(shiftIsOpen(member, ctx.time.now())).toBe(true); // the fresh habitat clock opens at 09:00
   ctx.game.commands.run("member.direct", { id:member.id, goal:"work" });
-  expect(notices).toContain(`${member.name} started a Yield shift.`);
-  expect(yieldShiftLabel(member)).toBe("Heading to Yield Console");
+  expect(notices).toContain(`${member.name} started a gig shift.`);
+  expect(yieldShiftLabel(member)).toBe("Heading to the Gig Terminal");
   // Repeating the press keeps the same shift and does not journal it twice.
   ctx.game.commands.run("member.direct", { id:member.id, goal:"work" });
-  expect(notices.filter(text => text.includes("started a Yield shift")).length).toBe(1);
+  expect(notices.filter(text => text.includes("started a gig shift")).length).toBe(1);
   const console = ctx.scene.object.get("starter:work_console")!;
   ctx.scene.entity.setPose(member.id, { position:[...console.position] });
   advance(ctx, 1);
@@ -370,7 +375,7 @@ test("a being with no furnished work station is told which furnishing fixes it",
   expect(shiftIsOpen(member, ctx.time.now())).toBe(true);
   ctx.scene.object.remove("starter:work_console");
   ctx.game.commands.run("member.direct", { id:member.id, goal:"work" });
-  expect(member.concern).toBe("No work station — furnish a Yield Console (Furnish menu)");
+  expect(member.concern).toBe("No work station — furnish a Gig Terminal (Furnish menu)");
   expect(member.action.kind).toBe("idle");
 });
 
@@ -384,7 +389,7 @@ test("a second Yield worker sent to a full console reads as waiting, not heading
   const objects = ctx.scene.object.list();
   expect(waitingForStation(state, first, objects)).toBe(false);
   expect(waitingForStation(state, second, objects)).toBe(true);
-  expect(yieldShiftLabel(second, waitingForStation(state, second, objects))).toBe("Waiting for a free Yield Console");
+  expect(yieldShiftLabel(second, waitingForStation(state, second, objects))).toBe("Waiting for a free Gig Terminal");
 });
 
 function bond(ctx: GameContext, a: string, b: string, opinion: number, familiarity: number): void {
@@ -408,8 +413,8 @@ test("a bonded pair refuses to split a shift, then works side by side once a sec
   expect(first.action.kind).toBe("idle");
   expect(second.action.kind).toBe("idle");
   expect(first.concern).toContain("bonded and will not split");
-  expect(first.concern).toContain("furnish a second Yield Console");
-  expect(notices.some(text => text.includes("furnish a second Yield Console"))).toBe(true);
+  expect(first.concern).toContain("furnish a second Gig Terminal");
+  expect(notices.some(text => text.includes("furnish a second Gig Terminal"))).toBe(true);
 
   ctx.scene.object.place("work_console", 8, 0, 8, { instanceId:"placed:work_console:1" });
   ctx.game.commands.run("member.direct", { id:first.id, goal:"work" });

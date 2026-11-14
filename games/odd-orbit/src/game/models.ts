@@ -2,11 +2,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
-import type { CreatureBodyShape } from "./creatures/bodyPlan";
 import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";
 
 
-const MONSTERS = "quaternius-textured-cute-monster-pack";
 const NATURE = "quaternius-stylized-nature";
 const FURN = "kaykit-furniture";
 const SPACE = "kaykit-space-base";
@@ -125,18 +123,3 @@ function buildObjectModels(): Record<string, ModelConfig> {
 }
 
 export const objectModels: Record<string, ModelConfig> = buildObjectModels();
-
-/** One cute monster per body shape; each keeps its one odd feature (one eye, tall neck, claws, no legs). */
-const ALIEN_MESH_BY_SHAPE: Record<CreatureBodyShape, string> = {
-  tall: `${MONSTERS}/Alien_Tall`,
-  round: `${MONSTERS}/Cyclops`,
-  blob: `${MONSTERS}/Alien`,
-  insectoid: `${MONSTERS}/Crab`,
-};
-
-export function resolveAlienMeshUrl(shape: CreatureBodyShape): string {
-  const id = ALIEN_MESH_BY_SHAPE[shape];
-  const url = assets.resolve(id)?.url;
-  if (url === undefined) throw new Error(`odd-orbit: ${id} is not in the asset catalog; run bun run games:provision odd-orbit`);
-  return url;
-}

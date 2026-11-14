@@ -35,14 +35,14 @@ export default defineFlow(game, {
     const porch = async () => { if (phone) await tap("Porch", "a home for four strange beings"); };
     const see = async (text: string, timeoutMs = 15000) => { await f.see(text, { timeoutMs }); await settle(); };
 
-    await see("a home for four strange beings");
+    await see("a boarding house bolted to a space station");
     await shot("title");
-    await tap("Households", "Household III");
-    await see("Household III");
+    await tap("Houses", "House III");
+    await see("House III");
     await shot("households");
     await porch();
-    await tap("Field guide", "Caring for a strange household");
-    await see("Caring for a strange household");
+    await tap("Landlord's guide", "Running a boarding house in orbit");
+    await see("Running a boarding house in orbit");
     await shot("guide");
     await porch();
     await tap("Settings", "Calm interface");
@@ -56,15 +56,15 @@ export default defineFlow(game, {
     await see("Comfortaa");
     await shot("credits");
     await porch();
-    await tap("Move in", "Moving-in card");
-    await see("Moving-in card");
-    await tap("Household name", "Typing: Enter moves in");
-    await see("Typing: Enter moves in");
+    await tap("Open the house", "Opening night");
+    await see("Opening night");
+    await tap("House name", "Typing: Enter opens the house");
+    await see("Typing: Enter opens the house");
     for (const key of ["KeyO", "KeyD", "KeyD", "Space", "KeyO", "KeyN", "KeyE", "KeyS"] as const) await f.press(key);
     await see("Odd Ones|");
     await shot("new");
     await f.press("Enter");
-    await f.waitForPage("!(window.__jgNativeUi?.text() ?? 'Moving-in card').includes('Moving-in card')", { timeoutMs: 40000, note: "Enter on the moving-in card moved the household in" });
+    await f.waitForPage("!(window.__jgNativeUi?.text() ?? 'Opening night').includes('Opening night')", { timeoutMs: 40000, note: "Enter on the opening-night card opened the house" });
     await f.waitFor((p) => p.members === 4, { timeoutMs: 40000 });
 
     // Once the habitat runs, software Rune on a loaded host stops presenting new frames (Deepward's own
@@ -79,29 +79,31 @@ export default defineFlow(game, {
     await act("Speed 2x");
     await act("Pause time", "Resume time");
     await act("Resume time", "Pause time");
-    // The first being's magnet is labelled with its generated name.
+    // The first tenant's key-tag is labelled with its name.
     const card = String(await f.page("(() => { const walk = (n) => n.props?.label?.endsWith(' card') ? n.props.label : (n.children ?? []).map(walk).find(Boolean); return walk(window.__jgNativeUi.tree()) ?? ''; })()"));
-    await act(card, "Post & mastery");
+    await act(card, "Day job & mastery");
     await act("Close member care");
-    await act("Furnish", "Make room for life");
-    await act("Close habitat panel");
-    await act("Pantry", "Earned today");
-    await act("Close habitat panel");
-    const waiting = phone ? "Back to the household" : "Everyone is waiting";
-    const leafBack = async () => { if (phone) await act("Contents", "Back to the household"); };
+    await act("Rooms", "Rooms plan");
+    await act("Close panel");
+    await act("Furnish", "Furnish the commons");
+    await act("Close panel");
+    await act("Pantry", "Taken in today");
+    await act("Close panel");
+    const waiting = phone ? "Back to the front desk" : "Everyone is waiting";
+    const leafBack = async () => { if (phone) await act("Contents", "Back to the front desk"); };
     await act("Handbook", waiting);
-    await act("Save to Household I", "Written into Household I");
-    await f.expectPage("localStorage.getItem('odd-orbit.household-save.v1') !== null", "the handbook wrote the household into its slot");
+    await act("Save to House I", "Written into House I");
+    await f.expectPage("localStorage.getItem('odd-orbit.household-save.v1') !== null", "the handbook wrote the house into its slot");
     await leafBack();
     await act("Settings", "Master volume");
     await leafBack();
     await act("Credits", "Comfortaa");
     await leafBack();
-    await act("Save & step outside", "a home for four strange beings");
+    await act("Save & step outside", "a boarding house bolted to a space station");
     await f.see("Odd Ones");
     await act("Continue", "Handbook");
     await f.press("Escape");
     await f.see(waiting);
-    await act("Back to the household", "Furnish");
+    await act("Back to the front desk", "Furnish");
   },
 });

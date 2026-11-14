@@ -7,9 +7,10 @@ import { careerView, rungIn } from "../careers";
 import { FURNITURE_BY_ID } from "../objects/catalog";
 import { TERM_RENT } from "./economy";
 import { createCharter, noteEvent, type CharterState, type HouseholdState } from "../session/types";
+import { boardingOf, DEED_PRICE, roomOf, tenantComfort } from "../boarding/boarding";
 
 /**
- * The Habitat Authority's charter: four terms of five days. Each term raises the base rent and sets
+ * The Dockmaster's lease on the boarding house's berth: four terms of five days. Each term raises the base rent and sets
  * three goals; a review at the term's last midnight pays a grant per goal met and gives a strike
  * when fewer than two were met. Two strikes, or debt past the bailiff line, end the charter in
  * eviction; four terms with at most one strike keep it.
@@ -25,7 +26,8 @@ export const FINAL_NOTICE_DEBT = 150;
 
 export type CharterMetric =
   | "rung2" | "rung3" | "stations" | "furnishings" | "debtFree" | "answered"
-  | "termIncome" | "bestOpinion" | "pantry" | "savings";
+  | "termIncome" | "bestOpinion" | "pantry" | "savings"
+  | "comfy" | "housed" | "reputation" | "modules" | "deedPaid";
 
 export interface CharterGoal extends ThresholdObjective {
   id: string;
@@ -37,31 +39,31 @@ export interface CharterGoal extends ThresholdObjective {
 
 export interface CharterTerm {
   name: string;
-  /** Base habitat rent per night, before each furnishing's running cost. */
+  /** Base docking fee per night, before each furnishing's and module's running cost. */
   rent: number;
   goals: readonly CharterGoal[];
 }
 
 export const TERMS: readonly CharterTerm[] = [
-  { name: "Settling in", rent: TERM_RENT[0], goals: [
-    { id: "t1-adept", metric: "rung2", target: 1, label: "Promote a being to Adept", hint: "Shifts earn standing; spend 3 in the inspector." },
-    { id: "t1-station", metric: "stations", target: 3, label: "Furnish a third paid station", hint: "Buy a Yield Console or Bloom Planter." },
-    { id: "t1-debt", metric: "debtFree", target: 1, label: "Close the term debt-free", hint: "Cover each midnight bill." },
+  { name: "Grand reopening", rent: TERM_RENT[0], goals: [
+    { id: "t1-comfy", metric: "comfy", target: 4, label: "Four tenants comfortable at once", hint: "Give Pip-9 a door or let an applicant in, then fix what they grumble about." },
+    { id: "t1-station", metric: "stations", target: 3, label: "Furnish a third paid station", hint: "Buy a Gig Terminal or a Hydro Tray." },
+    { id: "t1-debt", metric: "debtFree", target: 1, label: "Close the term debt-free", hint: "Rent night comes before the docking bill." },
   ] },
-  { name: "Finding a rhythm", rent: TERM_RENT[1], goals: [
-    { id: "t2-adepts", metric: "rung2", target: 3, label: "Three beings at Adept or better", hint: "Promote as standing allows." },
-    { id: "t2-answer", metric: "answered", target: 3, label: "Answer three transmissions", hint: "Choose before the Authority chooses for you." },
-    { id: "t2-income", metric: "termIncome", target: 1500, label: "Earn 1,500 credits this term", hint: "Higher rungs and export crops pay more." },
+  { name: "Word gets around", rent: TERM_RENT[1], goals: [
+    { id: "t2-housed", metric: "housed", target: 5, label: "Five tenants with a door of their own", hint: "Let an applicant in, or give Pip-9 a room." },
+    { id: "t2-answer", metric: "answered", target: 3, label: "Handle three front-desk calls", hint: "Choose before the house shrugs for you." },
+    { id: "t2-rep", metric: "reputation", target: 55, label: "Station reputation 55", hint: "Comfortable tenants write kind reviews." },
   ] },
-  { name: "Putting down roots", rent: TERM_RENT[2], goals: [
-    { id: "t3-close", metric: "bestOpinion", target: 70, label: "Two beings grow Close", hint: "Direct talks between a warm pair." },
-    { id: "t3-furnish", metric: "furnishings", target: 10, label: "Ten furnishings in the habitat", hint: "Each one adds to the nightly running cost." },
-    { id: "t3-pantry", metric: "pantry", target: 18, label: "Close the term with 18 rations", hint: "Pantry crops and a Green-fingered keeper help." },
+  { name: "Bolting on", rent: TERM_RENT[2], goals: [
+    { id: "t3-module", metric: "modules", target: 5, label: "Bolt on a fifth module", hint: "Buy a berth from the Rooms plan." },
+    { id: "t3-close", metric: "bestOpinion", target: 70, label: "Two tenants grow close", hint: "Kind walls and lounge chats." },
+    { id: "t3-income", metric: "termIncome", target: 1500, label: "Take in 1,500 credits this term", hint: "Rent, gigs and harvests all count." },
   ] },
-  { name: "Keeping the charter", rent: TERM_RENT[3], goals: [
-    { id: "t4-bond", metric: "bestOpinion", target: 95, label: "A lifelong bond", hint: "A Close pair who keep talking." },
-    { id: "t4-master", metric: "rung3", target: 1, label: "Promote a being to Master", hint: "Master takes 9 standing." },
-    { id: "t4-savings", metric: "savings", target: 600, label: "600 credits saved, no debt", hint: "Rent is highest now; spend carefully." },
+  { name: "Lease renewal", rent: TERM_RENT[3], goals: [
+    { id: "t4-bond", metric: "bestOpinion", target: 95, label: "A lifelong bond", hint: "A close pair who keep talking." },
+    { id: "t4-rep", metric: "reputation", target: 78, label: "Station reputation 78", hint: "Every tenant comfortable, nightly." },
+    { id: "t4-deed", metric: "deedPaid", target: 3000, label: "Pay off half the deed (3,000)", hint: "Pay toward the deed from the Rooms plan." },
   ] },
 ];
 
@@ -95,6 +97,11 @@ export function metricValue(state: HouseholdState, objects: readonly SceneObject
     }
     case "pantry": return state.pantry;
     case "savings": return state.debt > 0 ? 0 : Math.floor(state.credits);
+    case "comfy": return state.order.filter((id) => roomOf(state, id) !== null && tenantComfort(state, id).score >= 55).length;
+    case "housed": return state.order.filter((id) => roomOf(state, id) !== null).length;
+    case "reputation": return Math.floor(boardingOf(state).reputation);
+    case "modules": return boardingOf(state).rooms.length;
+    case "deedPaid": return Math.floor(DEED_PRICE - boardingOf(state).deedOwed);
   }
 }
 
@@ -122,12 +129,12 @@ export function reviewCharter(state: HouseholdState, objects: readonly SceneObje
   if (state.debt >= BAILIFF_DEBT) {
     charter.outcome = "evicted";
     charter.review = { term: charter.term, met: [], missed: [], grant: 0, strike: true, outcome: "evicted", reason: `Debt reached ${Math.round(state.debt)} credits; the bailiff line is ${BAILIFF_DEBT}.` };
-    noteEvent(state, notices, `The Habitat Authority has evicted the household: debt passed ${BAILIFF_DEBT} credits.`, "deny");
+    noteEvent(state, notices, `The Dockmaster has cut the house loose: debt passed ${BAILIFF_DEBT} credits.`, "deny");
     return;
   }
   if (state.debt >= FINAL_NOTICE_DEBT && !charter.warned) {
     charter.warned = true;
-    noteEvent(state, notices, `Final notice: debt is ${Math.round(state.debt)}. At ${BAILIFF_DEBT} the Authority evicts.`, "warn");
+    noteEvent(state, notices, `Final notice from the Dockmaster: debt is ${Math.round(state.debt)}. At ${BAILIFF_DEBT} the berth is repossessed.`, "warn");
   }
   if (state.debt < FINAL_NOTICE_DEBT) charter.warned = false;
   if (state.day < termEndDay(state)) return;
@@ -153,16 +160,16 @@ export function reviewCharter(state: HouseholdState, objects: readonly SceneObje
     term, met, missed, grant, strike, outcome: charter.outcome,
     ...(charter.outcome === "evicted" ? { reason: `Two terms closed with fewer than ${GOALS_TO_PASS} goals met.` } : {}),
   };
-  const head = `Term ${term + 1} review: ${met.length} of ${goals.length} goals met, grant ${grant} credits`;
-  if (charter.outcome === "evicted") noteEvent(state, notices, `${head}. Second strike — the household is evicted.`, "deny");
-  else if (charter.outcome === "kept") noteEvent(state, notices, `${head}. The charter is kept.`, "success");
-  else noteEvent(state, notices, `${head}${strike ? " — a strike" : ""}. Rent rises to ${TERMS[charter.term]!.rent}.`, strike ? "warn" : "success");
+  const head = `Lease review ${term + 1}: ${met.length} of ${goals.length} goals met, grant ${grant} credits`;
+  if (charter.outcome === "evicted") noteEvent(state, notices, `${head}. Second strike — the berth is repossessed.`, "deny");
+  else if (charter.outcome === "kept") noteEvent(state, notices, `${head}. The lease is renewed.`, "success");
+  else noteEvent(state, notices, `${head}${strike ? " — a strike" : ""}. Docking fees rise to ${TERMS[charter.term]!.rent}.`, strike ? "warn" : "success");
 }
 
-/** Total goals met across closed terms, out of twelve, and the Authority's word for it. */
+/** Total goals met across closed terms, out of twelve, and the Dockmaster's word for it. */
 export function charterGrade(charter: CharterState): { stars: number; of: number; word: string } {
   const stars = charter.stars.reduce((sum, n) => sum + n, 0);
   const of = TERMS.length * 3;
-  const word = stars >= 10 ? "Cherished" : stars >= 7 ? "Welcome" : "Tolerated";
+  const word = stars >= 10 ? "Five-star" : stars >= 7 ? "Well-reviewed" : "Tolerated";
   return { stars, of, word };
 }

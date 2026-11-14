@@ -18,8 +18,13 @@ import { householdStore } from "./store";
 import { resetAgents, resetBook } from "../agents";
 import { alignLegacyPosts, CAREER_NODE_IDS, STANDING_TRACKS } from "../careers";
 import { pairKey, BLOOM_CROPS, LIFESTYLES, type HouseholdState } from "./types";
+import { createBoarding, MAX_REVIEWS } from "../boarding/boarding";
+import { ROOM_SLOTS } from "../boarding/rooms";
+import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, SPECIES_IDS, isSpeciesId } from "../boarding/species";
 
 export const ORBIT_SAVE_KEY = "odd-orbit.household-save.v1";
+/** The most tenants a house can hold: every berth let, plus a fixture in the cupboard. */
+const MAX_TENANTS = ROOM_SLOTS + 1;
 const SAVE_LIMIT = 256 * 1024;
 const MAX_TIME = DAY_LENGTH * 1_000_000;
 /** A wall-clock stamp (ms) is far larger than simulated time; JavaScript dates top out here. */
@@ -28,9 +33,9 @@ const MAX_WALL_CLOCK = 8.64e15;
 export const ORBIT_SLOTS = ["household", "household-2", "household-3"] as const;
 /** A household's own name for its slot ("Household I"), never a raw storage key. */
 export const ORBIT_SLOT_LABEL: Record<string, string> = {
-  household: "Household I",
-  "household-2": "Household II",
-  "household-3": "Household III",
+  household: "House I",
+  "household-2": "House II",
+  "household-3": "House III",
 };
 /** Slot one keeps the original key, so a household saved by an older build still continues. */
 export function orbitSlotKey(slot: string): string {
@@ -59,6 +64,9 @@ export interface OrbitSave {
  * error, so a misspelled field cannot silently read `undefined`.
  */
 type SavedField =
+  | "admitted" | "applicant" | "asked" | "atmosphere" | "boarding" | "climate" | "deedOwed" | "departed" | "flareUntil"
+  | "gravity" | "grumbles" | "light" | "nextApplicantAt" | "noisyUntil" | "reputation" | "reviews" | "rooms" | "sealed"
+  | "settings" | "shuttered" | "slot" | "species" | "stars" | "tenantId" | "text"
   | "accounts" | "action" | "actionUntil" | "answered" | "assignedByPlayer" | "behaviors" | "bloomCrop" | "bodyPlan"
   | "broken" | "buildTool" | "calendar" | "careers" | "catalogId" | "charter" | "clock" | "company" | "completedShifts"
   | "concern" | "consolesOfflineUntil" | "credits" | "current" | "cursors" | "day" | "dayHarvest" | "dayIncome"
@@ -110,14 +118,15 @@ function validEconomy(value: unknown, now: number): boolean {
   return object(cursor) && keys(cursor, ["nextDueSeconds", "fired", "paused", "done"]) && number(cursor.nextDueSeconds, value.nowSeconds, now + DAY_LENGTH) && integer(cursor.fired) && cursor.nextDueSeconds % DAY_LENGTH === 0 && cursor.fired <= (cursor.nextDueSeconds - rule.startSeconds) / DAY_LENGTH && cursor.paused === false && cursor.done === false;
 }
 function validHousehold(h: unknown, clock: ClockSnapshot): h is HouseholdState {
-  if (!object(h) || h.seed !== WORLD_SEED || !Array.isArray(h.order) || h.order.length !== 4 || new Set(h.order).size !== 4 || h.order.some(id => !/^alien:[0-3]$/.test(id))) return false;
+  if (!object(h) || h.seed !== WORLD_SEED || !Array.isArray(h.order) || h.order.length < 1 || h.order.length > MAX_TENANTS || new Set(h.order).size !== h.order.length || h.order.some(id => typeof id !== "string" || !/^alien:\d{1,3}$/.test(id))) return false;
   if (!object(h.members) || !keys(h.members, h.order) || !number(h.credits) || !number(h.pantry, 0, PANTRY_CAP) || !number(h.debt) || !integer(h.day, Math.max(0, clock.calendar.day - 1), clock.calendar.day) || !integer(h.reliefDay, -1, h.day)) return false;
   if ((h.nextLifeEventAt !== undefined && !number(h.nextLifeEventAt, 0, MAX_TIME)) || !number(h.dayIncome) || !number(h.dayHarvest) || !validEconomy(h.economy, clock.now)) return false;
-  if (h.lastDay !== null && (!object(h.lastDay) || !integer(h.lastDay.day, 0, h.day) || !["income", "harvest", "bill"].every(key => number(h.lastDay[key])) || !integer(h.lastDay.missed, 0, 4))) return false;
+  if (h.lastDay !== null && (!object(h.lastDay) || !integer(h.lastDay.day, 0, h.day) || !["income", "harvest", "bill"].every(key => number(h.lastDay[key])) || !integer(h.lastDay.missed, 0, MAX_TENANTS))) return false;
   if (h.selectedMemberId !== null && !h.order.includes(h.selectedMemberId)) return false;
   if (h.buildTool !== null && (typeof h.buildTool !== "string" || !Object.hasOwn(FURNITURE_BY_ID, h.buildTool))) return false;
   for (const id of h.order) {
     const m = h.members[id];
+    if (m?.species !== undefined && !isSpeciesId(m.species)) return false;
     if (!object(m) || m.id !== id || !text(m.name, 80) || !JOBS.includes(m.job) || !body(m.bodyPlan) || !object(m.needs) || !keys(m.needs, NEEDS) || !NEEDS.every(need => number(m.needs[need], 0, 100))) return false;
     if (!(LIFESTYLES as readonly string[]).includes(m.lifestyle) || !number(m.stress, 0, 100) || typeof m.recovering !== "boolean" || !number(m.workToday, 0, 20) || !number(m.harvestToday, 0, 5) || !number(m.shiftProgress, 0, 20) || !integer(m.shiftDay, -1, h.day) || !integer(m.completedShifts) || !integer(m.missedShifts) || (m.concern !== null && !text(m.concern, 240))) return false;
     if (m.bloomCrop !== undefined && !(BLOOM_CROPS as readonly string[]).includes(m.bloomCrop)) return false;
@@ -141,7 +150,32 @@ function validHousehold(h: unknown, clock: ClockSnapshot): h is HouseholdState {
   if (h.story !== undefined && !validStory(h.story, clock.now)) return false;
   if (h.incident !== undefined && h.incident !== null && !validIncident(h.incident, h.order, clock.now)) return false;
   if (h.hazards !== undefined && !validHazards(h.hazards, clock.now)) return false;
+  if (h.boarding !== undefined && !validBoarding(h.boarding, h.order, clock.now)) return false;
   return integer(h.eventSeq);
+}
+
+const enumOf = (list: readonly string[]) => (value: unknown) => typeof value === "string" && list.includes(value);
+
+/** The boarding house: berths inside the grid, each let to at most one known tenant, settings from the books. */
+function validBoarding(b: unknown, order: string[], now: number): boolean {
+  if (!object(b) || !Array.isArray(b.rooms) || b.rooms.length > ROOM_SLOTS) return false;
+  const slots = new Set<number>();
+  const let_ = new Set<string>();
+  for (const room of b.rooms) {
+    if (!object(room) || !integer(room.slot, 0, ROOM_SLOTS - 1) || slots.has(room.slot) || room.id !== `room:${room.slot}` || typeof room.sealed !== "boolean" || typeof room.shuttered !== "boolean") return false;
+    slots.add(room.slot);
+    const st = room.settings;
+    if (!object(st) || !keys(st, ["atmosphere", "gravity", "climate", "light"]) || !enumOf(ATMOSPHERES)(st.atmosphere) || !enumOf(GRAVITIES)(st.gravity) || !enumOf(CLIMATES)(st.climate) || !enumOf(LIGHTS)(st.light)) return false;
+    if (room.tenantId !== null && (typeof room.tenantId !== "string" || !order.includes(room.tenantId) || let_.has(room.tenantId))) return false;
+    if (room.tenantId !== null) let_.add(room.tenantId);
+  }
+  if (!number(b.reputation, 0, 100) || !number(b.deedOwed, 0, 1_000_000) || !number(b.nextApplicantAt, 0, MAX_TIME) || !number(b.flareUntil, 0, now + 210 * 2) || !integer(b.admitted, 0, 10_000)) return false;
+  if (!object(b.grumbles) || !Object.entries(b.grumbles).every(([id, n]) => order.includes(id) && integer(n, 0, 99))) return false;
+  if (!object(b.noisyUntil) || !Object.entries(b.noisyUntil).every(([id, until]) => /^room:\d$/.test(id) && number(until, 0, now + 210 * 2))) return false;
+  if (!Array.isArray(b.departed) || b.departed.length > SPECIES_IDS.length * 4 || !b.departed.every(isSpeciesId)) return false;
+  if (!Array.isArray(b.reviews) || b.reviews.length > MAX_REVIEWS || !b.reviews.every((r: unknown) => object(r) && integer(r.day) && typeof r.tenantId === "string" && text(r.name, 80) && integer(r.stars, 1, 5) && typeof r.text === "string" && r.text.length <= 240)) return false;
+  const a = b.applicant;
+  return a === null || (object(a) && isSpeciesId(a.species) && number(a.deadline, 0, now + 210) && Array.isArray(a.asked) && a.asked.length <= 3 && a.asked.every((q: unknown) => integer(q, 0, 2)));
 }
 
 /** The charter: a term inside the four, strikes and stars inside their bounds, an outcome word. */
@@ -225,7 +259,7 @@ export function captureOrbitSave(ctx: GameContext): OrbitSave {
   })) as OrbitSave;
 }
 export function restoreOrbitSave(ctx: GameContext, save: OrbitSave): void {
-  if (!validOrbitSave(save)) throw new Error("Invalid Odd Orbit save");
+  if (!validOrbitSave(save)) throw new Error("Invalid NO VACANCY save");
   const detached = structuredClone(save);
   // A household restored without a name is named by its members until the player renames it.
   orbitProfile.name = detached.profile?.name ?? "";
@@ -241,6 +275,11 @@ export function restoreOrbitSave(ctx: GameContext, save: OrbitSave): void {
   legacy.charter ??= createCharter();
   legacy.incident ??= null;
   legacy.hazards ??= createHazards();
+  // Saves from before the boarding house: the household's four beings move into the first four rooms.
+  if (legacy.boarding === undefined) {
+    legacy.boarding = createBoarding(detached.clock.now);
+    legacy.order.forEach((id, i) => { const room = legacy.boarding!.rooms[i]; if (room !== undefined) room.tenantId = id; });
+  }
   for (const id of legacy.order) {
     const member = legacy.members[id];
     if (member !== undefined && member.traits === undefined) member.traits = rollTraits(`${legacy.seed}:${id.slice(id.indexOf(":") + 1)}`);

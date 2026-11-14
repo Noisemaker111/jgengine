@@ -20,7 +20,7 @@ export const NIGHT_DIM = "#c9b6ce";
 export const WARN = "#c2402f";
 export const FULL = { fraction: 1 } as const;
 
-/** The household's enamel colours, sampled from the dusk habitat. */
+/** The house's enamel colours, sampled from the room lamps against the hull. */
 export const ENAMEL = {
   cream: "#fff0d6",
   pink: "#f6a6cf",
@@ -38,7 +38,7 @@ export const MOOD_COLORS: Record<string, string> = { radiant: "#2f9a62", content
 /** The game icon for each need, used on magnets, rings and the furnishing catalogue. */
 export const NEED_ICON: Record<NeedId, GameIconName> = { hunger: "apple", energy: "feather", social: "heart", fun: "star" };
 
-/** Odd Orbit's one Rune theme: dusk-lilac habitat, pastel enamel, Comfortaa over Quicksand. */
+/** NO VACANCY's one Rune theme: pastel enamel key-tags and paper over a dark station, Comfortaa over Quicksand. */
 export const orbitTheme = {
   colors: { ink: INK, rim: RIM, paper: "#fff6e4", night: "#2a1f3d", ...ENAMEL, text: CREAM_TEXT, dim: DIM, warn: WARN },
   text: {
@@ -100,19 +100,32 @@ export function hslHex(h: number, s: number, l: number): string {
 }
 export const planColor = (plan: AlienBodyPlan, lightness = 60): string => hslHex(plan.hue, 62, lightness);
 
-/** A being's portrait, drawn from its body plan: coloured disc, body, eyes and a smile. */
+/** Each tenant silhouette as a 108-unit portrait: body path, where the eyes sit and any extra trim. */
+const PORTRAIT: Record<AlienBodyPlan["shape"], { body: string; eyeY: number; eyeGap: number; trim?: string }> = {
+  blob: { body: "M14 58q-6-18 8-28 4-16 14-10 10-6 16 6 14 8 10 32Z", eyeY: 38, eyeGap: 9, trim: "M26 22v-9m10 5v-12m10 7v-9" },
+  mist: { body: "M18 54q-10-2-8-12 0-10 12-10 2-14 16-12 12-4 18 8 14 2 12 14 2 12-12 12Z", eyeY: 40, eyeGap: 9 },
+  insectoid: { body: "M20 44q0-22 16-22t16 22q0 14-16 14T20 44Z", eyeY: 38, eyeGap: 7, trim: "M28 24 20 10m24 14 8-14M20 50l-9 6m41-6 9 6" },
+  twin: { body: "M12 36q0-16 12-16t12 16q0 4-2 6h4q-2-2-2-6 0-16 12-16t12 16q0 8-6 12 6 6 4 12H18q-2-6 4-12-10-4-10-12Z", eyeY: 33, eyeGap: 24 },
+  rock: { body: "M18 60 14 40l10-12 6-14 14 2 8 12 6 14-4 18Z", eyeY: 34, eyeGap: 8, trim: "M22 46h20l-6 6" },
+  robot: { body: "M20 24h32v24H20Zm4 26h24v8H24Z", eyeY: 36, eyeGap: 10, trim: "M44 24v-12" },
+  balloon: { body: "M36 10a24 22 0 1 1 0 44 24 22 0 1 1 0-44Zm-8 46-2 8m8-8v8m8-8 2 8", eyeY: 30, eyeGap: 10, trim: "M14 30h44M16 40h40" },
+  tall: { body: "M24 57V26q0-18 12-18t12 18v31Z", eyeY: 31, eyeGap: 8 },
+  round: { body: "M17 40q0-24 19-24t19 24q0 19-19 19T17 40Z", eyeY: 36, eyeGap: 8 },
+};
+
+/** A tenant's portrait, drawn from its body plan: coloured disc, silhouette, eyes and a smile. */
 export function Swatch({ plan, size = 40 }: { plan: AlienBodyPlan; size?: number }) {
-  const tall = plan.shape === "tall", blob = plan.shape === "blob";
-  const eyes = Math.max(1, Math.min(4, plan.eyeCount));
-  const body = tall ? "M24 57V26q0-18 12-18t12 18v31Z" : blob ? "M14 49q-5-16 10-21 0-16 13-10 17-5 19 15 13 7 1 23H20Z" : "M17 40q0-24 19-24t19 24q0 19-19 19T17 40Z";
-  const at = (i: number) => 36 + (i - (eyes - 1) / 2) * 8;
-  const whites = Array.from({ length: eyes }, (_, i) => `<ellipse cx="${at(i)}" cy="${tall ? 31 : 36}" rx="4" ry="5"/>`).join("");
-  const pupils = Array.from({ length: eyes }, (_, i) => `<circle cx="${at(i) + 1}" cy="${tall ? 32 : 37}" r="2"/>`).join("");
-  const layer = (art: string, color: string) => <RuneView pin={[0, 0, null, null]} width={size} height={size}><RuneGlyph size={size} color={color} artwork={`<g transform="scale(0.3333)">${art}</g>`} /></RuneView>;
-  return <RuneView width={size} height={size} radius={size / 2} fill={planColor(plan, 20)} border={{ width: 2, color: planColor(plan, 62) }} label={`${plan.shape} being`}>
-    {layer(`<path d="${body}" fill="currentColor"/><path d="m21 53-7 8m37-8 7 8m-31-2-3 6m16-6 3 6" fill="none" stroke="currentColor" stroke-width="3"/>`, planColor(plan, 67))}
-    {layer(`<g fill="currentColor">${whites}</g><circle cx="19" cy="18" r="3" fill="currentColor"/>`, "#fff5da")}
-    {layer(`<g fill="currentColor">${pupils}</g><path d="M30 47q6 5 12 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`, "#241634")}
+  const art = PORTRAIT[plan.shape] ?? PORTRAIT.round;
+  const eyes = plan.shape === "twin" ? 2 : Math.max(1, Math.min(4, plan.eyeCount));
+  const at = (i: number) => 36 + (i - (eyes - 1) / 2) * art.eyeGap;
+  const whites = Array.from({ length: eyes }, (_, i) => `<ellipse cx="${at(i)}" cy="${art.eyeY}" rx="4" ry="5"/>`).join("");
+  const pupils = Array.from({ length: eyes }, (_, i) => `<circle cx="${at(i) + 1}" cy="${art.eyeY + 1}" r="2"/>`).join("");
+  const layer = (svg: string, color: string) => <RuneView pin={[0, 0, null, null]} width={size} height={size}><RuneGlyph size={size} color={color} artwork={`<g transform="scale(0.3333)">${svg}</g>`} /></RuneView>;
+  return <RuneView width={size} height={size} radius={size / 2} fill={planColor(plan, 20)} border={{ width: 2, color: planColor(plan, 62) }} label={`${plan.shape} tenant`}>
+    {layer(`<path d="${art.body}" fill="currentColor"/>`, planColor(plan, 67))}
+    {art.trim ? layer(`<path d="${art.trim}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`, planColor(plan, 45)) : null}
+    {layer(`<g fill="currentColor">${whites}</g>`, "#fff5da")}
+    {layer(`<g fill="currentColor">${pupils}</g><path d="M30 ${art.eyeY + 11}q6 5 12 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`, "#241634")}
   </RuneView>;
 }
 

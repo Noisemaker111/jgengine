@@ -17,11 +17,13 @@ import { charterGrade, charterOf, GOALS_TO_PASS, STRIKES_TO_EVICT, TERM_DAYS, TE
 import { rentFor } from "../sim/economy";
 import { ANSWER_SECONDS, incidentDef } from "../sim/events";
 import { NEEDS } from "../needs/needs";
+import { roomOf, tenantComfort } from "../boarding/boarding";
+import { comfortTint } from "./rooms";
 import type { Live } from "@jgengine/core/ui/liveValue";
 import { ENAMEL, type EnamelTone, Fine, Heading, Icon, INK, Meter, NEED_COLORS, Paper, Plate, RIM, Row, Swatch, Tag, Text, Veil, WARN, creditsText, planColor } from "./kit";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
-const PHASE_WORD: Record<string, string> = { torpor: "Torpor", yield: "Yield hours", bloom: "Bloom hours", bond: "Bonding hours" };
+const PHASE_WORD: Record<string, string> = { torpor: "Lights out", yield: "Gig hours", bloom: "Hydro hours", bond: "Lounge hours" };
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /** The day's rhythm on a 24-hour dial: torpor, Yield, Bloom and bonding hours. */
@@ -81,19 +83,20 @@ function Magnet({ tone, icon, value, unit, label }: { tone: EnamelTone; icon: Ga
 export function FridgeMagnets({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const objects = useSceneObjects();
-  const door = useStore(householdStore, (s) => { const due = nextBill(s, objects); return { pantry: s.pantry, debt: s.debt, bill: Math.round(due), short: s.credits < due }; });
+  const door = useStore(householdStore, (s) => { const due = nextBill(s, objects); return { pantry: s.pantry, debt: s.debt, bill: Math.round(due), short: s.credits < due, reputation: Math.round(s.boarding?.reputation ?? 0) }; });
   return <RuneView gap={6} items="end" label="Household resources">
     <RuneView layout={compact ? "stack" : "row"} gap={5} items="end">
       <Magnet tone={door.short ? "coral" : "butter"} icon="coin" value={bind(() => creditsText(Math.floor(householdStore.read(ctx).credits)))} unit="credits" label="Credits" />
       <Magnet tone={door.pantry < 4 ? "coral" : "mint"} icon="bread" value={String(door.pantry)} unit="rations" label="Rations" />
-      <Magnet tone={door.short ? "coral" : "cream"} icon="hourglass" value={String(door.bill)} unit="midnight bill" label="Due at midnight" />
+      <Magnet tone={door.short ? "coral" : "cream"} icon="hourglass" value={String(door.bill)} unit="docking bill" label="Due at midnight" />
+      <Magnet tone={door.reputation < 40 ? "coral" : "lilac"} icon="star" value={String(door.reputation)} unit="rep" label="Station reputation" />
       {door.debt > 0 ? <Magnet tone="coral" icon="debuffArrow" value={creditsText(door.debt)} unit="debt" label="Debt" /> : null}
     </RuneView>
     {compact ? null : <Paper tint="#fff3b8" padding={[8, 12, 8, 12]} maxWidth={330}><Text size={14} text={bind(() => dayGoal(householdStore.read(ctx), ctx.scene.object.list()).replace(/^Next:\s*/, ""))} /></Paper>}
   </RuneView>;
 }
 
-/** The Authority's charter pinned under the fridge: the term, its three goals and the strikes so far. */
+/** The Dockmaster's lease pinned under the magnets: the term, its three goals and the strikes so far. */
 export function CharterNote({ compact }: { compact: boolean }) {
   const objects = useSceneObjects();
   const note = useStore(householdStore, (household) => {
@@ -106,21 +109,21 @@ export function CharterNote({ compact }: { compact: boolean }) {
     };
   });
   if (note.outcome !== "active") return <Paper tint="#d9f2e4" padding={[8, 12, 8, 12]} gap={2} role="status">
-    <Row gap={6}><Icon name="flag" size={15} /><Text weight={700}>{note.outcome === "kept" ? `Charter kept · ${note.grade.word}` : "Evicted"}</Text></Row>
-    <Fine>{`${note.grade.stars} of ${note.grade.of} goals across the charter`}</Fine>
+    <Row gap={6}><Icon name="flag" size={15} /><Text weight={700}>{note.outcome === "kept" ? `Lease renewed · ${note.grade.word}` : "Berth repossessed"}</Text></Row>
+    <Fine>{`${note.grade.stars} of ${note.grade.of} goals across the lease`}</Fine>
   </Paper>;
   const term = TERMS[note.term]!;
-  return <Paper tint="#e8f0ff" padding={[8, 12, 9, 12]} gap={3} width={compact ? 186 : 300} label="Habitat charter">
-    <RuneView layout={compact ? "stack" : "row"} gap={compact ? 3 : 6} justify="between"><Row gap={6}><Icon name="scroll" size={15} /><Text weight={700} size={14}>{`Term ${note.term + 1}/${TERMS.length} · ${term.name}`}</Text></Row>
+  return <Paper tint="#e8f0ff" padding={[8, 12, 9, 12]} gap={3} width={compact ? 186 : 300} label="Station lease">
+    <RuneView layout={compact ? "stack" : "row"} gap={compact ? 3 : 6} justify="between"><Row gap={6}><Icon name="scroll" size={15} /><Text weight={700} size={14}>{`Lease ${note.term + 1}/${TERMS.length} · ${term.name}`}</Text></Row>
       <Row gap={3} label={`${note.strikes} of ${STRIKES_TO_EVICT} strikes`}>{Array.from({ length: STRIKES_TO_EVICT }, (_, i) => <RuneView key={i} width={9} height={9} radius={5} border={{ width: 1.5, color: RIM }} fill={i < note.strikes ? "#ff6b7d" : "#ffffff"} />)}</Row></RuneView>
-    <Fine size={12}>{`Day ${Math.min(TERM_DAYS, note.dayOfTerm)} of ${TERM_DAYS} · rent ${note.rent} a night · meet ${GOALS_TO_PASS} of 3`}</Fine>
+    <Fine size={12}>{`Day ${Math.min(TERM_DAYS, note.dayOfTerm)} of ${TERM_DAYS} · docking ${note.rent} a night · meet ${GOALS_TO_PASS} of 3`}</Fine>
     {compact ? null : note.goals.map((goal) => <Row key={goal.id} gap={6}><Icon name={goal.met ? "check" : "hourglass"} size={13} color={goal.met ? "#2f9a62" : INK} /><Text size={13} grow={1}>{goal.label}</Text><Text size={13} weight={700}>{goal.text}</Text></Row>)}
   </Paper>;
 }
 
-const INCIDENT_ICON: Record<string, GameIconName> = { trader: "coin", overtime: "hourglass", dust: "leaf", brownout: "lightning", spoilage: "poison", traveller: "hand", quarrel: "fist", fever: "potionRed", meteor: "fire", hullLeak: "frost" };
+const INCIDENT_ICON: Record<string, GameIconName> = { trader: "coin", overtime: "hourglass", dust: "leaf", brownout: "lightning", spoilage: "poison", traveller: "hand", quarrel: "fist", fever: "potionRed", meteor: "fire", hullLeak: "frost", flare: "fire", eggs: "gem", molt: "skull" };
 
-/** A transmission slip from the Authority's relay: what happened, the household's answers and the fuse. */
+/** A call at the front desk: what happened, the house's answers and the fuse. */
 export function TransmissionSlip({ width }: { width: number }) {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -134,9 +137,9 @@ export function TransmissionSlip({ width }: { width: number }) {
   });
   if (slip === null) return null;
   const left = () => Math.max(0, slip.deadline - ctx.time.now());
-  return <Paper width={width} padding={[14, 16, 16, 16]} gap={8} role="alertdialog" label={`Transmission: ${slip.title}`}>
+  return <Paper width={width} padding={[14, 16, 16, 16]} gap={8} role="alertdialog" label={`Front desk: ${slip.title}`}>
     <Row gap={10}><RuneView width={36} height={36} radius={18} fill={ENAMEL.coral} border={{ width: 2, color: RIM }} justify="center" items="center"><Icon name={INCIDENT_ICON[slip.id] ?? "flag"} size={20} /></RuneView>
-      <RuneView gap={0} grow={1}><Tag>INCOMING TRANSMISSION</Tag><Heading size={19}>{slip.title}</Heading></RuneView></Row>
+      <RuneView gap={0} grow={1}><Tag>FRONT DESK</Tag><Heading size={19}>{slip.title}</Heading></RuneView></Row>
     <Text size={14}>{slip.text}</Text>
     <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={6} label="Answers">
       {slip.choices.map((choice) => { const fallback = choice.id === slip.fallback; return <Plate key={choice.id} tone={fallback ? "cream" : "mint"} disabled={choice.blocked !== null} layout="stack" gap={1} items="start" onPress={() => commands.run("incident.answer", { choice: choice.id })}>
@@ -149,7 +152,7 @@ export function TransmissionSlip({ width }: { width: number }) {
   </Paper>;
 }
 
-/** The Authority's letter at the close of a term, or the notice that ends the charter. */
+/** The Dockmaster's letter at the close of a lease term, or the notice that ends it. */
 export function TermLetter() {
   const { commands } = useGame();
   const letter = useStore(householdStore, (household) => {
@@ -160,20 +163,20 @@ export function TermLetter() {
   if (letter === null) return null;
   const { review, grade } = letter;
   const evicted = review.outcome === "evicted", kept = review.outcome === "kept";
-  const title = evicted ? "Notice of eviction" : kept ? "Charter kept" : `Term ${review.term + 1} review`;
+  const title = evicted ? "Berth repossessed" : kept ? "Lease renewed" : `Lease review ${review.term + 1}`;
   return <Veil label={title}>
-    <Tag>HABITAT AUTHORITY · RING FOUR</Tag>
+    <Tag>OFFICE OF THE DOCKMASTER · SPOKE SEVEN</Tag>
     <Heading size={26}>{title}</Heading>
     {review.reason !== undefined ? <Text color={WARN}>{review.reason}</Text> : null}
     {review.met.map((label) => <Row key={label} gap={6}><Icon name="check" size={14} color="#2f9a62" /><Text>{label}</Text></Row>)}
     {review.missed.map((label) => <Row key={label} gap={6}><Icon name="cross" size={14} color={WARN} /><Text>{label}</Text></Row>)}
-    {evicted ? null : <Text>{`Grant paid: ${review.grant} credits.${review.strike ? " Fewer than two goals were met — the household carries a strike." : ""}`}</Text>}
-    {!evicted && !kept ? <Text>{`Next term: ${TERMS[review.term + 1]!.name}. Rent rises to ${TERMS[review.term + 1]!.rent} a night. Strikes: ${letter.strikes} of ${STRIKES_TO_EVICT}.`}</Text> : null}
-    {kept ? <Text>{`The household is ${grade.word} on Ring Four: ${grade.stars} of ${grade.of} goals met across four terms. The habitat is yours to keep living in.`}</Text> : null}
-    {evicted ? <Text>{`The household met ${grade.stars} of ${grade.of} goals before the Authority closed the door. A new household can move in from the menu.`}</Text> : null}
+    {evicted ? null : <Text>{`Grant paid: ${review.grant} credits.${review.strike ? " Fewer than two goals were met — the house carries a strike." : ""}`}</Text>}
+    {!evicted && !kept ? <Text>{`Next term: ${TERMS[review.term + 1]!.name}. Docking rises to ${TERMS[review.term + 1]!.rent} a night. Strikes: ${letter.strikes} of ${STRIKES_TO_EVICT}.`}</Text> : null}
+    {kept ? <Text>{`NO VACANCY is ${grade.word} on Spoke Seven: ${grade.stars} of ${grade.of} goals met across four terms. The lease is renewed; buy the section's deed from the Rooms plan and the docking fees stop for good.`}</Text> : null}
+    {evicted ? <Text>{`The house met ${grade.stars} of ${grade.of} goals before the Dockmaster unbolted it. A new house can open from the menu.`}</Text> : null}
     {evicted
       ? <Plate tone="coral" onPress={() => commands.run("orbit.pause", {})}><Icon name="menu" size={16} /><Text weight={700}>Back to the menu</Text></Plate>
-      : <Plate tone="mint" onPress={() => commands.run("charter.dismiss", {})}><Icon name="check" size={16} /><Text weight={700}>{kept ? "Keep living here" : "Carry on"}</Text></Plate>}
+      : <Plate tone="mint" onPress={() => commands.run("charter.dismiss", {})}><Icon name="check" size={16} /><Text weight={700}>{kept ? "Keep the lights on" : "Carry on"}</Text></Plate>}
   </Veil>;
 }
 
@@ -193,11 +196,11 @@ function rosterSource(ctx: GameContext): RuneSource<string> {
   };
 }
 
-/** One enamel magnet per being, in their own colour, with their four needs and what they are doing. */
+/** One key-tag per tenant, in their own colour, with their four needs, their comfort and what they are doing. */
 export function RosterPanel({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const source = useMemo(() => rosterSource(ctx), [ctx]);
-  return <RuneView gap={8} label="Household"><RuneFor source={source} keyBy={(id) => id}>{(id) => <MemberMagnet id={id} compact={compact} />}</RuneFor></RuneView>;
+  return <RuneView gap={8} label="Tenants"><RuneFor source={source} keyBy={(id) => id}>{(id) => <MemberMagnet id={id} compact={compact} />}</RuneFor></RuneView>;
 }
 
 function MemberMagnet({ id, compact }: { id: string; compact: boolean }) {
@@ -212,7 +215,11 @@ function MemberMagnet({ id, compact }: { id: string; compact: boolean }) {
       border={bind(() => ({ width: selected() ? 3 : 2, color: selected() ? "#ffd98a" : RIM }))} onPress={() => commands.run("member.select", { id: selected() ? null : id })}>
       <Swatch plan={fixed.plan} size={compact ? 32 : 40} />
       <RuneView gap={2} grow={1} shrink>
-        <Row gap={4} justify="between"><Text weight={700} size={compact ? 12 : 14} shrink>{fixed.name}</Text>
+        <Row gap={4} justify="between"><Row gap={4} shrink><Text weight={700} size={compact ? 12 : 14} shrink>{fixed.name}</Text>
+          <RuneView width={22} height={14} radius={7} border={{ width: 1.5, color: RIM }} justify="center" items="center" label={`${fixed.name} comfort`}
+            fill={bind(() => { const s = householdStore.read(ctx); return roomOf(s, id) === null ? "#d8d0e6" : comfortTint(tenantComfort(s, id, ctx.time.now()).score); })}>
+            <Text size={9} weight={700} color={INK} text={bind(() => { const s = householdStore.read(ctx); return roomOf(s, id) === null ? "—" : String(Math.round(tenantComfort(s, id, ctx.time.now()).score)); })} />
+          </RuneView></Row>
           <RuneView hidden={bind(() => { const m = member(); return m === undefined || (!m.recovering && Math.min(...Object.values(m.needs)) >= 25); })}><Icon name="heart" size={13} color={WARN} /></RuneView></Row>
         <Fine size={compact ? 11 : 12} color="#4a2f52" text={bind(() => companyName(householdStore.read(ctx), id))} />
         <Row gap={3}>{NEEDS.map((need) => <Meter key={need} label={need} width={compact ? 26 : 36} height={5} value={() => member()?.needs[need] ?? 0} color={bind(() => (member()?.needs[need] ?? 0) < 30 ? "#ff6b7d" : NEED_COLORS[need])} />)}</Row>

@@ -16,14 +16,16 @@ function boot(credits = 1000, debt = 40) {
   const state = householdStore.read(ctx);
   state.credits = credits;
   state.debt = debt;
-  return { ctx, state, objects: ctx.scene.object.list() };
+  // Bills only: nobody lives in the rooms, so rent night adds nothing and each module still draws its fee.
+  for (const room of state.boarding!.rooms) room.tenantId = null;
+  return { ctx, state, objects: ctx.scene.object.list(), rooms: state.boarding!.rooms };
 }
 
 test("three overdue bills repay only the remaining debt", () => {
   for (const debt of [40, 90]) {
-    const { ctx, state, objects } = boot(1000, debt);
+    const { ctx, state, objects, rooms } = boot(1000, debt);
     settleHouseholdDay(state, objects, DAY_LENGTH * 3, ctx.game.notices);
-    expect(state.credits).toBe(1000 - dailyUpkeep(objects) * 3 - debt);
+    expect(state.credits).toBe(1000 - dailyUpkeep(objects, TERM_RENT[0], rooms) * 3 - debt);
     expect(state.debt).toBe(0);
     expect(state.economy.cursors.upkeep!.fired).toBe(3);
     ctx.game.save?.dispose();
@@ -31,9 +33,9 @@ test("three overdue bills repay only the remaining debt", () => {
 });
 
 test("the actual unattended simulation preserves repayment through save and resume", () => {
-  const { ctx, objects } = boot();
+  const { ctx, objects, rooms } = boot();
   simulateHousehold(ctx, ctx.time.advance(DAY_LENGTH * 3 - ctx.time.now()));
-  const expected = 1000 - dailyUpkeep(objects) * 3 - 40;
+  const expected = 1000 - dailyUpkeep(objects, TERM_RENT[0], rooms) * 3 - 40;
   expect(householdStore.read(ctx).credits).toBe(expected);
   expect(householdStore.read(ctx).debt).toBe(0);
   const saved = captureOrbitSave(ctx);
@@ -47,7 +49,7 @@ test("the actual unattended simulation preserves repayment through save and resu
 });
 
 test("a bounded settlement persists its unpaid cycles and finishes them after reload", () => {
-  const { ctx, state, objects } = boot(10000, 0);
+  const { ctx, state, objects, rooms } = boot(10000, 0);
   ctx.time.advance(DAY_LENGTH * 10 - ctx.time.now());
   settleHouseholdDay(state, objects, ctx.time.now(), ctx.game.notices);
   expect(state.economy.cursors.upkeep!.fired).toBe(7);
@@ -59,8 +61,8 @@ test("a bounded settlement persists its unpaid cycles and finishes them after re
   simulateHousehold(resumed, resumed.time.advance(0.25));
   const restored = householdStore.read(resumed);
   expect(restored.economy.cursors.upkeep!.fired).toBe(10);
-  expect(restored.credits).toBe(10000 - dailyUpkeep(objects) * 10);
-  expect(restored.lastDay!.bill).toBe(dailyUpkeep(objects) * 10);
+  expect(restored.credits).toBe(10000 - dailyUpkeep(objects, TERM_RENT[0], rooms) * 10);
+  expect(restored.lastDay!.bill).toBe(dailyUpkeep(objects, TERM_RENT[0], rooms) * 10);
   const settledCredits = restored.credits;
   simulateHousehold(resumed, resumed.time.advance(0.25));
   expect(householdStore.read(resumed).credits).toBe(settledCredits);
@@ -68,7 +70,7 @@ test("a bounded settlement persists its unpaid cycles and finishes them after re
 });
 
 test("a large unattended gap charges all ten bills without replaying paid work", () => {
-  const { ctx, objects } = boot(10000, 0);
+  const { ctx, objects, rooms } = boot(10000, 0);
   simulateHousehold(ctx, ctx.time.advance(DAY_LENGTH * 10 - ctx.time.now()));
   expect(householdStore.read(ctx).economy.cursors.upkeep!.fired).toBe(10);
   // The first settlement catches up seven bills at term one's rent and closes that term; the last
@@ -76,18 +78,18 @@ test("a large unattended gap charges all ten bills without replaying paid work",
   const charter = householdStore.read(ctx).charter!;
   expect(charter.term).toBe(2);
   const grants = GRANT_PER_GOAL * (charter.stars[0]! + charter.stars[1]!);
-  expect(householdStore.read(ctx).credits).toBe(10000 - dailyUpkeep(objects) * 7 - dailyUpkeep(objects, TERM_RENT[1]) * 3 + grants);
+  expect(householdStore.read(ctx).credits).toBe(10000 - dailyUpkeep(objects, TERM_RENT[0], rooms) * 7 - dailyUpkeep(objects, TERM_RENT[1], rooms) * 3 + grants);
   expect(householdStore.read(ctx).dayIncome).toBe(0);
   ctx.game.save?.dispose();
 });
 
 test("each settlement stays bounded even when hundreds of bills are overdue", () => {
-  const { ctx, state, objects } = boot(100000, 0);
+  const { ctx, state, objects, rooms } = boot(100000, 0);
   settleHouseholdDay(state, objects, DAY_LENGTH * 500, ctx.game.notices);
   expect(state.economy.cursors.upkeep!.fired).toBe(7);
   settleHouseholdDay(state, objects, DAY_LENGTH * 500, ctx.game.notices);
   expect(state.economy.cursors.upkeep!.fired).toBe(14);
   expect(state.economy.cursors.upkeep!.nextDueSeconds).toBe(DAY_LENGTH * 15);
-  expect(state.credits).toBe(100000 - dailyUpkeep(objects) * 14);
+  expect(state.credits).toBe(100000 - dailyUpkeep(objects, TERM_RENT[0], rooms) * 14);
   ctx.game.save?.dispose();
 });

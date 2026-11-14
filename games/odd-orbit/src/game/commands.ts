@@ -20,6 +20,13 @@ import { hasRoom, releaseMember, startConversation } from "./sim/simulate";
 import { answerIncident, HULL_PATCH_COST, repairCost, repairObject } from "./sim/events";
 import { charterOf } from "./sim/charter";
 import type { BloomCrop, HouseholdState, Lifestyle, MemberState } from "./session/types";
+import {
+  acceptApplicant, askApplicant, boardingOf, buyModule, moveTenant, payDeed, rejectApplicant, roomBySlot, sealRoom,
+  setRoomSetting, shutterRoom, tuneRoom,
+} from "./boarding/boarding";
+import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, SPECIES } from "./boarding/species";
+import type { RoomFactor } from "./boarding/rooms";
+import { spawnTenantBody } from "./sim/setup";
 
 export interface PointerInput {
   point: { x: number; y: number; z: number };
@@ -148,7 +155,7 @@ export function registerCommands(ctx: GameContext): void {
 
 type ShiftKind = "work" | "tend";
 
-const SHIFT_STATION: Record<ShiftKind, string> = { work: "Yield Console", tend: "Bloom Planter" };
+const SHIFT_STATION: Record<ShiftKind, string> = { work: "Gig Terminal", tend: "Hydro Tray" };
 
 function shiftRole(kind: ShiftKind): FurnitureRole {
   return kind === "work" ? "work" : "fun";
@@ -167,7 +174,7 @@ function freeForShift(ctx: GameContext, state: HouseholdState, member: MemberSta
 /** Why a bonded partner cannot take this shift yet, or null when they can. */
 function joinBlocker(state: HouseholdState, partner: MemberState, kind: ShiftKind, now: number): string | null {
   const wanted: Lifestyle = kind === "work" ? "yield" : "bloom";
-  if (partner.lifestyle !== wanted) return `${partner.name} keeps ${wanted === "yield" ? "Bloom" : "Yield"} hours`;
+  if (partner.lifestyle !== wanted) return `${partner.name} keeps ${wanted === "yield" ? "hydro" : "gig"} hours`;
   const station = kind === "work" ? "yield" : "bloom";
   if (!coverageOf(careerView(state), partner, station).ok) return `${partner.name} holds the ${careerOf(partner).label} post and cannot cover the ${STATION_LABEL[station]} yet`;
   if (!shiftIsOpen(partner, now)) return `${partner.name}'s ${scheduleLabel(partner)} window is closed`;
@@ -227,8 +234,8 @@ function orderShift(ctx: GameContext, state: HouseholdState, member: MemberState
       return false;
     }
     sendToStation(partner, kind, mate, now);
-    if (started && kind === "work") noteEvent(state, ctx.game.notices, `${member.name} started a Yield shift.`, "info");
-    noteEvent(state, ctx.game.notices, `${member.name} and ${partner.name} stay together: two ${noun === "Bloom Planter" ? "planters" : "consoles"}, one shift.`, "info");
+    if (started && kind === "work") noteEvent(state, ctx.game.notices, `${member.name} started a gig shift.`, "info");
+    noteEvent(state, ctx.game.notices, `${member.name} and ${partner.name} stay together: two ${noun === "Hydro Tray" ? "trays" : "terminals"}, one shift.`, "info");
     return true;
   }
   const stationKind = kind === "work" ? "yield" : "bloom";
@@ -237,7 +244,7 @@ function orderShift(ctx: GameContext, state: HouseholdState, member: MemberState
     refuseSplit(ctx, state, member, coverage.reason);
     return false;
   }
-  if (sendToStation(member, kind, station, now) && kind === "work") noteEvent(state, ctx.game.notices, `${member.name} started a Yield shift.`, "info");
+  if (sendToStation(member, kind, station, now) && kind === "work") noteEvent(state, ctx.game.notices, `${member.name} started a gig shift.`, "info");
   return true;
 }
 
@@ -353,9 +360,9 @@ function registerHouseholdCommands(ctx: GameContext): void {
       if (!stationCovers(previous, lifestyle)) {
         const next = postForLifestyle(lifestyle);
         member.job = next.id;
-        noteEvent(state, gameCtx.game.notices, `${member.name} moved to the ${next.label} post to keep ${lifestyle === "yield" ? "Yield" : "Bloom"} hours. The ladder starts again at its first rung.`, "info");
+        noteEvent(state, gameCtx.game.notices, `${member.name} moved to the ${next.label} post to keep ${lifestyle === "yield" ? "gig" : "hydro"} hours. The ladder starts again at its first rung.`, "info");
       } else {
-        noteEvent(state, gameCtx.game.notices, `${member.name} chose ${lifestyle === "yield" ? "Yield career" : "Bloom keeping"}. The daily paid limit stays in place.`, "info");
+        noteEvent(state, gameCtx.game.notices, `${member.name} chose ${lifestyle === "yield" ? "gig shifts" : "hydro shifts"}. The daily paid limit stays in place.`, "info");
       }
       householdStore.write(gameCtx, { ...state, members: { ...state.members } });
       checkpoint(gameCtx);
@@ -408,7 +415,7 @@ function registerHouseholdCommands(ctx: GameContext): void {
       const station = career.station === "either" ? member.lifestyle : career.station;
       const pay = stationPay(state, member, station);
       if (result.ok) {
-        noteEvent(state, gameCtx.game.notices, `${member.name} reached the ${result.reason} rung: pay x${pay.factor.toFixed(2)} at ${STATION_NAME[station]}${pay.rations > 0 ? ` and +${pay.rations} ration${pay.rations === 1 ? "" : "s"} on a Bloom harvest` : ""}.`, "success");
+        noteEvent(state, gameCtx.game.notices, `${member.name} reached the ${result.reason} rung: pay x${pay.factor.toFixed(2)} at ${STATION_NAME[station]}${pay.rations > 0 ? ` and +${pay.rations} ration${pay.rations === 1 ? "" : "s"} on a hydro harvest` : ""}.`, "success");
         gameCtx.game.audio.play("bond");
       } else {
         member.concern = result.reason;
@@ -496,7 +503,7 @@ function registerHouseholdCommands(ctx: GameContext): void {
       if (state.credits < RATION_BUNDLE.cost || state.pantry + RATION_BUNDLE.quantity > PANTRY_CAP) return;
       state.credits = creditAmount(state.credits - RATION_BUNDLE.cost);
       state.pantry += RATION_BUNDLE.quantity;
-      noteEvent(state, gameCtx.game.notices, "Bought six ration crystals for 36 credits.", "success");
+      noteEvent(state, gameCtx.game.notices, "Bought six rations for the galley: 36 credits.", "success");
       gameCtx.game.audio.play("purchase");
       householdStore.write(gameCtx, { ...state });
       checkpoint(gameCtx);
@@ -510,7 +517,7 @@ function registerHouseholdCommands(ctx: GameContext): void {
       state.pantry = Math.min(PANTRY_CAP, state.pantry + RELIEF.quantity);
       state.debt = creditAmount(state.debt + RELIEF.debt);
       state.reliefDay = state.day;
-      noteEvent(state, gameCtx.game.notices, "Emergency ration signal accepted: four crystals, 40 credits owed. Earn or harvest to recover.", "info");
+      noteEvent(state, gameCtx.game.notices, "The station food bank sent four rations: 40 credits owed. Earn or harvest to recover.", "info");
       gameCtx.game.audio.play("relief");
       householdStore.write(gameCtx, { ...state });
       checkpoint(gameCtx);
@@ -549,7 +556,7 @@ function registerHouseholdCommands(ctx: GameContext): void {
       if (state.hazards?.hullLeak !== true || state.credits < HULL_PATCH_COST) return;
       state.credits = creditAmount(state.credits - HULL_PATCH_COST);
       state.hazards = { ...state.hazards, hullLeak: false };
-      noteEvent(state, gameCtx.game.notices, `Patched the torpor wing for ${HULL_PATCH_COST} credits.`, "success");
+      noteEvent(state, gameCtx.game.notices, `Patched the nap-pod seam for ${HULL_PATCH_COST} credits.`, "success");
       gameCtx.game.audio.play("purchase");
       householdStore.write(gameCtx, { ...state });
       checkpoint(gameCtx);
@@ -564,5 +571,91 @@ function registerHouseholdCommands(ctx: GameContext): void {
       checkpoint(gameCtx);
     },
   });
+  registerBoardingCommands(ctx);
 }
 
+const FACTOR_VALUES: Record<RoomFactor, readonly string[]> = { atmosphere: ATMOSPHERES, gravity: GRAVITIES, climate: CLIMATES, light: LIGHTS };
+
+/** The landlord's verbs: retune, seal, shutter, move, dock a module, open the airlock, pay the deed. */
+function registerBoardingCommands(ctx: GameContext): void {
+  /** Run one house edit; a refusal goes to the notice feed instead of the bin. */
+  const edit = (gameCtx: GameContext, run: (state: HouseholdState) => string | null, done: string | ((state: HouseholdState) => string)) => {
+    if (gamePhase(gameCtx) !== "playing") return;
+    const state = householdStore.read(gameCtx);
+    const refused = run(state);
+    if (refused !== null) { gameCtx.game.notices.push({ text: refused, tone: "deny" }); return; }
+    noteEvent(state, gameCtx.game.notices, typeof done === "string" ? done : done(state), "success");
+    gameCtx.game.audio.play("purchase");
+    householdStore.write(gameCtx, { ...state, members: { ...state.members }, boarding: { ...boardingOf(state) } });
+    checkpoint(gameCtx);
+  };
+  ctx.game.commands.define<{ slot: number; factor: RoomFactor; value: string }>("room.set", {
+    apply(gameCtx, { slot, factor, value }) {
+      if (!Object.hasOwn(FACTOR_VALUES, factor) || !FACTOR_VALUES[factor].includes(value)) return;
+      edit(gameCtx, (s) => setRoomSetting(s, slot, factor, value as never), `Room ${slot + 1}: ${factor} set to ${value}.`);
+    },
+  });
+  ctx.game.commands.define<{ slot: number }>("room.tune", {
+    apply(gameCtx, { slot }) {
+      edit(gameCtx, (s) => tuneRoom(s, slot), (s) => { const id = roomBySlot(s, slot)?.tenantId; return `Room ${slot + 1} retuned to ${id ? s.members[id]?.name ?? "its tenant" : "its tenant"}'s taste.`; });
+    },
+  });
+  ctx.game.commands.define<{ slot: number }>("room.seal", {
+    apply(gameCtx, { slot }) { edit(gameCtx, (s) => sealRoom(s, slot), `Room ${slot + 1} gasketed: nothing leaks in or out.`); },
+  });
+  ctx.game.commands.define<{ slot: number }>("room.shutter", {
+    apply(gameCtx, { slot }) { edit(gameCtx, (s) => shutterRoom(s, slot), `Flare shutters fitted to room ${slot + 1}.`); },
+  });
+  ctx.game.commands.define<{ id: string; slot: number }>("room.move", {
+    apply(gameCtx, { id, slot }) {
+      edit(gameCtx, (s) => {
+        const wasFixture = boardingOf(s).rooms.every((room) => room.tenantId !== id);
+        const refused = moveTenant(s, id, slot);
+        if (refused === null && wasFixture && s.members[id]?.species === "pip") noteEvent(s, gameCtx.game.notices, `Pip-9 has a door. "${SPECIES.pip.lines.happy[0]}"`, "success");
+        if (refused === null) { const m = s.members[id]; if (m !== undefined) releaseMember(m); }
+        return refused;
+      }, (s) => `${s.members[id]?.name ?? "A tenant"} moved into room ${slot + 1}.`);
+    },
+  });
+  ctx.game.commands.define<{ slot: number }>("room.buy", {
+    apply(gameCtx, { slot }) { edit(gameCtx, (s) => buyModule(s, slot), `A new module docked at berth ${slot + 1}. VACANCY.`); },
+  });
+  ctx.game.commands.define<{ amount: number }>("deed.pay", {
+    apply(gameCtx, { amount }) {
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      edit(gameCtx, (s) => payDeed(s, amount), (s) => boardingOf(s).deedOwed <= 0
+        ? "The station section is yours. No more docking fees, ever. The tenants threw a party in the corridor."
+        : `Paid toward the deed: ${Math.round(boardingOf(s).deedOwed)} credits to go.`);
+    },
+  });
+  ctx.game.commands.define<{ question: number }>("applicant.ask", {
+    apply(gameCtx, { question }) {
+      if (gamePhase(gameCtx) !== "playing") return;
+      const state = householdStore.read(gameCtx);
+      if (askApplicant(state, question) !== null) return;
+      householdStore.write(gameCtx, { ...state, boarding: { ...boardingOf(state) } });
+    },
+  });
+  ctx.game.commands.define<{ slot?: number | null }>("applicant.accept", {
+    apply(gameCtx, input) {
+      if (gamePhase(gameCtx) !== "playing") return;
+      const state = householdStore.read(gameCtx);
+      const result = acceptApplicant(state, input.slot ?? null, gameCtx.time.now(), gameCtx.game.notices);
+      if (typeof result === "string") { gameCtx.game.notices.push({ text: result, tone: "deny" }); return; }
+      const room = boardingOf(state).rooms.find((r) => r.tenantId === result.id);
+      spawnTenantBody(gameCtx, result.id, result.bodyPlan, room?.slot ?? null);
+      gameCtx.game.audio.play("bond");
+      householdStore.write(gameCtx, { ...state, members: { ...state.members }, boarding: { ...boardingOf(state) } });
+      checkpoint(gameCtx);
+    },
+  });
+  ctx.game.commands.define("applicant.reject", {
+    apply(gameCtx) {
+      if (gamePhase(gameCtx) !== "playing") return;
+      const state = householdStore.read(gameCtx);
+      if (rejectApplicant(state, gameCtx.time.now(), gameCtx.game.notices) !== null) return;
+      householdStore.write(gameCtx, { ...state, boarding: { ...boardingOf(state) } });
+      checkpoint(gameCtx);
+    },
+  });
+}
