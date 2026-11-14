@@ -671,6 +671,37 @@ for (const m of markers as Record<string, any>[]) {
   threat(t, 'trap', 'trap', 0, 2, 5, 'an old mousetrap');
 }
 
+{
+  const w = 48, d = 32;
+  const t = template('garage-bikes', { name: 'By the garage bikes', zone: 'garage', minDepth: 3, w, d, floor: 'concrete', floorColor: '#7f7c78', flavor: 'A bicycle wheel stands like a Ferris wheel. Football, pump, oil can: a playground for giants.', dark: true });
+  wall(t, 'north', w, d, '#a9a395', '#8c8676');
+  cyl(t, 'bike-tyre', [-10, 26, -10], 26, 3, 'rubber', '#222222', { roll: Math.PI / 2, turn: 0 });
+  cyl(t, 'bike-rim', [-10, 26, -10], 22, 3.4, 'chrome', CHROME, { roll: Math.PI / 2 });
+  for (let i = 0; i < 8; i++) cyl(t, 'spoke', [-10, 26, -10], 0.2, 44, 'chrome', CHROME, { roll: i * Math.PI / 8 });
+  box(t, 'tyre-contact', [-10, 0.6, -10], [3, 1.2, 6], 'rubber', '#222222', { solid: true });
+  ball(t, 'football', [12, 7, 2], 7, 'rubber', '#e8e2d0', { solid: true });
+  cyl(t, 'pump', [18, 14, -10], 1.6, 28, 'metal', '#c0392b', { solid: true });
+  box(t, 'pump-handle', [18, 28.5, -10], [8, 1.2, 1.2], 'plastic', '#222222');
+  cyl(t, 'oil-can', [-18, 5, 8], 3.5, 10, 'metal', '#5a7a3a', { solid: true });
+  cyl(t, 'oil-spout', [-15, 11, 8], 0.4, 8, 'metal', '#5a7a3a', { roll: -0.8 });
+  box(t, 'oil-puddle', [-12, 0.05, 10], [8, 0.1, 6], 'glass', '#2a2622');
+  box(t, 'cardboard-flat', [2, 0.4, 10], [16, 0.8, 12], 'cardboard', CARD, { cover: true, turn: 0.2 });
+  box(t, 'flap', [23.6, 9, 4], [0.6, 16, 12], 'plastic', '#5d5a52');
+  lamp(t, 'window', [0, 60, 18], '#9fb9ff', 7, 100, 'moonlight through the garage window');
+  lamp(t, 'freezer', [-20, 6, -12], '#bfe8ff', 3, 26, 'a chest freezer’s light');
+  door(t, 'entry', 'entry', -20, 13, ['crack', 'vent'], 'the garage door gap');
+  door(t, 'on', 'forward', 6, -13, ['climb', 'cable'], 'up the pump hose');
+  exit(t, 'dogdoor', 'dogdoor', 21, 4, 'the cat flap to the garden');
+  spot(t, 'card', 2, 12, 'tucked', 'under the flattened box');
+  spot(t, 'ball', 4, -2, 'open', 'behind the football', { bias: 'part' });
+  spot(t, 'oil', -14, 2, 'open', 'by the oil can', { bias: 'part' });
+  spot(t, 'wheel', -2, -12, 'cache', 'in the spokes', { bias: 'curio' });
+  spot(t, 'pump', 14, -6, 'tucked', 'at the pump foot', { bias: 'part' });
+  threat(t, 'dog', 'dog', 8, 10, 3, 'the dog, let in to the garage');
+  threat(t, 'trap', 'trap', -6, 6, 3, 'a mousetrap');
+  threat(t, 'spider', 'spider', -20, -10, 4, 'a spider on the wheel');
+}
+
 for (const volume of volumes) session.dispatch({ type: 'addVolume', volume: volume as never });
 for (const marker of markers) {
   const result = api.handle({ method: 'add_marker', ...marker } as never);

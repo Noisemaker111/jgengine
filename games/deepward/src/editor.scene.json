@@ -3424,6 +3424,207 @@
         "threat": "trap",
         "minDepth": 5
       }
+    },
+    {
+      "id": "garage-bikes-lamp-window",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 55,
+        "y": 60,
+        "z": 293
+      },
+      "label": "moonlight through the garage window",
+      "meta": {
+        "template": "garage-bikes",
+        "color": "#9fb9ff",
+        "intensity": 7,
+        "distance": 100
+      }
+    },
+    {
+      "id": "garage-bikes-lamp-freezer",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 35,
+        "y": 6,
+        "z": 263
+      },
+      "label": "a chest freezer’s light",
+      "meta": {
+        "template": "garage-bikes",
+        "color": "#bfe8ff",
+        "intensity": 3,
+        "distance": 26
+      }
+    },
+    {
+      "id": "garage-bikes-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 288
+      },
+      "label": "the garage door gap",
+      "meta": {
+        "template": "garage-bikes",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent"
+        ]
+      }
+    },
+    {
+      "id": "garage-bikes-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": 61,
+        "y": 0,
+        "z": 262
+      },
+      "label": "up the pump hose",
+      "meta": {
+        "template": "garage-bikes",
+        "role": "forward",
+        "kinds": [
+          "climb",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "garage-bikes-exit-dogdoor",
+      "kind": "crumb-exit",
+      "position": {
+        "x": 76,
+        "y": 0,
+        "z": 279
+      },
+      "label": "the cat flap to the garden",
+      "meta": {
+        "template": "garage-bikes",
+        "exit": "dogdoor"
+      }
+    },
+    {
+      "id": "garage-bikes-spot-card",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 57,
+        "y": 0,
+        "z": 287
+      },
+      "label": "under the flattened box",
+      "meta": {
+        "template": "garage-bikes",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "garage-bikes-spot-ball",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 59,
+        "y": 0,
+        "z": 273
+      },
+      "label": "behind the football",
+      "meta": {
+        "template": "garage-bikes",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-bikes-spot-oil",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 41,
+        "y": 0,
+        "z": 277
+      },
+      "label": "by the oil can",
+      "meta": {
+        "template": "garage-bikes",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-bikes-spot-wheel",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 53,
+        "y": 0,
+        "z": 263
+      },
+      "label": "in the spokes",
+      "meta": {
+        "template": "garage-bikes",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "garage-bikes-spot-pump",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 69,
+        "y": 0,
+        "z": 269
+      },
+      "label": "at the pump foot",
+      "meta": {
+        "template": "garage-bikes",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-bikes-threat-dog",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 63,
+        "y": 0,
+        "z": 285
+      },
+      "label": "the dog, let in to the garage",
+      "meta": {
+        "template": "garage-bikes",
+        "threat": "dog",
+        "minDepth": 3
+      }
+    },
+    {
+      "id": "garage-bikes-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 49,
+        "y": 0,
+        "z": 281
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "garage-bikes",
+        "threat": "trap",
+        "minDepth": 3
+      }
+    },
+    {
+      "id": "garage-bikes-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 265
+      },
+      "label": "a spider on the wheel",
+      "meta": {
+        "template": "garage-bikes",
+        "threat": "spider",
+        "minDepth": 4
+      }
     }
   ],
   "volumes": [
@@ -12630,6 +12831,548 @@
         "cover": false,
         "turn": 0,
         "tilt": 0.6,
+        "roll": 0
+      }
+    },
+    {
+      "id": "room-garage-bikes",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 0.5,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "By the garage bikes",
+      "meta": {
+        "template": "garage-bikes",
+        "zone": "garage",
+        "minDepth": 3,
+        "floor": "concrete",
+        "floorColor": "#7f7c78",
+        "flavor": "A bicycle wheel stands like a Ferris wheel. Football, pump, oil can: a playground for giants.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "garage-bikes-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 60,
+        "z": 258
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#a9a395",
+      "label": "wall-north",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 2.8,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#8c8676",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 5.75,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#8c8676",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-bike-tyre-4",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 26,
+      "height": 3,
+      "color": "#222222",
+      "label": "bike-tyre",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "rubber",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "garage-bikes-bike-rim-5",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 22,
+      "height": 3.4,
+      "color": "#d8dde0",
+      "label": "bike-rim",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0.39269908169872414
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0.7853981633974483
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 1.1780972450961724
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-10",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-11",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 1.9634954084936207
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-12",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 2.356194490192345
+      }
+    },
+    {
+      "id": "garage-bikes-spoke-13",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 45,
+        "y": 26,
+        "z": 265
+      },
+      "radius": 0.2,
+      "height": 44,
+      "color": "#d8dde0",
+      "label": "spoke",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 2.748893571891069
+      }
+    },
+    {
+      "id": "garage-bikes-tyre-contact-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 45,
+        "y": 0.6,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 3
+      },
+      "color": "#222222",
+      "label": "tyre-contact",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "rubber",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-football-15",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": 67,
+        "y": 7,
+        "z": 277
+      },
+      "radius": 7,
+      "color": "#e8e2d0",
+      "label": "football",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "rubber",
+        "solid": true
+      }
+    },
+    {
+      "id": "garage-bikes-pump-16",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 73,
+        "y": 14,
+        "z": 265
+      },
+      "radius": 1.6,
+      "height": 28,
+      "color": "#c0392b",
+      "label": "pump",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-pump-handle-17",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 73,
+        "y": 28.5,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 0.6,
+        "z": 0.6
+      },
+      "color": "#222222",
+      "label": "pump-handle",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "plastic",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-oil-can-18",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 37,
+        "y": 5,
+        "z": 283
+      },
+      "radius": 3.5,
+      "height": 10,
+      "color": "#5a7a3a",
+      "label": "oil-can",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-oil-spout-19",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 40,
+        "y": 11,
+        "z": 283
+      },
+      "radius": 0.4,
+      "height": 8,
+      "color": "#5a7a3a",
+      "label": "oil-spout",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": -0.8
+      }
+    },
+    {
+      "id": "garage-bikes-oil-puddle-20",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 43,
+        "y": 0.05,
+        "z": 285
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 0.05,
+        "z": 3
+      },
+      "color": "#2a2622",
+      "label": "oil-puddle",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "glass",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-cardboard-flat-21",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 57,
+        "y": 0.4,
+        "z": 285
+      },
+      "halfExtents": {
+        "x": 8,
+        "y": 0.4,
+        "z": 6
+      },
+      "color": "#b48a58",
+      "label": "cardboard-flat",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "cardboard",
+        "solid": false,
+        "cover": true,
+        "turn": 0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-bikes-flap-22",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 78.6,
+        "y": 9,
+        "z": 279
+      },
+      "halfExtents": {
+        "x": 0.3,
+        "y": 8,
+        "z": 6
+      },
+      "color": "#5d5a52",
+      "label": "flap",
+      "meta": {
+        "template": "garage-bikes",
+        "material": "plastic",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
         "roll": 0
       }
     }

@@ -15,7 +15,7 @@ The package id is still `deepward`. Run `bun --cwd=games/deepward run dev` from 
 - **Room after room.** A run is a seed. Every room is a path from the crack ("0", then "0-1" for the
   second door out of it), and the room's template, its finds, its hunters and its exits are a pure
   function of the seed and that path (`src/game/runGen.ts`). The house is built from
-  editor-authored room templates in `src/editor.scene.json` (seventeen: under the kitchen cabinets, the counter,
+  editor-authored room templates in `src/editor.scene.json` (eighteen: under the kitchen cabinets, the counter,
   the pantry shelf, under the fridge, under the bookshelf, under the couch, the living-room rug, the
   front hall, the toy corner, under the bed, the garage workbench, the attic). Deeper rooms roll
   better finds and more hunters. The seed is saved, so a reload resumes the same house.
