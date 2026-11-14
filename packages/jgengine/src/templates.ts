@@ -123,7 +123,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
       ? []
       : [
           { path: ".gitignore", contents: gitignore },
-          { path: "AGENTS.md", contents: agentsMd(name, variant) },
+          { path: "AGENTS.md", contents: agentsMd(name) },
         ]),
     { path: "jgengine/AGENTS.md", contents: jgengineAgentsMd(variant) },
     { path: "src/index.css", contents: indexCss(variant, editor) },

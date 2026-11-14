@@ -222,7 +222,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
   test("standalone: AGENTS.md tells the agent how to restore models if the pull was skipped", () => {
     // Models are pulled, not shipped in the package — a scaffold that skipped the pull otherwise
     // renders placeholder primitives with nothing on the page explaining why.
-    const agents = fileOf(render("standalone"), "AGENTS.md");
+    const agents = fileOf(render("standalone"), "jgengine/AGENTS.md");
     expect(agents).toContain("npx @jgengine/assets pull starter");
     expect(agents).toContain("public/models");
   });
@@ -230,9 +230,13 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
   test("every game carries a minimal engine-owned jgengine/AGENTS.md pointer", () => {
     const standalone = fileOf(render("standalone"), "jgengine/AGENTS.md");
     expect(standalone).toContain("npx jgengine find");
-    expect(standalone).toContain("not React");
     expect(standalone).not.toContain("Probe Game");
+    const root = fileOf(render("standalone"), "AGENTS.md");
+    expect(root).toContain("README.md");
+    expect(root).toContain("jgengine/AGENTS.md");
+    expect(root.split("\n").length).toBeLessThan(15);
     const inRepo = fileOf(render("in-repo"), "jgengine/AGENTS.md");
+    expect(inRepo).toContain("not React");
     expect(inRepo).toContain("bun run find");
     expect(inRepo).toContain("monorepo's root");
     expect(inRepo.split("\n").length).toBeLessThan(20);
@@ -478,7 +482,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
 
   test("templates carry the gameKit-first agent onboarding", () => {
     const files = render("standalone");
-    const agents = fileOf(files, "AGENTS.md");
+    const agents = fileOf(files, "jgengine/AGENTS.md");
     expect(agents).toContain("User-facing first reply is short");
     expect(agents).toContain("dump file trees");
     expect(agents).toContain("@jgengine/shell/gameKit");
