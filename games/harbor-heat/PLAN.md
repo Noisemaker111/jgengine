@@ -179,6 +179,9 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
   submarine and festoon lights authored; HUD tide card, order cards, shift card and the books.
 - [x] 2. Re-theme pass: title, menus, catering contracts, rival pizzeria labels, Tide Rush circuit names,
   rival riders, radio tide bulletins, README and art direction.
+- [x] 2b. Depth round: flooded districts and pizza pins on the chart, impatient callers, first-time
+  lessons, splash spray and doorstep thanks, the delivery slip, hot streaks, cred from deliveries,
+  menu and quota rebalance.
 - [ ] 3. From-zero flow (`proofs/flows/from-zero.flow.ts`): new game → first delivery → first swap → shift
   close, played through real input; suite proofs under `proofs/sim/`.
 - [ ] 4. Retire the crime layer: Marco's story becomes the Vell family's (MegaSlice's buyout as acts), the
@@ -187,3 +190,16 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 - [ ] 5. Blimp line and rooftop drops: a mooring mast on the Heights, rooftop customers only the blimp
   reaches at the king tide, bridges as foot routes.
 - [ ] 6. Boats on the planing model and a wake/ripple flood surface (the engine gaps above).
+
+## Handoff
+
+- Done: milestones 1, 2 and 2b. Game tests pass (`bun run test games/harbor-heat`), check-types clean.
+  verify:fast passes everything it can run here; the asset-provision step fails on the sandbox proxy (403),
+  so its boot probe never starts.
+- Screens: Rune UI PNGs in `proofs/high-tide/` (title, shift HUD at high water, phone HUD, books, shift
+  card), rendered with the native-png example. The 3D canal screenshot (`bun run shoot harbor-heat --mode
+  play --state flood`) is not captured yet: this machine has no WebGPU adapter and the shared render slot
+  was held by another worktree.
+- Next: capture `--state flood` and `--state king-tide` on a machine with a GPU and check the flood sheets'
+  edges against the kerbs; milestone 3 (from-zero flow, proofs/sim); milestone 4 (retire the crime layer:
+  starter pistol, gun counter, HHPD).

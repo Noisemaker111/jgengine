@@ -38,6 +38,12 @@ with the published assets CLI before launching a fresh checkout; the original mo
 - **Rival riders.** With two or more boxes in the bag, a Carmine's Crust rider comes out of a side street
   and shadows you; stay within reach and they snatch the hottest box. Lose them past 70 m or let a canal
   drown their scooter.
+- **Patience and streaks.** A call left 150 s on the board walks to Carmine's Crust (the pager counts it
+  down). Great drops in a row build a hot streak: +6% on the tips per drop, up to five, until a bad box.
+  Every happy box also pays 15 cred (a plain one 4); the jet-ski needs cred 2, the gondola 3, the blimp 4.
+- **Lessons.** The first drowned engine, beached hull, stacked bag, cold box and upstairs drop each explain
+  themselves once. The chart tints each flooded district and pins the oven, the swap docks and every door
+  in the bag; after a hand-over the tide card shows the paid slip line by line.
 - **Midnight.** Last orders: boxes still out go cold, the night's takings meet MegaSlice's quota, and
   you sleep till the next dusk.
 - **The books** (**E** at the oven window when no call waits): buy ovens (capacity and faster calls),
