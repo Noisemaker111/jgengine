@@ -24,6 +24,7 @@ import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { ACTIVE_MAP, type MapId } from "../maps";
 
 /** The streets a player can keep. One document per street, all inside the shared save document (slot ids keep their first names). */
 export const KEEP_SLOTS = ["keep", "ward", "beacon"] as const;
@@ -69,6 +70,8 @@ export interface DefenseSave extends PreWorldFields {
   }[];
   /** Plots a drone's parcel is blocking. */
   parcels?: string[];
+  /** The map the day was played on; its plots only fit that map. */
+  map?: MapId;
   /** The clock to the next wave and what an early call would pay. */
   countdown?: WaveCountdownState;
   /** Ability cooldowns. */
@@ -99,6 +102,7 @@ export function captureDefense(ctx: GameContext): DefenseSave {
     })),
     countdown: session.countdown.snapshot(),
     parcels: [...session.parcels],
+    map: ACTIVE_MAP,
     abilities: session.abilities.state(),
   };
 }
@@ -438,6 +442,7 @@ export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> 
         gold: Number(facts["keep.gold"] ?? 0),
         lives: Number(facts["keep.lives"] ?? 0),
         wave: defense.encounter.wave + 1,
+        map: defense.map ?? "main-street",
         ...(thumbnail === null ? {} : { thumbnail }),
       };
     },

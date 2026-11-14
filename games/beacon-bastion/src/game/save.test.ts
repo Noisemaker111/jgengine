@@ -217,7 +217,7 @@ describe("the keep's save document", () => {
     playedIntoWave();
     const snapshot = JSON.parse(JSON.stringify(captureDefense(runner.ctx)));
     expect(validDefenseSave(snapshot)).toBe(true);
-    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "openingComposition", "parcels", "pressure"]);
+    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "map", "openingComposition", "parcels", "pressure"]);
   });
 
   test("the bank is its own section, so a new run does not clear it", async () => {

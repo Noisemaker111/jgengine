@@ -9,6 +9,7 @@ import { session } from "./session";
 import { beaconRunner } from "./testing";
 import { tickWaves } from "./waves/director";
 import { BUILD_PLOTS } from "./world/path";
+import { ACTIVE_MAP } from "../maps";
 import { restartDefense } from "./world/setup";
 
 /**
@@ -164,7 +165,9 @@ const MIXED: Plan = {
   },
   upgrades: true,
   // The corners where the street doubles back first, then the side street's mouth, then the long legs.
-  plots: ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-7", "plot-3", "plot-11", "plot-2", "plot-9", "plot-1"],
+  plots: ACTIVE_MAP === "downtown"
+    ? ["plot-2", "plot-4", "plot-7", "plot-8", "plot-11", "plot-6", "plot-3", "plot-5", "plot-9", "plot-10", "plot-1"]
+    : ["plot-5", "plot-4", "plot-10", "plot-6", "plot-8", "plot-7", "plot-3", "plot-11", "plot-2", "plot-9", "plot-1"],
   rites: true,
 };
 

@@ -5,11 +5,20 @@ import { clearanceZonesFrom } from "@jgengine/core/scatter/scatterRegion";
 
 import { editorCatalogs } from "./editorCatalogs";
 import sceneJson from "./editor.scene.json";
+import downtownJson from "./downtown.scene.json";
+import { ACTIVE_MAP } from "./maps";
 
 type Vec2 = readonly [number, number];
 
+/**
+ * Each map is its own scene document; `editor.scene.json` is Main Street and also carries the game's
+ * data catalogs (worker numbers), which every map shares, so the downtown document carries none.
+ */
+const SCENES = { "main-street": sceneJson, downtown: downtownJson } as const;
+const mapScene = { ...(SCENES[ACTIVE_MAP] as object), catalogs: (sceneJson as { catalogs: unknown }).catalogs };
+
 export const editorLayers: EditorDocument = seedEditorCatalogs(
-  normalizeEditorLayers(sceneJson as unknown as EditorLayersInput),
+  normalizeEditorLayers(mapScene as unknown as EditorLayersInput),
   editorCatalogs,
 );
 
