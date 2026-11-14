@@ -1,7 +1,7 @@
 /** The station hull and the black around it: the deck plating outside, the haze, the deep sky. */
 export const HABITAT = {
-  groundLow: "#1d1a2b",
-  groundHigh: "#2c2840",
+  groundLow: "#3a3552",
+  groundHigh: "#4a4466",
   pad: "#3a3550",
   horizon: "#2a2150",
   zenith: "#05040c",
@@ -9,7 +9,7 @@ export const HABITAT = {
   fog: "#0d0b1a",
   flora: "#63d6a3",
   floraAlt: "#e08cd0",
-  rock: "#24202f",
+  rock: "#34304a",
 } as const;
 
 /** The boarding house's modules: enamel cream shells on gunmetal trim, pastel light inside. */

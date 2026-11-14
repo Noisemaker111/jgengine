@@ -33,6 +33,6 @@ export function dayGoal(state: HouseholdState, objects: readonly SceneObject[]):
   const bill = Math.round(nextBill(state, objects));
   if (!hasWorkStation) return "Next: furnish a Gig Terminal so a tenant can earn toward the bills.";
   if (state.credits < bill) return `Next: find ${Math.round(bill - state.credits)} more credits before the ${bill}-credit docking bill.`;
-  if (state.pantry < LOW_RATIONS) return `Next: buy ${RATION_BUNDLE.quantity} rations in Pantry & bills before the household runs short.`;
+  if (state.pantry < LOW_RATIONS) return `Next: buy ${RATION_BUNDLE.quantity} rations in Pantry & bills before the galley runs short.`;
   return `Next: keep the tenants comfy and cover the ${bill}-credit docking bill.`;
 }

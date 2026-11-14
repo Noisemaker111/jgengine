@@ -382,8 +382,8 @@ function registerHouseholdCommands(ctx: GameContext): void {
         return;
       }
       if (!postOpen(state, member, next)) {
-        member.concern = `The ${next.label} post opens at ${next.postGate} household standing`;
-        noteEvent(state, gameCtx.game.notices, `${member.name} needs ${next.postGate} household standing for the ${next.label} post.`, "deny");
+        member.concern = `The ${next.label} post opens at ${next.postGate} house standing`;
+        noteEvent(state, gameCtx.game.notices, `${member.name} needs ${next.postGate} house standing for the ${next.label} post.`, "deny");
         householdStore.write(gameCtx, { ...state, members: { ...state.members } });
         return;
       }

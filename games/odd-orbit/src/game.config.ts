@@ -93,9 +93,9 @@ export const game = defineGame({
     lighting: {
       // Deep space: almost no ambient, a cool violet fill from the station's running lights and one
       // hard white key from the star, so the rooms' own pastel lamps carry the colour.
-      ambient: { color: "#5a4f8a", intensity: 0.22 },
-      hemisphere: { skyColor: "#6d5fb0", groundColor: "#120f1f", intensity: 0.35 },
-      directional: [{ color: "#fff1d6", intensity: 1.7, position: [-30, 34, 22], castShadow: true }],
+      ambient: { color: "#7a6fb0", intensity: 0.45 },
+      hemisphere: { skyColor: "#8f80d0", groundColor: "#2a2440", intensity: 0.6 },
+      directional: [{ color: "#fff1d6", intensity: 2.2, position: [-30, 34, 22], castShadow: true }],
     },
     // The station sits in black space; "cinematic" fills the unset post stack (IBL, tone-map, bloom,
     // AO, grade). Lighting above is authored explicitly and wins.

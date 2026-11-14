@@ -59,7 +59,7 @@ function inspectorView(household: HouseholdState, objects: readonly SceneObject[
     feverHours: (member.illUntil ?? 0) > now ? Math.ceil(((member.illUntil ?? 0) - now) / 210 * 24) : null,
     recovering: member.recovering,
     progressLine: `${progress.career.label} · ${RUNG_NAMES[progress.rung - 1]} (rung ${progress.rung}/3) · house standing ${progress.have}`,
-    payLine: `Yield ${yieldPay.masteryLabel} · pay x${yieldPay.factor.toFixed(2)} on a console. Bloom ${bloomPay.masteryLabel} · pay x${bloomPay.factor.toFixed(2)} on a planter${bloomPay.rations > 0 ? `, +${bloomPay.rations} ration${bloomPay.rations === 1 ? "" : "s"}` : ""}.`,
+    payLine: `Gig ${yieldPay.masteryLabel} · pay x${yieldPay.factor.toFixed(2)} at a terminal. Hydro ${bloomPay.masteryLabel} · pay x${bloomPay.factor.toFixed(2)} at a tray${bloomPay.rations > 0 ? `, +${bloomPay.rations} ration${bloomPay.rations === 1 ? "" : "s"}` : ""}.`,
     posts: postRows(household, member).map(row => ({
       id: row.career.id, label: row.career.label, current: row.current, open: row.open,
       note: row.current ? `${STATION_NAME[row.career.station === "either" ? (member.lifestyle === "bloom" ? "bloom" : "yield") : row.career.station]} post` : row.open ? `${row.career.station === "either" ? "either station" : `${STATION_NAME[row.career.station]} family`}` : `${row.needs} standing`,
@@ -129,7 +129,7 @@ export function Inspector() {
     {card.canChange ? null : <Fine>Today’s paid shift is committed. Change rhythm tomorrow.</Fine>}
     {card.lifestyle === "bloom" ? <>
       <Section title="Choose today's crop" />
-      <RuneView layout="grid" columns={2} gap={6} label="Bloom crop">{card.crops.map(({ choice, output }) => <Plate key={choice} on={crop === choice} disabled={card.cropLocked && crop !== choice} layout="stack" gap={1} items="start" onPress={run("member.bloomCrop", { id, crop: choice })}><Text weight={700} size={14}>{choice === "pantry" ? "Galley crop" : "Export crop"}</Text><Fine size={12}>{`${output.rations} rations · ${output.credits} credits`}</Fine></Plate>)}</RuneView>
+      <RuneView layout="grid" columns={2} gap={6} label="Hydro crop">{card.crops.map(({ choice, output }) => <Plate key={choice} on={crop === choice} disabled={card.cropLocked && crop !== choice} layout="stack" gap={1} items="start" onPress={run("member.bloomCrop", { id, crop: choice })}><Text weight={700} size={14}>{choice === "pantry" ? "Galley crop" : "Export crop"}</Text><Fine size={12}>{`${output.rations} rations · ${output.credits} credits`}</Fine></Plate>)}</RuneView>
       <Fine>{`Export trades 3 rations for 12 extra credits. Friends tending nearby add 1 ration and 12 credits. ${card.cropLocked ? "Crop committed until tomorrow." : "Choose before tending starts."}`}</Fine>
     </> : null}
     <Plate tone="pink" disabled={paidReason !== null || shiftLabel !== null} onPress={run("member.direct", { id, goal: card.lifestyle === "bloom" ? "tend" : "work" })}>{shiftLabel ?? (card.lifestyle === "bloom" ? `Tend ${crop} crop · ${reward.rations} rations + ${reward.credits} credits` : `Start a gig shift · earn up to ${card.yieldValue} credits`)}</Plate>

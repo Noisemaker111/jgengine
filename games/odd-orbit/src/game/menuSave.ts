@@ -51,7 +51,7 @@ function cardOf(slot: string, save: OrbitSave): { name: string; meta: Record<str
   return {
     name: householdName(household, save),
     meta: {
-      beings: `${household.order.length} beings`,
+      beings: `${household.order.length} tenants`,
       shift: working === null ? "Between shifts" : `${working.name} on shift`,
       day: clockWords(save),
       credits: `${household.credits} credits`,

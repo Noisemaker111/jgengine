@@ -289,7 +289,7 @@ export function rungProgressIn(view: CareerView, member: MemberState): RungProgr
     reason: nextRung === null
       ? `${career.label} is already a ${RUNG_NAMES[2]} post`
       : have < needs!
-        ? `${needs! - have} more household standing needed`
+        ? `${needs! - have} more house standing needed`
         : `${career.label} ${RUNG_NAMES[nextRung - 1]} is open`,
   };
 }

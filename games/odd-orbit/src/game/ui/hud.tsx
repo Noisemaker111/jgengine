@@ -57,7 +57,7 @@ export function HouseClock({ compact }: { compact: boolean }) {
   const { commands } = useGame();
   const day = useGameCalendar((c) => c.day);
   const phase = useGameStore((c) => householdPhase(c.time.now()));
-  return <Row gap={10} items="start" label="Household time">
+  return <Row gap={10} items="start" label="House time">
     <WallClock size={compact ? 60 : 84} />
     <RuneView gap={6}>
       <Paper padding={[6, 12, 8, 12]} gap={0} items="center" minWidth={compact ? 84 : 104}>
@@ -84,7 +84,7 @@ export function FridgeMagnets({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const objects = useSceneObjects();
   const door = useStore(householdStore, (s) => { const due = nextBill(s, objects); return { pantry: s.pantry, debt: s.debt, bill: Math.round(due), short: s.credits < due, reputation: Math.round(s.boarding?.reputation ?? 0) }; });
-  return <RuneView gap={6} items="end" label="Household resources">
+  return <RuneView gap={6} items="end" label="House ledger">
     <RuneView layout={compact ? "stack" : "row"} gap={5} items="end">
       <Magnet tone={door.short ? "coral" : "butter"} icon="coin" value={bind(() => creditsText(Math.floor(householdStore.read(ctx).credits)))} unit="credits" label="Credits" />
       <Magnet tone={door.pantry < 4 ? "coral" : "mint"} icon="bread" value={String(door.pantry)} unit="rations" label="Rations" />
