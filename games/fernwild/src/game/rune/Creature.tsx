@@ -71,7 +71,7 @@ const TARGET_WORD = { loudest: "the loudest", brightest: "lights", richest: "car
 function instinctLine(card: CreatureCard): string {
   const profile = botProfile(card.species);
   const targets = profile === null || profile.targets.length === 0 ? "" : ` · goes for ${profile.targets.map((rule) => TARGET_WORD[rule]).join(", then ")}`;
-  return `${TEMPERAMENT_WORD[card.temperament]}${targets}${card.dormant ? " · dormant" : ""}${card.overclocked ? " · OVERCLOCKED" : ""}`;
+  return `${TEMPERAMENT_WORD[card.temperament]}${targets}${card.dormant ? " · dormant" : ""}${card.conductor ? " · CONDUCTOR" : ""}${card.overclocked ? " · OVERCLOCKED" : ""}`;
 }
 
 /** ARK's tame stats: level and XP to the next, then each stat with a + while points are unspent. */

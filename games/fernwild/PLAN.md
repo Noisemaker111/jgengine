@@ -153,8 +153,8 @@ Proven in play by `src/game/machines.test.ts`, `rootServer.test.ts`, `creatures.
 | Rootkit | dormant until chopping nearby, then the forest stands up | tree-shaped body (has branch plates) |
 | Thermite Beetle | metal-ore gatherer mount with a drill | burrowing, ingot mining |
 | Homer | flyer mount, airlift; flies its cargo to the nearest storage box | |
-| Echo Mimic | copies the last trick used near it (unit-level; no dedicated play test) | |
-| Choir Drone | aura: other wild bots near hit harder; the Root Server's firewall | conductor-first mechanic |
+| Echo Mimic | copies the last trick used near it and turns it on you | |
+| Choir Drone | aura: other wild bots near hit harder; the highest-level singer conducts and shields the ring (hits on the others land at a quarter); the Root Server's firewall | |
 | Lampjaw | ambush, drawn to light, glowing lure antenna | deep-water only |
 | Hoover Leviathan | retaliator giant | mobile base platform |
 | Scrapper Rex | hunts other machines first, grows on every wreck | |

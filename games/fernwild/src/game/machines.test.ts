@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { creatureCard, creatureStep, creaturesView, destroyWild, disturbForest, isPuppeted, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { survivorView } from "./survivor";
 
@@ -149,4 +149,36 @@ test("in a Signal Storm wild machines are Overclocked: even a passive grazer hun
   const me = g.ctx.scene.entity.get(g.userId)!.position;
   const at = g.ctx.scene.entity.get(grazer)!.position;
   expect(Math.hypot(at[0] - me[0], at[2] - me[2])).toBeLessThan(5);
+});
+
+test("a Choir ring's conductor shields the other singers until it falls", () => {
+  const g = quiet();
+  g.ui.tryInvoke("cheat", { summon: { species: "choir", level: 9, distance: 6 } });
+  g.ui.tryInvoke("cheat", { summon: { species: "choir", level: 1, distance: 3 } });
+  tick(g, 0.1);
+  const singers = g.ctx.scene.entity.list().filter((entity) => entity.name === "choir").map((entity) => entity.id);
+  const conductor = singers.find((id) => creatureCard(g.ctx, id)!.conductor)!;
+  const singer = singers.find((id) => id !== conductor)!;
+  expect(creatureCard(g.ctx, conductor)!.level).toBe(9);
+  const before = creatureCard(g.ctx, singer)!.health.value;
+  hitCreature(g.ctx, singer, 40);
+  expect(before - creatureCard(g.ctx, singer)!.health.value).toBeLessThanOrEqual(10);
+  slayCreature(g.ctx, conductor);
+  tick(g, 0.1);
+  const after = creatureCard(g.ctx, singer)!.health.value;
+  hitCreature(g.ctx, singer, 20);
+  expect(after - creatureCard(g.ctx, singer)!.health.value).toBeGreaterThanOrEqual(19);
+});
+
+test("an Echo Mimic copies the last trick pulled near it and turns it on you", () => {
+  const g = quiet();
+  summon(g, "ticklet", { distance: 1.5 });
+  for (let i = 0; i < 100 && !g.ctx.game.notices.list().some((n) => n.text.startsWith("Ticklet:")); i += 1) tick(g, 0.1);
+  summon(g, "echo", { distance: 1.5 });
+  let echoed = false;
+  for (let i = 0; i < 150 && !echoed; i += 1) {
+    tick(g, 0.1);
+    echoed = g.ctx.game.notices.list().some((n) => n.text.startsWith("Echo Mimic: latched on"));
+  }
+  expect(echoed).toBe(true);
 });

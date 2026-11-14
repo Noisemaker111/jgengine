@@ -114,6 +114,8 @@ export interface BotProfile {
   sentry?: { radius: number };
   /** Uploaded, it flies what it carries home to the nearest storage box. */
   courier?: true;
+  /** A singing ring: the highest-level singer conducts, and while it lives the rest take this share of damage. */
+  conducted?: { radius: number; shielded: number };
   /** Ridden, it bends light around its rider: wild bots do not see you unless you hit them. */
   cloak?: true;
   /** Uploaded and following you, it patches you up: this much health every sentry sweep (4 s) within 6 m. */
@@ -142,7 +144,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore. Uploaded, it mines faster than any pick."),
   homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
-  choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. Shoot the singers first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 } }),
+  choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),
   lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot."),
   hoover: P("retaliator", ["attacker"], "A huge passive vacuum leviathan. Leave it be and it leaves you be."),
   scrapper: P("aggressive", ["machines", "biggest"], "Apex hunter that tears other robots apart for parts and grows stronger with every one.", { scraps: { perKill: 0.1, max: 2 } }),

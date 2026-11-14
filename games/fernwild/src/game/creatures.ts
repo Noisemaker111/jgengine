@@ -338,6 +338,26 @@ function wildMelee(ctx: GameContext, world: World, creature: Creature): number {
   return packBonus(profile?.pack, packmates) * song * scraps;
 }
 
+/**
+ * The conductor of a wild singing ring `creature` belongs to: the highest-level wild singer of its species
+ * within the ring's reach (ties to the oldest id), or null when it sings alone or is not a singer.
+ */
+function conductorOf(ctx: GameContext, world: World, creature: Creature): string | null {
+  const ring = botProfile(creature.species)?.conducted;
+  const self = ctx.scene.entity.get(creature.id)?.position;
+  if (ring === undefined || creature.tamed || self === undefined) return null;
+  let best: Creature | null = null;
+  let members = 0;
+  for (const other of world.creatures.values()) {
+    if (other.species !== creature.species || other.dead || other.tamed) continue;
+    const at = ctx.scene.entity.get(other.id)?.position;
+    if (at === undefined || Math.hypot(at[0] - self[0], at[2] - self[2]) > ring.radius) continue;
+    members += 1;
+    if (best === null || other.level > best.level || (other.level === best.level && other.id < best.id)) best = other;
+  }
+  return members < 2 || best === null ? null : best.id;
+}
+
 /** Who a wild bot reacts to: the technician (unless riding a light-bending Mirrorcat); other machines too when it hunts machines. */
 function notices(ctx: GameContext, selfId: string, candidateId: string): boolean {
   const entity = ctx.scene.entity.get(candidateId);
@@ -683,9 +703,14 @@ function dosesFor(def: SpeciesDef, doses: readonly VitalDose[]): VitalDose[] {
 }
 
 /** One blow or shot on a live creature: damage, aggro, its doses (torpor knocking it out, a bola's hold), and death. */
-function landHit(ctx: GameContext, attackerId: string, target: Creature, damage: number, doses: readonly VitalDose[]): CreatureStrike {
+function landHit(ctx: GameContext, attackerId: string, target: Creature, dealt: number, doses: readonly VitalDose[]): CreatureStrike {
   const world = worldOf(ctx);
   const def = defOf(target);
+  // A choir singer under a living conductor shrugs most of a hit off.
+  const conductor = conductorOf(ctx, world, target);
+  const shield = botProfile(target.species)?.conducted;
+  const damage = conductor !== null && conductor !== target.id && shield !== undefined ? dealt * shield.shielded : dealt;
+  if (damage < dealt) ctx.scene.entity.floatText({ instanceId: target.id, text: "Shielded: hit the conductor", kind: "damage" });
   target.lastHitBy = attackerId;
   ctx.scene.entity.effect({ from: attackerId, to: target.id, effect: "damage", via: { amount: damage } });
   world.driver.hurt(ctx, target.id, attackerId);
@@ -1557,6 +1582,12 @@ export function creatureStep(ctx: GameContext, id: string): { mode: string; targ
   return step === undefined ? null : { mode: step.mode, targetId: step.targetId };
 }
 
+/** The technician lands a plain hit of `damage` on a creature by id (a console and test hook; shields and knockouts apply). */
+export function hitCreature(ctx: GameContext, id: string, damage: number): CreatureStrike | null {
+  const creature = worldOf(ctx).creatures.get(id);
+  return creature === undefined || creature.dead ? null : landHit(ctx, ctx.player.userId, creature, damage, []);
+}
+
 /** A creature's traits (quirks and glitches), empty for none or an unknown id. */
 export function traitsOf(ctx: GameContext, id: string): readonly string[] {
   return worldOf(ctx).creatures.get(id)?.traits ?? [];
@@ -1982,6 +2013,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     helper: botProfile(creature.species)?.patches !== undefined ? "Following you, it patches you up" : botProfile(creature.species)?.powers !== undefined ? "On Guard Zone, it powers stations near it" : botProfile(creature.species)?.sentry !== undefined ? "On Guard Zone, it pings hostiles near its post" : botProfile(creature.species)?.cloak === true ? "Ridden, wild bots cannot see you" : null,
     dormant: creature.dormant,
     overclocked: !creature.tamed && world.storm,
+    conductor: conductorOf(ctx, world, creature) === creature.id,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
     lineage:
       creature.lineage === null
