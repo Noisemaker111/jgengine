@@ -7,7 +7,8 @@ import { ACID_SECONDS, ACID_SLOW, ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HAR
 import { hazardSpeedFactor, inMowerLane } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
-import { YARD } from "../yardInstance";
+import { YARD, YARD_NAV } from "../yardInstance";
+import { routeTo } from "../yardNav";
 import { distressNear, FLEE_SECONDS, matchRunning, playerDepot, pushFx, raiseDistress, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
@@ -74,7 +75,9 @@ function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: 
   const at = ctx.scene.entity.get(u.id)?.position;
   const acid = (session.acid[u.id] ?? 0) > session.elapsed ? ACID_SLOW : 1;
   const pace = (at === undefined ? base : base * yardPace(u.catalogId, u.faction, at[0], at[2])) * acid;
-  ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed: pace, dt, face: true });
+  // Ants walk the yard's routes (round patio stones, over the hose only at a crossing); wasps fly.
+  const next = at === undefined || u.catalogId === "wasp" ? [x, z] as const : routeTo(YARD_NAV, session.routes, u.id, [at[0], at[2]], x, z);
+  ctx.scene.entity.moveTowardCommit(u.id, [next[0], 0, next[1]], { speed: pace, dt, face: true });
 }
 
 /** How much nearer a preferred target counts: a raider takes a worker up to ~3x as far as a soldier. */

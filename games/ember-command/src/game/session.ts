@@ -15,6 +15,7 @@ import { combatantDef, nodeDef, type CombatantKind } from "./catalog";
 import { createFogState, FOG_BOUNDS, type FogState } from "./fog";
 import { createHazardState, NO_HAZARDS, type HazardState } from "./hazards";
 import { createTrailField, type AlarmPulse, type TrailField } from "./pheromone";
+import type { RouteCache } from "./yardNav";
 import type { FormationState } from "./formations";
 import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, TRAIL_CELL, type Faction } from "./tuning";
 import type { ResearchSpec } from "./upgrades";
@@ -83,6 +84,8 @@ export interface SessionState {
   trails: TrailField;
   /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
   fx: { kind: FxKind; x: number; z: number; at: number }[];
+  /** Each walker's cached route across the yard (see `yardNav.ts`). */
+  routes: Map<string, RouteCache>;
   /** Workers running for the nest after being bitten, with the battle second they calm down. */
   fleeing: Record<string, number>;
   /** Black ants a Scout has tagged with marking scent, and the battle second the tag fades. */
@@ -142,6 +145,7 @@ function fresh(): SessionState {
     distress: [],
     marked: {},
     fleeing: {},
+    routes: new Map(),
     fx: [],
     coachSeen: [],
     trailPainted: false,
