@@ -13,7 +13,7 @@ import { loadHeroPicks } from "../heroActs";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
 import { SUGAR, LEAF, STARTING_SUGAR, STARTING_LEAF } from "../tuning";
-import { initResourceField, resetSession, session, type UnitRuntime } from "../session";
+import { initResourceField, pushFx, resetSession, session, type UnitRuntime } from "../session";
 import { recordOutcome } from "../preferences";
 
 const wiredContexts = new WeakSet<GameContext>();
@@ -72,6 +72,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     return;
   }
   ctx.game.audio.play("fall", event.position);
+  pushFx(def.kind === "building" ? "chamber" : "death", event.position[0], event.position[2]);
   if (def.faction === "player" && def.kind === "unit") raiseAlarm(session.alarms, event.position[0], event.position[2], session.elapsed);
   if (def.faction === "enemy" && def.kind === "unit") {
     if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, SUGAR, def.bounty);

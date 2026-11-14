@@ -9,6 +9,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { BEAM_RADIUS, MOWER_DECK_HALF_LENGTH, mowerPosition, SPRINKLER_JET_HALF_ANGLE, sprinklerWarming } from "../hazards";
 import { ALARM_RADIUS, ALARM_SECONDS } from "../pheromone";
 import { cellCentre } from "../pheromone";
+import { activeJobs, jobProgress, queuedJobs } from "@jgengine/core/gameplay";
 import { session } from "../session";
 import { YARD } from "../yardInstance";
 
@@ -23,6 +24,10 @@ import { YARD } from "../yardInstance";
 
 const DROPS = 220;
 const ALARM_RINGS = 24;
+const PUFFS = 48;
+const DIG_SITES = 8;
+const PUFF_SECONDS = 0.9;
+const PUFF_COLOR: Record<string, THREE.Color> = { death: new THREE.Color("#c9b38a"), acid: new THREE.Color("#8dff5a"), chamber: new THREE.Color("#8a5a32") };
 const TRAIL_CAPACITY = 2400;
 
 function sprinklerHead(): THREE.Group {
@@ -166,6 +171,26 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
   const rings = new THREE.InstancedMesh(ringGeometry, ringMaterial, ALARM_RINGS);
   rings.frustumCulled = false;
   rings.count = 0;
+  // Puffs: a dust burst where a body falls, a green splash where acid lands, a soil cloud for a chamber.
+  const puffGeometry = new THREE.IcosahedronGeometry(1, 1);
+  const puffMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
+  const puffs = new THREE.InstancedMesh(puffGeometry, puffMaterial, PUFFS);
+  puffs.frustumCulled = false;
+  puffs.count = 0;
+  const puffColor = new THREE.Color();
+  // Dig sites: a ring of turned soil marking where a chamber is going in, filling as the dig goes.
+  const siteRingGeometry = new THREE.RingGeometry(2.6, 3.2, 32);
+  siteRingGeometry.rotateX(-Math.PI / 2);
+  const siteFillGeometry = new THREE.CircleGeometry(2.6, 32);
+  siteFillGeometry.rotateX(-Math.PI / 2);
+  const siteRingMaterial = new THREE.MeshStandardMaterial({ color: "#7a4a26", roughness: 1 });
+  const siteFillMaterial = new THREE.MeshBasicMaterial({ color: "#ffd23f", transparent: true, opacity: 0.45, depthWrite: false });
+  const siteRings = new THREE.InstancedMesh(siteRingGeometry, siteRingMaterial, DIG_SITES);
+  const siteFills = new THREE.InstancedMesh(siteFillGeometry, siteFillMaterial, DIG_SITES);
+  siteRings.frustumCulled = false;
+  siteFills.frustumCulled = false;
+  siteRings.count = 0;
+  siteFills.count = 0;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const s = new THREE.Vector3();
@@ -188,7 +213,7 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         warn.position.set(mx, ground(mx, mz) + 0.12, mz);
         root.add(mower, warn);
       }
-      root.add(rings, beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
+      root.add(rings, puffs, siteRings, siteFills, beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
       state.scene.add(root);
     },
     frame(state: EngineFrameState, delta: number) {
@@ -270,6 +295,47 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
       rings.count = r;
       rings.instanceMatrix.needsUpdate = true;
       ringMaterial.opacity = 0.55;
+
+      // Puffs swell and fade over a second.
+      let n2 = 0;
+      for (const fx of session.fx) {
+        const age = now - fx.at;
+        if (age < 0 || age > PUFF_SECONDS || n2 >= PUFFS) continue;
+        const k = age / PUFF_SECONDS;
+        const size = (fx.kind === "chamber" ? 3.2 : fx.kind === "acid" ? 0.7 : 1.1) * (0.4 + k);
+        p.set(fx.x, ground(fx.x, fx.z) + 0.4 + k * (fx.kind === "chamber" ? 2 : 0.8), fx.z);
+        s.setScalar(size * (1 - k * 0.3));
+        m.compose(p, q, s);
+        puffs.setMatrixAt(n2, m);
+        puffColor.copy(PUFF_COLOR[fx.kind] ?? PUFF_COLOR["death"]!).multiplyScalar(1 - k * 0.5);
+        puffs.setColorAt(n2, puffColor);
+        n2 += 1;
+      }
+      puffs.count = n2;
+      puffs.instanceMatrix.needsUpdate = true;
+      if (puffs.instanceColor !== null) puffs.instanceColor.needsUpdate = true;
+
+      // Dig sites: every chamber being dug, with its fill showing how far along it is.
+      let d = 0;
+      const digging = [...activeJobs(session.buildQueue).map((job) => ({ spec: job.spec, progress: jobProgress(job) })), ...queuedJobs(session.buildQueue).map((job) => ({ spec: job.spec, progress: 0 }))];
+      for (const job of digging) {
+        if (d >= DIG_SITES) break;
+        const gy = ground(job.spec.x, job.spec.z) + 0.06;
+        p.set(job.spec.x, gy, job.spec.z);
+        s.set(1, 1, 1);
+        m.compose(p, q, s);
+        siteRings.setMatrixAt(d, m);
+        const fill = Math.max(0.05, job.progress);
+        s.set(fill, 1, fill);
+        p.y = gy + 0.02;
+        m.compose(p, q, s);
+        siteFills.setMatrixAt(d, m);
+        d += 1;
+      }
+      siteRings.count = d;
+      siteFills.count = d;
+      siteRings.instanceMatrix.needsUpdate = true;
+      siteFills.instanceMatrix.needsUpdate = true;
 
       // Pheromone: refresh the instanced dots only when the scent grid changed.
       const field = session.trails;

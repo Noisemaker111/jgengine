@@ -8,7 +8,7 @@ import { hazardSpeedFactor } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
 import { YARD } from "../yardInstance";
-import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
+import { matchRunning, playerDepot, pushFx, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
@@ -205,7 +205,10 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
         const amount = resolved * lineMultiplier(u.faction, target.faction) * alarm;
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
         // Spitter acid gums up whatever it hits.
-        if (u.catalogId === "spitter" && target.kind === "unit") session.acid[target.id] = session.elapsed + ACID_SECONDS;
+        if (u.catalogId === "spitter" && target.kind === "unit") {
+          session.acid[target.id] = session.elapsed + ACID_SECONDS;
+          pushFx("acid", ent.position[0], ent.position[2]);
+        }
         // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
           raiseCombatNoise(ctx, { x: ent.position[0], z: ent.position[2] }, u.id);

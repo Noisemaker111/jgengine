@@ -78,6 +78,8 @@ export interface SessionState {
   trailArmed: boolean;
   /** The colony's scent grid (see `pheromone.ts`). */
   trails: TrailField;
+  /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
+  fx: { kind: "death" | "acid" | "chamber"; x: number; z: number; at: number }[];
   /** Units slowed by spitter acid, with the battle second the acid wears off. */
   acid: Record<string, number>;
   /** Live alarm-pheromone clouds where red ants died (see `pheromone.ts`). */
@@ -128,6 +130,7 @@ function fresh(): SessionState {
     trails: createTrailField(FOG_BOUNDS, TRAIL_CELL),
     alarms: [],
     acid: {},
+    fx: [],
     coachSeen: [],
     trailPainted: false,
     hazards: createHazardState(NO_HAZARDS),
@@ -231,3 +234,10 @@ export function playerDepot(from: { x: number; z: number }): { id: string; x: nu
   }
   return best;
 }
+
+/** Queue a puff for the overlay, keeping the list short. */
+export function pushFx(kind: "death" | "acid" | "chamber", x: number, z: number): void {
+  session.fx.push({ kind, x, z, at: session.elapsed });
+  if (session.fx.length > 48) session.fx.shift();
+}
+
