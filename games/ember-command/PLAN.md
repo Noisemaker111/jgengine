@@ -158,15 +158,20 @@ Genres: strategy. 0/17 proven · 17 missing.
 
 ## Handoff
 
-- Done (committed): the LAWN ORDER redesign (castes, chambers, sugar/leaf, popsicle, pheromone trails,
-  sprinkler/mower/rain/night/beam, backyard studios, procedural bodies, five missions, garden-journal
-  HUD) plus depth rounds: alarm scent, sprinkler tell, black ants dodge the mower and run red trails,
-  scout trail vision, field coach, spitter acid, Nursery/Granary bonuses, impatient beam, beam-lure tip,
-  dust/acid/soil puffs, dig sites, lawn minimap, crossing and brood guards, cupped leaf canopies.
-- Shared fixes: jg-ui bundle served under Vite's `?import`; capture Chrome gets WebGPU on SwiftShader;
-  Rune's first-frame marks use the page clock on wasm, and the jg-ui wasm was rebuilt (the old bundle
-  panicked on `std::time::Instant`). Grass fingerprint fixture rewritten (the lawn look moved).
-- Verify: game tests green; `verify:fast` earlier failed only on the grass fingerprint (now rewritten);
-  rerun pending. Screenshots: `shots/ember-command-play-half-low-draft.png` (draft, software GL).
-- Next: rerun `bun run verify:fast`; more shots (keep-enemy view, mission 5 beam); tune plant density
-  and the canopy look from the shots.
+- Done (committed): the LAWN ORDER redesign plus ten depth rounds — alarm and distress scent, hazard
+  tells (sprinkler hiss, lane flash, beam tightening), black ants dodge the mower and run red trails,
+  idle red ants and waiting foragers around the mower, scout trail vision, the field coach, spitter
+  acid, Nursery/Granary bonuses, brood lanes per Barracks, impatient beam that hunts fighters and burns
+  black ants when the colony hides, puffs and dig sites, lawn minimap with the beam, crossing and brood
+  guards, leaf canopies, notice feed capped and battle-only.
+- Fixed on the way: the black raids never marched (the director looked up an unauthored home id).
+- Shared fixes: jg-ui under Vite's `?import`; capture Chrome WebGPU on SwiftShader; Rune marks on the
+  page clock with the jg-ui wasm rebuilt; grass fingerprint fixture rewritten.
+- Evidence: 207 game tests incl. headless sims (opening raid, raids start, mower dodge, boss counter);
+  scratch probes (not committed) won all five missions with simple plans. Shots in `shots/`:
+  `ember-command-play-half-low-draft.png`, `ember-command-view-keep-enemy-half-low-draft.png`,
+  `ember-command-state-boss-half-low-draft.png`, `ember-command-sprinkler-31s-half-low-draft.png`.
+- Verify: `verify:fast` fails only on provisioning other games' library models (network 403); the
+  ember boot probe passes when a render slot is free. The to-skirmish drive flow is flaky under
+  software rendering (DOM settle), not reproduced as a game fault.
+- Next ideas: wasp flight lanes and nest, scouts marking enemies on the map, a second lawn.

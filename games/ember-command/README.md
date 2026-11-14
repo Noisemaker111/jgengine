@@ -44,6 +44,12 @@ are what the build does now.
 - **Caste and chamber depth.** Spitter acid slows its target (×0.65 for 2.5 s); a Nursery warms the
   brood (eggs hatch 25% faster); each Granary ferments +1 sugar a second; Scouts on a scent trail keep
   their full sight at night.
+- **Brood lanes.** The queen hatches one egg at a time; every Barracks Chamber adds a lane, so a colony
+  out-hatches a growing raid by digging more barracks.
+- **Colony instincts.** A bitten red ant gives off distress: idle red fighters within 16 m come running.
+  Idle ants (and black ants) walk out of the mower's lane when it roars; foragers wait at its edge.
+- **The boss's counter.** The kid follows the biggest knot of red fighters in the open; with the whole
+  army in shade he burns the black ants instead.
 - **Readable tells.** The sprinkler hisses and dribbles for 4 s before it sprays; the mower lane flashes
   red on the ground and the minimap for 9 s before the deck rolls; black ants run out of the lane on
   their own side when they hear it; the beam goes out of focus 3.5 s in every 15 and drags faster as
@@ -59,8 +65,9 @@ are what the build does now.
 - **Progression.** Brood room (supply) from the nest and Fungus Gardens; instincts researched in the
   Barracks (Mandibles and Chitin, three ranks each; Swarm or Turtle, a fork); the Marshal levels 1–5,
   each level offering an act (Ground Slam, Rally Scent, Acid Barrage, Chitin Ward) or a kept trait.
-- **Failure states.** The red nest at 1600 health, the black nest at 1300. Black raids wait 30 s, then
-  march every 42 s (raiders, majors, wasps), held at 22 fielded.
+- **Failure states.** The red nest at 1600 health, the black nest at 1300. Black raids scout first,
+  raise a forward camp, then march every 42 s (raiders, majors, wasps from the fourth raid), held at 22
+  fielded. A headless bot with two barracks holds past the eighth raid; an idle colony falls around 3:20.
 - **HUD.** Pantry strip (sugar, leaf, brood room, both nests, raid clock), the orders card, a yard strip
   naming the live hazards, a night wash, the lawn minimap, the Marshal's card and a 6×4 command board.
 - **Save.** `persist: { mode: "manual" }` checkpoints the campaign track and stores at mission beats.
