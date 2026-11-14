@@ -160,6 +160,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   model(t, `${FURN}/chair_A_wood`, [-2, 0, 30], 95, Math.PI);
   model(t, `${FOOD}/Spoon`, [-8, 0, 12], 18, 0.6);
   model(t, `${FOOD}/FryingPan`, [26, 0, 22], 40, 2.2);
+  model(t, `${FOOD}/Apple_Green`, [8, 0, 4], 6, 0.4, [5, 5]);
   lamp(t, 'oven-clock', [8, 12, -1], '#7dffb0', 1.5, 28, 'oven clock glow');
   lamp(t, 'moon', [8, 48, 12], '#9fb9ff', 10, 90, 'moonlight from the window');
   door(t, 'entry', 'entry', -14, -2, ['crack'], 'the baseboard crack');
@@ -253,6 +254,10 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   for (let i = 0; i < 6; i++) cyl(t, 'cooling-coil', [-15 + i * 6, 5, -10], 0.6, 36, 'metal', '#4a4f52', { roll: Math.PI / 2, turn: Math.PI / 2 });
   for (const [x, z, r] of [[-12, 4, 3], [6, -4, 2.4], [14, 6, 3.4], [-4, 8, 2]] as const) ball(t, 'dust-bunny', [x, r * 0.6, z], r, 'dust', DUST);
   box(t, 'vent-grille', [12, 3, -12.3], [9, 5, 0.6], 'metal', '#8c8f88');
+  model(t, `${FOOD}/Pizza_Slice`, [-12, 0, -6], 10, 0.5, [8, 6]);
+  model(t, `${FOOD}/Egg_Whole_White`, [8, 0, 8], 4.5, 0.3, [4, 3]);
+  model(t, `${PROPS}/Coin`, [-6, 0, 6], 3.5, 0.9);
+  model(t, `${FOOD}/Donut3`, [20, 0, -2], 6, 0.2, [6, 6]);
   lamp(t, 'motor', [-8, 4, -9], '#ff8a3c', 4, 22, 'compressor glow');
   lamp(t, 'gap', [0, 5, 12], '#9fb9ff', 4, 30, 'moonlight under the edge');
   door(t, 'entry', 'entry', -16, 9, ['crack', 'drop', 'cable'], 'the fridge gap');
@@ -285,6 +290,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'rug-edge', [0, 0.25, 15], [60, 0.5, 6], 'rug', RUG);
   model(t, `${PROPS}/BookGroup_Medium_1`, [12, 0, -6], 22, 0.1, [18, 5]);
   model(t, `${FURN}/armchair`, [48, 0, 30], 95, -2.4);
+  model(t, `${PROPS}/Book_Stack_2`, [4, 0, 8], 9, 0.7, [8, 6]);
   lamp(t, 'standard-lamp', [-24, 40, 16], '#ffc477', 10, 90, 'a lamp left on low');
   lamp(t, 'moon', [24, 50, 18], '#9fb9ff', 6, 90, 'moonlight');
   door(t, 'entry', 'entry', 20, -2, ['crack'], 'the baseboard crack');
@@ -312,6 +318,8 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'room-floor', [0, 0.4, 24], [80, 0.8, 30], 'wood', '#8c5a33');
   model(t, `${FURN}/pillow_B`, [-30, 0, 30], 30, 0.6);
   model(t, `${FURN}/table_low`, [10, 0, 56], 70, 0);
+  model(t, `${PROPS}/Coin_Pile_2`, [-2, 0, -12], 7, 0.3);
+  model(t, `${FOOD}/Popsicle_Chocolate`, [-12, 0, 0], 8, 2.1);
   lamp(t, 'tv-standby', [0, 6, 20], '#ff5a4a', 3, 40, 'tv standby light');
   lamp(t, 'moon', [10, 30, 30], '#9fb9ff', 7, 90, 'moonlight on the rug');
   door(t, 'entry', 'entry', -20, 12, ['crack', 'cable'], 'the couch skirt');
@@ -363,7 +371,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'mail-slot', [6, 46, -15.3], [14, 3, 0.6], 'chrome', BRASS);
   box(t, 'dog-flap', [-12, 9, -15.4], [12, 16, 0.6], 'plastic', '#5d5a52');
   box(t, 'doormat', [0, 0.6, -10], [36, 1.2, 9], 'rug', '#6a5236');
-  model(t, `${CLUTTER}/Debris_Papers`, [8, 1.3, -9], 18, 0.4);
+  model(t, `${CLUTTER}/Debris_Papers`, [8, 1.3, -9], 11, 0.4);
+  model(t, `${PROPS}/Key_Metal`, [4, 0, 2], 8, 0.6);
+  model(t, `${PROPS}/Coin_Pile`, [-4, 0, -3], 6, 0.2);
   box(t, 'letter-b', [-4, 1.5, -11], [12, 0.3, 8], 'paper', '#f2e6c8', { turn: -0.2 });
   box(t, 'sneaker', [-14, 5, 6], [10, 10, 24], 'fabric', '#e8e8e8', { solid: true, turn: 0.2 });
   box(t, 'sneaker-sole', [-14, 1, 6], [10.6, 2, 24.6], 'rubber', '#3a3a3a', { turn: 0.2 });
@@ -434,6 +444,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'sock', [14, 1, -8], [11, 2, 7], 'fabric', '#e8e4dc', { cover: true, turn: 0.7 });
   box(t, 'toy-car', [-2, 2.4, 8], [5, 4, 9], 'plastic', '#f1c40f', { solid: true, turn: -0.3 });
   box(t, 'vent-grille', [-16, 3, -14.3], [9, 5, 0.6], 'metal', '#c0c0b8');
+  model(t, `${FURN}/book_single`, [8, 0, -10], 12, 0.4, [10, 7]);
+  model(t, `${CLUTTER}/Traffic_Cone`, [20, 0, -2], 12, 0, [5, 5]);
+  model(t, `${FOOD}/Popsicle_Strawberry`, [-16, 0, 3], 9, 1.1);
   wall(t, 'north', w, d, '#9cc4d6', '#f4efe3');
   lamp(t, 'edge', [0, 8, 16], '#9fb9ff', 5, 40, 'moonlight at the bed edge');
   lamp(t, 'glowstick', [10, 2, -10], '#b4ff6a', 3, 18, 'a forgotten glow stick');
@@ -467,6 +480,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'sponge-scrub', [12, 3.2, 6], [9, 0.6, 6], 'fabric', '#27ae60', { turn: 0.4 });
   box(t, 'toothbrush', [-6, 0.7, 8], [2, 1.4, 26], 'plastic', '#c45ab3', { solid: true, turn: -0.9 });
   cyl(t, 'drip-puddle', [4, 0.05, -2], 3.5, 0.1, 'glass', '#9fd3ff');
+  model(t, `${PROPS}/Bottle_1`, [16, 0, -8], 18, 0, [6, 6]);
+  model(t, `${PROPS}/SmallBottles_1`, [-19, 0, -1], 10, 0.6, [8, 6]);
+  model(t, `${PROPS}/Potion_2`, [18, 0, 0], 9, 0.3, [5, 5]);
   box(t, 'door-gap', [0, 17, 14.6], [44, 34, 0.4], 'paint', '#fbf8f1', { tilt: 0.4 });
   lamp(t, 'door-crack', [0, 14, 13], '#ffe9c4', 5, 40, 'landing light through the door crack');
   lamp(t, 'drip', [4, 2, -2], '#9fd3ff', 2, 14, 'the drip catching light');
@@ -526,6 +542,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'sock-a', [8, 1, 8], [10, 2, 5], 'fabric', '#f4efe3', { cover: true, turn: 0.8 });
   box(t, 'sock-b', [18, 1, 4], [10, 2, 5], 'fabric', '#2c3e50', { turn: -0.5 });
   box(t, 'hoodie', [-18, 6, -8], [14, 12, 14], 'fabric', '#7a5aa0', { solid: true, turn: 0.4 });
+  model(t, `${FURN}/pillow_B`, [2, 0, -10], 18, 0.5, [14, 9]);
+  model(t, `${PROPS}/Pouch_Large`, [20, 0, -1], 10, -0.4, [8, 8]);
+  model(t, `${FURN}/book_single`, [-2, 0, 10], 10, 1.2, [8, 6]);
   lamp(t, 'hall', [0, 20, 15], '#ffd28a', 5, 50, 'hall light under the door');
   lamp(t, 'moon', [20, 50, -10], '#9fb9ff', 5, 90, 'moonlight');
   door(t, 'entry', 'entry', -20, 12, ['crack', 'climb', 'cable'], 'the door gap');
@@ -642,22 +661,24 @@ const DOOR_CLEAR = 9;
   const doors = (markers as Record<string, any>[]).filter(m => m.kind === 'crumb-door');
   const tooBig = (v: Record<string, any>) => v.shape === 'box' ? (v.halfExtents.x * 2 > 26 || v.halfExtents.z * 2 > 26) : (v.radius ?? 0) * 2 > 26;
   const low = (v: Record<string, any>) => v.center.y - (v.halfExtents?.y ?? (v.height ?? (v.radius ?? 0) * 2) / 2) < 3;
-  const groups = new Map<string, Record<string, any>[]>();
-  for (const v of volumes as Record<string, any>[]) {
-    if (v.kind !== 'crumb-prop' || tooBig(v) || !low(v)) continue;
-    const key = `${v.meta.template}|${v.label}`;
-    groups.set(key, [...(groups.get(key) ?? []), v]);
-  }
+  // The parts of one thing share a base name and stand together (a sneaker and its sole, a shoebox
+  // and its lid, a basket and its rim); four bed legs share a name but are four things.
+  const base = (v: Record<string, any>) => String(v.label).split('-')[0];
+  const partsOf = (v: Record<string, any>, reach: number) => (volumes as Record<string, any>[]).filter(p =>
+    p === v || (p.kind === 'crumb-prop' && p.meta.template === v.meta.template && !tooBig(p) && p.meta.hidden !== true && base(p) === base(v)
+      && Math.hypot(p.center.x - v.center.x, p.center.z - v.center.z) < reach + 2));
   for (const door of doors) {
     for (const v of volumes as Record<string, any>[]) {
       if (v.kind !== 'crumb-prop' || v.meta.template !== door.meta.template || tooBig(v) || !low(v) || v.meta.material === 'emissive') continue;
+      // Legs and feet hold furniture up where it stands; a Little slips between them.
+      if (/-(leg|foot)$/.test(String(v.label))) continue;
       const reach = Math.max(v.halfExtents?.x ?? v.radius ?? 1, v.halfExtents?.z ?? v.radius ?? 1);
       const dx = v.center.x - door.x, dz = v.center.z - door.z, dist = Math.hypot(dx, dz);
       const need = DOOR_CLEAR + reach - dist;
       if (need <= 0) continue;
       const ux = dist < 0.01 ? 1 : dx / dist, uz = dist < 0.01 ? 0 : dz / dist;
-      // Move every volume of the same named prop together, so a toy box keeps its lid.
-      for (const part of groups.get(`${v.meta.template}|${v.label}`) ?? [v]) { part.center.x += ux * need; part.center.z += uz * need; }
+      // Move every part of the prop together, so a toy box keeps its lid.
+      for (const part of partsOf(v, reach)) { part.center.x += ux * need; part.center.z += uz * need; }
     }
     for (const m of markers as Record<string, any>[]) {
       if (m.kind !== 'crumb-model' || m.meta.template !== door.meta.template || (m.meta.size ?? 0) > 30) continue;
@@ -727,6 +748,7 @@ for (const m of markers as Record<string, any>[]) {
   box(t, 'rafter', [0, 50, -19], [50, 60, 2], 'wood', '#4a3424', { tilt: 0.6 });
   model(t, `${PROPS}/CandleStick`, [-16, 0, -4], 8, 0.4, [6, 4]);
   model(t, `${PROPS}/Lantern_Wall`, [22, 0, -14], 14, -1.2);
+  model(t, `${PROPS}/CandleStick_Triple`, [-2, 0, -10], 12, 0.2, [8, 4]);
   lamp(t, 'fairy', [-2, 3, 12], '#ffcf8f', 6, 40, 'a string of fairy lights still plugged in');
   lamp(t, 'moon', [18, 30, -12], '#a8c4ff', 6, 70, 'moonlight through a gap in the tiles');
   door(t, 'entry', 'entry', -19, 13, ['crack', 'climb'], 'along the beams');

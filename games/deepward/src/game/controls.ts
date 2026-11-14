@@ -1,4 +1,5 @@
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { teleportPlayer } from "@jgengine/core/movement/teleport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { hashUnit } from "@jgengine/core/random/rng";
@@ -8,7 +9,7 @@ import { rebindAction } from "@jgengine/core/game/controlGate";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import { BURROW, DEPART, groundDistance, HOME_SPAWN, inCover, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
+import { BURROW, DEPART, eyeLevel, groundDistance, HOME_SPAWN, inCover, inside, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
 import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
@@ -97,7 +98,8 @@ function ungrab(): void { if (typeof document !== "undefined") document.exitPoin
 function freeze(ctx: GameContext): void { ctx.time.pause(); setGamePhase(ctx, "paused"); ctx.game.audio.setLoop("bed", { gain: 0 }); ungrab(); }
 function resume(ctx: GameContext): void { setGamePhase(ctx, "playing"); ctx.game.audio.setLoop("bed", { gain: BED_GAIN }); ctx.time.play(); }
 function teleport(ctx: GameContext, at: Point, facing?: number): void {
-  ctx.scene.entity.setPose(ctx.player.userId, { position: [at[0], 0, at[2]], rotationY: facing ?? Math.PI, dt: 0 });
+  // The engine's teleport also drops queued movement and turns the camera, so the view faces `facing`.
+  teleportPlayer(ctx, ctx.player.userId, { x: at[0], y: 0, z: at[2], yaw: facing ?? Math.PI });
   runtime(ctx).last = [at[0], 0, at[2]];
 }
 const faceToward = (from: Point, to: { x: number; z: number }) => Math.atan2(to.x - from[0], to.z - from[2]);
@@ -780,13 +782,31 @@ function standForOverview(ctx: GameContext): void {
   const run = viewStore.read(ctx).run;
   if (run === null) return;
   const t = roomOf(run).template, a = t.area;
-  let best: Point = [a.x, 0, a.z], far = -1;
-  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
-    const x = a.x - a.w / 2 + 2 + (a.w - 4) * i / 12, z = a.z - a.d / 2 + 2 + (a.d - 4) * j / 12;
-    const d = Math.hypot(x - a.x, z - a.z);
-    if (d > far && walkable(t, x, z, 1)) { far = d; best = [x, 0, z]; }
+  // Frame the room, not the nearest giant prop: stand in the open and look along the spot and
+  // heading whose fan of sight lines runs furthest before it meets a solid.
+  const sight = [...eyeLevel(t), ...t.models.filter(m => m.at[1] < 3).map(m => ({ x: m.at[0], z: m.at[2], w: m.size * 0.7, d: m.size * 0.7 }))], hunters = run.threats.filter(s => s.kind === "cat" || s.kind === "dog" || s.kind === "kid").map(s => ({ at: s.at, room: s.kind === "dog" ? 40 : s.kind === "cat" ? 28 : 20 }));
+  const clear = (x: number, z: number) => walkable(t, x, z, 0.4) && !sight.some(r => inside(x, z, r, 0.4)) && hunters.every(h => Math.hypot(h.at[0] - x, h.at[2] - z) > h.room / 3);
+  const open = (x: number, z: number, yaw: number) => {
+    let n = 0;
+    while (n < 80 && clear(x + Math.sin(yaw) * n, z + Math.cos(yaw) * n)) n += 1;
+    return n;
+  };
+  let best: Point = [a.x, 0, a.z], bestYaw = 0, bestScore = -Infinity;
+  for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
+    const x = a.x - a.w / 2 + 2 + (a.w - 4) * i / 16, z = a.z - a.d / 2 + 2 + (a.d - 4) * j / 16;
+    if (!walkable(t, x, z, 2.5) || !clear(x, z)) continue;
+    const crowd = hunters.reduce((sum, h) => sum + Math.max(0, h.room - Math.hypot(h.at[0] - x, h.at[2] - z)) * 6, 0);
+    const centre = Math.atan2(a.x - x, a.z - z);
+    // Look across the room, within a turn of its middle, along the clearest vista.
+    for (const swing of [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1]) {
+      const yaw = centre + swing;
+      let least = Infinity, sum = 0;
+      for (const fan of [-1, -0.66, -0.33, 0, 0.33, 0.66, 1]) { const n = Math.min(50, open(x, z, yaw + fan)); least = Math.min(least, n); sum += n; }
+      const score = least * 3 + sum / 7 - Math.abs(swing) * 4 - crowd;
+      if (score > bestScore) { bestScore = score; best = [x, 0, z]; bestYaw = yaw; }
+    }
   }
-  teleport(ctx, best, faceToward(best, { x: a.x, z: a.z }));
+  teleport(ctx, best, bestYaw);
   resume(ctx);
 }
 /** Dev-only: the mid-run stage, then home through the crack, so a capture lands on the night report. */
@@ -817,7 +837,14 @@ export async function stageRoom(ctx: GameContext, template: string): Promise<voi
   for (let i = 0; i < 400 && queue.length > 0; i++) {
     const path = queue.shift()!;
     const plan = planRoom(runSeedOf(run), path);
-    if (plan.template.id === template) { enterRoom(ctx, viewStore.read(ctx).run!, path, null); standForOverview(ctx); return; }
+    if (plan.template.id === template) {
+      enterRoom(ctx, viewStore.read(ctx).run!, path, null);
+      // A look capture shows the room's hunters at rest: the Cat grooming, the rest holding off.
+      const v2 = viewStore.read(ctx);
+      if (v2.run !== null) viewStore.write(ctx, { ...v2, run: { ...v2.run, threats: v2.run.threats.map(s => s.kind === "cat" ? { ...s, mode: "groom" as const, timer: 30, cooldown: 30 } : { ...s, cooldown: 30 }) } });
+      standForOverview(ctx);
+      return;
+    }
     queue.push(...plan.forwards.map(f => f.to));
   }
 }

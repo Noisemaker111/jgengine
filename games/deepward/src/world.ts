@@ -146,6 +146,13 @@ export function walkable(template: RoomTemplate, x: number, z: number, radius = 
   for (const s of template.solids) if (!s.cover && inside(x, z, s, radius)) return false;
   return true;
 }
+/** What fills a Little's eye line: every piece that spans eye height, solid or not (a leaning ladder, a bauble). */
+export function eyeLevel(template: RoomTemplate): Rect[] {
+  return template.props.filter(p => {
+    const half = p.halfExtents?.y ?? (p.height ?? (p.radius ?? 0) * 2) / 2;
+    return p.center.y - half < 3 && p.center.y + half > 1.6;
+  }).map(footprintOf);
+}
 /** Under something low: a tea towel, a sock, a magazine. The big hunters cannot see in. */
 export function inCover(template: RoomTemplate, at: Point): boolean {
   return template.solids.some(s => s.cover && inside(at[0], at[2], s));

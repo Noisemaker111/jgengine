@@ -157,6 +157,22 @@
       }
     },
     {
+      "id": "kitchen-cabinets-model-apple_green-24",
+      "kind": "crumb-model",
+      "position": {
+        "x": -50.06826899347782,
+        "y": 0,
+        "z": -158.3408335389859
+      },
+      "rotationY": 0.4,
+      "label": "quaternius-low-poly-food-pack/Apple_Green",
+      "meta": {
+        "template": "kitchen-cabinets",
+        "model": "quaternius-low-poly-food-pack/Apple_Green",
+        "size": 6
+      }
+    },
+    {
       "id": "kitchen-cabinets-lamp-oven-clock",
       "kind": "crumb-lamp",
       "position": {
@@ -244,9 +260,9 @@
       "id": "kitchen-cabinets-spot-bowl",
       "kind": "crumb-spot",
       "position": {
-        "x": -52.5,
+        "x": -53.8,
         "y": 0,
-        "z": -162
+        "z": -162.3
       },
       "label": "beside the cat bowl",
       "meta": {
@@ -259,9 +275,9 @@
       "id": "kitchen-cabinets-spot-towel",
       "kind": "crumb-spot",
       "position": {
-        "x": -42.5,
+        "x": -42,
         "y": 0,
-        "z": -157.9
+        "z": -157
       },
       "label": "under the tea towel",
       "meta": {
@@ -287,7 +303,7 @@
       "id": "kitchen-cabinets-spot-leg",
       "kind": "crumb-spot",
       "position": {
-        "x": -65,
+        "x": -64.5,
         "y": 0,
         "z": -154
       },
@@ -316,9 +332,9 @@
       "id": "kitchen-cabinets-threat-cat",
       "kind": "crumb-threat",
       "position": {
-        "x": -45.7,
+        "x": -44.5,
         "y": 0,
-        "z": -160.3
+        "z": -158.7
       },
       "label": "the cat",
       "meta": {
@@ -894,6 +910,70 @@
       }
     },
     {
+      "id": "under-fridge-model-pizza_slice-20",
+      "kind": "crumb-model",
+      "position": {
+        "x": -177,
+        "y": 0,
+        "z": -61
+      },
+      "rotationY": 0.5,
+      "label": "quaternius-low-poly-food-pack/Pizza_Slice",
+      "meta": {
+        "template": "under-fridge",
+        "model": "quaternius-low-poly-food-pack/Pizza_Slice",
+        "size": 10
+      }
+    },
+    {
+      "id": "under-fridge-model-egg_whole_white-22",
+      "kind": "crumb-model",
+      "position": {
+        "x": -160.16312611302877,
+        "y": 0,
+        "z": -47.39539076412859
+      },
+      "rotationY": 0.3,
+      "label": "quaternius-low-poly-food-pack/Egg_Whole_White",
+      "meta": {
+        "template": "under-fridge",
+        "model": "quaternius-low-poly-food-pack/Egg_Whole_White",
+        "size": 4.5
+      }
+    },
+    {
+      "id": "under-fridge-model-coin-24",
+      "kind": "crumb-model",
+      "position": {
+        "x": -170.70336743387261,
+        "y": 0,
+        "z": -49.088989769838214
+      },
+      "rotationY": 0.9,
+      "label": "quaternius-fantasy-props/Coin",
+      "meta": {
+        "template": "under-fridge",
+        "model": "quaternius-fantasy-props/Coin",
+        "size": 3.5
+      }
+    },
+    {
+      "id": "under-fridge-model-donut3-25",
+      "kind": "crumb-model",
+      "position": {
+        "x": -144.89908324295953,
+        "y": 0,
+        "z": -57.277521081861245
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-low-poly-food-pack/Donut3",
+      "meta": {
+        "template": "under-fridge",
+        "model": "quaternius-low-poly-food-pack/Donut3",
+        "size": 6
+      }
+    },
+    {
       "id": "under-fridge-lamp-motor",
       "kind": "crumb-lamp",
       "position": {
@@ -1025,7 +1105,7 @@
       "id": "under-fridge-spot-foot",
       "kind": "crumb-spot",
       "position": {
-        "x": -183,
+        "x": -182.5,
         "y": 0,
         "z": -64
       },
@@ -1112,6 +1192,22 @@
       }
     },
     {
+      "id": "bookshelf-base-model-book_stack_2-26",
+      "kind": "crumb-model",
+      "position": {
+        "x": -46.56661685801527,
+        "y": 0,
+        "z": -52.54172892748091
+      },
+      "rotationY": 0.7,
+      "label": "quaternius-fantasy-props/Book_Stack_2",
+      "meta": {
+        "template": "bookshelf-base",
+        "model": "quaternius-fantasy-props/Book_Stack_2",
+        "size": 9
+      }
+    },
+    {
       "id": "bookshelf-base-lamp-standard-lamp",
       "kind": "crumb-lamp",
       "position": {
@@ -1149,7 +1245,7 @@
       "position": {
         "x": -35,
         "y": 0,
-        "z": -57
+        "z": -56.5
       },
       "label": "the baseboard crack",
       "meta": {
@@ -1328,6 +1424,38 @@
         "template": "under-couch",
         "model": "kaykit-furniture/table_low",
         "size": 70
+      }
+    },
+    {
+      "id": "under-couch-model-coin_pile_2-23",
+      "kind": "crumb-model",
+      "position": {
+        "x": 53,
+        "y": 0,
+        "z": -67
+      },
+      "rotationY": 0.3,
+      "label": "quaternius-fantasy-props/Coin_Pile_2",
+      "meta": {
+        "template": "under-couch",
+        "model": "quaternius-fantasy-props/Coin_Pile_2",
+        "size": 7
+      }
+    },
+    {
+      "id": "under-couch-model-popsicle_chocolate-24",
+      "kind": "crumb-model",
+      "position": {
+        "x": 43,
+        "y": 0,
+        "z": -55
+      },
+      "rotationY": 2.1,
+      "label": "quaternius-low-poly-food-pack/Popsicle_Chocolate",
+      "meta": {
+        "template": "under-couch",
+        "model": "quaternius-low-poly-food-pack/Popsicle_Chocolate",
+        "size": 8
       }
     },
     {
@@ -1829,7 +1957,39 @@
       "meta": {
         "template": "front-hall",
         "model": "quaternius-toon-shooter/Debris_Papers",
-        "size": 18
+        "size": 11
+      }
+    },
+    {
+      "id": "front-hall-model-key_metal-6",
+      "kind": "crumb-model",
+      "position": {
+        "x": -161,
+        "y": 0,
+        "z": 57
+      },
+      "rotationY": 0.6,
+      "label": "quaternius-fantasy-props/Key_Metal",
+      "meta": {
+        "template": "front-hall",
+        "model": "quaternius-fantasy-props/Key_Metal",
+        "size": 8
+      }
+    },
+    {
+      "id": "front-hall-model-coin_pile-7",
+      "kind": "crumb-model",
+      "position": {
+        "x": -169,
+        "y": 0,
+        "z": 52
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-fantasy-props/Coin_Pile",
+      "meta": {
+        "template": "front-hall",
+        "model": "quaternius-fantasy-props/Coin_Pile",
+        "size": 6
       }
     },
     {
@@ -1949,9 +2109,9 @@
       "id": "front-hall-spot-mat",
       "kind": "crumb-spot",
       "position": {
-        "x": -171.3,
+        "x": -171,
         "y": 0,
-        "z": 49.7
+        "z": 48
       },
       "label": "on the doormat",
       "meta": {
@@ -2023,7 +2183,7 @@
       "position": {
         "x": -165,
         "y": 0,
-        "z": 65
+        "z": 64.5
       },
       "label": "the dog",
       "meta": {
@@ -2038,7 +2198,7 @@
       "position": {
         "x": -165,
         "y": 0,
-        "z": 65
+        "z": 64.5
       },
       "label": "the roomba",
       "meta": {
@@ -2286,6 +2446,54 @@
       }
     },
     {
+      "id": "under-bed-model-book_single-21",
+      "kind": "crumb-model",
+      "position": {
+        "x": 63,
+        "y": 0,
+        "z": 45
+      },
+      "rotationY": 0.4,
+      "label": "kaykit-furniture/book_single",
+      "meta": {
+        "template": "under-bed",
+        "model": "kaykit-furniture/book_single",
+        "size": 12
+      }
+    },
+    {
+      "id": "under-bed-model-traffic_cone-23",
+      "kind": "crumb-model",
+      "position": {
+        "x": 75,
+        "y": 0,
+        "z": 52
+      },
+      "rotationY": 0,
+      "label": "quaternius-toon-shooter/Traffic_Cone",
+      "meta": {
+        "template": "under-bed",
+        "model": "quaternius-toon-shooter/Traffic_Cone",
+        "size": 12
+      }
+    },
+    {
+      "id": "under-bed-model-popsicle_strawberry-25",
+      "kind": "crumb-model",
+      "position": {
+        "x": 40.48286929172154,
+        "y": 0,
+        "z": 54.66354409362653
+      },
+      "rotationY": 1.1,
+      "label": "quaternius-low-poly-food-pack/Popsicle_Strawberry",
+      "meta": {
+        "template": "under-bed",
+        "model": "quaternius-low-poly-food-pack/Popsicle_Strawberry",
+        "size": 9
+      }
+    },
+    {
       "id": "under-bed-lamp-edge",
       "kind": "crumb-lamp",
       "position": {
@@ -2403,7 +2611,7 @@
       "id": "under-bed-spot-sock",
       "kind": "crumb-spot",
       "position": {
-        "x": 68,
+        "x": 69.5,
         "y": 0,
         "z": 49
       },
@@ -2432,9 +2640,9 @@
       "id": "under-bed-spot-deep",
       "kind": "crumb-spot",
       "position": {
-        "x": 59,
+        "x": 56.8,
         "y": 0,
-        "z": 43
+        "z": 44.3
       },
       "label": "in the deep dark under the middle",
       "meta": {
@@ -2486,6 +2694,54 @@
         "template": "under-bed",
         "threat": "roomba",
         "minDepth": 4
+      }
+    },
+    {
+      "id": "bathroom-sink-model-bottle_1-16",
+      "kind": "crumb-model",
+      "position": {
+        "x": 181,
+        "y": 0,
+        "z": 47
+      },
+      "rotationY": 0,
+      "label": "quaternius-fantasy-props/Bottle_1",
+      "meta": {
+        "template": "bathroom-sink",
+        "model": "quaternius-fantasy-props/Bottle_1",
+        "size": 18
+      }
+    },
+    {
+      "id": "bathroom-sink-model-smallbottles_1-18",
+      "kind": "crumb-model",
+      "position": {
+        "x": 145.73249955540473,
+        "y": 0,
+        "z": 51.05749510945215
+      },
+      "rotationY": 0.6,
+      "label": "quaternius-fantasy-props/SmallBottles_1",
+      "meta": {
+        "template": "bathroom-sink",
+        "model": "quaternius-fantasy-props/SmallBottles_1",
+        "size": 10
+      }
+    },
+    {
+      "id": "bathroom-sink-model-potion_2-20",
+      "kind": "crumb-model",
+      "position": {
+        "x": 183,
+        "y": 0,
+        "z": 51.5
+      },
+      "rotationY": 0.3,
+      "label": "quaternius-fantasy-props/Potion_2",
+      "meta": {
+        "template": "bathroom-sink",
+        "model": "quaternius-fantasy-props/Potion_2",
+        "size": 9
       }
     },
     {
@@ -2946,6 +3202,54 @@
       }
     },
     {
+      "id": "laundry-pile-model-pillow_b-12",
+      "kind": "crumb-model",
+      "position": {
+        "x": -53,
+        "y": 0,
+        "z": 155
+      },
+      "rotationY": 0.5,
+      "label": "kaykit-furniture/pillow_B",
+      "meta": {
+        "template": "laundry-pile",
+        "model": "kaykit-furniture/pillow_B",
+        "size": 18
+      }
+    },
+    {
+      "id": "laundry-pile-model-pouch_large-14",
+      "kind": "crumb-model",
+      "position": {
+        "x": -35,
+        "y": 0,
+        "z": 163
+      },
+      "rotationY": -0.4,
+      "label": "quaternius-fantasy-props/Pouch_Large",
+      "meta": {
+        "template": "laundry-pile",
+        "model": "quaternius-fantasy-props/Pouch_Large",
+        "size": 10
+      }
+    },
+    {
+      "id": "laundry-pile-model-book_single-16",
+      "kind": "crumb-model",
+      "position": {
+        "x": -57,
+        "y": 0,
+        "z": 175
+      },
+      "rotationY": 1.2,
+      "label": "kaykit-furniture/book_single",
+      "meta": {
+        "template": "laundry-pile",
+        "model": "kaykit-furniture/book_single",
+        "size": 10
+      }
+    },
+    {
       "id": "laundry-pile-lamp-hall",
       "kind": "crumb-lamp",
       "position": {
@@ -3018,7 +3322,7 @@
       "id": "laundry-pile-exit-vent",
       "kind": "crumb-exit",
       "position": {
-        "x": -55,
+        "x": -61.5,
         "y": 0,
         "z": 152
       },
@@ -3091,9 +3395,9 @@
       "id": "laundry-pile-spot-basket",
       "kind": "crumb-spot",
       "position": {
-        "x": -52.5,
+        "x": -48.5,
         "y": 0,
-        "z": 153.4
+        "z": 165.2
       },
       "label": "beside the basket",
       "meta": {
@@ -3105,7 +3409,7 @@
       "id": "laundry-pile-threat-roomba",
       "kind": "crumb-threat",
       "position": {
-        "x": -55,
+        "x": -51,
         "y": 0,
         "z": 171
       },
@@ -3339,7 +3643,7 @@
       "id": "workbench-spot-leg",
       "kind": "crumb-spot",
       "position": {
-        "x": 37,
+        "x": 37.5,
         "y": 0,
         "z": 155
       },
@@ -3877,6 +4181,22 @@
         "template": "attic-christmas",
         "model": "quaternius-fantasy-props/Lantern_Wall",
         "size": 14
+      }
+    },
+    {
+      "id": "attic-christmas-model-candlestick_triple-30",
+      "kind": "crumb-model",
+      "position": {
+        "x": -57,
+        "y": 0,
+        "z": 265
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-fantasy-props/CandleStick_Triple",
+      "meta": {
+        "template": "attic-christmas",
+        "model": "quaternius-fantasy-props/CandleStick_Triple",
+        "size": 12
       }
     },
     {
@@ -5512,9 +5832,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65.35580947103884,
+        "x": -67,
         "y": 31,
-        "z": -156.61657144836045
+        "z": -156
       },
       "radius": 1.3,
       "height": 62,
@@ -5534,9 +5854,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -41.35580947103884,
+        "x": -43,
         "y": 31,
-        "z": -153.61657144836045
+        "z": -153
       },
       "radius": 1.3,
       "height": 62,
@@ -5652,9 +5972,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -45.13859641286352,
+        "x": -43,
         "y": 1.4,
-        "z": -154.405000223339
+        "z": -152.7
       },
       "halfExtents": {
         "x": 3.5,
@@ -5697,6 +6017,29 @@
         "turn": 0,
         "tilt": 0,
         "roll": 0
+      }
+    },
+    {
+      "id": "kitchen-cabinets-model-solid-25",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -49.69042445208291,
+        "y": 2,
+        "z": -158.6682988081948
+      },
+      "halfExtents": {
+        "x": 2.5,
+        "y": 2,
+        "z": 2.5
+      },
+      "label": "quaternius-low-poly-food-pack/Apple_Green footprint",
+      "meta": {
+        "template": "kitchen-cabinets",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.4
       }
     },
     {
@@ -5987,9 +6330,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 71,
+        "x": 76.89949493661166,
         "y": 9.4,
-        "z": -173
+        "z": -167.10050506338834
       },
       "radius": 5.4,
       "height": 0.8,
@@ -6435,9 +6778,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 182,
+        "x": 181.3255310830457,
         "y": 12.4,
-        "z": -161
+        "z": -155.60424866436549
       },
       "radius": 4.7,
       "height": 1.2,
@@ -6809,9 +7152,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -195.20357927167294,
+        "x": -185,
         "y": 3.5,
-        "z": -58.903358460443634
+        "z": -66
       },
       "radius": 1.2,
       "height": 7,
@@ -6831,9 +7174,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -195.20357927167294,
+        "x": -185,
         "y": 3.5,
-        "z": -37.903358460443634
+        "z": -45
       },
       "radius": 1.2,
       "height": 7,
@@ -6853,9 +7196,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -155.20357927167294,
+        "x": -145,
         "y": 3.5,
-        "z": -58.903358460443634
+        "z": -66
       },
       "radius": 1.2,
       "height": 7,
@@ -6875,9 +7218,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -155.20357927167294,
+        "x": -145,
         "y": 3.5,
-        "z": -37.903358460443634
+        "z": -45
       },
       "radius": 1.2,
       "height": 7,
@@ -7029,9 +7372,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -172.53288751936455,
+        "x": -173.5036594293469,
         "y": 1.7999999999999998,
-        "z": -60.15209265961599
+        "z": -55.370425713316365
       },
       "radius": 3,
       "color": "#8d8478",
@@ -7047,9 +7390,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -154.53288751936455,
+        "x": -159,
         "y": 1.44,
-        "z": -68.15209265961599
+        "z": -59
       },
       "radius": 2.4,
       "color": "#8d8478",
@@ -7065,9 +7408,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -146.53288751936455,
+        "x": -155.87828243319285,
         "y": 2.04,
-        "z": -58.15209265961599
+        "z": -56.31742364978926
       },
       "radius": 3.4,
       "color": "#8d8478",
@@ -7083,9 +7426,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -164.53288751936455,
+        "x": -169,
         "y": 1.2,
-        "z": -56.15209265961599
+        "z": -47
       },
       "radius": 2,
       "color": "#8d8478",
@@ -7120,6 +7463,75 @@
         "turn": 0,
         "tilt": 0,
         "roll": 0
+      }
+    },
+    {
+      "id": "under-fridge-model-solid-21",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -177,
+        "y": 2,
+        "z": -61
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 3
+      },
+      "label": "quaternius-low-poly-food-pack/Pizza_Slice footprint",
+      "meta": {
+        "template": "under-fridge",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.5
+      }
+    },
+    {
+      "id": "under-fridge-model-solid-23",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -159.91505664385033,
+        "y": 2,
+        "z": -47.36438208048129
+      },
+      "halfExtents": {
+        "x": 2,
+        "y": 2,
+        "z": 1.5
+      },
+      "label": "quaternius-low-poly-food-pack/Egg_Whole_White footprint",
+      "meta": {
+        "template": "under-fridge",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.3
+      }
+    },
+    {
+      "id": "under-fridge-model-solid-26",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -144.79816648591907,
+        "y": 2,
+        "z": -57.55504216372249
+      },
+      "halfExtents": {
+        "x": 3,
+        "y": 2,
+        "z": 3
+      },
+      "label": "quaternius-low-poly-food-pack/Donut3 footprint",
+      "meta": {
+        "template": "under-fridge",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.2
       }
     },
     {
@@ -7599,9 +8011,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -44.77407702124112,
+        "x": -44.88848134662972,
         "y": 3,
-        "z": -57.77562991555301
+        "z": -58.085931447154216
       },
       "halfExtents": {
         "x": 6.7,
@@ -7625,9 +8037,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -71.05131662072846,
+        "x": -77,
         "y": 8,
-        "z": -66.91933937864349
+        "z": -59
       },
       "radius": 1.6,
       "height": 16,
@@ -7647,9 +8059,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -27.051316620728446,
+        "x": -33,
         "y": 8,
-        "z": -66.91933937864349
+        "z": -59
       },
       "radius": 1.6,
       "height": 16,
@@ -7737,6 +8149,29 @@
         "solid": true,
         "hidden": true,
         "turn": 0.1
+      }
+    },
+    {
+      "id": "bookshelf-base-model-solid-27",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -46.878964381792485,
+        "y": 2,
+        "z": -52.15129452275939
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 3
+      },
+      "label": "quaternius-fantasy-props/Book_Stack_2 footprint",
+      "meta": {
+        "template": "bookshelf-base",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.7
       }
     },
     {
@@ -7852,9 +8287,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 28.73450755749755,
+        "x": 33,
         "y": 4.5,
-        "z": -77.5966746558991
+        "z": -68
       },
       "radius": 1.6,
       "height": 9,
@@ -7874,9 +8309,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 28.73450755749755,
+        "x": 33,
         "y": 4.5,
-        "z": -55.596674655899086
+        "z": -46
       },
       "radius": 1.6,
       "height": 9,
@@ -7896,9 +8331,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 72.73450755749755,
+        "x": 77,
         "y": 4.5,
-        "z": -77.5966746558991
+        "z": -68
       },
       "radius": 1.6,
       "height": 9,
@@ -7918,9 +8353,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 72.73450755749755,
+        "x": 77,
         "y": 4.5,
-        "z": -55.596674655899086
+        "z": -46
       },
       "radius": 1.6,
       "height": 9,
@@ -7966,9 +8401,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 44.93135855337062,
+        "x": 45.947186022489994,
         "y": 2.7,
-        "z": -63.68735542387924
+        "z": -64.87248747118517
       },
       "halfExtents": {
         "x": 0.8,
@@ -7992,9 +8427,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 45.81791917335464,
+        "x": 46.83374664247401,
         "y": 2.7,
-        "z": -60.82134595650243
+        "z": -62.00647800380836
       },
       "halfExtents": {
         "x": 0.8,
@@ -8018,9 +8453,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 46.70447979333866,
+        "x": 47.720307262458036,
         "y": 2.7,
-        "z": -57.95533648912561
+        "z": -59.14046853643154
       },
       "halfExtents": {
         "x": 0.8,
@@ -8044,9 +8479,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 47.59104041332268,
+        "x": 48.60686788244205,
         "y": 2.7,
-        "z": -55.08932702174879
+        "z": -56.27445906905472
       },
       "halfExtents": {
         "x": 0.8,
@@ -8070,9 +8505,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 48.4776010333067,
+        "x": 49.49342850242607,
         "y": 2.7,
-        "z": -52.223317554371974
+        "z": -53.40844960167791
       },
       "halfExtents": {
         "x": 0.8,
@@ -8096,9 +8531,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 49.364161653290715,
+        "x": 50.37998912241009,
         "y": 2.7,
-        "z": -49.357308086995154
+        "z": -50.54244013430109
       },
       "halfExtents": {
         "x": 0.8,
@@ -8122,9 +8557,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 63.36324676318529,
+        "x": 65,
         "y": 1.6,
-        "z": -49.36324676318529
+        "z": -51
       },
       "radius": 1.8,
       "color": "#f4e3b3",
@@ -8158,9 +8593,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 57.36324676318529,
+        "x": 59,
         "y": 1.6,
-        "z": -46.36324676318529
+        "z": -48
       },
       "radius": 1.8,
       "color": "#f4e3b3",
@@ -8176,9 +8611,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 69.36324676318529,
+        "x": 71,
         "y": 1.6,
-        "z": -53.36324676318529
+        "z": -55
       },
       "radius": 1.8,
       "color": "#f4e3b3",
@@ -8542,9 +8977,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 177,
+        "x": 174.89188970806637,
         "y": 5.6,
-        "z": -61
+        "z": -58.681078678873014
       },
       "radius": 7,
       "height": 1.4,
@@ -8743,7 +9178,7 @@
       }
     },
     {
-      "id": "front-hall-letter-b-6",
+      "id": "front-hall-letter-b-8",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -8769,13 +9204,13 @@
       }
     },
     {
-      "id": "front-hall-sneaker-7",
+      "id": "front-hall-sneaker-9",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -164.04220049479486,
+        "x": -163.77017850240136,
         "y": 5,
-        "z": 51.66934606316158
+        "z": 51.27237759330965
       },
       "halfExtents": {
         "x": 5,
@@ -8795,13 +9230,13 @@
       }
     },
     {
-      "id": "front-hall-sneaker-sole-8",
+      "id": "front-hall-sneaker-sole-10",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
         "x": -163.77017850240136,
         "y": 1,
-        "z": 51.272377593309656
+        "z": 51.27237759330965
       },
       "halfExtents": {
         "x": 5.3,
@@ -8821,7 +9256,7 @@
       }
     },
     {
-      "id": "front-hall-welly-9",
+      "id": "front-hall-welly-11",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -8847,7 +9282,7 @@
       }
     },
     {
-      "id": "front-hall-umbrella-stand-10",
+      "id": "front-hall-umbrella-stand-12",
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
@@ -8869,7 +9304,7 @@
       }
     },
     {
-      "id": "front-hall-wall-east-11",
+      "id": "front-hall-wall-east-13",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -8895,7 +9330,7 @@
       }
     },
     {
-      "id": "front-hall-baseboard-east-12",
+      "id": "front-hall-baseboard-east-14",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -8921,7 +9356,7 @@
       }
     },
     {
-      "id": "front-hall-baseboard-lip-east-13",
+      "id": "front-hall-baseboard-lip-east-15",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -9731,9 +10166,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -49,
+        "x": -56.180339887498945,
         "y": 6.5,
-        "z": 69
+        "z": 65.40983005625053
       },
       "radius": 0.9,
       "height": 2.5,
@@ -9894,9 +10329,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -73,
+        "x": -68.29179606750063,
         "y": 12.4,
-        "z": 65
+        "z": 55.58359213500126
       },
       "halfExtents": {
         "x": 6.3,
@@ -10158,9 +10593,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 19.57864847849559,
+        "x": 31,
         "y": 8,
-        "z": 33.15375621113745
+        "z": 40
       },
       "radius": 1.8,
       "height": 16,
@@ -10180,9 +10615,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 19.57864847849559,
+        "x": 31,
         "y": 8,
-        "z": 59.15375621113745
+        "z": 66
       },
       "radius": 1.8,
       "height": 16,
@@ -10202,9 +10637,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 67.5786484784956,
+        "x": 79,
         "y": 8,
-        "z": 33.15375621113745
+        "z": 40
       },
       "radius": 1.8,
       "height": 16,
@@ -10224,9 +10659,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 67.5786484784956,
+        "x": 79,
         "y": 8,
-        "z": 59.15375621113745
+        "z": 66
       },
       "radius": 1.8,
       "height": 16,
@@ -10298,9 +10733,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 56.346676938886425,
+        "x": 59,
         "y": 1.4,
-        "z": 59.23111795925762
+        "z": 61
       },
       "radius": 1.4,
       "color": "#e74c3c",
@@ -10316,9 +10751,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 60.346676938886425,
+        "x": 63,
         "y": 1.4,
-        "z": 51.23111795925762
+        "z": 53
       },
       "radius": 1.4,
       "color": "#2ecc71",
@@ -10426,7 +10861,53 @@
       }
     },
     {
-      "id": "under-bed-wall-north-21",
+      "id": "under-bed-model-solid-22",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 63,
+        "y": 2,
+        "z": 45
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 2,
+        "z": 3.5
+      },
+      "label": "kaykit-furniture/book_single footprint",
+      "meta": {
+        "template": "under-bed",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.4
+      }
+    },
+    {
+      "id": "under-bed-model-solid-24",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 75,
+        "y": 2,
+        "z": 52
+      },
+      "halfExtents": {
+        "x": 2.5,
+        "y": 2,
+        "z": 2.5
+      },
+      "label": "quaternius-toon-shooter/Traffic_Cone footprint",
+      "meta": {
+        "template": "under-bed",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0
+      }
+    },
+    {
+      "id": "under-bed-wall-north-26",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -10452,7 +10933,7 @@
       }
     },
     {
-      "id": "under-bed-baseboard-north-22",
+      "id": "under-bed-baseboard-north-27",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -10478,7 +10959,7 @@
       }
     },
     {
-      "id": "under-bed-baseboard-lip-north-23",
+      "id": "under-bed-baseboard-lip-north-28",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -10896,7 +11377,76 @@
       }
     },
     {
-      "id": "bathroom-sink-door-gap-16",
+      "id": "bathroom-sink-model-solid-17",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 181,
+        "y": 2,
+        "z": 47
+      },
+      "halfExtents": {
+        "x": 3,
+        "y": 2,
+        "z": 3
+      },
+      "label": "quaternius-fantasy-props/Bottle_1 footprint",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-model-solid-19",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 145.82303530144725,
+        "y": 2,
+        "z": 52.053388315919854
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 3
+      },
+      "label": "quaternius-fantasy-props/SmallBottles_1 footprint",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.6
+      }
+    },
+    {
+      "id": "bathroom-sink-model-solid-21",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 183,
+        "y": 2,
+        "z": 53.5
+      },
+      "halfExtents": {
+        "x": 2.5,
+        "y": 2,
+        "z": 2.5
+      },
+      "label": "quaternius-fantasy-props/Potion_2 footprint",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.3
+      }
+    },
+    {
+      "id": "bathroom-sink-door-gap-22",
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
@@ -11053,9 +11603,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -153.6873629022557,
+        "x": -153.89949493661166,
         "y": 5,
-        "z": 161.6873629022557
+        "z": 161.89949493661166
       },
       "radius": 4.7,
       "height": 9,
@@ -11590,6 +12140,75 @@
       }
     },
     {
+      "id": "laundry-pile-model-solid-13",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -53,
+        "y": 2,
+        "z": 155
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 2,
+        "z": 4.5
+      },
+      "label": "kaykit-furniture/pillow_B footprint",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.5
+      }
+    },
+    {
+      "id": "laundry-pile-model-solid-15",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -35,
+        "y": 2,
+        "z": 163
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 4
+      },
+      "label": "quaternius-fantasy-props/Pouch_Large footprint",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": -0.4
+      }
+    },
+    {
+      "id": "laundry-pile-model-solid-17",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -57,
+        "y": 2,
+        "z": 175
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 3
+      },
+      "label": "kaykit-furniture/book_single footprint",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 1.2
+      }
+    },
+    {
       "id": "room-workbench",
       "kind": "crumb-room",
       "shape": "box",
@@ -11730,7 +12349,7 @@
       "center": {
         "x": 35,
         "y": 30,
-        "z": 146.5
+        "z": 153
       },
       "halfExtents": {
         "x": 1.5,
@@ -11756,7 +12375,7 @@
       "center": {
         "x": 35,
         "y": 30,
-        "z": 168.5
+        "z": 175
       },
       "halfExtents": {
         "x": 1.5,
@@ -11782,7 +12401,7 @@
       "center": {
         "x": 75,
         "y": 30,
-        "z": 146.5
+        "z": 153
       },
       "halfExtents": {
         "x": 1.5,
@@ -11808,7 +12427,7 @@
       "center": {
         "x": 75,
         "y": 30,
-        "z": 168.5
+        "z": 175
       },
       "halfExtents": {
         "x": 1.5,
@@ -11880,9 +12499,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 43,
+        "x": 44.99512076087079,
         "y": 16.2,
-        "z": 169
+        "z": 166.50609904891152
       },
       "radius": 7.1,
       "height": 0.6,
@@ -12331,9 +12950,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 181,
+        "x": 179.86214183778907,
         "y": 12.8,
-        "z": 167
+        "z": 161.31070918894528
       },
       "halfExtents": {
         "x": 4,
@@ -13515,6 +14134,29 @@
         "solid": true,
         "hidden": true,
         "turn": 0.4
+      }
+    },
+    {
+      "id": "attic-christmas-model-solid-31",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -57,
+        "y": 2,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 2,
+        "z": 2
+      },
+      "label": "quaternius-fantasy-props/CandleStick_Triple footprint",
+      "meta": {
+        "template": "attic-christmas",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.2
       }
     },
     {
