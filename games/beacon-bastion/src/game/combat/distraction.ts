@@ -73,7 +73,7 @@ export function distract(ctx: GameContext, worker: Worker, seconds: number, ping
   ctx.scene.entity.floatText({ instanceId: worker.id, text: ping, element: "frost" });
   if (!already) {
     speak(ctx, worker.id, worker.kind, "distracted");
-    ctx.game.playEntityAnimation(worker.id, "hit");
+    ctx.game.playEntityAnimation(worker.id, "phone");
   }
   tip(ctx, "distracted");
   return true;

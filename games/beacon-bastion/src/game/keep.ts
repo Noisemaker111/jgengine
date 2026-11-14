@@ -159,7 +159,10 @@ export const keep = defineGameSpec({
     else {
       ctx.game.audio.play("upgrade");
       const worker = target === null ? null : keep.of(ctx).instance(target);
-      if (worker !== null) speak(ctx, worker.id, worker.kind, "promote");
+      if (worker !== null) {
+        speak(ctx, worker.id, worker.kind, "promote");
+        ctx.game.playEntityAnimation(worker.id, "cheer");
+      }
     }
   },
 });

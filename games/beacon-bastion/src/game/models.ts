@@ -15,9 +15,27 @@ const FOREST = "kaykit-forest";
  */
 export const WORKER_HEIGHT = 3.4;
 
+/**
+ * Every worker body in the pack shares one rig and clip set, so one table maps the game's moments to
+ * clips: a throw is a punch, a notification makes them bend down to the phone, a promotion is a
+ * victory pose. Locomotion stays automatic.
+ */
+const RIG = "CharacterArmature|";
+export const WORKER_ANIMATION = {
+  auto: true,
+  clock: "game",
+  oneShots: {
+    attack: `${RIG}Punch`,
+    hit: `${RIG}RecieveHit`,
+    phone: `${RIG}PickUp`,
+    cheer: `${RIG}Victory`,
+    death: `${RIG}Defeat`,
+  },
+} as const;
+
 /** A worker in their work clothes: one Quaternius character per trade, in its own colours. */
 function workerPick(def: TowerDef): ModelPick {
-  return { model: def.model, style: { targetHeight: WORKER_HEIGHT, animation: { auto: true, clock: "game" } } };
+  return { model: def.model, style: { targetHeight: WORKER_HEIGHT, animation: WORKER_ANIMATION } };
 }
 
 /** The town hall at the end of Main Street: the thing the tech is marching on. */
