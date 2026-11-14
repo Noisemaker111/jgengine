@@ -20,6 +20,7 @@ import { tickAbilities } from "../combat/cast";
 import { powerDrainNear, sendNotification, spotWorker, workersNear } from "../combat/distraction";
 import { tickHeldPay } from "./heldWavePay";
 import { killBounty } from "./bounty";
+import { tip } from "../tips";
 
 /** How high a drone (or The Cloud) floats over the street. */
 export const FLIGHT_HEIGHT = 2.4;
@@ -151,6 +152,9 @@ function adoptBoss(ctx: GameContext, instanceId: string, unit: string): void {
 
 function spawnCreep(ctx: GameContext, order: EncounterOrder): void {
   const instanceId = spawnRaider(ctx, order.unit, order.entry ?? SPAWN_POINT_KEY);
+  const def = creepDef(order.unit);
+  if (def.flying === true) tip(ctx, "flyer");
+  if (def.boosts !== undefined) tip(ctx, "boost");
   adoptBoss(ctx, instanceId, order.unit);
 }
 
@@ -282,7 +286,7 @@ function dropParcel(ctx: GameContext, creep: CreepRuntime): void {
   if (pick === null) return;
   session.parcels.add(pick.id);
   ctx.scene.entity.floatText({ position: [pick.position[0], pick.position[1] + 1.2, pick.position[2]], text: "Package delivered!", element: "frost" });
-  ctx.game.notices.push({ text: "A drone dropped a parcel on a plot: click it to sign for it", ttlMs: 3000 });
+  tip(ctx, "parcel");
 }
 
 function routeLength(route: string): number {
@@ -362,7 +366,8 @@ function tickUpdates(ctx: GameContext, dt: number): void {
       session.updateAt = null;
       pick.installing = UPDATE_RULE.seconds;
       ctx.scene.entity.floatText({ instanceId: pick.instanceId, text: "Installing Update…", element: "frost", crit: true });
-      ctx.game.notices.push({ text: `A ${creepDef(pick.catalogId).label} is installing an update — burst it down before it finishes!`, ttlMs: 3500 });
+      if (session.tipsShown.has("update")) ctx.game.notices.push({ text: `A ${creepDef(pick.catalogId).label} is installing an update — burst it down!`, ttlMs: 3000 });
+      tip(ctx, "update");
     }
   }
   for (const creep of session.creeps.values()) {

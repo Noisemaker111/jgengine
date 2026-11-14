@@ -115,6 +115,8 @@ export interface SessionState {
   waveClock: number;
   /** Counts voice lines spoken, so each pick is deterministic. */
   voiceSeq: number;
+  /** Onboarding tips already shown this day. */
+  tipsShown: Set<string>;
   /** Blackout and Do Not Disturb. */
   abilities: AbilityKit;
   /** The ability waiting for a click on the field, if one is armed. */
@@ -147,6 +149,7 @@ function freshState(): SessionState {
     updateAt: null,
     waveClock: 0,
     voiceSeq: 0,
+    tipsShown: new Set(),
     abilities: createAbilityKit(ABILITIES.map((ability) => ({ id: ability.id, cooldownMs: ability.cooldownMs, castType: ability.castType }))),
     armedAbility: null,
     falling: [],

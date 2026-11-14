@@ -14,8 +14,9 @@ import { gameClockMs, session, type WorkerClock } from "../session";
 import { roadProgress, routeOf } from "../world/path";
 import { canHurt, type DamageType } from "./damage";
 import { pushProjectile } from "./pendingProjectiles";
-import { strike } from "./strike";
 import { payBounty, removeCreep } from "../waves/director";
+import { tip } from "../tips";
+import { isWet, strike } from "./strike";
 
 const TOWER_ID = "__tower__";
 /** How far a daisy-chained shock jumps to the next gadget, and what each jump keeps. */
@@ -159,6 +160,10 @@ function land(volley: Volley, targetId: string, damage: number): void {
   const target = ctx.scene.entity.get(targetId);
   if (target === null) return;
   const hit = { type: def.damageType, pen: stats.pen };
+  if (def.damageType === "shock" && isWet(targetId)) {
+    tip(ctx, "wet");
+    ctx.scene.entity.floatText({ instanceId: targetId, text: "ZAP! x2.5", element: "lightning", crit: true });
+  }
   strike(ctx, towerId, targetId, { ...hit, base: damage }, tradeScale(stats, targetId));
   afflict(volley, targetId);
   if (stats.stun_ms > 0) hold(targetId, stats.stun_ms);
@@ -320,7 +325,10 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     if (stats.snap > 0 && !isDistracted(tower.id)) snapOut(ctx, tower.id, entity.position, range);
     if (isDistracted(tower.id)) continue;
     clock.heat = heatFactor(ctx, entity.position);
-    if (clock.heat < 1) session.workers.apply(tower.id, "overheated");
+    if (clock.heat < 1) {
+      session.workers.apply(tower.id, "overheated");
+      tip(ctx, "overheat");
+    }
     const pool = (stats.air > 0 ? all : ground).filter((candidate) => {
       const creep = session.creeps.get(candidate.id);
       return creep !== undefined && canHurt(def.damageType, creepDef(creep.catalogId).class);

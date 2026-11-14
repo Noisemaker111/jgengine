@@ -8,6 +8,7 @@ import { towerDef } from "../entities/towers/catalog";
 import { keep, towerStats } from "../keep";
 import { session, type CreepRuntime } from "../session";
 import { speak } from "./towerAI";
+import { tip } from "../tips";
 
 /**
  * Technology fights back without shooting. Phones, watches, speakers and chatbots fire
@@ -71,6 +72,7 @@ export function distract(ctx: GameContext, worker: Worker, seconds: number, ping
   session.workers.apply(worker.id, "distracted", { durationScale: seconds * scale });
   ctx.scene.entity.floatText({ instanceId: worker.id, text: ping, element: "frost" });
   if (!already) speak(ctx, worker.id, worker.kind, "distracted");
+  tip(ctx, "distracted");
   return true;
 }
 
@@ -128,6 +130,7 @@ export function spotWorker(ctx: GameContext, creep: CreepRuntime): string | null
   }
   if (best === null) return null;
   session.workers.apply(best.id, "spotted");
+  tip(ctx, "camera");
   ctx.scene.entity.floatText({ instanceId: best.id, text: "SPOTTED", element: "bleed" });
   ctx.scene.entity.vfx({ preset: "lightning", from: [at[0], at[1] + 1.6, at[2]], to: [best.position[0], best.position[1] + 1.6, best.position[2]], color: 0xff3a3a });
   return best.id;
