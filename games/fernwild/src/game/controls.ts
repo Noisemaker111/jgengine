@@ -5,22 +5,9 @@ import type { CreditsDocument, CreditsEntry } from "@jgengine/core/menu/credits"
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { lookCredits } from "../art/look";
-import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
 import { BODY_SOURCE_IDS } from "./assets";
 import { TOOL_MODELS } from "./models";
 import { itemIconCredits } from "./data/itemIcons";
-
-/** One credit line per author and licence of the creature models, naming each model. */
-function creatureCredits(): string[] {
-  const byAuthor = new Map<string, string[]>();
-  for (const source of Object.values(CREATURE_MODEL_SOURCES) as CreatureModelSource[]) {
-    const key = `${source.author}, ${source.license}`;
-    const titles = byAuthor.get(key) ?? [];
-    if (!titles.includes(source.title)) titles.push(source.title);
-    byAuthor.set(key, titles);
-  }
-  return [...byAuthor].map(([key, titles]) => `Creature models (${titles.join(", ")}): ${key} via poly.pizza.`);
-}
 
 /** Keys, as the Controls pane lists them; the bindings live in `game.config.ts`. ARK's PC layout. */
 export const CONTROLS: readonly (readonly [string, string])[] = [
@@ -52,7 +39,6 @@ const creditLines = (): CreditsEntry[] =>
     "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
     "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
     "Cloth texture: ambientCG (Fabric 007), CC0.",
-    ...creatureCredits(),
     ...libraryModelCredits(TOOL_MODELS),
     ...itemIconCredits(),
   ].map((label) => ({ label }));

@@ -221,7 +221,7 @@ test("danger rises with distance: the beach herds are level 5 at most, the far s
   expect(nearby.length).toBeGreaterThan(0);
   for (const entity of nearby) expect(creatureCard(runner.ctx, entity.id)?.level ?? Infinity).toBeLessThanOrEqual(7);
   // The beach by the start keeps no hunters: a new survivor learns the island before anything hunts them.
-  expect(nearby.filter((entity) => speciesDef(entity.name)?.temperament === "aggressive").map((entity) => entity.name)).toEqual([]);
+  expect(nearby.filter((entity) => ["aggressive", "pack", "ambush"].includes(speciesDef(entity.name)?.temperament ?? "")).map((entity) => entity.name)).toEqual([]);
   expect(wildLevelCap(0)).toBe(5);
   expect(wildLevelCap(500)).toBe(15);
   expect(wildLevelCap(2000)).toBe(30);

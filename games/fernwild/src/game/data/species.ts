@@ -1,11 +1,11 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 
+import { botProfile, temperamentConfig, type Temperament } from "./bots";
 import { type FirmwareTier, preferredFirmware, withFirmware } from "./firmware";
 import { AWAKE_TAMES, food, type TamingDef, tamingTable } from "./taming";
 
-/** How a wild creature treats the survivor, by ARK's temperament names. */
-export type Temperament = "oblivious" | "skittish" | "docile" | "territorial" | "aggressive";
+export type { Temperament };
 
 /** A creature's base stat and its gain per wild level (ARK's wild per-level increase). */
 export interface StatLine {
@@ -69,7 +69,7 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "firmware">>> = {
   mowbot: {
     id: "mowbot",
     label: "Mowbot",
-    temperament: "oblivious",
+    temperament: "passive",
     diet: "grazer",
     health: { base: 40, perLevel: 8 },
     stamina: { base: 100, perLevel: 10 },
@@ -117,7 +117,7 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "firmware">>> = {
   lodestone: {
     id: "lodestone",
     label: "Lodestone",
-    temperament: "aggressive",
+    temperament: "pack",
     diet: "scavenger",
     health: { base: 200, perLevel: 40 },
     stamina: { base: 150, perLevel: 15 },
@@ -153,7 +153,6 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "firmware">>> = {
  */
 type Row = [
   label: string,
-  temperament: Temperament,
   diet: "grazer" | "scavenger",
   health: number,
   healthPerLevel: number,
@@ -169,65 +168,65 @@ type Row = [
 ];
 
 const ROWS: Readonly<Record<string, Row>> = {
-  ripsaw: ["Ripsaw", "aggressive", "scavenger", 420, 84, 300, 350, 21, 300, 35, 2.5, 8.5, 1.4, 39],
-  bulldozaur: ["Bulldozaur", "territorial", "grazer", 375, 75, 150, 250, 15, 365, 32, 2, 4.6, 1.6, 16],
-  platebacker: ["Platebacker", "territorial", "grazer", 650, 130, 300, 500, 30, 500, 42, 1.6, 3.5, 2, 30],
-  sirenhorn: ["Sirenhorn", "skittish", "grazer", 200, 40, 450, 150, 9, 480, 12, 2.5, 7.9, 1.4, 18],
-  antennelk: ["Antennelk", "skittish", "grazer", 300, 60, 280, 175, 10.5, 220, 30, 2.6, 9, 1, 20],
-  watchwing: ["Watchwing", "skittish", "scavenger", 210, 42, 150, 120, 7.2, 120, 18, 1.7, 5, 0.9, 25],
-  scrapper: ["Scrapper Rex", "aggressive", "scavenger", 1100, 220, 420, 1550, 93, 500, 62, 2.5, 6.5, 2.6, 57],
-  sparkspitter: ["Sparkspitter", "aggressive", "scavenger", 130, 26, 100, 75, 4.5, 45, 10, 1.9, 4, 0.6, null],
-  ramjack: ["Ramjack", "territorial", "grazer", 175, 35, 150, 160, 9.6, 150, 10, 2.4, 6.5, 0.8, 20],
-  frostbyte: ["Frostbyte", "aggressive", "scavenger", 330, 66, 260, 450, 27, 170, 33, 3, 9.5, 0.9, 29],
-  hulkloader: ["Hulkloader", "territorial", "grazer", 600, 120, 300, 500, 30, 400, 36, 1.5, 5, 1.6, 50],
-  shrikebot: ["Shrikebot", "aggressive", "scavenger", 270, 54, 160, 300, 18, 120, 18, 4, 10, 0.8, 30],
-  liftape: ["Liftape", "docile", "grazer", 640, 64, 300, 1100, 66, 220, 40, 1.8, 5, 1.3, 40],
-  coilsheep: ["Coilsheep", "oblivious", "grazer", 100, 20, 100, 85, 5.1, 90, 5, 1.2, 3, 0.6, null],
-  rootkit: ["Rootkit", "aggressive", "scavenger", 450, 90, 300, 400, 24, 200, 25, 2, 6, 0.8, null],
-  ticklet: ["Ticklet", "aggressive", "scavenger", 35, 7, 100, 50, 3, 150, 7, 2, 4, 0.4, null],
-  echo: ["Echo Mimic", "aggressive", "scavenger", 200, 40, 150, 180, 10.8, 140, 7, 2.4, 6, 0.5, null],
-  thermite: ["Thermite Beetle", "territorial", "grazer", 700, 140, 175, 420, 25.2, 250, 50, 1.4, 3.5, 1.6, 36],
-  homer: ["Homer", "aggressive", "scavenger", 365, 73, 400, 600, 36, 400, 25, 1.5, 4, 1.2, 44],
-  rollgrinder: ["Rollgrinder", "docile", "grazer", 850, 170, 300, 800, 48, 250, 32, 1.1, 2.5, 1.3, 30],
-  clawmaul: ["Clawmaul", "aggressive", "scavenger", 630, 126, 250, 1000, 60, 380, 35, 2.5, 7.5, 1.8, 49],
-  rhinodrill: ["Rhinodrill", "territorial", "grazer", 500, 100, 120, 600, 36, 750, 40, 2, 8, 1.5, 35],
-  timberjack: ["Timberjack", "territorial", "grazer", 850, 170, 330, 550, 33, 500, 48, 1.8, 4, 2.2, 40],
-  warhorn: ["Warhorn", "aggressive", "scavenger", 1100, 220, 420, 1550, 93, 500, 55, 2.5, 6.5, 2.2, 60],
-  fangsaw: ["Fangsaw", "aggressive", "scavenger", 250, 50, 200, 380, 22.8, 250, 35, 2.8, 9.5, 0.9, 30],
-  tuxbot: ["Tuxbot", "oblivious", "scavenger", 170, 34, 100, 100, 6, 100, 6, 1, 2.5, 0.5, null],
-  smogrhino: ["Smogrhino", "territorial", "grazer", 375, 75, 150, 250, 15, 365, 28, 2, 4.5, 1.5, 35],
-  mirrorcat: ["Mirrorcat", "aggressive", "scavenger", 700, 140, 400, 700, 42, 400, 40, 2.5, 8, 1, 50],
-  ironbear: ["Ironbear", "aggressive", "scavenger", 400, 80, 500, 1000, 60, 650, 50, 2.2, 8, 1.4, 45],
-  coilcobra: ["Coilcobra", "aggressive", "scavenger", 170, 34, 150, 175, 10.5, 150, 30, 1.5, 4, 0.6, null],
-  puckbot: ["Puckbot", "oblivious", "grazer", 90, 18, 100, 100, 6, 90, 6, 1.5, 4, 0.5, null],
-  bumperbot: ["Bumperbot", "docile", "grazer", 375, 75, 300, 300, 18, 200, 32, 1.4, 3.5, 1, null],
-  klepto: ["Klepto", "aggressive", "scavenger", 50, 10, 100, 25, 1.5, 25, 4, 2, 6, 0.3, null],
-  highrise: ["Highrise", "docile", "grazer", 1026, 205.2, 300, 1300, 78, 850, 45, 1.5, 4, 3, 50],
-  pistonmare: ["Pistonmare", "skittish", "grazer", 240, 48, 560, 420, 25.2, 350, 9, 2.5, 12, 0.9, 25],
-  zipstrider: ["Zipstrider", "skittish", "grazer", 150, 30, 300, 420, 25.2, 270, 8, 3, 10, 0.9, 25],
-  sawbeaver: ["Sawbeaver", "docile", "grazer", 450, 90, 180, 350, 21, 300, 28, 1.2, 3, 1, 25],
-  hivedrone: ["Hive Drone", "aggressive", "scavenger", 150, 30, 100, 80, 4.8, 100, 10, 2, 5, 0.8, 25],
-  heatsink: ["Heatsink", "territorial", "scavenger", 650, 130, 300, 1000, 60, 300, 35, 1.2, 3, 1.2, 34],
-  snapjaw: ["Snapjaw", "aggressive", "scavenger", 300, 60, 150, 300, 18, 200, 22, 1.8, 6, 0.9, 32],
-  arcwire: ["Arcwire", "aggressive", "scavenger", 400, 80, 450, 400, 24, 400, 35, 1.7, 5, 1.3, 23],
-  springtoad: ["Springtoad", "skittish", "scavenger", 220, 44, 200, 150, 9, 200, 15, 1.5, 4, 0.7, 24],
-  siphon: ["Siphon", "aggressive", "scavenger", 40, 8, 100, 10, 0.6, 50, 3, 0.8, 1.5, 0.3, null],
-  choir: ["Choir Drone", "aggressive", "scavenger", 70, 14, 100, 50, 3, 30, 7, 2, 4, 0.4, null],
-  lampjaw: ["Lampjaw", "skittish", "scavenger", 190, 38, 300, 100, 6, 100, 6, 1, 2, 0.6, 21],
-  riptide: ["Riptide", "aggressive", "scavenger", 780, 156, 280, 550, 33, 300, 25, 2.2, 6, 1.6, 44],
-  railcrawler: ["Railcrawler", "aggressive", "scavenger", 750, 150, 150, 300, 18, 300, 20, 1.5, 4, 1, 50],
-  stingvolt: ["Stingvolt", "aggressive", "scavenger", 280, 56, 200, 300, 18, 150, 15, 2, 5, 0.8, 25],
-  wallcrawler: ["Wallcrawler", "aggressive", "scavenger", 480, 96, 400, 700, 42, 400, 10, 2, 6, 1.2, 45],
-  hoover: ["Hoover Leviathan", "docile", "grazer", 2070, 414, 240, 2000, 120, 1600, 60, 1.2, 2.5, 4, 55],
-  pylon: ["Pylon Walker", "oblivious", "grazer", 1700, 340, 300, 2000, 120, 1200, 10, 1.2, 2.5, 3, 40],
-  switchback: ["Switchback", "skittish", "grazer", 250, 50, 200, 210, 12.6, 375, 25, 2, 7, 1.2, 35],
+  ripsaw: ["Ripsaw", "scavenger", 420, 84, 300, 350, 21, 300, 35, 2.5, 8.5, 1.4, 39],
+  bulldozaur: ["Bulldozaur", "grazer", 375, 75, 150, 250, 15, 365, 32, 2, 4.6, 1.6, 16],
+  platebacker: ["Platebacker", "grazer", 650, 130, 300, 500, 30, 500, 42, 1.6, 3.5, 2, 30],
+  sirenhorn: ["Sirenhorn", "grazer", 200, 40, 450, 150, 9, 480, 12, 2.5, 7.9, 1.4, 18],
+  antennelk: ["Antennelk", "grazer", 300, 60, 280, 175, 10.5, 220, 30, 2.6, 9, 1, 20],
+  watchwing: ["Watchwing", "scavenger", 210, 42, 150, 120, 7.2, 120, 18, 1.7, 5, 0.9, 25],
+  scrapper: ["Scrapper Rex", "scavenger", 1100, 220, 420, 1550, 93, 500, 62, 2.5, 6.5, 2.6, 57],
+  sparkspitter: ["Sparkspitter", "scavenger", 130, 26, 100, 75, 4.5, 45, 10, 1.9, 4, 0.6, null],
+  ramjack: ["Ramjack", "grazer", 175, 35, 150, 160, 9.6, 150, 10, 2.4, 6.5, 0.8, 20],
+  frostbyte: ["Frostbyte", "scavenger", 330, 66, 260, 450, 27, 170, 33, 3, 9.5, 0.9, 29],
+  hulkloader: ["Hulkloader", "grazer", 600, 120, 300, 500, 30, 400, 36, 1.5, 5, 1.6, 50],
+  shrikebot: ["Shrikebot", "scavenger", 270, 54, 160, 300, 18, 120, 18, 4, 10, 0.8, 30],
+  liftape: ["Liftape", "grazer", 640, 64, 300, 1100, 66, 220, 40, 1.8, 5, 1.3, 40],
+  coilsheep: ["Coilsheep", "grazer", 100, 20, 100, 85, 5.1, 90, 5, 1.2, 3, 0.6, null],
+  rootkit: ["Rootkit", "scavenger", 450, 90, 300, 400, 24, 200, 25, 2, 6, 0.8, null],
+  ticklet: ["Ticklet", "scavenger", 35, 7, 100, 50, 3, 150, 7, 2, 4, 0.4, null],
+  echo: ["Echo Mimic", "scavenger", 200, 40, 150, 180, 10.8, 140, 7, 2.4, 6, 0.5, null],
+  thermite: ["Thermite Beetle", "grazer", 700, 140, 175, 420, 25.2, 250, 50, 1.4, 3.5, 1.6, 36],
+  homer: ["Homer", "scavenger", 365, 73, 400, 600, 36, 400, 25, 1.5, 4, 1.2, 44],
+  rollgrinder: ["Rollgrinder", "grazer", 850, 170, 300, 800, 48, 250, 32, 1.1, 2.5, 1.3, 30],
+  clawmaul: ["Clawmaul", "scavenger", 630, 126, 250, 1000, 60, 380, 35, 2.5, 7.5, 1.8, 49],
+  rhinodrill: ["Rhinodrill", "grazer", 500, 100, 120, 600, 36, 750, 40, 2, 8, 1.5, 35],
+  timberjack: ["Timberjack", "grazer", 850, 170, 330, 550, 33, 500, 48, 1.8, 4, 2.2, 40],
+  warhorn: ["Warhorn", "scavenger", 1100, 220, 420, 1550, 93, 500, 55, 2.5, 6.5, 2.2, 60],
+  fangsaw: ["Fangsaw", "scavenger", 250, 50, 200, 380, 22.8, 250, 35, 2.8, 9.5, 0.9, 30],
+  tuxbot: ["Tuxbot", "scavenger", 170, 34, 100, 100, 6, 100, 6, 1, 2.5, 0.5, null],
+  smogrhino: ["Smogrhino", "grazer", 375, 75, 150, 250, 15, 365, 28, 2, 4.5, 1.5, 35],
+  mirrorcat: ["Mirrorcat", "scavenger", 700, 140, 400, 700, 42, 400, 40, 2.5, 8, 1, 50],
+  ironbear: ["Ironbear", "scavenger", 400, 80, 500, 1000, 60, 650, 50, 2.2, 8, 1.4, 45],
+  coilcobra: ["Coilcobra", "scavenger", 170, 34, 150, 175, 10.5, 150, 30, 1.5, 4, 0.6, null],
+  puckbot: ["Puckbot", "grazer", 90, 18, 100, 100, 6, 90, 6, 1.5, 4, 0.5, null],
+  bumperbot: ["Bumperbot", "grazer", 375, 75, 300, 300, 18, 200, 32, 1.4, 3.5, 1, null],
+  klepto: ["Klepto", "scavenger", 50, 10, 100, 25, 1.5, 25, 4, 2, 6, 0.3, null],
+  highrise: ["Highrise", "grazer", 1026, 205.2, 300, 1300, 78, 850, 45, 1.5, 4, 3, 50],
+  pistonmare: ["Pistonmare", "grazer", 240, 48, 560, 420, 25.2, 350, 9, 2.5, 12, 0.9, 25],
+  zipstrider: ["Zipstrider", "grazer", 150, 30, 300, 420, 25.2, 270, 8, 3, 10, 0.9, 25],
+  sawbeaver: ["Sawbeaver", "grazer", 450, 90, 180, 350, 21, 300, 28, 1.2, 3, 1, 25],
+  hivedrone: ["Hive Drone", "scavenger", 150, 30, 100, 80, 4.8, 100, 10, 2, 5, 0.8, 25],
+  heatsink: ["Heatsink", "scavenger", 650, 130, 300, 1000, 60, 300, 35, 1.2, 3, 1.2, 34],
+  snapjaw: ["Snapjaw", "scavenger", 300, 60, 150, 300, 18, 200, 22, 1.8, 6, 0.9, 32],
+  arcwire: ["Arcwire", "scavenger", 400, 80, 450, 400, 24, 400, 35, 1.7, 5, 1.3, 23],
+  springtoad: ["Springtoad", "scavenger", 220, 44, 200, 150, 9, 200, 15, 1.5, 4, 0.7, 24],
+  siphon: ["Siphon", "scavenger", 40, 8, 100, 10, 0.6, 50, 3, 0.8, 1.5, 0.3, null],
+  choir: ["Choir Drone", "scavenger", 70, 14, 100, 50, 3, 30, 7, 2, 4, 0.4, null],
+  lampjaw: ["Lampjaw", "scavenger", 190, 38, 300, 100, 6, 100, 6, 1, 2, 0.6, 21],
+  riptide: ["Riptide", "scavenger", 780, 156, 280, 550, 33, 300, 25, 2.2, 6, 1.6, 44],
+  railcrawler: ["Railcrawler", "scavenger", 750, 150, 150, 300, 18, 300, 20, 1.5, 4, 1, 50],
+  stingvolt: ["Stingvolt", "scavenger", 280, 56, 200, 300, 18, 150, 15, 2, 5, 0.8, 25],
+  wallcrawler: ["Wallcrawler", "scavenger", 480, 96, 400, 700, 42, 400, 10, 2, 6, 1.2, 45],
+  hoover: ["Hoover Leviathan", "grazer", 2070, 414, 240, 2000, 120, 1600, 60, 1.2, 2.5, 4, 55],
+  pylon: ["Pylon Walker", "grazer", 1700, 340, 300, 2000, 120, 1200, 10, 1.2, 2.5, 3, 40],
+  switchback: ["Switchback", "grazer", 250, 50, 200, 210, 12.6, 375, 25, 2, 7, 1.2, 35],
 };
 
 const round = (value: number, step = 1) => Math.round(value / step) * step;
 
 /** A table row as a full species: ARK's per-level patterns and size-scaled tables fill what the row leaves out. */
 function fromRow(id: string, row: Row): Omit<SpeciesDef, "firmware"> {
-  const [label, temperament, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
+  const [label, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
   // Meals scale with the torpor a body carries, as ARK's do: a lodestone (180 torpor) eats 7 raw meat at level 1.
   // Scavengers count in raw meat, grazers in mejoberries (three to a meat); a meal digests in 50 s.
   const meals = Math.max(2, round(torpor / 26));
@@ -240,7 +239,7 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "firmware"> {
   return {
     id,
     label,
-    temperament,
+    temperament: botProfile(id)?.temperament ?? "passive",
     diet,
     health: { base: health, perLevel: healthPerLevel },
     stamina: { base: stamina, perLevel: stamina * 0.1 },
@@ -356,18 +355,7 @@ export function statAt(line: StatLine, level: number): number {
   return line.base + line.perLevel * (level - 1);
 }
 
-/** ARK temperaments as tunings of the engine's three: oblivious and docile only answer a hit. Reach comes from the body. */
+/** A species' temperament as the engine's temperament config. Reach comes from the body. */
 export function temperamentOf(def: SpeciesDef): TemperamentConfig {
-  switch (def.temperament) {
-    case "oblivious":
-      return { kind: "passive", fleeRange: 0 };
-    case "skittish":
-      return { kind: "passive", fleeRange: 12 };
-    case "docile":
-      return { kind: "territorial", territoryRadius: 0, breakAt: 0 };
-    case "territorial":
-      return { kind: "territorial", territoryRadius: 10, breakAt: 0 };
-    case "aggressive":
-      return { kind: "predator", breakAt: 0 };
-  }
+  return temperamentConfig(def.temperament);
 }

@@ -9,7 +9,8 @@ import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
 import { bodyPacks } from "./assets";
 import { BODIES } from "./character";
-import { SPECIES_MODELS } from "./data/creatureModels";
+import { ROBOT_BODIES } from "./data/robotBodies";
+import { bodyModel as robotModel } from "../engine-local/creatureBody/bodyPlan";
 import { HARVESTABLES } from "./data/harvestables";
 import { itemDef } from "./data/items";
 
@@ -29,7 +30,7 @@ const BODY_MODELS: Record<string, ModelConfig> = resolveModelPlan(
   Object.fromEntries(BODIES.map((body) => [body.id, { model: body.model, style: { targetHeight: SURVIVOR_HEIGHT, animation: SURVIVOR_ANIMATION } }])),
 );
 
-function bodyModel(id: string): ModelConfig {
+function survivorModel(id: string): ModelConfig {
   const model = BODY_MODELS[id];
   if (model === undefined) throw new Error(`fernwild: survivor body "${id}" is missing from the Quaternius modular packs`);
   return model;
@@ -85,17 +86,12 @@ const WORN: Record<string, WornLayer> = Object.fromEntries(
 export const TOOL_MODELS: readonly string[] = [...new Set(Object.values(TOOLS).map((tool) => tool.model))];
 
 /**
- * The survivor and every species: free animal models (data/creatureModels.ts), each drawn at the
- * species' standing height and tinted where a relative stands in for it.
+ * The technician and every machine: each species is a robot body built in code (data/robotBodies.ts), an
+ * animated GLB generated the first time it is drawn, at the species' standing height.
  */
 export const entityModels: Record<string, ModelConfig> = {
-  player: { ...bodyModel(BODIES[0].id), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, bodyModel(body.id)])) },
-  ...Object.fromEntries(
-    Object.entries(SPECIES_MODELS).map(([species, { file, height, tint, tintMaterials }]) => [
-      species,
-      { url: `/models/imported/creatures/${file}.glb`, animation: "auto", targetHeight: height, ...(tint === undefined ? {} : { material: { color: tint, ...(tintMaterials === undefined ? {} : { materials: tintMaterials }) } }) } satisfies ModelConfig,
-    ]),
-  ),
+  player: { ...survivorModel(BODIES[0].id), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, survivorModel(body.id)])) },
+  ...Object.fromEntries(Object.entries(ROBOT_BODIES).map(([species, robot]) => [species, robotModel(robot.plan, robot.height)])),
 };
 
 export const objectModels: Record<string, ModelConfig> = {};

@@ -24,6 +24,7 @@ import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
 import { IMPRINT_BONUS, IMPRINTED_STATS, MUTATIONS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
+import { HOSTILE } from "./data/bots";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
@@ -1638,7 +1639,7 @@ export function nearestThreat(ctx: GameContext, from: readonly [number, number, 
   let bestDistance = within;
   for (const creature of worldOf(ctx).creatures.values()) {
     const temperament = defOf(creature).temperament;
-    if (creature.dead || creature.tamed || (temperament !== "aggressive" && temperament !== "territorial")) continue;
+    if (creature.dead || creature.tamed || !HOSTILE.has(temperament)) continue;
     const at = ctx.scene.entity.get(creature.id)?.position;
     if (at === undefined) continue;
     const distance = Math.hypot(at[0] - from[0], at[2] - from[2]);

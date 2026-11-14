@@ -102,6 +102,7 @@ import {
 import {
   STRUCTURES,
 } from "./game/data/structures";
+import { HOSTILE } from "./game/data/bots";
 import {
   content,
 } from "./game/content";
@@ -458,7 +459,7 @@ export const game = defineGame({
         // 1 while the creature in front is wild (alive or a body to carve), 0 for a tame or nothing.
         aimedWild: creatures.aimed !== null && !creatures.aimed.tamed ? 1 : 0,
         // 1 while the creature in front is a live wild hunter (aggressive or territorial) that will fight back.
-        aimedThreat: creatures.aimed !== null && !creatures.aimed.tamed && !creatures.aimed.dead && (creatures.aimed.temperament === "aggressive" || creatures.aimed.temperament === "territorial") ? 1 : 0,
+        aimedThreat: creatures.aimed !== null && !creatures.aimed.tamed && !creatures.aimed.dead && HOSTILE.has(creatures.aimed.temperament) ? 1 : 0,
         // The aimed creature's health; 0 with nothing aimed or a body.
         aimedHealth: creatures.aimed?.health.value ?? 0,
         // The aimed tame's food in percent of its max; -1 with no tame aimed.

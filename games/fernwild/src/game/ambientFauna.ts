@@ -1,16 +1,18 @@
 import { windField } from "@jgengine/core/world/wind";
 import type { AmbientFaunaConfig } from "@jgengine/core/ambientFauna/ambientFaunaConfig";
 
+import { bodyModel as robotModel } from "../engine-local/creatureBody/bodyPlan";
 import { editorLayers } from "../editorLayers";
+import { AMBIENT_BODIES } from "./data/robotBodies";
 import { SEA_LEVEL } from "../world";
 
 const weather = editorLayers.simulation?.weather?.wind;
 const GROW_ABOVE = 2.4;
 
 /**
- * Life the art direction's pass 8 asks for: fish in the shallows, pollen and fireflies and dragonflies over
- * the grass, watchwings overhead. The groups are `ambient_fauna` zones in editor.scene.json; this table says
- * how each species looks. The catalog has no watchwing model, so the flyers use its vulture.
+ * Life the art direction's pass 8 asks for: fish in the shallows, pollen and spark motes over the grass,
+ * micro-drones skimming it and Watchwings circling overhead. The groups are `ambient_fauna` zones in
+ * editor.scene.json; this table says how each looks. The drones are robot bodies built in code.
  */
 export const ambientFauna: AmbientFaunaConfig = {
   species: {
@@ -25,11 +27,11 @@ export const ambientFauna: AmbientFaunaConfig = {
     pollen: { sprite: { color: "#fff3c4", size: 0.045, glow: true } },
     firefly: { sprite: { color: "#d8f26a", size: 0.07, glow: true } },
     dragonfly: {
-      model: { url: "/models/imported/creatures/dragonfly.glb", targetHeight: 0.25 },
+      model: robotModel(AMBIENT_BODIES.microdrone.plan, AMBIENT_BODIES.microdrone.height),
       sprite: { color: "#3fb7c9", size: 0.06, length: 4 },
     },
     watchwing: {
-      model: { url: "/models/imported/creatures/vulture.glb", targetHeight: 2.4, material: { color: "#c8b090" } },
+      model: robotModel(AMBIENT_BODIES.watchwing.plan, AMBIENT_BODIES.watchwing.height),
       sprite: { color: "#2a2620", size: 0.5, length: 3 },
     },
   },
