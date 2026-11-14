@@ -2,8 +2,8 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
 /**
- * Wildwire's machines on screen: roster bots roaming the south beach, a drained Mowbot open for the
- * upload, and the same beach on a Signal Storm night. Shots for review, each after the scene settles.
+ * Wildwire's machines on screen: a spread of the roster on the south beach, uploaded and idling round the
+ * technician. A shot for review once the scene settles (wildwire-upload and wildwire-storm take the others).
  */
 const SLOW = { timeoutMs: 120000 };
 
@@ -29,17 +29,5 @@ export default defineFlow(game, {
     for (const [species, distance, side] of roster) await f.command("cheat", { summon: { species, level: 5, distance, side, tamed: true } });
     await f.wait(2000);
     await snap("wildwire-island-bots");
-    // A drained Mowbot, jacked into.
-    await f.command("cheat", { summon: { species: "mowbot", level: 3, distance: 2.5, knockedOut: true } });
-    await f.wait(1500);
-    await f.press("KeyE");
-    await f.see(/Upload|Discharge/, SLOW);
-    await snap("wildwire-upload");
-    await f.press("Escape");
-    await f.wait(1500);
-    // Night, and the broadcast.
-    await f.command("cheat", { clock: 3600 * 0.9, storm: true });
-    await f.wait(3000);
-    await snap("wildwire-storm-night");
   },
 });
