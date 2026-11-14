@@ -14,7 +14,7 @@ import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { useGameStore } from "@jgengine/ui/hooks";
-import { Button, crumbTheme, Frame, GOLD, GREEN, Heading, Meter, MUTED, RED, Row, Section, Sheet, SKY, Tag, Text } from "./dock";
+import { Button, CREAM, crumbTheme, Frame, GOLD, GREEN, Heading, Meter, MUTED, RED, Row, Section, Sheet, SKY, Tag, Text } from "./dock";
 import { nearby, storageChanged, viewStore } from "../controls";
 import { clockText, footprint, hasGear, isDawn, lightsOn, littlesOf, roomOf, twoHanded, type Run } from "../state";
 import { loadOf } from "../haul";
@@ -57,7 +57,7 @@ export function GameUI() {
       <RuneView anchor="top-right" safe inset={18}><Button onPress={() => command("pause")}>Hold still / Esc</Button></RuneView>
       {screen.out ? <RunHud /> : screen.mode === "home" ? <HomeHud /> : null}
       <RuneView anchor="bottom" safe inset={20} gap={8} maxWidth={620} responsive={{ phone: { maxWidth: 340 } }}><Prompt command={command} /><Radio /></RuneView>
-      {screen.panel === "stash" ? <StashSheet command={command} close={close} /> : screen.panel === "workbench" ? <WorkbenchSheet command={command} close={close} /> : screen.panel === "nook" ? <NookSheet command={command} close={close} /> : screen.panel === "pack" ? <PackSheet command={command} close={close} /> : null}
+      {screen.panel === "stash" ? <StashSheet command={command} close={close} /> : screen.panel === "workbench" ? <WorkbenchSheet command={command} close={close} /> : screen.panel === "nook" ? <NookSheet command={command} close={close} /> : screen.panel === "pack" ? <PackSheet command={command} close={close} /> : screen.panel === "report" ? <ReportSheet close={close} /> : null}
       {screen.mode === "caught" ? <CaughtSheet command={command} /> : screen.mode === "saving" || screen.mode === "blocked" ? <SaveSheet command={command} /> : null}
       {swapping ? <RuneView anchor="fill" fill="#140c08" justify="center" items="center" gap={8}><Heading>Creeping on…</Heading><Text color={MUTED} text={bind(() => { const v = viewStore.read(ctx); return v.run === null ? "Home to the burrow." : roomOf(v.run).template.name; })} /></RuneView> : null}
     </RuneView>
@@ -229,6 +229,18 @@ function PackSheet({ command, close }: { command: Command; close: () => void }) 
     {run !== null && hasGear(run, "slingshot") ? <Text color={SKY}>G flings a pebble to draw hunters away.</Text> : null}
     {run !== null && hasGear(run, "spear") ? <Text color={SKY}>F jabs with the needle.</Text> : null}
     <Button onPress={() => command("pack")}>Close the pack / Tab</Button>
+  </Sheet>;
+}
+function ReportSheet({ close }: { close: () => void }) {
+  const report = useStore(viewStore, v => v.report);
+  if (report === null) return null;
+  return <Sheet title="Home safe!" label="Night report" close={close}>
+    <Tag color={GREEN}>{`${report.clock} · ${report.rooms} ROOM${report.rooms === 1 ? "" : "S"} · ${report.depth} DEEP · OUT BY THE ${report.via === "dogdoor" ? "FLAP" : report.via.toUpperCase()}`}</Tag>
+    {report.items.length === 0 ? <Text>You came back empty-handed, but you came back.</Text> : <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={6}>{report.items.map(i => <Row key={i.id}><ItemMark kind={i.kind} size={26} /><Text grow={1} shrink color={i.rarity === "common" ? CREAM : GOLD}>{i.name}</Text></Row>)}</RuneView>}
+    <Heading size={22} color={GOLD}>{`+${report.caps} bottle caps`}</Heading>
+    {report.sets.map(id => <Text key={id} color={GREEN}>{`Set complete: ${SETS[id as keyof typeof SETS].name}! ${SETS[id as keyof typeof SETS].flavor}`}</Text>)}
+    {report.littles.map(id => <Text key={id} color={LITTLES[id].color}>{`${LITTLES[id].name} ${LITTLES[id].title} has moved into the burrow!`}</Text>)}
+    <Button onPress={close}>Into the burrow</Button>
   </Sheet>;
 }
 function CaughtSheet({ command }: { command: Command }) {

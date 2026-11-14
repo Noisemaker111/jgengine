@@ -182,7 +182,10 @@ export function ThreatLayer({ templateId }: { templateId: string }) {
     for (const s of run.threats) {
       const object = objects.current.get(s.key);
       if (object === undefined) continue;
-      object.visible = s.mode !== "dead";
+      // A mousetrap hides in the gloom until you are nearly on it, unless Bolt is looking.
+      const me = ctx.scene.entity.get(ctx.player.userId)?.position;
+      const hidden = s.kind === "trap" && s.mode === "armed" && !LITTLES[run.little].trapSense && (me === undefined || Math.hypot(me[0] - s.at[0], me[2] - s.at[2]) > 6);
+      object.visible = s.mode !== "dead" && !hidden;
       poseThreat(object, s, state.clock.elapsedTime, template?.ceiling ?? 0);
     }
   });

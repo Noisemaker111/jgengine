@@ -21,7 +21,7 @@ export const keybinds: ActionCodesMap = {
   sprint: ["ShiftLeft"],
   crumbInteract: ["KeyE"], crumbPack: ["Tab"], crumbUse: ["KeyF"], crumbFling: ["KeyG"], crumbSneak: ["KeyC", "ControlLeft"],
 };
-export type Panel = "stash" | "workbench" | "nook" | "pack";
+export type Panel = "stash" | "workbench" | "nook" | "pack" | "report";
 export interface View {
   home: Home; run: Run | null;
   mode: "loading" | "home" | "run" | "saving" | "blocked" | "caught";
@@ -30,10 +30,13 @@ export interface View {
   /** How far your sound carried this tick and how close the nearest hunter is to noticing you, for the HUD. */
   noise: number; danger: number;
   sneaking: boolean;
+  /** The last extraction, shown once on the way back into the burrow. */
+  report: NightReport | null;
 }
+export interface NightReport { items: { id: string; kind: ItemKind; name: string; rarity: string }[]; caps: number; sets: string[]; depth: number; rooms: number; via: string; clock: string; littles: LittleId[] }
 export const viewStore = defineStore<View>("crumbrun.session", () => ({
   home: newHome(), run: null, mode: "loading", panel: null, paused: false,
-  hint: "Walk to the crack in the wall. E to slip out into the house.", error: "", pending: null, noise: 0, danger: 0, sneaking: false,
+  hint: "Walk to the crack in the wall. E to slip out into the house.", error: "", pending: null, noise: 0, danger: 0, sneaking: false, report: null,
 }));
 const runtime = perContext(() => ({
   save: null as RecordSession | null, ready: false, boot: Promise.resolve(),
@@ -267,8 +270,10 @@ function finish(ctx: GameContext, kind: Result["kind"], reason: string, via = ""
     }
     teleport(ctx, HOME_SPAWN, Math.PI);
     syncPlayer(ctx, null);
-    viewStore.write(ctx, { ...viewStore.read(ctx), home, run: null, mode: "home", pending: null, paused: false, panel: null, error: "", hint });
-    resume(ctx);
+    // The night's report: what came home, what it was worth, and who it moved in.
+    const report: NightReport = { items: v.run!.pack.map(i => ({ id: i.id, kind: kindOf(i), name: i.name, rarity: i.rarity })), caps: last.caps ?? 0, sets: last.sets ?? [], depth: last.depth ?? 0, rooms: v.run!.visited.length, via: last.via ?? "crack", clock: clockText(v.run!), littles: littlesOf(home).filter(id => !littlesOf(v.home).includes(id)) };
+    viewStore.write(ctx, { ...viewStore.read(ctx), home, run: null, mode: "home", pending: null, paused: false, panel: "report", report, error: "", hint });
+    freeze(ctx);
     ctx.game.audio.play("banked");
   }).catch((error: unknown) => {
     runtime(ctx).writing = false;
