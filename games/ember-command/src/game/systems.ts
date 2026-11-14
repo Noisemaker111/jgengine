@@ -15,7 +15,7 @@ import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore, type ResearchView } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
-import { SUGAR, INCOME_TRICKLE, LEAF, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
+import { SUGAR, GRANARY_TRICKLE, INCOME_TRICKLE, LEAF, NURSERY_HATCH_BONUS, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
 import {
   advanceHazards,
   BEAM_BUILDING_DPS,
@@ -168,7 +168,9 @@ const productionSystem: SystemDefinition = defineSystem({
   tick: { type: "frame", stage: "combat" },
   update(ctx, dt) {
     if (!matchRunning()) return;
-    const result = tickQueue(session.production, TRAINING_CONFIG, dt);
+    // A standing Nursery Chamber warms the brood: every egg hatches faster.
+    const warmed = livingUnits("player", "building").some((u) => u.catalogId === "nursery") ? 1 + NURSERY_HATCH_BONUS : 1;
+    const result = tickQueue(session.production, TRAINING_CONFIG, dt * warmed);
     session.production = result.state;
     for (const event of result.events) {
       if (event.type === "completed") spawnTrained(ctx, event.output.unitId);
@@ -321,6 +323,7 @@ const hazardSystem: SystemDefinition = defineSystem({
     }
     if (session.hazards.mower.phase !== "idle") dodgeMower(ctx);
     pruneAlarms(session.alarms, session.elapsed);
+    for (const [id, until] of Object.entries(session.acid)) if (until <= session.elapsed) delete session.acid[id];
     applyHazardHarm(ctx, dt);
   },
 });
@@ -355,6 +358,7 @@ function coachFacts(): CoachFacts {
     night: session.hazards.dark >= 0.5,
     enemySeen,
     skirmish: hud.campaign === null,
+    beam: session.hazards.toggles.beam,
   };
 }
 
@@ -391,7 +395,8 @@ const incomeSystem: SystemDefinition = defineSystem({
   tick: { type: "interval", every: 1 },
   update(ctx) {
     if (!matchRunning()) return;
-    ctx.game.economy.grant(ctx.player.userId, SUGAR, INCOME_TRICKLE);
+    const granaries = livingUnits("player", "building").filter((u) => u.catalogId === "granary").length;
+    ctx.game.economy.grant(ctx.player.userId, SUGAR, INCOME_TRICKLE + granaries * GRANARY_TRICKLE);
   },
 });
 

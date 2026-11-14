@@ -260,7 +260,7 @@ describe("alarm scent, hazard tells and the coach", () => {
   });
 
   test("the coach names the next verb once, at the moment it matters", () => {
-    const base = { elapsed: 0, foraging: 0, scented: false, trailPainted: false, hasBarracks: false, broodFull: false, night: false, enemySeen: false, skirmish: false };
+    const base = { elapsed: 0, foraging: 0, scented: false, trailPainted: false, hasBarracks: false, broodFull: false, night: false, enemySeen: false, beam: false, skirmish: false };
     expect(dueTips(base, []).map((t) => t.id)).toEqual([]);
     expect(dueTips({ ...base, elapsed: 7 }, []).map((t) => t.id)).toEqual(["forage"]);
     expect(dueTips({ ...base, elapsed: 7 }, ["forage"])).toEqual([]);

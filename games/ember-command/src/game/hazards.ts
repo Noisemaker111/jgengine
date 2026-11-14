@@ -73,6 +73,13 @@ export const BEAM_CYCLE = 15;
 export const BEAM_BLUR = 3.5;
 /** Seconds of warm-up before the beam first focuses. */
 export const BEAM_GRACE = 6;
+/** Seconds over which the kid's impatience doubles the beam's drag speed. */
+export const BEAM_IMPATIENCE = 240;
+
+/** How fast the lens drags the spot at battle second `t`. */
+export function beamSpeedAt(t: number): number {
+  return BEAM_SPEED * (1 + Math.min(1, Math.max(0, t) / BEAM_IMPATIENCE));
+}
 
 export type MowerPhase = "idle" | "warning" | "crossing";
 
@@ -211,7 +218,8 @@ export function advanceHazards(state: HazardState, layout: YardLayout, dt: numbe
     const dx = beam.tx - beam.x;
     const dz = beam.tz - beam.z;
     const gap = Math.hypot(dx, dz);
-    const step = Math.min(gap, BEAM_SPEED * dt);
+    // The kid gets impatient: the spot drags faster the longer the battle runs (up to double).
+    const step = Math.min(gap, beamSpeedAt(t) * dt);
     if (gap > 0) {
       beam.x += (dx / gap) * step;
       beam.z += (dz / gap) * step;

@@ -224,7 +224,7 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
     <RuneView variant="leather" layout="grid" columns={columns} gap={4}>
       {train("worker", "1", "Forages crumbs, sugar and leaf pulp, lays scent on the way home, and digs chambers.")}
       {train("soldier", "2", "Big-jawed front line. Bites black majors 50% harder; screens spitters from raiders. Needs a Barracks Chamber.")}
-      {train("spitter", "3", "Acid at range: full damage past 3 m, weak up close and against armoured majors, strong against nests. Needs a Barracks Chamber.")}
+      {train("spitter", "3", "Acid at range: full damage past 3 m, weak up close and against armoured majors, strong against nests; acid slows what it hits. Needs a Barracks Chamber.")}
       {train("scout", "9", "Fast and fragile, with antennae that sense twice as far. Light the fog, find the black ants, dodge the mower.")}
       {train("beetle", "0", "A tamed rhinoceros beetle: slow, huge, and it tears chambers apart. Needs a Barracks and a Nursery Chamber.")}
       <Slot {...p} icon="attackMove" hotkey="R" command={{ name: "unit.attackMove" }} tone={() => (!playing() ? "locked" : hud().attackMoveArmed ? "active" : "ready")}
@@ -234,8 +234,8 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
         tip={() => ({ title: "Pheromone Line", desc: "Arm, then right-click: lays a scent trail from the selected ants (or the nest) to that point. Red ants run up to 40% faster on scent and forage quicker at a scented node. Rain and the sprinkler wash it away.", chips: costChips(TRAIL_PAINT_COST) })} />
       {build("barracks", "barracks", "B", "Dig Barracks Chamber", "Hatches Soldiers, Spitters and Beetles, unlocks instincts, and takes food drop-offs.")}
       {build("fungus_garden", "fungus_garden", "G", "Dig Fungus Garden", `Feeds the brood: raises your brood room (supply) by ${BUILDINGS.fungus_garden.supply}.`, [{ icon: "food", text: `+${BUILDINGS.fungus_garden.supply}` }])}
-      {build("nursery", "nursery", "U", "Dig Nursery Chamber", "Where tamed beetles are raised: unlocks the Tank Beetle.")}
-      {build("granary", "granary", "Y", "Dig Granary Chamber", "A forward food store: workers drop their loads here, so dig it near far crumbs or the popsicle.")}
+      {build("nursery", "nursery", "U", "Dig Nursery Chamber", "Warms the brood: unlocks the Tank Beetle and every egg hatches 25% faster.")}
+      {build("granary", "granary", "Y", "Dig Granary Chamber", "A forward food store: workers drop their loads here (dig it near the popsicle), and it ferments +1 sugar a second.")}
       {build("acid_mound", "tower", "T", "Dig Acid Mound", "A spitting turret that soaks black ants who stray into range.")}
       <Slot {...p} icon="rally" hotkey="F" command={{ name: "unit.rally" }} tone={() => (!playing() ? "locked" : hud().rallyArmed ? "active" : "ready")}
         tip={() => ({ title: "Rally Scent", desc: "Arm, then right-click where new hatchlings should gather.", chips: [] })} />

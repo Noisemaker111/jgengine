@@ -67,6 +67,14 @@ export const TRAIL_FLOOR = 0.04;
 export const TRAIL_SPEED_BONUS = 0.4;
 export const TRAIL_HARVEST_BONUS = 0.3;
 
+/** Spitter acid: a hit leaves the target sticky and slow for a moment. */
+export const ACID_SLOW = 0.65;
+export const ACID_SECONDS = 2.5;
+/** A Nursery Chamber warms the brood: eggs hatch this much faster while one stands. */
+export const NURSERY_HATCH_BONUS = 0.25;
+/** Each Granary Chamber ferments a little stored sugar every second. */
+export const GRANARY_TRICKLE = 1;
+
 /** The garden hose: climbing over it is slow except at its two crossings. */
 export const HOSE_SLOW = 0.35;
 export const HOSE_HALF_WIDTH = 1.6;

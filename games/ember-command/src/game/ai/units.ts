@@ -3,7 +3,7 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
-import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS, HOSE_SLOW, TRAIL_HARVEST_BONUS, TRAIL_HAUL_DEPOSIT, TRAIL_SPEED_BONUS } from "../tuning";
+import { ACID_SECONDS, ACID_SLOW, ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS, HOSE_SLOW, TRAIL_HARVEST_BONUS, TRAIL_HAUL_DEPOSIT, TRAIL_SPEED_BONUS } from "../tuning";
 import { hazardSpeedFactor } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
@@ -51,7 +51,8 @@ export function yardPace(catalogId: string, faction: "player" | "enemy", x: numb
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
   const base = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
   const at = ctx.scene.entity.get(u.id)?.position;
-  const pace = at === undefined ? base : base * yardPace(u.catalogId, u.faction, at[0], at[2]);
+  const acid = (session.acid[u.id] ?? 0) > session.elapsed ? ACID_SLOW : 1;
+  const pace = (at === undefined ? base : base * yardPace(u.catalogId, u.faction, at[0], at[2])) * acid;
   ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed: pace, dt, face: true });
 }
 
@@ -203,6 +204,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
         const alarm = u.faction === "player" ? alarmDamageFactor(session.alarms, self.position[0], self.position[2], session.elapsed) : 1;
         const amount = resolved * lineMultiplier(u.faction, target.faction) * alarm;
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
+        // Spitter acid gums up whatever it hits.
+        if (u.catalogId === "spitter" && target.kind === "unit") session.acid[target.id] = session.elapsed + ACID_SECONDS;
         // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
           raiseCombatNoise(ctx, { x: ent.position[0], z: ent.position[2] }, u.id);

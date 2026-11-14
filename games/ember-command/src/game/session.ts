@@ -78,6 +78,8 @@ export interface SessionState {
   trailArmed: boolean;
   /** The colony's scent grid (see `pheromone.ts`). */
   trails: TrailField;
+  /** Units slowed by spitter acid, with the battle second the acid wears off. */
+  acid: Record<string, number>;
   /** Live alarm-pheromone clouds where red ants died (see `pheromone.ts`). */
   alarms: AlarmPulse[];
   /** Coach tips already shown this battle (see `coach.ts`). */
@@ -125,6 +127,7 @@ function fresh(): SessionState {
     trailArmed: false,
     trails: createTrailField(FOG_BOUNDS, TRAIL_CELL),
     alarms: [],
+    acid: {},
     coachSeen: [],
     trailPainted: false,
     hazards: createHazardState(NO_HAZARDS),

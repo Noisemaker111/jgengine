@@ -18,6 +18,8 @@ export interface CoachFacts {
   night: boolean;
   /** A hostile has been seen by the colony. */
   enemySeen: boolean;
+  /** The magnifying glass is in this battle. */
+  beam: boolean;
   /** The free skirmish runs no orders card, so the coach names the goal. */
   skirmish: boolean;
 }
@@ -58,6 +60,11 @@ export const COACH_TIPS: readonly CoachTip[] = [
     id: "night",
     text: "Night shortens every antenna. Scouts (9) on a scent trail and ants on patio stones still see far.",
     when: (f) => f.night,
+  },
+  {
+    id: "beam",
+    text: "The kid hunts the biggest knot of ants in the open. Hide under the giant leaves, and lure the beam onto the black nest: it burns them too.",
+    when: (f) => f.beam && f.elapsed >= 3,
   },
   {
     id: "skirmish",
