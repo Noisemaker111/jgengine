@@ -19,7 +19,7 @@ import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
 
-import { buildCost, keep, towerStats } from "../keep";
+import { buildCost, keep, towerLevel, towerStats } from "../keep";
 import { session } from "../session";
 import { towerDef } from "../entities/towers/catalog";
 import { editorLayers } from "../../editorLayers";
@@ -333,7 +333,9 @@ function workerStatusDraw(ctx: GameContext): EngineDraw {
   const tapeMaterial = new MeshStandardMaterial({ color: "#e8d27a", roughness: 0.6 });
   const mats = new Map<string, MeshStandardMaterial>();
   const auras = new Map<string, MeshStandardMaterial>();
-  const pool = { phones: [] as Group[], rings: [] as Mesh[], mats: [] as Mesh[], auras: [] as Mesh[], parcels: [] as Group[] };
+  const star = new SphereGeometry(0.22, 10, 8);
+  const gold = new MeshStandardMaterial({ color: "#ffd24a", emissive: "#ffb020", emissiveIntensity: 0.8, roughness: 0.4 });
+  const pool = { phones: [] as Group[], rings: [] as Mesh[], mats: [] as Mesh[], auras: [] as Mesh[], parcels: [] as Group[], stars: [] as Mesh[] };
   const matOf = (color: string) => {
     let value = mats.get(color);
     if (value === undefined) {
@@ -367,13 +369,20 @@ function workerStatusDraw(ctx: GameContext): EngineDraw {
     },
     frame(_state: EngineFrameState, dt: number) {
       clock += dt;
-      const used = { phones: 0, rings: 0, mats: 0, auras: 0, parcels: 0 };
+      const used = { phones: 0, rings: 0, mats: 0, auras: 0, parcels: 0, stars: 0 };
       const world = keep.of(ctx);
       for (const worker of world.instances()) {
         if (!worker.ready) continue;
         const at = ctx.scene.entity.get(worker.id)?.position;
         if (at === undefined) continue;
         const def = towerDef(worker.kind, editorLayers);
+        // Promotions show as gold pips orbiting slowly over the worker's head, one per rank above the first.
+        const ranks = towerLevel(world, worker.id) - 1;
+        for (let index = 0; index < ranks; index += 1) {
+          const pip = take(pool.stars, used.stars++, () => new Mesh(star, gold));
+          const angle = clock * 1.2 + (index * Math.PI * 2) / Math.max(1, ranks);
+          pip.position.set(at[0] + Math.cos(angle) * 0.55, at[1] + WORKER_HEIGHT + 0.25, at[2] + Math.sin(angle) * 0.55);
+        }
         const pad = take(pool.mats, used.mats++, () => new Mesh(mat, matOf(def.color)));
         pad.material = matOf(def.color);
         pad.position.set(at[0], at[1] + 0.05, at[2]);
@@ -426,8 +435,8 @@ function workerStatusDraw(ctx: GameContext): EngineDraw {
     dispose(state: EngineFrameState) {
       state.scene.remove(group);
       group.clear();
-      for (const geometry of [phoneBody, phoneScreen, ring, mat, aura, parcelBox, tape]) geometry.dispose();
-      for (const material of [dark, glow, spotted, cardboard, tapeMaterial, ...mats.values(), ...auras.values()]) material.dispose();
+      for (const geometry of [phoneBody, phoneScreen, ring, mat, aura, parcelBox, tape, star]) geometry.dispose();
+      for (const material of [dark, glow, spotted, cardboard, tapeMaterial, gold, ...mats.values(), ...auras.values()]) material.dispose();
     },
   };
 }

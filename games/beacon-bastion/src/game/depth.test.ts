@@ -197,6 +197,14 @@ describe("distraction: technology fights back without shooting", () => {
     expect(TOWER_CATALOG.worker_barista!.voice.distracted).toContain(session.bubbles.find((bubble) => bubble.at === worker)!.text);
   });
 
+  test("a chatbot echoes the worker's own line back at them, garbled", () => {
+    standTower("worker_barista", 0);
+    const bot = raiderAt("tech_chatbot", 0);
+    sendNotification(runner.ctx, session.creeps.get(bot)!);
+    const reply = session.bubbles.find((bubble) => bubble.at === bot)!.text;
+    expect(TOWER_CATALOG.worker_barista!.voice.fire.some((line) => reply.includes(line.replace(/[.!?…]+$/, "")))).toBe(true);
+  });
+
   test("Do Not Disturb snaps every worker out of their phone", () => {
     const worker = standTower("worker_barista", 0);
     session.workers.apply(worker, "distracted", { durationScale: 10 });

@@ -4,7 +4,7 @@ import { vec3 } from "@jgengine/core/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
 import { creepDef, type CreepDef } from "../entities/enemies/catalog";
-import { towerDef } from "../entities/towers/catalog";
+import { towerDef, voiceLine } from "../entities/towers/catalog";
 import { keep, towerStats } from "../keep";
 import { say, session, type CreepRuntime } from "../session";
 import { speak } from "./towerAI";
@@ -95,6 +95,16 @@ function pickTarget(workers: readonly Worker[], at: EntityPosition, range: numbe
   return best;
 }
 
+/**
+ * A chatbot's reply: the worker's own line, confidently restated with the meaning sanded off.
+ * "Extra hot, for here." comes back as "Great question! Extra hot, for here… as an AI?"
+ */
+export function chatbotEcho(kind: string, seed: number): string {
+  const line = voiceLine(kind, "fire", seed).replace(/[.!?…]+$/, "");
+  const frames = ["Great question! %s… as an AI?", "So what I'm hearing is: %s?", "Let me rephrase: %s, but worse", "%s! (citation needed)"];
+  return frames[seed % frames.length]!.replace("%s", line);
+}
+
 /** Fire one notification (or a "Hey—" at everyone in reach). Returns how many workers it distracted. */
 export function sendNotification(ctx: GameContext, creep: CreepRuntime, def: CreepDef = creepDef(creep.catalogId)): number {
   const notify = def.notify;
@@ -108,11 +118,12 @@ export function sendNotification(ctx: GameContext, creep: CreepRuntime, def: Cre
     ? workers.filter((worker) => vec3.distance(worker.position, at) <= notify.range)
     : [pickTarget(workers, at, notify.range)].filter((worker): worker is Worker => worker !== null);
   if (targets.length === 0) return 0;
-  // A chatbot answers in the worker's own words, echoed back until they lose the thread.
-  const ping = def.mesh === "chatbot" ? `"${text}"` : text;
+  // A chatbot answers in the worker's own words, echoed back garbled until they lose the thread.
+  const echoed = def.mesh === "chatbot" ? chatbotEcho(targets[0]!.kind, session.voiceSeq) : null;
+  const ping = echoed === null ? text : "Confused?";
   let landed = 0;
   for (const worker of targets) if (distract(ctx, worker, notify.seconds, ping)) landed += 1;
-  say(creep.instanceId, text, "ping", ctx.time.now());
+  say(creep.instanceId, echoed ?? text, "ping", ctx.time.now());
   if (notify.area === true) ctx.scene.entity.vfx({ preset: "shockwave", to: [at[0], at[1] + 0.6, at[2]], radius: notify.range, durationMs: 500, color: 0x3ae0ff });
   return landed;
 }
