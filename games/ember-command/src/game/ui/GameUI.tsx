@@ -16,7 +16,7 @@ import { lawnTheme, GAME_FONTS, WAX } from "./theme";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
-/** Lawn Order's war table on one native Rune surface: the field HUD, the front end and the notice feed. */
+/** LAWN ORDER's garden journal on one native Rune surface: the field HUD, the front end and the notice feed. */
 export function GameUI() {
   const ctx = useGameContext();
   const settings = useSettings();
@@ -26,7 +26,20 @@ export function GameUI() {
   const phase = useHudSlice((h) => h.phase);
   const { width, height } = useRuneViewport();
   const [mapOpen, setMapOpen] = useState(false);
-  const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
+  // At most the three newest reports, so a burst of hazard beats and coach tips never buries the field.
+  const notices = useMemo(() => {
+    let cache: ReturnType<typeof ctx.game.notices.list> = [];
+    let key = "";
+    return {
+      read: () => {
+        const next = ctx.game.notices.list().slice(-3);
+        const nextKey = next.map((n) => n.id).join(",");
+        if (nextKey !== key) { key = nextKey; cache = next; }
+        return cache;
+      },
+      subscribe: ctx.game.notices.subscribe,
+    };
+  }, [ctx]);
   const field = phase === "playing" || phase === "paused";
 
   // Escape is the field desk's own key in a running battle; a held battle resumes through the dispatch case's back action.
@@ -51,7 +64,8 @@ export function GameUI() {
         <FieldSettings ctx={ctx} width={Math.min(520, width - 24)} />
       </RuneView>
     </RuneView> : null}
-    <RuneView anchor="top" safe inset={width < 700 ? 180 : 96} gap={6} items="center" maxWidth={Math.min(520, width - 24)}>
+    {/* The pause menu and the title speak for themselves: the field's reports only show in battle. */}
+    <RuneView anchor="top" safe inset={width < 700 ? 180 : 96} gap={6} items="center" maxWidth={Math.min(520, width - 24)} hidden={phase !== "playing"}>
       <RuneTransient source={notices} expire={ctx.game.notices.prune}>{(notice) =>
         <RuneView variant="note" padding={[6, 14, 6, 14]}><Text align="center" text={notice.text} {...(notice.tone === "deny" ? { color: WAX } : {})} /></RuneView>}
       </RuneTransient>
