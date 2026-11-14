@@ -51,6 +51,8 @@ export const HANDOFF_SPEED = 10;
 export const BOARD_SIZE = 4;
 /** Game seconds a call waits on the board before the customer gives up and calls a rival. */
 export const CALL_PATIENCE = 150;
+/** Who calls first in a new career: the Okafor twins' stall, a short walk from the oven. */
+export const FIRST_CALLER = "okafor_twins";
 /** Each great drop in a row adds this share to the tips, up to the cap. */
 export const STREAK_STEP = 0.06;
 export const STREAK_CAP = 5;
@@ -197,7 +199,9 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   const nextCallIn = state.nextCallIn - dt;
   if (nextCallIn > 0) return { ...state, nextCallIn };
   const busy = new Set([...state.board.map((call) => call.customerId), ...state.bag.map((order) => order.customerId)]);
-  const caller = nextCaller({ rep: shopRep(ctx), hour: hourOf(ctx), busy, roll: roll(state.serial + 1), idaDue: state.idaDue });
+  // A new rider's very first call is the night market across the boardwalk: a short walk that teaches the loop.
+  const firstEver = pizzeriaStore.read(ctx).deliveries === 0 && state.serial === 0 && !busy.has(FIRST_CALLER);
+  const caller = firstEver ? (customerById(FIRST_CALLER) ?? null) : nextCaller({ rep: shopRep(ctx), hour: hourOf(ctx), busy, roll: roll(state.serial + 1), idaDue: state.idaDue });
   const interval = callInterval(pizzeriaStore.read(ctx)) * (nightRules(ctx)?.callScale ?? 1);
   if (caller === null) return { ...state, nextCallIn: interval / 2 };
   const serial = state.serial + 1;
