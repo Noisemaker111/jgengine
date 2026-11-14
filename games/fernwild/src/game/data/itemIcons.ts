@@ -10,7 +10,7 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   stone: "gameicons:delapouite/stone-pile",
   flint: "gameicons:delapouite/flint-spark",
   fiber: "gameicons:delapouite/high-grass",
-  salvage: "gameicons:delapouite/animal-hide",
+  salvage: "gameicons:lorc/gear-hammer",
   metal: "gameicons:faithtoken/minerals",
   metal_ingot: "gameicons:lorc/metal-bar",
   metal_pick: "gameicons:delapouite/war-pick",
@@ -23,17 +23,17 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   mejoberry_seed: "gameicons:lorc/seedling",
   fertilizer: "gameicons:delapouite/fertilizer-bag",
   crop_plot: "gameicons:delapouite/field",
-  homer_beacon: "gameicons:lorc/bird-claw",
-  arcwire_coil: "gameicons:lorc/dorsal-scales",
-  hoover_turbine: "gameicons:lorc/dinosaur-bones",
-  coilcobra_capacitor: "gameicons:lorc/chemical-drop",
+  homer_beacon: "gameicons:lorc/radar-dish",
+  arcwire_coil: "gameicons:lorc/electrical-crescent",
+  hoover_turbine: "gameicons:delapouite/turbine",
+  coilcobra_capacitor: "gameicons:lorc/processor",
   element: "gameicons:lorc/floating-crystal",
   hive_flag: "gameicons:delapouite/flag-objective",
-  biogel: "gameicons:lorc/meat",
-  prime_biogel: "gameicons:delapouite/steak",
-  gel_ration: "gameicons:delapouite/kebab-spit",
-  soured_gel: "gameicons:lorc/meat",
-  drain_spike: "gameicons:lorc/pill",
+  biogel: "gameicons:lorc/potion-ball",
+  prime_biogel: "gameicons:lorc/round-bottom-flask",
+  gel_ration: "gameicons:delapouite/jelly-beans",
+  soured_gel: "gameicons:lorc/goo-explosion",
+  drain_spike: "gameicons:delapouite/spark-plug",
   stimulant: "gameicons:delapouite/medicine-pills",
   stone_pick: "gameicons:lorc/mining",
   stone_hatchet: "gameicons:delapouite/hatchet",
@@ -64,12 +64,12 @@ const BY_ITEM: Readonly<Record<string, string>> = {
 };
 
 /** Families sharing one icon, by id prefix or suffix. */
-const ARTIFACT = "gameicons:delapouite/glowing-artifact";
+const ARTIFACT = "gameicons:lorc/circuitry";
 const TROPHY = "gameicons:lorc/trophy";
 const BERRY = "gameicons:lorc/elderberry";
-const SADDLE = "gameicons:delapouite/saddle";
-const EGG = "gameicons:lorc/egg-clutch";
-const FIRMWARE = "gameicons:delapouite/dog-bowl";
+const SADDLE = "gameicons:lorc/gear-hammer";
+const EGG = "gameicons:delapouite/power-generator";
+const FIRMWARE = "gameicons:lorc/microchip";
 
 /** Building pieces by shape. */
 const BY_SHAPE: Readonly<Record<string, string>> = {

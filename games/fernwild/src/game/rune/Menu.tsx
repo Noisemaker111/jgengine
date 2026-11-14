@@ -237,7 +237,7 @@ export function TitleMenu(): ReactNode {
                   <RuneView gap={2}>
                     <Tag color={TEAL} text="WAKE ON THE BEACH. SURVIVE THE ISLAND." />
                     <Text family={DISPLAY} size={phone ? 54 : 84} weight={700} tracking={2} color={INK} text="FERNWILD" />
-                    <Text size={15} color={DIM} text="Gather, craft, learn schematics, build, and bot the island's dinosaurs." />
+                    <Text size={15} color={DIM} text="Gather, craft, learn schematics, build, and upload the island's feral machines." />
                   </RuneView>
                   <RuneView gap={6}>
                     <Verb label="Continue" hint={saved ? "Back where you left off" : "No save yet"} disabled={!saved} run={() => void continueGame(ctx)} />
