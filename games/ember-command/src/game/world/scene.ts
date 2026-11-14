@@ -7,6 +7,7 @@ import { editorLayers } from "../../editorLayers";
 import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
 import { activeCampaignStep, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
 import { createHazardState, SKIRMISH_HAZARDS } from "../hazards";
+import { raiseAlarm } from "../pheromone";
 import { grantHeroXp, heroXpFor } from "../hero";
 import { loadHeroPicks } from "../heroActs";
 import { registerCommands } from "../commands";
@@ -71,6 +72,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     return;
   }
   ctx.game.audio.play("fall", event.position);
+  if (def.faction === "player" && def.kind === "unit") raiseAlarm(session.alarms, event.position[0], event.position[2], session.elapsed);
   if (def.faction === "enemy" && def.kind === "unit") {
     if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, SUGAR, def.bounty);
     grantHeroXp(ctx, heroXpFor(event.catalogId)); // the hero champions the kill

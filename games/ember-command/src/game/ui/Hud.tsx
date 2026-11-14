@@ -99,7 +99,7 @@ function OrdersNote({ width }: { width: number }) {
 function YardStrip({ width }: { width: number }) {
   const hz = useHudSlice((h) => h.hazards);
   const items: { text: string; warn: boolean }[] = [];
-  if (hz.sprinkler !== "none") items.push({ text: hz.sprinkler === "on" ? "Sprinkler spraying" : "Sprinkler idle", warn: hz.sprinkler === "on" });
+  if (hz.sprinkler !== "none") items.push({ text: hz.sprinkler === "on" ? "Sprinkler spraying" : hz.sprinkler === "warming" ? "Sprinkler hissing: about to spray!" : "Sprinkler idle", warn: hz.sprinkler !== "off" });
   if (hz.mower !== "none") items.push({ text: hz.mower === "crossing" ? "MOWER CROSSING" : hz.mower === "warning" ? `Mower in ${hz.mowerIn ?? 0}s — clear the lane!` : `Mower in ${hz.mowerIn ?? 0}s`, warn: hz.mower !== "idle" });
   if (hz.rain) items.push({ text: "Rain: slow going, scent washing", warn: true });
   if (hz.night) items.push({ text: "Night: antennae short", warn: false });

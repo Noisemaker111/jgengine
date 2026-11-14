@@ -136,3 +136,40 @@ export function scentedCells(field: TrailField): { x: number; z: number; scent: 
 export function trailSpeedFactor(scent: number, bonus: number): number {
   return 1 + Math.max(0, Math.min(TRAIL_MAX, scent)) * bonus;
 }
+
+/**
+ * Alarm pheromone: when a red ant dies it bursts a cloud of alarm scent, and every red ant inside it
+ * bites harder for a few seconds — the colony gets angry where it bleeds. Pure records with an expiry
+ * on the battle clock; the death handler raises them, `units.ts` reads them, the overlay draws rings.
+ */
+export interface AlarmPulse {
+  x: number;
+  z: number;
+  /** Battle second it was raised, and when it fades. */
+  at: number;
+  until: number;
+}
+
+export const ALARM_RADIUS = 9;
+export const ALARM_SECONDS = 5;
+export const ALARM_DAMAGE_BONUS = 0.25;
+/** At most this many clouds live at once; the oldest drops first. */
+export const ALARM_CAP = 24;
+
+export function raiseAlarm(alarms: AlarmPulse[], x: number, z: number, now: number): void {
+  alarms.push({ x, z, at: now, until: now + ALARM_SECONDS });
+  while (alarms.length > ALARM_CAP) alarms.shift();
+}
+
+/** Drop the clouds that have faded by `now`. */
+export function pruneAlarms(alarms: AlarmPulse[], now: number): void {
+  for (let i = alarms.length - 1; i >= 0; i -= 1) if (alarms[i]!.until <= now) alarms.splice(i, 1);
+}
+
+/** Damage multiplier a red ant at a point gets from live alarm clouds (they do not stack). */
+export function alarmDamageFactor(alarms: readonly AlarmPulse[], x: number, z: number, now: number): number {
+  for (const alarm of alarms) {
+    if (alarm.until > now && Math.hypot(alarm.x - x, alarm.z - z) <= ALARM_RADIUS) return 1 + ALARM_DAMAGE_BONUS;
+  }
+  return 1;
+}

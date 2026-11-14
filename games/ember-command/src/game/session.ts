@@ -14,7 +14,7 @@ import type { BuildSpec } from "./building";
 import { combatantDef, nodeDef, type CombatantKind } from "./catalog";
 import { createFogState, FOG_BOUNDS, type FogState } from "./fog";
 import { createHazardState, NO_HAZARDS, type HazardState } from "./hazards";
-import { createTrailField, type TrailField } from "./pheromone";
+import { createTrailField, type AlarmPulse, type TrailField } from "./pheromone";
 import type { FormationState } from "./formations";
 import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, TRAIL_CELL, type Faction } from "./tuning";
 import type { ResearchSpec } from "./upgrades";
@@ -78,6 +78,12 @@ export interface SessionState {
   trailArmed: boolean;
   /** The colony's scent grid (see `pheromone.ts`). */
   trails: TrailField;
+  /** Live alarm-pheromone clouds where red ants died (see `pheromone.ts`). */
+  alarms: AlarmPulse[];
+  /** Coach tips already shown this battle (see `coach.ts`). */
+  coachSeen: string[];
+  /** Whether the commander has painted a Pheromone Line this battle (the coach stops nagging). */
+  trailPainted: boolean;
   /** The yard's clocks: sprinkler, mower, rain, night and the magnifying glass (see `hazards.ts`). */
   hazards: HazardState;
   /** The marching shape and the anchor the army holds around it (see `formations.ts`). */
@@ -118,6 +124,9 @@ function fresh(): SessionState {
     attackMoveArmed: false,
     trailArmed: false,
     trails: createTrailField(FOG_BOUNDS, TRAIL_CELL),
+    alarms: [],
+    coachSeen: [],
+    trailPainted: false,
     hazards: createHazardState(NO_HAZARDS),
     formation: { kind: "line", anchor: { x: 0, z: 0 }, facing: 0, members: [], offsets: {} },
     fog: createFogState(FOG_CELL),

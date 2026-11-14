@@ -6,7 +6,8 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useGameContext } from "@jgengine/ui/provider";
 
-import { BEAM_RADIUS, MOWER_DECK_HALF_LENGTH, mowerPosition, SPRINKLER_JET_HALF_ANGLE } from "../hazards";
+import { BEAM_RADIUS, MOWER_DECK_HALF_LENGTH, mowerPosition, SPRINKLER_JET_HALF_ANGLE, sprinklerWarming } from "../hazards";
+import { ALARM_RADIUS, ALARM_SECONDS } from "../pheromone";
 import { cellCentre } from "../pheromone";
 import { session } from "../session";
 import { YARD } from "../yardInstance";
@@ -21,6 +22,7 @@ import { YARD } from "../yardInstance";
  */
 
 const DROPS = 220;
+const ALARM_RINGS = 24;
 const TRAIL_CAPACITY = 2400;
 
 function sprinklerHead(): THREE.Group {
@@ -157,6 +159,13 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
   trails.frustumCulled = false;
   trails.count = 0;
   let trailVersion = -1;
+  // Alarm clouds: a red ring that swells out to the cloud's reach and fades as it does.
+  const ringGeometry = new THREE.RingGeometry(0.86, 1, 40);
+  ringGeometry.rotateX(-Math.PI / 2);
+  const ringMaterial = new THREE.MeshBasicMaterial({ color: "#ff3b2f", transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending });
+  const rings = new THREE.InstancedMesh(ringGeometry, ringMaterial, ALARM_RINGS);
+  rings.frustumCulled = false;
+  rings.count = 0;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const s = new THREE.Vector3();
@@ -179,7 +188,7 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         warn.position.set(mx, ground(mx, mz) + 0.12, mz);
         root.add(mower, warn);
       }
-      root.add(beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
+      root.add(rings, beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
       state.scene.add(root);
     },
     frame(state: EngineFrameState, delta: number) {
@@ -190,14 +199,17 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
       if (head !== null && sprinkler !== null) {
         head.rotation.y = hz.sprinkler.angle;
         const spraying = hz.toggles.sprinkler && hz.sprinkler.on;
-        drops.visible = spraying;
-        if (spraying) {
+        const warming = sprinklerWarming(hz, YARD);
+        drops.visible = spraying || warming;
+        // The tell: in the seconds before it sprays, the head spins and dribbles a short weak arc.
+        if (warming) head.rotation.y += Math.sin(t * 30) * 0.08;
+        if (spraying || warming) {
           const baseY = ground(sprinkler.x, sprinkler.z) + 3.8;
           for (let i = 0; i < DROPS; i += 1) {
             const f = ((i * 0.6180339) + t * 0.9) % 1;
             const spread = ((i * 7919) % 100) / 100 - 0.5;
             const angle = hz.sprinkler.angle + spread * SPRINKLER_JET_HALF_ANGLE * 2 * (0.6 + 0.6 * f);
-            const d = f * sprinkler.reach;
+            const d = f * sprinkler.reach * (spraying ? 1 : 0.18);
             const x = sprinkler.x + Math.sin(angle) * d;
             const z = sprinkler.z + Math.cos(angle) * d;
             const y = baseY + Math.sin(f * Math.PI) * 7 - f * 3.4 + ground(x, z) * f;
@@ -241,6 +253,23 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         spot.scale.setScalar(focused ? 1 : 2.4);
         coreSpot.visible = focused;
       }
+
+      // Alarm rings swell over the cloud's life.
+      const now = session.elapsed;
+      let r = 0;
+      for (const alarm of session.alarms) {
+        if (r >= ALARM_RINGS) break;
+        const life = Math.max(0, Math.min(1, (now - alarm.at) / ALARM_SECONDS));
+        p.set(alarm.x, ground(alarm.x, alarm.z) + 0.15, alarm.z);
+        const radius = ALARM_RADIUS * (0.25 + 0.75 * Math.sqrt(life));
+        s.set(radius, 1, radius);
+        m.compose(p, q, s);
+        rings.setMatrixAt(r, m);
+        r += 1;
+      }
+      rings.count = r;
+      rings.instanceMatrix.needsUpdate = true;
+      ringMaterial.opacity = 0.55;
 
       // Pheromone: refresh the instanced dots only when the scent grid changed.
       const field = session.trails;

@@ -228,6 +228,7 @@ export function paintTrail(ctx: GameContext, selection: readonly string[], x: nu
   const cells = paintLine(session.trails, from.x, from.z, x, z, TRAIL_PAINT_STRENGTH, TRAIL_PAINT_MAX_LENGTH);
   if (cells === 0) return false;
   ctx.game.economy.charge(ctx.player.userId, SUGAR, TRAIL_PAINT_COST);
+  session.trailPainted = true;
   ctx.game.audio.play("scent", [x, 0, z]);
   notify(ctx, "Pheromone Line laid: red ants run faster along it, and foragers harvest quicker where it ends.", "success");
   return true;

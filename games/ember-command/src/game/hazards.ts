@@ -31,6 +31,8 @@ export const SKIRMISH_HAZARDS: HazardToggles = { sprinkler: true, mower: true, r
 export const SPRINKLER_CYCLE = 46;
 export const SPRINKLER_ON = 18;
 export const SPRINKLER_SWEEP_PERIOD = 9;
+/** Seconds before the spray when the head spins up and dribbles: the tell. */
+export const SPRINKLER_WARMUP = 4;
 /** Half-angle of the jet's wedge, in radians, and what it does to an ant caught in it. */
 export const SPRINKLER_JET_HALF_ANGLE = 0.16;
 export const SPRINKLER_DPS = 6;
@@ -220,6 +222,34 @@ export function advanceHazards(state: HazardState, layout: YardLayout, dt: numbe
   }
 
   return events;
+}
+
+/** True in the few seconds before the sprinkler sprays: the head hisses and dribbles. */
+export function sprinklerWarming(state: HazardState, layout: YardLayout): boolean {
+  if (!state.toggles.sprinkler || layout.sprinkler === null || state.sprinkler.on) return false;
+  const phase = state.t % SPRINKLER_CYCLE;
+  const start = SPRINKLER_CYCLE - SPRINKLER_ON;
+  return phase >= start - SPRINKLER_WARMUP && phase < start;
+}
+
+/**
+ * Where a black ant standing in the mower lane runs to when the engine roars: straight out of the
+ * lane on its own side, two body lengths past the edge. Null when the point is not in the lane.
+ */
+export function laneEscape(layout: YardLayout, x: number, z: number): YardPoint | null {
+  const lane = layout.mowerLane;
+  if (lane === null || distanceToSegment(x, z, lane.from, lane.to) > lane.halfWidth + 0.5) return null;
+  const dx = lane.to.x - lane.from.x;
+  const dz = lane.to.z - lane.from.z;
+  const length = Math.hypot(dx, dz) || 1;
+  const nx = -dz / length;
+  const nz = dx / length;
+  const side = (x - lane.from.x) * nx + (z - lane.from.z) * nz >= 0 ? 1 : -1;
+  const t = Math.max(0, Math.min(1, ((x - lane.from.x) * dx + (z - lane.from.z) * dz) / (length * length)));
+  const px = lane.from.x + dx * t;
+  const pz = lane.from.z + dz * t;
+  const out = lane.halfWidth + 3;
+  return { x: px + nx * side * out, z: pz + nz * side * out };
 }
 
 /** True when a point is inside the sprinkler's spraying jet. */

@@ -25,7 +25,12 @@ import {
   underMower,
   type HazardEvent,
 } from "./hazards";
-import { createTrailField, decayTrails, deposit, paintLine, scentAt, trailSpeedFactor, washTrails } from "./pheromone";
+import { dueTips } from "./coach";
+import { laneEscape, sprinklerWarming, SPRINKLER_WARMUP } from "./hazards";
+import {
+  alarmDamageFactor, createTrailField, decayTrails, deposit, paintLine, pruneAlarms, raiseAlarm, scentAt, trailSpeedFactor, washTrails,
+  type AlarmPulse,
+} from "./pheromone";
 import { resetSession, session } from "./session";
 import { TRAIL_PAINT_COST } from "./tuning";
 import { inShade, onHose, onPatio, readYardLayout, type YardLayout } from "./yard";
@@ -227,5 +232,39 @@ describe("castes and the pheromone verb", () => {
     expect(paintTrail(ctx, ["s1"], 0, 20)).toBe(false);
     expect(scentAt(session.trails, 0.5, 10)).toBe(0);
     expect(ctx.game.notices.list().at(-1)?.tone).toBe("deny");
+  });
+});
+
+describe("alarm scent, hazard tells and the coach", () => {
+  test("an alarm cloud makes nearby red ants bite 25% harder until it fades", () => {
+    const alarms: AlarmPulse[] = [];
+    raiseAlarm(alarms, 0, 0, 10);
+    expect(alarmDamageFactor(alarms, 3, 0, 11)).toBeCloseTo(1.25, 5);
+    expect(alarmDamageFactor(alarms, 30, 0, 11)).toBe(1);
+    expect(alarmDamageFactor(alarms, 3, 0, 16)).toBe(1);
+    pruneAlarms(alarms, 16);
+    expect(alarms).toHaveLength(0);
+  });
+
+  test("the sprinkler hisses for a few seconds before it sprays", () => {
+    const state = createHazardState({ ...NO_HAZARDS, sprinkler: true });
+    run(state, SPRINKLER_CYCLE - SPRINKLER_ON - SPRINKLER_WARMUP + 1);
+    expect(sprinklerWarming(state, TEST_YARD)).toBe(true);
+    expect(state.sprinkler.on).toBe(false);
+  });
+
+  test("a black ant in the mower lane runs out on its own side", () => {
+    expect(laneEscape(TEST_YARD, 5, 8)!.z).toBeLessThan(10 - 4);
+    expect(laneEscape(TEST_YARD, 5, 12)!.z).toBeGreaterThan(10 + 4);
+    expect(laneEscape(TEST_YARD, 5, 30)).toBeNull();
+  });
+
+  test("the coach names the next verb once, at the moment it matters", () => {
+    const base = { elapsed: 0, foraging: 0, scented: false, trailPainted: false, hasBarracks: false, broodFull: false, night: false, enemySeen: false, skirmish: false };
+    expect(dueTips(base, []).map((t) => t.id)).toEqual([]);
+    expect(dueTips({ ...base, elapsed: 7 }, []).map((t) => t.id)).toEqual(["forage"]);
+    expect(dueTips({ ...base, elapsed: 7 }, ["forage"])).toEqual([]);
+    expect(dueTips({ ...base, elapsed: 30, foraging: 3, scented: true }, ["forage"]).map((t) => t.id)).toEqual(["trail"]);
+    expect(dueTips({ ...base, elapsed: 30, foraging: 3, scented: true, trailPainted: true }, ["forage"])).toEqual([]);
   });
 });

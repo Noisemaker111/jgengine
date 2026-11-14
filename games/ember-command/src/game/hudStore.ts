@@ -11,7 +11,7 @@ export type MatchPhase = "ready" | "playing" | "paused" | "won" | "lost";
 
 /** The yard's clocks as the weather strip reads them; "none" when the battle does not run that hazard. */
 export interface HazardView {
-  sprinkler: "none" | "off" | "on";
+  sprinkler: "none" | "off" | "warming" | "on";
   mower: "none" | "idle" | "warning" | "crossing";
   /** Whole seconds to the next mower pass, or null without a mower. */
   mowerIn: number | null;

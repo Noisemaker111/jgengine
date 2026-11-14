@@ -22,16 +22,19 @@ import {
   BEAM_UNIT_DPS,
   densestKnot,
   inSprinklerJet,
+  laneEscape,
   MOWER_BUILDING_DAMAGE,
   MOWER_UNIT_DAMAGE,
   mowerEta,
   nightSightFactor,
   SPRINKLER_DPS,
+  sprinklerWarming,
   underBeam,
   underMower,
   type HazardEvent,
 } from "./hazards";
-import { decayTrails, washTrails } from "./pheromone";
+import { decayTrails, pruneAlarms, scentAt, washTrails } from "./pheromone";
+import { dueTips, type CoachFacts } from "./coach";
 import { onPatio } from "./yard";
 import { YARD } from "./yardInstance";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
@@ -117,7 +120,10 @@ function playerSightSources(ctx: GameContext): SightSource[] {
     const x = entity.position[0];
     const z = entity.position[2];
     const ground = unit.kind === "unit" && onPatio(YARD, x, z) ? PATIO_SIGHT_BONUS : 1;
-    eyes.push({ x, z, radius: sightRadiusFor(unit.catalogId, unit.kind) * nightSightFactor(session.hazards) * ground });
+    // A scout reads the colony's scent: on a trail its antennae ignore the dark.
+    const scouting = unit.catalogId === "scout" && scentAt(session.trails, x, z) > 0.3;
+    const night = scouting ? 1 : nightSightFactor(session.hazards);
+    eyes.push({ x, z, radius: sightRadiusFor(unit.catalogId, unit.kind) * night * ground });
   }
   return eyes;
 }
@@ -285,6 +291,20 @@ function applyHazardHarm(ctx: GameContext, dt: number): void {
   }
 }
 
+/**
+ * Black ants are not stupid: when the mower roars they run out of its lane on their own side. The red
+ * colony gets the same warning and has to make that call itself.
+ */
+function dodgeMower(ctx: GameContext): void {
+  for (const unit of session.units.values()) {
+    if (unit.faction !== "enemy" || unit.kind !== "unit" || unit.catalogId === "wasp") continue;
+    const entity = ctx.scene.entity.get(unit.id);
+    if (entity === null) continue;
+    const out = laneEscape(YARD, entity.position[0], entity.position[2]);
+    if (out !== null) unit.command = { kind: "move", x: out.x, z: out.z };
+  }
+}
+
 /** The yard's clocks: advance them, announce their beats, and let them hurt whoever stands in the way. */
 const hazardSystem: SystemDefinition = defineSystem({
   id: "ember-command.hazards",
@@ -299,6 +319,8 @@ const hazardSystem: SystemDefinition = defineSystem({
       ctx.game.notices.push({ text: notice.text, tone: notice.tone ?? "info", ttlMs: 6000 });
       playHazardCue(ctx, key);
     }
+    if (session.hazards.mower.phase !== "idle") dodgeMower(ctx);
+    pruneAlarms(session.alarms, session.elapsed);
     applyHazardHarm(ctx, dt);
   },
 });
@@ -312,6 +334,54 @@ const trailSystem: SystemDefinition = defineSystem({
     const hz = session.hazards;
     decayTrails(session.trails, 0.25, TRAIL_HALF_LIFE, hz.rain.on ? TRAIL_RAIN_DECAY : 1);
     if (hz.sprinkler.on) washTrails(session.trails, (x, z) => inSprinklerJet(hz, YARD, x, z));
+  },
+});
+
+/** What the coach reads once a second. */
+function coachFacts(): CoachFacts {
+  const hud = hudStore.get();
+  let foraging = 0;
+  for (const unit of session.units.values()) {
+    if (unit.command.kind === "gather") foraging += 1;
+  }
+  const enemySeen = enemyVisible();
+  return {
+    elapsed: session.elapsed,
+    foraging,
+    scented: session.trails.scent.some((v) => v > 0),
+    trailPainted: session.trailPainted,
+    hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
+    broodFull: usedSupply() + reservedSupply() >= session.supplyCap,
+    night: session.hazards.dark >= 0.5,
+    enemySeen,
+    skirmish: hud.campaign === null,
+  };
+}
+
+let enemyVisibleCtx: GameContext | null = null;
+/** Whether any black ant stands in the colony's sight right now. */
+function enemyVisible(): boolean {
+  const ctx = enemyVisibleCtx;
+  if (ctx === null) return false;
+  for (const unit of session.units.values()) {
+    if (unit.faction !== "enemy" || unit.kind !== "unit") continue;
+    const entity = ctx.scene.entity.get(unit.id);
+    if (entity !== null && enemyDrawn(session.fog, entity.position[0], entity.position[2])) return true;
+  }
+  return false;
+}
+
+/** The field coach: one-time tips naming the next useful verb (see `coach.ts`). */
+const coachSystem: SystemDefinition = defineSystem({
+  id: "ember-command.coach",
+  tick: { type: "interval", every: 1 },
+  update(ctx) {
+    if (!matchRunning()) return;
+    enemyVisibleCtx = ctx;
+    for (const tip of dueTips(coachFacts(), session.coachSeen)) {
+      session.coachSeen.push(tip.id);
+      ctx.game.notices.push({ text: tip.text, ttlMs: 11_000 });
+    }
   },
 });
 
@@ -372,7 +442,7 @@ const hudSystem: SystemDefinition = defineSystem({
       hasNursery: livingUnits("player", "building").some((u) => u.catalogId === "nursery"),
       trailArmed: session.trailArmed,
       hazards: {
-        sprinkler: session.hazards.toggles.sprinkler ? (session.hazards.sprinkler.on ? "on" : "off") : "none",
+        sprinkler: !session.hazards.toggles.sprinkler ? "none" : session.hazards.sprinkler.on ? "on" : sprinklerWarming(session.hazards, YARD) ? "warming" : "off",
         mower: session.hazards.toggles.mower ? session.hazards.mower.phase : "none",
         mowerIn: (() => { const eta = mowerEta(session.hazards, YARD); return eta === null ? null : Math.ceil(eta); })(),
         rain: session.hazards.rain.on,
@@ -417,6 +487,7 @@ export const systems: readonly SystemDefinition[] = [
   towerSystem,
   hazardSystem,
   trailSystem,
+  coachSystem,
   incomeSystem,
   hudSystem,
   campaignSystem,

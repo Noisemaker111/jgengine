@@ -5,7 +5,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS, HOSE_SLOW, TRAIL_HARVEST_BONUS, TRAIL_HAUL_DEPOSIT, TRAIL_SPEED_BONUS } from "../tuning";
 import { hazardSpeedFactor } from "../hazards";
-import { deposit, scentAt, trailSpeedFactor } from "../pheromone";
+import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
 import { YARD } from "../yardInstance";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
@@ -199,7 +199,9 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
         const base = def.damage + heroAttackBonus(ctx, u.catalogId);
         const resolved = factionDamage(tacticalDamage(base, u.catalogId, target.catalogId, distXZ(self.position, ent.position)), u.faction, target.faction);
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
-        const amount = resolved * lineMultiplier(u.faction, target.faction);
+        // A red ant inside an alarm cloud (a comrade died nearby) bites harder.
+        const alarm = u.faction === "player" ? alarmDamageFactor(session.alarms, self.position[0], self.position[2], session.elapsed) : 1;
+        const amount = resolved * lineMultiplier(u.faction, target.faction) * alarm;
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
         // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
