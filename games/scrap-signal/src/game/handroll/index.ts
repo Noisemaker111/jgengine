@@ -7,3 +7,5 @@ export * from "./reserve";
 export * from "./perks";
 export * from "./bossDrops";
 export * from "./uniques";
+export * from "./personality";
+export * from "./merge";

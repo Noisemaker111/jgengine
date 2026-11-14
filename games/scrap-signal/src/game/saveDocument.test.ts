@@ -48,7 +48,7 @@ function fluxGun(): GunDef {
     kind: "gun",
     name: "Fluxed Test",
     family: "pistol",
-    manufacturer: "Apex",
+    manufacturer: "Duct Tape",
     rarity: "common",
     element: "flux",
     level: 1,

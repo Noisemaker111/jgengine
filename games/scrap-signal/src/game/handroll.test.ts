@@ -34,17 +34,17 @@ describe("gun generation", () => {
     expect(provenance?.choices.find((choice) => choice.step === "rarity")?.optionId).toBe("legendary");
   });
 
-  test("legendary guns carry real legendary names and tighter spread", () => {
+  test("heirlooms carry real heirloom names and tighter spread", () => {
     const rng = seededRng("leg-test");
     const gun = rollGun(rng, 10, { rarity: "legendary", family: "sniper" });
-    expect(["Longshot", "Ashfall", "Skullsplit"].some((name) => gun.name.includes(name))).toBe(true);
+    expect(["Leftover Night", "Popcorn Apocalypse", "The Defroster"].some((name) => gun.name.includes(name))).toBe(true);
   });
 
-  test("blackwood guns never spawn elemental", () => {
+  test("cinder-block guns never spawn elemental", () => {
     const rng = seededRng("blackwood-test");
     for (let index = 0; index < 300; index += 1) {
       const gun = rollGun(rng, 5);
-      if (gun.manufacturer === "Blackwood") expect(gun.element === "none" || gun.element === "explosive").toBe(true);
+      if (gun.manufacturer === "Cinder Block") expect(gun.element).toBe("none");
     }
   });
 

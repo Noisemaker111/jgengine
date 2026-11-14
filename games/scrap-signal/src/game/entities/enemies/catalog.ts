@@ -46,7 +46,7 @@ function drops(table: string): OnDeathSpec {
 const baseEnemies: readonly EnemyDef[] = [
   {
     id: "husk",
-    name: "Husk Drone",
+    name: "Roomba",
     family: "scrapjack",
     elite: false,
     surface: "flesh",
@@ -63,7 +63,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "marauder",
-    name: "Scav Drone",
+    name: "Sprinkler Turret",
     family: "scrapjack",
     elite: false,
     surface: "flesh",
@@ -80,7 +80,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "nomad",
-    name: "Hauler Frame",
+    name: "Smart Fridge",
     family: "scrapjack",
     elite: false,
     surface: "flesh",
@@ -97,7 +97,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "elite_husk",
-    name: "Elite Husk",
+    name: "Roomba Prime",
     family: "scrapjack",
     elite: true,
     surface: "armor",
@@ -114,7 +114,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "ripper_pup",
-    name: "Ripper Whelp",
+    name: "Mini Drone",
     family: "ripper",
     elite: false,
     surface: "flesh",
@@ -131,7 +131,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "ripper",
-    name: "Ripper Unit",
+    name: "Delivery Drone",
     family: "ripper",
     elite: false,
     surface: "armor",
@@ -148,7 +148,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "elite_ripper",
-    name: "Alpha Ripper",
+    name: "Hive Drone",
     family: "ripper",
     elite: true,
     surface: "armor",
@@ -165,7 +165,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "bruiser_brat",
-    name: "Scrap Whelp",
+    name: "Push Mower",
     family: "ripper",
     elite: false,
     surface: "flesh",
@@ -183,7 +183,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "bruiser",
-    name: "Bruiser Frame",
+    name: "Lawnmower Brute",
     family: "ripper",
     elite: false,
     surface: "flesh",
@@ -201,7 +201,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "crawler",
-    name: "Crawler Unit",
+    name: "Garage Door Crusher",
     family: "ripper",
     elite: false,
     surface: "armor",
@@ -218,7 +218,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "crawler_soldier",
-    name: "Crawler Trooper",
+    name: "Two-Car Crusher",
     family: "ripper",
     elite: false,
     surface: "armor",
@@ -235,7 +235,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "loader",
-    name: "Sentry Frame",
+    name: "Smart Speaker",
     family: "scrapjack",
     elite: false,
     surface: "armor",
@@ -252,7 +252,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "loader_war",
-    name: "Siege Frame",
+    name: "Soundbar",
     family: "scrapjack",
     elite: false,
     surface: "armor",
@@ -269,7 +269,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "elite_loader",
-    name: "Elite Loader",
+    name: "Home Theater System",
     family: "scrapjack",
     elite: true,
     surface: "armor",
@@ -287,7 +287,7 @@ const baseEnemies: readonly EnemyDef[] = [
   {
     // Act 1's boss: the den matriarch the Old Tusk quest wakes. Flesh, so fire is the answer.
     id: "old_tusk",
-    name: "Old Tusk",
+    name: "Big Mulch",
     family: "boss",
     elite: true,
     surface: "flesh",
@@ -306,7 +306,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "wreck_maw",
-    name: "Wreck-Maw",
+    name: "The Compactor",
     family: "boss",
     elite: true,
     surface: "flesh",
@@ -323,7 +323,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "foreman_maw",
-    name: "The Foreman",
+    name: "The HOA President",
     family: "boss",
     elite: true,
     surface: "armor",
@@ -340,7 +340,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "foundry_heart",
-    name: "Foundry Heart",
+    name: "Mother Router",
     family: "boss",
     elite: true,
     surface: "armor",
@@ -357,7 +357,7 @@ const baseEnemies: readonly EnemyDef[] = [
   },
   {
     id: "captain_rusk",
-    name: "Captain Rusk",
+    name: "The Leaf Blower King",
     family: "boss",
     elite: true,
     surface: "armor",
@@ -453,12 +453,12 @@ export interface EnemyWeaponDef {
 }
 
 export const enemyWeapons: readonly EnemyWeaponDef[] = [
-  { id: "bolt_marauder", name: "Scav Round", kind: "enemy_weapon", weapon: { damage: 9, range: 48, spread: 4, projectile: { speed: 30 } } },
-  { id: "bolt_nomad", name: "Hauler Slug", kind: "enemy_weapon", weapon: { damage: 16, range: 40, spread: 5, projectile: { speed: 26 } } },
-  { id: "bolt_rusk", name: "Rusk Flare", kind: "enemy_weapon", weapon: { damage: 22, range: 52, spread: 3, projectile: { speed: 28 } } },
-  { id: "bolt_loader", name: "Loader Bolt", kind: "enemy_weapon", weapon: { damage: 13, range: 50, spread: 3.5, projectile: { speed: 32 } } },
-  { id: "bolt_loader_war", name: "WAR Barrage", kind: "enemy_weapon", weapon: { damage: 20, range: 46, spread: 4.5, projectile: { speed: 30 } } },
-  { id: "bolt_foundry_heart", name: "Magma Gout", kind: "enemy_weapon", weapon: { damage: 34, range: 60, spread: 3, projectile: { speed: 30 } } },
+  { id: "bolt_marauder", name: "Sprinkler Jet", kind: "enemy_weapon", weapon: { damage: 9, range: 48, spread: 4, projectile: { speed: 30 } } },
+  { id: "bolt_nomad", name: "Ice Cube", kind: "enemy_weapon", weapon: { damage: 16, range: 40, spread: 5, projectile: { speed: 26 } } },
+  { id: "bolt_rusk", name: "Leaf Storm", kind: "enemy_weapon", weapon: { damage: 22, range: 52, spread: 3, projectile: { speed: 28 } } },
+  { id: "bolt_loader", name: "Bass Pulse", kind: "enemy_weapon", weapon: { damage: 13, range: 50, spread: 3.5, projectile: { speed: 32 } } },
+  { id: "bolt_loader_war", name: "Surround Sound", kind: "enemy_weapon", weapon: { damage: 20, range: 46, spread: 4.5, projectile: { speed: 30 } } },
+  { id: "bolt_foundry_heart", name: "Packet Storm", kind: "enemy_weapon", weapon: { damage: 34, range: 60, spread: 3, projectile: { speed: 30 } } },
 ];
 
 export const LEVEL_HEALTH_GROWTH = 1.11;
@@ -486,8 +486,8 @@ export interface NpcDef {
 }
 
 export const npcs: readonly NpcDef[] = [
-  { id: NPC_IDS.bolt, name: "B0-LT", stats: { health: { max: 100, min: 1 } } },
-  { id: "dr_sparx", name: "Dr. Sparx", stats: { health: { max: 100, min: 1 } } },
-  { id: "rigg", name: "Rigg Kincaid", stats: { health: { max: 100, min: 1 } } },
-  { id: "gauge", name: "Sir Gauge", stats: { health: { max: 100, min: 1 } } },
+  { id: NPC_IDS.bolt, name: "DING", stats: { health: { max: 100, min: 1 } } },
+  { id: "dr_sparx", name: "Nana Pruitt", stats: { health: { max: 100, min: 1 } } },
+  { id: "rigg", name: "Hank Ruddle", stats: { health: { max: 100, min: 1 } } },
+  { id: "gauge", name: "Mr. Fenwick", stats: { health: { max: 100, min: 1 } } },
 ];

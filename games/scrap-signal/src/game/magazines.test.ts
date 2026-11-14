@@ -46,6 +46,8 @@ function testGun(overrides: Partial<GunDef> = {}): GunDef {
     ammoPerShot: 1,
     magSize: 5,
     reloadMs: 2000,
+    // A personality that keeps its own pace: Philosophical never changes reload speed.
+    personality: "philosophical",
     ...overrides,
   } as unknown as GunDef;
 }

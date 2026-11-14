@@ -18,6 +18,7 @@ import {
   SIGNATURE_PERKS,
   consumeRound,
   derivePerks,
+  heirloomStory,
   dropsFrom,
   gunPerks,
   magLoaded,
@@ -81,7 +82,7 @@ function perkGun(perks: string[], overrides: Partial<GunDef> = {}): GunDef {
     kind: "gun",
     name: "Test Coilpin",
     family: "pistol",
-    manufacturer: "Apex",
+    manufacturer: "Duct Tape",
     rarity: "rare",
     element: "none",
     level: 1,
@@ -95,6 +96,8 @@ function perkGun(perks: string[], overrides: Partial<GunDef> = {}): GunDef {
     use: "fireGun",
     weapon: { damage: 10, range: 60, spread: 1, fireIntervalMs: 200, critChance: 0.1, critMult: 2 },
     perks,
+    // A calm voice: Philosophical never touches damage or reload, so the perk numbers read clean.
+    personality: "philosophical",
     ...overrides,
   });
 }
@@ -193,21 +196,22 @@ describe("perk rules on the triggered-rules seam", () => {
 });
 
 describe("perk rolls", () => {
-  test("all 18 named legendaries carry a signature with a flavor line", () => {
+  test("all 22 heirlooms carry a signature with a flavor line and a backstory", () => {
     const names = Object.values(LEGENDARY_NAMES).flatMap((list) => list.map(([, name]) => name));
-    expect(names).toHaveLength(18);
+    expect(names).toHaveLength(22);
     for (const name of names) {
       const perk = signaturePerkFor(name);
       expect(perk?.signature?.flavor.length).toBeGreaterThan(4);
+      expect(heirloomStory(name)?.length ?? 0).toBeGreaterThan(20);
     }
-    expect(SIGNATURE_PERKS).toHaveLength(18);
+    expect(SIGNATURE_PERKS).toHaveLength(22);
   });
 
   test("a rolled named legendary leads with its signature; rarity sets the rolled count", () => {
-    const sixgun = rollGun(seededRng("perk-sig"), 5, { legendary: "Sixgun" });
-    expect(sixgun.name.endsWith("Sixgun")).toBe(true);
+    const sixgun = rollGun(seededRng("perk-sig"), 5, { legendary: "Six-Pack" });
+    expect(sixgun.name.endsWith("Six-Pack")).toBe(true);
     expect(sixgun.perks?.[0]).toBe("sig_sixgun");
-    expect(perkLines(sixgun)[0]).toMatchObject({ signature: true, flavor: "Six shots. Count 'em.", dropsFrom: "Captain Rusk" });
+    expect(perkLines(sixgun)[0]).toMatchObject({ signature: true, flavor: "Six shots. Then a break.", dropsFrom: "The Leaf Blower King" });
     const rng = seededRng("perk-rarity");
     for (let index = 0; index < 40; index += 1) {
       expect(rollGun(rng, 4, { rarity: "common" }).perks).toEqual([]);
@@ -222,7 +226,7 @@ describe("perk rolls", () => {
   test("perks never move the roll stream: same seed, same gun with or without the perk pass", () => {
     const a = rollGun(seededRng("stream-check"), 9, { family: "rifle" });
     const b = rollGun(seededRng("stream-check"), 9, { family: "rifle" });
-    expect({ ...a, id: "", perks: [] }).toEqual({ ...b, id: "", perks: [] });
+    expect({ ...a, id: "", perks: [], personality: "" }).toEqual({ ...b, id: "", perks: [], personality: "" });
     // And the perk pick is a pure function of the gun's own id.
     expect(derivePerks(a)).toEqual(a.perks as string[]);
   });
@@ -257,11 +261,11 @@ describe("dedicated boss drops", () => {
     const zeroes = () => 0;
     const first = dropBossLegendary(ctx, event, zeroes);
     expect(first?.rarity).toBe("legendary");
-    expect(first?.name.endsWith("Sixgun")).toBe(true);
-    expect(first?.manufacturer).toBe("Blackwood");
+    expect(first?.name.endsWith("Gale Force Gertie")).toBe(true);
+    expect(first?.manufacturer).toBe("Firecrackers");
     const highs = [0.1, 0.99];
     const second = dropBossLegendary(ctx, { ...(event as object), catalogId: "foundry_heart" } as never, () => highs.shift() ?? 0.5);
-    expect(second?.name.endsWith("Ashfall")).toBe(true);
+    expect(second?.name.endsWith("Popcorn Apocalypse")).toBe(true);
     expect(second?.family).toBe("sniper");
     expect(dropBossLegendary(ctx, event, () => 0.5)).toBeNull();
     expect(dropBossLegendary(ctx, { ...(event as object), catalogId: "husk" } as never, zeroes)).toBeNull();

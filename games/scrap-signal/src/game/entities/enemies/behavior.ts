@@ -6,6 +6,7 @@ import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { pointInTelegraph, type TelegraphConfig, type TelegraphShape } from "@jgengine/core/combat/telegraph";
 import { hashString } from "@jgengine/core/random/rng";
 import { zoneLevelAt } from "../../world/zones";
+import { soakIntervalScale, soakSpeedScale } from "../../combat/soak";
 import { enemyWeapons, levelDamageMult, type EnemyDef } from "./catalog";
 
 const weaponDamage = new Map(enemyWeapons.map((weapon) => [weapon.id, weapon.weapon.damage]));
@@ -112,8 +113,8 @@ export function tickEnemyAttack(
   mods: EnemyAttackMods = {},
 ): void {
   const power = powerOf(ctx).get(enemyId);
-  const speed = def.walkSpeed * (mods.speedScale ?? 1) * (power?.speed ?? 1);
-  const intervalScale = (mods.intervalScale ?? 1) * (power?.interval ?? 1);
+  const speed = def.walkSpeed * (mods.speedScale ?? 1) * (power?.speed ?? 1) * soakSpeedScale(ctx, enemyId);
+  const intervalScale = (mods.intervalScale ?? 1) * (power?.interval ?? 1) * soakIntervalScale(ctx, enemyId);
 
   // A wound-up attack is committed: the fighter stands until it lands, then lands where it locked.
   const pending = windupsOf(ctx).get(enemyId);

@@ -17,6 +17,7 @@ import {
   type GunRarity,
 } from "./guns";
 import { derivePerks } from "./perks";
+import { derivePersonality } from "./personality";
 import { uniqueGun } from "./uniques";
 
 /**
@@ -81,14 +82,16 @@ export interface RollGunOptions {
   family?: GunFamily;
   level?: number;
   luck?: number;
-  /** Pin a named legendary ("Sixgun"): forces legendary rarity, its family and its maker. */
+  /** Pin an heirloom ("Six-Pack"): forces legendary rarity, its family and its mod. */
   legendary?: string;
-  /** Pin a maker for a non-legendary roll ("Chuckwerk"). */
+  /** Pin a mod for a non-heirloom roll ("Rubber Bands"). */
   maker?: string;
   /** The rarest tier this roll may land on; rarer tiers get no weight. A pinned rarity ignores it. */
   maxRarity?: Rarity;
   /** Pin a quest-reward unique ("Kindler"): its maker, family, rarity, element and name. */
   unique?: string;
+  /** Pin the element (a workbench merge carries one over). A mod that never goes elemental still takes none. */
+  element?: GunElement;
 }
 
 /** The family and maker a named legendary belongs to, or undefined for a name nobody rolls. */
@@ -184,9 +187,10 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
 
   let element: GunElement = "none";
   if (unique !== undefined) element = unique.element;
+  else if (options.element !== undefined) element = manufacturer.neverElemental === true ? "none" : (manufacturer.forcedElement ?? options.element);
   else if (manufacturer.neverElemental !== true) {
     if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
-    else if (manufacturer.id === "Voltek" || rng() < tier.elementChance) element = pick(rng, ELEMENTS);
+    else if (rng() < tier.elementChance) element = pick(rng, ELEMENTS);
   }
 
   const gunLevel = options.level ?? level;
@@ -222,7 +226,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
     use: "fireGun",
     weapon: {
       damage,
-      range: base.stats.range,
+      range: Math.round(base.stats.range * (manufacturer.range ?? 1)),
       spread: Math.round(base.stats.spread * manufacturer.spread * (rarity === "legendary" ? 0.7 : 1) * 100) / 100,
       fireIntervalMs: Math.max(60, Math.round(base.stats.fireIntervalMs * manufacturer.interval * (2 - tier.mult))),
       critChance: Math.min(0.5, base.stats.critChance + (tier.mult - 1) * 0.08),
@@ -235,6 +239,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
   };
   // Perks come off the gun's own id stream (see `derivePerks`), never the roll rng above.
   def.perks = derivePerks(def);
+  def.personality = derivePersonality(def);
   gunProvenanceById.set(def.id, rolled.result.provenance);
   return registerGun(def);
 }

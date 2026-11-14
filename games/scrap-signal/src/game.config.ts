@@ -28,6 +28,7 @@ import { FRONT_SITE } from "./game/encounters/front";
 import { GameUI } from "./game/ui/GameUI";
 import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
+import { renderEntity } from "./game/world/ApplianceMesh";
 import { NPCS } from "./game/quests/catalog";
 import { RED_CHESTS } from "./game/world/setup";
 import { AMMO_CRATES } from "./game/items/ammoCrates";
@@ -255,6 +256,8 @@ export const game = defineGame({
   scene: {
     editorLayers: sceneDoc,
     entityModels,
+    // Every hostile is a procedural appliance (Roombas, mowers, fridges, ...); NPCs keep their models.
+    renderEntity,
     objectModels,
     WorldOverlay: FerralonWorldOverlay,
     // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its

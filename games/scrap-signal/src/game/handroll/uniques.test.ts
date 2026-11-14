@@ -27,7 +27,6 @@ describe("scrap-signal quest-reward uniques", () => {
       if (maker === undefined) throw new Error(`${unique.name}: unknown maker ${unique.maker}`);
       if (maker.neverElemental === true) expect(unique.element, unique.name).toBe("none");
       if (maker.forcedElement !== undefined) expect(unique.element, unique.name).toBe(maker.forcedElement);
-      if (maker.id === "Voltek") expect(unique.element, unique.name).not.toBe("none");
     }
   });
 

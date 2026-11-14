@@ -1,7 +1,6 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import {
   quaterniusAnimatedLowpolyRobot,
-  quaterniusAnimatedMechPack,
   quaterniusLowPolyDesertAssets,
   quaterniusModularScifi,
   quaterniusStylizedNature,
@@ -10,25 +9,22 @@ import {
 import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import { MACHINE } from "./palette";
-
 const MODEL_PACKS = [
   quaterniusModularScifi,
   quaterniusStylizedNature,
   quaterniusToonShooter,
-  quaterniusAnimatedMechPack,
   quaterniusAnimatedLowpolyRobot,
   quaterniusLowPolyDesertAssets,
 ];
 
 const MATERIAL_SOURCES = {
-  /** Ferralon's cracked desert floor — real grain so the flats stop reading as flat vertex colour. */
+  /** Ground grain under the lawns and dirt paths, so the yards stop reading as flat vertex colour. */
   ground: "ambientcg-ground031",
-  /** Rust-banded cliff rock for mesas, spires and boulders. */
+  /** Rock for the landscaping boulders and retaining walls. */
   cliff: "ambientcg-rock035",
-  /** Warm scratched plate for scavenger chassis and improvised structures. */
+  /** Scratched plate for junk piles and improvised barricades. */
   scrapMetal: "ambientcg-metal007",
-  /** Riveted panel for manufactured loader armour and industrial props. */
+  /** Riveted panel for utility boxes and garage props. */
   panel: "ambientcg-metalplates001",
 } as const;
 
@@ -64,53 +60,3 @@ function modelMaps(sourceId: string) {
 export const CLIFF_MAPS = modelMaps(MATERIAL_SOURCES.cliff);
 export const SCRAP_METAL_MAPS = modelMaps(MATERIAL_SOURCES.scrapMetal);
 export const PANEL_MAPS = modelMaps(MATERIAL_SOURCES.panel);
-
-/**
- * Chassis finish per enemy family. Every entry is a machine hue (see {@link MACHINE}) —
- * deliberately never a terrain hue, so an enemy is never the same colour as the dirt it stands on.
- * `plate` is the body; `accent` and `optic` are reserved for trim on models that expose a separate
- * optic mesh (a whole-model emissive override lights the entire body, so single-mesh casts use
- * `plate` alone and mark elites by taking the darkest, coldest values).
- */
-export interface ChassisStyle {
-  plate: string;
-  accent: string;
-  optic: string;
-}
-
-const HUSK_CHASSIS: ChassisStyle = { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite };
-const LOADER_CHASSIS: ChassisStyle = { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic };
-
-export const CHASSIS: Record<string, ChassisStyle> = {
-  husk: HUSK_CHASSIS,
-  marauder: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
-  nomad: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.optic },
-  elite_husk: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
-  ripper_pup: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.optic },
-  ripper: { plate: MACHINE.scrap, accent: MACHINE.hazard, optic: MACHINE.optic },
-  elite_ripper: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
-  bruiser_brat: { plate: MACHINE.steel, accent: MACHINE.joint, optic: MACHINE.optic },
-  bruiser: { plate: MACHINE.scrap, accent: MACHINE.joint, optic: MACHINE.optic },
-  crawler: { plate: MACHINE.steel, accent: MACHINE.rust, optic: MACHINE.optic },
-  crawler_soldier: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
-  loader: LOADER_CHASSIS,
-  loader_war: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
-  elite_loader: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
-  old_tusk: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.opticElite },
-  wreck_maw: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite },
-  foreman_maw: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
-  captain_rusk: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
-  foundry_heart: { plate: MACHINE.joint, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
-};
-
-/** An enemy's finish: its own entry, else its base's (a local breed), with a breed's plate over it. */
-export function chassisOf(
-  def: { id: string; look?: string; plate?: string },
-  fallback: "husk" | "loader",
-): ChassisStyle {
-  const style =
-    CHASSIS[def.id] ??
-    (def.look === undefined ? undefined : CHASSIS[def.look]) ??
-    (fallback === "husk" ? HUSK_CHASSIS : LOADER_CHASSIS);
-  return def.plate === undefined ? style : { ...style, plate: def.plate };
-}

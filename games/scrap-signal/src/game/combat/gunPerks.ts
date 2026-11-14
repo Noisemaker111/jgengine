@@ -30,6 +30,7 @@ import { session } from "../session";
 import { lastPickupStore } from "../stores";
 import { zoneLevelAt } from "../world/sites";
 import { isFluxed, type GunHitMods, type HitOutcome } from "./hitModel";
+import { moodDamageFor, moodKill, moodReloadFor } from "./personalityRuntime";
 
 /**
  * Gun perks on the engine's triggered-rules seam. The engine owns matching, predicates, stacking,
@@ -168,10 +169,11 @@ function shapeFrom(ctx: GameContext, gun: GunDef, firings: readonly RuleFiring[]
   return { damageScale, forceCrit };
 }
 
-/** The live timed damage buff on a gun: Rampage stacks, Kill Clip, Skullsplit. 1 with none. */
+/** The live damage scale on a gun: timed perk buffs (Rampage, Kill Clip, ...) times its personality's mood. */
 export function perkDamageScale(ctx: GameContext, gun: GunDef): number {
   const runtime = perksOf(ctx);
-  if (!runtime.stamped.has(gun.id)) return 1;
+  const moodScale = moodDamageFor(ctx, gun);
+  if (!runtime.stamped.has(gun.id)) return moodScale;
   runtime.rules.tick(nowMs(ctx));
   let pct = 0;
   for (const effect of runtime.rules.activeFor(gun.id)) {
@@ -180,20 +182,21 @@ export function perkDamageScale(ctx: GameContext, gun: GunDef): number {
     const per = typeof pctParam === "number" ? pctParam : 0;
     pct += per * effect.stacks;
   }
-  return 1 + pct;
+  return (1 + pct) * moodScale;
 }
 
-/** The live reload-speed multiplier (Outlaw). 1 with none. */
+/** The live reload-speed multiplier: Outlaw's buff times the personality's pace (Grumpy and Dramatic dawdle). */
 export function perkReloadScale(ctx: GameContext, gun: GunDef): number {
   const runtime = perksOf(ctx);
-  if (!runtime.stamped.has(gun.id)) return 1;
+  const pace = moodReloadFor(gun);
+  if (!runtime.stamped.has(gun.id)) return pace;
   runtime.rules.tick(nowMs(ctx));
   let pct = 0;
   for (const effect of runtime.rules.activeFor(gun.id)) {
     const reloadPct = effect.params?.["pct"];
     if (effect.effectId === "perk.reload" && typeof reloadPct === "number") pct = Math.max(pct, reloadPct);
   }
-  return 1 + pct;
+  return (1 + pct) * pace;
 }
 
 /** Live buff readout for the HUD: label and stacks of each timed perk on a gun. */
@@ -260,6 +263,7 @@ function livingEnemiesNear(ctx: GameContext, at: readonly [number, number, numbe
 export function perkKill(ctx: GameContext, gun: GunDef, from: string, victimId: string, crit: boolean): void {
   const runtime = perksOf(ctx);
   if (runtime.applyingPerk) return;
+  moodKill(ctx, gun, from);
   const elemental = gun.element !== "none" && gun.element !== "explosive" && gun.element !== "flux";
   const firings = dispatch(ctx, gun, "gun.kill", { crit, elemental });
   if (firings.length === 0) return;

@@ -13,6 +13,7 @@ import { registerCommands, resumeBuild } from "./game/commands";
 import { settleBootPhase } from "./game/bootPhase";
 import { resetCombat, syncCombatTargets, tickCombat } from "./game/combat/hitModel";
 import { registerPerks } from "./game/combat/gunPerks";
+import { tickPersonality } from "./game/combat/personalityRuntime";
 import { startAmbience, tickAudio } from "./game/audio/drive";
 import { equippedGun, noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
 import { applyWalkSpeed, tickHandling } from "./game/handling";
@@ -398,6 +399,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickReloads(ctx, dt);
   tickReserve(ctx, dt);
   tickHandling(ctx, gunById(equippedGun() ?? "") ?? null, dt);
+  tickPersonality(ctx);
   applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
   tickRelay(ctx, dt);
   tickMastWatch(ctx, dt);

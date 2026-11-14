@@ -36,7 +36,7 @@ export interface PerkDef {
   signature?: { gun: string; flavor: string };
 }
 
-const CRIT_FAMILIES: readonly GunFamily[] = ["pistol", "smg", "shotgun", "rifle", "sniper"];
+const CRIT_FAMILIES: readonly GunFamily[] = ["pistol", "smg", "shotgun", "rifle", "sniper", "vacuum", "extinguisher"];
 /** "Until the counter fills" — a counter perk's stacks live this long between procs. */
 const COUNTER_MS = 600_000;
 
@@ -133,7 +133,7 @@ export const ROLLED_PERKS: readonly PerkDef[] = [
   {
     id: "last_word",
     name: "Last Word",
-    text: "+50% damage during Emergency Reserve.",
+    text: "+50% damage during Last Gasp.",
     rules: [{ event: "gun.prehit", when: { eq: ["downed", true] }, effect: { id: "perk.hitScale", params: { pct: 0.5 } } }],
   },
 ];
@@ -142,29 +142,29 @@ export const ROLLED_PERKS: readonly PerkDef[] = [
 export const SIGNATURE_PERKS: readonly PerkDef[] = [
   // Pistols
   {
-    id: "sig_ravager", name: "Short Fuse", signature: { gun: "Ravager", flavor: "Light the fuse. Walk away." },
+    id: "sig_ravager", name: "Audit", signature: { gun: "Tax Season", flavor: "Every receipt, accounted for." },
     text: "Crit kills detonate: 5m blast at 120% damage.",
-    rules: [{ event: "gun.kill", when: crit, effect: { id: "perk.explode", params: { radius: 5, pct: 1.2, label: "SHORT FUSE" } } }],
+    rules: [{ event: "gun.kill", when: crit, effect: { id: "perk.explode", params: { radius: 5, pct: 1.2, label: "AUDIT" } } }],
   },
   {
-    id: "sig_endless", name: "Bottomless", signature: { gun: "Endless", flavor: "Reloading is for quitters." },
+    id: "sig_endless", name: "Bottomless Tray", signature: { gun: "Infinite Memo", flavor: "Reloading is for quitters." },
     text: "Kills refill the magazine.",
     rules: [{ event: "gun.kill", effect: { id: "perk.refund", params: { fraction: 1, label: "BOTTOMLESS" } } }],
   },
   {
-    id: "sig_sixgun", name: "Six Shooter", signature: { gun: "Sixgun", flavor: "Six shots. Count 'em." },
+    id: "sig_sixgun", name: "Six-Pack", signature: { gun: "Six-Pack", flavor: "Six shots. Then a break." },
     text: "Every 6th shot is a guaranteed crit.",
     rules: [counter("gun.shot", 6, "crit")],
   },
   // SMGs
   {
-    id: "sig_cinder", name: "Wildfire", signature: { gun: "Cinder", flavor: "Feed the fire." },
+    id: "sig_cinder", name: "Hot Tar", signature: { gun: "Roofer's Revenge", flavor: "It spreads. It always spreads." },
     text: "Kills spread the element to 3 enemies within 8m.",
-    rules: [{ event: "gun.kill", when: { eq: ["elemental", true] }, effect: { id: "perk.spread", params: { count: 3, radius: 8, label: "WILDFIRE" } } }],
+    rules: [{ event: "gun.kill", when: { eq: ["elemental", true] }, effect: { id: "perk.spread", params: { count: 3, radius: 8, label: "HOT TAR" } } }],
   },
   {
-    id: "sig_fluxer", name: "Feature, Not Bug", signature: { gun: "Fluxer", flavor: "It's not a bug. It's a feature." },
-    text: "Fluxed targets always take crits.",
+    id: "sig_fluxer", name: "Feature, Not Bug", signature: { gun: "Feature Creep", flavor: "It's not a bug. It's a feature." },
+    text: "Glittered targets always take crits.",
     rules: [{ event: "gun.prehit", when: { eq: ["fluxed", true] }, effect: { id: "perk.crit" } }],
   },
   {
@@ -174,45 +174,45 @@ export const SIGNATURE_PERKS: readonly PerkDef[] = [
   },
   // Shotguns
   {
-    id: "sig_broadcast", name: "Now Hear This", signature: { gun: "Broadcast", flavor: "Now hear this." },
+    id: "sig_broadcast", name: "Raked Clean", signature: { gun: "Autumn's End", flavor: "Every leaf in its place." },
     text: "Kills restore 35% of your shield.",
     rules: [{ event: "gun.kill", effect: { id: "perk.shield", params: { pct: 0.35 } } }],
   },
   {
-    id: "sig_flakcannon", name: "Close Enough", signature: { gun: "Flakcannon", flavor: "Close enough counts." },
+    id: "sig_flakcannon", name: "Close Enough", signature: { gun: "Gale Force Gertie", flavor: "Close enough counts." },
     text: "Every kill bursts into flak: 4m at 60% damage.",
     rules: [{ event: "gun.kill", effect: { id: "perk.explode", params: { radius: 4, pct: 0.6, label: "FLAK" } } }],
   },
   {
-    id: "sig_sledgehammer", name: "No Subtlety", signature: { gun: "Sledgehammer", flavor: "Subtlety is a rumor." },
+    id: "sig_sledgehammer", name: "Raccoon Launch", signature: { gun: "The Big Huff", flavor: "It was fine. Mostly." },
     text: "Kills heal 12% of max health.",
     rules: [{ event: "gun.kill", effect: { id: "perk.heal", params: { pct: 0.12 } } }],
   },
   // Rifles
   {
-    id: "sig_shredder", name: "Shred First", signature: { gun: "Shredder", flavor: "Shred first. Ask never." },
+    id: "sig_shredder", name: "Blue Ribbon", signature: { gun: "Old Faithful", flavor: "Three years running." },
     text: "Every third crit refunds 3 rounds.",
     rules: [counter("gun.hit", 3, "refund", 3, crit)],
   },
   {
-    id: "sig_piledriver", name: "On The Pile", signature: { gun: "Piledriver", flavor: "One more for the pile." },
+    id: "sig_piledriver", name: "Drip, Drip", signature: { gun: "Water Torture", flavor: "One more drop." },
     text: "Reload within 4s of a kill: +60% damage for 6s.",
     rules: [
       { event: "gun.kill", effect: { id: "perk.arm" }, durationMs: 4000, stacking: "refresh" },
-      { event: "gun.reload", when: { eq: ["armed", true] }, effect: { id: "perk.damage", params: { pct: 0.6, label: "ON THE PILE" } }, durationMs: 6000, stacking: "refresh" },
+      { event: "gun.reload", when: { eq: ["armed", true] }, effect: { id: "perk.damage", params: { pct: 0.6, label: "DRIP, DRIP" } }, durationMs: 6000, stacking: "refresh" },
     ],
   },
   {
-    id: "sig_vandal", name: "Somebody Pays", signature: { gun: "Vandal", flavor: "Somebody's paying for this." },
+    id: "sig_vandal", name: "Cannonball!", signature: { gun: "Slip 'n' Slide", flavor: "Last one in is a rotten egg." },
     text: "Crit kills reload twice as fast and add +20% damage for 6s.",
     rules: [
-      { event: "gun.kill", when: crit, effect: { id: "perk.reload", params: { pct: 1, label: "SOMEBODY PAYS" } }, durationMs: 6000, stacking: "refresh" },
+      { event: "gun.kill", when: crit, effect: { id: "perk.reload", params: { pct: 1, label: "CANNONBALL" } }, durationMs: 6000, stacking: "refresh" },
       { event: "gun.kill", when: crit, effect: { id: "perk.damage", params: { pct: 0.2 } }, durationMs: 6000, stacking: "refresh" },
     ],
   },
   // Snipers
   {
-    id: "sig_longshot", name: "Patience", signature: { gun: "Longshot", flavor: "Patience is a loaded word." },
+    id: "sig_longshot", name: "Thursday Lasagna", signature: { gun: "Leftover Night", flavor: "Patience is a reheated word." },
     text: "The first shot from a full magazine crits for +50%.",
     rules: [
       { event: "gun.shot", when: { eq: ["fullMag", true] }, effect: { id: "perk.crit" } },
@@ -220,30 +220,52 @@ export const SIGNATURE_PERKS: readonly PerkDef[] = [
     ],
   },
   {
-    id: "sig_ashfall", name: "Ashfall", signature: { gun: "Ashfall", flavor: "Let it all come down." },
+    id: "sig_ashfall", name: "Extra Butter", signature: { gun: "Popcorn Apocalypse", flavor: "Let it all come down." },
     text: "Crit kills spread the element to 4 enemies within 10m.",
-    rules: [{ event: "gun.kill", when: { all: [crit, { eq: ["elemental", true] }] }, effect: { id: "perk.spread", params: { count: 4, radius: 10, label: "ASHFALL" } } }],
+    rules: [{ event: "gun.kill", when: { all: [crit, { eq: ["elemental", true] }] }, effect: { id: "perk.spread", params: { count: 4, radius: 10, label: "EXTRA BUTTER" } } }],
   },
   {
-    id: "sig_skullsplit", name: "Aim Higher", signature: { gun: "Skullsplit", flavor: "Aim higher." },
+    id: "sig_skullsplit", name: "Do Not Discuss", signature: { gun: "The Defroster", flavor: "We don't talk about it." },
     text: "Crit kills stack +40% damage for 8s, up to 2 times.",
-    rules: [{ event: "gun.kill", when: crit, effect: { id: "perk.damage", params: { pct: 0.4, label: "AIM HIGHER" } }, durationMs: 8000, stacking: "stack", maxStacks: 2 }],
+    rules: [{ event: "gun.kill", when: crit, effect: { id: "perk.damage", params: { pct: 0.4, label: "DO NOT DISCUSS" } }, durationMs: 8000, stacking: "stack", maxStacks: 2 }],
   },
   // Launchers
   {
-    id: "sig_kaboom", name: "Ka-BOOM", signature: { gun: "Kaboom", flavor: "Ka. BOOM." },
+    id: "sig_kaboom", name: "Ka-TOAST", signature: { gun: "Ka-Toast", flavor: "Ka. TOAST." },
     text: "Kills put a rocket back in the tube.",
-    rules: [{ event: "gun.kill", effect: { id: "perk.refund", params: { rounds: 1, label: "KA-BOOM" } }, cooldownMs: 250 }],
+    rules: [{ event: "gun.kill", effect: { id: "perk.refund", params: { rounds: 1, label: "KA-TOAST" } }, cooldownMs: 250 }],
   },
   {
-    id: "sig_starfall", name: "Make A Wish", signature: { gun: "Starfall", flavor: "Make a wish." },
+    id: "sig_starfall", name: "Make A Wish", signature: { gun: "Wish Upon a Crumb", flavor: "Make a wish." },
     text: "Kills call down a second blast: 5m at 70% damage.",
-    rules: [{ event: "gun.kill", effect: { id: "perk.explode", params: { radius: 5, pct: 0.7, label: "STARFALL" } }, rateLimit: { count: 3, windowMs: 1000 } }],
+    rules: [{ event: "gun.kill", effect: { id: "perk.explode", params: { radius: 5, pct: 0.7, label: "MAKE A WISH" } }, rateLimit: { count: 3, windowMs: 1000 } }],
   },
   {
-    id: "sig_aftershock", name: "Not Over Yet", signature: { gun: "Aftershock", flavor: "It's never over the first time." },
-    text: "+100% damage during Emergency Reserve.",
+    id: "sig_aftershock", name: "Smoke Alarm", signature: { gun: "Burnt Offering", flavor: "It's never over the first time." },
+    text: "+100% damage during Last Gasp.",
     rules: [{ event: "gun.prehit", when: { eq: ["downed", true] }, effect: { id: "perk.hitScale", params: { pct: 1 } } }],
+  },
+  // Vacuums
+  {
+    id: "sig_dust_bunny", name: "Good Boy", signature: { gun: "Dust Bunny", flavor: "Who's a good vacuum?" },
+    text: "Kills put 40% of the hopper back.",
+    rules: [{ event: "gun.kill", effect: { id: "perk.refund", params: { fraction: 0.4, label: "GOOD BOY" } } }],
+  },
+  {
+    id: "sig_lost_earring", name: "Found It!", signature: { gun: "Lost Earring Finder", flavor: "It was under the couch the whole time." },
+    text: "Every 5th hit is a guaranteed crit.",
+    rules: [counter("gun.hit", 5, "crit")],
+  },
+  // Fire extinguishers
+  {
+    id: "sig_snow_day", name: "Snow Day", signature: { gun: "Snow Day", flavor: "School's cancelled." },
+    text: "Kills burst into a 5m cold snap at 50% damage.",
+    rules: [{ event: "gun.kill", effect: { id: "perk.explode", params: { radius: 5, pct: 0.5, label: "SNOW DAY" } }, rateLimit: { count: 3, windowMs: 1000 } }],
+  },
+  {
+    id: "sig_kitchen_hero", name: "Grease Fire", signature: { gun: "Kitchen Hero", flavor: "Never water. Always foam." },
+    text: "Kills stack +15% damage for 5s, up to 4 times.",
+    rules: [{ event: "gun.kill", effect: { id: "perk.damage", params: { pct: 0.15, label: "GREASE FIRE" } }, durationMs: 5000, stacking: "stack", maxStacks: 4 }],
   },
 ];
 
@@ -254,7 +276,7 @@ export function perkById(id: string): PerkDef | undefined {
   return PERKS.get(id);
 }
 
-/** The named legendary a gun is, read off its maker and name ("Burning Sixgun" is a Blackwood Sixgun). */
+/** The heirloom a gun is, read off its mod and name ("Spicy Six-Pack" is a Cinder Block Six-Pack). */
 export function legendaryNameOf(gun: Pick<GunDef, "rarity" | "family" | "manufacturer" | "name">): string | null {
   if (gun.rarity !== "legendary") return null;
   const names = LEGENDARY_NAMES[gun.family] ?? [];

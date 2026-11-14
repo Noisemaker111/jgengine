@@ -39,7 +39,7 @@ function gun(element: GunElement, damage: number, critMult: number, critChance =
     kind: "gun",
     name: "Test Gun",
     family: "pistol",
-    manufacturer: "Apex",
+    manufacturer: "Duct Tape",
     rarity: "common",
     element,
     level: 1,

@@ -40,6 +40,8 @@ const FAMILY_HANDLING: Record<GunFamily, FamilyHandling> = {
   rifle: { hip: 1.6, ads: 0.45, bloom: 0.2, bloomMax: 2.5, kick: 0.008, zoom: 0.78 },
   sniper: { hip: 6, ads: 1 / 6, bloom: 0.6, bloomMax: 2, kick: 0.04, zoom: 0.45 },
   launcher: { hip: 1, ads: 0.8, bloom: 0.3, bloomMax: 1.6, kick: 0.035, zoom: 0.9 },
+  vacuum: { hip: 1, ads: 0.8, bloom: 0.1, bloomMax: 1.3, kick: 0.004, zoom: 0.95 },
+  extinguisher: { hip: 1, ads: 0.85, bloom: 0.08, bloomMax: 1.2, kick: 0.003, zoom: 0.95 },
 };
 
 /** Spread multiplier while moving, and while crouched and braced. */
@@ -47,7 +49,7 @@ export const MOVING_SPREAD = 1.6;
 export const BRACED_SPREAD = 0.7;
 /** Walk speed share while aimed: aiming trades movement for precision. */
 export const AIMED_WALK_SCALE = 0.55;
-/** Walk speed while downed in the Emergency Reserve window. */
+/** Walk speed while downed in the Last Gasp window. */
 export const DOWNED_WALK_SPEED = 1.6;
 /** Seconds bloom takes to settle back to the resting cone. */
 const BLOOM_SETTLE_SECONDS = 0.45;

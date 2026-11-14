@@ -179,6 +179,29 @@ function ledgerSystem(ctx: GameContext): GameSaveSystem {
  * Restored definitions are plain data, and the id counter is pushed past them so the next roll cannot
  * reuse one.
  */
+/**
+ * Guns saved before the junk rework carry a gun maker where a mod now sits. Save-format
+ * compatibility only: each old maker maps to the mod that took over its numbers.
+ */
+const LEGACY_MAKER_MODS: Readonly<Record<string, string>> = {
+  Blackwood: "Cinder Block",
+  Apex: "Duct Tape",
+  Voltek: "Glitter",
+  Chuckwerk: "Rubber Bands",
+  Detonic: "Firecrackers",
+  Ironworks: "Batteries",
+  Vanguard: "Extension Cord",
+  Scrapjack: "Laundry Basket",
+};
+
+function withCurrentMod(def: Record<string, unknown>): Record<string, unknown> {
+  const maker = def["manufacturer"];
+  const mod = typeof maker === "string" ? LEGACY_MAKER_MODS[maker] : undefined;
+  if (mod === undefined) return def;
+  const model = def["model"];
+  return { ...def, manufacturer: mod, ...(typeof model === "string" && model.startsWith(`${maker}:`) ? { model: `${mod}:${model.slice(String(maker).length + 1)}` } : {}) };
+}
+
 function gunsSystem(): GameSaveSystem {
   return {
     name: "guns",
@@ -190,7 +213,7 @@ function gunsSystem(): GameSaveSystem {
         if (!isRecord(def)) continue;
         const id = def["id"];
         if (typeof id !== "string" || !isRecord(def["weapon"])) continue;
-        registerGun(def as never);
+        registerGun(withCurrentMod(def) as never);
         serial = Math.max(serial, gunSerialOf(id));
       }
       ensureGunSerialAtLeast(serial);

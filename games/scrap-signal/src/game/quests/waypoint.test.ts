@@ -34,7 +34,7 @@ function journal(ctx: GameContext): QuestJournal {
 
 describe("scrap-signal quest marker", () => {
   test("with no quest it points at the person who has one", () => {
-    expect(questWaypoint(bootContext())).toEqual({ x: 6, y: 0, z: 8, kind: "npc", label: "Talk to B0-LT" });
+    expect(questWaypoint(bootContext())).toEqual({ x: 6, y: 0, z: 8, kind: "npc", label: "Talk to DING" });
   });
 
   test("a kill objective points at the nearest living target", () => {
@@ -99,6 +99,6 @@ describe("scrap-signal quest marker", () => {
     journal(ctx).accept("p1", QUEST_IDS.firstGun);
     journal(ctx).progress("p1", QUEST_IDS.firstGun, "chest", 1);
     journal(ctx).progress("p1", QUEST_IDS.firstGun, "gun", 1);
-    expect(questWaypoint(ctx)).toMatchObject({ x: 6, z: 8, kind: "npc", label: "Return to B0-LT" });
+    expect(questWaypoint(ctx)).toMatchObject({ x: 6, z: 8, kind: "npc", label: "Return to DING" });
   });
 });

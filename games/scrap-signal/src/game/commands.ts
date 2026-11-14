@@ -1,3 +1,4 @@
+import { moodPickup } from "./combat/personalityRuntime";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_LABELS, AMMO_STAT_IDS, type AmmoPool } from "./ammo";
@@ -57,8 +58,8 @@ export function upgradeCost(count: number): number {
 }
 
 const PICKUP_RADIUS = 2.8;
-/** The crash chest's pistol: a plain budget maker, so the first gun is honest and the next one is better. */
-const STARTER_MAKER = "Chuckwerk";
+/** The crash chest's staple gun: busted, rubber-banded and cheerful, so the first weapon is honest and friendly and the next one is better. */
+const STARTER_MAKER = "Rubber Bands";
 const chestRng = seededRng("scrap-red-chests");
 
 interface AimPayload {
@@ -154,6 +155,7 @@ function pickupWorldItem(ctx: GameContext): void {
     session.selectSlot(ctx, slot);
     noteEquipped(gun.id);
     lastPickupStore.write(ctx, { gunId: gun.id, atMs: ctx.time.now() * 1000 });
+    moodPickup(ctx, gun);
     ctx.scene.entity.floatText({ instanceId: userId, text: gun.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: gun.id, rarity: gun.rarity });
     noteGunHeld(ctx, gun);
@@ -212,6 +214,7 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
   const at = object?.position ?? ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
   if (crash) {
     const pistol = rollGun(chestRng, 1, { family: "pistol", rarity: "common", maker: STARTER_MAKER });
+    pistol.personality = "cheerful";
     ctx.scene.worldItem.spawn({
       itemId: pistol.id,
       position: chestDropSpot(ctx, at, 0, 1),

@@ -7,16 +7,22 @@ import { AMMO_LABELS } from "../ammo";
 import { bonus } from "../characters";
 import { resolveGunHit, type GunHitMods } from "../combat/hitModel";
 import { perkAfterHit, perkDamageScale, perkHitMods, perkShot, watchDeaths, withGunKills } from "../combat/gunPerks";
+import { moodIntervalFor, moodShot, paranoidAim } from "../combat/personalityRuntime";
+import { chill, dazzle } from "../combat/soak";
+import { enemyById } from "../entities/enemies/catalog";
 import { noteHit, noteShot } from "../feel";
 import { playHit, playShot } from "../audio/drive";
 import {
   applyElementalProc,
+  bodyOf,
   cancelReload,
   consumeRound,
   gunById,
   isReloading,
   magLoaded,
   startReload,
+  SURFACE_LABELS,
+  type GunDef,
 } from "../handroll";
 import { fireHandling, handlingView, playerStance, shotAim } from "../handling";
 import type { HitReactionConfig } from "@jgengine/core/combat/hitReaction";
@@ -65,8 +71,11 @@ function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: str
   } else if (outcome.multiplier !== 1) {
     // The element chart said something about this body: say it where the bullet landed.
     const strong = outcome.multiplier > 1;
-    ctx.scene.entity.floatText({ instanceId: targetId, text: strong ? `EFFECTIVE vs ${outcome.resistance.toUpperCase()}!` : `RESISTED by ${outcome.resistance.toUpperCase()}`, kind: strong ? "warn" : "info" });
+    const surface = surfaceWord(outcome.resistance);
+    ctx.scene.entity.floatText({ instanceId: targetId, text: strong ? `EFFECTIVE vs ${surface}!` : `RESISTED by ${surface}`, kind: strong ? "warn" : "info" });
   }
+  bodyEffect(ctx, gun.family, from, targetId);
+  if (gun.element === "flux") dazzle(ctx, targetId);
   const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
   noteHit(nowMs, outcome.crit, killed);
   // Body feel through the SDK's shared hit reaction: the target flinches (knockback + shell flinch
@@ -75,6 +84,36 @@ function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: str
   playHit(ctx, ctx.scene.entity.get(targetId)?.position ?? [0, 0, 0], outcome.crit);
   applyElementalProc(ctx, combatRng, gun, from, targetId);
   perkAfterHit(ctx, gun, from, targetId, outcome, wasAlive && (killed || died.has(targetId)));
+}
+
+/** The element chart's surface as the player reads it on an appliance. */
+function surfaceWord(resistance: string): string {
+  const label = (SURFACE_LABELS as Record<string, string>)[resistance];
+  return (label ?? resistance).toUpperCase();
+}
+
+/** How far one vacuum hit drags a body toward the shooter, in metres. */
+export const VACUUM_PULL = 0.9;
+
+/** What the body does to what it hits beyond damage: the vacuum drags it in, the extinguisher chills it. */
+function bodyEffect(ctx: GameContext, family: GunDef["family"], from: string, targetId: string): void {
+  const special = bodyOf(family).special;
+  if (special === undefined) return;
+  if (special === "slow") {
+    chill(ctx, targetId);
+    return;
+  }
+  const target = ctx.scene.entity.get(targetId);
+  const me = ctx.scene.entity.get(from);
+  if (target === null || me === null || enemyById(target.name)?.family === "boss") return;
+  const dx = me.position[0] - target.position[0];
+  const dz = me.position[2] - target.position[2];
+  const distance = Math.hypot(dx, dz);
+  if (distance < 2.4) return;
+  const step = Math.min(VACUUM_PULL, distance - 2.2);
+  const x = target.position[0] + (dx / distance) * step;
+  const z = target.position[2] + (dz / distance) * step;
+  ctx.scene.entity.setPose(targetId, { position: [x, ctx.world.groundHeightAt(x, z), z] });
 }
 
 const fireGun: ItemUseHandler<GameContext> = {
@@ -95,7 +134,15 @@ const fireGun: ItemUseHandler<GameContext> = {
     if (nowMs < readyAt) return { state: ctx };
 
     if (magLoaded(ctx, gun) < gun.ammoPerShot) {
-      if (!startReload(ctx, gun)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
+      if (!startReload(ctx, gun)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} LEFT`);
+      return { state: ctx };
+    }
+    // The personality has a say before the round leaves: a sulking gun jams, a philosopher's round
+    // is free, a paranoid trigger twitches.
+    const mood = moodShot(ctx, gun);
+    if (mood.jammed) {
+      lastFiredAt.set(gateKey, nowMs + 400);
+      warn(ctx, input.from, "JAMMED (SULKING)");
       return { state: ctx };
     }
     // Perk shot events read the magazine before the round leaves it (Opening Shot wants a full mag).
@@ -105,15 +152,18 @@ const fireGun: ItemUseHandler<GameContext> = {
     // happens once per fired shot, so the shared proc/crit rng stream keeps the same order.
     if (bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund")) {
       ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
+    } else if (mood.free) {
+      ctx.scene.entity.floatText({ instanceId: input.from, text: "WHAT IS A BULLET, REALLY?", kind: "pickup" });
     } else {
       consumeRound(ctx, gun);
+      if (mood.extraRound && magLoaded(ctx, gun) >= gun.ammoPerShot) consumeRound(ctx, gun);
     }
-    lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));
+    lastFiredAt.set(gateKey, nowMs + Math.round((gun.weapon.fireIntervalMs * moodIntervalFor(gun)) / (1 + bonus("fireRate"))));
     noteShot(nowMs, gun.family);
     playShot(ctx, gun.family);
     cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
 
-    const look = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
+    const look = paranoidAim(ctx, gun, input.from, input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 });
     // The cone and climb are the engine handling's: read the climb before this shot adds to it.
     const aim = shotAim(look, handlingView(ctx), fireHandling(ctx, gun).spread);
     // Delivery stays the engine projectile (its cone, ballistics and settled event are what the tracer

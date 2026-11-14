@@ -1,14 +1,12 @@
-import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
-import { assets, chassisOf, CLIFF_MAPS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+import { assets, CLIFF_MAPS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
-import { enemies, type EnemyDef } from "../entities/enemies/catalog";
 
 const SCIFI = "quaternius-modular-scifi";
 const NATURE = "quaternius-stylized-nature";
 const TOON = "quaternius-toon-shooter";
-const MECH = "quaternius-animated-mech-pack";
 const ROBOT = "quaternius-animated-lowpoly-robot";
 const DESERT = "quaternius-low-poly-desert-assets";
 
@@ -33,78 +31,12 @@ function holding(gun: ToonGun): string[] {
   return TOON_GUNS.filter((candidate) => candidate !== gun);
 }
 
-type RigKind = "humanoid" | "beast" | "machine";
-
-const BASE_HEIGHT: Record<RigKind, number> = { humanoid: HUMANOID_HEIGHT, beast: 1.2, machine: 2.6 };
-
 /**
- * Enemy casting. Scrapjack crews are Quaternius Toon Shooter characters, each with the one gun that
- * tells its rank; beast-frames are the Quaternius sci-fi aliens; loaders and heavy frames are the
- * Quaternius Animated Mechs, which walk, punch and die on their own clips. One studio, one bevel.
+ * Hostiles are not cast from a model pack: every rogue appliance is built from primitives in
+ * `applianceModel.ts` and drawn through the game's `renderEntity`. Only the neighbours and DING
+ * resolve models here.
  */
-const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: string; gun?: ToonGun }> = {
-  husk: { kind: "humanoid", model: `${TOON}/Character_Enemy`, gun: "Pistol" },
-  marauder: { kind: "humanoid", model: `${TOON}/Character_Hazmat`, gun: "Shovel" },
-  nomad: { kind: "machine", model: `${MECH}/Leela`, fallbackModel: `${MECH}/Mike` },
-  elite_husk: { kind: "humanoid", model: `${TOON}/Character_Soldier`, gun: "AK" },
-  ripper_pup: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
-  ripper: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
-  elite_ripper: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  bruiser_brat: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  bruiser: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
-  crawler: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
-  crawler_soldier: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  loader: { kind: "machine", model: `${MECH}/Mike`, fallbackModel: `${MECH}/Stan` },
-  loader_war: { kind: "machine", model: `${MECH}/Stan`, fallbackModel: `${MECH}/Mike` },
-  elite_loader: { kind: "machine", model: `${MECH}/George`, fallbackModel: `${MECH}/Stan` },
-  old_tusk: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
-  wreck_maw: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
-  foreman_maw: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  captain_rusk: { kind: "humanoid", model: `${TOON}/Character_Soldier`, gun: "RocketLauncher" },
-  foundry_heart: { kind: "machine", model: `${MECH}/George`, fallbackModel: `${MECH}/Stan` },
-};
-
-/**
- * Machine finish per family. Values come from {@link MACHINE}, never from the terrain hues, so an
- * enemy is never the same colour as the dirt it stands on — that hue split is what makes a
- * silhouette legible at range against open desert.
- */
-function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
-  const style = chassisOf(def, "husk");
-  // Silhouette separation. Hostiles stand on sand within a stop of their own value, so the read at
-  // 40 m is an edge, not an albedo: a cool rim, hotter and stronger on elites so an elite announces
-  // itself before its health bar does.
-  const rim = {
-    color: def.elite ? style.optic : MACHINE.rimCool,
-    strength: def.elite ? 0.9 : 0.45,
-    power: def.elite ? 2.6 : 3.4,
-  };
-  // Crews and mechs keep their pack's painted parts (skin, cloth, hazard trim): a whole-model tint
-  // would flatten them to one colour. The aliens are one material, so their plate is the read.
-  if (kind !== "beast") return { rim };
-  return { color: style.plate, metalness: 0.2, roughness: 0.75, rim };
-}
-
-/** A local breed wears its base's rig. */
-function rigOf(def: EnemyDef) {
-  return RIG_BY_ID[def.look ?? def.id];
-}
-
-function enemyPick(def: EnemyDef): ModelPick | null {
-  const rig = rigOf(def);
-  if (rig === undefined) return null;
-  return {
-    model: rig.model,
-    ...(rig.fallbackModel === undefined ? {} : { fallbackModel: rig.fallbackModel }),
-    style: {
-      targetHeight: BASE_HEIGHT[rig.kind] * def.scale,
-      material: enemyFinish(def, rig.kind),
-      ...(rig.gun === undefined ? {} : { hiddenNodes: holding(rig.gun) }),
-    },
-  };
-}
-
-/** The crew: the Toon Shooter cast in their own colours, each with the gun of their trade. */
+/** The neighbours: the Toon Shooter cast in their own colours, each holding the tool of their trade. */
 const NPCS: Record<string, { body: string; gun: ToonGun }> = {
   dr_sparx: { body: `${TOON}/Character_Hazmat`, gun: "Revolver_Small" },
   rigg: { body: `${TOON}/Character_Hazmat`, gun: "Shotgun" },
@@ -114,14 +46,10 @@ const NPCS: Record<string, { body: string; gun: ToonGun }> = {
 
 function buildEntityModels(): Record<string, ModelConfig> {
   const plan: Record<string, ModelPick> = {};
-  for (const def of enemies) {
-    const pick = enemyPick(def);
-    if (pick !== null) plan[def.id] = pick;
-  }
   for (const [id, npc] of Object.entries(NPCS)) {
     plan[id] = { model: npc.body, style: { targetHeight: HUMANOID_HEIGHT, hiddenNodes: holding(npc.gun) } };
   }
-  // B0-LT, the guide: a small walking robot with a lit visor.
+  // DING, the guide: a video doorbell that defected, walking about on a small robot body.
   plan["bolt"] = { model: `${ROBOT}/Robot`, style: { targetHeight: 1.1, material: { rim: { color: MACHINE.optic, strength: 0.6, power: 2.8 } } } };
   return resolveModelPlan(assets, plan);
 }

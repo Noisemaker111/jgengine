@@ -172,6 +172,8 @@ export function playShot(ctx: GameContext, family: string): void {
     shotgun: "gun_shotgun",
     sniper: "gun_sniper",
     launcher: "gun_launcher",
+    vacuum: "gun_smg",
+    extinguisher: "gun_smg",
   };
   cue(ctx, byFamily[family] ?? "gun_pistol");
 }
