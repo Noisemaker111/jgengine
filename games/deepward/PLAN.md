@@ -98,7 +98,7 @@ Genres: extraction. 13/16 proven · 3 missing.
 `home: 1, caps: 0, stash: 0, littles: 2, zones: 2, upgrades: 1`.
 
 ### Content budget
-12 room templates in 5 zones plus the burrow; 37 item kinds (8 food, 9 parts, 11 curios, 7 gear,
+16 room templates in 5 zones plus the burrow; 40 item kinds (8 food, 9 parts, 14 curios, 7 gear,
 bottle caps) in 5 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights);
 6 connector kinds; 4 exit kinds; 5 burrow upgrades, 5 recipes, 3 charts.
 
@@ -134,7 +134,13 @@ bottle caps) in 5 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Ki
 
 ## Handoff
 
-Done: the whole game layer is replaced (see README). Tests: `bun run test` in the package (8 files).
-Next: screenshot-driven polish of lighting and props per template, a from-zero flow in
-`proofs/flows/`, suite proofs in `proofs/sim/`, and more templates (bathroom sink, laundry basket,
-dining table) so each zone has two or more rooms.
+Done: the whole game layer is replaced (see README): 16 room templates over 5 zones, seeded
+room-after-room runs with seven kinds of night, 40 finds in 5 sets, 7 gear effects, 6 Littles,
+7 hunters with on-screen tells, 4 exit kinds, burrow upgrades, crafting, charts, the kid's toy box,
+footsteps and heartbeat audio. Tests: `bun run test` in the package; suite 13/16 (`proofs/sim`,
+`proofs/content.ts`); flow `proofs/flows/first-night.flow.ts`.
+
+Not yet verified on screen: the shared capture browser was saturated by other lanes for this whole
+session, so no screenshot of the new house was taken. Next: capture `mid-run`, `room-counter`,
+`room-rug`, `room-toys`, `room-attic`, `stash`, `workbench` and `nook`, tune lamp intensities, fog and
+prop scale from what they show, then the remaining suite entries (find-features, settings, menu).
