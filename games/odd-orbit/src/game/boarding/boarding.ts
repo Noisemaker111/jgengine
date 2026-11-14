@@ -9,7 +9,7 @@ import {
   ROOM_SLOTS, SEAL_COST, SETTING_COST, SHUTTER_COST, STARTING_ROOMS, starsFor, wallFriction,
   type Comfort, type HouseView, type RoomFactor, type RoomSettings, type RoomState,
 } from "./rooms";
-import { APPLICANT_ORDER, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
+import { APPLICANT_ORDER, quoted, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
 
 /**
  * The house's own ledger beside the household's: which modules are bolted on, who lives in each,
@@ -382,7 +382,7 @@ export function settleBoardingNight(state: HouseholdState, now: number, notices:
     if ((boarding.grumbles[id] ?? 0) < GRUMBLES_TO_LEAVE) continue;
     const member = state.members[id]!;
     const def = SPECIES[speciesOfMember(member)];
-    noteEvent(state, notices, `${member.name} moved out: "${def.lines.moveOut}" One star.`, "deny");
+    noteEvent(state, notices, `${member.name} moved out: ${quoted(def.lines.moveOut)} One star.`, "deny");
     boarding.reviews = [{ day: state.day, tenantId: id, name: member.name, stars: 1, text: def.lines.moveOut }, ...boarding.reviews].slice(0, MAX_REVIEWS);
     boarding.reputation = Math.max(0, boarding.reputation - 12);
     boarding.departed = [...boarding.departed, speciesOfMember(member)];
@@ -462,9 +462,9 @@ export function acceptApplicant(state: HouseholdState, slot: number | null, now:
   if (def.upfront !== undefined) {
     state.credits += def.upfront;
     state.dayIncome += def.upfront;
-    noteEvent(state, notices, `${def.name} moved in and paid a century of rent up front: ${def.upfront} credits. "${def.lines.greet}"`, "success");
+    noteEvent(state, notices, `${def.name} moved in and paid a century of rent up front: ${def.upfront} credits. ${quoted(def.lines.greet)}`, "success");
   } else {
-    noteEvent(state, notices, `${def.name} moved into room ${room.slot + 1}. "${def.lines.greet}"`, "success");
+    noteEvent(state, notices, `${def.name} moved into room ${room.slot + 1}. ${quoted(def.lines.greet)}`, "success");
   }
   return member;
 }
@@ -474,7 +474,7 @@ export function rejectApplicant(state: HouseholdState, now: number, notices: Pic
   const applicant = boarding.applicant;
   if (applicant === null) return "Nobody at the airlock";
   const def = SPECIES[applicant.species];
-  noteEvent(state, notices, `You turned ${def.name} away. "${def.lines.rejected}"`, "info");
+  noteEvent(state, notices, `You turned ${def.name} away. ${quoted(def.lines.rejected)}`, "info");
   boarding.applicant = null;
   boarding.nextApplicantAt = now + APPLICANT_GAP;
   return null;
@@ -511,7 +511,7 @@ export function advanceBarks(state: HouseholdState, now: number, notices: Pick<N
       : comfort.score >= 55 ? pickLine(def.lines.happy, turn) : (comfort.reasons[0]?.text || pickLine(def.lines.unhappy, turn));
     if (line.length === 0) continue;
     if (species === "basalt") boarding.basaltSpokeDay = state.day;
-    const text = `${member.name}: “${line}”`;
+    const text = `${member.name}: ${quoted(line)}`;
     notices.push({ text, tone: comfort.score >= 55 ? "info" : "warn" });
     return text;
   }

@@ -27,7 +27,7 @@ export function stationShortfall(role: FurnitureRole, planter: boolean, furnishe
 export function dayGoal(state: HouseholdState, objects: readonly SceneObject[]): string {
   const hasWorkStation = objects.some(object => FURNITURE_BY_ID[object.catalogId]?.role === "work");
   const boarding = boardingOf(state);
-  if (boarding.applicant !== null) return `Next: ${SPECIES[boarding.applicant.species].name} is buzzing at the airlock — interview them.`;
+  if (boarding.applicant !== null) return `Next: ${SPECIES[boarding.applicant.species].name} at the airlock — interview them before they drift off.`;
   const miserable = state.order.find((id) => roomOf(state, id) !== null && tenantComfort(state, id).score < 30);
   if (miserable !== undefined) return `Next: ${state.members[miserable]!.name} is miserable — fix their room in the Rooms plan.`;
   const leaky = state.order.find((id) => roomOf(state, id) !== null && tenantComfort(state, id).reasons.some((r) => r.factor === "leak"));

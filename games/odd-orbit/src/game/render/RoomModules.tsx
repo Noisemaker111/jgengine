@@ -13,6 +13,8 @@ import type { Atmosphere, Climate, Light } from "../boarding/species";
 import { householdStore } from "../session/store";
 import type { HouseholdState } from "../session/types";
 import { AIR_COLOR, CLIMATE_COLOR, LIGHT_COLOR, STATION } from "../palette";
+import { SPECIES } from "../boarding/species";
+import { buildTenantRig } from "./TenantMesh";
 
 /**
  * The boarding house's modules, drawn from the room model: a chunky cut-away box per docked berth
@@ -222,7 +224,7 @@ function signature(state: HouseholdState, now: number): string {
     const comfort = r.tenantId === null ? -1 : Math.floor(tenantComfort(state, r.tenantId, now).score / 5);
     return `${r.slot}:${r.settings.atmosphere}${r.settings.gravity}${r.settings.climate}${r.settings.light}:${r.sealed ? 1 : 0}${r.shuttered ? 1 : 0}:${r.tenantId ?? "-"}:${comfort}`;
   });
-  return `${rooms.join("|")}#${b.flareUntil > now ? "F" : ""}#${Object.keys(b.noisyUntil).length}`;
+  return `${rooms.join("|")}#${b.flareUntil > now ? "F" : ""}#${Object.keys(b.noisyUntil).length}#${b.applicant?.species ?? ""}`;
 }
 
 export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
@@ -234,6 +236,11 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
   let anims: Animated[] = [];
   let last = "";
   let warned = false;
+  // Whoever is buzzing at the airlock waits in the corridor in person, under a little spotlight.
+  const visitor = new THREE.Group();
+  visitor.position.set(AIRLOCK.x + 1.9, 0, AIRLOCK.z + 1.5);
+  root.add(visitor);
+  let visitorAnimate: ((t: number, moving: boolean) => void) | null = null;
   const clear = () => {
     modules.traverse((node) => { const m = (node as THREE.Mesh).material as THREE.Material | undefined; m?.dispose(); });
     modules.clear();
@@ -264,8 +271,23 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
           const room = roomBySlot(household, slot);
           modules.add(room === null ? buildScaffold(slot) : buildRoom(household, room, now, anims));
         }
+        visitor.clear();
+        visitorAnimate = null;
+        const applicant = boardingOf(household).applicant;
+        if (applicant !== null) {
+          const rig = buildTenantRig(SPECIES[applicant.species].bodyPlan);
+          rig.root.scale.setScalar(0.9);
+          visitor.add(rig.root);
+          const spot = new THREE.Mesh(geo.circle, new THREE.MeshBasicMaterial({ color: "#6ff3ff", transparent: true, opacity: 0.35, depthWrite: false }));
+          spot.rotation.x = -Math.PI / 2;
+          spot.position.y = 0.14;
+          spot.scale.setScalar(0.8);
+          visitor.add(spot);
+          visitorAnimate = rig.animate;
+        }
       }
       const t = state.clock.elapsedTime;
+      visitorAnimate?.(t, false);
       for (const a of anims) {
         if (a.lamp) a.lamp.emissiveIntensity = 1.2 + Math.sin(t * 2 + a.phase) * 0.4;
         if (a.haze) { (a.haze.material as THREE.MeshBasicMaterial).opacity = 0.12 + (Math.sin(t * 1.3 + a.phase) + 1) * 0.06; a.haze.rotation.y = t * 0.2; }

@@ -60,7 +60,7 @@ describe("dayGoal at the front desk", () => {
   test("an applicant at the airlock comes first", () => {
     const state = household();
     state.boarding!.applicant = { species: "velvet", deadline: 999, asked: [] };
-    expect(dayGoal(state, [station("work_console")])).toBe("Next: Velvet is buzzing at the airlock — interview them.");
+    expect(dayGoal(state, [station("work_console")])).toBe("Next: Velvet at the airlock — interview them before they drift off.");
   });
 
   test("a miserable tenant is named with the fix", () => {

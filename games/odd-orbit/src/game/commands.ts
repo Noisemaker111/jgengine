@@ -24,7 +24,7 @@ import {
   acceptApplicant, askApplicant, boardingOf, buyModule, moveTenant, payDeed, rejectApplicant, roomBySlot, sealRoom,
   setRoomSetting, shutterRoom, tuneRoom,
 } from "./boarding/boarding";
-import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, SPECIES } from "./boarding/species";
+import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, quoted, SPECIES } from "./boarding/species";
 import type { RoomFactor } from "./boarding/rooms";
 import { spawnTenantBody } from "./sim/setup";
 
@@ -611,7 +611,7 @@ function registerBoardingCommands(ctx: GameContext): void {
       edit(gameCtx, (s) => {
         const wasFixture = boardingOf(s).rooms.every((room) => room.tenantId !== id);
         const refused = moveTenant(s, id, slot);
-        if (refused === null && wasFixture && s.members[id]?.species === "pip") noteEvent(s, gameCtx.game.notices, `Pip-9 has a door. "${SPECIES.pip.lines.happy[0]}"`, "success");
+        if (refused === null && wasFixture && s.members[id]?.species === "pip") noteEvent(s, gameCtx.game.notices, `Pip-9 has a door. ${quoted(SPECIES.pip.lines.happy[0]!)}`, "success");
         if (refused === null) { const m = s.members[id]; if (m !== undefined) releaseMember(m); }
         return refused;
       }, (s) => `${s.members[id]?.name ?? "A tenant"} moved into room ${slot + 1}.`);

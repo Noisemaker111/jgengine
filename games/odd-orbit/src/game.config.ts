@@ -73,6 +73,8 @@ export const game = defineGame({
       // The first transmission waiting on an answer, and the Authority's letter at the close of term one.
       transmission: ["orbit.new", { name: "household.stage", input: { mode: "transmission" } }],
       "term-review": ["orbit.new", { name: "household.stage", input: { mode: "review" } }],
+      // The first applicant waiting in the corridor, buzzer slip up.
+      airlock: ["orbit.new", { name: "household.stage", input: { mode: "airlock" } }],
     },
     probe: (ctx) => {
       const state = householdStore.read(ctx);

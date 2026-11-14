@@ -21,7 +21,7 @@ import { nextBill, RATION_BUNDLE, RELIEF, PANTRY_CAP } from "../sim/economy";
 import { HULL_PATCH_COST, repairCost } from "../sim/events";
 import { roomOf, speciesOfMember, tenantComfort } from "../boarding/boarding";
 import { comfortWord } from "../boarding/rooms";
-import { SPECIES } from "../boarding/species";
+import { quoted, SPECIES } from "../boarding/species";
 import { comfortTint } from "./rooms";
 import { ENAMEL, Fine, Heading, Icon, INK, Meter, MOOD_COLORS, NEED_COLORS, NEED_ICON, Plate, Row, Swatch, Tag, Text, WARN, creditsText } from "./kit";
 
@@ -103,7 +103,7 @@ export function Inspector() {
     <Row gap={6}><Text weight={700} color={MOOD_COLORS[card.mood.tier] ?? INK}>{`${card.mood.face} ${card.mood.label}`}</Text><Fine grow={1} shrink>{card.goal}</Fine></Row>
     <RuneView fill={card.room === null ? "#d8d0e6" : comfortTint(card.comfort.score)} radius={10} border={{ width: 2, color: "#2a1733" }} padding={[6, 10, 6, 10]} gap={2} label="Room and comfort">
       <Text weight={700}>{card.room === null ? "No room yet · lives in the broom cupboard" : `Room ${card.room} · ${card.comfort.word} · comfort ${card.comfort.score}`}</Text>
-      <Fine size={12} color={INK}>{`“${card.comfort.line}”`}</Fine>
+      <Fine size={12} color={INK}>{quoted(card.comfort.line)}</Fine>
     </RuneView>
     <Fine size={12}>Open Rooms to move them or retune their room. Comfort sets the rent they pay and the review they write.</Fine>
     <Row gap={5} label="Traits">{card.traits.map(trait => <RuneView key={trait.id} fill={ENAMEL.lilac} radius={99} border={{ width: 1.5, color: INK }} padding={[2, 10, 2, 10]} tooltip={trait.blurb}><Text size={13} weight={700}>{trait.label}</Text></RuneView>)}</Row>

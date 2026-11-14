@@ -13,7 +13,7 @@ import {
 import {
   comfortWord, effectiveRoom, noiseWord, ROOM_COLUMNS, ROOM_FACTORS, ROOM_SLOTS, SEAL_COST, SETTING_COST, SHUTTER_COST, type RoomFactor,
 } from "../boarding/rooms";
-import { ATMOSPHERES, CLIMATES, GRAVITIES, INTERVIEW_QUESTIONS, LIGHTS, SPECIES } from "../boarding/species";
+import { ATMOSPHERES, CLIMATES, GRAVITIES, INTERVIEW_QUESTIONS, LIGHTS, quoted, SPECIES } from "../boarding/species";
 import { householdStore } from "../session/store";
 import type { HouseholdState } from "../session/types";
 import { ENAMEL, Fine, Heading, Icon, INK, Paper, Plate, RIM, Row, Swatch, Tag, Text, WARN, creditsText } from "./kit";
@@ -98,7 +98,7 @@ export function RoomsPanel() {
     <Heading size={16} padding={[8, 0, 0, 0]}>Latest reviews</Heading>
     {view.reviews.length === 0 ? <Fine>No reviews yet. Tenants write them on rent night.</Fine> : view.reviews.map((r, i) => <RuneView key={`${r.day}-${r.tenantId}-${i}`} gap={0}>
       <Row gap={4}><Text size={13} weight={700}>{r.name}</Text><Text size={13} color="#c2477f">{"★".repeat(r.stars) + "☆".repeat(5 - r.stars)}</Text></Row>
-      <Fine size={12}>{`“${r.text}”`}</Fine>
+      <Fine size={12}>{quoted(r.text)}</Fine>
     </RuneView>)}
     <Heading size={16} padding={[8, 0, 0, 0]}>The station section</Heading>
     {view.deedPaid
@@ -132,7 +132,7 @@ function RoomCard({ cell, view, run }: { cell: BuiltCell; view: Plan; run: (name
     </Row>
     {comfort !== null ? <RuneView fill={comfortTint(comfort.score)} radius={10} border={{ width: 2, color: RIM }} padding={[6, 10, 6, 10]} gap={2}>
       <Text weight={700}>{`${comfortWord(comfort.score)} · comfort ${comfort.score}${comfort.second !== null ? ` / other head ${comfort.second}` : ""}`}</Text>
-      <Fine size={12} color={INK}>{`“${comfort.reasons[0]?.text || speciesDef!.lines.happy[0]}”`}</Fine>
+      <Fine size={12} color={INK}>{quoted(comfort.reasons[0]?.text || speciesDef!.lines.happy[0]!)}</Fine>
     </RuneView> : null}
     {comfort !== null && comfort.reasons.length > 0 ? <RuneView gap={2} label="What is wrong">{comfort.reasons.map((r) => <Row key={r.factor} gap={6}>
       <Text size={12} weight={700} color={WARN} width={36}>{`-${r.penalty}`}</Text><Fine size={12} grow={1} shrink>{r.factor === "leak" ? "Air leaking in through a shared wall" : r.factor === "noise" ? "Too loud for them" : `${FACTOR_LABEL[r.factor as RoomFactor]} is not to their taste`}</Fine>
@@ -170,7 +170,7 @@ export function ApplicantSlip({ width }: { width: number }) {
   return <Paper width={width} padding={[14, 16, 16, 16]} gap={8} role="alertdialog" label={`Applicant: ${slip.name}`}>
     <Row gap={10}><Swatch plan={slip.plan} size={44} />
       <RuneView gap={0} grow={1} shrink><Tag>BUZZ AT THE AIRLOCK</Tag><Heading size={19}>{slip.name}</Heading><Fine size={12}>{slip.title}</Fine></RuneView></Row>
-    <Text size={14}>{`“${def.lines.greet}”`}</Text>
+    <Text size={14}>{quoted(def.lines.greet)}</Text>
     {INTERVIEW_QUESTIONS.map((q, i) => slip.asked.includes(i)
       ? <RuneView key={q} fill={ENAMEL.cream} radius={10} border={{ width: 1.5, color: RIM }} padding={[5, 9, 5, 9]} gap={1}><Fine size={12}>{q}</Fine><Text size={13}>{def.lines.interview[i]}</Text></RuneView>
       : <Plate key={q} tone="sky" minHeight={32} padding={[4, 10, 4, 10]} size={13} onPress={() => commands.run("applicant.ask", { question: i })}>{`Ask: ${q}`}</Plate>)}

@@ -212,6 +212,11 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
   },
 };
 
+/** A tenant's line in speech marks, unless it already carries its own (the Twins quote each head). */
+export function quoted(line: string): string {
+  return /^["“]/.test(line) ? line : `“${line}”`;
+}
+
 export function speciesOf(id: SpeciesId): SpeciesDef {
   return SPECIES[id];
 }
