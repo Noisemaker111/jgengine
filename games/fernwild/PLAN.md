@@ -293,3 +293,22 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [x] 14. Rock as ARK draws it: rounded boulders with cracks and stacked ledges instead of flat low-poly facets (#2687)
 - [x] 15. Clothes drawn on the survivor's body (#2811)
 - [x] 16. Survivor creation and the spawn screen: name, four bodies, height, and seven beaches graded Easy to Hard on the island map; death wakes you on the beach you chose
+
+## Handoff
+
+Wildwire re-theme (robot-taming survival), work in progress on this branch.
+
+Done:
+- Mechanical rename of every species, rig (saddle), item and the boss to Wildwire names (biogel/salvage, firmware, drain spike, EMP arrow, Hivemind); files renamed.
+- `src/game/data/bots.ts`: 7 temperaments, targeting rules, tricks, quirks, glitches, charge drain, Signal Storm schedule (first storm night 6), chips; tested in `bots.test.ts`.
+- `src/game/data/robotBodies.ts`: procedural robot body for every species via the body-plan machine style; imported animal GLBs, bake script and autoRig removed; tested.
+- Core `creatureDriver`: wild mind `focus` (targeting score) and `lightOf`, with tests.
+- `creatures.ts`: targeting facts, pack/choir/scrapper melee, tricks, dormant Rootkits (`disturbForest` from chopping), storms (`setStorm`, `endStorms`, `stormView`), sentries, quirks on upload; `tameHunger.ts` charge drain by rust/heat/traits.
+- Shared `games/shared/viteJgUiWasm.ts`: strips `?import` when serving jg-ui.
+
+In progress / next steps:
+1. Breeding glitches: in `breeding.ts` `bringIntoWorld`, pass `traits: [rollGlitch(newMutations)]` through `spawnBaby`/`spawnCreature`.
+2. Re-run `bun run test games/fernwild` (12+ min) and fix failures (tame-hunger timing vs. charge drain, temperament checks).
+3. Player-facing text: UI (Hud, Creature, Screens, Menu), onboarding, notes, controls BRIEFING/credits, README, this PLAN brief, art-direction, `jgengine.json` name, `games/README.md` row, CONTENT-PROVENANCE row; probes for storms/sentries.
+4. Root Server boss (cave end, `endStorms`), Homer send-home, Hoover platform, Harvest chip: not started.
+5. `bun run gen`, `bun run verify:fast`. Screenshot blocked: Rune wasm panics ("time not implemented") under software WebGPU (CHROME_PATH wrapper with `--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader`, JG_CAPTURE_GL=swiftshader, JG_BROKER=0).
