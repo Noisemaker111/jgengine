@@ -37,16 +37,18 @@ describe("beacon-bastion world", () => {
     expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.highland);
   });
 
-  test("authored terrain survives the adapter and keeps approach and foundation surfaces distinct", () => {
+  test("authored terrain survives the adapter: concrete sidewalks along the street, lawn everywhere else", () => {
     expect(TERRAIN.detail).toBeDefined();
     expect(world.kind === "environment" ? world.sculpt : undefined).toBe(editorLayers.terrain);
     const painted = editorLayers.terrain!;
     const surfaceAt = (x: number, z: number) => painted.surfaces[Math.floor((z - painted.bounds.minZ) / painted.cellSize) * painted.cols + Math.floor((x - painted.bounds.minX) / painted.cellSize)];
-    expect(surfaceAt(-30, -12)).toBe("dirt");
+    expect(surfaceAt(-30, -12)).toBe("gravel");
     expect(surfaceAt(-36, -15.2)).toBe("gravel");
-    expect(surfaceAt(-32, 26)).toBe("rock");
+    expect(surfaceAt(-32, 26)).toBe("grass");
     expect(surfaceAt(0, -30)).toBe("grass");
-    expect(Math.max(...painted.offsets)).toBeCloseTo(2.4);
+    expect(new Set(painted.surfaces)).toEqual(new Set(["grass", "gravel"]));
+    // A small town's lawns swell gently; the old highland mounds are a third of their height.
+    expect(Math.max(...painted.offsets)).toBeCloseTo(0.84);
     expect(painted.offsets.filter(value => value !== 0).length).toBe(548);
   });
 });
