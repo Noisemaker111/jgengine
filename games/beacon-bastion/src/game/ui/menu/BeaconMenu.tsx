@@ -207,7 +207,7 @@ function KeepNiche({ slot, recent, onTake }: { slot: SaveSlotMeta; recent: boole
     <Text size={14} color={DIM}>{slot.empty ? "Closed for business" : (slotText(slot, "character") ?? slot.name ?? label)}</Text>
     {slot.empty ? <Text size={12} color={DIM}>No day kept here</Text> : <Row gap={10}>
       {wave === null ? null : <Row gap={3}><Glyph name="megaphone" size={13} /><Text size={13}>{`Wave ${wave}`}</Text></Row>}
-      {gold === null ? null : <Row gap={3}><Glyph name="coin" size={13} color={GOLD} /><Text size={13}>{String(gold)}</Text></Row>}
+      {gold === null ? null : <Row gap={3}><Text size={13} color={GOLD}>{`$${gold}`}</Text></Row>}
       {lives === null ? null : <Row gap={3}><Glyph name="coffee" size={13} color={BLOOD} /><Text size={13}>{String(lives)}</Text></Row>}
     </Row>}
     {slot.empty || slot.savedAt === undefined ? null : <Text size={12} color={DIM}>{`Kept ${relativeSavedAt(slot.savedAt)}`}</Text>}

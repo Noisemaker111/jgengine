@@ -2093,6 +2093,7 @@
 - `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
+- `hideAdapterlessWebGpu` (function): function hideAdapterlessWebGpu(nav: { gpu?: { requestAdapter(): Promise<unknown> } } | undefined = globalThis.navigator as never): Promise<boolean> — A browser can expose `navigator.gpu` with no adapter behind it (Linux Chrome without a GPU, headless capture). wgpu then takes the canvas with a WebGPU context, fails to find an adapter, and its WebGL2 fallback finds the canvas already claimed, so no UI draws at all. Hiding the empty `navigator.gpu` before mount sends wgpu straight to WebGL2. Resolves true when it hid it.
 - `runeBundleUrl` (function): function runeBundleUrl(baseUrl: string = DEFAULT_BASE): string — The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
 
 ## @jgengine/core/ui/sceneSwap.view

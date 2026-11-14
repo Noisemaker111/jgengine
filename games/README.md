@@ -25,7 +25,7 @@ owns the discovery, upstream implementation, adoption and verification workflow.
 | Brightway Park | `brightway-park` | Park-builder tycoon |
 | Odd Orbit | `odd-orbit` | Alien household sim |
 | Scrap Signal | `scrap-signal` | Looter-shooter |
-| Beacon Bastion | `beacon-bastion` | Tower defense |
+| Do Not Disturb | `beacon-bastion` | Humans-vs-technology tower defense |
 | Deepward | `deepward` | First-person extraction slice: salvage, pack, return and bank |
 | Harbor Heat | `harbor-heat` | Coastal courier and crew adventure |
 | Drift Foundry | `drift-foundry` | Physics racer |

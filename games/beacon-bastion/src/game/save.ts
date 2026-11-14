@@ -274,7 +274,7 @@ export async function withdrawKeep(ctx: GameContext): Promise<void> {
   if (!keepCanCheckpoint(ctx)) return;
   await captureKeepThumb();
   await checkpointKeep(ctx, 1);
-  if (!keepCanCheckpoint(ctx)) throw new Error("The keep changed or could not be saved.");
+  if (!keepCanCheckpoint(ctx)) throw new Error("The street changed or could not be saved.");
   await refreshBeaconSlots(ctx);
 }
 
@@ -452,7 +452,7 @@ export async function saveToSlot(ctx: GameContext, slot: string): Promise<void> 
   if (save.slot() !== slot) await save.switchSlot(slot);
   await save.save();
   const state = checkpoints(ctx);
-  if (save.status() === "error") { state.failed = true; unsavedKeep.write(ctx, true); throw new Error("The keep could not be saved."); }
+  if (save.status() === "error") { state.failed = true; unsavedKeep.write(ctx, true); throw new Error("The street could not be saved."); }
   state.slot = slot;
   state.raw = keepBytes(slot);
   state.failed = false;

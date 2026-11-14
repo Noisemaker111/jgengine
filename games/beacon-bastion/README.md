@@ -1,13 +1,16 @@
-# Beacon Bastion
+# Do Not Disturb
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 Game suite: **0/17 proven · 17 missing** · `jgengine suite beacon-bastion`
 <!-- /suite-score -->
 
-Tower defense on a highland approach. Eleven authored plots sit beside two raider roads: the long main
-approach and a short east flank. The keep has twenty lives. A defense is twelve waves, six authored and
-six composed, played on one of three difficulties. Runs on engine source; start it
-with `bun --cwd=games/beacon-bastion run dev` from the repository root.
+Humans-vs-technology tower defense. Ordinary working people defend the last analog town against
+marching technology: earbuds, phones, Flock cameras, smart speakers, robot vacuums, drones, scooters,
+smart fridges, graphics cards, mining rigs, self-driving cars, chatbots, routers, a server rack and,
+last, THE DATA CENTER. Eleven sidewalk plots line Main Street and a short side street; the town has
+twenty Attention Span. A day is twelve waves, six authored, five composed and the finale, on one of
+three shifts. The folder and package id stay `beacon-bastion`. Runs on engine source; start it with
+`bun --cwd=games/beacon-bastion run dev` from the repository root. Plan: `PLAN.md`; look: `src/art-direction.md`.
 
 ## Design checklist
 
@@ -15,114 +18,56 @@ Read from `src/game/{waves,entities,combat,build,world}` and `src/game/campaign.
 is what the build does now.
 
 - **Core loop.**
-  - 150 starting gold buys a tower for one of eleven plots:
-    - Archer Post (50): pierce, hits flyers.
-    - Frost Spire (70): frost, slows, hits flyers.
-    - Cannon Redoubt (90, rises in 4 s): blast with splash, ground only.
-    - Arcane Sanctum (110, rises in 3 s): arcane, ignores armor, hits flyers.
-  - The keep, its plots, towers, purse and walls are one engine world spec (`src/game/keep.ts`),
-    shared by every player in co-op.
-  - Once a wave has fully arrived, a clock runs (25 s on Knight). When it runs out, the next wave
-    marches on its own. Calling it early pays 1.2 gold per second skipped, capped at 40.
-  - The clock holds while a boss walks.
-  - Raiders leak 1–8 lives each into the keep. A kill pays the raider's weight times the wave curve.
-  - Held-wave pay (`src/game/waves/heldWavePay.ts`). The first time the road is clear after a wave has
-    fully arrived, the garrison is paid for every wave since the last pay:
-    - wages of 10 + 2 × the wave number;
-    - interest of 10% of the purse, capped at 20, so banking gold competes with spending it;
-    - 10 more when no raider broke through since the last pay.
-    - A wave called early is still paid, at the next clear road, but interest pays once per clear road.
-  - Mending. Every life lost is a breach. With the road clear, R or the Mend sign beside the purse
-    mends one breach for 20 gold, up to the walls the defense opened with.
-- **Damage and raiders.**
-  - Every shot is pierce, blast, frost or arcane, read against what the raider is made of (the engine
-    damage table):
-    - Bone takes ×0.6 from arrows and ×1.4 from shells.
-    - Wards take ×0.6 from frost and ×0.4 from arcane.
-    - Wraiths take nothing from shells and ×1.3 from arcane.
-  - Armor (0–45) blunts pierce and blast: 40 armor halves a hit. Frost and arcane ignore it.
-  - The roster is fourteen raiders:
-    - Wraiths fly the flank road, where only archers, frost and arcane reach them.
-    - Bulwarks carry an 80-point ward that grows back 2.5 s after the last hit.
-    - Shamans mend 10% of every nearby raider's health every 3 s.
-    - Hulks break into three bonelings where they fall.
-  - Statuses run on the engine status runtime:
-    - Burns stack to 3.
-    - Ironshot cracks armor by 10 a stack.
-    - Frost freezes, and leaves raiders brittle (+25% damage taken).
-- **Progression — six systems.**
-  - Tower ladders. Every tower takes two shared ranks (75% of build cost × rank; each adds 50%
-    damage, 15% fire rate, 0.5 range). It then commits to one of two paths, and taking one closes the
-    other. Each path has two steps (150–320 gold):
-    - Archer: Longbow (+3.5 range, ignores up to 45 armor, every 4th arrow ×3) or Volley (three targets,
-      fire arrows).
-    - Cannon: Mortar (+4 range, 0.5 s stun) or Ironshot (cracks armor for every other tower).
-    - Frost: Glacier (a pulsing aura with brittle chill) or Rime (freezes every 4th, then 3rd, hit;
-      Shatterpoint doubles damage on frozen raiders).
-    - Arcane: Storm (bolts chain to 5 raiders) or Ember (burns, and melts wards 2.5× faster).
-    - Selling returns 70% of everything spent. The ladders are the engine's `upgradePaths`, so the world
-      model prices, refuses and saves every step.
-  - Aim. Each tower targets the first raider on the road, the last, the strongest or the nearest. T
-    cycles it, as does the tower card.
-  - Beacon rites. Beacon Fire (Q, every 40 s) falls 0.9 s after a click on the road: 120 damage in
-    3.5 m plus a burn. The Frost Bell (E, every 55 s) slows every raider to 40% for 4 s (a boss to 70%).
-  - Bounty ladder. Kill pay is the raider's weight × `1 + 0.25 × (wave − 1)`, capped at ×4, then the
-    relic, the difficulty and the council.
-  - Stars and the war council. A hold earns 1–3 stars by lives kept (90% for three), plus one on
-    Warlord. The best stars per difficulty are council points, spent on the result stone:
-    - Arsenal: tower-line damage, reach, and two mutually exclusive doctrines.
-    - Treasury: opening gold, walls, kill pay, early-call pay.
-    - Rites: hotter fire, faster cooldowns.
-  - Relics. A finished defense banks half its purse (capped at 200), and the result card offers
-    three relics through the engine's seeded draft.
-- **Difficulty.**
-  - Squire: 25 lives, raiders ×0.8 health, 32 s breathers.
-  - Knight: 20 lives, 25 s breathers.
-  - Warlord: 12 lives, raiders ×1.2 health and +5 armor, 20 s breathers, a fourth star.
-  - It is picked on the result stone and saved with the keep.
-- **Pacing, checked headless** (`src/game/balance.test.ts` plays whole defenses against the real
-  director, towers and purse):
-  - An empty keep falls by wave 3.
-  - Eleven cannons fall to the wraiths.
-  - A mixed, upgraded keep holds Knight with about 14 of 20 lives and never banks more than 300 unspent.
-  - The same keep does worse on Warlord.
-- **Failure states.** Losing every life ends the run with "The Keep Has Fallen": no stars, and a
-  rebuild from the banked purse and the chosen relic.
-  - Leaks also cost gold, because a raider that leaks pays no bounty.
-  - Waves escalate through the composed act: duration 20 to 28 seconds, counts ×1.4 per rank, and
-    wraiths, bulwarks, shamans and hulks in every pattern.
-  - Victory is twelve waves with the field clear.
-- **Minute 5 -> hour 5.**
-  - At 5:00, waves 1–3 are down. Three or four towers stand and the first has reached rank II. The
-    first wraiths have shown whether the flank has air cover.
-  - At hour 5, each tower line has been tried down both of its paths. A few stars are seated on the war
-    council, and Warlord is the reason to replay a keep that already held on Knight.
+  - $150 hires workers onto plots from a hiring board of fourteen (keys 1–0 for the first ten):
+    - Barista ($50): hot coffee, splash, ×1.4 vs gadgets, ground only.
+    - Plumber ($65): water, slows, leaves tech Wet for 4 s.
+    - Farmer ($60): pitchfork, pierce, hits flyers at ×1.5.
+    - Grandma ($70): analog, 7% chance a hit just turns the tech off (bosses lose 3% instead).
+    - Electrician ($100): shock, ×2.5 on Wet tech; the only trade that cuts a data center's power.
+    - Teacher ($90): confiscates a gadget in reach every 8 s (paid as a kill) and snaps nearby workers out of their phones.
+    - Librarian ($80): SHHH aura — no notification goes out from or lands inside her reach.
+    - Construction Worker ($95, clocks in in 3 s): jackhammer splash, crushes armor, ground only.
+    - Firefighter ($85): hose, ×2.2 vs overheating tech (graphics cards, rigs, the data center).
+    - Janitor ($75): unplugs everything in reach every second, slows it.
+    - Mail Carrier ($80): junk mail at anything, and $20 every time a wave arrives.
+    - Monk ($90): offline aura — workers near him cannot be distracted. He does not fight.
+    - IT Guy ($120): reboots the furthest tech in reach back to the start of its road every 14 s.
+    - Lawyer ($130): legal damage that ignores armor; a Cease & Desist freezes the strongest tech for 2.5 s every 10 s.
+  - Every worker has voice lines (on hire, on the job, when distracted, on promotion), shown as floating text.
+  - The town, its plots, workers, till and attention are one engine world spec (`src/game/keep.ts`), shared in co-op.
+  - Once a wave has fully arrived, a clock runs (25 s on Full-Time); calling early pays $1.2 per second skipped, capped at 40. The clock holds while a boss rolls.
+  - Held-wave pay: wages of 10 + 2 × wave, 10% interest on the till capped at 20, 10 more for a wave with no leak.
+  - Coffee break: with the street clear, R wins back one attention for $20, up to the day's starting attention.
+- **Distraction — technology fights back without shooting.**
+  - Phones (every 6 s, 2.2 s), smartwatches, chatbots and smart speakers ("Hey—" distracts everyone in 6 m) fire notifications. A distracted worker looks at their phone (a glowing phone floats over them) and stops working.
+  - Flock cameras spot a worker every 6 s: notifications go for spotted workers first and last 1.5× longer.
+  - Graphics cards, mining rigs and the data center overheat the workers near them (they work 25–40% slower).
+  - Answers: Teacher (snap out), Librarian (hush), Monk (immune), and the Do Not Disturb button.
+  - Distraction runs on the engine status runtime as a second, worker-side runtime (`session.workers`).
+- **Damage and tech.**
+  - Seven damage types (hot, water, shock, blunt, pierce, legal, analog) against five classes (gadget, hardware, wireless, network, vehicle) on the engine damage table. Legal and analog ignore armor; 40 armor halves a hit; shock is ×2.5 on Wet tech.
+  - Smart fridges carry a 70-point shield that regrows; routers patch 6% of nearby tech every 3 s and boost it (+20% speed, +10 armor); wrecked self-driving cars release two scooters; drones drop a parcel on a plot that blocks hiring until clicked; mining rigs pay more the longer they live and steal cash if they get through.
+  - "Installing Update…": from wave 3, part-way through each wave the healthiest tech stops for 4 s and takes +25% damage; if it finishes it gains +20 armor (an IT Guy's Factory Reset wipes it).
+  - Tech gets 4% sturdier each wave (bosses excepted).
 - **Bosses.**
-  - The Warden (wave 6, again on 12) raises a 200-point ward when enraged, then calls two Bulwarks for
-    its last stand.
-  - The Warlord (wave 8) calls four grunts when bloodied and five bonelings when cornered.
-- **The composed act.** Waves 7–12 come from `waves/composer.ts`, a pure function of `DIRECTOR_SEED` and
-  the wave number. Five squad patterns mix the new raiders and send wraiths down the flank. The horn
-  previews the next wave with trait marks (flyers, armor, wards, shields, healers, splitters, flank)
-  before it marches.
-- **References it is chasing.**
-  - *Kingdom Rush*:
-    - feel: branching tower paths, a hero-free pair of rites on cooldowns, and calling waves early for
-      gold;
-    - UI: tower cards with the next step's price at a glance.
-  - *Defense Grid: The Awakening*:
-    - feel: plot planning before the wave lands;
-    - density: several towers firing down one long sightline.
-  - *Bloons TD 6*:
-    - feel: two exclusive paths per tower that change how it fights;
-    - targeting priority per tower.
-- **Gap to target.**
-  - Mazing on open ground.
-  - A second map.
-  - A relic that changes how a tower works rather than only the numbers.
+  - Server Rack (wave 6, again on 9): restores two backup drives every 6 s unless an Electrician stands within 9 m; at half health it overclocks and raises a 150-point firewall.
+  - THE DATA CENTER (wave 12): on mains power it takes 30% damage and spawns phones; Electricians within 9 m drain its power; then it takes full damage. It overloads (drones, a GPU) and browns out, and when destroyed it migrates to THE CLOUD, a flying final form that summons drones.
+- **Progression.**
+  - Promotions: two shared ranks per worker (Shift Lead → Head Barista, Journeyman → Master Plumber, Department Head → Vice Principal…; 75% of hire × rank, +50% damage, +15% pace, +0.5 m reach), then one of two careers with two steps each; taking one closes the other. Letting a worker go returns 70%.
+  - Aim: first, last, strongest, nearest (T).
+  - Town buttons: Blackout (Q, every 40 s) flips the breaker on a point of the street, 120 damage in 3.5 m and a short-circuit; Do Not Disturb (E, every 55 s) slows every gadget to 40% for 4 s, snaps every worker out of their phone and holds notifications.
+  - Scrap pay: weight × `1 + 0.2 × (wave − 1)`, capped at ×3.
+  - Stars per shift seat the Town Council (Labor Union, Town Budget, Town Rituals); a finished day banks half its till (cap 200) and offers three perks.
+- **Difficulty.** Part-Time: 25 attention, tech ×0.8 health, 32 s breaks. Full-Time: 20, 25 s. Overtime: 12, ×1.2 health, +5 armor, 20 s, a fourth star.
+- **Pacing, checked headless** (`src/game/balance.test.ts`):
+  - A town that hires nobody loses by wave 3.
+  - Baristas alone can't reach the drones or The Cloud.
+  - A mixed, promoted crew holds Full-Time with about 11 of 20 attention and never banks more than 300 unspent.
+  - The same crew loses on Overtime.
+- **Failure states.** Losing all attention ends the day with "Total Distraction"; victory is twelve waves with the street clear.
+- **Gap to target.** A worker "looking at the phone" animation (today a floating phone); world-anchored speech bubbles (an engine gap); a second map.
 
 Loop proof: to-first-defense
 
-The roads, plots and tower base numbers are read from `src/editor.scene.json`, so moving a road or
-retuning a tower is an editor edit rather than a coordinate table. Run `bun run check-types` and
-`bun run test` here after changes.
+The roads, plots, buildings and worker base numbers are read from `src/editor.scene.json`, so moving a
+road or retuning a worker is an editor edit. Run `bun run check-types` and `bun run test` here after changes.

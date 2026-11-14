@@ -4,16 +4,16 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 import { lookCredits } from "../art/look";
 import { ASSET_SOURCE_IDS } from "./assets";
 
-/** The keep's own work, then every pack it actually ships - both derived, neither retyped by hand. */
+/** The game's own work, then every pack it actually ships - both derived, neither retyped by hand. */
 const AUTHORED = {
-  title: "BEACON BASTION",
+  title: "DO NOT DISTURB",
   sections: [
     {
-      heading: "Original Beacon Bastion work",
+      heading: "Original Do Not Disturb work",
       entries: [
         {
-          label: "Keep, towers, raiders and beacon",
-          detail: "Authored tower-defense rules, wave manifest, field-kit HUD and the keep's palette; source in beacon-bastion/src.",
+          label: "Workers, technology, town and voice lines",
+          detail: "Authored tower-defense rules, distraction, wave manifest, procedural tech meshes and the diner HUD; source in beacon-bastion/src.",
         },
       ],
     },
@@ -26,11 +26,11 @@ const AUTHORED = {
       ],
     },
   ],
-  notice: "Every model pack above is used under the license it is listed with.",
+  notice: "Fonts: Lilita One (Juan Montoreano) and Nunito (Vernon Adams, Jacques Le Bailly), SIL OFL 1.1. Every model pack above is used under the license it is listed with.",
 };
 
 export const BEACON_CREDITS = mergeCredits(
   AUTHORED,
   creditsForSourceIds(ASSET_SOURCE_IDS),
-  { title: "BEACON BASTION", sections: lookCredits() },
+  { title: "DO NOT DISTURB", sections: lookCredits() },
 );

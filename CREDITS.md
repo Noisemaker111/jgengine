@@ -544,6 +544,15 @@ code is copied. Its tests check it against the expected outputs of the BehavePlu
   Jenkins, Chojnacky, Heath & Birdsey 2003, national-scale biomass estimators, *Forest Science* 49
   and NE-GTR-319 (USFS), the test reference for foliage mass.
 
+## Do Not Disturb (`games/beacon-bastion`)
+
+Workers are Quaternius **Animated Characters Pack** models; the town hall and houses are Quaternius
+**Low Poly Buildings**; shops, lamps, hydrants, benches and parked cars are KayKit **City Builder**;
+yard trees are KayKit **Forest Nature Pack** (all CC0, see the Quaternius and KayKit sections). The
+technology is drawn procedurally. Fonts bundled in `games/beacon-bastion/src/art/fonts/`: **Lilita One**
+by Juan Montoreano and **Nunito** by Vernon Adams and Jacques Le Bailly, both SIL Open Font License 1.1
+from Google Fonts. Sky: Poly Haven *Kloppenheim 06 (Pure Sky)* (CC0).
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design
