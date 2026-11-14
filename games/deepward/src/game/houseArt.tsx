@@ -13,7 +13,7 @@ import type { EditorVolume } from "@jgengine/core/editor/types";
 import { TEMPLATES, type RoomTemplate } from "../world";
 import { houseMaterial, isHouseMaterial, type HouseMaterial } from "./houseMaterials";
 import { itemMesh } from "./itemArt";
-import { poseThreat, threatMesh, webMesh } from "./threatArt";
+import { animateAnimal, poseThreat, threatMesh, upgradeToAnimal, webMesh } from "./threatArt";
 import { viewStore } from "./controls";
 import { kindOf, ITEMS, type ItemKind } from "./loot";
 import { LITTLES } from "./littles";
@@ -194,8 +194,8 @@ function LootProp({ id, at, kind, color, strength }: { id: string; at: readonly 
       scrap.position.set(0.5, 0.62, 0.1); scrap.rotation.y = 0.6; holder.add(scrap);
     }
     const glow = (opacity: number) => new MeshBasicMaterial({ color, transparent: true, opacity: opacity * strength, depthWrite: false, blending: AdditiveBlending });
-    const beam = new Mesh(new CylinderGeometry(0.55, 1.1, 7, 16, 1, true), glow(0.16));
-    beam.position.y = 3.5; group.add(beam);
+    const beam = new Mesh(new CylinderGeometry(0.18, 0.9, 4.6, 16, 1, true), glow(0.09));
+    beam.position.y = 2.3; group.add(beam);
     const ring = new Mesh(new RingGeometry(1.3, 1.6, 32), glow(0.75));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; group.add(ring);
     const twinkle = new Mesh(new SphereGeometry(0.16, 8, 6), new MeshBasicMaterial({ color: "#ffffff" }));
@@ -238,12 +238,21 @@ function WayMark({ at, color, exit }: { at: readonly [number, number, number]; c
     disc.rotation.x = -Math.PI / 2; disc.position.y = 0.04; group.add(disc);
     const ring = new Mesh(new TorusGeometry(exit ? 2.2 : 1.8, 0.08, 6, 40), new MeshBasicMaterial({ color }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; group.add(ring);
-    const beacon = new Mesh(new CylinderGeometry(0.06, 0.06, exit ? 9 : 5, 6), new MeshBasicMaterial({ color, transparent: true, opacity: 0.45 }));
+    const beaconMat = new MeshBasicMaterial({ color, transparent: true, opacity: 0.4, depthWrite: false });
+    const beacon = new Mesh(new CylinderGeometry(0.03, 0.05, exit ? 9 : 5, 6), beaconMat);
     beacon.position.y = exit ? 4.5 : 2.5; group.add(beacon);
+    const discMat = disc.material as MeshBasicMaterial;
     let t = 0;
     return {
       mount(state: EngineFrameState) { state.scene.add(group); },
-      frame(_s: EngineFrameState, delta: number) { t += delta; ring.scale.setScalar(1 + Math.sin(t * 2.4) * 0.06); },
+      frame(s: EngineFrameState, delta: number) {
+        t += delta; ring.scale.setScalar(1 + Math.sin(t * 2.4) * 0.06);
+        // Standing on a mark, its beacon and disc fade out so they never fill a Little's view.
+        const near = Math.hypot(s.camera.position.x - at[0], s.camera.position.z - at[2]);
+        const fade = Math.min(1, Math.max(0, (near - 2.5) / 4));
+        beacon.visible = fade > 0.02; beaconMat.opacity = 0.4 * fade;
+        discMat.opacity = 0.22 * fade; ring.visible = near > 5;
+      },
       dispose(state: EngineFrameState) { state.scene.remove(group); disposeObjectTree(group); },
     };
   }} deps={[at[0], at[2], color]} />;
@@ -267,6 +276,7 @@ export function ThreatLayer({ templateId }: { templateId: string }) {
       const hidden = s.kind === "trap" && s.mode === "armed" && !LITTLES[run.little].trapSense && (me === undefined || Math.hypot(me[0] - s.at[0], me[2] - s.at[2]) > 6);
       object.visible = s.mode !== "dead" && !hidden;
       poseThreat(object, s, state.clock.elapsedTime, template?.ceiling ?? 0);
+      animateAnimal(object, s, state.delta);
     }
   });
   return <EngineDrawMount create={() => {
@@ -277,12 +287,13 @@ export function ThreatLayer({ templateId }: { templateId: string }) {
     if (run !== null) for (const s of run.threats) {
       if (s.mode === "dead") continue;
       const object = threatMesh(s.kind, s.key);
+      upgradeToAnimal(object, s.kind, s.key);
       objects.current.set(s.key, object); root.add(object);
       if (s.kind === "spider") { const web = webMesh(); web.position.set(s.home[0], 0, s.home[2]); webGroup.add(web); }
     }
     return {
       mount(state: EngineFrameState) { state.scene.add(root); },
-      dispose(state: EngineFrameState) { state.scene.remove(root); disposeObjectTree(root); objects.current.clear(); },
+      dispose(state: EngineFrameState) { for (const o of objects.current.values()) o.userData["disposed"] = true; state.scene.remove(root); disposeObjectTree(root); objects.current.clear(); },
     };
   }} deps={[cast, templateId]} />;
 }

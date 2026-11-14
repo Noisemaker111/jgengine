@@ -559,7 +559,7 @@ export function registerControls(ctx: GameContext): void {
         await stageMidRun(state, 0);
         const v = viewStore.read(state), run = v.run, at = playerAt(state);
         if (run === null || at === null) return;
-        const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw) * 24, 0, at[2] + Math.cos(yaw) * 24];
+        const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw + 0.3) * 34, 0, at[2] + Math.cos(yaw + 0.3) * 34];
         const cat = { ...spawnThreat({ key: `${run.room}:dev-cat`, kind: "cat", slot: { id: "dev-cat", kind: "cat", at: spot, minDepth: 0, label: "the cat" } }), mode: "crouch" as const, timer: 60, target: at, facing: yaw + Math.PI };
         viewStore.write(state, { ...v, run: { ...run, threats: [...run.threats, cat] }, danger: 0.9 });
       })();

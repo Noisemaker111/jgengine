@@ -1,3 +1,7 @@
+import { AnimationMixer, Color, type AnimationAction } from "three";
+import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
+import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
+import { houseAssets } from "./assets";
 import { BoxGeometry, CircleGeometry, ConeGeometry, MeshBasicMaterial, CylinderGeometry, Group, LineBasicMaterial, LineSegments, BufferGeometry, Float32BufferAttribute, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, type Object3D } from "three";
 import { hashUnit } from "@jgengine/core/random/rng";
 import type { ThreatState } from "./threats";
@@ -124,6 +128,64 @@ function floorShadow(g: Group, w: number, d: number): void {
   pool.rotation.x = -Math.PI / 2; pool.position.y = 0.04; pool.scale.set(w, d, 1); pool.name = "shadow";
   g.add(pool);
 }
+const animals = new GLTFLoader();
+const animalCache = new Map<string, Promise<GLTF | null>>();
+/** Quaternius' animated low-poly animals (CC0): the house's Cat and dog, with idle and walk cycles. */
+const ANIMAL: Partial<Record<ThreatKind, { model: string; length: number }>> = {
+  cat: { model: "quaternius-animated-animales-low-poly/Cat", length: 30 },
+  dog: { model: "quaternius-animated-animales-low-poly/Dog", length: 54 },
+};
+/**
+ * Swap a procedural Cat or dog body for the animated model once it loads; the procedural body stays if
+ * the pack is not provisioned. The model walks while the hunter moves and idles when it stops.
+ */
+export function upgradeToAnimal(group: Group, kind: ThreatKind, key: string): void {
+  const spec = ANIMAL[kind];
+  const ref = spec === undefined ? null : houseAssets.resolve(spec.model);
+  if (spec === undefined || ref === null || ref.dims === undefined) return;
+  const { dims } = ref;
+  let pending = animalCache.get(ref.url);
+  if (pending === undefined) { pending = animals.loadAsync(ref.url).catch(() => null); animalCache.set(ref.url, pending); }
+  void pending.then(gltf => {
+    const body = group.getObjectByName("body");
+    if (gltf === null || body === undefined || group.userData["disposed"] === true) return;
+    const model = cloneSkinned(gltf.scene) as Group;
+    const scale = spec.length / Math.max(dims.footprint.w, dims.footprint.d);
+    model.scale.setScalar(scale);
+    model.rotation.y = -Math.PI / 2;
+    model.position.set(0, -(dims.minY ?? 0) * scale, 0);
+    // The pack's cat is snow white; give each house Cat its own coat, keeping dark eyes and nose.
+    const coat = kind === "cat" ? new Color(CAT_COATS[Math.floor(hashUnit(key) * CAT_COATS.length)]!) : null;
+    model.traverse(node => {
+      node.castShadow = true; node.receiveShadow = true;
+      if (coat === null || !(node instanceof Mesh)) return;
+      const tint = (m: MeshStandardMaterial) => { const c = m.clone(); if (c.color.r + c.color.g + c.color.b > 2.1) c.color.copy(coat); return c; };
+      node.material = Array.isArray(node.material) ? node.material.map(m => tint(m as MeshStandardMaterial)) : tint(node.material as MeshStandardMaterial);
+    });
+    for (const child of [...body.children]) child.visible = false;
+    body.add(model);
+    const mixer = new AnimationMixer(model);
+    const clip = (word: string) => gltf.animations.find(a => a.name.toLowerCase().includes(word));
+    const idle = clip("idle"), walk = clip("walk");
+    const actions = { idle: idle === undefined ? null : mixer.clipAction(idle), walk: walk === undefined ? null : mixer.clipAction(walk) };
+    actions.idle?.play();
+    group.userData["animal"] = { mixer, actions, walking: false };
+  });
+}
+/** Run the animal's clips: walk while it moves, idle when it holds still. */
+export function animateAnimal(group: Group, s: ThreatState, delta: number): void {
+  const a = group.userData["animal"] as { mixer: AnimationMixer; actions: { idle: AnimationAction | null; walk: AnimationAction | null }; walking: boolean } | undefined;
+  if (a === undefined) return;
+  const walking = s.mode === "prowl" || s.mode === "stalk" || s.mode === "awake" || s.mode === "fled" || s.mode === "pounce";
+  if (walking !== a.walking) {
+    a.walking = walking;
+    const to = walking ? a.actions.walk : a.actions.idle, from = walking ? a.actions.idle : a.actions.walk;
+    if (to !== null) { to.reset().play(); if (from !== null) to.crossFadeFrom(from, 0.25, false); }
+  }
+  if (a.actions.walk !== null) a.actions.walk.timeScale = s.mode === "stalk" || s.mode === "pounce" ? 1.6 : 1;
+  a.mixer.update(delta);
+}
+
 export function threatMesh(kind: ThreatKind, key: string): Group {
   switch (kind) {
     case "cat": { const g = cat(key); floorShadow(g, 11, 20); return g; }

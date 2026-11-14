@@ -16,6 +16,7 @@ export const CRUMB_RUN_CREDITS = mergeCredits({
         { label: "Low Poly Food Pack", detail: "Quaternius, CC0: bread, jars, bottles, cutlery, plates, fruit", href: "https://quaternius.com" },
         { label: "Fantasy Props", detail: "Quaternius, CC0: mug, books, chest, candlestick, bucket, lantern", href: "https://quaternius.com" },
         { label: "Toon Shooter Game Kit", detail: "Quaternius, CC0: boxes, cans, tyres, shovel, pallet, papers", href: "https://quaternius.com" },
+        { label: "Animated Animals", detail: "Quaternius, CC0: the Cat and the dog, with idle and walk cycles", href: "https://quaternius.com" },
       ],
     },
     ...lookCredits(),
