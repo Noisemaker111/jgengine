@@ -98,8 +98,21 @@ function RunHud() {
         <Button onPress={() => ctx.game.commands.run("deepward.pack", {})}>Repack / Tab</Button>
       </Frame>
     </RuneView>
+    <RuneView anchor="center" padding={[150, 0, 0, 0]} maxWidth={520} responsive={{ phone: { maxWidth: 300 } }}><Text align="center" size={phone ? 16 : 20} family="Fredoka" color={RED} text={bind(() => { const r = run(); return r === null ? "" : tellOf(r); })} /></RuneView>
     <RuneView anchor="center"><Text size={22} color={bind(() => (run()?.hurt ?? 0) > 0 ? RED : "#fff3e0a0")}>·</Text></RuneView>
   </>;
+}
+/** The loudest tell in the room right now, so a hunter's intent is readable at a glance. */
+function tellOf(run: Run): string {
+  const t = run.threats;
+  if (t.some(s => s.kind === "cat" && s.mode === "crouch")) return "The Cat is crouching, tail swishing. MOVE or HIDE!";
+  if (t.some(s => s.kind === "cat" && s.mode === "pounce")) return "POUNCE!";
+  if (t.some(s => s.kind === "kid" && s.mode === "looking")) return (t.find(x => x.kind === "kid")?.seen ?? 0) > 0.4 ? "The kid has seen you! Get out of sight!" : "The kid is sitting up, looking around. Hide!";
+  if (t.some(s => s.kind === "dog" && s.mode === "awake")) return "The dog is awake and barking.";
+  if (t.some(s => s.kind === "spider" && s.mode === "bite")) return "The spider rears up to bite!";
+  if (t.some(s => s.kind === "cat" && (s.mode === "stalk" || s.mode === "listen"))) return "The Cat heard something. Keep still, or sneak (C).";
+  if (t.some(s => s.kind === "roomba" && s.mode === "sweep")) return "The Roomba is sweeping. Stay out of its lane.";
+  return "";
 }
 function HomeHud() {
   const ctx = useGameContext(), read = () => viewStore.read(ctx);

@@ -11,7 +11,7 @@ import authored from "./editor.scene.json";
 export type Point = readonly [number, number, number];
 export type Zone = "kitchen" | "living" | "kidroom" | "garage" | "attic";
 export const ZONES: readonly Zone[] = ["kitchen", "living", "kidroom", "garage", "attic"];
-export const ZONE_NAME: Record<Zone, string> = { kitchen: "Kitchen", living: "Living room", kidroom: "Kid's bedroom", garage: "Garage", attic: "Attic" };
+export const ZONE_NAME: Record<Zone, string> = { kitchen: "Kitchen", living: "Living room", kidroom: "Upstairs", garage: "Garage", attic: "Attic" };
 export function isZone(value: unknown): value is Zone { return typeof value === "string" && (ZONES as readonly string[]).includes(value); }
 
 export type ConnectorKind = "crack" | "climb" | "drop" | "cable" | "train" | "vent";

@@ -13,12 +13,12 @@ import { createEditorHost } from '@jgengine/editor/session';
 import { writeFileSync } from 'node:fs';
 
 const path = new URL('../src/editor.scene.json', import.meta.url);
-const SPACING = 110, COLS = 4, ROWS = 4;
+const SPACING = 110, COLS = 4, ROWS = 5;
 const half = (SPACING * COLS) / 2;
 const CELL = 10;
 const cols = (SPACING * COLS) / CELL, rows = (SPACING * ROWS) / CELL;
 const terrain = {
-  bounds: { minX: -half, minZ: -half, maxX: half, maxZ: half },
+  bounds: { minX: -half, minZ: -half, maxX: half, maxZ: -half + SPACING * ROWS },
   cellSize: CELL, cols, rows,
   offsets: Array.from({ length: (cols + 1) * (rows + 1) }, () => 0),
   surfaces: Array.from({ length: cols * rows }, () => null),
@@ -420,6 +420,97 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   threat(t, 'roomba', 'roomba', 0, 4, 4, 'the roomba');
 }
 
+{
+  const w = 44, d = 28;
+  const t = template('bathroom-sink', { name: 'Under the bathroom sink', zone: 'kidroom', minDepth: 2, w, d, floor: 'tile', floorColor: '#cfe0e3', flavor: 'A cupboard of bottles taller than towers. The U-bend drips like a slow clock.', dark: true, ceiling: 34 });
+  box(t, 'cabinet-back', [0, 18, -14.5], [50, 36, 1], 'paint', '#f2efe8');
+  box(t, 'cabinet-top', [0, 35, 0], [50, 2, 30], 'paint', '#e8e3d8');
+  for (const x of [-24, 24]) box(t, 'cabinet-side', [x, 18, 0], [1, 36, 30], 'paint', '#ebe6db');
+  cyl(t, 'waste-pipe', [4, 22, -9], 1.8, 26, 'chrome', CHROME);
+  cyl(t, 'u-bend', [4, 9, -6], 1.8, 8, 'chrome', CHROME, { roll: Math.PI / 2, turn: Math.PI / 2 });
+  cyl(t, 'pipe-down', [4, 4, -3], 1.8, 8, 'chrome', CHROME);
+  cyl(t, 'bleach', [-14, 13, -6], 5, 26, 'plastic', '#3a7bd5', { solid: true });
+  cyl(t, 'bleach-cap', [-14, 27, -6], 2, 3, 'plastic', '#e74c3c');
+  cyl(t, 'spray', [-4, 11, -9], 3.6, 22, 'plastic', '#7cc48a', { solid: true });
+  box(t, 'spray-head', [-4, 23, -8], [2.4, 3, 5], 'plastic', '#f2f2f2');
+  box(t, 'sponge', [12, 1.5, 6], [9, 3, 6], 'fabric', '#f1c40f', { cover: true, turn: 0.4 });
+  box(t, 'sponge-scrub', [12, 3.2, 6], [9, 0.6, 6], 'fabric', '#27ae60', { turn: 0.4 });
+  box(t, 'toothbrush', [-6, 0.7, 8], [2, 1.4, 26], 'plastic', '#c45ab3', { solid: true, turn: -0.9 });
+  cyl(t, 'drip-puddle', [4, 0.05, -2], 3.5, 0.1, 'glass', '#9fd3ff');
+  box(t, 'door-gap', [0, 17, 14.6], [44, 34, 0.4], 'paint', '#fbf8f1', { tilt: 0.4 });
+  lamp(t, 'door-crack', [0, 14, 13], '#ffe9c4', 5, 40, 'landing light through the door crack');
+  lamp(t, 'drip', [4, 2, -2], '#9fd3ff', 2, 14, 'the drip catching light');
+  door(t, 'entry', 'entry', -18, 10, ['crack', 'vent', 'climb'], 'the cupboard door gap');
+  door(t, 'on', 'forward', 18, 10, ['crack', 'vent', 'cable'], 'the gap behind the pedestal');
+  spot(t, 'bleach', -10, -1, 'tucked', 'behind the bleach bottle');
+  spot(t, 'sponge', 12, 9, 'tucked', 'under the sponge');
+  spot(t, 'pipe', 6, -11, 'cache', 'behind the U-bend', { bias: 'curio' });
+  spot(t, 'brush', -10, 11, 'open', 'by the toothbrush', { bias: 'part' });
+  spot(t, 'puddle', 2, 2, 'open', 'beside the drip');
+  threat(t, 'spider', 'spider', -18, -10, 2, 'a sink spider');
+  threat(t, 'trap', 'trap', 6, 2, 3, 'a mousetrap');
+  threat(t, 'lights', 'lights', 0, 0, 2, 'the bathroom light');
+}
+{
+  const w = 48, d = 32;
+  const t = template('dining-table', { name: 'On the dining table', zone: 'living', minDepth: 1, w, d, floor: 'wood', floorColor: '#7a4a2a', flavor: 'Last night’s supper was never cleared. Plates like frozen lakes, a fork like a fallen tower.', elevated: 50 });
+  box(t, 'table-slab', [0, -1.5, 0], [56, 3, 38], 'wood', '#7a4a2a');
+  box(t, 'table-edge', [0, -1.5, 19.3], [56, 3.2, 1], 'wood', '#5c3b22');
+  cyl(t, 'plate', [-10, 0.5, 2], 11, 1, 'ceramic', '#f4f1ea', { solid: false });
+  cyl(t, 'plate-rim', [-10, 1.1, 2], 11.2, 0.3, 'ceramic', '#3b5f7a');
+  cyl(t, 'gravy', [-12, 1.2, 4], 4, 0.2, 'glass', '#7a4a26');
+  box(t, 'fork-handle', [12, 0.6, 4], [3, 1.2, 26], 'chrome', CHROME, { solid: true, turn: 0.25 });
+  for (let i = 0; i < 4; i++) box(t, 'fork-tine', [8.8 + i * 1.1, 0.6, -11], [0.6, 1, 8], 'chrome', CHROME, { turn: 0.25 });
+  cyl(t, 'glass', [16, 9, -8], 5, 18, 'glass', '#d9eef4', { solid: true });
+  cyl(t, 'glass-water', [16, 5, -8], 4.7, 9, 'glass', '#9fd3ff');
+  cyl(t, 'salt', [-20, 6, -10], 2.4, 12, 'ceramic', '#f4f1ea', { solid: true });
+  cyl(t, 'pepper', [-15, 6, -12], 2.4, 12, 'ceramic', '#3a3330', { solid: true });
+  cyl(t, 'candle-stick', [2, 10, -10], 1.6, 20, 'metal', BRASS, { solid: true });
+  cyl(t, 'candle-wax', [2, 26, -10], 1.2, 12, 'wax', WAX);
+  ball(t, 'candle-flame', [2, 33, -10], 0.9, 'emissive', '#ffb347', { glow: 2.5 });
+  box(t, 'napkin-fold', [-2, 1.4, 12], [12, 2.8, 8], 'fabric', '#c45a4a', { cover: true, turn: 0.2 });
+  box(t, 'far-floor', [0, -50, 40], [200, 1, 120], 'wood', '#8c5a33');
+  for (const x of [-40, 40]) cyl(t, 'far-chair', [x, -28, 26], 2, 44, 'wood', OAK);
+  lamp(t, 'candle', [2, 32, -10], '#ffb347', 9, 50, 'a candle burning low');
+  lamp(t, 'moon', [-20, 60, 20], '#9fb9ff', 6, 100, 'moonlight on the table');
+  door(t, 'entry', 'entry', -20, 13, ['climb', 'cable'], 'the table leg');
+  door(t, 'drop', 'forward', 6, 14.5, ['drop', 'cable'], 'the table edge');
+  door(t, 'runner', 'forward', 21, -13, ['cable', 'climb'], 'the lamp flex');
+  spot(t, 'plate', -10, 2, 'open', 'on the dinner plate', { bias: 'food' });
+  spot(t, 'salt', -17, -7, 'tucked', 'behind the salt and pepper', { bias: 'food' });
+  spot(t, 'napkin', -2, 15, 'tucked', 'under the napkin');
+  spot(t, 'glass', 12, -5, 'open', 'by the water glass', { bias: 'curio' });
+  spot(t, 'candle', 5, -12, 'cache', 'in the candle drips', { bias: 'curio' });
+  threat(t, 'cat', 'cat', 0, 0, 1, 'the cat on the table');
+  threat(t, 'lights', 'lights', 0, 0, 2, 'the dining light');
+}
+{
+  const w = 46, d = 30;
+  const t = template('laundry-pile', { name: 'The laundry mountain', zone: 'kidroom', minDepth: 3, w, d, floor: 'carpet', floorColor: '#6d7d96', flavor: 'A week of clothes in a heap by the basket. Pockets full of forgotten things.', dark: true });
+  wall(t, 'north', w, d, '#c8b8d8', '#f4efe3');
+  box(t, 'basket', [14, 18, -8], [18, 36, 14], 'cardboard', '#c8a06a', { solid: true });
+  box(t, 'basket-rim', [14, 36.5, -8], [19, 1.5, 15], 'wood', '#a87b4c');
+  box(t, 'jeans', [-6, 4, -4], [24, 8, 12], 'fabric', '#3d5a8a', { solid: true, turn: 0.15 });
+  box(t, 'jeans-pocket', [-6, 8.2, 0.5], [6, 0.4, 4], 'fabric', '#33507c', { turn: 0.15 });
+  box(t, 'tshirt', [-12, 1.5, 9], [18, 3, 12], 'fabric', '#e74c3c', { cover: true, turn: -0.3 });
+  box(t, 'sock-a', [8, 1, 8], [10, 2, 5], 'fabric', '#f4efe3', { cover: true, turn: 0.8 });
+  box(t, 'sock-b', [18, 1, 4], [10, 2, 5], 'fabric', '#2c3e50', { turn: -0.5 });
+  box(t, 'hoodie', [-18, 6, -8], [14, 12, 14], 'fabric', '#7a5aa0', { solid: true, turn: 0.4 });
+  lamp(t, 'hall', [0, 20, 15], '#ffd28a', 5, 50, 'hall light under the door');
+  lamp(t, 'moon', [20, 50, -10], '#9fb9ff', 5, 90, 'moonlight');
+  door(t, 'entry', 'entry', -20, 12, ['crack', 'climb', 'cable'], 'the door gap');
+  door(t, 'on', 'forward', 20, 12, ['crack', 'climb'], 'over the sock pile');
+  exit(t, 'vent', 'vent', 0, -13, 'the floor vent');
+  spot(t, 'pocket', -6, 3, 'cache', 'in a jeans pocket', { bias: 'curio' });
+  spot(t, 'tshirt', -12, 12, 'tucked', 'under the T-shirt');
+  spot(t, 'sock', 8, 11, 'tucked', 'inside a sock', { bias: 'curio' });
+  spot(t, 'hood', -18, 2, 'open', 'by the hoodie', { bias: 'part' });
+  spot(t, 'basket', 4, -9, 'open', 'beside the basket');
+  threat(t, 'roomba', 'roomba', 0, 6, 3, 'the roomba');
+  threat(t, 'cat', 'cat', 6, 4, 3, 'the cat nesting in the laundry');
+  threat(t, 'kid', 'kid', 0, 18, 4, 'the kid at the door');
+}
+
 // ---------------------------------------------------------------- garage
 {
   const w = 48, d = 32;
@@ -450,6 +541,34 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   threat(t, 'trap-b', 'trap', 10, 2, 4, 'a second mousetrap');
   threat(t, 'spider', 'spider', -18, -8, 3, 'a garage spider');
   threat(t, 'dog', 'dog', 6, 12, 4, 'the dog');
+}
+
+{
+  const w = 46, d = 28;
+  const t = template('garage-shelf', { name: 'The garage shelving', zone: 'garage', minDepth: 4, w, d, floor: 'metal', floorColor: '#7d8286', flavor: 'A steel shelf of jars and tins. Everything the family ever meant to fix is up here.', dark: true, elevated: 40, ceiling: 30 });
+  box(t, 'shelf-steel', [0, -0.8, 0], [52, 1.6, 34], 'metal', '#7d8286');
+  box(t, 'shelf-above', [0, 31, 0], [52, 1.6, 34], 'metal', '#6f7478');
+  box(t, 'pegwall', [0, 16, -15], [52, 32, 0.8], 'cardboard', '#b9925c');
+  cyl(t, 'screw-jar', [-14, 7, -7], 5, 14, 'glass', '#cfe0e3', { solid: true });
+  cyl(t, 'screw-jar-lid', [-14, 14.6, -7], 5.3, 1.2, 'metal', '#c0392b');
+  cyl(t, 'tin-a', [-2, 6, -8], 5.5, 12, 'metal', '#a9acae', { solid: true });
+  cyl(t, 'tin-b', [8, 4, -6], 4, 8, 'metal', '#3f7fbf', { solid: true });
+  box(t, 'toolbox', [16, 6, 2], [14, 12, 9], 'plastic', '#c0392b', { solid: true });
+  box(t, 'toolbox-handle', [16, 12.8, 2], [8, 1.2, 1.4], 'metal', '#222222');
+  box(t, 'tape-roll', [-12, 1.4, 8], [7, 2.8, 7], 'plastic', '#a6a6a6', { solid: true });
+  box(t, 'rag', [2, 0.8, 8], [12, 1.6, 9], 'fabric', '#8a6d4a', { cover: true, turn: 0.3 });
+  box(t, 'far-floor', [0, -40, 40], [200, 1, 120], 'concrete', '#8a8784');
+  lamp(t, 'charger', [-20, 4, 10], '#ff4a3a', 3, 24, 'a charger LED');
+  lamp(t, 'window', [10, 40, 20], '#9fb9ff', 6, 90, 'the garage window');
+  door(t, 'entry', 'entry', -20, 11, ['climb', 'cable'], 'the shelf upright');
+  door(t, 'edge', 'forward', 18, 12, ['drop', 'cable'], 'the shelf lip');
+  spot(t, 'jar', -10, -3, 'cache', 'spilled from the screw jar', { bias: 'part' });
+  spot(t, 'rag', 2, 11, 'tucked', 'under the oily rag');
+  spot(t, 'toolbox', 10, 6, 'tucked', 'behind the toolbox', { bias: 'part' });
+  spot(t, 'tape', -6, 8, 'open', 'by the tape roll', { bias: 'part' });
+  spot(t, 'tin', 2, -2, 'open', 'between the tins');
+  threat(t, 'spider', 'spider', 14, -9, 4, 'a shelf spider');
+  threat(t, 'trap', 'trap', -2, 4, 4, 'a mousetrap');
 }
 
 // ---------------------------------------------------------------- attic

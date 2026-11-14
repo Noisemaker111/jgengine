@@ -2073,12 +2073,590 @@
       }
     },
     {
+      "id": "bathroom-sink-lamp-door-crack",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 165,
+        "y": 14,
+        "z": 68
+      },
+      "label": "landing light through the door crack",
+      "meta": {
+        "template": "bathroom-sink",
+        "color": "#ffe9c4",
+        "intensity": 5,
+        "distance": 40
+      }
+    },
+    {
+      "id": "bathroom-sink-lamp-drip",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 169,
+        "y": 2,
+        "z": 53
+      },
+      "label": "the drip catching light",
+      "meta": {
+        "template": "bathroom-sink",
+        "color": "#9fd3ff",
+        "intensity": 2,
+        "distance": 14
+      }
+    },
+    {
+      "id": "bathroom-sink-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 147,
+        "y": 0,
+        "z": 65
+      },
+      "label": "the cupboard door gap",
+      "meta": {
+        "template": "bathroom-sink",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "bathroom-sink-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": 183,
+        "y": 0,
+        "z": 65
+      },
+      "label": "the gap behind the pedestal",
+      "meta": {
+        "template": "bathroom-sink",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "bathroom-sink-spot-bleach",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 157,
+        "y": 0,
+        "z": 54
+      },
+      "label": "behind the bleach bottle",
+      "meta": {
+        "template": "bathroom-sink",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "bathroom-sink-spot-sponge",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 177,
+        "y": 0,
+        "z": 64
+      },
+      "label": "under the sponge",
+      "meta": {
+        "template": "bathroom-sink",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "bathroom-sink-spot-pipe",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 171,
+        "y": 0,
+        "z": 44
+      },
+      "label": "behind the U-bend",
+      "meta": {
+        "template": "bathroom-sink",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "bathroom-sink-spot-brush",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 148.7,
+        "y": 0,
+        "z": 67.7
+      },
+      "label": "by the toothbrush",
+      "meta": {
+        "template": "bathroom-sink",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "bathroom-sink-spot-puddle",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 169.5,
+        "y": 0,
+        "z": 57
+      },
+      "label": "beside the drip",
+      "meta": {
+        "template": "bathroom-sink",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "bathroom-sink-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 145.1,
+        "y": 0,
+        "z": 45.5
+      },
+      "label": "a sink spider",
+      "meta": {
+        "template": "bathroom-sink",
+        "threat": "spider",
+        "minDepth": 2
+      }
+    },
+    {
+      "id": "bathroom-sink-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 171,
+        "y": 0,
+        "z": 57
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "bathroom-sink",
+        "threat": "trap",
+        "minDepth": 3
+      }
+    },
+    {
+      "id": "bathroom-sink-threat-lights",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 165,
+        "y": 0,
+        "z": 55
+      },
+      "label": "the bathroom light",
+      "meta": {
+        "template": "bathroom-sink",
+        "threat": "lights",
+        "minDepth": 2
+      }
+    },
+    {
+      "id": "dining-table-lamp-candle",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -163,
+        "y": 32,
+        "z": 155
+      },
+      "label": "a candle burning low",
+      "meta": {
+        "template": "dining-table",
+        "color": "#ffb347",
+        "intensity": 9,
+        "distance": 50
+      }
+    },
+    {
+      "id": "dining-table-lamp-moon",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -185,
+        "y": 60,
+        "z": 185
+      },
+      "label": "moonlight on the table",
+      "meta": {
+        "template": "dining-table",
+        "color": "#9fb9ff",
+        "intensity": 6,
+        "distance": 100
+      }
+    },
+    {
+      "id": "dining-table-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -185,
+        "y": 0,
+        "z": 178
+      },
+      "label": "the table leg",
+      "meta": {
+        "template": "dining-table",
+        "role": "entry",
+        "kinds": [
+          "climb",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "dining-table-door-drop",
+      "kind": "crumb-door",
+      "position": {
+        "x": -159,
+        "y": 0,
+        "z": 179.5
+      },
+      "label": "the table edge",
+      "meta": {
+        "template": "dining-table",
+        "role": "forward",
+        "kinds": [
+          "drop",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "dining-table-door-runner",
+      "kind": "crumb-door",
+      "position": {
+        "x": -143,
+        "y": 0,
+        "z": 152
+      },
+      "label": "the lamp flex",
+      "meta": {
+        "template": "dining-table",
+        "role": "forward",
+        "kinds": [
+          "cable",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "dining-table-spot-plate",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -175,
+        "y": 0,
+        "z": 167
+      },
+      "label": "on the dinner plate",
+      "meta": {
+        "template": "dining-table",
+        "tier": "open",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "dining-table-spot-salt",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -181.5,
+        "y": 0,
+        "z": 158
+      },
+      "label": "behind the salt and pepper",
+      "meta": {
+        "template": "dining-table",
+        "tier": "tucked",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "dining-table-spot-napkin",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -167,
+        "y": 0,
+        "z": 180
+      },
+      "label": "under the napkin",
+      "meta": {
+        "template": "dining-table",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "dining-table-spot-glass",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -155,
+        "y": 0,
+        "z": 156.5
+      },
+      "label": "by the water glass",
+      "meta": {
+        "template": "dining-table",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "dining-table-spot-candle",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -160,
+        "y": 0,
+        "z": 153
+      },
+      "label": "in the candle drips",
+      "meta": {
+        "template": "dining-table",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "dining-table-threat-cat",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -165,
+        "y": 0,
+        "z": 165
+      },
+      "label": "the cat on the table",
+      "meta": {
+        "template": "dining-table",
+        "threat": "cat",
+        "minDepth": 1
+      }
+    },
+    {
+      "id": "dining-table-threat-lights",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -165,
+        "y": 0,
+        "z": 165
+      },
+      "label": "the dining light",
+      "meta": {
+        "template": "dining-table",
+        "threat": "lights",
+        "minDepth": 2
+      }
+    },
+    {
+      "id": "laundry-pile-lamp-hall",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -55,
+        "y": 20,
+        "z": 180
+      },
+      "label": "hall light under the door",
+      "meta": {
+        "template": "laundry-pile",
+        "color": "#ffd28a",
+        "intensity": 5,
+        "distance": 50
+      }
+    },
+    {
+      "id": "laundry-pile-lamp-moon",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -35,
+        "y": 50,
+        "z": 155
+      },
+      "label": "moonlight",
+      "meta": {
+        "template": "laundry-pile",
+        "color": "#9fb9ff",
+        "intensity": 5,
+        "distance": 90
+      }
+    },
+    {
+      "id": "laundry-pile-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -75,
+        "y": 0,
+        "z": 177
+      },
+      "label": "the door gap",
+      "meta": {
+        "template": "laundry-pile",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "climb",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "laundry-pile-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": -35,
+        "y": 0,
+        "z": 177
+      },
+      "label": "over the sock pile",
+      "meta": {
+        "template": "laundry-pile",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "laundry-pile-exit-vent",
+      "kind": "crumb-exit",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 152
+      },
+      "label": "the floor vent",
+      "meta": {
+        "template": "laundry-pile",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "laundry-pile-spot-pocket",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -60.3,
+        "y": 0,
+        "z": 168.7
+      },
+      "label": "in a jeans pocket",
+      "meta": {
+        "template": "laundry-pile",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "laundry-pile-spot-tshirt",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -67,
+        "y": 0,
+        "z": 177
+      },
+      "label": "under the T-shirt",
+      "meta": {
+        "template": "laundry-pile",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "laundry-pile-spot-sock",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -47,
+        "y": 0,
+        "z": 176
+      },
+      "label": "inside a sock",
+      "meta": {
+        "template": "laundry-pile",
+        "tier": "tucked",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "laundry-pile-spot-hood",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -73,
+        "y": 0,
+        "z": 167
+      },
+      "label": "by the hoodie",
+      "meta": {
+        "template": "laundry-pile",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "laundry-pile-spot-basket",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -52.5,
+        "y": 0,
+        "z": 153.4
+      },
+      "label": "beside the basket",
+      "meta": {
+        "template": "laundry-pile",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "laundry-pile-threat-roomba",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 171
+      },
+      "label": "the roomba",
+      "meta": {
+        "template": "laundry-pile",
+        "threat": "roomba",
+        "minDepth": 3
+      }
+    },
+    {
+      "id": "laundry-pile-threat-cat",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -48.5,
+        "y": 0,
+        "z": 169.9
+      },
+      "label": "the cat nesting in the laundry",
+      "meta": {
+        "template": "laundry-pile",
+        "threat": "cat",
+        "minDepth": 3
+      }
+    },
+    {
+      "id": "laundry-pile-threat-kid",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 183
+      },
+      "label": "the kid at the door",
+      "meta": {
+        "template": "laundry-pile",
+        "threat": "kid",
+        "minDepth": 4
+      }
+    },
+    {
       "id": "workbench-lamp-charger",
       "kind": "crumb-lamp",
       "position": {
-        "x": 183,
+        "x": 73,
         "y": 12,
-        "z": 47
+        "z": 157
       },
       "label": "a battery charger LED",
       "meta": {
@@ -2092,9 +2670,9 @@
       "id": "workbench-lamp-window",
       "kind": "crumb-lamp",
       "position": {
-        "x": 175,
+        "x": 65,
         "y": 70,
-        "z": 65
+        "z": 175
       },
       "label": "the garage window",
       "meta": {
@@ -2108,9 +2686,9 @@
       "id": "workbench-door-entry",
       "kind": "crumb-door",
       "position": {
-        "x": 145,
+        "x": 35,
         "y": 0,
-        "z": 69
+        "z": 179
       },
       "label": "the garage door gap",
       "meta": {
@@ -2126,9 +2704,9 @@
       "id": "workbench-door-cord",
       "kind": "crumb-door",
       "position": {
-        "x": 183.5,
+        "x": 73.5,
         "y": 0,
-        "z": 69
+        "z": 179
       },
       "label": "the extension cord",
       "meta": {
@@ -2144,9 +2722,9 @@
       "id": "workbench-exit-dogdoor",
       "kind": "crumb-exit",
       "position": {
-        "x": 144,
+        "x": 34,
         "y": 0,
-        "z": 61
+        "z": 171
       },
       "label": "the cat flap to the garden",
       "meta": {
@@ -2158,9 +2736,9 @@
       "id": "workbench-spot-screws",
       "kind": "crumb-spot",
       "position": {
-        "x": 169,
+        "x": 59,
         "y": 0,
-        "z": 61
+        "z": 171
       },
       "label": "among the screws",
       "meta": {
@@ -2173,9 +2751,9 @@
       "id": "workbench-spot-can",
       "kind": "crumb-spot",
       "position": {
-        "x": 161,
+        "x": 51,
         "y": 0,
-        "z": 63
+        "z": 173
       },
       "label": "behind the paint can",
       "meta": {
@@ -2188,9 +2766,9 @@
       "id": "workbench-spot-reel",
       "kind": "crumb-spot",
       "position": {
-        "x": 179,
+        "x": 69,
         "y": 0,
-        "z": 51
+        "z": 161
       },
       "label": "by the cord reel",
       "meta": {
@@ -2203,9 +2781,9 @@
       "id": "workbench-spot-stain",
       "kind": "crumb-spot",
       "position": {
-        "x": 167,
+        "x": 57,
         "y": 0,
-        "z": 53
+        "z": 163
       },
       "label": "at the oil stain",
       "meta": {
@@ -2217,9 +2795,9 @@
       "id": "workbench-spot-leg",
       "kind": "crumb-spot",
       "position": {
-        "x": 147.5,
+        "x": 37.5,
         "y": 0,
-        "z": 45
+        "z": 155
       },
       "label": "at the bench leg",
       "meta": {
@@ -2232,9 +2810,9 @@
       "id": "workbench-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": 161,
+        "x": 51,
         "y": 0,
-        "z": 55
+        "z": 165
       },
       "label": "a mousetrap",
       "meta": {
@@ -2247,9 +2825,9 @@
       "id": "workbench-threat-trap-b",
       "kind": "crumb-threat",
       "position": {
-        "x": 174.8,
+        "x": 64.8,
         "y": 0,
-        "z": 56.6
+        "z": 166.6
       },
       "label": "a second mousetrap",
       "meta": {
@@ -2262,9 +2840,9 @@
       "id": "workbench-threat-spider",
       "kind": "crumb-threat",
       "position": {
-        "x": 147,
+        "x": 37,
         "y": 0,
-        "z": 47
+        "z": 157
       },
       "label": "a garage spider",
       "meta": {
@@ -2277,9 +2855,9 @@
       "id": "workbench-threat-dog",
       "kind": "crumb-threat",
       "position": {
-        "x": 169.3,
+        "x": 59.3,
         "y": 0,
-        "z": 68
+        "z": 178
       },
       "label": "the dog",
       "meta": {
@@ -2289,12 +2867,183 @@
       }
     },
     {
+      "id": "garage-shelf-lamp-charger",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 145,
+        "y": 4,
+        "z": 175
+      },
+      "label": "a charger LED",
+      "meta": {
+        "template": "garage-shelf",
+        "color": "#ff4a3a",
+        "intensity": 3,
+        "distance": 24
+      }
+    },
+    {
+      "id": "garage-shelf-lamp-window",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 175,
+        "y": 40,
+        "z": 185
+      },
+      "label": "the garage window",
+      "meta": {
+        "template": "garage-shelf",
+        "color": "#9fb9ff",
+        "intensity": 6,
+        "distance": 90
+      }
+    },
+    {
+      "id": "garage-shelf-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 145,
+        "y": 0,
+        "z": 176
+      },
+      "label": "the shelf upright",
+      "meta": {
+        "template": "garage-shelf",
+        "role": "entry",
+        "kinds": [
+          "climb",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "garage-shelf-door-edge",
+      "kind": "crumb-door",
+      "position": {
+        "x": 183,
+        "y": 0,
+        "z": 177
+      },
+      "label": "the shelf lip",
+      "meta": {
+        "template": "garage-shelf",
+        "role": "forward",
+        "kinds": [
+          "drop",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "garage-shelf-spot-jar",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 155.5,
+        "y": 0,
+        "z": 163.9
+      },
+      "label": "spilled from the screw jar",
+      "meta": {
+        "template": "garage-shelf",
+        "tier": "cache",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-shelf-spot-rag",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 167,
+        "y": 0,
+        "z": 176
+      },
+      "label": "under the oily rag",
+      "meta": {
+        "template": "garage-shelf",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "garage-shelf-spot-toolbox",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 175.4,
+        "y": 0,
+        "z": 172.4
+      },
+      "label": "behind the toolbox",
+      "meta": {
+        "template": "garage-shelf",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-shelf-spot-tape",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 159,
+        "y": 0,
+        "z": 173
+      },
+      "label": "by the tape roll",
+      "meta": {
+        "template": "garage-shelf",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "garage-shelf-spot-tin",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 167.3,
+        "y": 0,
+        "z": 163.4
+      },
+      "label": "between the tins",
+      "meta": {
+        "template": "garage-shelf",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "garage-shelf-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 179,
+        "y": 0,
+        "z": 156
+      },
+      "label": "a shelf spider",
+      "meta": {
+        "template": "garage-shelf",
+        "threat": "spider",
+        "minDepth": 4
+      }
+    },
+    {
+      "id": "garage-shelf-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 163,
+        "y": 0,
+        "z": 169
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "garage-shelf",
+        "threat": "trap",
+        "minDepth": 4
+      }
+    },
+    {
       "id": "attic-boxes-lamp-window",
       "kind": "crumb-lamp",
       "position": {
         "x": -147,
         "y": 28,
-        "z": 153
+        "z": 263
       },
       "label": "moonlight through the attic window",
       "meta": {
@@ -2310,7 +3059,7 @@
       "position": {
         "x": -183,
         "y": 6,
-        "z": 179
+        "z": 289
       },
       "label": "light from the hatch",
       "meta": {
@@ -2326,7 +3075,7 @@
       "position": {
         "x": -183,
         "y": 0,
-        "z": 179
+        "z": 289
       },
       "label": "the attic hatch",
       "meta": {
@@ -2345,7 +3094,7 @@
       "position": {
         "x": -147,
         "y": 0,
-        "z": 179
+        "z": 289
       },
       "label": "along the beams",
       "meta": {
@@ -2363,7 +3112,7 @@
       "position": {
         "x": -184,
         "y": 0,
-        "z": 175
+        "z": 285
       },
       "label": "the heating vent",
       "meta": {
@@ -2377,7 +3126,7 @@
       "position": {
         "x": -155,
         "y": 0,
-        "z": 162
+        "z": 272
       },
       "label": "at the old trunk",
       "meta": {
@@ -2392,7 +3141,7 @@
       "position": {
         "x": -167,
         "y": 0,
-        "z": 163
+        "z": 273
       },
       "label": "between the boxes",
       "meta": {
@@ -2407,7 +3156,7 @@
       "position": {
         "x": -169,
         "y": 0,
-        "z": 174
+        "z": 284
       },
       "label": "in the insulation",
       "meta": {
@@ -2421,7 +3170,7 @@
       "position": {
         "x": -161,
         "y": 0,
-        "z": 171
+        "z": 281
       },
       "label": "on the joist",
       "meta": {
@@ -2436,7 +3185,7 @@
       "position": {
         "x": -147,
         "y": 0,
-        "z": 161
+        "z": 271
       },
       "label": "under the window",
       "meta": {
@@ -2451,7 +3200,7 @@
       "position": {
         "x": -166,
         "y": 0,
-        "z": 153.3
+        "z": 263.3
       },
       "label": "the attic spider",
       "meta": {
@@ -2466,7 +3215,7 @@
       "position": {
         "x": -146,
         "y": 0,
-        "z": 178.9
+        "z": 288.9
       },
       "label": "another spider",
       "meta": {
@@ -2481,7 +3230,7 @@
       "position": {
         "x": -175,
         "y": 0,
-        "z": 169
+        "z": 279
       },
       "label": "an old mousetrap",
       "meta": {
@@ -8546,13 +9295,1272 @@
       }
     },
     {
-      "id": "room-workbench",
+      "id": "room-bathroom-sink",
       "kind": "crumb-room",
       "shape": "box",
       "center": {
         "x": 165,
         "y": 0.5,
         "z": 55
+      },
+      "halfExtents": {
+        "x": 22,
+        "y": 0.5,
+        "z": 14
+      },
+      "label": "Under the bathroom sink",
+      "meta": {
+        "template": "bathroom-sink",
+        "zone": "kidroom",
+        "minDepth": 2,
+        "floor": "tile",
+        "floorColor": "#cfe0e3",
+        "flavor": "A cupboard of bottles taller than towers. The U-bend drips like a slow clock.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 34,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "bathroom-sink-cabinet-back-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 18,
+        "z": 40.5
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 18,
+        "z": 0.5
+      },
+      "color": "#f2efe8",
+      "label": "cabinet-back",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-cabinet-top-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 35,
+        "z": 55
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 1,
+        "z": 15
+      },
+      "color": "#e8e3d8",
+      "label": "cabinet-top",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-cabinet-side-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 141,
+        "y": 18,
+        "z": 55
+      },
+      "halfExtents": {
+        "x": 0.5,
+        "y": 18,
+        "z": 15
+      },
+      "color": "#ebe6db",
+      "label": "cabinet-side",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-cabinet-side-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 189,
+        "y": 18,
+        "z": 55
+      },
+      "halfExtents": {
+        "x": 0.5,
+        "y": 18,
+        "z": 15
+      },
+      "color": "#ebe6db",
+      "label": "cabinet-side",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-waste-pipe-5",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 169,
+        "y": 22,
+        "z": 46
+      },
+      "radius": 1.8,
+      "height": 26,
+      "color": "#d8dde0",
+      "label": "waste-pipe",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-u-bend-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 169,
+        "y": 9,
+        "z": 49
+      },
+      "radius": 1.8,
+      "height": 8,
+      "color": "#d8dde0",
+      "label": "u-bend",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "chrome",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "bathroom-sink-pipe-down-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 169,
+        "y": 4,
+        "z": 52
+      },
+      "radius": 1.8,
+      "height": 8,
+      "color": "#d8dde0",
+      "label": "pipe-down",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "chrome",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-bleach-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 151,
+        "y": 13,
+        "z": 49
+      },
+      "radius": 5,
+      "height": 26,
+      "color": "#3a7bd5",
+      "label": "bleach",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "plastic",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-bleach-cap-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 151,
+        "y": 27,
+        "z": 49
+      },
+      "radius": 2,
+      "height": 3,
+      "color": "#e74c3c",
+      "label": "bleach-cap",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "plastic",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-spray-10",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 161,
+        "y": 11,
+        "z": 46
+      },
+      "radius": 3.6,
+      "height": 22,
+      "color": "#7cc48a",
+      "label": "spray",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "plastic",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-spray-head-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 161,
+        "y": 23,
+        "z": 47
+      },
+      "halfExtents": {
+        "x": 1.2,
+        "y": 1.5,
+        "z": 2.5
+      },
+      "color": "#f2f2f2",
+      "label": "spray-head",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "plastic",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-sponge-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 177,
+        "y": 1.5,
+        "z": 61
+      },
+      "halfExtents": {
+        "x": 4.5,
+        "y": 1.5,
+        "z": 3
+      },
+      "color": "#f1c40f",
+      "label": "sponge",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-sponge-scrub-13",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 177,
+        "y": 3.2,
+        "z": 61
+      },
+      "halfExtents": {
+        "x": 4.5,
+        "y": 0.3,
+        "z": 3
+      },
+      "color": "#27ae60",
+      "label": "sponge-scrub",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "fabric",
+        "solid": false,
+        "cover": false,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-toothbrush-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 159,
+        "y": 0.7,
+        "z": 63
+      },
+      "halfExtents": {
+        "x": 1,
+        "y": 0.7,
+        "z": 13
+      },
+      "color": "#c45ab3",
+      "label": "toothbrush",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": -0.9,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-drip-puddle-15",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 169,
+        "y": 0.05,
+        "z": 53
+      },
+      "radius": 3.5,
+      "height": 0.1,
+      "color": "#9fd3ff",
+      "label": "drip-puddle",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "bathroom-sink-door-gap-16",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 17,
+        "z": 69.6
+      },
+      "halfExtents": {
+        "x": 22,
+        "y": 17,
+        "z": 0.2
+      },
+      "color": "#fbf8f1",
+      "label": "door-gap",
+      "meta": {
+        "template": "bathroom-sink",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0.4,
+        "roll": 0
+      }
+    },
+    {
+      "id": "room-dining-table",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": 0.5,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "On the dining table",
+      "meta": {
+        "template": "dining-table",
+        "zone": "living",
+        "minDepth": 1,
+        "floor": "wood",
+        "floorColor": "#7a4a2a",
+        "flavor": "Last night’s supper was never cleared. Plates like frozen lakes, a fork like a fallen tower.",
+        "root": false,
+        "dark": false,
+        "elevated": 50,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "dining-table-table-slab-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": -1.5,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 28,
+        "y": 1.5,
+        "z": 19
+      },
+      "color": "#7a4a2a",
+      "label": "table-slab",
+      "meta": {
+        "template": "dining-table",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-table-edge-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": -1.5,
+        "z": 184.3
+      },
+      "halfExtents": {
+        "x": 28,
+        "y": 1.6,
+        "z": 0.5
+      },
+      "color": "#5c3b22",
+      "label": "table-edge",
+      "meta": {
+        "template": "dining-table",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-plate-3",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -175,
+        "y": 0.5,
+        "z": 167
+      },
+      "radius": 11,
+      "height": 1,
+      "color": "#f4f1ea",
+      "label": "plate",
+      "meta": {
+        "template": "dining-table",
+        "material": "ceramic",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-plate-rim-4",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -175,
+        "y": 1.1,
+        "z": 167
+      },
+      "radius": 11.2,
+      "height": 0.3,
+      "color": "#3b5f7a",
+      "label": "plate-rim",
+      "meta": {
+        "template": "dining-table",
+        "material": "ceramic",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-gravy-5",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -177,
+        "y": 1.2,
+        "z": 169
+      },
+      "radius": 4,
+      "height": 0.2,
+      "color": "#7a4a26",
+      "label": "gravy",
+      "meta": {
+        "template": "dining-table",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-fork-handle-6",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -153,
+        "y": 0.6,
+        "z": 169
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.6,
+        "z": 13
+      },
+      "color": "#d8dde0",
+      "label": "fork-handle",
+      "meta": {
+        "template": "dining-table",
+        "material": "chrome",
+        "solid": true,
+        "cover": false,
+        "turn": 0.25,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-fork-tine-7",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -156.2,
+        "y": 0.6,
+        "z": 154
+      },
+      "halfExtents": {
+        "x": 0.3,
+        "y": 0.5,
+        "z": 4
+      },
+      "color": "#d8dde0",
+      "label": "fork-tine",
+      "meta": {
+        "template": "dining-table",
+        "material": "chrome",
+        "solid": false,
+        "cover": false,
+        "turn": 0.25,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-fork-tine-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -155.1,
+        "y": 0.6,
+        "z": 154
+      },
+      "halfExtents": {
+        "x": 0.3,
+        "y": 0.5,
+        "z": 4
+      },
+      "color": "#d8dde0",
+      "label": "fork-tine",
+      "meta": {
+        "template": "dining-table",
+        "material": "chrome",
+        "solid": false,
+        "cover": false,
+        "turn": 0.25,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-fork-tine-9",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -154,
+        "y": 0.6,
+        "z": 154
+      },
+      "halfExtents": {
+        "x": 0.3,
+        "y": 0.5,
+        "z": 4
+      },
+      "color": "#d8dde0",
+      "label": "fork-tine",
+      "meta": {
+        "template": "dining-table",
+        "material": "chrome",
+        "solid": false,
+        "cover": false,
+        "turn": 0.25,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-fork-tine-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -152.9,
+        "y": 0.6,
+        "z": 154
+      },
+      "halfExtents": {
+        "x": 0.3,
+        "y": 0.5,
+        "z": 4
+      },
+      "color": "#d8dde0",
+      "label": "fork-tine",
+      "meta": {
+        "template": "dining-table",
+        "material": "chrome",
+        "solid": false,
+        "cover": false,
+        "turn": 0.25,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-glass-11",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -149,
+        "y": 9,
+        "z": 157
+      },
+      "radius": 5,
+      "height": 18,
+      "color": "#d9eef4",
+      "label": "glass",
+      "meta": {
+        "template": "dining-table",
+        "material": "glass",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-glass-water-12",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -149,
+        "y": 5,
+        "z": 157
+      },
+      "radius": 4.7,
+      "height": 9,
+      "color": "#9fd3ff",
+      "label": "glass-water",
+      "meta": {
+        "template": "dining-table",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-salt-13",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -185,
+        "y": 6,
+        "z": 155
+      },
+      "radius": 2.4,
+      "height": 12,
+      "color": "#f4f1ea",
+      "label": "salt",
+      "meta": {
+        "template": "dining-table",
+        "material": "ceramic",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-pepper-14",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -180,
+        "y": 6,
+        "z": 153
+      },
+      "radius": 2.4,
+      "height": 12,
+      "color": "#3a3330",
+      "label": "pepper",
+      "meta": {
+        "template": "dining-table",
+        "material": "ceramic",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-candle-stick-15",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -163,
+        "y": 10,
+        "z": 155
+      },
+      "radius": 1.6,
+      "height": 20,
+      "color": "#c9a24b",
+      "label": "candle-stick",
+      "meta": {
+        "template": "dining-table",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-candle-wax-16",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -163,
+        "y": 26,
+        "z": 155
+      },
+      "radius": 1.2,
+      "height": 12,
+      "color": "#f2d7a4",
+      "label": "candle-wax",
+      "meta": {
+        "template": "dining-table",
+        "material": "wax",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-candle-flame-17",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -163,
+        "y": 33,
+        "z": 155
+      },
+      "radius": 0.9,
+      "color": "#ffb347",
+      "label": "candle-flame",
+      "meta": {
+        "template": "dining-table",
+        "material": "emissive",
+        "solid": false,
+        "glow": 2.5
+      }
+    },
+    {
+      "id": "dining-table-napkin-fold-18",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -167,
+        "y": 1.4,
+        "z": 177
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 1.4,
+        "z": 4
+      },
+      "color": "#c45a4a",
+      "label": "napkin-fold",
+      "meta": {
+        "template": "dining-table",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-far-floor-19",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": -50,
+        "z": 205
+      },
+      "halfExtents": {
+        "x": 100,
+        "y": 0.5,
+        "z": 60
+      },
+      "color": "#8c5a33",
+      "label": "far-floor",
+      "meta": {
+        "template": "dining-table",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-far-chair-20",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -205,
+        "y": -28,
+        "z": 191
+      },
+      "radius": 2,
+      "height": 44,
+      "color": "#b07a45",
+      "label": "far-chair",
+      "meta": {
+        "template": "dining-table",
+        "material": "wood",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "dining-table-far-chair-21",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -125,
+        "y": -28,
+        "z": 191
+      },
+      "radius": 2,
+      "height": 44,
+      "color": "#b07a45",
+      "label": "far-chair",
+      "meta": {
+        "template": "dining-table",
+        "material": "wood",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "room-laundry-pile",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 0.5,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 23,
+        "y": 0.5,
+        "z": 15
+      },
+      "label": "The laundry mountain",
+      "meta": {
+        "template": "laundry-pile",
+        "zone": "kidroom",
+        "minDepth": 3,
+        "floor": "carpet",
+        "floorColor": "#6d7d96",
+        "flavor": "A week of clothes in a heap by the basket. Pockets full of forgotten things.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "laundry-pile-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 60,
+        "z": 149
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#c8b8d8",
+      "label": "wall-north",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 2.8,
+        "z": 149.8
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#f4efe3",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 5.75,
+        "z": 149.8
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#f4efe3",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-basket-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -41,
+        "y": 18,
+        "z": 157
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 18,
+        "z": 7
+      },
+      "color": "#c8a06a",
+      "label": "basket",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "cardboard",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-basket-rim-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -41,
+        "y": 36.5,
+        "z": 157
+      },
+      "halfExtents": {
+        "x": 9.5,
+        "y": 0.75,
+        "z": 7.5
+      },
+      "color": "#a87b4c",
+      "label": "basket-rim",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-jeans-6",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -61,
+        "y": 4,
+        "z": 161
+      },
+      "halfExtents": {
+        "x": 12,
+        "y": 4,
+        "z": 6
+      },
+      "color": "#3d5a8a",
+      "label": "jeans",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": true,
+        "cover": false,
+        "turn": 0.15,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-jeans-pocket-7",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -61,
+        "y": 8.2,
+        "z": 165.5
+      },
+      "halfExtents": {
+        "x": 3,
+        "y": 0.2,
+        "z": 2
+      },
+      "color": "#33507c",
+      "label": "jeans-pocket",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": false,
+        "cover": false,
+        "turn": 0.15,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-tshirt-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -67,
+        "y": 1.5,
+        "z": 174
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 1.5,
+        "z": 6
+      },
+      "color": "#e74c3c",
+      "label": "tshirt",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": -0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-sock-a-9",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -47,
+        "y": 1,
+        "z": 173
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 1,
+        "z": 2.5
+      },
+      "color": "#f4efe3",
+      "label": "sock-a",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.8,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-sock-b-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -37,
+        "y": 1,
+        "z": 169
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 1,
+        "z": 2.5
+      },
+      "color": "#2c3e50",
+      "label": "sock-b",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": false,
+        "cover": false,
+        "turn": -0.5,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "laundry-pile-hoodie-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -73,
+        "y": 6,
+        "z": 157
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 6,
+        "z": 7
+      },
+      "color": "#7a5aa0",
+      "label": "hoodie",
+      "meta": {
+        "template": "laundry-pile",
+        "material": "fabric",
+        "solid": true,
+        "cover": false,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "room-workbench",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 0.5,
+        "z": 165
       },
       "halfExtents": {
         "x": 24,
@@ -8580,9 +10588,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 165,
+        "x": 55,
         "y": 60,
-        "z": 38
+        "z": 148
       },
       "halfExtents": {
         "x": 26,
@@ -8606,9 +10614,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 165,
+        "x": 55,
         "y": 2.8,
-        "z": 38.8
+        "z": 148.8
       },
       "halfExtents": {
         "x": 26,
@@ -8632,9 +10640,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 165,
+        "x": 55,
         "y": 5.75,
-        "z": 38.8
+        "z": 148.8
       },
       "halfExtents": {
         "x": 26,
@@ -8658,9 +10666,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 165,
+        "x": 55,
         "y": 60,
-        "z": 39.4
+        "z": 149.4
       },
       "halfExtents": {
         "x": 25,
@@ -8684,9 +10692,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 145,
+        "x": 35,
         "y": 30,
-        "z": 43
+        "z": 153
       },
       "halfExtents": {
         "x": 1.5,
@@ -8710,9 +10718,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 145,
+        "x": 35,
         "y": 30,
-        "z": 65
+        "z": 175
       },
       "halfExtents": {
         "x": 1.5,
@@ -8736,9 +10744,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 185,
+        "x": 75,
         "y": 30,
-        "z": 43
+        "z": 153
       },
       "halfExtents": {
         "x": 1.5,
@@ -8762,9 +10770,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 185,
+        "x": 75,
         "y": 30,
-        "z": 65
+        "z": 175
       },
       "halfExtents": {
         "x": 1.5,
@@ -8788,9 +10796,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 165,
+        "x": 55,
         "y": 61,
-        "z": 54
+        "z": 164
       },
       "halfExtents": {
         "x": 25,
@@ -8814,9 +10822,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 153,
+        "x": 43,
         "y": 8,
-        "z": 59
+        "z": 169
       },
       "radius": 7,
       "height": 16,
@@ -8836,9 +10844,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 153,
+        "x": 43,
         "y": 16.2,
-        "z": 59
+        "z": 169
       },
       "radius": 7.1,
       "height": 0.6,
@@ -8858,9 +10866,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 177,
+        "x": 67,
         "y": 6,
-        "z": 63
+        "z": 173
       },
       "radius": 5.5,
       "height": 12,
@@ -8880,9 +10888,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 167,
+        "x": 57,
         "y": 0.6,
-        "z": 49
+        "z": 159
       },
       "radius": 0.5,
       "height": 7,
@@ -8902,9 +10910,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 171,
+        "x": 61,
         "y": 0.6,
-        "z": 59
+        "z": 169
       },
       "radius": 0.5,
       "height": 7,
@@ -8924,9 +10932,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 161,
+        "x": 51,
         "y": 0.6,
-        "z": 65
+        "z": 175
       },
       "radius": 0.5,
       "height": 7,
@@ -8946,9 +10954,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 169,
+        "x": 59,
         "y": 0.05,
-        "z": 53
+        "z": 163
       },
       "halfExtents": {
         "x": 8,
@@ -8972,9 +10980,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 183,
+        "x": 73,
         "y": 7,
-        "z": 47
+        "z": 157
       },
       "radius": 7,
       "height": 6,
@@ -8994,9 +11002,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 173,
+        "x": 63,
         "y": 0.5,
-        "z": 47
+        "z": 157
       },
       "radius": 0.6,
       "height": 22,
@@ -9016,9 +11024,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 141.4,
+        "x": 31.4,
         "y": 9,
-        "z": 61
+        "z": 171
       },
       "halfExtents": {
         "x": 0.3,
@@ -9038,13 +11046,339 @@
       }
     },
     {
+      "id": "room-garage-shelf",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 0.5,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 23,
+        "y": 0.5,
+        "z": 14
+      },
+      "label": "The garage shelving",
+      "meta": {
+        "template": "garage-shelf",
+        "zone": "garage",
+        "minDepth": 4,
+        "floor": "metal",
+        "floorColor": "#7d8286",
+        "flavor": "A steel shelf of jars and tins. Everything the family ever meant to fix is up here.",
+        "root": false,
+        "dark": true,
+        "elevated": 40,
+        "ceiling": 30,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "garage-shelf-shelf-steel-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": -0.8,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.8,
+        "z": 17
+      },
+      "color": "#7d8286",
+      "label": "shelf-steel",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-shelf-above-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 31,
+        "z": 165
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.8,
+        "z": 17
+      },
+      "color": "#6f7478",
+      "label": "shelf-above",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-pegwall-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 16,
+        "z": 150
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 16,
+        "z": 0.4
+      },
+      "color": "#b9925c",
+      "label": "pegwall",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "cardboard",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-screw-jar-4",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 151,
+        "y": 7,
+        "z": 158
+      },
+      "radius": 5,
+      "height": 14,
+      "color": "#cfe0e3",
+      "label": "screw-jar",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "glass",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-screw-jar-lid-5",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 151,
+        "y": 14.6,
+        "z": 158
+      },
+      "radius": 5.3,
+      "height": 1.2,
+      "color": "#c0392b",
+      "label": "screw-jar-lid",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-tin-a-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 163,
+        "y": 6,
+        "z": 157
+      },
+      "radius": 5.5,
+      "height": 12,
+      "color": "#a9acae",
+      "label": "tin-a",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-tin-b-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 173,
+        "y": 4,
+        "z": 159
+      },
+      "radius": 4,
+      "height": 8,
+      "color": "#3f7fbf",
+      "label": "tin-b",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-toolbox-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 181,
+        "y": 6,
+        "z": 167
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 6,
+        "z": 4.5
+      },
+      "color": "#c0392b",
+      "label": "toolbox",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-toolbox-handle-9",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 181,
+        "y": 12.8,
+        "z": 167
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 0.6,
+        "z": 0.7
+      },
+      "color": "#222222",
+      "label": "toolbox-handle",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-tape-roll-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 153,
+        "y": 1.4,
+        "z": 173
+      },
+      "halfExtents": {
+        "x": 3.5,
+        "y": 1.4,
+        "z": 3.5
+      },
+      "color": "#a6a6a6",
+      "label": "tape-roll",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-rag-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 167,
+        "y": 0.8,
+        "z": 173
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 0.8,
+        "z": 4.5
+      },
+      "color": "#8a6d4a",
+      "label": "rag",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "garage-shelf-far-floor-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": -40,
+        "z": 205
+      },
+      "halfExtents": {
+        "x": 100,
+        "y": 0.5,
+        "z": 60
+      },
+      "color": "#8a8784",
+      "label": "far-floor",
+      "meta": {
+        "template": "garage-shelf",
+        "material": "concrete",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
       "id": "room-attic-boxes",
       "kind": "crumb-room",
       "shape": "box",
       "center": {
         "x": -165,
         "y": 0.5,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 23,
@@ -9074,7 +11408,7 @@
       "center": {
         "x": -185,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9100,7 +11434,7 @@
       "center": {
         "x": -177,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9126,7 +11460,7 @@
       "center": {
         "x": -169,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9152,7 +11486,7 @@
       "center": {
         "x": -161,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9178,7 +11512,7 @@
       "center": {
         "x": -153,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9204,7 +11538,7 @@
       "center": {
         "x": -145,
         "y": 0.6,
-        "z": 165
+        "z": 275
       },
       "halfExtents": {
         "x": 1.5,
@@ -9230,7 +11564,7 @@
       "center": {
         "x": -177,
         "y": 12,
-        "z": 157
+        "z": 267
       },
       "halfExtents": {
         "x": 9,
@@ -9256,7 +11590,7 @@
       "center": {
         "x": -177,
         "y": 24.1,
-        "z": 157
+        "z": 267
       },
       "halfExtents": {
         "x": 1.5,
@@ -9282,7 +11616,7 @@
       "center": {
         "x": -177,
         "y": 30,
-        "z": 156
+        "z": 266
       },
       "halfExtents": {
         "x": 7,
@@ -9308,7 +11642,7 @@
       "center": {
         "x": -151,
         "y": 8,
-        "z": 171
+        "z": 281
       },
       "halfExtents": {
         "x": 7,
@@ -9334,7 +11668,7 @@
       "center": {
         "x": -155,
         "y": 8,
-        "z": 155
+        "z": 265
       },
       "halfExtents": {
         "x": 10,
@@ -9360,7 +11694,7 @@
       "center": {
         "x": -155,
         "y": 8,
-        "z": 160.1
+        "z": 270.1
       },
       "halfExtents": {
         "x": 10.2,
@@ -9386,7 +11720,7 @@
       "center": {
         "x": -155,
         "y": 12,
-        "z": 160.3
+        "z": 270.3
       },
       "halfExtents": {
         "x": 1,
@@ -9412,7 +11746,7 @@
       "center": {
         "x": -169,
         "y": 1.4,
-        "z": 177
+        "z": 287
       },
       "halfExtents": {
         "x": 8,
@@ -9438,7 +11772,7 @@
       "center": {
         "x": -165,
         "y": 50,
-        "z": 145
+        "z": 255
       },
       "halfExtents": {
         "x": 25,
@@ -9464,7 +11798,7 @@
       "center": {
         "x": -145,
         "y": 30,
-        "z": 149
+        "z": 259
       },
       "halfExtents": {
         "x": 4,
@@ -9490,7 +11824,7 @@
       "center": {
         "x": -186,
         "y": 3,
-        "z": 175
+        "z": 285
       },
       "halfExtents": {
         "x": 0.3,
@@ -9520,12 +11854,507 @@
       "minX": -220,
       "minZ": -220,
       "maxX": 220,
-      "maxZ": 220
+      "maxZ": 330
     },
     "cellSize": 10,
     "cols": 44,
-    "rows": 44,
+    "rows": 55,
     "offsets": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -11553,6 +14382,490 @@
       0
     ],
     "surfaces": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,

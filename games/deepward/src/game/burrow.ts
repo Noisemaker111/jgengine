@@ -35,7 +35,7 @@ export const UPGRADE_IDS = Object.keys(UPGRADES) as UpgradeId[];
 
 /** Charts: the house beyond the kitchen and the living room, each opened at the map room. */
 export const CHARTS: Record<Exclude<Zone, "kitchen" | "living">, { cost: Cost; flavor: string }> = {
-  kidroom: { cost: { items: { crayon: 1 }, caps: 15 }, flavor: "Up the stairs: the kid's bedroom, full of toys and a sleeping giant." },
+  kidroom: { cost: { items: { crayon: 1 }, caps: 15 }, flavor: "Up the stairs: the kid's bedroom, the bathroom and the laundry, full of toys and a sleeping giant." },
   garage: { cost: { items: { screw: 1, spring: 1 }, caps: 25 }, flavor: "Through the hall: the cold garage, all parts and traps." },
   attic: { cost: { items: { "tiny-key": 1, "thread-spool": 1 }, caps: 40 }, flavor: "Up through the hatch: the attic, where the old treasure sleeps." },
 };
