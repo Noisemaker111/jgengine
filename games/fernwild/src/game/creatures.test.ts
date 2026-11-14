@@ -379,7 +379,7 @@ test("a ridden Watchwing lifts a mowbot beside it and lets it go, but is too sma
   tick(runner, 0.1);
   runner.ui.tryInvoke("airlift", {});
   const mowbot = airliftView(runner.ctx).holding;
-  expect(mowbot).toStartWith("dodo_");
+  expect(mowbot).toStartWith("mowbot_");
   runner.ui.tryInvoke("airlift", {});
   tick(runner, 0.1);
   expect(airliftView(runner.ctx).holding).toBeNull();

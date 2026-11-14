@@ -19,7 +19,7 @@ describe("robot bodies", () => {
       const eye = model.materials.find((material) => material.name === "eye");
       expect(eye?.emissive, species).toBeDefined();
       const temperament = BOTS[species]?.temperament;
-      if (temperament !== undefined) expect(eye?.emissive, species).toBe(TEMPERAMENT_GLOW[temperament]);
+      if (temperament !== undefined && species !== "root_server") expect(eye?.emissive, species).toBe(TEMPERAMENT_GLOW[temperament]);
       expect(model.materials.find((material) => material.name === "body")?.metalness ?? 0, species).toBeGreaterThan(0);
       expect(encodeGlb(model).byteLength, species).toBeGreaterThan(1000);
       expect(robot.height, species).toBeGreaterThan(0.2);

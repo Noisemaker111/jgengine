@@ -27,6 +27,8 @@ export interface IslandCave {
   artifact: string;
   /** ARK's hard caves: deeper, more dwellers. */
   hard: boolean;
+  /** The guardian that sleeps in its chamber, if any (the Root Server). */
+  boss?: string;
   layout: CaveLayout;
 }
 
@@ -38,12 +40,13 @@ export function islandCaves(ground: (x: number, z: number) => number): IslandCav
   return editorLayers.paths
     .filter((path) => path.kind === "cave")
     .map((path) => {
-      const meta = (path.meta ?? {}) as { artifact?: string; height?: number; chamber?: number; cover?: number; hard?: boolean };
+      const meta = (path.meta ?? {}) as { artifact?: string; height?: number; chamber?: number; cover?: number; hard?: boolean; boss?: string };
       return {
         id: path.id,
         label: path.label ?? path.id,
         artifact: meta.artifact ?? "",
         hard: meta.hard === true,
+        ...(meta.boss === undefined ? {} : { boss: meta.boss }),
         layout: caveLayout(
           {
             path: path.points.map((point) => [point.x, point.z] as const),

@@ -1345,7 +1345,7 @@ function revertToWild(ctx: GameContext, world: World, creature: Creature): void 
 /** Start or stop a Signal Storm now, whatever the night (a console, a proof). */
 export function setStorm(ctx: GameContext, on: boolean): CreatureEvent[] {
   const world = worldOf(ctx);
-  if (world.storm === on) return [];
+  if (world.storm === on || (on && world.stormsEnded)) return [];
   return on ? startStorm(ctx, world) : stopStorm(ctx, world);
 }
 
@@ -1808,6 +1808,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     }),
     scrapped: creature.scrapped,
     dormant: creature.dormant,
+    overclocked: !creature.tamed && world.storm,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
     lineage:
       creature.lineage === null

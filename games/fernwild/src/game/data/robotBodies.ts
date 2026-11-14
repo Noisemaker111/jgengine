@@ -161,8 +161,22 @@ const hivemind = (body: string): RobotBody => ({
   plan: bug("hivedrone", 4, [4, 2, 3.4], [3.4, 0.3], [1.4, 1.1, 1.4, 0], { body, accent: "#b06bff", glow: "#d68bff", features: { shell: 0.8, mandibles: 1 }, machine: { antennae: { count: 2, length: 1.6 }, stacks: 1 } }),
 });
 
+/** The Root Server: a rack of servers on stub feet, crowned with antennae and exhaust, one great lens. */
+const rootServer: RobotBody = {
+  height: 6,
+  plan: {
+    torso: { length: 4, height: 4.5, width: 3.2 },
+    legs: { pairs: 2, length: 0.5, thickness: 0.4 },
+    head: head([1.2, 1.4, 2.4, 0]),
+    features: { plates: { count: 6, height: 1.2 } },
+    machine: { glow: "#ff2b2b", cyclops: true, antennae: { count: 2, length: 2.2 }, stacks: 1.6 },
+    colors: { body: "#2a2f36", accent: "#5a6470", belly: "#14171b" },
+  },
+};
+
 export const ROBOT_BODIES: Readonly<Record<string, RobotBody>> = {
   ...PLANS,
+  root_server: rootServer,
   hivemind_gamma: hivemind("#1e1626"),
   hivemind_beta: hivemind("#2a1838"),
   hivemind_alpha: hivemind("#3a0f16"),

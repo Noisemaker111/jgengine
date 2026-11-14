@@ -36965,6 +36965,7 @@
         "lat": 70.6,
         "lon": 86.1,
         "artifact": "artifact_massive",
+        "boss": "root_server",
         "height": 6,
         "chamber": 12,
         "cover": 6,

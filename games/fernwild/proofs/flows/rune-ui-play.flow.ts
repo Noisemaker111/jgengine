@@ -55,7 +55,7 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.crafting >= 1, { timeoutMs: 60000, note: "a click on the recipe queues a Stone Pick" });
     await snap("inventory");
     await tap("Engrams");
-    await f.see(/engram points/, SLOW);
+    await f.see(/schematic points/, SLOW);
     await snap("engrams");
     await tap("Dossier");
     await f.see("Explorer notes", SLOW);
@@ -66,7 +66,7 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.aimedWild === 0 && p.aimedHealth > 0, { timeoutMs: 30000, note: "the tame stands under the aim" });
     await f.press("KeyE");
     await f.waitFor((p) => p.screen === 1, { timeoutMs: 60000, note: "the tame's inventory opens" });
-    await f.see(/Tamed/, SLOW);
+    await f.see(/Uploaded/, SLOW);
     await snap("creature");
     await tap("Follow (T)");
     await tap("Close");

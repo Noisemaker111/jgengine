@@ -8,8 +8,10 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { viewedBreeding } from "../breeding";
 import type { CreatureCard } from "../creatures";
 import { itemLabel } from "../data/items";
-import { tameFood } from "../tameHunger";
+
 import { ItemIcon } from "./ItemIcon";
+import { botProfile, CHIPS, TEMPERAMENT_GLOW } from "../data/bots";
+import { chargeWear, tameFood } from "../tameHunger";
 import { Button, GOOD, INK, Meter, Panel, Row, Small, Tag, Text } from "./kit";
 import { liveCreatures, same } from "./live";
 
@@ -40,6 +42,7 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
   return (
     <RuneView gap={4} width={220} label={card.label}>
       <Text weight={700} size={14} color={INK} text={`${card.label} · ${card.sex === "female" ? "female" : "male"} · Lvl ${card.level}${status}`} />
+      {card.tamed || card.dead ? null : <Small color={TEMPERAMENT_GLOW[card.temperament]} text={instinctLine(card)} />}
       {card.imprint > 0 || card.mutations > 0 ? (
         <Small color={INK} text={[card.imprint > 0 ? `Imprinted ${Math.round(card.imprint * 100)}%` : "", card.mutations > 0 ? `${card.mutations} glitch${card.mutations === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")} />
       ) : null}
@@ -47,17 +50,27 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
       {card.tamed && !card.dead ? <Meter label="Stamina" value={() => live().stamina.value} max={() => live().stamina.max} color="#e7c84a" /> : null}
       {card.tamed && !card.dead ? <Meter label="Weight" value={() => live().weight.value} max={() => live().weight.max} color="#a3a3a3" /> : null}
       {card.tamed && !card.dead && tameFood(ctx, card.id) !== null ? (
-        <Meter label={() => ((tameFood(ctx, card.id)?.value ?? 0) <= 0 ? "Food · starving" : "Food")} value={() => tameFood(ctx, card.id)?.value ?? 0} max={() => tameFood(ctx, card.id)?.max ?? 1} color="#d79a3c" />
+        <Meter label={() => ((tameFood(ctx, card.id)?.value ?? 0) <= 0 ? "Charge · dead cell" : chargeWear(ctx, card.id) === "rust" ? "Charge · rusting in the wet" : chargeWear(ctx, card.id) === "heat" ? "Charge · overheating" : "Charge")} value={() => tameFood(ctx, card.id)?.value ?? 0} max={() => tameFood(ctx, card.id)?.max ?? 1} color="#d79a3c" />
       ) : null}
-      {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Torpor" value={() => live().taming?.torpor ?? 0} max={() => live().taming?.maxTorpor ?? 1} color="#a45fd6" /> : null}
+      {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Discharge" value={() => live().taming?.torpor ?? 0} max={() => live().taming?.maxTorpor ?? 1} color="#a45fd6" /> : null}
       {taming !== null && taming.unconscious ? (
         <>
-          <Meter label="Taming" value={() => Math.round((live().taming?.progress ?? 0) * 100)} max={() => 100} color="#7ad06a" />
+          <Meter label="Upload" value={() => Math.round((live().taming?.progress ?? 0) * 100)} max={() => 100} color="#7ad06a" />
           <Small color={INK} text={bind(() => `Upload integrity ${Math.round((live().taming?.effectiveness ?? 0) * 100)}%`)} />
         </>
       ) : null}
     </RuneView>
   );
+}
+
+const TEMPERAMENT_WORD = { passive: "Passive", skittish: "Skittish", territorial: "Territorial", aggressive: "Aggressive", pack: "Pack hunter", ambush: "Ambusher", retaliator: "Retaliator" } as const;
+const TARGET_WORD = { loudest: "the loudest", brightest: "lights", richest: "cargo", weakest: "the wounded", machines: "other machines", attacker: "whoever hit it", biggest: "the biggest machine" } as const;
+
+/** What a wild bot is, in its eye colour: temperament, who it goes for, and Overclocked in a storm. */
+function instinctLine(card: CreatureCard): string {
+  const profile = botProfile(card.species);
+  const targets = profile === null || profile.targets.length === 0 ? "" : ` · goes for ${profile.targets.map((rule) => TARGET_WORD[rule]).join(", then ")}`;
+  return `${TEMPERAMENT_WORD[card.temperament]}${targets}${card.dormant ? " · dormant" : ""}${card.overclocked ? " · OVERCLOCKED" : ""}`;
 }
 
 /** ARK's tame stats: level and XP to the next, then each stat with a + while points are unspent. */
@@ -136,7 +149,7 @@ function hungryLine(foods: readonly string[]): string {
   return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it uploads best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
 }
 
-const STANCE_LINE = { passive: "Never fights", neutral: "Fights back, and joins your fights", aggressive: "Attacks anything near" } as const;
+const STANCE_LINE = { passive: "Passive chip: never fights, even when hit", neutral: "Escort chip: fights what threatens you or itself", aggressive: "Aggressive chip: goes for any wild machine it sees" } as const;
 
 /** ARK's remote inventory: the creature's own items, taming state, saddle and orders. Take puts an item back in your bag. */
 export function CreaturePanel(): ReactNode {
@@ -165,19 +178,25 @@ export function CreaturePanel(): ReactNode {
           {card.saddled ? <Button command={{ name: "unsaddle" }}>Remove</Button> : null}
         </Row>
       ) : null}
-      {card.tamed ? (
-        <Row gap={6}>
-          <Small color={INK} grow={1} text={card.order === "follow" ? "Following you" : "Staying put"} />
-          <Button command={{ name: "whistleFollow" }}>Follow (T)</Button>
-          <Button command={{ name: "whistleStay" }}>Stay (U)</Button>
-        </Row>
+      {card.traits.length > 0 ? (
+        <RuneView gap={2}>
+          {card.traits.map((trait) => (
+            <Small key={trait.id} color={trait.kind === "good" ? "#7ad06a" : trait.kind === "bad" || trait.kind === "quirk" ? "#e0a05a" : "#b98cff"} text={`${trait.kind === "quirk" ? "Quirk" : "Glitch"}: ${trait.label}. ${trait.note}`} />
+          ))}
+        </RuneView>
       ) : null}
       {card.tamed ? (
         <RuneView gap={4}>
+          <Tag text="Behaviour chips" />
+          <Row gap={6}>
+            <Small color={INK} grow={1} text={card.order === "follow" ? "Follow: at your heel" : "Guard Zone: holds and defends this spot"} />
+            <Button picked={card.order === "follow"} command={{ name: "whistleFollow" }}>Follow (T)</Button>
+            <Button picked={card.order !== "follow"} command={{ name: "whistleStay" }}>Guard Zone (U)</Button>
+          </Row>
           <Small color={INK} text={STANCE_LINE[card.stance ?? "neutral"]} />
           <Row gap={6}>
             {(["passive", "neutral", "aggressive"] as const).map((stance) => (
-              <Button key={stance} picked={card.stance === stance} command={{ name: `whistle${stance[0]!.toUpperCase()}${stance.slice(1)}` }}>{stance[0]!.toUpperCase() + stance.slice(1)}</Button>
+              <Button key={stance} picked={card.stance === stance} command={{ name: `whistle${stance[0]!.toUpperCase()}${stance.slice(1)}` }}>{CHIPS.find((chip) => chip.id === stance)?.label ?? stance}</Button>
             ))}
           </Row>
         </RuneView>

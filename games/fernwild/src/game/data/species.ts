@@ -253,7 +253,7 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "firmware"> {
     killXp: Math.max(2, round(health / 20)),
     attack: { damage: melee, interval: big ? 1.4 : 1, reach: round(1.4 + radius * 0.6, 0.1) },
     taming: { ...tamingTable({ base: torpor, perLevel: torporPerLevel }, need, foods), awake: AWAKE_TAMES.has(id) },
-    saddle: saddleLevel === null ? null : `${id}_saddle`,
+    saddle: saddleLevel === null ? null : `${id}_rig`,
     saddleEngram:
       saddleLevel === null
         ? null
@@ -298,6 +298,38 @@ function hivemind(tier: "gamma" | "beta" | "alpha", health: number, healthPerLev
   };
 }
 
+/**
+ * The Root Server: a buried rack of servers that never moves, pulses a shock at what comes close and
+ * cannot be drained. Its health is tuned for a technician with metal tools and a mount (approximate).
+ */
+function rootServer(): SpeciesDef {
+  return {
+    id: "root_server",
+    label: "The Root Server",
+    temperament: "territorial",
+    diet: "scavenger",
+    health: { base: 18000, perLevel: 0 },
+    stamina: { base: 1000, perLevel: 0 },
+    oxygen: { base: 150, perLevel: 0 },
+    food: { base: 10000, perLevel: 0 },
+    weight: { base: 2000, perLevel: 0 },
+    melee: { base: 45, perLevel: 0 },
+    walk: 0,
+    sprint: 0,
+    sprintStamina: 0,
+    killXp: 0,
+    attack: { damage: 45, interval: 2.5, reach: 5 },
+    taming: tamingTable({ base: 100000, perLevel: 0 }, [1, 1], {}),
+    saddle: null,
+    saddleEngram: null,
+    seat: [0, 0, 0],
+    carcass: { hits: 40, meat: 2, salvage: 12 },
+    radius: 3,
+    torporImmune: true,
+    firmware: null,
+  };
+}
+
 /** Every species on the Island: the detailed three, the table's rest, and the Hivemind. */
 /** A tameable species with ARK's firmware in its foods: its tier and up first, the tiers below last. */
 function withBait(def: Omit<SpeciesDef, "firmware">): SpeciesDef {
@@ -312,6 +344,7 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
   hivemind_gamma: hivemind("gamma", 324000, 64800, 180),
   hivemind_beta: hivemind("beta", 648000, 97200, 320),
   hivemind_alpha: hivemind("alpha", 972000, 243000, 540),
+  root_server: rootServer(),
 };
 
 /** What a tame puts its level-up points into. */

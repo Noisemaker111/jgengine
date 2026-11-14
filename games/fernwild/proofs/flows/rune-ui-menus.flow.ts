@@ -39,7 +39,7 @@ export default defineFlow(game, {
     await f.see("FERNWILD", SLOW);
     await snap("title");
     await tap("Controls");
-    await f.see(/Whistle your tames/, SLOW);
+    await f.see(/Whistle your bots/, SLOW);
     await f.expect((p) => p.menuPane === 1, "the Controls page is the menu's pane");
     await snap("controls");
     await tap("Back");

@@ -380,7 +380,7 @@ export const game = defineGame({
         narcotics: ctx.player.inventory.count(BAG, "drain_spike"),
         clubs: ctx.player.inventory.count(BAG, "wooden_club") + ctx.player.inventory.count(HOTBAR, "wooden_club"),
         // The bag slot holding a saddle, to double-click into a tame's inventory; -1 with none.
-        saddleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.endsWith("_saddle")),
+        saddleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.endsWith("_rig")),
         gelRation: ctx.player.inventory.count(BAG, "gel_ration"),
         hatchets: ctx.player.inventory.count(HOTBAR, "stone_hatchet") + ctx.player.inventory.count(BAG, "stone_hatchet"),
         // The bag slot of the first building piece, to double-click onto the hotbar (-1 with none), and the

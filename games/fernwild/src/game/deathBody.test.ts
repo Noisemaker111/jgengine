@@ -76,7 +76,7 @@ test("killed by a lodestone far from the beach, the survivor wakes there empty-h
   // Back at the body (the wild cleared off first, ARK's DestroyWildDinos), E takes everything back.
   game.ui.tryInvoke("cheat", { destroyWild: true });
   tick(game, 0.1);
-  expect(game.ctx.scene.entity.list().some((entity) => entity.id.startsWith("raptor_"))).toBe(false);
+  expect(game.ctx.scene.entity.list().some((entity) => entity.id.startsWith("lodestone_"))).toBe(false);
   game.ctx.scene.entity.setPose(game.userId, { position: [body.at[0] + 1, body.at[1], body.at[2]] });
   tick(game, 0.1);
   game.ui.tryInvoke("recoverBody", {});

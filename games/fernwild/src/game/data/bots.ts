@@ -177,6 +177,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   wallcrawler: P("aggressive", ["weakest"], "Wall-climbing lizard bot of the caves."),
   pylon: P("passive", [], "A walking power pylon, enormous and harmless."),
   switchback: P("skittish", [], "Folds from biped to quad and back as it runs."),
+  root_server: P("territorial", ["attacker", "loudest"], "The buried datacenter that broadcasts the Signal Storms. Destroy it and they stop."),
 };
 
 export function botProfile(species: string): BotProfile | null {

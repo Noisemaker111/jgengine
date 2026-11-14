@@ -325,6 +325,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-firmware.proof.ts",
+      "proves": [
+        "taming.crafted-bait"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-gather.proof.ts",
       "proves": [
         "creatures.work.gather"
@@ -349,13 +356,6 @@
       "file": "proofs/sim/tame-keep-under.proof.ts",
       "proves": [
         "taming.keep-under"
-      ],
-      "ok": true
-    },
-    {
-      "file": "proofs/sim/tame-firmware.proof.ts",
-      "proves": [
-        "taming.crafted-bait"
       ],
       "ok": true
     },

@@ -5,6 +5,7 @@ import { defineSystem } from "@jgengine/shell/gameKit";
 import { editorLayers } from "./editorLayers";
 import { baseSave, buildHut, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
+import { resetRootServer, rootServerSave, tickRootServer } from "./game/rootServer";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
@@ -192,6 +193,13 @@ export const systems = [
     update: tickHivemind,
     save: hiveSave,
     reset: resetHivemind,
+  }),
+  defineSystem({
+    id: "rootServer",
+    tick: { type: "fixed", rate: 4 },
+    update: tickRootServer,
+    save: rootServerSave,
+    reset: resetRootServer,
   }),
   defineSystem({
     id: "dossier",
