@@ -163,23 +163,16 @@ Genres: strategy. 0/17 proven · 17 missing.
 
 ## Handoff
 
-- Done (committed): the LAWN ORDER redesign plus ten depth rounds — alarm and distress scent, hazard
-  tells (sprinkler hiss, lane flash, beam tightening), black ants dodge the mower and run red trails,
-  idle red ants and waiting foragers around the mower, scout trail vision, the field coach, spitter
-  acid, Nursery/Granary bonuses, brood lanes per Barracks, impatient beam that hunts fighters and burns
-  black ants when the colony hides, puffs and dig sites, lawn minimap with the beam, crossing and brood
-  guards, leaf canopies, notice feed capped and battle-only, scout marking scent (tagged black ants
-  stay drawn 10 s), bitten workers flee to the nest, level-up card docked top-right on desktop.
-- Fixed on the way: the black raids never marched (the director looked up an unauthored home id).
-- Shared fixes: jg-ui under Vite's `?import`; capture Chrome WebGPU on SwiftShader; Rune marks on the
-  page clock with the jg-ui wasm rebuilt; grass fingerprint fixture rewritten.
-- Evidence: 208 game tests incl. headless sims (opening raid, raids start, mower dodge, boss counter);
-  scratch probes (not committed) won all five missions with simple plans. Shots in `shots/`:
-  `ember-command-play-half-low-draft.png`, `ember-command-view-keep-enemy-half-low-draft.png`,
-  `ember-command-state-boss-half-low-draft.png`, `ember-command-sprinkler-31s-half-low-draft.png`,
-  `ember-command-raid-19s-half-low-draft.png`.
-- Verify: `verify:fast` fails only on provisioning other games' library models (network 403); the
-  ember boot probe passes when a render slot is free. The to-skirmish drive flow is flaky under
-  software rendering (DOM settle), not reproduced as a game fault.
-- Next ideas: wasp flight lanes and a wasp nest, a second lawn, real-GPU screenshots (all shots so
-  far are draft software renders).
+- Done (committed): the LAWN ORDER redesign plus the depth rounds (see README). Latest round:
+  readable ants (castes ~35% larger, team rings, closer camera, see-through shade canopies); real
+  routes on the engine nav grid (hose crossed only at its crossings, patio stones gone round); the
+  paper wasp nest; Return to title no longer hangs (thumbnail wait capped) and the to-skirmish flow
+  passes; the campaign balanced against a committed mid-skill sim (all five missions won, the finale
+  costing ~20 ants); the Marshal leads formations at the clicked point.
+- Not built: a second lawn map — blocked on the multi-scene seam named under Gaps.
+- Evidence: 213 game tests incl. headless sims; `bun run drive ember-command --flow to-skirmish`
+  passes; `verify:fast` fails only on provisioning other games' models (network 403).
+- Shots (draft software renders): `shots/ember-command-play-half-low-draft.png`,
+  `shots/ember-command-state-boss-half-low-draft.png`,
+  `shots/ember-command-view-keep-enemy-half-low-draft.png`, `shots/ember-command-readable-18s-half-low-draft.png`.
+- Next: the multi-scene seam and a front-yard map; real-GPU screenshots.

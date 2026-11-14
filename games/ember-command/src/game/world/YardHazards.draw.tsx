@@ -92,12 +92,14 @@ function mowerBody(): THREE.Group {
 /** A giant broad leaf held up on its stalk over each authored shade spot: it casts the real shadow the
  * magnifying glass cannot burn through. */
 function shadeCanopies(ground: (x: number, z: number) => number): THREE.Object3D[] {
-  const leafMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, side: THREE.DoubleSide });
+  // See-through from the commander's camera (it still casts its full shadow), so a canopy over the nest
+  // never hides the ants beneath it.
+  const leafMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, side: THREE.DoubleSide, transparent: true, opacity: 0.38, depthWrite: false });
   const stalkMaterial = new THREE.MeshStandardMaterial({ color: "#4f8a2a", roughness: 0.8 });
   return YARD.shade.map((spot, i) => {
     const group = new THREE.Group();
     const y = ground(spot.x, spot.z);
-    const height = 6.5 + (i % 2) * 1.2;
+    const height = 9 + (i % 2) * 1.2;
     const leaf = new THREE.Mesh(leafGeometry(spot.radius * 1.3, i), leafMaterial);
     leaf.rotation.y = i * 1.3;
     leaf.position.set(spot.x, y + height, spot.z);
