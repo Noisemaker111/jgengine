@@ -112,7 +112,8 @@ function build(def: CreepDef): { root: Group; rig: Rig } {
       body.add(slab, screen);
       face(body, 0.8, 1.05, 0.1, "#0b1830");
       body.add(part(box(0.18, 0.3, 0.12), dark, -0.28, 0.12, 0), part(box(0.18, 0.3, 0.12), dark, 0.28, 0.12, 0));
-      body.rotation.x = -0.25;
+      // Leaned well back so its screen and face look up at the street camera.
+      body.rotation.x = -0.6;
       break;
     }
     case "earbuds": {
@@ -130,6 +131,7 @@ function build(def: CreepDef): { root: Group; rig: Rig } {
       body.add(part(box(0.32, 1.3, 0.1), mat("#3a6aff"), 0, 0.85, -0.02));
       body.add(part(box(0.7, 0.7, 0.2), shell, 0, 0.85, 0.05), part(plane(0.58, 0.58), glow, 0, 0.85, 0.16));
       face(body, 0.55, 0.85, 0.17);
+      body.rotation.x = -0.45;
       break;
     }
     case "flock": {
