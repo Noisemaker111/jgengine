@@ -115,11 +115,14 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - [ ] 4. A worker animation for "looking at the phone" instead of the floating phone alone.
 
 ## Handoff
-- Done: full roster (14 workers, 18 tech), distraction on a worker status runtime, Wet + shock, Data
-  Center power and migration to The Cloud, Installing Update, parcels, router boosts, mining theft,
-  12-wave ramp (6 authored, 5 composed, finale), balance test (mixed crew holds Full-Time ~6/20; dropping the distraction answers loses),
-  procedural tech meshes, town scene via editor markers, diner HUD, onboarding tips, comic speech
-  bubbles, worker throw/flinch animations; 165 tests green; check-types clean.
-- In progress: verify:fast after the asset-provision fix; mid-wave screenshot review.
-- Next: read shots and fix what is ugly or unreadable; playtest feel of distraction; worker
-  "looking at phone" pose; a second map or mode only after the first map is polished.
+- Done: full roster (14 workers, 18 tech), distraction on a worker status runtime (balance proves
+  dropping the Teacher/Librarian loses), Wet + shock (ZAP x2.5 pop), Data Center mains power (HUD
+  meter) and migration to The Cloud, Installing Update bar, parcels, router boosts, mining theft,
+  chatbots echoing workers' own lines, 12-wave ramp, procedural tech meshes, painted City Builder
+  street via editor markers, diner HUD, onboarding tips, comic speech bubbles (capped, stacked),
+  throw/flinch animations, promotion pips, kill-pay pops, phone "ding"; 169 tests green.
+- Shots reviewed: /tmp/claude-0/dnd-mid2.png, dnd-tech.png, dnd-finale1.png, dnd-result.png, dnd-title.png.
+- verify:fast: everything passes except two environment-only steps (library-model provisioning for
+  other games is blocked by the sandbox proxy; the boot probe waits on a render slot other agents hold).
+- Next: a "looking at phone" pose instead of only the floating phone; tech kinds' faces turned toward
+  the camera; a second map or an endless "Overtime shift" mode once the first map is polished.

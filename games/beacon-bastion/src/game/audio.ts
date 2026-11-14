@@ -3,7 +3,7 @@ import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 /**
  * Procedural cues for the defense's player-facing moments. Each id is played from the accepted
  * command, wave, or death transition that causes it; rejected input only ever plays "denied".
- * Synth patches need no asset files and stay in the forest-keep palette (stone, wood, horn, chime).
+ * Synth patches need no asset files.
  *
  * World cues carry a wide falloff: the top-down camera sits well above the field, so the SDK's
  * default 24-unit range would silence them.
@@ -96,6 +96,19 @@ export const BEACON_SOUNDS = {
       voices: [
         { kind: "noise", duration: 0.3, filterFreq: 420, filterType: "lowpass", gain: 0.55 },
         { kind: "tone", freq: 90, slideTo: 55, duration: 0.3, wave: "square", gain: 0.4 },
+      ],
+    },
+  },
+  // A notification lands: the two-tone phone "ding" everybody's head turns for.
+  ping: {
+    id: "ping",
+    bus: "sfx",
+    gain: 0.45,
+    falloff: WORLD_FALLOFF,
+    synth: {
+      voices: [
+        { kind: "tone", freq: 1568, duration: 0.09, wave: "sine", gain: 0.45 },
+        { kind: "tone", freq: 2093, duration: 0.16, wave: "sine", gain: 0.4, delay: 0.09 },
       ],
     },
   },

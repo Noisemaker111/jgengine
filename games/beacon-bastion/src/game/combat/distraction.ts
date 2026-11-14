@@ -124,6 +124,7 @@ export function sendNotification(ctx: GameContext, creep: CreepRuntime, def: Cre
   let landed = 0;
   for (const worker of targets) if (distract(ctx, worker, notify.seconds, ping)) landed += 1;
   say(creep.instanceId, echoed ?? text, "ping", ctx.time.now());
+  if (landed > 0) ctx.game.audio.play("ping", at);
   if (notify.area === true) ctx.scene.entity.vfx({ preset: "shockwave", to: [at[0], at[1] + 0.6, at[2]], radius: notify.range, durationMs: 500, color: 0x3ae0ff });
   return landed;
 }
