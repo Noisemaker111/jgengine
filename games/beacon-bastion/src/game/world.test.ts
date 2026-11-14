@@ -37,12 +37,12 @@ describe("beacon-bastion world", () => {
     expect(summary.terrain?.palette).not.toEqual(TERRAIN_MATERIAL_PALETTES.highland);
   });
 
-  test("authored terrain survives the adapter: concrete sidewalks along the street, lawn everywhere else", () => {
+  test("authored terrain survives the adapter: concrete pads under the plots, lawn everywhere else", () => {
     expect(TERRAIN.detail).toBeDefined();
     expect(world.kind === "environment" ? world.sculpt : undefined).toBe(editorLayers.terrain);
     const painted = editorLayers.terrain!;
     const surfaceAt = (x: number, z: number) => painted.surfaces[Math.floor((z - painted.bounds.minZ) / painted.cellSize) * painted.cols + Math.floor((x - painted.bounds.minX) / painted.cellSize)];
-    expect(surfaceAt(-30, -12)).toBe("gravel");
+    expect(surfaceAt(-30, -12)).toBe("grass");
     expect(surfaceAt(-36, -15.2)).toBe("gravel");
     expect(surfaceAt(-32, 26)).toBe("grass");
     expect(surfaceAt(0, -30)).toBe("grass");

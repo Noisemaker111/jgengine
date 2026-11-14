@@ -14,7 +14,9 @@ import { BUBBLE_RULE, session, type SpeechBubble } from "../session";
 /** How far above the entity's feet a bubble hangs. */
 const LIFT = { voice: 4.1, ping: 3.2 } as const;
 /** A ping bubble is smaller than a worker's line; bubbles close together stack upward instead of overlapping. */
-const SIZE = { voice: 1.25, ping: 0.85 } as const;
+const SIZE = { voice: 1.7, ping: 1.2 } as const;
+/** At most this many gadget pings show at once: the newest win, so the street never grows a tower of bubbles. */
+const MAX_PINGS = 2;
 const STACK_REACH = 4;
 const PIXELS = 64;
 
@@ -104,7 +106,9 @@ export function speechBubblesDraw(ctx: GameContext): EngineDraw {
       const now = ctx.time.now();
       const live = new Set<number>();
       const placed: [number, number, number][] = [];
+      const pings = session.bubbles.filter((bubble) => bubble.kind === "ping" && now - bubble.born <= BUBBLE_RULE.seconds).slice(-MAX_PINGS).map((bubble) => bubble.id);
       for (const bubble of session.bubbles) {
+        if (bubble.kind === "ping" && !pings.includes(bubble.id)) continue;
         const age = now - bubble.born;
         const at = ctx.scene.entity.get(bubble.at)?.position;
         if (age < 0 || age > BUBBLE_RULE.seconds || at === undefined) continue;
