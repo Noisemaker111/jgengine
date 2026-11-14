@@ -123,7 +123,7 @@ test("the HUD's health is the pool hits land on, the moment they land", () => {
   shows();
   expect(pool().max).toBeGreaterThan(100);
   const before = pool().current;
-  runner.ctx.scene.entity.effect({ from: "raptor", to: runner.userId, effect: "damage", via: { amount: 15 } });
+  runner.ctx.scene.entity.effect({ from: "lodestone", to: runner.userId, effect: "damage", via: { amount: 15 } });
   shows();
   expect(pool().current).toBeCloseTo(before - 15, 5);
 });
@@ -131,29 +131,29 @@ test("the HUD's health is the pool hits land on, the moment they land", () => {
 test("raw meat goes off in the bag: a unit every 10 minutes turns to spoiled meat, the narcotic's base", () => {
   const runner = survivorRunner();
   tick(runner, 0.1);
-  runner.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  runner.ctx.player.inventory.put(BAG, "biogel", 2);
   for (let second = 0; second < 590; second += 1) runner.step(1);
-  expect(count(runner, "raw_meat")).toBe(2);
-  expect(count(runner, "spoiled_meat")).toBe(0);
+  expect(count(runner, "biogel")).toBe(2);
+  expect(count(runner, "soured_gel")).toBe(0);
   for (let second = 0; second < 20; second += 1) runner.step(1);
-  expect(count(runner, "raw_meat")).toBe(1);
-  expect(count(runner, "spoiled_meat")).toBe(1);
+  expect(count(runner, "biogel")).toBe(1);
+  expect(count(runner, "soured_gel")).toBe(1);
 });
 
 test("a save keeps how far the meat has gone off", () => {
   const before = survivorRunner();
   tick(before, 0.1);
-  before.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  before.ctx.player.inventory.put(BAG, "biogel", 2);
   for (let second = 0; second < 590; second += 1) before.step(1);
   const saved = survivorSave(before.ctx).snapshot();
 
   const after = survivorRunner();
   tick(after, 0.1);
-  after.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  after.ctx.player.inventory.put(BAG, "biogel", 2);
   survivorSave(after.ctx).hydrate(saved);
   for (let second = 0; second < 20; second += 1) after.step(1);
-  expect(count(after, "raw_meat")).toBe(1);
-  expect(count(after, "spoiled_meat")).toBe(1);
+  expect(count(after, "biogel")).toBe(1);
+  expect(count(after, "soured_gel")).toBe(1);
 });
 
 test("double-clicked cloth is worn in its slot, insulates and weighs, swaps, comes off and survives a save", () => {

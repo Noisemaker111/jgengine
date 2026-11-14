@@ -1,20 +1,20 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorDown } from "./scenarios";
+import { lodestoneDown } from "./scenarios";
 
 /** The fastest any creature's torpor wears off, a second (ARK: 0.3 at level 1, 0.5 at level 30). */
 const FASTEST_DRAIN = 0.5;
 
-// A raptor partway tamed, five raw meat of the seven it needs at normal taming speed. Play gives it one
+// A lodestone partway tamed, five raw meat of the seven it needs at normal taming speed. Play gives it one
 // last narcotic and then nothing: it stays out while that torpor and what it already had wear off, only
 // then wakes wild, and the taming is gone.
 export default defineProof(game, {
   proves: ["taming.wake-loses"],
   setup(s) {
-    raptorDown(s, { raw_meat: 5, narcotic: 1 });
+    lodestoneDown(s, { biogel: 5, drain_spike: 1 });
     s.command("giveCreature", { inventoryId: "inventory", slot: s.probe().foodSlot });
-    const narcotic = s.ctx.player.inventory.state("inventory").slots.findIndex((stack) => stack?.itemId === "narcotic");
+    const narcotic = s.ctx.player.inventory.state("inventory").slots.findIndex((stack) => stack?.itemId === "drain_spike");
     s.command("giveCreature", { inventoryId: "inventory", slot: narcotic });
     s.waitFor((p) => p.tameProgress > 0, { timeoutMs: 20_000 });
     s.command("cheat", { tamingSpeed: 1 });
@@ -25,7 +25,7 @@ export default defineProof(game, {
   async play(p) {
     await p.expect((r) => r.aimedDown === 1 && r.tameProgress > 0, "down and partway tamed");
     const start = await p.probe();
-    await p.act("feedNarcotic", { itemId: "narcotic" });
+    await p.act("feedNarcotic", { itemId: "drain_spike" });
     await p.act("closeCreature", {});
     // Everything it has to wear off: the torpor it holds and the narcotic still taking effect.
     const earliest = start.clock + (start.aimedTorpor + 40) / FASTEST_DRAIN;

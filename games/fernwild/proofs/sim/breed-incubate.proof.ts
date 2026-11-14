@@ -1,12 +1,12 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorPair } from "./scenarios";
+import { lodestonePair } from "./scenarios";
 
 export default defineProof(game, {
   proves: ["breeding.incubate"],
   setup(s) {
-    raptorPair(s);
+    lodestonePair(s);
     s.waitFor((p) => p.eggs >= 1, { timeoutMs: 80_000 });
     s.command("cheat", { give: { campfire: 1, wood: 10 }, toHotbar: ["campfire"], breedingSpeed: 1000 });
   },

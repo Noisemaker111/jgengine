@@ -231,7 +231,7 @@ function carcassNode(world: World, id: string) {
   const creature = world.creatures.get(id);
   const def = creature === undefined ? null : speciesDef(creature.species);
   if (creature === undefined || def === null || !creature.dead) return null;
-  return { id, budget: def.carcass.hits, resources: [{ kind: "raw_meat", amount: def.carcass.meat }, { kind: "hide", amount: def.carcass.hide }] };
+  return { id, budget: def.carcass.hits, resources: [{ kind: "biogel", amount: def.carcass.meat }, { kind: "salvage", amount: def.carcass.salvage }] };
 }
 
 function defOf(creature: Creature): SpeciesDef {
@@ -636,7 +636,7 @@ function kill(ctx: GameContext, creature: Creature): void {
   } else if (creature.region !== "") {
     world.director.notifyRemoved(creature.region, creature.species);
   }
-  // The wild ones the Broodmother's tribute asks for carry their trophy, to take from the body.
+  // The wild ones the Hivemind's tribute asks for carry their trophy, to take from the body.
   const trophy = creature.tamed ? undefined : TROPHY_DROPS[creature.species];
   if (trophy !== undefined) {
     const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, trophy, 1);
@@ -688,7 +688,7 @@ function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: num
   const swimming = ridden && swimmer !== undefined && inDeepWater(ctx, creature.id);
   // Loaded past its weight the mount slows, and at the limit it cannot move. In the air a flyer flies at its flying speed.
   const walk = (flying ? flyer.speed : swimming ? swimmer.speed / SWIM_SLOW : def.walk * statOf(creature, "speed")) * loadOf(creature).moveMultiplier;
-  // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
+  // Ridden, the mount sprints at its own ARK ratio (a tamed lodestone 11.04 / 4.8 m/s), not the survivor's.
   const run = (def.tamedSprint ?? def.sprint) / def.walk;
   const moved = entity === null ? null : entity.movement;
   if (ridden && moved !== null && (Math.abs((moved.walkSpeed ?? 0) - walk) > 0.01 || moved.runMultiplier !== run)) ctx.scene.entity.update(creature.id, { movement: { ...moved, walkSpeed: walk, runMultiplier: run } });
@@ -1562,7 +1562,7 @@ export function wildLevelNear(ctx: GameContext, from: readonly [number, number, 
  * Where to find a wild one of `species` (one id or several) from `from`: the nearest live untamed one
  * within `within` metres, else the centre of the nearest spawn zone it lives in that may hold one: an
  * asleep zone fills as you come, but an awake one with none left has shown you all it has until it refills.
- * `keep` passes over ones a survivor would not go for (one grazing beside a raptor).
+ * `keep` passes over ones a survivor would not go for (one grazing beside a lodestone).
  */
 export function nearestWild(
   ctx: GameContext,

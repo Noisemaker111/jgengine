@@ -353,7 +353,7 @@
       "ok": true
     },
     {
-      "file": "proofs/sim/tame-kibble.proof.ts",
+      "file": "proofs/sim/tame-firmware.proof.ts",
       "proves": [
         "taming.crafted-bait"
       ],

@@ -8,7 +8,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { eggsOnGround } from "../eggs";
 
-/** Egg size by its item id: an extra-small dodo egg to an extra-large one. */
+/** Egg size by its item id: an extra-small mowbot egg to an extra-large one. */
 const SIZE: Readonly<Record<string, number>> = { egg_xs: 0.09, egg_s: 0.12, egg_m: 0.16, egg_l: 0.21, egg_xl: 0.28 };
 
 /** Wild eggs lying where their mothers left them: pale speckled ovals on the ground. */

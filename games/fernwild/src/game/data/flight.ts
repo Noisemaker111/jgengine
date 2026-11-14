@@ -5,10 +5,10 @@
  * cannot hold itself up and drops.
  */
 export const FLYERS: Readonly<Record<string, { speed: number; stamina: number; liftRadius: number }>> = {
-  // A Pteranodon lifts the smallest: a dodo, a compy, a dilophosaur.
-  pteranodon: { speed: 16, stamina: 4, liftRadius: 0.6 },
-  // An Argentavis lifts up to a raptor, a phiomia or a pachy.
-  argentavis: { speed: 11, stamina: 3, liftRadius: 1 },
+  // A Watchwing lifts the smallest: a mowbot, a klepto, a sparkspitter.
+  watchwing: { speed: 16, stamina: 4, liftRadius: 0.6 },
+  // An Homer lifts up to a lodestone, a craneback or a ramjack.
+  homer: { speed: 11, stamina: 3, liftRadius: 1 },
 };
 
 /**

@@ -8,7 +8,7 @@ import { useGameStore } from "@jgengine/ui/hooks";
 
 import * as THREE from "three";
 
-import { broodView, greenObelisk, lairWall, spitInFlight } from "../broodmother";
+import { hiveView, greenObelisk, lairWall, spitInFlight } from "../hivemind";
 import { PORTAL_RANGE } from "../data/bosses";
 
 const GREEN = "#34ff6a";
@@ -104,7 +104,7 @@ function portalRingDraw(): EngineDraw {
 
 /** While the portal counts down, the obelisk's foot glows: a green beam and a ring as wide as it reaches. */
 function Portal({ ctx }: WorldOverlayProps): ReactNode {
-  const phase = useGameStore((state) => broodView(state).phase);
+  const phase = useGameStore((state) => hiveView(state).phase);
   const at = useMemo(() => greenObelisk(ctx), [ctx]);
   if (phase !== "portal") return null;
   return (
@@ -115,8 +115,8 @@ function Portal({ ctx }: WorldOverlayProps): ReactNode {
   );
 }
 
-/** What the Broodmother adds to the world: her walled lair, the portal at the obelisk, and her acid in the air. */
-export function BroodLair({ ctx }: WorldOverlayProps): ReactNode {
+/** What the Hivemind adds to the world: her walled lair, the portal at the obelisk, and her acid in the air. */
+export function HiveLair({ ctx }: WorldOverlayProps): ReactNode {
   return (
     <>
       <LairWall ctx={ctx} />

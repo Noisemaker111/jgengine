@@ -28,7 +28,7 @@ export const NOTES: readonly NoteDef[] = [
   { at: "cave_lava_cave", title: "Nadia's notebook: the lava cave", text: "Heat comes off the walls like an oven. Drink before you go in, and carry more water than you think." },
   { at: "peak_volcano", title: "Nadia's notebook: the volcano", text: "Black glass on the slopes, sharp enough to shave with. The ground shakes when the sky goes orange." },
   { at: "obelisk_blue", title: "Nadia's notebook: the blue pillar", text: "Three pillars, three colours, all humming the same note. Whoever built them built the island too." },
-  { at: "cave_north_west_cave", title: "Tomas's diary: the north-west", text: "The north-west cave is a maze. Mark your turns. I lost a raptor in there and nearly lost myself." },
+  { at: "cave_north_west_cave", title: "Tomas's diary: the north-west", text: "The north-west cave is a maze. Mark your turns. I lost a lodestone in there and nearly lost myself." },
   { at: "peak_whitesky", title: "Tomas's diary: Whitesky", text: "Snow to the knee. Furs or a fire, or the cold will have you before the wolves do." },
   { at: "peak_fars_peak", title: "Tomas's diary: Far's Peak", text: "Crystal grows out of the rock up here like ice that never melts. It rings when you strike it." },
   { at: "cave_north_east_cave", title: "Tomas's diary: the north-east", text: "The north-east cave floods at the back. Hold your breath, swim the dark, and the chamber is dry on the other side." },

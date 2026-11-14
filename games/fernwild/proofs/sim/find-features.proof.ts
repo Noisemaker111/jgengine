@@ -107,12 +107,12 @@ export default defineProof(game, {
     await followPointer(p, 0.5);
     await p.press("KeyE");
     await p.waitFor((r) => r.drinks >= 1, { timeoutMs: 3000, note: "drank at the shore" });
-    // "Tame a dodo": punch it asleep, then its inventory and the berries
+    // "Tame a mowbot": punch it asleep, then its inventory and the berries
     await knockOutPointed(p);
     await p.hold("KeyE", { until: (r) => r.screen === 1, timeoutMs: 3000 });
     await p.waitFor((r) => r.foodSlot >= 0, { timeoutMs: 2000, note: "berries to give it" });
     for (let stack = 0; stack < 8 && (await p.probe()).foodSlot >= 0; stack += 1) await p.act("giveCreature", { inventoryId: "inventory", slot: (await p.probe()).foodSlot });
-    await p.waitFor((r) => r.tamed === 1, { timeoutMs: 300_000, note: "the dodo eats the berries and is tamed" });
+    await p.waitFor((r) => r.tamed === 1, { timeoutMs: 300_000, note: "the mowbot eats the berries and is tamed" });
     await p.act("closeCreature", {});
     await p.waitFor((r) => r.taught >= 7, { timeoutMs: 3000, note: "every step of the teaching area done" });
   },

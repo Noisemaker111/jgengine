@@ -1,11 +1,11 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorTamed } from "./scenarios";
+import { lodestoneTamed } from "./scenarios";
 
 export default defineProof(game, {
   proves: ["creatures.ride.ground"],
-  setup: (s) => raptorTamed(s, { raptor_saddle: 1 }),
+  setup: (s) => lodestoneTamed(s, { lodestone_rig: 1 }),
   async play(p) {
     await p.act("giveCreature", { inventoryId: "inventory", slot: (await p.probe()).saddleSlot });
     await p.waitFor((r) => r.saddled === 1, { timeoutMs: 3000, note: "saddled" });

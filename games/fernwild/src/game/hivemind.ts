@@ -11,13 +11,13 @@ import { ringWallSolids } from "@jgengine/core/world/worldSolids";
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { creatureAlive, creatureHealth, moveCreature, removeCreatureNow, slayCreature, spawnCreature, tames } from "./creatures";
-import { BROOD_CAPS, BROOD_CLOCK, BROOD_LAIR, BROOD_PHASES, BROOD_TIERS, broodTier, PORTAL_RANGE, SPIT } from "./data/bosses";
+import { HIVE_CAPS, HIVE_CLOCK, HIVE_LAIR, HIVE_PHASES, HIVE_TIERS, hiveTier, PORTAL_RANGE, SPIT } from "./data/bosses";
 import { itemLabel } from "./data/items";
 import { setScreen } from "./screens";
 import { drugSurvivor, give, survivorLevel, takeAnywhere, webSurvivor } from "./survivor";
 
 /** The layer the lair's wall occupies in the world's collision. */
-const SOLIDS_LAYER = "fernwild:broodLair";
+const SOLIDS_LAYER = "fernwild:hiveLair";
 /** How near the obelisk's foot E reaches its terminal, metres. */
 const TERMINAL_REACH = 12;
 /** Seconds the acid takes to fly, for the drawing. */
@@ -25,13 +25,13 @@ export const SPIT_FLIGHT = 0.6;
 /** Seconds into the fight her first spit comes. */
 export const FIRST_SPIT = 3;
 
-interface Brood {
+interface Hive {
   arena: SummonedEncounter<SummonCandidate>;
-  /** The Broodmother's creature id while she is in the lair. */
+  /** The Hivemind's creature id while she is in the lair. */
   boss: string | null;
   phase: PhaseClockState | null;
-  /** The Araneo she has called. */
-  brood: string[];
+  /** The Hive Drone she has called. */
+  hive: string[];
   nextSpit: number;
   /** Her last spit, for the drawing: from her to where the survivor stood. */
   spit: { at: number; from: readonly [number, number, number]; to: readonly [number, number, number] } | null;
@@ -41,25 +41,25 @@ interface Brood {
   strength: number;
 }
 
-const broodOf = perContext((ctx: GameContext): Brood => {
+const hiveOf = perContext((ctx: GameContext): Hive => {
   ctx.world.solids.set(SOLIDS_LAYER, lairWall(ctx));
-  return { arena: lairEncounter(), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null, strength: 1 };
+  return { arena: lairEncounter(), boss: null, phase: null, hive: [], nextSpit: 0, spit: null, tell: null, strength: 1 };
 });
 
 /** Her lair's fight: a survivor level the summon asks, the artifact cost, the portal, and the trip home. */
 function lairEncounter(): SummonedEncounter<SummonCandidate> {
   return createSummonedEncounter<SummonCandidate>({
-    tiers: BROOD_TIERS,
-    portalSeconds: BROOD_CLOCK.portalSeconds,
-    partyCaps: BROOD_CAPS,
+    tiers: HIVE_TIERS,
+    portalSeconds: HIVE_CLOCK.portalSeconds,
+    partyCaps: HIVE_CAPS,
     lead: "survivor",
-    victorySeconds: BROOD_CLOCK.victorySeconds,
+    victorySeconds: HIVE_CLOCK.victorySeconds,
   });
 }
 
 /** The lair's ring wall, standing on its islet. */
 export function lairWall(ctx: GameContext) {
-  return ringWallSolids({ center: BROOD_LAIR.center, radius: BROOD_LAIR.radius, height: BROOD_LAIR.wallHeight, thickness: 5, sides: 36, groundHeight: ctx.world.groundHeightAt });
+  return ringWallSolids({ center: HIVE_LAIR.center, radius: HIVE_LAIR.radius, height: HIVE_LAIR.wallHeight, thickness: 5, sides: 36, groundHeight: ctx.world.groundHeightAt });
 }
 
 /** The Green Obelisk: where the terminal stands, on the ground under the floating spire. */
@@ -75,12 +75,12 @@ function flat(a: readonly number[], b: readonly number[]): number {
 }
 
 function inLair(at: readonly number[]): boolean {
-  return Math.hypot(at[0]! - BROOD_LAIR.center[0], at[2]! - BROOD_LAIR.center[1]) <= BROOD_LAIR.radius + 2;
+  return Math.hypot(at[0]! - HIVE_LAIR.center[0], at[2]! - HIVE_LAIR.center[1]) <= HIVE_LAIR.radius + 2;
 }
 
 /** A point in the lair `along` of the way from its centre to the wall, at `angle` (0 is east, π west). */
 function lairSpot(along: number, angle: number): [number, number] {
-  return [BROOD_LAIR.center[0] + Math.cos(angle) * BROOD_LAIR.radius * along, BROOD_LAIR.center[1] + Math.sin(angle) * BROOD_LAIR.radius * along];
+  return [HIVE_LAIR.center[0] + Math.cos(angle) * HIVE_LAIR.radius * along, HIVE_LAIR.center[1] + Math.sin(angle) * HIVE_LAIR.radius * along];
 }
 
 // --- the terminal ----------------------------------------------------------------------------------
@@ -96,9 +96,9 @@ function carried(ctx: GameContext, item: string): number {
 
 /** E at the Green Obelisk's foot: its terminal, listing each difficulty's tribute. */
 export function obeliskPrompts(ctx: GameContext): PositionedPrompt[] {
-  if (!nearTerminal(ctx) || broodOf(ctx).arena.state().phase !== "idle") return [];
+  if (!nearTerminal(ctx) || hiveOf(ctx).arena.state().phase !== "idle") return [];
   const [x, , z] = greenObelisk(ctx);
-  return [{ id: "obelisk:green", position: { x, z }, priority: 3, prompt: proximityPrompt({ radius: TERMINAL_REACH + 1, display: keybind("interact", "Green Obelisk · Summon the Broodmother"), invoke: command("obeliskUse") }) }];
+  return [{ id: "obelisk:green", position: { x, z }, priority: 3, prompt: proximityPrompt({ radius: TERMINAL_REACH + 1, display: keybind("interact", "Green Obelisk · Summon the Hivemind"), invoke: command("obeliskUse") }) }];
 }
 
 export function useObelisk(ctx: GameContext): void {
@@ -106,27 +106,27 @@ export function useObelisk(ctx: GameContext): void {
 }
 
 /** Pay a difficulty's tribute and open the portal. */
-export function summonBroodmother(ctx: GameContext, tierId: string): void {
-  const tier = broodTier(tierId);
+export function summonHivemind(ctx: GameContext, tierId: string): void {
+  const tier = hiveTier(tierId);
   if (tier === null || !nearTerminal(ctx)) return;
-  const result = broodOf(ctx).arena.summon(tier.id, { count: (item) => carried(ctx, item), take: (item, count) => void takeAnywhere(ctx, item, count) }, { level: survivorLevel(ctx) }, ctx.time.now());
+  const result = hiveOf(ctx).arena.summon(tier.id, { count: (item) => carried(ctx, item), take: (item, count) => void takeAnywhere(ctx, item, count) }, { level: survivorLevel(ctx) }, ctx.time.now());
   if (!result.ok) {
     const check = result.check;
-    const why = result.reason === "busy" ? "The Broodmother is already summoned" : check !== undefined && !check.requirementMet ? `Requires level ${tier.minLevel}` : `Missing ${check?.missing.map((entry) => `${entry.need - entry.have} ${itemLabel(entry.item)}`).join(", ") ?? "tribute"}`;
+    const why = result.reason === "busy" ? "The Hivemind is already summoned" : check !== undefined && !check.requirementMet ? `Requires level ${tier.minLevel}` : `Missing ${check?.missing.map((entry) => `${entry.need - entry.have} ${itemLabel(entry.item)}`).join(", ") ?? "tribute"}`;
     ctx.game.notices.push({ text: why, tone: "deny" });
     return;
   }
   setScreen(ctx, null);
-  ctx.game.notices.push({ text: `${tier.label} Broodmother summoned. The portal opens in ${Math.round(broodOf(ctx).arena.secondsLeft(ctx.time.now()) ?? 0)} seconds: stay near the obelisk with your tames.`, tone: "success" });
+  ctx.game.notices.push({ text: `${tier.label} Hivemind summoned. The portal opens in ${Math.round(hiveOf(ctx).arena.secondsLeft(ctx.time.now()) ?? 0)} seconds: stay near the obelisk with your tames.`, tone: "success" });
 }
 
 /** What the terminal screen lists: each difficulty, its level and tribute against what the survivor carries. */
 export function obeliskView(ctx: GameContext) {
   const level = survivorLevel(ctx);
-  const arena = broodOf(ctx).arena;
+  const arena = hiveOf(ctx).arena;
   return {
     busy: arena.state().phase !== "idle",
-    tiers: BROOD_TIERS.map((tier) => {
+    tiers: HIVE_TIERS.map((tier) => {
       const check = arena.check(tier.id, (item) => carried(ctx, item), { level });
       return {
         id: tier.id,
@@ -153,25 +153,25 @@ function gather(ctx: GameContext): SummonCandidate[] {
   return out;
 }
 
-function callBrood(ctx: GameContext, brood: Brood, count: number): void {
+function callHive(ctx: GameContext, hive: Hive, count: number): void {
   for (let index = 0; index < count; index += 1) {
     // Out of the walls all round her.
-    const id = spawnCreature(ctx, "araneo", lairSpot(0.85, (index / count) * Math.PI * 2 + ctx.rng() * 0.4), { level: 1 + Math.floor(ctx.rng() * 30) });
-    if (id !== null) brood.brood.push(id);
+    const id = spawnCreature(ctx, "hivedrone", lairSpot(0.85, (index / count) * Math.PI * 2 + ctx.rng() * 0.4), { level: 1 + Math.floor(ctx.rng() * 30) });
+    if (id !== null) hive.hive.push(id);
   }
 }
 
-function clearLair(ctx: GameContext, brood: Brood): void {
-  for (const id of [...brood.brood, ...(brood.boss === null ? [] : [brood.boss])]) removeCreatureNow(ctx, id);
-  brood.boss = null;
-  brood.phase = null;
-  brood.brood = [];
-  brood.spit = null;
-  brood.tell = null;
+function clearLair(ctx: GameContext, hive: Hive): void {
+  for (const id of [...hive.hive, ...(hive.boss === null ? [] : [hive.boss])]) removeCreatureNow(ctx, id);
+  hive.boss = null;
+  hive.phase = null;
+  hive.hive = [];
+  hive.spit = null;
+  hive.tell = null;
 }
 
-function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonly SummonCandidate[], refused: number): void {
-  const tier = broodTier(tierId)!;
+function enter(ctx: GameContext, hive: Hive, tierId: string, admitted: readonly SummonCandidate[], refused: number): void {
+  const tier = hiveTier(tierId)!;
   // ARK's portal pulls riders off their mounts; both go through.
   ridingOf(ctx).dismount(ctx.player.userId);
   const start = lairSpot(0.75, Math.PI);
@@ -181,39 +181,39 @@ function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonl
     .filter((entry) => entry.kind === "companion")
     .forEach((entry, index) => moveCreature(ctx, entry.id, lairSpot(0.8, Math.PI + (index % 2 === 0 ? 1 : -1) * (0.3 + Math.floor(index / 2) * 0.15))));
   // She waits in the middle of her lair.
-  brood.boss = spawnCreature(ctx, tier.species, lairSpot(0, 0), { level: 1 });
-  const health = brood.boss === null || brood.strength === 1 ? null : ctx.scene.entity.stats.get(brood.boss, "health");
-  if (brood.boss !== null && health !== null) ctx.scene.entity.stats.set(brood.boss, "health", { max: health.max * brood.strength, current: health.max * brood.strength });
-  brood.phase = createPhaseClock(BROOD_PHASES);
+  hive.boss = spawnCreature(ctx, tier.species, lairSpot(0, 0), { level: 1 });
+  const health = hive.boss === null || hive.strength === 1 ? null : ctx.scene.entity.stats.get(hive.boss, "health");
+  if (hive.boss !== null && health !== null) ctx.scene.entity.stats.set(hive.boss, "health", { max: health.max * hive.strength, current: health.max * hive.strength });
+  hive.phase = createPhaseClock(HIVE_PHASES);
   // She greets them with a spit before she closes in.
-  brood.nextSpit = ctx.time.now() + FIRST_SPIT;
-  callBrood(ctx, brood, BROOD_PHASES[0]!.brood);
+  hive.nextSpit = ctx.time.now() + FIRST_SPIT;
+  callHive(ctx, hive, HIVE_PHASES[0]!.hive);
   const left = refused > 0 ? ` ${refused} could not come through.` : "";
-  ctx.game.notices.push({ text: `The ${tier.label} Broodmother's lair. Kill her!${left}`, tone: "deny" });
+  ctx.game.notices.push({ text: `The ${tier.label} Hivemind's lair. Kill her!${left}`, tone: "deny" });
 }
 
-function fight(ctx: GameContext, brood: Brood, dt: number): void {
+function fight(ctx: GameContext, hive: Hive, dt: number): void {
   const now = ctx.time.now();
-  const arena = brood.arena;
+  const arena = hive.arena;
   const me = ctx.scene.entity.get(ctx.player.userId);
   // A survivor no longer in the lair (dead, back on the beach) has left the fight; so has a tame that died.
   if (arena.inside(ctx.player.userId) && (me === null || !inLair(me.position))) arena.leave(ctx.player.userId);
   for (const id of arena.state().party["companion"] ?? []) if (!creatureAlive(ctx, id)) arena.leave(id);
-  const health = brood.boss === null ? null : creatureHealth(ctx, brood.boss);
-  if (health === null || brood.phase === null || arena.state().phase !== "fight") return;
-  const step = advancePhase(BROOD_PHASES, brood.phase, health, dt);
-  brood.phase = step.state;
+  const health = hive.boss === null ? null : creatureHealth(ctx, hive.boss);
+  if (health === null || hive.phase === null || arena.state().phase !== "fight") return;
+  const step = advancePhase(HIVE_PHASES, hive.phase, health, dt);
+  hive.phase = step.state;
   if (step.tell !== null) {
-    brood.tell = { text: step.tell.id, until: now + step.tell.seconds };
+    hive.tell = { text: step.tell.id, until: now + step.tell.seconds };
     ctx.game.notices.push({ text: step.tell.id, tone: "deny" });
   }
   const phase = step.phase;
-  if (step.changed) callBrood(ctx, brood, phase.brood);
-  const boss = ctx.scene.entity.get(brood.boss!);
-  if (now >= brood.nextSpit && boss !== null && me !== null && arena.inside(ctx.player.userId)) {
-    brood.nextSpit = now + phase.spitEvery;
+  if (step.changed) callHive(ctx, hive, phase.hive);
+  const boss = ctx.scene.entity.get(hive.boss!);
+  if (now >= hive.nextSpit && boss !== null && me !== null && arena.inside(ctx.player.userId)) {
+    hive.nextSpit = now + phase.spitEvery;
     if (flat(boss.position, me.position) <= SPIT.range) {
-      brood.spit = { at: now, from: [boss.position[0], boss.position[1] + 3, boss.position[2]], to: [me.position[0], me.position[1] + 1, me.position[2]] };
+      hive.spit = { at: now, from: [boss.position[0], boss.position[1] + 3, boss.position[2]], to: [me.position[0], me.position[1] + 1, me.position[2]] };
       ctx.scene.entity.effect({ from: boss.id, to: me.id, effect: "damage", via: { amount: SPIT.damage } });
       drugSurvivor(ctx, SPIT.torpor);
       webSurvivor(ctx, SPIT.webSlow, SPIT.webSeconds);
@@ -223,26 +223,26 @@ function fight(ctx: GameContext, brood: Brood, dt: number): void {
 }
 
 /** The obelisk's clock: the portal, the fight, the win and the trip home. */
-export function tickBroodmother(ctx: GameContext, dt: number): void {
-  const brood = broodOf(ctx);
+export function tickHivemind(ctx: GameContext, dt: number): void {
+  const hive = hiveOf(ctx);
   const now = ctx.time.now();
-  if (brood.tell !== null && brood.tell.until <= now) brood.tell = null;
-  if (brood.arena.state().phase === "fight") fight(ctx, brood, dt);
-  const events = brood.arena.tick(now, { targetAlive: () => brood.boss !== null && creatureAlive(ctx, brood.boss), gather: () => gather(ctx) });
+  if (hive.tell !== null && hive.tell.until <= now) hive.tell = null;
+  if (hive.arena.state().phase === "fight") fight(ctx, hive, dt);
+  const events = hive.arena.tick(now, { targetAlive: () => hive.boss !== null && creatureAlive(ctx, hive.boss), gather: () => gather(ctx) });
   for (const event of events) {
-    const tier = broodTier(event.tier)!;
-    if (event.type === "entered") enter(ctx, brood, event.tier, event.admitted, event.refused.length);
+    const tier = hiveTier(event.tier)!;
+    if (event.type === "entered") enter(ctx, hive, event.tier, event.admitted, event.refused.length);
     else if (event.type === "closed") ctx.game.notices.push({ text: "The portal closed with nobody near the obelisk. The tribute is spent.", tone: "deny" });
     else if (event.type === "won") {
       if ((event.party["survivor"] ?? []).includes(ctx.player.userId)) for (const [item, count] of Object.entries(tier.rewards)) give(ctx, item, count);
-      // Her brood dies with her.
-      for (const id of brood.brood) slayCreature(ctx, id);
-      ctx.game.notices.push({ text: `The ${tier.label} Broodmother is dead! ${Object.entries(tier.rewards).map(([item, count]) => `${count} ${itemLabel(item)}`).join(", ")}. Back to the obelisk in a minute.`, tone: "success" });
+      // Her hive dies with her.
+      for (const id of hive.hive) slayCreature(ctx, id);
+      ctx.game.notices.push({ text: `The ${tier.label} Hivemind is dead! ${Object.entries(tier.rewards).map(([item, count]) => `${count} ${itemLabel(item)}`).join(", ")}. Back to the obelisk in a minute.`, tone: "success" });
     } else if (event.type === "lost") {
       const companions = event.party["companion"] ?? [];
       for (const id of companions) slayCreature(ctx, id);
-      clearLair(ctx, brood);
-      ctx.game.notices.push({ text: companions.length > 0 ? `The Broodmother won. ${companions.length} tames left in her lair are lost.` : "The Broodmother won.", tone: "deny" });
+      clearLair(ctx, hive);
+      ctx.game.notices.push({ text: companions.length > 0 ? `The Hivemind won. ${companions.length} tames left in her lair are lost.` : "The Hivemind won.", tone: "deny" });
     } else if (event.type === "returned") {
       const obelisk = greenObelisk(ctx);
       for (const entry of event.returns) {
@@ -250,88 +250,88 @@ export function tickBroodmother(ctx: GameContext, dt: number): void {
         if (entry.kind === "survivor") teleportPlayer(ctx, entry.id, { x: entry.to[0], z: entry.to[2], yaw: Math.atan2(obelisk[0] - entry.to[0], obelisk[2] - entry.to[2]) });
         else moveCreature(ctx, entry.id, [entry.to[0], entry.to[2]]);
       }
-      clearLair(ctx, brood);
+      clearLair(ctx, hive);
       ctx.game.notices.push({ text: "Back at the Green Obelisk", tone: "success" });
     }
   }
 }
 
 /** What the HUD and the world draw: the fight's phase and clock, her health and phase, the portal and her last spit. */
-export function broodView(ctx: GameContext) {
-  const brood = broodOf(ctx);
-  const state = brood.arena.state();
+export function hiveView(ctx: GameContext) {
+  const hive = hiveOf(ctx);
+  const state = hive.arena.state();
   const now = ctx.time.now();
-  const tier = state.tier === null ? null : broodTier(state.tier);
+  const tier = state.tier === null ? null : hiveTier(state.tier);
   return {
     phase: state.phase,
     tier: tier?.label ?? null,
-    secondsLeft: brood.arena.secondsLeft(now),
-    inside: brood.arena.inside(ctx.player.userId),
-    boss: brood.boss === null ? null : { id: brood.boss, health: creatureHealth(ctx, brood.boss) ?? 0, phase: brood.phase?.phaseId ?? null, at: ctx.scene.entity.get(brood.boss)?.position ?? null },
-    brood: brood.brood.filter((id) => creatureAlive(ctx, id)).length,
-    tell: brood.tell?.text ?? null,
+    secondsLeft: hive.arena.secondsLeft(now),
+    inside: hive.arena.inside(ctx.player.userId),
+    boss: hive.boss === null ? null : { id: hive.boss, health: creatureHealth(ctx, hive.boss) ?? 0, phase: hive.phase?.phaseId ?? null, at: ctx.scene.entity.get(hive.boss)?.position ?? null },
+    hive: hive.hive.filter((id) => creatureAlive(ctx, id)).length,
+    tell: hive.tell?.text ?? null,
     survivors: state.party["survivor"]?.length ?? 0,
     companions: state.party["companion"]?.length ?? 0,
   };
 }
 
-export type BroodView = ReturnType<typeof broodView>;
+export type HiveView = ReturnType<typeof hiveView>;
 
 /** The acid in flight, for the drawing: where it is now, or null. */
 export function spitInFlight(ctx: GameContext): readonly [number, number, number] | null {
-  const spit = broodOf(ctx).spit;
+  const spit = hiveOf(ctx).spit;
   const t = spit === null ? 1 : (ctx.time.now() - spit.at) / SPIT_FLIGHT;
   if (spit === null || t < 0 || t >= 1) return null;
   const lerp = (i: number) => spit.from[i]! + (spit.to[i]! - spit.from[i]!) * t;
   return [lerp(0), lerp(1) + Math.sin(t * Math.PI) * 4, lerp(2)];
 }
 
-/** ARK's admin SetHealth on the Broodmother: her health to this share of its max, for proofs. */
-export function setBroodHealth(ctx: GameContext, share: number): void {
-  const boss = broodOf(ctx).boss;
+/** ARK's admin SetHealth on the Hivemind: her health to this share of its max, for proofs. */
+export function setHiveHealth(ctx: GameContext, share: number): void {
+  const boss = hiveOf(ctx).boss;
   const health = boss === null ? null : ctx.scene.entity.stats.get(boss, "health");
   if (boss === null || health === null) return;
   ctx.scene.entity.stats.set(boss, "health", { current: Math.max(0, Math.min(1, share)) * health.max });
 }
 
-/** ARK's server boss difficulty: each Broodmother summoned from now on has this share of her health. */
-export function setBroodStrength(ctx: GameContext, share: number): void {
-  broodOf(ctx).strength = Math.max(0.0001, Math.min(1, share));
+/** ARK's server boss difficulty: each Hivemind summoned from now on has this share of her health. */
+export function setHiveStrength(ctx: GameContext, share: number): void {
+  hiveOf(ctx).strength = Math.max(0.0001, Math.min(1, share));
 }
 
-interface BroodSave {
+interface HiveSave {
   arena: SummonedEncounterState;
   boss: string | null;
   phase: PhaseClockState | null;
-  brood: string[];
+  hive: string[];
   nextSpit: number;
 }
 
-export function broodSave(ctx: GameContext) {
+export function hiveSave(ctx: GameContext) {
   return {
-    key: "fernwild.brood",
-    snapshot: (): BroodSave => {
-      const brood = broodOf(ctx);
-      return { arena: brood.arena.snapshot(), boss: brood.boss, phase: brood.phase, brood: [...brood.brood], nextSpit: brood.nextSpit };
+    key: "fernwild.hive",
+    snapshot: (): HiveSave => {
+      const hive = hiveOf(ctx);
+      return { arena: hive.arena.snapshot(), boss: hive.boss, phase: hive.phase, hive: [...hive.hive], nextSpit: hive.nextSpit };
     },
-    hydrate: (data: BroodSave) => {
-      const brood = broodOf(ctx);
-      brood.arena.restore(data.arena);
-      brood.boss = data.boss;
-      brood.phase = data.phase;
-      brood.brood = [...data.brood];
-      brood.nextSpit = data.nextSpit;
+    hydrate: (data: HiveSave) => {
+      const hive = hiveOf(ctx);
+      hive.arena.restore(data.arena);
+      hive.boss = data.boss;
+      hive.phase = data.phase;
+      hive.hive = [...data.hive];
+      hive.nextSpit = data.nextSpit;
     },
   };
 }
 
-export function resetBroodmother(ctx: GameContext): void {
-  const brood = broodOf(ctx);
-  brood.arena.reset();
-  brood.boss = null;
-  brood.phase = null;
-  brood.brood = [];
-  brood.spit = null;
-  brood.tell = null;
-  brood.strength = 1;
+export function resetHivemind(ctx: GameContext): void {
+  const hive = hiveOf(ctx);
+  hive.arena.reset();
+  hive.boss = null;
+  hive.phase = null;
+  hive.hive = [];
+  hive.spit = null;
+  hive.tell = null;
+  hive.strength = 1;
 }

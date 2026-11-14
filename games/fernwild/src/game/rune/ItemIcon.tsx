@@ -24,7 +24,7 @@ const RESOURCE_COLOR: Record<string, string> = {
   stone: "#8d8d88",
   flint: "#5d6670",
   fiber: "#7fa24a",
-  hide: "#9b6e4e",
+  salvage: "#9b6e4e",
   mejoberry: "#5a4bb0",
   amarberry: "#c0392b",
   azulberry: "#2e6fd0",

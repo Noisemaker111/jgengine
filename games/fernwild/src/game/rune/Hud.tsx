@@ -15,7 +15,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { baseView } from "../base";
 import { HOTBAR } from "../bags";
-import { broodView } from "../broodmother";
+import { hiveView } from "../hivemind";
 import { bodyView } from "../deathBody";
 import { dossierView } from "../dossier";
 import { itemLabel } from "../data/items";
@@ -252,14 +252,14 @@ function Banner(): ReactNode {
 /** ARK's boss bar across the top: her name and health, the phase tell, and the portal and return clocks. */
 function BossBar(): ReactNode {
   const ctx = useGameContext();
-  const phase = useGameStore((c) => { const v = broodView(c); return { phase: v.phase, inside: v.inside, tier: v.tier }; }, same);
+  const phase = useGameStore((c) => { const v = hiveView(c); return { phase: v.phase, inside: v.inside, tier: v.tier }; }, same);
   if (phase.phase === "idle") return null;
-  const view = () => broodView(ctx);
+  const view = () => hiveView(ctx);
   const seconds = () => Math.ceil(view().secondsLeft ?? 0);
   if (phase.phase === "portal") {
     return (
       <Panel items="center" gap={4} fill="#0c0f0dcc" padding={[8, 14, 8, 14]}>
-        <Text weight={700} color={GREEN} text={`${phase.tier} Broodmother summoned`} />
+        <Text weight={700} color={GREEN} text={`${phase.tier} Hivemind summoned`} />
         <Small color={INK} text={bind(() => `The portal opens in ${seconds()} s · stand within ${PORTAL_RANGE} m of the Green Obelisk with your tames`)} />
       </Panel>
     );
@@ -268,11 +268,11 @@ function BossBar(): ReactNode {
   const health = () => view().boss?.health ?? 0;
   return (
     <Panel items="center" gap={4} fill="#0c0f0dcc" padding={[8, 14, 8, 14]} width={448} responsive={{ phone: { width: 340 } }}>
-      <Text weight={700} size={16} text={`${phase.tier} Broodmother Lysrix`} />
+      <Text weight={700} size={16} text={`${phase.tier} Hivemind Prime`} />
       <RuneView width={FULL} height={12} fill="#000000aa" radius={3} clip>
         <RuneView height={12} width={bind(() => ({ fraction: health() }))} gradient={{ angle: 180, stops: [[0, "#d84a3a"], [1, "#8a1f18"]] }} />
       </RuneView>
-      <Small color={INK} text={bind(() => (view().phase === "victory" ? `Victory! Back to the obelisk in ${seconds()} s` : `${Math.ceil(health() * 100)}% · ${view().brood} Araneo`))} />
+      <Small color={INK} text={bind(() => (view().phase === "victory" ? `Victory! Back to the obelisk in ${seconds()} s` : `${Math.ceil(health() * 100)}% · ${view().hive} Hive Drone`))} />
       <Text weight={700} size={18} color="#ffb04a" text={bind(() => (view().phase === "fight" ? (view().tell ?? "") : ""))} />
     </Panel>
   );

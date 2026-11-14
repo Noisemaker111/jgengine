@@ -125,7 +125,7 @@ test("a campfire lets raw meat cook only while it burns: wood on it lights it, a
   const game = runner();
   tick(game, 0.1);
   const cook = recipeDef("cook_meat")!;
-  game.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  game.ctx.player.inventory.put(BAG, "biogel", 2);
   expect(craftBlock(game.ctx, cook)).toBe("Needs a Campfire");
   hold(game, "campfire");
   place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
@@ -198,8 +198,8 @@ function stocked(pieceId: string, count: number): HeadlessRunner {
   place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
   tick(game, 0.1);
   game.ui.tryInvoke("structureUse", {});
-  game.ctx.player.inventory.put(BAG, "raw_meat", count);
-  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat") });
+  game.ctx.player.inventory.put(BAG, "biogel", count);
+  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "biogel") });
   return game;
 }
 
@@ -210,19 +210,19 @@ const wait = (game: HeadlessRunner, seconds: number) => {
 
 test("meat goes off in a storage box as fast as carried, and four times slower in a preserving bin, which takes only food", () => {
   const box = stocked("storage_box", 1);
-  expect(held(box, "raw_meat")).toBe(1);
+  expect(held(box, "biogel")).toBe(1);
   wait(box, 610);
-  expect(held(box, "raw_meat")).toBe(0);
-  expect(held(box, "spoiled_meat")).toBe(1);
+  expect(held(box, "biogel")).toBe(0);
+  expect(held(box, "soured_gel")).toBe(1);
 
   const bin = stocked("preserving_bin", 1);
   expect(storeView(bin.ctx)!.slots).toHaveLength(6);
-  expect(held(bin, "raw_meat")).toBe(1);
+  expect(held(bin, "biogel")).toBe(1);
   wait(bin, 610);
-  expect(held(bin, "raw_meat")).toBe(1);
+  expect(held(bin, "biogel")).toBe(1);
   wait(bin, 1800);
-  expect(held(bin, "raw_meat")).toBe(0);
-  expect(held(bin, "spoiled_meat")).toBe(1);
+  expect(held(bin, "biogel")).toBe(0);
+  expect(held(bin, "soured_gel")).toBe(1);
 
   bin.ctx.player.inventory.put(BAG, "stone", 5);
   bin.ui.tryInvoke("storePut", { inventoryId: BAG, slot: bin.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone") });
@@ -234,12 +234,12 @@ test("a hide sleeping bag is where the survivor wakes after dying, once: it is u
   const game = runner();
   tick(game, 0.1);
   const beach = [...game.ctx.scene.entity.get(game.userId)!.position];
-  hold(game, "hide_sleeping_bag");
+  hold(game, "bedroll");
   game.ui.tryInvoke("cheat", { teleport: [beach[0]! + 40, beach[2]!] });
   tick(game, 0.1);
   place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
   const [bag] = baseBuilding(game.ctx).list();
-  expect(bag?.pieceId).toBe("hide_sleeping_bag");
+  expect(bag?.pieceId).toBe("bedroll");
   const flat = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0]! - b[0]!, a[2]! - b[2]!);
 
   game.ui.tryInvoke("cheat", { teleport: [beach[0]! + 80, beach[2]!] });

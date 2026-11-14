@@ -61,7 +61,7 @@ interface Survivor {
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
-  /** Webbed (the Broodmother's spit): moving at this share of speed until this game time. */
+  /** Webbed (the Hivemind's spit): moving at this share of speed until this game time. */
   web: { slow: number; until: number } | null;
   /** Lifetime tallies: gathers that took something, items crafted, drinks from water. */
   tally: Tally;

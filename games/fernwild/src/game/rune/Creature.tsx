@@ -13,7 +13,7 @@ import { ItemIcon } from "./ItemIcon";
 import { Button, GOOD, INK, Meter, Panel, Row, Small, Tag, Text } from "./kit";
 import { liveCreatures, same } from "./live";
 
-const NARCOTIC = new Set(["narcoberry", "narcotic", "stimberry", "stimulant"]);
+const NARCOTIC = new Set(["narcoberry", "drain_spike", "stimberry", "stimulant"]);
 
 /** A card with its per-frame numbers zeroed: what decides which rows a readout shows, so it re-renders only when they change. */
 export function cardShape(card: CreatureCard): CreatureCard {
@@ -128,11 +128,11 @@ function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
   );
 }
 
-/** Its favourite first (ARK's kibble tier), then the plain foods it also takes; the other kibble tiers go unsaid. */
+/** Its favourite first (ARK's firmware tier), then the plain foods it also takes; the other firmware tiers go unsaid. */
 function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
   if (best === undefined) return "It eats nothing you can give it.";
-  const plain = rest.filter((item) => !item.startsWith("kibble_"));
+  const plain = rest.filter((item) => !item.startsWith("firmware_"));
   return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it tames best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
 }
 

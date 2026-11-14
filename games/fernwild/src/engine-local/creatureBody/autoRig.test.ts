@@ -14,7 +14,7 @@ const COW: BodyPlan = {
   colors: { body: "#7a5a3a" },
 };
 
-const RAPTOR: BodyPlan = {
+const LODESTONE: BodyPlan = {
   torso: { length: 1.2, height: 0.55, width: 0.45 },
   legs: { pairs: 2, length: 0.9, thickness: 0.09, biped: true, armScale: 0.45 },
   neck: { length: 0.45, thickness: 0.12, rise: 50 },
@@ -101,7 +101,7 @@ describe("autoRig", () => {
   });
 
   test("a biped gets one pair of legs under its hips and a long tail", () => {
-    const rigged = autoRig(asStatic(RAPTOR), { shape: "biped" });
+    const rigged = autoRig(asStatic(LODESTONE), { shape: "biped" });
     expect(rigged.nodes.filter((node) => node.name.startsWith("leg_")).map((node) => node.name)).toEqual(["leg_0_l", "leg_0_r"]);
     expect(rigged.nodes.filter((node) => node.name.startsWith("tail_"))).toHaveLength(3);
   });

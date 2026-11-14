@@ -62,18 +62,18 @@ function face(game: HeadlessRunner, id: string): void {
 }
 
 test("every Island species that breeds in ARK has its wiki times; the sterile and non-breeding ones do not", () => {
-  expect(breedingOf("raptor", 1)).toMatchObject({ egg: { incubation: { all: [{ gte: ["temperature", 20] }, { lte: ["temperature", 28] }] }, healthSeconds: 600 }, carrySeconds: 7140, maturationSeconds: 133_320 });
-  expect(breedingOf("phiomia", 1)).toMatchObject({ egg: null, carrySeconds: 35_700 });
-  expect(incubationBand("rex")).toEqual([32, 34]);
-  for (const sterile of ["titanoboa", "leech", "titanomyrma", "meganeura"]) expect(breedingOf(sterile, 1)).toBeNull();
+  expect(breedingOf("lodestone", 1)).toMatchObject({ egg: { incubation: { all: [{ gte: ["temperature", 20] }, { lte: ["temperature", 28] }] }, healthSeconds: 600 }, carrySeconds: 7140, maturationSeconds: 133_320 });
+  expect(breedingOf("craneback", 1)).toMatchObject({ egg: null, carrySeconds: 35_700 });
+  expect(incubationBand("scrapper")).toEqual([32, 34]);
+  for (const sterile of ["coilcobra", "siphon", "ticklet", "choir"]) expect(breedingOf(sterile, 1)).toBeNull();
 });
 
-test("a raptor pair left together mates and lays an egg that a campfire keeps warm; the baby hatches small, grows, eats and imprints", () => {
+test("a lodestone pair left together mates and lays an egg that a campfire keeps warm; the baby hatches small, grows, eats and imprints", () => {
   const game = runner();
   tick(game, 0.1);
-  // Night on the beach: too cold for a raptor egg without a fire.
+  // Night on the beach: too cold for a lodestone egg without a fire.
   game.ui.tryInvoke("cheat", { clock: 3500 });
-  const { mother, father } = pair(game, "raptor");
+  const { mother, father } = pair(game, "lodestone");
   expect(creatureCard(game.ctx, mother)?.sex).toBe("female");
   tick(game, 30);
   expect(breedingCard(game.ctx, mother)?.mating).toBeGreaterThan(0.3);
@@ -87,7 +87,7 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   tick(game, 5);
   expect(breedingView(game.ctx).egg!.progress).toBe(0);
   expect(breedingView(game.ctx).egg!.health).toBeLessThan(1);
-  // A campfire a few metres off brings it into range (right beside, a raptor egg is too hot); at a thousandfold speed
+  // A campfire a few metres off brings it into range (right beside, a lodestone egg is too hot); at a thousandfold speed
   // it hatches in seconds.
   const egg = eggs(game.ctx)[0]!;
   game.ctx.scene.entity.setPose(game.userId, { position: [egg.at[0] + 8, egg.at[1], egg.at[2]], rotationY: -Math.PI / 2 });
@@ -133,8 +133,8 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   tick(game, 0.2);
   game.ui.tryInvoke("creatureUse", {});
   tick(game, 0.1);
-  game.ctx.player.inventory.put(BAG, "raw_meat", 10);
-  const meatSlot = game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat");
+  game.ctx.player.inventory.put(BAG, "biogel", 10);
+  const meatSlot = game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "biogel");
   game.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: meatSlot });
   tick(game, 1);
   expect(tameFood(game.ctx, baby.id)!.value).toBeGreaterThan(0);
@@ -158,7 +158,7 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
     }
   } else {
     // A cuddle, or its favourite food from the survivor's bag: E in front of it.
-    game.ctx.player.inventory.put(BAG, "raw_meat", 5);
+    game.ctx.player.inventory.put(BAG, "biogel", 5);
     game.ctx.scene.entity.setPose(baby.id, { position: [me[0], egg.at[1], me[2] + 2] });
     face(game, baby.id);
     tick(game, 0.2);
@@ -176,10 +176,10 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   expect(game.ctx.scene.entity.get(baby.id)?.size).toBe(1);
 });
 
-test("a phiomia carries her young and gives birth beside her", () => {
+test("a craneback carries her young and gives birth beside her", () => {
   const game = runner();
   tick(game, 0.1);
-  const { mother } = pair(game, "phiomia");
+  const { mother } = pair(game, "craneback");
   tick(game, 62);
   expect(eggs(game.ctx)).toHaveLength(0);
   expect(breedingCard(game.ctx, mother)!.pregnancy).not.toBeNull();
@@ -210,13 +210,13 @@ const field = (litter: (rng: () => number) => number = () => 1) =>
     litter,
   });
 
-const mates = (gap: number, species = "raptor", who = "her", mate = "him"): MateCandidate[] => [
+const mates = (gap: number, species = "lodestone", who = "her", mate = "him"): MateCandidate[] => [
   { id: who, species, sex: "female", at: [0, 0, 0] },
   { id: mate, species, sex: "male", at: [gap, 0, 0] },
 ];
 
 describe("breeding field", () => {
-  test("a raptor pair kept together for the mating time lays an egg; apart, the bar starts over; then she rests", () => {
+  test("a lodestone pair kept together for the mating time lays an egg; apart, the bar starts over; then she rests", () => {
     const breeding = field();
     const rng = rngOf(3);
     breeding.mate(mates(3), 30, rng);
@@ -225,7 +225,7 @@ describe("breeding field", () => {
     breeding.mate(mates(10), 1, rng);
     expect(breeding.matingProgress("her")).toBeNull();
     // A male of another kind does nothing.
-    expect(breeding.mate([{ id: "her", species: "raptor", sex: "female", at: [0, 0, 0] }, { id: "x", species: "phiomia", sex: "male", at: [1, 0, 0] }], 60, rng)).toEqual([]);
+    expect(breeding.mate([{ id: "her", species: "lodestone", sex: "female", at: [0, 0, 0] }, { id: "x", species: "craneback", sex: "male", at: [1, 0, 0] }], 60, rng)).toEqual([]);
     breeding.mate(mates(3), 30, rng);
     const events = breeding.mate(mates(3), 30, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
@@ -237,7 +237,7 @@ describe("breeding field", () => {
     expect(breeding.mate(mates(3), 120, rng)).toEqual([]);
   });
 
-  test("a raptor egg hatches only in its temperature, and out of it loses health until it is lost", () => {
+  test("a lodestone egg hatches only in its temperature, and out of it loses health until it is lost", () => {
     const breeding = field();
     const rng = rngOf(5);
     breeding.mate(mates(2), 61, rng);
@@ -259,16 +259,16 @@ describe("breeding field", () => {
     expect(lost.map((event) => event.type)).toEqual(["eggLost"]);
   });
 
-  test("a phiomia carries for its gestation and gives birth, then rests", () => {
+  test("a craneback carries for its gestation and gives birth, then rests", () => {
     const breeding = field();
     const rng = rngOf(7);
-    const events = breeding.mate(mates(4, "phiomia"), 61, rng);
+    const events = breeding.mate(mates(4, "craneback"), 61, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived"]);
     expect(breeding.eggs()).toHaveLength(0);
     expect(breeding.pregnancy("her")?.progress).toBe(0);
     expect(breeding.tick(35_000, 35_000, () => 0, rng)).toEqual([]);
     const born = breeding.tick(35_700, 700, () => 0, rng);
-    expect(born).toEqual([{ type: "born", mother: "her", species: "phiomia", offspring: { from: "her+him" } }]);
+    expect(born).toEqual([{ type: "born", mother: "her", species: "craneback", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
     expect(breeding.cooldown("her")).toBeGreaterThan(0);
   });
@@ -276,11 +276,11 @@ describe("breeding field", () => {
   test("a baby grows through ARK's stages, asks for care every interval, and answering every request imprints it fully", () => {
     const breeding = field();
     const rng = rngOf(11);
-    expect(breeding.raise("baby", "raptor", 0).stage).toBe("baby");
-    // Same cut points ARK's stage list always gave: 10% and 50% of the 133320 s a raptor takes to grow.
+    expect(breeding.raise("baby", "lodestone", 0).stage).toBe("baby");
+    // Same cut points ARK's stage list always gave: 10% and 50% of the 133320 s a lodestone takes to grow.
     const stageAfter = (matured: number) => {
       const other = field();
-      other.raise("x", "raptor", 0);
+      other.raise("x", "lodestone", 0);
       other.tick(0, matured * 133_320, () => 0, rngOf(1));
       return other.offspringOf("x")?.stage;
     };
@@ -316,16 +316,16 @@ describe("breeding field", () => {
     expect(breeding.cooldown("her")).toBeLessThanOrEqual(17_280);
     const hatched = breeding.tick(714, 714, () => 25, rng);
     expect(hatched.map((event) => event.type)).toEqual(["hatched"]);
-    breeding.raise("baby", "raptor", 714);
-    breeding.mate(mates(2, "phiomia", "her2", "him2"), 61, rng);
+    breeding.raise("baby", "lodestone", 714);
+    breeding.mate(mates(2, "craneback", "her2", "him2"), 61, rng);
     const copy = field();
     copy.restore(breeding.snapshot());
     expect(copy.offspringOf("baby")?.nextCareAt).toBeCloseTo(714 + 2880, 6);
-    expect(copy.pregnancy("her2")?.species).toBe("phiomia");
+    expect(copy.pregnancy("her2")?.species).toBe("craneback");
     expect(copy.speeds().grow).toBe(10);
     copy.forget("baby");
     expect(copy.offspring()).toHaveLength(0);
-    expect(() => breeding.raise("x", "titanoboa", 0)).toThrow("cannot breed");
+    expect(() => breeding.raise("x", "coilcobra", 0)).toThrow("cannot breed");
   });
 
   test("twins and triplets come at ARK's odds", () => {

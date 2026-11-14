@@ -41,7 +41,7 @@ function carried(game: HeadlessRunner): Record<string, number> {
 
 const me = (game: HeadlessRunner) => game.ctx.scene.entity.get(game.userId)!;
 
-test("killed by a raptor far from the beach, the survivor wakes there empty-handed, walks back and takes everything back", () => {
+test("killed by a lodestone far from the beach, the survivor wakes there empty-handed, walks back and takes everything back", () => {
   const game = runner();
   tick(game, 0.1);
   game.ui.tryInvoke("cheat", { give: { stone: 20, wood: 12, stone_pick: 1 }, toHotbar: ["stone_pick"] });
@@ -49,12 +49,12 @@ test("killed by a raptor far from the beach, the survivor wakes there empty-hand
   const before = carried(game);
   expect(before.stone).toBe(20);
   expect(before.stone_pick).toBe(1);
-  // On the hillside below the lower south cave, a long way from the beach, with a strong raptor beside.
+  // On the hillside below the lower south cave, a long way from the beach, with a strong lodestone beside.
   game.ui.tryInvoke("cheat", { goto: { cave: "cave_lower_south_cave", back: 30 } });
   tick(game, 0.1);
   const fell = [...me(game).position];
   expect(game.ctx.world.groundHeightAt(fell[0]!, fell[2]!)).toBeGreaterThan(0.5);
-  game.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 120, distance: 3 } });
+  game.ui.tryInvoke("cheat", { summon: { species: "lodestone", level: 120, distance: 3 } });
   for (let t = 0; t < 120 && bodies(game.ctx).length === 0; t += 0.05) game.step(0.05);
   expect(bodies(game.ctx)).toHaveLength(1);
 

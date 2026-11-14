@@ -10,7 +10,7 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   stone: "gameicons:delapouite/stone-pile",
   flint: "gameicons:delapouite/flint-spark",
   fiber: "gameicons:delapouite/high-grass",
-  hide: "gameicons:delapouite/animal-hide",
+  salvage: "gameicons:delapouite/animal-hide",
   metal: "gameicons:faithtoken/minerals",
   metal_ingot: "gameicons:lorc/metal-bar",
   metal_pick: "gameicons:delapouite/war-pick",
@@ -23,17 +23,17 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   mejoberry_seed: "gameicons:lorc/seedling",
   fertilizer: "gameicons:delapouite/fertilizer-bag",
   crop_plot: "gameicons:delapouite/field",
-  argentavis_talon: "gameicons:lorc/bird-claw",
-  sarcosuchus_skin: "gameicons:lorc/dorsal-scales",
-  sauropod_vertebra: "gameicons:lorc/dinosaur-bones",
-  titanoboa_venom: "gameicons:lorc/chemical-drop",
+  homer_beacon: "gameicons:lorc/bird-claw",
+  arcwire_coil: "gameicons:lorc/dorsal-scales",
+  hoover_turbine: "gameicons:lorc/dinosaur-bones",
+  coilcobra_capacitor: "gameicons:lorc/chemical-drop",
   element: "gameicons:lorc/floating-crystal",
-  spider_flag: "gameicons:delapouite/flag-objective",
-  raw_meat: "gameicons:lorc/meat",
-  raw_prime_meat: "gameicons:delapouite/steak",
-  cooked_meat: "gameicons:delapouite/kebab-spit",
-  spoiled_meat: "gameicons:lorc/meat",
-  narcotic: "gameicons:lorc/pill",
+  hive_flag: "gameicons:delapouite/flag-objective",
+  biogel: "gameicons:lorc/meat",
+  prime_biogel: "gameicons:delapouite/steak",
+  gel_ration: "gameicons:delapouite/kebab-spit",
+  soured_gel: "gameicons:lorc/meat",
+  drain_spike: "gameicons:lorc/pill",
   stimulant: "gameicons:delapouite/medicine-pills",
   stone_pick: "gameicons:lorc/mining",
   stone_hatchet: "gameicons:delapouite/hatchet",
@@ -42,7 +42,7 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   torch: "gameicons:delapouite/primitive-torch",
   storage_box: "gameicons:delapouite/chest",
   preserving_bin: "gameicons:delapouite/barrel",
-  hide_sleeping_bag: "gameicons:delapouite/sleeping-bag",
+  bedroll: "gameicons:delapouite/sleeping-bag",
   cloth_shirt: "gameicons:lucasms/shirt",
   cloth_pants: "gameicons:lorc/trousers",
   cloth_hat: "gameicons:delapouite/outback-hat",
@@ -53,14 +53,14 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   bola: "gameicons:delapouite/hunting-bolas",
   bow: "gameicons:lorc/pocket-bow",
   stone_arrow: "gameicons:delapouite/plain-arrow",
-  tranq_arrow: "gameicons:lorc/arrow-flights",
+  emp_arrow: "gameicons:lorc/arrow-flights",
   obsidian_arrow: "gameicons:lorc/broadhead-arrow",
   element_pick: "gameicons:delapouite/pick-of-destiny",
   snow_mask: "gameicons:delapouite/steampunk-goggles",
   oilskin_coat: "gameicons:delapouite/pirate-coat",
-  brood_greaves: "gameicons:delapouite/greaves",
-  brood_gauntlets: "gameicons:delapouite/gauntlet",
-  brood_treads: "gameicons:lorc/steeltoe-boots",
+  hive_greaves: "gameicons:delapouite/greaves",
+  hive_gauntlets: "gameicons:delapouite/gauntlet",
+  hive_treads: "gameicons:lorc/steeltoe-boots",
 };
 
 /** Families sharing one icon, by id prefix or suffix. */
@@ -69,7 +69,7 @@ const TROPHY = "gameicons:lorc/trophy";
 const BERRY = "gameicons:lorc/elderberry";
 const SADDLE = "gameicons:delapouite/saddle";
 const EGG = "gameicons:lorc/egg-clutch";
-const KIBBLE = "gameicons:delapouite/dog-bowl";
+const FIRMWARE = "gameicons:delapouite/dog-bowl";
 
 /** Building pieces by shape. */
 const BY_SHAPE: Readonly<Record<string, string>> = {
@@ -106,7 +106,7 @@ export function itemIconKey(itemId: string): string | null {
   if (itemId.includes("_trophy_")) return TROPHY;
   if (itemId.endsWith("berry")) return BERRY;
   if (itemId.startsWith("egg_")) return EGG;
-  if (itemId.startsWith("kibble_")) return KIBBLE;
+  if (itemId.startsWith("firmware_")) return FIRMWARE;
   const def = itemDef(itemId);
   if (def?.kind === "saddle") return SADDLE;
   const shape = structureDef(itemId)?.shape;
@@ -114,7 +114,7 @@ export function itemIconKey(itemId: string): string | null {
 }
 
 /** Every icon the game ships, for its credits. */
-export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, EGG, KIBBLE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
+export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, EGG, FIRMWARE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
 
 /** One credit line per game-icons.net artist. */
 export function itemIconCredits(): string[] {

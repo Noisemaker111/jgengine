@@ -25,7 +25,38 @@ export interface BodyPlan {
   /** A long legless body of this many segments (snakes, leeches). The torso is the first segment. */
   serpent?: { segments: number };
   features?: BodyFeatures;
+  /** Build it as a machine: panelled boxes, metal, glowing eyes and the fittings robots carry. */
+  machine?: MachineStyle;
   colors: { body: string; belly?: string; accent?: string };
+}
+
+/**
+ * A body plan built as a robot instead of an animal: the same skeleton and gait, drawn in hard panels
+ * over pistons, a metal finish and eyes that glow. Every length is metres.
+ */
+export interface MachineStyle {
+  /** Eye (or lens) glow colour, sRGB hex; it reads at night and says what the machine is. */
+  glow: string;
+  /** Square panels for torso and head instead of rounded hide. Default true. */
+  boxy?: boolean;
+  /** One big lens instead of two eyes. */
+  cyclops?: boolean;
+  /** Antennae on the head: how many and how long. */
+  antennae?: { count: 1 | 2; length: number };
+  /** Exhaust stacks standing up off the back. */
+  stacks?: number;
+  /** A rotor disc spinning over the back, this radius (drones). */
+  rotor?: number;
+  /** A drill bit on the snout, this long. */
+  drill?: number;
+  /** A circular saw blade on the snout, this radius. */
+  saw?: number;
+  /** Forklift tines under the head, this long. */
+  forks?: number;
+  /** Bolted joint caps at the hips and knees. Default true. */
+  joints?: boolean;
+  /** How metallic the hull reads, 0 to 1. Default 0.55. */
+  metal?: number;
 }
 
 /** What sets a species apart. Every length is metres. */
@@ -97,6 +128,30 @@ class Part {
         const b = a + segU + 1;
         this.indices.push(a, a + 1, b, b, a + 1, b + 1);
       }
+    }
+    return this;
+  }
+  /** An axis-aligned box centred on `c` with half-extents `h`, flat-shaded. */
+  box(c: V3, h: V3): this {
+    const faces: [V3, V3, V3][] = [
+      [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      [[-1, 0, 0], [0, 1, 0], [0, 0, -1]],
+      [[0, 1, 0], [0, 0, 1], [1, 0, 0]],
+      [[0, -1, 0], [0, 0, -1], [1, 0, 0]],
+      [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
+      [[0, 0, -1], [-1, 0, 0], [0, 1, 0]],
+    ];
+    for (const [n, u, v] of faces) {
+      const corner = (su: number, sv: number): V3 => [
+        c[0] + (n[0] + u[0] * su + v[0] * sv) * h[0],
+        c[1] + (n[1] + u[1] * su + v[1] * sv) * h[1],
+        c[2] + (n[2] + u[2] * su + v[2] * sv) * h[2],
+      ];
+      const a = this.vertex(corner(-1, -1), n);
+      const b = this.vertex(corner(1, -1), n);
+      const d = this.vertex(corner(1, 1), n);
+      const e = this.vertex(corner(-1, 1), n);
+      this.indices.push(a, b, d, a, d, e);
     }
     return this;
   }
@@ -190,13 +245,21 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   const hip = splay ? legs.length * 0.45 : legs.pairs === 0 ? torso.height * 0.5 : legs.length;
   const centreY = hip + (legs.pairs === 0 ? 0 : torso.height * 0.3);
 
+  const m = plan.machine;
+  const boxy = m !== undefined && m.boxy !== false;
   const root = rig.add("creature", -1, [0, 0, 0]);
   const body = rig.add("body", root, [0, centreY, 0]);
   const limbs: GaitLimb[] = [];
   const swaying: { node: number; phase: number; amp: number }[] = [];
 
   // Trunk, belly and back features.
-  if (plan.serpent === undefined) {
+  if (plan.serpent === undefined && boxy) {
+    // A hull of panels: the main box, a darker under-frame and a raised spine plate.
+    rig.part(body, MAT.body).box([0, torso.height * 0.04, 0], [torso.width / 2, torso.height * 0.46, torso.length / 2]);
+    rig.part(body, MAT.belly).box([0, -torso.height * 0.3, 0], [torso.width * 0.42, torso.height * 0.24, torso.length * 0.46]);
+    rig.part(body, MAT.accent).box([0, torso.height * 0.52, -torso.length * 0.05], [torso.width * 0.3, torso.height * 0.06, torso.length * 0.36]);
+    for (const side of [-1, 1]) rig.part(body, MAT.eye).box([side * torso.width * 0.505, torso.height * 0.12, torso.length * 0.2], [torso.width * 0.01, torso.height * 0.05, torso.length * 0.12]);
+  } else if (plan.serpent === undefined) {
     rig.part(body, MAT.body).ellipsoid([0, 0, 0], [torso.width / 2, torso.height / 2, torso.length / 2], 12, 7);
     rig.part(body, MAT.belly).ellipsoid([0, -torso.height * 0.12, 0], [torso.width * 0.44, torso.height * 0.4, torso.length * 0.44], 10, 6);
   } else {
@@ -216,11 +279,24 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
       const z = (0.45 - t * 0.95) * torso.length;
       const h = f.plates.height * (0.6 + 0.4 * Math.sin(t * Math.PI));
       const side = i % 2 === 0 ? -1 : 1;
-      rig.part(body, MAT.accent).ellipsoid([side * torso.width * 0.08, torso.height * 0.45 + h * 0.45, z], [torso.width * 0.04, h * 0.55, h * 0.4], 6, 4);
+      if (boxy) rig.part(body, MAT.accent).box([side * torso.width * 0.12, torso.height * 0.45 + h * 0.45, z], [torso.width * 0.03, h * 0.5, h * 0.35]);
+      else rig.part(body, MAT.accent).ellipsoid([side * torso.width * 0.08, torso.height * 0.45 + h * 0.45, z], [torso.width * 0.04, h * 0.55, h * 0.4], 6, 4);
     }
   }
   if (f.sail !== undefined) rig.part(body, MAT.accent).ellipsoid([0, torso.height * 0.4, 0], [torso.width * 0.04, f.sail, torso.length * 0.42], 10, 5);
   if (f.mane === true) rig.part(body, MAT.accent).ellipsoid([0, torso.height * 0.15, torso.length * 0.3], [torso.width * 0.6, torso.height * 0.62, torso.length * 0.28], 10, 6);
+  if (m?.stacks !== undefined) {
+    for (const side of [-1, 1]) {
+      const base: V3 = [side * torso.width * 0.22, torso.height * 0.4, -torso.length * 0.25];
+      rig.part(body, MAT.belly).tube(base, [base[0], base[1] + m.stacks, base[2] - m.stacks * 0.15], torso.width * 0.07, torso.width * 0.06, 6);
+      rig.part(body, MAT.eye).ellipsoid([base[0], base[1] + m.stacks, base[2] - m.stacks * 0.15], [torso.width * 0.05, torso.width * 0.02, torso.width * 0.05], 6, 3);
+    }
+  }
+  if (m?.rotor !== undefined) {
+    const top = torso.height * 0.5;
+    rig.part(body, MAT.belly).tube([0, top, 0], [0, top + m.rotor * 0.35, 0], torso.width * 0.05, torso.width * 0.05, 6);
+    rig.part(body, MAT.accent).ellipsoid([0, top + m.rotor * 0.35, 0], [m.rotor, m.rotor * 0.04, m.rotor], 14, 3);
+  }
 
   // Legs.
   const hipY = hip - centreY;
@@ -244,8 +320,10 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
         const reach = arms ? length : hip;
         const knee: V3 = [0, -reach * 0.5, arms ? reach * 0.25 : (legs.biped === true ? -reach * 0.12 : reach * 0.04)];
         const foot: V3 = [0, -reach + r * 0.6, arms ? reach * 0.45 : 0];
-        rig.part(node, MAT.body).tube([0, 0, 0], knee, r * 1.15, r * 0.9).tube(knee, foot, r * 0.9, r * 0.7);
-        if (!arms) rig.part(node, MAT.accent).ellipsoid([foot[0], foot[1] - r * 0.25, foot[2] + r * 0.4], [r * 0.95, r * 0.45, r * 1.4], 8, 4);
+        rig.part(node, m === undefined ? MAT.body : MAT.belly).tube([0, 0, 0], knee, r * 1.15, r * 0.9).tube(knee, foot, r * 0.9, r * 0.7);
+        if (m !== undefined && m.joints !== false) rig.part(node, MAT.accent).ellipsoid([0, 0, 0], [r * 1.35, r * 1.35, r * 1.35], 8, 5).ellipsoid(knee, [r * 1.1, r * 1.1, r * 1.1], 8, 5);
+        if (!arms && boxy) rig.part(node, MAT.accent).box([foot[0], foot[1] - r * 0.2, foot[2] + r * 0.4], [r * 1.0, r * 0.4, r * 1.4]);
+        else if (!arms) rig.part(node, MAT.accent).ellipsoid([foot[0], foot[1] - r * 0.25, foot[2] + r * 0.4], [r * 0.95, r * 0.45, r * 1.4], 8, 4);
         const diagonal = legs.biped === true ? (side < 0 ? 0 : 0.5) : (pair + (side < 0 ? 0 : 1)) % 2 === 0 ? 0 : 0.5;
         limbs.push({ node, phase: diagonal, axis: [1, 0, 0], scale: arms ? 0.4 : 1 });
       }
@@ -274,11 +352,33 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   const hl = head.length;
   const hh = head.height;
   const hw = head.width;
-  rig.part(headNode, MAT.body).ellipsoid([0, 0, hl * 0.35], [hw / 2, hh / 2, hl * 0.42]);
   const snout = head.snout ?? 0.5;
-  if (f.beak === true) rig.part(headNode, MAT.accent).cone([0, -hh * 0.05, hl * 0.65], [0, -hh * 0.2, hl * (0.75 + snout)], hh * 0.3);
-  else if (snout > 0) rig.part(headNode, MAT.body).tube([0, -hh * 0.08, hl * 0.5], [0, -hh * 0.14, hl * (0.6 + snout)], hh * 0.36, hh * 0.24);
-  for (const side of [-1, 1]) rig.part(headNode, MAT.eye).ellipsoid([side * hw * 0.38, hh * 0.18, hl * 0.48], [hh * 0.09, hh * 0.09, hh * 0.09], 6, 4);
+  if (boxy) {
+    rig.part(headNode, MAT.body).box([0, 0, hl * 0.35], [hw / 2, hh / 2, hl * 0.42]);
+    if (f.beak === true) rig.part(headNode, MAT.accent).cone([0, -hh * 0.05, hl * 0.7], [0, -hh * 0.2, hl * (0.8 + snout)], hh * 0.3, 4);
+    else if (snout > 0) rig.part(headNode, MAT.belly).box([0, -hh * 0.14, hl * (0.72 + snout * 0.5)], [hw * 0.32, hh * 0.24, hl * snout * 0.5]);
+    // A visor band across the face carries the eyes.
+    rig.part(headNode, MAT.belly).box([0, hh * 0.16, hl * 0.775], [hw * 0.46, hh * 0.14, hl * 0.02]);
+  } else {
+    rig.part(headNode, MAT.body).ellipsoid([0, 0, hl * 0.35], [hw / 2, hh / 2, hl * 0.42]);
+    if (f.beak === true) rig.part(headNode, MAT.accent).cone([0, -hh * 0.05, hl * 0.65], [0, -hh * 0.2, hl * (0.75 + snout)], hh * 0.3);
+    else if (snout > 0) rig.part(headNode, MAT.body).tube([0, -hh * 0.08, hl * 0.5], [0, -hh * 0.14, hl * (0.6 + snout)], hh * 0.36, hh * 0.24);
+  }
+  if (m?.cyclops === true) rig.part(headNode, MAT.eye).ellipsoid([0, hh * 0.16, hl * (boxy ? 0.79 : 0.7)], [hh * 0.2, hh * 0.2, hh * 0.08], 10, 6);
+  else if (boxy) for (const side of [-1, 1]) rig.part(headNode, MAT.eye).box([side * hw * 0.24, hh * 0.16, hl * 0.79], [hw * 0.12, hh * 0.08, hl * 0.02]);
+  else for (const side of [-1, 1]) rig.part(headNode, MAT.eye).ellipsoid([side * hw * 0.38, hh * 0.18, hl * 0.48], [hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13)], 6, 4);
+  if (m?.antennae !== undefined) {
+    const spots = m.antennae.count === 1 ? [0] : [-1, 1];
+    for (const side of spots) {
+      const foot: V3 = [side * hw * 0.3, hh * 0.45, hl * 0.25];
+      const tip: V3 = [foot[0] + side * m.antennae.length * 0.25, foot[1] + m.antennae.length, foot[2] - m.antennae.length * 0.3];
+      rig.part(headNode, MAT.belly).tube(foot, tip, hh * 0.035, hh * 0.02, 5);
+      rig.part(headNode, MAT.eye).ellipsoid(tip, [hh * 0.07, hh * 0.07, hh * 0.07], 6, 4);
+    }
+  }
+  if (m?.drill !== undefined) rig.part(headNode, MAT.accent).cone([0, -hh * 0.1, hl * (0.75 + snout)], [0, -hh * 0.1, hl * (0.75 + snout) + m.drill], hh * 0.28, 8);
+  if (m?.saw !== undefined) rig.part(headNode, MAT.accent).ellipsoid([0, -hh * 0.2, hl * (0.7 + snout) + m.saw * 0.4], [hh * 0.04, m.saw, m.saw], 16, 4);
+  if (m?.forks !== undefined) for (const side of [-1, 1]) rig.part(headNode, MAT.belly).box([side * hw * 0.25, -hh * 0.55, hl * 0.6 + m.forks * 0.5], [hw * 0.06, hh * 0.04, m.forks * 0.5]);
   if (f.horns !== undefined) {
     if (f.horns.count !== 2) rig.part(headNode, MAT.accent).cone([0, hh * 0.15, hl * (0.6 + snout * 0.7)], [0, hh * 0.15 + f.horns.length * 0.8, hl * (0.6 + snout * 0.7) + f.horns.length * 0.4], hh * 0.16);
     if (f.horns.count >= 2) for (const side of [-1, 1]) rig.part(headNode, MAT.accent).cone([side * hw * 0.3, hh * 0.35, hl * 0.4], [side * hw * 0.45, hh * 0.35 + f.horns.length * 0.5, hl * 0.4 + f.horns.length * 0.85], hh * 0.14);
@@ -295,7 +395,8 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   if (f.wings !== undefined) {
     for (const side of [-1, 1] as const) {
       const wing = rig.add(`wing_${side < 0 ? "l" : "r"}`, body, [side * torso.width * 0.4, torso.height * 0.3, torso.length * 0.1]);
-      rig.part(wing, MAT.accent).ellipsoid([side * f.wings * 0.25, 0, -torso.length * 0.05], [f.wings * 0.25, torso.height * 0.04, torso.length * 0.32], 10, 4);
+      if (boxy) rig.part(wing, MAT.accent).box([side * f.wings * 0.25, 0, -torso.length * 0.05], [f.wings * 0.25, torso.height * 0.03, torso.length * 0.28]);
+      else rig.part(wing, MAT.accent).ellipsoid([side * f.wings * 0.25, 0, -torso.length * 0.05], [f.wings * 0.25, torso.height * 0.04, torso.length * 0.32], 10, 4);
       wings.push(wing);
     }
   }
@@ -337,12 +438,20 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
 
   return {
     nodes,
-    materials: [
-      { name: "body", color: plan.colors.body },
-      { name: "belly", color: plan.colors.belly ?? plan.colors.body },
-      { name: "accent", color: plan.colors.accent ?? plan.colors.body, roughness: 0.7 },
-      { name: "eye", color: "#111111", roughness: 0.3 },
-    ],
+    materials:
+      m === undefined
+        ? [
+            { name: "body", color: plan.colors.body },
+            { name: "belly", color: plan.colors.belly ?? plan.colors.body },
+            { name: "accent", color: plan.colors.accent ?? plan.colors.body, roughness: 0.7 },
+            { name: "eye", color: "#111111", roughness: 0.3 },
+          ]
+        : [
+            { name: "body", color: plan.colors.body, metalness: m.metal ?? 0.55, roughness: 0.45 },
+            { name: "belly", color: plan.colors.belly ?? "#3a3d42", metalness: 0.7, roughness: 0.4 },
+            { name: "accent", color: plan.colors.accent ?? plan.colors.body, metalness: 0.35, roughness: 0.55 },
+            { name: "eye", color: m.glow, emissive: m.glow, roughness: 0.2 },
+          ],
     clips,
   };
 }

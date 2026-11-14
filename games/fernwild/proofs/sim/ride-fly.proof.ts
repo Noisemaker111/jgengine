@@ -6,7 +6,7 @@ import { game } from "../../src/game.config";
 const FOOT = [12, 275] as const;
 const UPHILL = 3.93;
 
-// Saddle a tamed Pteranodon at the foot of the slope, take off, climb well clear of the ground, fly over
+// Saddle a tamed Watchwing at the foot of the slope, take off, climb well clear of the ground, fly over
 // the rise and land on top: higher ground than a walk would reach in the time.
 export default defineProof(game, {
   proves: ["creatures.ride.fly"],
@@ -14,7 +14,7 @@ export default defineProof(game, {
     s.waitFor((p) => p.creatures > 0, { timeoutMs: 60_000 });
     s.command("cheat", { teleport: [FOOT[0], FOOT[1], UPHILL] });
     s.wait(300);
-    s.command("cheat", { give: { pteranodon_saddle: 1 }, summon: { species: "pteranodon", level: 1, distance: 2.5, tamed: true } });
+    s.command("cheat", { give: { watchwing_rig: 1 }, summon: { species: "watchwing", level: 1, distance: 2.5, tamed: true } });
     s.wait(300);
   },
   async play(p) {

@@ -10,10 +10,10 @@ export default defineProof(game, {
     s.waitFor((p) => p.carrying === 3, { timeoutMs: 3000 });
     s.command("cheat", { goto: { cave: "cave_lower_south_cave", back: 30 } });
     s.waitFor((p) => p.z < 1050, { timeoutMs: 3000 });
-    s.command("cheat", { summon: { species: "raptor", level: 30, distance: 5 } });
+    s.command("cheat", { summon: { species: "lodestone", level: 30, distance: 5 } });
   },
   async play(p) {
-    // The wild raptor's own AI kills the survivor; they wake on the beach with their things left on the body.
+    // The wild lodestone's own AI kills the survivor; they wake on the beach with their things left on the body.
     await p.waitFor((r) => r.bodyDistance > 50, { timeoutMs: 90_000, note: "killed and awake on the beach" });
     await p.expect((r) => r.carrying === 0 && r.bodyStacks === 3, "died empty-handed, everything with the body");
   },

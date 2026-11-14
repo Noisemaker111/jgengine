@@ -41,7 +41,7 @@ const survivor = (runner: HeadlessRunner) => defined(runner.ctx.scene.entity.get
 const here = (runner: HeadlessRunner) => survivor(runner).position;
 const step = (onboarding: OnboardingRuntime) => onboarding.run().current()?.step.id ?? null;
 
-test("the survivor's path walks a new survivor from a punched tree to a tamed dodo, pointing at each thing", () => {
+test("the survivor's path walks a new survivor from a punched tree to a tamed mowbot, pointing at each thing", () => {
   const { runner, onboarding } = firstDayRunner();
   tick(runner, 0.3);
 
@@ -106,25 +106,25 @@ test("the survivor's path walks a new survivor from a punched tree to a tamed do
   runner.ctx.scene.entity.setPose(runner.userId, { position: atStones, rotationY: facing });
   tick(runner, 0.3);
 
-  // Step 7 points at a dodo (or the dodo herd's grounds), and a tame finishes the beach.
+  // Step 7 points at a mowbot (or the mowbot herd's grounds), and a tame finishes the beach.
   expect(step(onboarding)).toBe("tame");
   tick(runner, 0.3);
-  const dodo = defined(nearestWild(runner.ctx, "dodo", here(runner), 250));
-  // The pointer looks on a 0.25 s beat, so a grazing dodo may have stepped a little since.
+  const mowbot = defined(nearestWild(runner.ctx, "mowbot", here(runner), 250));
+  // The pointer looks on a 0.25 s beat, so a grazing mowbot may have stepped a little since.
   const pointed = defined(onboarding.pointing());
-  expect(Math.hypot(pointed[0] - dodo[0], pointed[2] - dodo[2])).toBeLessThan(1);
+  expect(Math.hypot(pointed[0] - mowbot[0], pointed[2] - mowbot[2])).toBeLessThan(1);
   expect(onboarding.run().isFinished()).toBe(false);
   expect(creaturesView(runner.ctx).tamed).toBe(0);
 
-  // A dodo right in front, tamed: the pointer moves onto it, then the day is done.
+  // A mowbot right in front, tamed: the pointer moves onto it, then the day is done.
   const me = here(runner);
   const yaw = survivor(runner).rotationY;
-  const id = defined(spawnCreature(runner.ctx, "dodo", [me[0] + Math.sin(yaw) * 2.5, me[2] + Math.cos(yaw) * 2.5]));
+  const id = defined(spawnCreature(runner.ctx, "mowbot", [me[0] + Math.sin(yaw) * 2.5, me[2] + Math.cos(yaw) * 2.5]));
   tick(runner, 0.5);
-  // The pointer follows the wandering dodo on its 0.25 s look beat.
+  // The pointer follows the wandering mowbot on its 0.25 s look beat.
   const pointing = defined(onboarding.pointing());
-  const dodoAt = defined(runner.ctx.scene.entity.get(id)).position;
-  expect(Math.hypot(pointing[0] - dodoAt[0], pointing[2] - dodoAt[2])).toBeLessThan(0.5);
+  const mowbotAt = defined(runner.ctx.scene.entity.get(id)).position;
+  expect(Math.hypot(pointing[0] - mowbotAt[0], pointing[2] - mowbotAt[2])).toBeLessThan(0.5);
   forceTame(runner.ctx);
   tick(runner, 0.3);
   expect(creaturesView(runner.ctx).tamed).toBe(1);

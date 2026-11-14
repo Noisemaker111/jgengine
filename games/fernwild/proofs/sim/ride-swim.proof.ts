@@ -20,7 +20,7 @@ function deepWaterNear(ground: (x: number, z: number) => number, from: readonly 
 let seaward = 0;
 
 // A swimming tame carries its rider through water. Setup finds the beach between the spawn and the nearest deep
-// sea and puts the survivor on it, facing the sea, with a tamed Sarco and its saddle. Play saddles and mounts it,
+// sea and puts the survivor on it, facing the sea, with a tamed Arcwire and its saddle. Play saddles and mounts it,
 // rides into the sea, and keeps riding: afloat, it swims well over 25 m in four seconds, where a mount that is no
 // swimmer only wades at a share of its walk.
 export default defineProof(game, {
@@ -42,7 +42,7 @@ export default defineProof(game, {
     seaward = Math.atan2(-dx, -dz);
     s.command("cheat", { destroyWild: true, teleport: [beach[0], beach[1], seaward] });
     s.wait(500);
-    s.command("cheat", { give: { sarco_saddle: 1 }, summon: { species: "sarco", level: 1, distance: 2.5, tamed: true } });
+    s.command("cheat", { give: { arcwire_rig: 1 }, summon: { species: "arcwire", level: 1, distance: 2.5, tamed: true } });
     s.wait(500);
   },
   async play(p) {
@@ -50,7 +50,7 @@ export default defineProof(game, {
     await p.act("giveCreature", { inventoryId: "inventory", slot: (await p.probe()).saddleSlot });
     await p.act("closeCreature", {});
     await p.hold("KeyE", { until: (r) => r.riding === 1, timeoutMs: 3000 });
-    await p.expect((r) => r.mountSwimmer === 1 && r.mountSwimming === 0, "riding the Sarco on the beach");
+    await p.expect((r) => r.mountSwimmer === 1 && r.mountSwimming === 0, "riding the Arcwire on the beach");
     await p.heading(seaward);
     await p.hold("KeyW", { until: (r) => r.mountSwimming === 1, timeoutMs: 15_000 });
     const start = await p.probe();

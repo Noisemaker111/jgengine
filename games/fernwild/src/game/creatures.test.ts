@@ -59,10 +59,10 @@ test("every species any spawn zone lists has stats and a body, so no zone stays 
 test("only the herds near the survivor are awake, and they follow the survivor across the island", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  // The south beach wakes with ARK's beach herds: dodos and phiomias, nothing from the far side of the island.
+  // The south beach wakes with ARK's beach herds: mowbots and cranebacks, nothing from the far side of the island.
   const beach = new Set(wildNames(runner));
-  expect(beach.has("dodo")).toBe(true);
-  expect(beach.has("phiomia")).toBe(true);
+  expect(beach.has("mowbot")).toBe(true);
+  expect(beach.has("craneback")).toBe(true);
   expect(creaturesView(runner.ctx).count).toBeGreaterThan(5);
   expect(farthest(runner)).toBeLessThan(320);
 
@@ -81,14 +81,14 @@ test("only the herds near the survivor are awake, and they follow the survivor a
   expect(farthest(runner)).toBeLessThan(320);
 });
 
-test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", () => {
+test("club a lodestone unconscious, tame it on raw meat, saddle it and ride it", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  // A survivor who levelled health and stamina, as anyone taking on a raptor with a club must: it
+  // A survivor who levelled health and stamina, as anyone taking on a lodestone with a club must: it
   // bites for 15 every 0.8 s while they swing, so they need far more than a new survivor's 100 health.
-  runner.ui.tryInvoke("cheat", { xp: 100000, give: { wooden_club: 1, raw_meat: 10, raptor_saddle: 1 }, tamingSpeed: 20, spend: { health: 45, stamina: 8 } });
+  runner.ui.tryInvoke("cheat", { xp: 100000, give: { wooden_club: 1, biogel: 10, lodestone_rig: 1 }, tamingSpeed: 20, spend: { health: 45, stamina: 8 } });
   equip(runner, "wooden_club");
-  runner.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 1, distance: 2.5 } });
+  runner.ui.tryInvoke("cheat", { summon: { species: "lodestone", level: 1, distance: 2.5 } });
 
   let hits = 0;
   while (creaturesView(runner.ctx).down === 0 && hits < 40) {
@@ -96,7 +96,7 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
     hits += 1;
     tick(runner, 0.95);
   }
-  // A club hit lands 20 torpor on a level-1 raptor's 180; its torpor drains a little between swings.
+  // A club hit lands 20 torpor on a level-1 lodestone's 180; its torpor drains a little between swings.
   expect(hits).toBeGreaterThanOrEqual(9);
   expect(hits).toBeLessThanOrEqual(10);
   expect(creaturesView(runner.ctx).aimed?.taming?.unconscious).toBe(true);
@@ -107,22 +107,22 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
 
   runner.ui.tryInvoke("creatureUse", {});
   expect(openScreen(runner.ctx)).toBe("creature");
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "raw_meat") });
-  expect(creaturesView(runner.ctx).viewing?.inventory.some((slot) => slot?.itemId === "raw_meat")).toBe(true);
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "biogel") });
+  expect(creaturesView(runner.ctx).viewing?.inventory.some((slot) => slot?.itemId === "biogel")).toBe(true);
   for (let t = 0; t < 40 && creaturesView(runner.ctx).tamed === 0; t += 1) tick(runner, 1);
   const tame = creaturesView(runner.ctx).viewing!;
   expect(tame.tamed).toBe(true);
   // Seven raw meat at level 1; the other three stay in its inventory.
-  expect(tame.inventory.filter((slot) => slot?.itemId === "raw_meat").reduce((sum, slot) => sum + slot!.count, 0)).toBe(3);
+  expect(tame.inventory.filter((slot) => slot?.itemId === "biogel").reduce((sum, slot) => sum + slot!.count, 0)).toBe(3);
 
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "raptor_saddle") });
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "lodestone_rig") });
   expect(creaturesView(runner.ctx).viewing?.saddled).toBe(true);
   runner.ui.tryInvoke("closeCreature", {});
   runner.ui.tryInvoke("creatureUse", {});
   expect(runner.ctx.player.possession.active(runner.userId)).toBe(tame.id);
   expect(creaturesView(runner.ctx).riding?.id).toBe(tame.id);
 
-  // W now drives the raptor at its own walking pace, with the rider on its back.
+  // W now drives the lodestone at its own walking pace, with the rider on its back.
   const start = runner.ctx.scene.entity.get(tame.id)!.position;
   runner.aim({ heading: facing(runner) });
   for (let t = 0; t < 1; t += 0.05) runner.step(0.05, { held: ["moveForward"] });
@@ -139,14 +139,14 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
 test("a tame levels on ARK's curve from kills, spends points into its stats, and a ridden sprint costs its stamina", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { give: { raptor_saddle: 1 }, summon: { species: "raptor", level: 1, distance: 2.5 } });
+  runner.ui.tryInvoke("cheat", { give: { lodestone_rig: 1 }, summon: { species: "lodestone", level: 1, distance: 2.5 } });
   tick(runner, 0.1);
   runner.ui.tryInvoke("cheat", { forceTame: true });
   tick(runner, 0.1);
-  const raptor = creaturesView(runner.ctx).aimed!;
-  expect(raptor.tamed).toBe(true);
-  expect(raptor.growth).toMatchObject({ tamedAt: 1, gained: 0, unspent: 0, xpNext: 10 });
-  expect(raptor.stamina).toEqual({ value: 150, max: 150 });
+  const lodestone = creaturesView(runner.ctx).aimed!;
+  expect(lodestone.tamed).toBe(true);
+  expect(lodestone.growth).toMatchObject({ tamedAt: 1, gained: 0, unspent: 0, xpNext: 10 });
+  expect(lodestone.stamina).toEqual({ value: 150, max: 150 });
 
   // 10 XP for the first level, 20 for the second: 35 XP is two levels and 5 toward the third.
   runner.ui.tryInvoke("creatureUse", {});
@@ -164,25 +164,25 @@ test("a tame levels on ARK's curve from kills, spends points into its stats, and
   expect(sheet.growth!.unspent).toBe(0);
   expect(sheet.growth!.stats.find((stat) => stat.id === "health")!.points).toBe(2);
 
-  // A kill by the tame gives it the kill's XP: a level-1 dodo is worth ARK's 2.
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "raptor_saddle") });
+  // A kill by the tame gives it the kill's XP: a level-1 mowbot is worth ARK's 2.
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "lodestone_rig") });
   runner.ui.tryInvoke("closeCreature", {});
   runner.ui.tryInvoke("creatureUse", {});
-  expect(creaturesView(runner.ctx).riding?.id).toBe(raptor.id);
-  runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level: 1, distance: 2.4 } });
-  const mount = runner.ctx.scene.entity.get(raptor.id)!;
-  const dodo = runner.ctx.scene.entity.list().filter((entity) => entity.name === "dodo").sort((a, b) => Math.hypot(a.position[0] - mount.position[0], a.position[2] - mount.position[2]) - Math.hypot(b.position[0] - mount.position[0], b.position[2] - mount.position[2]))[0]!;
-  runner.ctx.scene.entity.setPose(dodo.id, { position: [mount.position[0] + Math.sin(mount.rotationY) * 2.4, mount.position[1], mount.position[2] + Math.cos(mount.rotationY) * 2.4], rotationY: 0 });
-  // A hurt dodo runs; leave it one bite from death so the kill lands before it can.
-  runner.ctx.scene.entity.stats.set(dodo.id, "health", { current: 5 });
+  expect(creaturesView(runner.ctx).riding?.id).toBe(lodestone.id);
+  runner.ui.tryInvoke("cheat", { summon: { species: "mowbot", level: 1, distance: 2.4 } });
+  const mount = runner.ctx.scene.entity.get(lodestone.id)!;
+  const mowbot = runner.ctx.scene.entity.list().filter((entity) => entity.name === "mowbot").sort((a, b) => Math.hypot(a.position[0] - mount.position[0], a.position[2] - mount.position[2]) - Math.hypot(b.position[0] - mount.position[0], b.position[2] - mount.position[2]))[0]!;
+  runner.ctx.scene.entity.setPose(mowbot.id, { position: [mount.position[0] + Math.sin(mount.rotationY) * 2.4, mount.position[1], mount.position[2] + Math.cos(mount.rotationY) * 2.4], rotationY: 0 });
+  // A hurt mowbot runs; leave it one bite from death so the kill lands before it can.
+  runner.ctx.scene.entity.stats.set(mowbot.id, "health", { current: 5 });
   const xpBefore = creaturesView(runner.ctx).riding!.growth!.xp;
   runner.ui.tryInvoke("fire", {});
   tick(runner, 0.1);
-  expect(runner.ctx.scene.entity.stats.get(dodo.id, "health")!.current).toBeLessThanOrEqual(0);
+  expect(runner.ctx.scene.entity.stats.get(mowbot.id, "health")!.current).toBeLessThanOrEqual(0);
   expect(creaturesView(runner.ctx).riding!.growth!.xp - xpBefore).toBeCloseTo(2, 1);
 
   // Sprinting on its back burns ARK's 6 stamina a second; walking spends none.
-  runner.aim({ heading: runner.ctx.scene.entity.get(raptor.id)!.rotationY });
+  runner.aim({ heading: runner.ctx.scene.entity.get(lodestone.id)!.rotationY });
   const fresh = creaturesView(runner.ctx).riding!.stamina.value;
   for (let t = 0; t < 2; t += 0.05) runner.step(0.05, { held: ["moveForward", "sprint"] });
   const spent = fresh - creaturesView(runner.ctx).riding!.stamina.value;
@@ -193,9 +193,9 @@ test("a tame levels on ARK's curve from kills, spends points into its stats, and
 test("bare fists knock out as well as hurt: a punch puts ARK's 1.75x its damage into torpor", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { summon: { species: "phiomia", level: 1, distance: 1.2 } });
+  runner.ui.tryInvoke("cheat", { summon: { species: "craneback", level: 1, distance: 1.2 } });
   tick(runner, 0.1);
-  expect(creaturesView(runner.ctx).aimed?.label).toBe("Phiomia");
+  expect(creaturesView(runner.ctx).aimed?.label).toBe("Craneback");
   runner.ui.tryInvoke("fire", { yaw: facing(runner) });
   tick(runner, 0.1);
   const card = creaturesView(runner.ctx).aimed!;
@@ -227,11 +227,11 @@ test("danger rises with distance: the beach herds are level 5 at most, the far s
   expect(wildLevelCap(2000)).toBe(30);
 });
 
-test("fists put a dodo to sleep before they kill it, at any wild level", () => {
+test("fists put a mowbot to sleep before they kill it, at any wild level", () => {
   for (const level of [1, 15, 30]) {
     const runner = islandRunner();
     tick(runner, 0.1);
-    runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level, distance: 1.2 } });
+    runner.ui.tryInvoke("cheat", { summon: { species: "mowbot", level, distance: 1.2 } });
     tick(runner, 0.1);
     const me = runner.ctx.scene.entity.get(runner.userId);
     if (me === null) throw new Error("no survivor on the beach");
@@ -239,36 +239,36 @@ test("fists put a dodo to sleep before they kill it, at any wild level", () => {
       const at = runner.ctx.scene.entity.get(id)?.position;
       return at === undefined ? Infinity : Math.hypot(at[0] - me.position[0], at[2] - me.position[2]);
     };
-    const dodo = runner.ctx.scene.entity.list().filter((entity) => entity.name === "dodo").sort((a, b) => near(a.id) - near(b.id))[0]?.id ?? "";
-    expect(dodo).not.toBe("");
-    // The dodo runs when hit: each swing, the survivor has caught up with it again.
-    for (let swing = 0; swing < 60 && runner.ctx.scene.entity.get(dodo) !== undefined; swing += 1) {
+    const mowbot = runner.ctx.scene.entity.list().filter((entity) => entity.name === "mowbot").sort((a, b) => near(a.id) - near(b.id))[0]?.id ?? "";
+    expect(mowbot).not.toBe("");
+    // The mowbot runs when hit: each swing, the survivor has caught up with it again.
+    for (let swing = 0; swing < 60 && runner.ctx.scene.entity.get(mowbot) !== undefined; swing += 1) {
       const yaw = facing(runner);
       const [x, , z] = me.position;
       const ahead: [number, number] = [x + Math.sin(yaw) * 1.2, z + Math.cos(yaw) * 1.2];
-      runner.ctx.scene.entity.setPose(dodo, { position: [ahead[0], runner.ctx.world.groundHeightAt(ahead[0], ahead[1]), ahead[1]], rotationY: 0 });
+      runner.ctx.scene.entity.setPose(mowbot, { position: [ahead[0], runner.ctx.world.groundHeightAt(ahead[0], ahead[1]), ahead[1]], rotationY: 0 });
       tick(runner, 0.05);
       const card = creaturesView(runner.ctx).aimed;
       if (card?.taming?.unconscious === true) break;
       runner.ui.tryInvoke("fire", { yaw });
       tick(runner, 1);
     }
-    expect(runner.ctx.scene.entity.get(dodo)).toBeDefined();
+    expect(runner.ctx.scene.entity.get(mowbot)).toBeDefined();
     expect(creaturesView(runner.ctx).aimed?.taming?.unconscious).toBe(true);
   }
 });
 
-test("a dodo runs when hit, and its body carves into meat and hide", () => {
+test("a mowbot runs when hit, and its body carves into meat and hide", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { give: { spear: 1, stone_pick: 1 }, summon: { species: "dodo", level: 1, distance: 1.6 } });
+  runner.ui.tryInvoke("cheat", { give: { spear: 1, stone_pick: 1 }, summon: { species: "mowbot", level: 1, distance: 1.6 } });
   equip(runner, "spear");
-  const dodo = creaturesView(runner.ctx).aimed?.id ?? null;
+  const mowbot = creaturesView(runner.ctx).aimed?.id ?? null;
   tick(runner, 0.1);
-  expect(creaturesView(runner.ctx).aimed?.label).toBe("Dodo");
+  expect(creaturesView(runner.ctx).aimed?.label).toBe("Mowbot");
   runner.ui.tryInvoke("fire", { yaw: facing(runner) });
   tick(runner, 0.95);
-  expect(runner.ctx.scene.entity.distance(dodo ?? creaturesView(runner.ctx).aimed!.id, runner.userId)!).toBeGreaterThan(2);
+  expect(runner.ctx.scene.entity.distance(mowbot ?? creaturesView(runner.ctx).aimed!.id, runner.userId)!).toBeGreaterThan(2);
   runner.ui.tryInvoke("fire", { yaw: facing(runner) });
   tick(runner, 0.2);
   expect(creaturesView(runner.ctx).aimed?.dead).toBe(true);
@@ -283,32 +283,32 @@ test("a dodo runs when hit, and its body carves into meat and hide", () => {
     runner.ui.tryInvoke("fire", { yaw: facing(runner) });
     tick(runner, 0.75);
   }
-  expect(runner.ctx.player.inventory.count(BAG, "raw_meat")).toBeGreaterThan(runner.ctx.player.inventory.count(BAG, "hide"));
+  expect(runner.ctx.player.inventory.count(BAG, "biogel")).toBeGreaterThan(runner.ctx.player.inventory.count(BAG, "salvage"));
 });
 
-test("a Doedicurus carries stone at a quarter of its weight, bites stone from a boulder into its own inventory, and stops when loaded to its limit", () => {
+test("a Rollgrinder carries stone at a quarter of its weight, bites stone from a boulder into its own inventory, and stops when loaded to its limit", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  // Stand five metres from the nearest boulder, facing it, with a tame Doedicurus between.
+  // Stand five metres from the nearest boulder, facing it, with a tame Rollgrinder between.
   const me = runner.ctx.scene.entity.get(runner.userId)!.position;
   const rock = nearestHarvestable(runner.ctx, me, 200, "strike", "flint")!;
   expect(rock).not.toBeNull();
   const away = Math.atan2(me[0] - rock[0], me[2] - rock[2]);
   runner.ui.tryInvoke("cheat", { teleport: [rock[0] + Math.sin(away) * 5, rock[2] + Math.cos(away) * 5, away + Math.PI] });
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { give: { doedicurus_saddle: 1, stone: 100 }, summon: { species: "doedicurus", level: 1, distance: 2.6, tamed: true } });
+  runner.ui.tryInvoke("cheat", { give: { rollgrinder_rig: 1, stone: 100 }, summon: { species: "rollgrinder", level: 1, distance: 2.6, tamed: true } });
   tick(runner, 0.1);
   const tame = creaturesView(runner.ctx).aimed!;
-  expect(tame.species).toBe("doedicurus");
+  expect(tame.species).toBe("rollgrinder");
 
-  // A hundred stone weighs 50 in the bag; on the Doedicurus it weighs 12.5.
+  // A hundred stone weighs 50 in the bag; on the Rollgrinder it weighs 12.5.
   runner.ui.tryInvoke("creatureUse", {});
   runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "stone") });
   expect(creaturesView(runner.ctx).viewing!.weight.value).toBe(12.5);
   runner.ui.tryInvoke("takeCreature", { slot: 0 });
   expect(creaturesView(runner.ctx).viewing!.weight.value).toBe(0);
 
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "doedicurus_saddle") });
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "rollgrinder_rig") });
   runner.ui.tryInvoke("closeCreature", {});
   runner.ui.tryInvoke("creatureUse", {});
   expect(creaturesView(runner.ctx).riding?.id).toBe(tame.id);
@@ -334,14 +334,14 @@ test("a Doedicurus carries stone at a quarter of its weight, bites stone from a 
   expect(stoneOn()).toBe(loaded);
 });
 
-test("a ridden Pteranodon climbs on Space and burns stamina in the air; out of stamina it drops to the ground", () => {
+test("a ridden Watchwing climbs on Space and burns stamina in the air; out of stamina it drops to the ground", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { give: { pteranodon_saddle: 1 }, summon: { species: "pteranodon", level: 1, distance: 2.5, tamed: true } });
+  runner.ui.tryInvoke("cheat", { give: { watchwing_rig: 1 }, summon: { species: "watchwing", level: 1, distance: 2.5, tamed: true } });
   tick(runner, 0.1);
   const tame = creaturesView(runner.ctx).aimed!;
   runner.ui.tryInvoke("creatureUse", {});
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "pteranodon_saddle") });
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "watchwing_rig") });
   runner.ui.tryInvoke("closeCreature", {});
   runner.ui.tryInvoke("creatureUse", {});
   expect(creaturesView(runner.ctx).riding?.id).toBe(tame.id);
@@ -362,24 +362,24 @@ test("a ridden Pteranodon climbs on Space and burns stamina in the air; out of s
   expect(altitude()).toBeLessThan(AIRBORNE);
 });
 
-test("a ridden Pteranodon lifts a dodo beside it and lets it go, but is too small to lift a raptor", () => {
+test("a ridden Watchwing lifts a mowbot beside it and lets it go, but is too small to lift a lodestone", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  runner.ui.tryInvoke("cheat", { give: { pteranodon_saddle: 1 }, summon: { species: "pteranodon", level: 1, distance: 2.5, tamed: true } });
+  runner.ui.tryInvoke("cheat", { give: { watchwing_rig: 1 }, summon: { species: "watchwing", level: 1, distance: 2.5, tamed: true } });
   tick(runner, 0.1);
   runner.ui.tryInvoke("creatureUse", {});
-  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "pteranodon_saddle") });
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "watchwing_rig") });
   runner.ui.tryInvoke("closeCreature", {});
   runner.ui.tryInvoke("creatureUse", {});
-  runner.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 1, distance: 2 } });
+  runner.ui.tryInvoke("cheat", { summon: { species: "lodestone", level: 1, distance: 2 } });
   tick(runner, 0.1);
   runner.ui.tryInvoke("airlift", {});
   expect(airliftView(runner.ctx).holding).toBeNull();
-  runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level: 1, distance: 0.5 } });
+  runner.ui.tryInvoke("cheat", { summon: { species: "mowbot", level: 1, distance: 0.5 } });
   tick(runner, 0.1);
   runner.ui.tryInvoke("airlift", {});
-  const dodo = airliftView(runner.ctx).holding;
-  expect(dodo).toStartWith("dodo_");
+  const mowbot = airliftView(runner.ctx).holding;
+  expect(mowbot).toStartWith("dodo_");
   runner.ui.tryInvoke("airlift", {});
   tick(runner, 0.1);
   expect(airliftView(runner.ctx).holding).toBeNull();

@@ -2,7 +2,7 @@ import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
 
-// A raptor charges from fifteen metres. A thrown bola wraps its legs: it stays where it is while the bola
+// A lodestone charges from fifteen metres. A thrown bola wraps its legs: it stays where it is while the bola
 // holds, then the hold wears off and it comes on again.
 export default defineProof(game, {
   proves: ["taming.trap"],
@@ -12,11 +12,11 @@ export default defineProof(game, {
     s.press("Digit1");
     s.hold("KeyD", { until: (p) => p.acrossSpawn > 3, ms: 200, timeoutMs: 4000 });
     s.hold("KeyW", { ms: 250 });
-    s.command("cheat", { summon: { species: "raptor", level: 1, distance: 15 } });
+    s.command("cheat", { summon: { species: "lodestone", level: 1, distance: 15 } });
     s.wait(200);
   },
   async play(p) {
-    await p.expect((r) => r.held === 0 && r.threatDist > 0, "a raptor out there, nothing held");
+    await p.expect((r) => r.held === 0 && r.threatDist > 0, "a lodestone out there, nothing held");
     await p.hold("mouse0", { until: (r) => r.held === 1, timeoutMs: 5000 });
     const caught = await p.probe();
     await p.wait(5000);

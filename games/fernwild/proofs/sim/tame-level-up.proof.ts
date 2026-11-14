@@ -1,12 +1,12 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorTamed } from "./scenarios";
+import { lodestoneTamed } from "./scenarios";
 
 export default defineProof(game, {
   proves: ["creatures.level-up"],
   setup(s) {
-    raptorTamed(s);
+    lodestoneTamed(s);
     s.command("cheat", { tameXp: 35 });
   },
   async play(p) {

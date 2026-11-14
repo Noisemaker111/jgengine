@@ -12,7 +12,7 @@ const TRIKE: BodyPlan = {
   colors: { body: "#7a8a5a", belly: "#c8c0a0", accent: "#e0d0b0" },
 };
 
-const RAPTOR: BodyPlan = {
+const LODESTONE: BodyPlan = {
   torso: { length: 1.2, height: 0.55, width: 0.45 },
   legs: { pairs: 2, length: 0.9, thickness: 0.09, biped: true, armScale: 0.45 },
   neck: { length: 0.45, thickness: 0.12, rise: 50 },
@@ -63,7 +63,7 @@ describe("bodyModel", () => {
   test("legs follow the plan: four for a quadruped, two plus arms for a biped, eight splayed for a spider, none for a snake", () => {
     const legs = (plan: BodyPlan) => bodyGlbModel(plan).nodes.filter((node) => node.name.startsWith("leg_")).length;
     expect(legs(TRIKE)).toBe(4);
-    expect(legs(RAPTOR)).toBe(4);
+    expect(legs(LODESTONE)).toBe(4);
     expect(legs(SPIDER)).toBe(8);
     expect(legs(SNAKE)).toBe(0);
     expect(bodyGlbModel(SNAKE).nodes.filter((node) => node.name.startsWith("tail_")).length).toBe(8);
@@ -98,7 +98,7 @@ describe("bodyModel", () => {
 
   test("the same plan always gives the same model, and a ModelConfig loads it animated at its height, built only when read", () => {
     let built = 0;
-    const counted: BodyPlan = { ...RAPTOR, get torso() { built += 1; return RAPTOR.torso; } };
+    const counted: BodyPlan = { ...LODESTONE, get torso() { built += 1; return LODESTONE.torso; } };
     const lazy = bodyModel(counted, 1.7);
     expect(built).toBe(0);
     void lazy.url;
@@ -106,12 +106,12 @@ describe("bodyModel", () => {
     expect(once).toBeGreaterThan(0);
     void lazy.url;
     expect(built).toBe(once);
-    expect(encodeGlb(bodyGlbModel(RAPTOR))).toEqual(encodeGlb(bodyGlbModel(RAPTOR)));
-    const config = bodyModel(RAPTOR, 1.7);
+    expect(encodeGlb(bodyGlbModel(LODESTONE))).toEqual(encodeGlb(bodyGlbModel(LODESTONE)));
+    const config = bodyModel(LODESTONE, 1.7);
     expect(config.url.startsWith("data:model/gltf-binary;base64,")).toBe(true);
     expect(config.targetHeight).toBe(1.7);
     expect(config.animation).toBe("auto");
     const bytes = Uint8Array.from(atob(config.url.slice(config.url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
-    expect(bytes).toEqual(encodeGlb(bodyGlbModel(RAPTOR)));
+    expect(bytes).toEqual(encodeGlb(bodyGlbModel(LODESTONE)));
   });
 });

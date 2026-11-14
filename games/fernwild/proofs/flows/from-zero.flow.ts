@@ -4,7 +4,7 @@ import { game } from "../../src/game.config";
 type Probe = ReturnType<NonNullable<NonNullable<typeof game.capture>["probe"]>>;
 type Check = (p: Probe) => boolean;
 /** Things the survivor can see and walk to: the path's pointer, the nearest tree, flint rock, bush or easy prey, or a station it built. */
-type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar" | "floor" | "doorway" | "carcass" | "note" | "danger" | "phiomia";
+type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar" | "floor" | "doorway" | "carcass" | "note" | "danger" | "craneback";
 
 /** The number keys, by the hotbar key they take in hand (Digit0 is the tenth). */
 const DIGITS = ["Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"] as const;
@@ -283,7 +283,7 @@ async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void>
       await f.hold("mouse0", { ms: 500 });
       spent += 500;
       const q = await f.probe();
-      if (q.aimedHealth === p.aimedHealth && q.hide === p.hide && q.rawMeat === p.rawMeat) {
+      if (q.aimedHealth === p.aimedHealth && q.salvage === p.salvage && q.biogel === p.biogel) {
         // In sight but out of the tool's reach: close in.
         await f.heading(q.preyYaw);
         await f.hold("KeyW", { ms: 250 });
@@ -352,7 +352,7 @@ export default defineFlow(game, {
     await f.press("KeyE");
     await f.waitFor((p) => p.drinks >= 1, { timeoutMs: 3000, note: "drank" });
 
-    // the dodo: punch it asleep, open its inventory and give it the berries
+    // the mowbot: punch it asleep, open its inventory and give it the berries
     await chaseDown(f);
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
     await f.waitFor((p) => p.foodSlot >= 0, { timeoutMs: 2000 });
@@ -362,7 +362,7 @@ export default defineFlow(game, {
       if (fed.foodSlot < 0) break;
       await f.command("giveCreature", { inventoryId: "inventory", slot: fed.foodSlot });
     }
-    await guardUntil(f, (p) => p.tamed === 1, "the dodo eats the berries on its clock and is tamed", 300_000);
+    await guardUntil(f, (p) => p.tamed === 1, "the mowbot eats the berries on its clock and is tamed", 300_000);
     await f.command("closeCreature", {});
 
     // a level's stat point into health
@@ -378,13 +378,13 @@ export default defineFlow(game, {
     await placePiece(f);
     await f.waitFor((p) => p.campfires === 1, { timeoutMs: 2000, note: "a campfire stands" });
 
-    // meat: the pick on a dodo, lystrosaurus or phiomia, then on its body
+    // meat: the pick on a mowbot, puckbot or craneback, then on its body
     await hand(f, pick);
-    await hunt(f, (p) => p.rawMeat >= 2);
+    await hunt(f, (p) => p.biogel >= 2);
     // cook it at the campfire
     await walkTo(f, 2.5, "campfire");
     await f.command("craft", { recipeId: "cook_meat" });
-    await f.waitFor((p) => p.cookedMeat >= 1, { timeoutMs: 40_000, note: "meat cooked on the campfire" });
+    await f.waitFor((p) => p.gelRation >= 1, { timeoutMs: 40_000, note: "meat cooked on the campfire" });
 
     // the spear: fiber from bushes (bare hands), wood from trees (the hatchet), flint from a rock (the pick)
     await hand(f, bare);
@@ -449,12 +449,12 @@ export default defineFlow(game, {
     }
     await f.waitFor((p) => p.taught >= 13, { timeoutMs: 3000, note: "the hut is the path's thirteenth step" });
 
-    // the Phiomia saddle engram, then the path's order: tame a Phiomia (the one by the beach, before a hunt takes it), then make its saddle
-    await f.command("learn", { engramId: "phiomia_saddle" });
+    // the Craneback saddle engram, then the path's order: tame a Craneback (the one by the beach, before a hunt takes it), then make its saddle
+    await f.command("learn", { engramId: "craneback_rig" });
     await f.waitFor((p) => p.taught >= 14, { timeoutMs: 3000, note: "the saddle engram is learned" });
     await hand(f, bare);
     await gather(f, "bush", (p) => p.berries >= 40);
-    // punch a Phiomia asleep and feed it the berries
+    // punch a Craneback asleep and feed it the berries
     await chaseDown(f, 300_000);
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
     for (let stack = 0; stack < 8; stack += 1) {
@@ -462,33 +462,33 @@ export default defineFlow(game, {
       if (p.foodSlot < 0) break;
       await f.command("giveCreature", { inventoryId: "inventory", slot: p.foodSlot });
     }
-    await guardUntil(f, (p) => p.tamed === 2, "the Phiomia eats its way to tamed", 600_000);
+    await guardUntil(f, (p) => p.tamed === 2, "the Craneback eats its way to tamed", 600_000);
     await f.command("closeCreature", {});
     // its saddle: hide from a hunt with the hatchet, then fiber and wood
     await hand(f, hatchet);
-    await hunt(f, (p) => p.hide >= 20, 900_000);
+    await hunt(f, (p) => p.salvage >= 20, 900_000);
     await hand(f, bare);
     await gather(f, "bush", (p) => p.fiber >= 15);
     await hand(f, hatchet);
     await gather(f, "tree", (p) => p.wood >= 5);
-    await f.command("craft", { recipeId: "phiomia_saddle" });
+    await f.command("craft", { recipeId: "craneback_rig" });
     await f.waitFor((p) => p.saddleSlot >= 0, { timeoutMs: 30_000, note: "the saddle is made" });
-    // back to the Phiomia, the saddle into its inventory, then E to climb on
+    // back to the Craneback, the saddle into its inventory, then E to climb on
     await hand(f, bare);
-    await walkTo(f, 2.2, "phiomia");
-    await f.heading(yawOf(await f.probe(), "phiomia"));
+    await walkTo(f, 2.2, "craneback");
+    await f.heading(yawOf(await f.probe(), "craneback"));
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
     await f.command("giveCreature", { inventoryId: "inventory", slot: (await f.probe()).saddleSlot });
     await f.command("closeCreature", {});
     await f.hold("KeyE", { until: (p) => p.riding === 1, timeoutMs: 3000 });
 
     // ride to the nearest explorer note and read it
-    await f.waitFor((p) => p.taught >= 16, { timeoutMs: 3000, note: "riding the Phiomia is the path's sixteenth step" });
+    await f.waitFor((p) => p.taught >= 16, { timeoutMs: 3000, note: "riding the Craneback is the path's sixteenth step" });
     await walkTo(f, 2, "point", 600_000);
     await f.press("KeyE");
     await f.waitFor((p) => p.notesSeen >= 1, { timeoutMs: 3000, note: "the note is read into the dossier" });
     await f.command("closeNote", {});
-    // off the Phiomia to work by hand
+    // off the Craneback to work by hand
     await f.hold("KeyE", { until: (p) => p.riding === 0, timeoutMs: 3000 });
 
     // narcotics: a Mortar and Pestle from stone and hide, narcoberries, and meat left to spoil
@@ -496,15 +496,15 @@ export default defineFlow(game, {
     await gather(f, "rock", (p) => p.stone >= 65);
     // the engram learned with the stone in, to see what the hide is for
     await f.command("learn", { engramId: "mortar_and_pestle" });
-    await hunt(f, (p) => p.hide >= 15 && p.rawMeat + p.spoiledMeat >= 1, 900_000);
+    await hunt(f, (p) => p.salvage >= 15 && p.biogel + p.souredGel >= 1, 900_000);
     await learnAndCraft(f, "mortar_and_pestle", (p) => p.pieceSlot >= 0, false);
     await placePiece(f);
     await hand(f, bare);
     await gather(f, "bush", (p) => p.narcoberries >= 5);
     await walkTo(f, 2.5, "mortar");
-    await f.command("learn", { engramId: "narcotic" });
-    await f.waitFor((p) => p.spoiledMeat >= 1, { timeoutMs: 600_000, note: "the meat has gone off" });
-    await f.command("craft", { recipeId: "narcotic" });
+    await f.command("learn", { engramId: "drain_spike" });
+    await f.waitFor((p) => p.souredGel >= 1, { timeoutMs: 600_000, note: "the meat has gone off" });
+    await f.command("craft", { recipeId: "drain_spike" });
     await f.waitFor((p) => p.narcotics >= 1, { timeoutMs: 30_000, note: "a narcotic is ground" });
 
     // the club: level 8 opens it

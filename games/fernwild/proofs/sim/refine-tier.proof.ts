@@ -11,7 +11,7 @@ export default defineProof(game, {
   proves: ["crafting.refine-tier"],
   setup(s) {
     s.command("onboarding.skip");
-    s.command("cheat", { xp: 100_000, give: { stone_hatchet: 1, refining_forge: 1, stone_pillar: 1, metal: 2, wood: 7, hide: 10 }, toHotbar: ["stone_hatchet", "refining_forge", "stone_pillar"] });
+    s.command("cheat", { xp: 100_000, give: { stone_hatchet: 1, refining_forge: 1, stone_pillar: 1, metal: 2, wood: 7, salvage: 10 }, toHotbar: ["stone_hatchet", "refining_forge", "stone_pillar"] });
     s.command("learn", { engramId: "metal_pick" });
     // Onto open sand, clear of the palm by the spawn, facing inland.
     s.hold("KeyD", { ms: 700 });

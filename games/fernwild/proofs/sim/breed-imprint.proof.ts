@@ -1,18 +1,18 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorPair } from "./scenarios";
+import { lodestonePair } from "./scenarios";
 
-// A baby asks for care as it grows, and each care given raises its imprint. Setup breeds a raptor pair,
+// A baby asks for care as it grows, and each care given raises its imprint. Setup breeds a lodestone pair,
 // hatches the egg by a campfire with breeding sped up, then slows breeding to 200x (a request every 144 s)
-// and leaves the survivor raw meat, a raptor's favourite. Play answers two requests: a cuddle or a feed
+// and leaves the survivor raw meat, a lodestone's favourite. Play answers two requests: a cuddle or a feed
 // with E, or a walk of 30 m with it whistled to heel.
 export default defineProof(game, {
   proves: ["breeding.raise-imprint"],
   setup(s) {
-    raptorPair(s);
+    lodestonePair(s);
     s.waitFor((p) => p.eggs >= 1, { timeoutMs: 80_000 });
-    s.command("cheat", { give: { campfire: 1, wood: 10, raw_meat: 10 }, toHotbar: ["campfire"], breedingSpeed: 1000 });
+    s.command("cheat", { give: { campfire: 1, wood: 10, biogel: 10 }, toHotbar: ["campfire"], breedingSpeed: 1000 });
     s.press("Digit1");
     s.hold("mouse0", { until: (p) => p.fuel >= 0, ms: 80, timeoutMs: 3000 });
     for (let wood = 0; wood < 4; wood += 1) s.press("KeyE");

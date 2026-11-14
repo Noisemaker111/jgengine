@@ -72,7 +72,7 @@ Genres: creature-survival. 67/67 proven.
 | `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |
 | `taming.wake-loses` | proven | An unconscious creature stays out until its torpor, and any sedative still taking effect, wears off; then it wakes up wild and the taming progress is lost. | proofs/sim/tame-wake.proof.ts |
 | `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
-| `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
+| `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-firmware.proof.ts |
 | `taming.passive-feed` | proven | Some creatures tame awake, by offering food without being hit. | proofs/sim/tame-passive.proof.ts |
 | `taming.trap` | proven | A trap or snare holds a creature still for taming. | proofs/sim/bola.proof.ts |
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
@@ -108,8 +108,8 @@ Genres: creature-survival. 67/67 proven.
 ## Design brief
 
 - Core loop: hit a tree, a rock or a bush, see "+3 Thatch", fill the bag, craft the next tool that gathers faster.
-- Session loop: reach the next tame or build: a dodo by minute 5, a campfire and cooked meat by 10, a thatch hut by 15, a saddled phiomia by 20.
-- Long loop: levels and engram points open 79 engrams (stone, thatch, wood, stone building, saddles, narcotics, the club); tames level 88 times past taming; breeding stacks stats over generations; caves give the three artifacts; the Broodmother at the green obelisk is the gate.
+- Session loop: reach the next tame or build: a mowbot by minute 5, a campfire and cooked meat by 10, a thatch hut by 15, a saddled craneback by 20.
+- Long loop: levels and engram points open 79 engrams (stone, thatch, wood, stone building, saddles, narcotics, the club); tames level 88 times past taming; breeding stacks stats over generations; caves give the three artifacts; the Hivemind at the green obelisk is the gate.
 - Second 0: you wake on the south beach with nothing but the Stone Pick and Torch engrams known, because ARK starts you with bare hands so the first tree teaches the whole game.
 - Onboarding: the Survivor's path, top left, one step at a time with a star on the map at its target; it teaches each system by doing it once, and locks nothing after the first craft.
 - Pace: something new every 5 minutes.
@@ -123,11 +123,11 @@ Genres: creature-survival. 67/67 proven.
 - 1:00 the first level from gathering; unlocks the Stone Pick craft and teaches I, engrams and crafting
 - 2:00 unlocks the Stone Hatchet engram; teaches spending engram points and which tool takes what
 - 3:00 food and water fall; teaches drinking at the shore and eating berries
-- 4:30 a dodo on the beach; teaches the knock-out tame: punch it out, berries in its inventory, it is yours
+- 4:30 a mowbot on the beach; teaches the knock-out tame: punch it out, berries in its inventory, it is yours
 - 5:30 level up; teaches spending a stat point and unlocks the campfire and spear engrams
-- 7:00 teaches hunting a dodo or lystro, carving meat by tool and cooking it on the campfire
+- 7:00 teaches hunting a mowbot or lystro, carving meat by tool and cooking it on the campfire
 - 8:30 unlocks thatch building: a foundation, a doorframe, walls, a ceiling and a door, shelter from rain and cold
-- 9:30 teaches the next goal: the Phiomia Saddle at level 5 and a phiomia knocked out with fists or a club
+- 9:30 teaches the next goal: the Craneback Saddle at level 5 and a craneback knocked out with fists or a club
 
 ### Start state
 
@@ -167,16 +167,16 @@ What each of ARK's beats is, what Fernwild did when this plan was written (playe
 | Punch thatch and wood, E for stones, fiber and berries | Same, but "Harvest Stones" showed over trees, so E looked like it would pick up a trunk | E names only what you aim at; a trunk hides the stones only when it is nearer and nearer the middle of your view |
 | XP, engram points, tiers | ARK's XP table and engram levels | Same; the Survivor's path walks you through spending them |
 | Hunger, thirst, temperature, stamina | All four, plus weight | Raw meat now spoils in 10 minutes, cooked in 20, into spoiled meat (the narcotic's base), as in ARK |
-| Knock-out taming: narcotics, berries, effectiveness, imprinting | Worked only through the `cheat` command in the proofs; a club landed half its torpor, so a raptor took 18 hits | Taming is played for real from zero: punch a dodo out, feed it berries; club a phiomia, keep it under with narcotics from the mortar. A club hit lands its full torpor (9 hits for a level-1 raptor) |
+| Knock-out taming: narcotics, berries, effectiveness, imprinting | Worked only through the `cheat` command in the proofs; a club landed half its torpor, so a lodestone took 18 hits | Taming is played for real from zero: punch a mowbot out, feed it berries; club a craneback, keep it under with narcotics from the mortar. A club hit lands its full torpor (9 hits for a level-1 lodestone) |
 | Survivor and tame stat levelling | Both, with ARK's per-point gains | Same |
-| Creature roles | 58 species with ARK's temperaments; the beach rolled raptors, dilophosaurs and trikes at level 30 beside the spawn | The start beach holds dodos, phiomia, lystros and parasaurs; wild levels cap at 5 near the start and climb a level every 50 m out, so danger rises with distance |
+| Creature roles | 58 species with ARK's temperaments; the beach rolled lodestones, dilophosaurs and bulldozaurs at level 30 beside the spawn | The start beach holds mowbots, craneback, lystros and sirenhorns; wild levels cap at 5 near the start and climb a level every 50 m out, so danger rises with distance |
 | Base building and defense | Thatch, wood and stone tiers with snapping | Same; the first hut is a Survivor's path step |
 | Biomes and danger by distance | The biomes were there, the danger was not | Level cap by distance (above) |
-| Explorer notes, obelisks, boss gate | Obelisks and the Broodmother; no notes | 21 explorer notes at caves, obelisks and summits, read with E for XP; a Dossier tab lists species met, species tamed and notes read; the map marks unread notes, obelisks, caves and tames |
+| Explorer notes, obelisks, boss gate | Obelisks and the Hivemind; no notes | 21 explorer notes at caves, obelisks and summits, read with E for XP; a Dossier tab lists species met, species tamed and notes read; the map marks unread notes, obelisks, caves and tames |
 | The map | A small map only during the tutorial, with no ground on it | Always on: the island baked from its real ground, your goal starred, notes, obelisks, cave mouths and tames marked |
-| The first hour | No guide past the first craft | The Survivor's path runs 23 steps from the first tree to the Broodmother |
+| The first hour | No guide past the first craft | The Survivor's path runs 23 steps from the first tree to the Hivemind |
 
-Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino raids on the base at night, and no flyers to tame on the path.
+Still short of ARK: no bolas, slingshot or tranq arrows, no firmware, no wild dino raids on the base at night, and no flyers to tame on the path.
 
 ## Built from the parts
 
@@ -233,9 +233,9 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 - weather — biome climate, day and night, rain, snow, storms
 - airdrop — supply drops: coloured crates by place and level
 - breeding — mating, eggs, incubation, imprinting, mutations
-- boss fight — the Broodmother summoned at an obelisk with artifacts, an arena, Araneo minions, rewards
+- boss fight — the Hivemind summoned at an obelisk with artifacts, an arena, Hive Drone minions, rewards
 - metal tier — metal tools and structures, smithy, forge
-- cooking — cooking pot, kibble for taming
+- cooking — cooking pot, firmware for taming
 - explorer notes — notes across the island and the experience they give
 - more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave
 
@@ -259,9 +259,9 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | weather — biome climate, day and night, rain, snow, storms | `authored-weather` · `import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather"`<br>`authored-weather-rendering` · `import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw"` | covered |
 | airdrop — supply drops: coloured crates by place and level | `paced-schedule` · `import { createPacedSchedule } from "@jgengine/core/time/pacedSchedule"`<br>`motion-track` · `import { createMotionTrack } from "@jgengine/core/movement/motionTrack"`<br>`weighted-pick` · `import { pickWeighted } from "@jgengine/core/random/pick"`<br>`remains-field` · `import { createRemainsField } from "./engine-local/remains/remains"` | covered |
 | breeding — mating, eggs, incubation, imprinting, mutations | `breeding` · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`<br>`value-inheritance` · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`<br>`resolve` · `import { tierAt } from "@jgengine/core/threshold/thresholds"` | covered |
-| boss fight — the Broodmother summoned at an obelisk with artifacts, an arena, Araneo minions, rewards | `summoned-encounter` · `import { createSummonedEncounter } from "./engine-local/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"` | covered |
+| boss fight — the Hivemind summoned at an obelisk with artifacts, an arena, Hive Drone minions, rewards | `summoned-encounter` · `import { createSummonedEncounter } from "./engine-local/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"` | covered |
 | metal tier — metal tools and structures, smithy, forge | `mood` · `import { createMoodReader } from "@jgengine/core/agents/mood"`<br>`resolve` · `import { tierAt } from "@jgengine/core/gameplay"` | partial |
-| cooking — cooking pot, kibble for taming | `dose-table` · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`<br>`remains-field` · `import { createRemainsField } from "./engine-local/remains/remains"` | covered |
+| cooking — cooking pot, firmware for taming | `dose-table` · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`<br>`remains-field` · `import { createRemainsField } from "./engine-local/remains/remains"` | covered |
 | explorer notes — notes across the island and the experience they give | `editor-material-controls` · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`<br>`damage-type-unknown` · `import { UnknownDamageTypeError } from "@jgengine/core/combat"` | partial |
 | more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave | `summoned-encounter` · `import { createSummonedEncounter } from "./engine-local/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { createPhaseClock } from "@jgengine/core/ai/phaseLadder"` | partial |
 
@@ -283,9 +283,9 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [x] 4. Weather and climate (#2598)
 - [x] 5. Supply drops (#2599)
 - [x] 6. Breeding (#2606)
-- [x] 7. Boss arena engine feature and the Broodmother at the green obelisk
+- [x] 7. Boss arena engine feature and the Hivemind at the green obelisk
 - [ ] 8. Metal tier: metal tools and structures, smithy, forge
-- [x] 9. Cooking pot and kibble for taming (#2972)
+- [x] 9. Cooking pot and firmware for taming (#2972)
 - [x] 10. Explorer notes, the dossier and the island map
 - [ ] 11. Megapithecus, the Dragon and the Overseer on the boss arena feature
 - [x] 12. The south beach as ARK draws it: pale sand with pebbles and driftwood, palms near the water, a jungle wall of trees, ferns, bushes and waist-high grass (#2687)

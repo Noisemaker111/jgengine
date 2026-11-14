@@ -10,14 +10,14 @@ export default defineProof(game, {
     s.press("Digit1");
     s.hold("KeyD", { until: (p) => p.acrossSpawn > 3, ms: 200, timeoutMs: 4000 });
     s.hold("KeyW", { ms: 250 });
-    s.command("cheat", { summon: { species: "raptor", level: 1, distance: 4 } });
+    s.command("cheat", { summon: { species: "lodestone", level: 1, distance: 4 } });
     s.wait(500);
   },
   async play(p) {
     const before = await p.probe();
-    // Spear the raptor that comes at you, then keep striking the body it leaves.
+    // Spear the lodestone that comes at you, then keep striking the body it leaves.
     await p.hold("mouse0", { until: (r) => r.carcassDist >= 0, ms: 200, timeoutMs: 20_000 });
-    await p.hold("mouse0", { until: (r) => r.rawMeat > before.rawMeat && r.hide > before.hide, ms: 200, timeoutMs: 20_000 });
-    await p.expect((r) => r.rawMeat > before.rawMeat && r.hide > before.hide, "the raptor's body gave meat and hide");
+    await p.hold("mouse0", { until: (r) => r.biogel > before.biogel && r.salvage > before.salvage, ms: 200, timeoutMs: 20_000 });
+    await p.expect((r) => r.biogel > before.biogel && r.salvage > before.salvage, "the lodestone's body gave meat and hide");
   },
 });

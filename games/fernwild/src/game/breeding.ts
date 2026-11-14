@@ -26,9 +26,9 @@ import { setFoodPace, setTameFood } from "./tameHunger";
 /** How close the survivor stands to a baby to cuddle or feed it. */
 const CARE_REACH = 4;
 
-/** What a hungry baby wants fed by hand: ARK's kibble, here its kind's favourite food. */
+/** What a hungry baby wants fed by hand: ARK's firmware, here its kind's favourite food. */
 function favouriteFood(species: string): string {
-  return speciesDef(species)?.diet === "carnivore" ? "raw_meat" : "mejoberry";
+  return speciesDef(species)?.diet === "scavenger" ? "biogel" : "mejoberry";
 }
 
 interface Nursery {

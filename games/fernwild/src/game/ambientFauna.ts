@@ -9,8 +9,8 @@ const GROW_ABOVE = 2.4;
 
 /**
  * Life the art direction's pass 8 asks for: fish in the shallows, pollen and fireflies and dragonflies over
- * the grass, pteranodons overhead. The groups are `ambient_fauna` zones in editor.scene.json; this table says
- * how each species looks. The catalog has no pteranodon model, so the flyers use its vulture.
+ * the grass, watchwings overhead. The groups are `ambient_fauna` zones in editor.scene.json; this table says
+ * how each species looks. The catalog has no watchwing model, so the flyers use its vulture.
  */
 export const ambientFauna: AmbientFaunaConfig = {
   species: {
@@ -28,7 +28,7 @@ export const ambientFauna: AmbientFaunaConfig = {
       model: { url: "/models/imported/creatures/dragonfly.glb", targetHeight: 0.25 },
       sprite: { color: "#3fb7c9", size: 0.06, length: 4 },
     },
-    pteranodon: {
+    watchwing: {
       model: { url: "/models/imported/creatures/vulture.glb", targetHeight: 2.4, material: { color: "#c8b090" } },
       sprite: { color: "#2a2620", size: 0.5, length: 3 },
     },

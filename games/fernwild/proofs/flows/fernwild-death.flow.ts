@@ -13,19 +13,19 @@ export default defineFlow(game, {
     await f.command("cheat", {"goto":{"cave":"cave_lower_south_cave","back":30}});
     // the teleport has landed, a quarter kilometre north of the beach
     await f.waitFor((p) => p.z < 1050, { timeoutMs: 3000 });
-    // a level 30 wild raptor five metres ahead
-    await f.command("cheat", {"summon":{"species":"raptor","level":30,"distance":5}});
+    // a level 30 wild lodestone five metres ahead
+    await f.command("cheat", {"summon":{"species":"lodestone","level":30,"distance":5}});
     // it attacks: health below 70%
     await f.waitFor((p) => p.health < p.healthMax * 0.7, { timeoutMs: 20000 });
-    // the raptor on the survivor, health falling
-    await f.shot("fernwild-death-raptor");
+    // the lodestone on the survivor, health falling
+    await f.shot("fernwild-death-lodestone");
     // killed: awake back on the beach, the body far behind
     await f.waitFor((p) => p.bodyDistance > 50, { timeoutMs: 60000 });
     await f.expect((p) => (p.carrying) === 0, "empty-handed");
     await f.expect((p) => (p.bodyStacks) === 3, "all three stacks lie with the body");
     // awake on the beach; the HUD says how far the body is and how long it lasts
     await f.shot("fernwild-death-beach");
-    // ARK's admin DestroyWildDinos, so the raptor isn't waiting
+    // ARK's admin DestroyWildDinos, so the lodestone isn't waiting
     await f.command("cheat", {"destroyWild":true});
     // back where the survivor fell
     await f.command("cheat", {"goto":{"cave":"cave_lower_south_cave","back":30}});

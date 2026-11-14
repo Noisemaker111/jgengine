@@ -44,7 +44,7 @@ export default defineFlow(game, {
     await snap("hud-detail");
     await f.press("KeyH");
     await f.command("cheat", {
-      give: { stone_pick: 1, spear: 1, thatch: 40, wood: 20, stone: 30, flint: 12, fiber: 50, mejoberry: 15, cooked_meat: 3, cloth_shirt: 1, narcotic: 4, storage_box: 1 },
+      give: { stone_pick: 1, spear: 1, thatch: 40, wood: 20, stone: 30, flint: 12, fiber: 50, mejoberry: 15, gel_ration: 3, cloth_shirt: 1, drain_spike: 4, storage_box: 1 },
       toHotbar: ["storage_box", "stone_pick", "spear", "mejoberry"],
       xp: 600,
     });
@@ -62,7 +62,7 @@ export default defineFlow(game, {
     await snap("dossier");
     await f.press("KeyI");
     await f.waitFor((p) => p.screen === 0, { timeoutMs: 60000, note: "I closes the screens" });
-    await f.command("cheat", { summon: { species: "parasaur", level: 5, distance: 4, tamed: true } });
+    await f.command("cheat", { summon: { species: "sirenhorn", level: 5, distance: 4, tamed: true } });
     await f.waitFor((p) => p.aimedWild === 0 && p.aimedHealth > 0, { timeoutMs: 30000, note: "the tame stands under the aim" });
     await f.press("KeyE");
     await f.waitFor((p) => p.screen === 1, { timeoutMs: 60000, note: "the tame's inventory opens" });

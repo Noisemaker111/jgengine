@@ -2,7 +2,7 @@ import type { SpoilRule } from "@jgengine/core/inventory/spoilage";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
-import { EGG_LABEL, EGG_SIZES, eggItem, KIBBLE_LABEL, KIBBLE_TIERS, kibbleItem } from "./kibble";
+import { EGG_LABEL, EGG_SIZES, eggItem, FIRMWARE_LABEL, FIRMWARE_TIERS, firmwareItem } from "./firmware";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
@@ -11,13 +11,13 @@ import { STRUCTURES } from "./structures";
  * in 20, both into spoiled meat, the narcotic's base. Spoiled meat itself rots away in an hour.
  */
 export const SPOILS: Readonly<Record<string, SpoilRule>> = {
-  raw_meat: { seconds: 600, into: "spoiled_meat" },
-  raw_prime_meat: { seconds: 600, into: "spoiled_meat" },
-  cooked_meat: { seconds: 1200, into: "spoiled_meat" },
-  spoiled_meat: { seconds: 3600, into: null },
-  // ARK's wild eggs and kibble go bad too, kibble much slower (approx).
+  biogel: { seconds: 600, into: "soured_gel" },
+  prime_biogel: { seconds: 600, into: "soured_gel" },
+  gel_ration: { seconds: 1200, into: "soured_gel" },
+  soured_gel: { seconds: 3600, into: null },
+  // ARK's wild eggs and firmware go bad too, firmware much slower (approx).
   ...Object.fromEntries(EGG_SIZES.map((size) => [eggItem(size), { seconds: 1800, into: null }])),
-  ...Object.fromEntries(KIBBLE_TIERS.map((tier) => [kibbleItem(tier), { seconds: 7200, into: null }])),
+  ...Object.fromEntries(FIRMWARE_TIERS.map((tier) => [firmwareItem(tier), { seconds: 7200, into: null }])),
 };
 
 /** What eating or drinking one unit does to the survivor. */
@@ -110,11 +110,11 @@ const berry = (id: string, label: string, consume: Consume, note: string): ItemD
 
 /**
  * Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. A punch knocks out
- * as well as hurts: ARK deals 1.75x a fist's damage as torpor, so a dodo sleeps before it dies.
+ * as well as hurts: ARK deals 1.75x a fist's damage as torpor, so a mowbot sleeps before it dies.
  * Each tool's `hits` are the doses one hit lands in a creature's body.
  */
 export const FIST: ToolDef = {
-  gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, raw_meat: 0.5, hide: 0.5 }, defaultBias: 0 },
+  gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, biogel: 0.5, salvage: 0.5 }, defaultBias: 0 },
   reach: 1.6,
   damage: 8,
   hits: [{ vital: "torpor", amount: 8 * 1.75 }],
@@ -138,7 +138,7 @@ export const ITEMS: readonly ItemDef[] = [
   resource("stone", "Stone", 0.5, 100, "Broken rock. A hatchet on boulders gets plenty."),
   resource("flint", "Flint", 0.05, 100, "Sharp stone flakes. A pick on boulders gets plenty."),
   resource("fiber", "Fiber", 0.01, 300, "Plant fiber pulled from bushes by hand."),
-  resource("hide", "Hide", 0.01, 200, "Skin from a carcass."),
+  resource("salvage", "Hide", 0.01, 200, "Skin from a carcass."),
   resource("metal", "Metal", 1, 300, "Raw ore from the glinting rocks high in the mountains."),
   resource("metal_ingot", "Metal Ingot", 1, 200, "Smelted from metal ore in a lit refining forge. Metal tools are made of it."),
   resource("obsidian", "Obsidian", 1, 100, "Black volcanic glass from the volcano and the high cliffs."),
@@ -149,69 +149,69 @@ export const ITEMS: readonly ItemDef[] = [
   resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled meat and thatch. A crop plot's crop grows only while it has some."),
   // ARK's cave artifacts: one on a pedestal at the end of each cave, back half an hour after it is taken.
   resource("artifact_clever", "Artifact of the Clever", 1, 1, "A glowing relic from the deepest chamber of the central cave; the island's guardian wants it."),
-  resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave. The Broodmother never asks for it; brood gauntlets are made with it."),
+  resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave. The Hivemind never asks for it; hive gauntlets are made with it."),
   resource("artifact_hunter", "Artifact of the Hunter", 1, 1, "A glowing relic from the deepest chamber of the lower south cave; the island's guardian wants it."),
-  resource("artifact_devourer", "Artifact of the Devourer", 1, 1, "A glowing relic from the deepest chamber of the north-east cave. The Broodmother never asks for it; brood treads are made with it."),
-  resource("artifact_pack", "Artifact of the Pack", 1, 1, "A glowing relic from the deepest chamber of the upper south cave. The Broodmother never asks for it; brood greaves are made with it."),
+  resource("artifact_devourer", "Artifact of the Devourer", 1, 1, "A glowing relic from the deepest chamber of the north-east cave. The Hivemind never asks for it; hive treads are made with it."),
+  resource("artifact_pack", "Artifact of the Pack", 1, 1, "A glowing relic from the deepest chamber of the upper south cave. The Hivemind never asks for it; hive greaves are made with it."),
   resource("artifact_massive", "Artifact of the Massive", 1, 1, "A glowing relic from the deepest chamber of the lava cave; the island's guardian wants it."),
-  resource("artifact_immune", "Artifact of the Immune", 1, 1, "A glowing relic from the deepest chamber of the swamp cave. The Broodmother never asks for it; brood gauntlets are made with it."),
-  resource("artifact_strong", "Artifact of the Strong", 1, 1, "A glowing relic from the deepest chamber of the snow cave. The Broodmother never asks for it; brood greaves are made with it."),
-  // The Broodmother's tribute trophies, found on the bodies of the creatures that carry them, and what she leaves.
-  resource("argentavis_talon", "Argentavis Talon", 2, 100, "Found on a dead Argentavis. The Broodmother's Beta and Alpha tribute asks for them."),
-  resource("sarcosuchus_skin", "Sarcosuchus Skin", 2, 100, "Found on a dead Sarco. The Broodmother's Beta and Alpha tribute asks for them."),
-  resource("sauropod_vertebra", "Sauropod Vertebra", 2, 100, "Found on a dead Brontosaurus or Diplodocus. The Broodmother's Beta and Alpha tribute asks for them."),
-  resource("titanoboa_venom", "Titanoboa Venom", 2, 100, "Found on a dead Titanoboa. The Broodmother's Beta and Alpha tribute asks for them."),
-  resource("element", "Element", 0.1, 100, "Strange glowing matter the guardians leave behind. The element pick and brood gear are made with it."),
-  resource("spider_flag", "Spider Flag", 2, 1, "A banner of the Broodmother, for whoever beat her. Brood greaves are sewn from it."),
-  resource("broodmother_trophy_gamma", "Gamma Broodmother Trophy", 5, 1, "Proof you beat the Gamma Broodmother. Brood greaves are made around it."),
-  resource("broodmother_trophy_beta", "Beta Broodmother Trophy", 5, 1, "Proof you beat the Beta Broodmother. Brood gauntlets are made around it."),
-  resource("broodmother_trophy_alpha", "Alpha Broodmother Trophy", 5, 1, "Proof you beat the Alpha Broodmother. Brood treads are made around it."),
-  { id: "raw_meat", label: "Raw Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Edible, barely. Cook it on a campfire." },
-  { id: "raw_prime_meat", label: "Raw Prime Meat", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "The best cut. Carnivores tame fastest on it." },
-  { id: "cooked_meat", label: "Cooked Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
-  { id: "spoiled_meat", label: "Spoiled Meat", kind: "consumable", weight: 0.1, stack: 50, consume: { food: 5, health: -10, torpor: 25 }, note: "Rotten. Good for making narcotics." },
+  resource("artifact_immune", "Artifact of the Immune", 1, 1, "A glowing relic from the deepest chamber of the swamp cave. The Hivemind never asks for it; hive gauntlets are made with it."),
+  resource("artifact_strong", "Artifact of the Strong", 1, 1, "A glowing relic from the deepest chamber of the snow cave. The Hivemind never asks for it; hive greaves are made with it."),
+  // The Hivemind's tribute trophies, found on the bodies of the creatures that carry them, and what she leaves.
+  resource("homer_beacon", "Homer Talon", 2, 100, "Found on a dead Homer. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("arcwire_coil", "Arcwire Skin", 2, 100, "Found on a dead Arcwire. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("hoover_turbine", "Sauropod Vertebra", 2, 100, "Found on a dead Hoover Leviathan or Pylon Walker. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("coilcobra_capacitor", "Coilcobra Venom", 2, 100, "Found on a dead Coilcobra. The Hivemind's Beta and Alpha tribute asks for them."),
+  resource("element", "Element", 0.1, 100, "Strange glowing matter the guardians leave behind. The element pick and hive gear are made with it."),
+  resource("hive_flag", "Spider Flag", 2, 1, "A banner of the Hivemind, for whoever beat her. Hive greaves are sewn from it."),
+  resource("hivemind_trophy_gamma", "Gamma Hivemind Trophy", 5, 1, "Proof you beat the Gamma Hivemind. Hive greaves are made around it."),
+  resource("hivemind_trophy_beta", "Beta Hivemind Trophy", 5, 1, "Proof you beat the Beta Hivemind. Hive gauntlets are made around it."),
+  resource("hivemind_trophy_alpha", "Alpha Hivemind Trophy", 5, 1, "Proof you beat the Alpha Hivemind. Hive treads are made around it."),
+  { id: "biogel", label: "Raw Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Edible, barely. Cook it on a campfire." },
+  { id: "prime_biogel", label: "Raw Prime Meat", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "The best cut. Scavengers tame fastest on it." },
+  { id: "gel_ration", label: "Cooked Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
+  { id: "soured_gel", label: "Spoiled Meat", kind: "consumable", weight: 0.1, stack: 50, consume: { food: 5, health: -10, torpor: 25 }, note: "Rotten. Good for making narcotics." },
   berry("mejoberry", "Mejoberry", { food: 1.5, water: 0.2 }, "A sweet berry plant-eaters love."),
   berry("amarberry", "Amarberry", { food: 1.5, water: 0.2 }, "A common red berry."),
   berry("azulberry", "Azulberry", { food: 1.5, water: 0.2 }, "A common blue berry."),
   berry("tintoberry", "Tintoberry", { food: 1.5, water: 0.2 }, "A common yellow berry."),
   berry("narcoberry", "Narcoberry", { food: 1.5, torpor: 8 }, "Makes the eater drowsy."),
   berry("stimberry", "Stimberry", { food: 1.5, water: -5, torpor: -7.5 }, "Wakes the eater up and dries them out."),
-  // Wild eggs (ARK's unfertilized eggs): edible, but worth more cooked into kibble.
-  ...EGG_SIZES.map((size): ItemDef => ({ id: eggItem(size), label: EGG_LABEL[size], kind: "consumable", weight: 0.5, stack: 100, consume: { food: 10, health: -2 }, note: "Laid by a wild creature. Cook it into kibble in a cooking pot." })),
-  ...KIBBLE_TIERS.map((tier): ItemDef => ({ id: kibbleItem(tier), label: KIBBLE_LABEL[tier], kind: "consumable", weight: 0.1, stack: 100, consume: { food: 30 }, note: "Taming food. Creatures of this tier and below tame fastest and cleanest on it." })),
-  { id: "narcotic", label: "Narcotic", kind: "consumable", weight: 0.1, stack: 100, consume: { health: -5, torpor: 40 }, note: "Force-fed to a sleeping creature to keep it under." },
+  // Wild eggs (ARK's unfertilized eggs): edible, but worth more cooked into firmware.
+  ...EGG_SIZES.map((size): ItemDef => ({ id: eggItem(size), label: EGG_LABEL[size], kind: "consumable", weight: 0.5, stack: 100, consume: { food: 10, health: -2 }, note: "Laid by a wild creature. Cook it into firmware in a cooking pot." })),
+  ...FIRMWARE_TIERS.map((tier): ItemDef => ({ id: firmwareItem(tier), label: FIRMWARE_LABEL[tier], kind: "consumable", weight: 0.1, stack: 100, consume: { food: 30 }, note: "Taming food. Creatures of this tier and below tame fastest and cleanest on it." })),
+  { id: "drain_spike", label: "Narcotic", kind: "consumable", weight: 0.1, stack: 100, consume: { health: -5, torpor: 40 }, note: "Force-fed to a sleeping creature to keep it under." },
   { id: "stimulant", label: "Stimulant", kind: "consumable", weight: 0.1, stack: 100, consume: { stamina: 30, water: -10, torpor: -40 }, note: "Wakes the eater fast." },
   {
     id: "stone_pick", label: "Stone Pick", kind: "tool", weight: 1, stack: 1, note: "Thatch from trees, flint from rocks, ore from metal, obsidian, crystal and oil rocks.",
-    tool: { durability: 40, gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
+    tool: { durability: 40, gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, biogel: 1.4, salvage: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
   },
   {
     id: "stone_hatchet", label: "Stone Hatchet", kind: "tool", weight: 1, stack: 1, note: "Wood from trees, stone from rocks.",
-    tool: { durability: 40, gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
+    tool: { durability: 40, gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, salvage: 1.4, biogel: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
   },
   // ARK's metal tools: more of everything per swing, they last longer, and only metal breaks stone (numbers approx).
   {
     id: "metal_pick", label: "Metal Pick", kind: "tool", weight: 1, stack: 1, note: "Far more flint and ore than a stone pick, and it breaks stone.",
-    tool: { durability: 100, gather: { power: 2.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 20, damageClass: "metal", stamina: 3, cooldown: 0.7 },
+    tool: { durability: 100, gather: { power: 2.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, biogel: 1.4, salvage: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 20, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
   {
     id: "metal_hatchet", label: "Metal Hatchet", kind: "tool", weight: 1, stack: 1, note: "Far more wood and stone than a stone hatchet, and it breaks stone.",
-    tool: { durability: 100, gather: { power: 2.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 18, damageClass: "metal", stamina: 3, cooldown: 0.7 },
+    tool: { durability: 100, gather: { power: 2.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, salvage: 1.4, biogel: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 18, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
-  // Past the Broodmother (ours, not ARK's): Element in a metal head gets the most from every rock and lasts three metal picks.
+  // Past the Hivemind (ours, not ARK's): Element in a metal head gets the most from every rock and lasts three metal picks.
   {
     id: "element_pick", label: "Element Pick", kind: "tool", weight: 1, stack: 1, note: "Element set in metal: the most flint, ore, obsidian, crystal and oil a swing gets, and it breaks stone.",
-    tool: { durability: 300, gather: { power: 4, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 30, damageClass: "metal", stamina: 3, cooldown: 0.7 },
+    tool: { durability: 300, gather: { power: 4, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, biogel: 1.4, salvage: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 30, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
-    // ARK's club lands about 3.75x its damage as torpor: a level-1 raptor (180 torpor) sleeps in 9 hits, a
-    // phiomia (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
+    // ARK's club lands about 3.75x its damage as torpor: a level-1 lodestone (180 torpor) sleeps in 9 hits, a
+    // craneback (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
     tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, hits: [{ vital: "torpor", amount: 20 }], stamina: 6, cooldown: 0.9 },
   },
   {
     id: "spear", label: "Spear", kind: "tool", weight: 2, stack: 1, note: "A long, sharp stick for fighting.",
-    tool: { durability: 30, gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
+    tool: { durability: 30, gather: { power: 1, biases: { biogel: 1, salvage: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
   },
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
   cloth("cloth_shirt", "Cloth Shirt", "torso", 1),
@@ -220,13 +220,13 @@ export const ITEMS: readonly ItemDef[] = [
   cloth("cloth_gloves", "Cloth Gloves", "hands", 0.5),
   cloth("cloth_boots", "Cloth Boots", "feet", 0.5),
   // Gear for the far end of the climb (ours, not ARK's): crystal from the snow peaks and oil from the frozen shore keep
-  // the cold out, and past the Broodmother her trophies, flag and Element, with the five artifacts her tribute never
-  // asks for, make brood gear that widens the comfortable band at both ends.
-  { id: "snow_mask", label: "Snow Mask", kind: "armor", weight: 1, stack: 1, wear: { slot: "head", heatC: 1, coldC: 6 }, note: "Crystal lenses in thick hide: the peaks' cold and glare stay out. Double-click to wear it." },
+  // the cold out, and past the Hivemind her trophies, flag and Element, with the five artifacts her tribute never
+  // asks for, make hive gear that widens the comfortable band at both ends.
+  { id: "snow_mask", label: "Snow Mask", kind: "armor", weight: 1, stack: 1, wear: { slot: "head", heatC: 1, coldC: 6 }, note: "Crystal lenses in thick salvage: the peaks' cold and glare stay out. Double-click to wear it." },
   { id: "oilskin_coat", label: "Oilskin Coat", kind: "armor", weight: 3, stack: 1, wear: { slot: "torso", heatC: 3, coldC: 7 }, note: "Hide sealed with oil: the frozen shore's wind runs off it. Double-click to wear it." },
-  { id: "brood_greaves", label: "Brood Greaves", kind: "armor", weight: 4, stack: 1, wear: { slot: "legs", heatC: 6, coldC: 6 }, note: "Built round the Gamma Broodmother's trophy. Double-click to wear it." },
-  { id: "brood_gauntlets", label: "Brood Gauntlets", kind: "armor", weight: 2, stack: 1, wear: { slot: "hands", heatC: 6, coldC: 6 }, note: "Built round the Beta Broodmother's trophy. Double-click to wear it." },
-  { id: "brood_treads", label: "Brood Treads", kind: "armor", weight: 3, stack: 1, wear: { slot: "feet", heatC: 8, coldC: 8 }, note: "Built round the Alpha Broodmother's trophy. Double-click to wear it." },
+  { id: "hive_greaves", label: "Hive Greaves", kind: "armor", weight: 4, stack: 1, wear: { slot: "legs", heatC: 6, coldC: 6 }, note: "Built round the Gamma Hivemind's trophy. Double-click to wear it." },
+  { id: "hive_gauntlets", label: "Hive Gauntlets", kind: "armor", weight: 2, stack: 1, wear: { slot: "hands", heatC: 6, coldC: 6 }, note: "Built round the Beta Hivemind's trophy. Double-click to wear it." },
+  { id: "hive_treads", label: "Hive Treads", kind: "armor", weight: 3, stack: 1, wear: { slot: "feet", heatC: 8, coldC: 8 }, note: "Built round the Alpha Hivemind's trophy. Double-click to wear it." },
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
   {
@@ -234,10 +234,10 @@ export const ITEMS: readonly ItemDef[] = [
     tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, doses: [{ vital: "torpor", amount: 25 }] } } } },
   },
   // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
-  // range. A level-1 raptor (180 torpor) sleeps on two tranq arrows. Numbers approx.
+  // range. A level-1 lodestone (180 torpor) sleeps on two tranq arrows. Numbers approx.
   {
     id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then obsidian, then stone arrows.",
-    tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, obsidian_arrow: { damage: 40, doses: [{ vital: "torpor", amount: 5 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
+    tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { emp_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, obsidian_arrow: { damage: 40, doses: [{ vital: "torpor", amount: 5 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
   },
   // ARK's bola: thrown, it wraps a creature's legs and holds it still for a while; the biggest shrug it off.
   // The bola in hand is its own ammo. Hold time approx.
@@ -246,7 +246,7 @@ export const ITEMS: readonly ItemDef[] = [
     tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 25, ammo: { bola: { damage: 0, doses: [{ vital: "held", amount: 15 }] } } } },
   },
   { id: "stone_arrow", label: "Stone Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A flint-tipped arrow for the bow." },
-  { id: "tranq_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in narcotic: knocks creatures out from range." },
+  { id: "emp_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in drain_spike: knocks creatures out from range." },
   { id: "obsidian_arrow", label: "Obsidian Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A volcanic-glass head that cuts deeper than flint. The bow fires it before stone arrows." },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
   ...Object.values(SPECIES).flatMap((def): ItemDef[] =>

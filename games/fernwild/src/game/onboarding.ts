@@ -25,8 +25,8 @@ const tamedA = (ctx: GameContext, species: string): boolean => tames(ctx).some((
 const BERRIES = ["mejoberry", "amarberry", "azulberry", "tintoberry"] as const;
 const ARTIFACTS = ["artifact_clever", "artifact_hunter", "artifact_massive"] as const;
 /** The beach's easy meat: creatures that run rather than fight. */
-export const PREY = ["dodo", "lystrosaurus", "phiomia"] as const;
-const TROPHIES = ["broodmother_trophy_gamma", "broodmother_trophy_beta", "broodmother_trophy_alpha"] as const;
+export const PREY = ["mowbot", "puckbot", "craneback"] as const;
+const TROPHIES = ["hivemind_trophy_gamma", "hivemind_trophy_beta", "hivemind_trophy_alpha"] as const;
 
 /** The nearest shallows from `from`: rings outward until the ground dips under the sea. */
 function nearestWater(ctx: GameContext, from: OnboardingPoint, within: number): OnboardingPoint | null {
@@ -62,10 +62,10 @@ function nearestCave(ctx: GameContext, from: OnboardingPoint, within: number): O
 
 /**
  * The survivor's path, ARK's first hours as steps. On the beach (the teaching area): punch a tree, gather
- * stone, craft the pick, learn and craft the hatchet, pick berries, drink, tame a dodo. Then out across the
+ * stone, craft the pick, learn and craft the hatchet, pick berries, drink, tame a mowbot. Then out across the
  * island, each step opening the next tier the way ARK's levels do: a stat point, a campfire and cooked
- * meat, a spear, a thatch hut, the Phiomia saddle and a ridden Phiomia, an explorer note, narcotics, a
- * club and a raptor, a cave's artifact, then the three artifacts and the Broodmother. Each step points at
+ * meat, a spear, a thatch hut, the Craneback saddle and a ridden Craneback, an explorer note, narcotics, a
+ * club and a lodestone, a cave's artifact, then the three artifacts and the Hivemind. Each step points at
  * the nearest thing to do it with (arrow and minimap star).
  */
 export const FIRST_DAY: OnboardingConfig<GameContext> = {
@@ -120,9 +120,9 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "tame",
-      text: "Tame a dodo",
-      detail: "Punch a dodo until it sleeps (torpor), then press E and put berries in its inventory. It eats on its own clock; hitting it again lowers the taming effectiveness.",
-      target: { kind: "dodo", within: 250 },
+      text: "Tame a mowbot",
+      detail: "Punch a mowbot until it sleeps (torpor), then press E and put berries in its inventory. It eats on its own clock; hitting it again lowers the taming effectiveness.",
+      target: { kind: "mowbot", within: 250 },
       done: { when: (ctx) => creaturesView(ctx).tamed >= 1 },
       grants: { xp: { amount: 40 } },
     },
@@ -145,23 +145,23 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "meat",
       text: "Hunt for meat",
-      detail: "Kill a dodo, lystrosaurus or phiomia, then keep hitting the body: the pick takes meat, the hatchet hide.",
+      detail: "Kill a mowbot, puckbot or craneback, then keep hitting the body: the pick takes meat, the hatchet hide.",
       inArea: false,
       target: { kind: "prey", within: 300 },
-      done: { when: (ctx, userId) => heldAny(ctx, userId, ["raw_meat", "cooked_meat"]) >= 1 },
+      done: { when: (ctx, userId) => heldAny(ctx, userId, ["biogel", "gel_ration"]) >= 1 },
     },
     {
       id: "cook",
       text: "Cook meat on the campfire",
       detail: "Stand by your campfire, press I and cook the raw meat. Cooked meat fills you and heals; raw meat makes you sick.",
       inArea: false,
-      done: { when: (ctx, userId) => held(ctx, userId, "cooked_meat") >= 1 },
+      done: { when: (ctx, userId) => held(ctx, userId, "gel_ration") >= 1 },
       grants: { xp: { amount: 15 } },
     },
     {
       id: "spear",
       text: "Craft a Spear",
-      detail: "Your first weapon: 8 wood, 2 flint, 12 fiber. Raptors and dilophosaurs hunt the open ground.",
+      detail: "Your first weapon: 8 wood, 2 flint, 12 fiber. Lodestones and dilophosaurs hunt the open ground.",
       inArea: false,
       done: { when: (ctx, userId) => held(ctx, userId, "spear") >= 1 },
       grants: { xp: { amount: 15 } },
@@ -169,7 +169,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     {
       id: "hut",
       text: "Build a thatch hut",
-      detail: "Level 4 opens thatch: a foundation, a doorframe, three walls, a door and a ceiling. A roof keeps the rain off; a door keeps raptors out.",
+      detail: "Level 4 opens thatch: a foundation, a doorframe, three walls, a door and a ceiling. A roof keeps the rain off; a door keeps lodestones out.",
       inArea: false,
       done: {
         progress: (ctx) =>
@@ -184,26 +184,26 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     },
     {
       id: "saddle",
-      text: "Learn the Phiomia Saddle",
-      detail: "At level 5 the Phiomia Saddle opens in Engrams. A Phiomia carries more than you and can be ridden.",
+      text: "Learn the Craneback Saddle",
+      detail: "At level 5 the Craneback Saddle opens in Engrams. A Craneback carries more than you and can be ridden.",
       inArea: false,
-      done: { when: (ctx) => knowsEngram(ctx, "phiomia_saddle") },
+      done: { when: (ctx) => knowsEngram(ctx, "craneback_rig") },
     },
     {
-      id: "phiomia",
-      text: "Tame a Phiomia",
+      id: "craneback",
+      text: "Tame a Craneback",
       detail: "Knock it out and feed it berries. It is skittish: it runs when hit, so stay on it.",
       inArea: false,
-      target: { kind: "phiomia", within: 1500 },
-      done: { when: (ctx) => tamedA(ctx, "phiomia") },
+      target: { kind: "craneback", within: 1500 },
+      done: { when: (ctx) => tamedA(ctx, "craneback") },
       grants: { xp: { amount: 60 } },
     },
     {
       id: "ride",
-      text: "Saddle and ride your Phiomia",
-      detail: "Craft the saddle, put it in your Phiomia's inventory, then press E on it to climb on.",
+      text: "Saddle and ride your Craneback",
+      detail: "Craft the saddle, put it in your Craneback's inventory, then press E on it to climb on.",
       inArea: false,
-      done: { when: (ctx) => creaturesView(ctx).riding?.species === "phiomia" },
+      done: { when: (ctx) => creaturesView(ctx).riding?.species === "craneback" },
       grants: { xp: { amount: 20 } },
     },
     {
@@ -215,11 +215,11 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
       done: { when: (ctx) => dossierView(ctx).notes.seen >= 1 },
     },
     {
-      id: "narcotic",
+      id: "drain_spike",
       text: "Make narcotics",
       detail: "At level 6 learn the Mortar and Pestle and Narcotic: 5 narcoberries and 1 spoiled meat. Narcotics keep a big creature asleep while it eats.",
       inArea: false,
-      done: { when: (ctx, userId) => held(ctx, userId, "narcotic") >= 1 },
+      done: { when: (ctx, userId) => held(ctx, userId, "drain_spike") >= 1 },
       grants: { xp: { amount: 30 } },
     },
     {
@@ -230,12 +230,12 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
       done: { when: (ctx, userId) => held(ctx, userId, "wooden_club") >= 1 },
     },
     {
-      id: "raptor",
-      text: "Tame a Raptor",
-      detail: "Raptors bite back. Club it down, keep it under with narcotics, and feed it raw meat.",
+      id: "lodestone",
+      text: "Tame a Lodestone",
+      detail: "Lodestones bite back. Club it down, keep it under with narcotics, and feed it raw meat.",
       inArea: false,
-      target: { kind: "raptor", within: 1500 },
-      done: { when: (ctx) => tamedA(ctx, "raptor") },
+      target: { kind: "lodestone", within: 1500 },
+      done: { when: (ctx) => tamedA(ctx, "lodestone") },
       grants: { xp: { amount: 120 } },
     },
     {
@@ -257,8 +257,8 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
       grants: { xp: { amount: 300 } },
     },
     {
-      id: "broodmother",
-      text: "Defeat the Broodmother",
+      id: "hivemind",
+      text: "Defeat the Hivemind",
       detail: "Pay the tribute at the Green Obelisk's terminal and bring your strongest tames: everyone within 30 m goes to her lair.",
       inArea: false,
       ...(GREEN_OBELISK === undefined ? {} : { target: { at: [GREEN_OBELISK.position.x, GREEN_OBELISK.position.y, GREEN_OBELISK.position.z] as const } }),
@@ -271,10 +271,10 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
     rock: (ctx, from, within) => nearestHarvestable(ctx, from, within, "strike", "flint"),
     bush: (ctx, from, within) => nearestHarvestable(ctx, from, within, "pick", "mejoberry"),
     water: nearestWater,
-    dodo: (ctx, from, within) => nearestWild(ctx, "dodo", from, within),
+    mowbot: (ctx, from, within) => nearestWild(ctx, "mowbot", from, within),
     prey: (ctx, from, within) => nearestWild(ctx, PREY, from, within),
-    phiomia: (ctx, from, within) => nearestWild(ctx, "phiomia", from, within),
-    raptor: (ctx, from, within) => nearestWild(ctx, "raptor", from, within),
+    craneback: (ctx, from, within) => nearestWild(ctx, "craneback", from, within),
+    lodestone: (ctx, from, within) => nearestWild(ctx, "lodestone", from, within),
     note: nearestUnreadNote,
     cave: nearestCave,
   },

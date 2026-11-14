@@ -4,11 +4,11 @@
  * than they walk: ridden in water, each of these swims at its own speed (metres a second, approximate).
  */
 export const SWIMMERS: Readonly<Record<string, { speed: number }>> = {
-  sarco: { speed: 10 },
-  baryonyx: { speed: 11 },
-  kaprosuchus: { speed: 9 },
-  diplocaulus: { speed: 8 },
-  beelzebufo: { speed: 7 },
+  arcwire: { speed: 10 },
+  riptide: { speed: 11 },
+  snapjaw: { speed: 9 },
+  lampjaw: { speed: 8 },
+  springtoad: { speed: 7 },
 };
 
 /** The share of its walking speed anything else keeps in water. */

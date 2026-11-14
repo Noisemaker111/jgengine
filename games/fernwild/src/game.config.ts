@@ -57,9 +57,9 @@ import {
 import {
   EGG_SIZES,
   eggItem,
-  KIBBLE_TIERS,
-  kibbleItem,
-} from "./game/data/kibble";
+  FIRMWARE_TIERS,
+  firmwareItem,
+} from "./game/data/firmware";
 import {
   bodyPrompts,
   bodyView,
@@ -69,12 +69,12 @@ import {
   breedingView,
 } from "./game/breeding";
 import {
-  broodView,
+  hiveView,
   obeliskPrompts,
-} from "./game/broodmother";
+} from "./game/hivemind";
 import {
-  BROOD_PHASES,
-  BROOD_TIERS,
+  HIVE_PHASES,
+  HIVE_TIERS,
 } from "./game/data/bosses";
 import {
   airliftView,
@@ -186,8 +186,8 @@ function nearestEgg(eggs: readonly { at: readonly [number, number, number] }[], 
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
 
 /** Animals only the northern snow keeps, and only the south-coast beach keeps: what the biome probes count. */
-const SNOW_KINDS = new Set(["woolly_rhino", "mammoth", "sabertooth", "ovis", "kairuku", "yutyrannus", "purlovia"]);
-const COAST_KINDS = new Set(["dodo", "phiomia", "lystrosaurus", "parasaur", "dilophosaur", "moschops", "compy", "pachy"]);
+const SNOW_KINDS = new Set(["rhinodrill", "timberjack", "fangsaw", "coilsheep", "tuxbot", "warhorn", "rootkit"]);
+const COAST_KINDS = new Set(["mowbot", "craneback", "puckbot", "sirenhorn", "sparkspitter", "bumperbot", "klepto", "ramjack"]);
 
 export const game = defineGame({
   name: "Fernwild",
@@ -301,7 +301,7 @@ export const game = defineGame({
       const crate = nearestSupplyDrop(ctx);
       const breeding = breedingView(ctx);
       const babyAt = breeding.baby === null ? null : (ctx.scene.entity.get(breeding.baby.id)?.position ?? null);
-      const brood = broodView(ctx);
+      const hive = hiveView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       const pointing = onboardingOf(ctx)?.pointing() ?? null;
       const dossier = dossierView(ctx);
@@ -372,15 +372,15 @@ export const game = defineGame({
         flint: ctx.player.inventory.count(BAG, "flint"),
         engramPoints: view.engramPoints,
         berries: ["mejoberry", "amarberry", "azulberry", "tintoberry"].reduce((sum, item) => sum + ctx.player.inventory.count(BAG, item), 0),
-        rawMeat: ctx.player.inventory.count(BAG, "raw_meat"),
-        hide: ctx.player.inventory.count(BAG, "hide"),
+        biogel: ctx.player.inventory.count(BAG, "biogel"),
+        salvage: ctx.player.inventory.count(BAG, "salvage"),
         narcoberries: ctx.player.inventory.count(BAG, "narcoberry"),
-        spoiledMeat: ctx.player.inventory.count(BAG, "spoiled_meat"),
-        narcotics: ctx.player.inventory.count(BAG, "narcotic"),
+        souredGel: ctx.player.inventory.count(BAG, "soured_gel"),
+        narcotics: ctx.player.inventory.count(BAG, "drain_spike"),
         clubs: ctx.player.inventory.count(BAG, "wooden_club") + ctx.player.inventory.count(HOTBAR, "wooden_club"),
         // The bag slot holding a saddle, to double-click into a tame's inventory; -1 with none.
         saddleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.endsWith("_saddle")),
-        cookedMeat: ctx.player.inventory.count(BAG, "cooked_meat"),
+        gelRation: ctx.player.inventory.count(BAG, "gel_ration"),
         hatchets: ctx.player.inventory.count(HOTBAR, "stone_hatchet") + ctx.player.inventory.count(BAG, "stone_hatchet"),
         // The bag slot of the first building piece, to double-click onto the hotbar (-1 with none), and the
         // hotbar key (1-based) holding one (0 with none). Campfires standing.
@@ -397,8 +397,8 @@ export const game = defineGame({
         plotFertilizer: base.plot === null ? -1 : Math.ceil(base.plot.fertilizer),
         mejoberries: ctx.player.inventory.count(BAG, "mejoberry") + ctx.player.inventory.count(HOTBAR, "mejoberry"),
         // Sleeping bags placed, and where the last one lies (0, 0 with none).
-        bags: piecesBuilt(ctx, "hide_sleeping_bag"),
-        ...((at) => ({ bagX: at === undefined ? 0 : Math.round(at[0] * 10) / 10, bagZ: at === undefined ? 0 : Math.round(at[2] * 10) / 10 }))(lastPiece(ctx, "hide_sleeping_bag")),
+        bags: piecesBuilt(ctx, "bedroll"),
+        ...((at) => ({ bagX: at === undefined ? 0 : Math.round(at[0] * 10) / 10, bagZ: at === undefined ? 0 : Math.round(at[2] * 10) / 10 }))(lastPiece(ctx, "bedroll")),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),
@@ -412,9 +412,9 @@ export const game = defineGame({
         ...((at) => ({ bushX: at === null ? 0 : Math.round(at[0] * 10) / 10, bushZ: at === null ? 0 : Math.round(at[2] * 10) / 10 }))(nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
         // (passing over prey grazing within 30 m of a hunter, as a survivor with a spear would).
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
-        // The nearest wild Ovis within 30 m, a passive tame to follow and hand-feed.
-        ...sight("ovis", nearestWild(ctx, "ovis", here, 30)),
-        ...sight("dodo", nearestWild(ctx, "dodo", here, 30)),
+        // The nearest wild Coilsheep within 30 m, a passive tame to follow and hand-feed.
+        ...sight("coilsheep", nearestWild(ctx, "coilsheep", here, 30)),
+        ...sight("mowbot", nearestWild(ctx, "mowbot", here, 30)),
         // Live wild creatures within 60 m: what the herd-refill proof counts.
         wildNear: wildCountNear(ctx, here, 60),
         // The nearest wild hunter within 60 m, and how many creatures a bola or trap holds still.
@@ -426,10 +426,10 @@ export const game = defineGame({
         ...sight("note", nearestUnreadNote(ctx, here, 4000)),
         // The nearest wild hunter within 40 m, the one to keep clear of.
         ...sight("danger", nearestThreat(ctx, here, 40)),
-        // The nearest tamed Phiomia, to walk back to with its saddle.
-        ...sight("phiomia", nearestTame(ctx, here, "phiomia")),
-        ...sight("raptor", nearestTame(ctx, here, "raptor")),
-        ...sight("doedicurus", nearestTame(ctx, here, "doedicurus")),
+        // The nearest tamed Craneback, to walk back to with its saddle.
+        ...sight("craneback", nearestTame(ctx, here, "craneback")),
+        ...sight("lodestone", nearestTame(ctx, here, "lodestone")),
+        ...sight("rollgrinder", nearestTame(ctx, here, "rollgrinder")),
         // The nearest campfire and mortar the survivor placed, to walk back to and work at.
         ...sight("campfire", stationNear("campfire")),
         ...sight("mortar", stationNear("mortar_and_pestle")),
@@ -447,8 +447,8 @@ export const game = defineGame({
         // Items in the open storage box (-1 with none open).
         stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
         // The bag's raw meat slot, and the raw meat in the open container (-1 with none open).
-        meatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
-        storedMeat: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.itemId === "raw_meat" ? slot.count : 0), 0)))(storeView(ctx)),
+        meatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "biogel"),
+        storedMeat: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.itemId === "biogel" ? slot.count : 0), 0)))(storeView(ctx)),
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
@@ -474,19 +474,19 @@ export const game = defineGame({
         lastTameBonus: lastTame(ctx)?.bonus ?? -1,
         // The most taming progress, in percent, an awake wild creature still holds (waking should leave none).
         awakeProgress: Math.round(awakeTamingProgress(ctx) * 100),
-        // Wild eggs and kibble carried, any size or tier.
+        // Wild eggs and firmware carried, any size or tier.
         eggsCarried: EGG_SIZES.reduce((sum, size) => sum + ctx.player.inventory.count(BAG, eggItem(size)), 0),
-        kibble: KIBBLE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, kibbleItem(tier)), 0),
+        firmware: FIRMWARE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, firmwareItem(tier)), 0),
         // Metal ingots carried, and the hotbar key (1-based) a metal pick sits on, 0 with none there.
         ingots: ctx.player.inventory.count(BAG, "metal_ingot"),
         metalPickKey: keyOf("metal_pick"),
         // The nearest egg on the ground within 60 m, and the nearest cooking pot placed.
         ...sight("wildEgg", nearestEgg(eggsOnGround(ctx), here, 60)),
         ...sight("pot", stationNear("cooking_pot")),
-        // The bag slot holding kibble (any tier), raw prime meat and raw meat, to double-click into a downed creature; -1 with none.
-        kibbleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.startsWith("kibble_")),
-        primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_prime_meat"),
-        rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
+        // The bag slot holding firmware (any tier), raw prime meat and raw meat, to double-click into a downed creature; -1 with none.
+        firmwareSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.startsWith("firmware_")),
+        primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "prime_biogel"),
+        rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "biogel"),
         riding: creatures.riding === null ? 0 : 1,
         // 1 while the ridden mount is in deep water, and 1 when it is one of the swimmers.
         ...((swim) => ({ mountSwimming: swim.swimming ? 1 : 0, mountSwimmer: swim.swimmer ? 1 : 0 }))(mountSwim(ctx)),
@@ -585,25 +585,25 @@ export const game = defineGame({
         }))(breeding.baby === null ? null : (creatureCard(ctx, breeding.baby.id)?.lineage ?? null)),
         atBaby: breedingPrompts(ctx).length > 0 ? 1 : 0,
         ...sight("baby", babyAt),
-        // The Broodmother: 0 nothing summoned, 1 the portal counting down, 2 the fight, 3 won and waiting to go back;
-        // 1 while the survivor is in her lair; her health and phase (1-3) and her Araneo alive; 1 while webbed;
+        // The Hivemind: 0 nothing summoned, 1 the portal counting down, 2 the fight, 3 won and waiting to go back;
+        // 1 while the survivor is in her lair; her health and phase (1-3) and her Hive Drone alive; 1 while webbed;
         // the tames in the fight with the survivor; 1 at the obelisk's terminal.
-        brood: ["idle", "portal", "fight", "victory"].indexOf(brood.phase),
-        inLair: brood.inside ? 1 : 0,
-        broodHealth: brood.boss === null ? -1 : Math.round(brood.boss.health * 1000) / 10,
-        broodPhase: brood.boss?.phase === null || brood.boss === null ? 0 : BROOD_PHASES.findIndex((phase) => phase.id === brood.boss!.phase) + 1,
-        araneo: brood.brood,
+        hive: ["idle", "portal", "fight", "victory"].indexOf(hive.phase),
+        inLair: hive.inside ? 1 : 0,
+        hiveHealth: hive.boss === null ? -1 : Math.round(hive.boss.health * 1000) / 10,
+        hivePhase: hive.boss?.phase === null || hive.boss === null ? 0 : HIVE_PHASES.findIndex((phase) => phase.id === hive.boss!.phase) + 1,
+        hivedrone: hive.hive,
         // Where she stands, and 1 while her phase tell is on screen.
-        ...sight("brood", brood.boss?.at ?? null),
-        broodTell: brood.tell === null ? 0 : 1,
+        ...sight("hive", hive.boss?.at ?? null),
+        hiveTell: hive.tell === null ? 0 : 1,
         webbed: view.webbed ? 1 : 0,
-        lairTames: brood.companions,
+        lairTames: hive.companions,
         atObelisk: obeliskPrompts(ctx).length > 0 ? 1 : 0,
         element: ctx.player.inventory.count(BAG, "element"),
-        // Broodmother trophies carried, and brood gear (made only around one) carried.
-        broodTrophies: BROOD_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, `broodmother_trophy_${tier.id}`), 0),
-        broodGear: ["brood_greaves", "brood_gauntlets", "brood_treads"].reduce((sum, item) => sum + [BAG, HOTBAR].reduce((n, id) => n + ctx.player.inventory.count(id, item), 0), 0),
-        tranqArrows: ctx.player.inventory.count(BAG, "tranq_arrow") + ctx.player.inventory.count(HOTBAR, "tranq_arrow"),
+        // Hivemind trophies carried, and hive gear (made only around one) carried.
+        hiveTrophies: HIVE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, `hivemind_trophy_${tier.id}`), 0),
+        hiveGear: ["hive_greaves", "hive_gauntlets", "hive_treads"].reduce((sum, item) => sum + [BAG, HOTBAR].reduce((n, id) => n + ctx.player.inventory.count(id, item), 0), 0),
+        empArrows: ctx.player.inventory.count(BAG, "emp_arrow") + ctx.player.inventory.count(HOTBAR, "emp_arrow"),
         stones: ctx.player.inventory.count(BAG, "stone") + ctx.player.inventory.count(HOTBAR, "stone"),
       };
     },

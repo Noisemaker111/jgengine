@@ -8,8 +8,8 @@ const meal = (food: number): readonly VitalDose[] => [{ vital: "food", amount: f
  * first (ARK: meat 50, berries 20 to 30; approximate). The same dose table shape as a taming diet.
  */
 export const TAME_DIET = createDoseTable({
-  carnivore: { raw_prime_meat: meal(50), raw_meat: meal(50), cooked_meat: meal(50) },
-  herbivore: { mejoberry: meal(30), amarberry: meal(20), azulberry: meal(20), tintoberry: meal(20) },
+  scavenger: { prime_biogel: meal(50), biogel: meal(50), gel_ration: meal(50) },
+  grazer: { mejoberry: meal(30), amarberry: meal(20), azulberry: meal(20), tintoberry: meal(20) },
 });
 
 /** A grown tame empties a full food meter in about three hours (approximate; ARK's rate is per species). */

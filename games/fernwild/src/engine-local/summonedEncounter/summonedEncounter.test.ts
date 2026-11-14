@@ -51,8 +51,8 @@ describe("summoned encounter", () => {
         me,
         { id: "friend", kind: "survivor", at: AT },
         { id: "third", kind: "survivor", at: AT },
-        { id: "rex", kind: "companion", at: AT },
-        { id: "raptor", kind: "companion", at: AT },
+        { id: "scrapper", kind: "companion", at: AT },
+        { id: "lodestone", kind: "companion", at: AT },
         { id: "wolf", kind: "companion", at: AT },
       ] satisfies SummonCandidate[],
     };
@@ -60,23 +60,23 @@ describe("summoned encounter", () => {
     expect(encounter.secondsLeft(124)).toBe(1);
     const [entered] = encounter.tick(125, hooks);
     expect(entered).toMatchObject({ type: "entered", tier: "gamma", refused: [{ id: "third", reason: "full" }, { id: "wolf", reason: "full" }] });
-    expect(encounter.state()).toMatchObject({ phase: "fight", party: { survivor: ["me", "friend"], companion: ["rex", "raptor"] } });
-    expect(encounter.inside("rex")).toBe(true);
+    expect(encounter.state()).toMatchObject({ phase: "fight", party: { survivor: ["me", "friend"], companion: ["scrapper", "lodestone"] } });
+    expect(encounter.inside("scrapper")).toBe(true);
     expect(encounter.inside("wolf")).toBe(false);
   });
 
   test("a kind left out of the caps is never taken", () => {
     const encounter = createSummonedEncounter<SummonCandidate>({ ...OPTIONS, partyCaps: { survivor: 2 } });
     encounter.summon("gamma", bag({ clever: 1, hunter: 1 }), { level: 30 }, 0);
-    const [entered] = encounter.tick(25, { targetAlive: () => true, gather: () => [me, { id: "rex", kind: "companion", at: AT }] });
-    expect(entered).toMatchObject({ type: "entered", refused: [{ id: "rex", reason: "full" }] });
+    const [entered] = encounter.tick(25, { targetAlive: () => true, gather: () => [me, { id: "scrapper", kind: "companion", at: AT }] });
+    expect(entered).toMatchObject({ type: "entered", refused: [{ id: "scrapper", reason: "full" }] });
     expect(encounter.state().party["companion"]).toBeUndefined();
   });
 
   test("a portal with no lead in range closes and the cost is spent", () => {
     const encounter = createSummonedEncounter<SummonCandidate>(OPTIONS);
     encounter.summon("gamma", bag({ clever: 1, hunter: 1 }), { level: 30 }, 0);
-    expect(encounter.tick(25, { targetAlive: () => true, gather: () => [{ id: "rex", kind: "companion", at: AT }] })).toEqual([{ type: "closed", tier: "gamma" }]);
+    expect(encounter.tick(25, { targetAlive: () => true, gather: () => [{ id: "scrapper", kind: "companion", at: AT }] })).toEqual([{ type: "closed", tier: "gamma" }]);
     expect(encounter.state().phase).toBe("idle");
   });
 
@@ -84,24 +84,24 @@ describe("summoned encounter", () => {
     const encounter = createSummonedEncounter<SummonCandidate>(OPTIONS);
     encounter.summon("gamma", bag({ clever: 1, hunter: 1 }), { level: 30 }, 0);
     let alive = true;
-    const hooks = { targetAlive: () => alive, gather: () => [me, { id: "rex", kind: "companion" as const, at: [1, 1, 1] as const }] };
+    const hooks = { targetAlive: () => alive, gather: () => [me, { id: "scrapper", kind: "companion" as const, at: [1, 1, 1] as const }] };
     encounter.tick(25, hooks);
     expect(encounter.tick(40, hooks)).toEqual([]);
     alive = false;
-    expect(encounter.tick(41, hooks)).toEqual([{ type: "won", tier: "gamma", party: { survivor: ["me"], companion: ["rex"] } }]);
+    expect(encounter.tick(41, hooks)).toEqual([{ type: "won", tier: "gamma", party: { survivor: ["me"], companion: ["scrapper"] } }]);
     expect(encounter.secondsLeft(41)).toBe(60);
     expect(encounter.tick(100, hooks)).toEqual([]);
-    expect(encounter.tick(101, hooks)).toEqual([{ type: "returned", tier: "gamma", returns: [{ id: "me", kind: "survivor", to: AT }, { id: "rex", kind: "companion", to: [1, 1, 1] }] }]);
+    expect(encounter.tick(101, hooks)).toEqual([{ type: "returned", tier: "gamma", returns: [{ id: "me", kind: "survivor", to: AT }, { id: "scrapper", kind: "companion", to: [1, 1, 1] }] }]);
     expect(encounter.state().phase).toBe("idle");
   });
 
   test("when the last lead falls the fight is lost with the party inside", () => {
     const encounter = createSummonedEncounter<SummonCandidate>(OPTIONS);
     encounter.summon("gamma", bag({ clever: 1, hunter: 1 }), { level: 30 }, 0);
-    const hooks = { targetAlive: () => true, gather: () => [me, { id: "rex", kind: "companion" as const, at: AT }] };
+    const hooks = { targetAlive: () => true, gather: () => [me, { id: "scrapper", kind: "companion" as const, at: AT }] };
     encounter.tick(25, hooks);
     encounter.leave("me");
-    expect(encounter.tick(26, hooks)).toEqual([{ type: "lost", tier: "gamma", reason: "wiped", party: { survivor: [], companion: ["rex"] } }]);
+    expect(encounter.tick(26, hooks)).toEqual([{ type: "lost", tier: "gamma", reason: "wiped", party: { survivor: [], companion: ["scrapper"] } }]);
   });
 
   test("a time limit loses an unfinished fight", () => {

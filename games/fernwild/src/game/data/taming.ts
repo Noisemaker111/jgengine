@@ -32,10 +32,10 @@ export interface TamingDef {
  * ARK's passive tames on the Island: walk up while it is hungry and hand it a food it likes, wait for it to
  * digest, and feed it again; any hit scares it and the tame so far is lost.
  */
-export const AWAKE_TAMES: ReadonlySet<string> = new Set(["ovis", "lystrosaurus", "moschops", "equus", "castoroides", "gigantopithecus"]);
+export const AWAKE_TAMES: ReadonlySet<string> = new Set(["coilsheep", "puckbot", "bumperbot", "pistonmare", "sawbeaver", "liftape"]);
 
 /**
- * One food: the affinity it gives (in the species' plain food, so raw meat is 1 for a carnivore), the
+ * One food: the affinity it gives (in the species' plain food, so raw meat is 1 for a scavenger), the
  * seconds the belly takes to digest it (the time to the next meal), and the ineffectiveness it adds.
  */
 export function food(affinity: number, digestSeconds: number, ineffectiveness = 0.03): readonly VitalDose[] {
@@ -90,7 +90,7 @@ export const NARCOTICS = createDoseTable(
   {
     any: {
       narcoberry: [{ vital: "torpor", amount: 8, seconds: 3 }],
-      narcotic: [{ vital: "torpor", amount: 40, seconds: 16 }],
+      drain_spike: [{ vital: "torpor", amount: 40, seconds: 16 }],
       stimberry: [{ vital: "torpor", amount: -7.5, seconds: 3 }],
       stimulant: [{ vital: "torpor", amount: -40, seconds: 3 }],
     },

@@ -9,7 +9,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { eggs } from "../breeding";
 import { speciesDef } from "../data/species";
 
-/** A fertilized egg's size by its kind: a dodo's fits a hand, a bronto's is a boulder (approximate). */
+/** A fertilized egg's size by its kind: a mowbot's fits a hand, a bronto's is a boulder (approximate). */
 function eggSize(species: string): number {
   return 0.18 + Math.min(0.5, (speciesDef(species)?.radius ?? 0.5) * 0.12);
 }

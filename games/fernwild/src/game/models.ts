@@ -18,7 +18,7 @@ const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${N
 /** A rock tinted to read as the ore it holds. */
 const ore = (file: string, targetHeight: number, material: NonNullable<ModelConfig["material"]>): ModelConfig => ({ ...nature(file, targetHeight), material });
 
-/** A survivor stands 1.8 m, slim beside every creature over dodo size. */
+/** A survivor stands 1.8 m, slim beside every creature over mowbot size. */
 const SURVIVOR_HEIGHT = 1.8;
 
 /** The packs' own idle, walk and run, plus the engine's authored jump, swim, punch, swing and gather. */
@@ -66,12 +66,12 @@ const CLOTH_DYES: Record<string, string> = {
   cloth_pants: "#6c5034",
   cloth_gloves: "#5c432c",
   cloth_boots: "#4b3622",
-  // The late gear: grey-blue snow mask, black oilskin, and the brood set in the Broodmother's dark violet.
+  // The late gear: grey-blue snow mask, black oilskin, and the hive set in the Hivemind's dark violet.
   snow_mask: "#8fa3b3",
   oilskin_coat: "#1f1d1b",
-  brood_greaves: "#3b2a4a",
-  brood_gauntlets: "#3b2a4a",
-  brood_treads: "#3b2a4a",
+  hive_greaves: "#3b2a4a",
+  hive_gauntlets: "#3b2a4a",
+  hive_treads: "#3b2a4a",
 };
 
 const WORN: Record<string, WornLayer> = Object.fromEntries(

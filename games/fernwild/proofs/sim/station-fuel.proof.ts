@@ -9,7 +9,7 @@ export default defineProof(game, {
   proves: ["crafting.fuel"],
   setup(s) {
     s.waitFor((p) => p.creatures > 0, { timeoutMs: 60_000 });
-    s.command("cheat", { give: { campfire: 1, raw_meat: 3, wood: 1 }, toHotbar: ["campfire"] });
+    s.command("cheat", { give: { campfire: 1, biogel: 3, wood: 1 }, toHotbar: ["campfire"] });
     s.press("Digit1");
     s.hold("mouse0", { until: (p) => p.fuel >= 0, ms: 80, timeoutMs: 3000 });
     s.command("cheat", { fuel: 10 });
@@ -22,8 +22,8 @@ export default defineProof(game, {
     await p.wait(500);
     const out = await p.probe();
     await p.wait(15_000);
-    await p.expect((r) => r.craftProgress === out.craftProgress && r.cookedMeat === 0, `the cooking stopped at ${out.craftProgress}% when the fire went out`);
+    await p.expect((r) => r.craftProgress === out.craftProgress && r.gelRation === 0, `the cooking stopped at ${out.craftProgress}% when the fire went out`);
     await p.press("KeyE");
-    await p.waitFor((r) => r.cookedMeat >= 1, { timeoutMs: 20_000, note: "one more wood and the first meat finishes" });
+    await p.waitFor((r) => r.gelRation >= 1, { timeoutMs: 20_000, note: "one more wood and the first meat finishes" });
   },
 });

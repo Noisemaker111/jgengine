@@ -29,7 +29,7 @@ function stageFixture(state: NativeFixture) {
     session.command("start", {});
     tick(0.5);
     session.command("cheat", {
-      give: { stone_pick: 1, stone_hatchet: 1, spear: 1, thatch: 40, wood: 20, stone: 30, flint: 12, fiber: 50, mejoberry: 15, cooked_meat: 3, cloth_shirt: 1, narcotic: 4 },
+      give: { stone_pick: 1, stone_hatchet: 1, spear: 1, thatch: 40, wood: 20, stone: 30, flint: 12, fiber: 50, mejoberry: 15, gel_ration: 3, cloth_shirt: 1, drain_spike: 4 },
       toHotbar: ["stone_pick", "stone_hatchet", "spear", "mejoberry"],
       xp: 400,
     });
@@ -40,7 +40,7 @@ function stageFixture(state: NativeFixture) {
   if (state === "detail") session.command("hudDetail", {});
   if (state === "inventory" || state === "engrams" || state === "dossier" || state === "obelisk") session.command("screen", { screen: state });
   if (state === "creature") {
-    session.command("cheat", { summon: { species: "dodo", level: 5, distance: 2.5, tamed: true } });
+    session.command("cheat", { summon: { species: "mowbot", level: 5, distance: 2.5, tamed: true } });
     tick(0.4);
     session.command("creatureUse", {});
     tick(0.1);

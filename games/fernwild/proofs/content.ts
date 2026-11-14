@@ -2,12 +2,12 @@ import type { ContentProgressionRule } from "@jgengine/core/game/contentValidati
 import { recipeContent, type SuiteContent, type SuiteContentUse } from "@jgengine/core/suite/contentAudit";
 
 import { islandCaves } from "../src/game/caves";
-import { BROOD_TIERS, TROPHY_DROPS } from "../src/game/data/bosses";
+import { HIVE_TIERS, TROPHY_DROPS } from "../src/game/data/bosses";
 import { incubationBand } from "../src/game/data/breeding";
 import { CRAFTING_RECIPES, ENGRAMS } from "../src/game/data/engrams";
 import { HARVESTABLES } from "../src/game/data/harvestables";
 import { SEEDS } from "../src/game/data/farm";
-import { eggItem, eggSizeFor } from "../src/game/data/kibble";
+import { eggItem, eggSizeFor } from "../src/game/data/firmware";
 import { FIST, ITEMS, PICK_UP, SPOILS, type ToolDef } from "../src/game/data/items";
 import { SPECIES } from "../src/game/data/species";
 import { START } from "../src/game/data/start";
@@ -36,12 +36,12 @@ const harvest: ContentProgressionRule[] = Object.entries(HARVESTABLES).flatMap((
 
 const carcasses: ContentProgressionRule[] = Object.values(SPECIES).map((species) => {
   const trophy = TROPHY_DROPS[species.id];
-  return { id: `carcass:${species.id}`, path: `src/game/data/species.ts/${species.id}`, requires: [], provides: ["raw_meat", "hide", ...(trophy === undefined ? [] : [trophy])] };
+  return { id: `carcass:${species.id}`, path: `src/game/data/species.ts/${species.id}`, requires: [], provides: ["biogel", "salvage", ...(trophy === undefined ? [] : [trophy])] };
 });
 
 // Wild females of every egg-laying species drop an egg of their size (src/game/eggs.ts).
 const laying: ContentProgressionRule[] = Object.values(SPECIES).flatMap((species) =>
-  species.kibble === null || incubationBand(species.id) === null ? [] : [{ id: `lay:${species.id}`, path: "src/game/eggs.ts", requires: [], provides: [eggItem(eggSizeFor(species.radius))] }]);
+  species.firmware === null || incubationBand(species.id) === null ? [] : [{ id: `lay:${species.id}`, path: "src/game/eggs.ts", requires: [], provides: [eggItem(eggSizeFor(species.radius))] }]);
 
 const spoiling: ContentProgressionRule[] = Object.entries(SPOILS).flatMap(([from, rule]) =>
   rule.into === null ? [] : [{ id: `spoil:${from}`, path: "src/game/data/items.ts/SPOILS", requires: [from], provides: [rule.into] }]);
@@ -50,7 +50,7 @@ const crates: ContentProgressionRule[] = SUPPLY_TIERS.map((tier) => ({ id: `crat
 
 const caves: ContentProgressionRule[] = islandCaves(() => 0).filter((cave) => cave.artifact !== "").map((cave) => ({ id: `cave:${cave.id}`, path: `src/editor.scene.json/${cave.id}`, requires: [], provides: [cave.artifact] }));
 
-const bosses: ContentProgressionRule[] = BROOD_TIERS.map((tier) => ({ id: `boss:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, requires: Object.keys(tier.cost), provides: Object.keys(tier.rewards) }));
+const bosses: ContentProgressionRule[] = HIVE_TIERS.map((tier) => ({ id: `boss:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, requires: Object.keys(tier.cost), provides: Object.keys(tier.rewards) }));
 
 const uses: SuiteContentUse[] = [
   ...recipes.uses,
@@ -60,7 +60,7 @@ const uses: SuiteContentUse[] = [
   { id: "keep-under", path: "src/game/data/taming.ts", items: Object.keys(NARCOTICS) },
   // A crop plot takes a seed to plant and fertilizer to grow it (src/game/base.ts).
   { id: "plant", path: "src/game/data/farm.ts", items: [...Object.keys(SEEDS), "fertilizer"] },
-  ...BROOD_TIERS.map((tier) => ({ id: `summon:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, items: Object.keys(tier.cost) })),
+  ...HIVE_TIERS.map((tier) => ({ id: `summon:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, items: Object.keys(tier.cost) })),
 ];
 
 /** Fernwild's content for the game suite's data entries, read from the catalogs the game runs on. */

@@ -110,7 +110,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   { id: "storage_box", boxes: [{ min: [-0.5, 0, -0.35], max: [0.5, 0.6, 0.35] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "crop_plot", boxes: [{ min: [-1, 0, -1], max: [1, 0.4, 1] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "preserving_bin", boxes: [{ min: [-0.4, 0, -0.4], max: [0.4, 0.9, 0.4] }], ground: { maxStep: 0.6 }, floor: true },
-  { id: "hide_sleeping_bag", boxes: [{ min: [-0.45, 0, -1], max: [0.45, 0.15, 1] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "bedroll", boxes: [{ min: [-0.45, 0, -1], max: [0.45, 0.15, 1] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
 /** Which socket kinds mate: candidate kind `a` onto placed kind `b`. */
@@ -156,17 +156,17 @@ export const STRUCTURES: readonly StructureDef[] = [
   // ARK's Preserving Bin: food kept in it goes off far slower (level and cost approx).
   piece("preserving_bin", "Preserving Bin", "preserving_bin", "station", 400, 9, 9, { stone: 30, wood: 30, thatch: 30, fiber: 20 }, 10, "Keeps 6 stacks of food fresh four times as long. E opens it."),
   // ARK's Hide Sleeping Bag: wake on it once after death, and it is used up.
-  piece("hide_sleeping_bag", "Hide Sleeping Bag", "hide_sleeping_bag", "station", 100, 4, 3, { hide: 15, fiber: 15 }, 2, "A one-time respawn point: die and you wake here, once."),
+  piece("bedroll", "Hide Sleeping Bag", "bedroll", "station", 100, 4, 3, { salvage: 15, fiber: 15 }, 2, "A one-time respawn point: die and you wake here, once."),
   piece("thatch_foundation", "Thatch Foundation", "foundation", "thatch", 2400, 4, 3, { thatch: 20, wood: 6, fiber: 15 }, 6, "The floor every hut starts from."),
   piece("thatch_wall", "Thatch Wall", "wall", "thatch", 1600, 4, 3, { thatch: 10, wood: 2, fiber: 7 }, 4, "Snaps to a foundation edge."),
   piece("thatch_doorframe", "Thatch Doorframe", "doorframe", "thatch", 2400, 4, 3, { thatch: 8, wood: 6, fiber: 6 }, 4, "A wall with a door gap."),
   piece("thatch_door", "Thatch Door", "door", "thatch", 1600, 4, 3, { thatch: 7, fiber: 4 }, 4, "Fits a doorframe. E opens it."),
   piece("thatch_ceiling", "Thatch Ceiling", "ceiling", "thatch", 1600, 4, 3, { thatch: 15, wood: 4, fiber: 10 }, 4, "A roof over walls."),
-  piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, hide: 15 }, 12, "Grinds sparkpowder and narcotics."),
-  // ARK's Cooking Pot (level and points approximate): where eggs become kibble.
-  piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks kibble from an egg and food: the bait creatures tame fastest on."),
+  piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, salvage: 15 }, 12, "Grinds sparkpowder and narcotics."),
+  // ARK's Cooking Pot (level and points approximate): where eggs become firmware.
+  piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks firmware from an egg and food: the bait creatures tame fastest on."),
   // ARK's Refining Forge (level, points and cost approx): fed wood, it smelts metal ore into ingots.
-  piece("refining_forge", "Refining Forge", "refining_forge", "station", 1000, 16, 12, { stone: 125, flint: 5, hide: 65, wood: 20, fiber: 40 }, 30, "Smelts metal ore into ingots while it burns. E feeds it wood."),
+  piece("refining_forge", "Refining Forge", "refining_forge", "station", 1000, 16, 12, { stone: 125, flint: 5, salvage: 65, wood: 20, fiber: 40 }, 30, "Smelts metal ore into ingots while it burns. E feeds it wood."),
   piece("wooden_foundation", "Wooden Foundation", "foundation", "wood", 15000, 11, 6, { wood: 80, thatch: 20, fiber: 15 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_wall", "Wooden Wall", "wall", "wood", 10000, 11, 7, { wood: 40, thatch: 10, fiber: 7 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_doorframe", "Wooden Doorframe", "doorframe", "wood", 10000, 11, 6, { wood: 30, thatch: 8, fiber: 6 }, 4, "A wooden wall with a door gap."),
@@ -201,7 +201,7 @@ export const BASE_BUILDING: BaseBuildingConfig = {
 export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot", "refining_forge"]);
 
 /** Pieces a dead survivor wakes on instead of the beach; each is used up by it. */
-export const BEDS: ReadonlySet<string> = new Set(["hide_sleeping_bag"]);
+export const BEDS: ReadonlySet<string> = new Set(["bedroll"]);
 
 /** A piece that holds items: how many stacks, how fast what it holds goes off (1 is as fast as carried), and whether it takes only perishables. */
 export interface ContainerSpec {

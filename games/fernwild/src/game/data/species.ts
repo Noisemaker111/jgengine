@@ -1,7 +1,7 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 
-import { type KibbleTier, preferredKibble, withKibble } from "./kibble";
+import { type FirmwareTier, preferredFirmware, withFirmware } from "./firmware";
 import { AWAKE_TAMES, food, type TamingDef, tamingTable } from "./taming";
 
 /** How a wild creature treats the survivor, by ARK's temperament names. */
@@ -18,7 +18,7 @@ export interface SpeciesDef {
   id: string;
   label: string;
   temperament: Temperament;
-  diet: "herbivore" | "carnivore";
+  diet: "grazer" | "scavenger";
   health: StatLine;
   stamina: StatLine;
   oxygen: StatLine;
@@ -28,7 +28,7 @@ export interface SpeciesDef {
   /** Walk and sprint in metres per second (ARK units / 100). */
   walk: number;
   sprint: number;
-  /** Sprint once tamed, when ARK lists a different one (a tamed raptor outruns a wild one). */
+  /** Sprint once tamed, when ARK lists a different one (a tamed lodestone outruns a wild one). */
   tamedSprint?: number;
   /** Stamina a second while ridden at a sprint (ARK's movement table). */
   sprintStamina: number;
@@ -44,13 +44,13 @@ export interface SpeciesDef {
   /** Where the rider sits: right, up, forward in metres. */
   seat: readonly [number, number, number];
   /** Its body when harvested: hits it lasts and what each hit gives before the tool's bias. */
-  carcass: { hits: number; meat: number; hide: number };
+  carcass: { hits: number; meat: number; salvage: number };
   /** Body radius in metres, for hits and prompts. */
   radius: number;
   /** Clubs, darts and narcotics never put it down (ARK's bosses). */
   torporImmune?: boolean;
-  /** The kibble tier it tames best on; null for what cannot be tamed. */
-  kibble: KibbleTier | null;
+  /** The firmware tier it tames best on; null for what cannot be tamed. */
+  firmware: FirmwareTier | null;
 }
 
 /** Wild creatures roll levels 1-30 like ARK's Island at difficulty 1. */
@@ -65,12 +65,12 @@ export function wildLevelCap(metresFromStart: number): number {
 }
 
 /** The three species with their full wiki taming tables. ARK wiki numbers (ark.wiki.gg). Speeds are units/s ÷ 100. */
-const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
-  dodo: {
-    id: "dodo",
-    label: "Dodo",
+const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "firmware">>> = {
+  mowbot: {
+    id: "mowbot",
+    label: "Mowbot",
     temperament: "oblivious",
-    diet: "herbivore",
+    diet: "grazer",
     health: { base: 40, perLevel: 8 },
     stamina: { base: 100, perLevel: 10 },
     oxygen: { base: 150, perLevel: 15 },
@@ -87,14 +87,14 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     saddle: null,
     saddleEngram: null,
     seat: [0, 0.6, 0],
-    carcass: { hits: 4, meat: 1, hide: 0.6 },
+    carcass: { hits: 4, meat: 1, salvage: 0.6 },
     radius: 0.45,
   },
-  phiomia: {
-    id: "phiomia",
-    label: "Phiomia",
+  craneback: {
+    id: "craneback",
+    label: "Craneback",
     temperament: "skittish",
-    diet: "herbivore",
+    diet: "grazer",
     health: { base: 300, perLevel: 60 },
     stamina: { base: 300, perLevel: 30 },
     oxygen: { base: 150, perLevel: 15 },
@@ -108,17 +108,17 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     attack: { damage: 10, interval: 1.2, reach: 2.2 },
     // Wiki: 27 mejoberries in 2:42 at level 1, 63 at level 30; 41 of the other berries in 2:44.
     taming: tamingTable({ base: 240, perLevel: 14.4 }, [27, 63], { mejoberry: food(1, 6), amarberry: food(0.66, 4), azulberry: food(0.66, 4), tintoberry: food(0.66, 4) }),
-    saddle: "phiomia_saddle",
-    saddleEngram: { level: 5, points: 6, cost: { hide: 20, fiber: 15, wood: 5 } },
+    saddle: "craneback_rig",
+    saddleEngram: { level: 5, points: 6, cost: { salvage: 20, fiber: 15, wood: 5 } },
     seat: [0, 1.55, -0.1],
-    carcass: { hits: 14, meat: 2, hide: 1.6 },
+    carcass: { hits: 14, meat: 2, salvage: 1.6 },
     radius: 1,
   },
-  raptor: {
-    id: "raptor",
-    label: "Raptor",
+  lodestone: {
+    id: "lodestone",
+    label: "Lodestone",
     temperament: "aggressive",
-    diet: "carnivore",
+    diet: "scavenger",
     health: { base: 200, perLevel: 40 },
     stamina: { base: 150, perLevel: 15 },
     oxygen: { base: 150, perLevel: 15 },
@@ -132,11 +132,11 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     killXp: 12,
     attack: { damage: 15, interval: 0.8, reach: 2.2 },
     // Wiki: 7 raw meat in 5:51 at level 1, 15 at level 30; 3 prime in 2:31; 13 cooked in 5:26.
-    taming: tamingTable({ base: 180, perLevel: 10.8 }, [7, 15], { raw_prime_meat: food(2.33, 50, 0.02), raw_meat: food(1, 50), cooked_meat: food(0.54, 25) }),
-    saddle: "raptor_saddle",
-    saddleEngram: { level: 18, points: 9, cost: { hide: 110, fiber: 65, wood: 20 } },
+    taming: tamingTable({ base: 180, perLevel: 10.8 }, [7, 15], { prime_biogel: food(2.33, 50, 0.02), biogel: food(1, 50), gel_ration: food(0.54, 25) }),
+    saddle: "lodestone_rig",
+    saddleEngram: { level: 18, points: 9, cost: { salvage: 110, fiber: 65, wood: 20 } },
     seat: [0, 1.25, -0.25],
-    carcass: { hits: 10, meat: 2, hide: 2 },
+    carcass: { hits: 10, meat: 2, salvage: 2 },
     radius: 0.8,
   },
 };
@@ -145,16 +145,16 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
  * The rest of the Island's bestiary, one row each: ARK's temperament and diet, then health and its
  * per-level gain, stamina, torpor and its per-level gain, weight and melee from the wiki's base
  * creature statistics table; walk and sprint in metres per second, body radius, and the saddle
- * engram's level (null: no saddle). Where the table had no clean row (purlovia, sabertooth, sarco,
- * kairuku, kaprosuchus, leech, meganeura, diplocaulus, diplodocus, dimetrodon, beelzebufo, baryonyx,
- * arthropleura, pulmonoscorpius) and for every speed, the numbers approximate the wiki's.
+ * engram's level (null: no saddle). Where the table had no clean row (rootkit, fangsaw, arcwire,
+ * tuxbot, snapjaw, siphon, choir, lampjaw, pylon, heatsink, springtoad, riptide,
+ * railcrawler, stingvolt) and for every speed, the numbers approximate the wiki's.
  * Per-level stamina, weight and melee, food, kill XP, bite timing, taming foods, carcass and saddle
  * costs follow ARK's patterns scaled by body size rather than per-species wiki values.
  */
 type Row = [
   label: string,
   temperament: Temperament,
-  diet: "herbivore" | "carnivore",
+  diet: "grazer" | "scavenger",
   health: number,
   healthPerLevel: number,
   stamina: number,
@@ -169,72 +169,72 @@ type Row = [
 ];
 
 const ROWS: Readonly<Record<string, Row>> = {
-  carnotaurus: ["Carnotaurus", "aggressive", "carnivore", 420, 84, 300, 350, 21, 300, 35, 2.5, 8.5, 1.4, 39],
-  triceratops: ["Triceratops", "territorial", "herbivore", 375, 75, 150, 250, 15, 365, 32, 2, 4.6, 1.6, 16],
-  stegosaurus: ["Stegosaurus", "territorial", "herbivore", 650, 130, 300, 500, 30, 500, 42, 1.6, 3.5, 2, 30],
-  parasaur: ["Parasaur", "skittish", "herbivore", 200, 40, 450, 150, 9, 480, 12, 2.5, 7.9, 1.4, 18],
-  megaloceros: ["Megaloceros", "skittish", "herbivore", 300, 60, 280, 175, 10.5, 220, 30, 2.6, 9, 1, 20],
-  pteranodon: ["Pteranodon", "skittish", "carnivore", 210, 42, 150, 120, 7.2, 120, 18, 1.7, 5, 0.9, 25],
-  rex: ["Rex", "aggressive", "carnivore", 1100, 220, 420, 1550, 93, 500, 62, 2.5, 6.5, 2.6, 57],
-  dilophosaur: ["Dilophosaur", "aggressive", "carnivore", 130, 26, 100, 75, 4.5, 45, 10, 1.9, 4, 0.6, null],
-  pachy: ["Pachy", "territorial", "herbivore", 175, 35, 150, 160, 9.6, 150, 10, 2.4, 6.5, 0.8, 20],
-  direwolf: ["Direwolf", "aggressive", "carnivore", 330, 66, 260, 450, 27, 170, 33, 3, 9.5, 0.9, 29],
-  chalicotherium: ["Chalicotherium", "territorial", "herbivore", 600, 120, 300, 500, 30, 400, 36, 1.5, 5, 1.6, 50],
-  terror_bird: ["Terror Bird", "aggressive", "carnivore", 270, 54, 160, 300, 18, 120, 18, 4, 10, 0.8, 30],
-  gigantopithecus: ["Gigantopithecus", "docile", "herbivore", 640, 64, 300, 1100, 66, 220, 40, 1.8, 5, 1.3, 40],
-  ovis: ["Ovis", "oblivious", "herbivore", 100, 20, 100, 85, 5.1, 90, 5, 1.2, 3, 0.6, null],
-  purlovia: ["Purlovia", "aggressive", "carnivore", 450, 90, 300, 400, 24, 200, 25, 2, 6, 0.8, null],
-  titanomyrma: ["Titanomyrma", "aggressive", "carnivore", 35, 7, 100, 50, 3, 150, 7, 2, 4, 0.4, null],
-  troodon: ["Troodon", "aggressive", "carnivore", 200, 40, 150, 180, 10.8, 140, 7, 2.4, 6, 0.5, null],
-  ankylosaurus: ["Ankylosaurus", "territorial", "herbivore", 700, 140, 175, 420, 25.2, 250, 50, 1.4, 3.5, 1.6, 36],
-  argentavis: ["Argentavis", "aggressive", "carnivore", 365, 73, 400, 600, 36, 400, 25, 1.5, 4, 1.2, 44],
-  doedicurus: ["Doedicurus", "docile", "herbivore", 850, 170, 300, 800, 48, 250, 32, 1.1, 2.5, 1.3, 30],
-  allosaurus: ["Allosaurus", "aggressive", "carnivore", 630, 126, 250, 1000, 60, 380, 35, 2.5, 7.5, 1.8, 49],
-  woolly_rhino: ["Woolly Rhinoceros", "territorial", "herbivore", 500, 100, 120, 600, 36, 750, 40, 2, 8, 1.5, 35],
-  mammoth: ["Mammoth", "territorial", "herbivore", 850, 170, 330, 550, 33, 500, 48, 1.8, 4, 2.2, 40],
-  yutyrannus: ["Yutyrannus", "aggressive", "carnivore", 1100, 220, 420, 1550, 93, 500, 55, 2.5, 6.5, 2.2, 60],
-  sabertooth: ["Sabertooth", "aggressive", "carnivore", 250, 50, 200, 380, 22.8, 250, 35, 2.8, 9.5, 0.9, 30],
-  kairuku: ["Kairuku", "oblivious", "carnivore", 170, 34, 100, 100, 6, 100, 6, 1, 2.5, 0.5, null],
-  pachyrhinosaurus: ["Pachyrhinosaurus", "territorial", "herbivore", 375, 75, 150, 250, 15, 365, 28, 2, 4.5, 1.5, 35],
-  thylacoleo: ["Thylacoleo", "aggressive", "carnivore", 700, 140, 400, 700, 42, 400, 40, 2.5, 8, 1, 50],
-  direbear: ["Dire Bear", "aggressive", "carnivore", 400, 80, 500, 1000, 60, 650, 50, 2.2, 8, 1.4, 45],
-  titanoboa: ["Titanoboa", "aggressive", "carnivore", 170, 34, 150, 175, 10.5, 150, 30, 1.5, 4, 0.6, null],
-  lystrosaurus: ["Lystrosaurus", "oblivious", "herbivore", 90, 18, 100, 100, 6, 90, 6, 1.5, 4, 0.5, null],
-  moschops: ["Moschops", "docile", "herbivore", 375, 75, 300, 300, 18, 200, 32, 1.4, 3.5, 1, null],
-  compy: ["Compy", "aggressive", "carnivore", 50, 10, 100, 25, 1.5, 25, 4, 2, 6, 0.3, null],
-  paraceratherium: ["Paraceratherium", "docile", "herbivore", 1026, 205.2, 300, 1300, 78, 850, 45, 1.5, 4, 3, 50],
-  equus: ["Equus", "skittish", "herbivore", 240, 48, 560, 420, 25.2, 350, 9, 2.5, 12, 0.9, 25],
-  gallimimus: ["Gallimimus", "skittish", "herbivore", 150, 30, 300, 420, 25.2, 270, 8, 3, 10, 0.9, 25],
-  castoroides: ["Castoroides", "docile", "herbivore", 450, 90, 180, 350, 21, 300, 28, 1.2, 3, 1, 25],
-  araneo: ["Araneo", "aggressive", "carnivore", 150, 30, 100, 80, 4.8, 100, 10, 2, 5, 0.8, 25],
-  dimetrodon: ["Dimetrodon", "territorial", "carnivore", 650, 130, 300, 1000, 60, 300, 35, 1.2, 3, 1.2, 34],
-  kaprosuchus: ["Kaprosuchus", "aggressive", "carnivore", 300, 60, 150, 300, 18, 200, 22, 1.8, 6, 0.9, 32],
-  sarco: ["Sarco", "aggressive", "carnivore", 400, 80, 450, 400, 24, 400, 35, 1.7, 5, 1.3, 23],
-  beelzebufo: ["Beelzebufo", "skittish", "carnivore", 220, 44, 200, 150, 9, 200, 15, 1.5, 4, 0.7, 24],
-  leech: ["Leech", "aggressive", "carnivore", 40, 8, 100, 10, 0.6, 50, 3, 0.8, 1.5, 0.3, null],
-  meganeura: ["Meganeura", "aggressive", "carnivore", 70, 14, 100, 50, 3, 30, 7, 2, 4, 0.4, null],
-  diplocaulus: ["Diplocaulus", "skittish", "carnivore", 190, 38, 300, 100, 6, 100, 6, 1, 2, 0.6, 21],
-  baryonyx: ["Baryonyx", "aggressive", "carnivore", 780, 156, 280, 550, 33, 300, 25, 2.2, 6, 1.6, 44],
-  arthropleura: ["Arthropleura", "aggressive", "carnivore", 750, 150, 150, 300, 18, 300, 20, 1.5, 4, 1, 50],
-  pulmonoscorpius: ["Pulmonoscorpius", "aggressive", "carnivore", 280, 56, 200, 300, 18, 150, 15, 2, 5, 0.8, 25],
-  megalania: ["Megalania", "aggressive", "carnivore", 480, 96, 400, 700, 42, 400, 10, 2, 6, 1.2, 45],
-  brontosaurus: ["Brontosaurus", "docile", "herbivore", 2070, 414, 240, 2000, 120, 1600, 60, 1.2, 2.5, 4, 55],
-  diplodocus: ["Diplodocus", "oblivious", "herbivore", 1700, 340, 300, 2000, 120, 1200, 10, 1.2, 2.5, 3, 40],
-  iguanodon: ["Iguanodon", "skittish", "herbivore", 250, 50, 200, 210, 12.6, 375, 25, 2, 7, 1.2, 35],
+  ripsaw: ["Ripsaw", "aggressive", "scavenger", 420, 84, 300, 350, 21, 300, 35, 2.5, 8.5, 1.4, 39],
+  bulldozaur: ["Bulldozaur", "territorial", "grazer", 375, 75, 150, 250, 15, 365, 32, 2, 4.6, 1.6, 16],
+  platebacker: ["Platebacker", "territorial", "grazer", 650, 130, 300, 500, 30, 500, 42, 1.6, 3.5, 2, 30],
+  sirenhorn: ["Sirenhorn", "skittish", "grazer", 200, 40, 450, 150, 9, 480, 12, 2.5, 7.9, 1.4, 18],
+  antennelk: ["Antennelk", "skittish", "grazer", 300, 60, 280, 175, 10.5, 220, 30, 2.6, 9, 1, 20],
+  watchwing: ["Watchwing", "skittish", "scavenger", 210, 42, 150, 120, 7.2, 120, 18, 1.7, 5, 0.9, 25],
+  scrapper: ["Scrapper Rex", "aggressive", "scavenger", 1100, 220, 420, 1550, 93, 500, 62, 2.5, 6.5, 2.6, 57],
+  sparkspitter: ["Sparkspitter", "aggressive", "scavenger", 130, 26, 100, 75, 4.5, 45, 10, 1.9, 4, 0.6, null],
+  ramjack: ["Ramjack", "territorial", "grazer", 175, 35, 150, 160, 9.6, 150, 10, 2.4, 6.5, 0.8, 20],
+  frostbyte: ["Frostbyte", "aggressive", "scavenger", 330, 66, 260, 450, 27, 170, 33, 3, 9.5, 0.9, 29],
+  hulkloader: ["Hulkloader", "territorial", "grazer", 600, 120, 300, 500, 30, 400, 36, 1.5, 5, 1.6, 50],
+  shrikebot: ["Shrikebot", "aggressive", "scavenger", 270, 54, 160, 300, 18, 120, 18, 4, 10, 0.8, 30],
+  liftape: ["Liftape", "docile", "grazer", 640, 64, 300, 1100, 66, 220, 40, 1.8, 5, 1.3, 40],
+  coilsheep: ["Coilsheep", "oblivious", "grazer", 100, 20, 100, 85, 5.1, 90, 5, 1.2, 3, 0.6, null],
+  rootkit: ["Rootkit", "aggressive", "scavenger", 450, 90, 300, 400, 24, 200, 25, 2, 6, 0.8, null],
+  ticklet: ["Ticklet", "aggressive", "scavenger", 35, 7, 100, 50, 3, 150, 7, 2, 4, 0.4, null],
+  echo: ["Echo Mimic", "aggressive", "scavenger", 200, 40, 150, 180, 10.8, 140, 7, 2.4, 6, 0.5, null],
+  thermite: ["Thermite Beetle", "territorial", "grazer", 700, 140, 175, 420, 25.2, 250, 50, 1.4, 3.5, 1.6, 36],
+  homer: ["Homer", "aggressive", "scavenger", 365, 73, 400, 600, 36, 400, 25, 1.5, 4, 1.2, 44],
+  rollgrinder: ["Rollgrinder", "docile", "grazer", 850, 170, 300, 800, 48, 250, 32, 1.1, 2.5, 1.3, 30],
+  clawmaul: ["Clawmaul", "aggressive", "scavenger", 630, 126, 250, 1000, 60, 380, 35, 2.5, 7.5, 1.8, 49],
+  rhinodrill: ["Rhinodrill", "territorial", "grazer", 500, 100, 120, 600, 36, 750, 40, 2, 8, 1.5, 35],
+  timberjack: ["Timberjack", "territorial", "grazer", 850, 170, 330, 550, 33, 500, 48, 1.8, 4, 2.2, 40],
+  warhorn: ["Warhorn", "aggressive", "scavenger", 1100, 220, 420, 1550, 93, 500, 55, 2.5, 6.5, 2.2, 60],
+  fangsaw: ["Fangsaw", "aggressive", "scavenger", 250, 50, 200, 380, 22.8, 250, 35, 2.8, 9.5, 0.9, 30],
+  tuxbot: ["Tuxbot", "oblivious", "scavenger", 170, 34, 100, 100, 6, 100, 6, 1, 2.5, 0.5, null],
+  smogrhino: ["Smogrhino", "territorial", "grazer", 375, 75, 150, 250, 15, 365, 28, 2, 4.5, 1.5, 35],
+  mirrorcat: ["Mirrorcat", "aggressive", "scavenger", 700, 140, 400, 700, 42, 400, 40, 2.5, 8, 1, 50],
+  ironbear: ["Ironbear", "aggressive", "scavenger", 400, 80, 500, 1000, 60, 650, 50, 2.2, 8, 1.4, 45],
+  coilcobra: ["Coilcobra", "aggressive", "scavenger", 170, 34, 150, 175, 10.5, 150, 30, 1.5, 4, 0.6, null],
+  puckbot: ["Puckbot", "oblivious", "grazer", 90, 18, 100, 100, 6, 90, 6, 1.5, 4, 0.5, null],
+  bumperbot: ["Bumperbot", "docile", "grazer", 375, 75, 300, 300, 18, 200, 32, 1.4, 3.5, 1, null],
+  klepto: ["Klepto", "aggressive", "scavenger", 50, 10, 100, 25, 1.5, 25, 4, 2, 6, 0.3, null],
+  highrise: ["Highrise", "docile", "grazer", 1026, 205.2, 300, 1300, 78, 850, 45, 1.5, 4, 3, 50],
+  pistonmare: ["Pistonmare", "skittish", "grazer", 240, 48, 560, 420, 25.2, 350, 9, 2.5, 12, 0.9, 25],
+  zipstrider: ["Zipstrider", "skittish", "grazer", 150, 30, 300, 420, 25.2, 270, 8, 3, 10, 0.9, 25],
+  sawbeaver: ["Sawbeaver", "docile", "grazer", 450, 90, 180, 350, 21, 300, 28, 1.2, 3, 1, 25],
+  hivedrone: ["Hive Drone", "aggressive", "scavenger", 150, 30, 100, 80, 4.8, 100, 10, 2, 5, 0.8, 25],
+  heatsink: ["Heatsink", "territorial", "scavenger", 650, 130, 300, 1000, 60, 300, 35, 1.2, 3, 1.2, 34],
+  snapjaw: ["Snapjaw", "aggressive", "scavenger", 300, 60, 150, 300, 18, 200, 22, 1.8, 6, 0.9, 32],
+  arcwire: ["Arcwire", "aggressive", "scavenger", 400, 80, 450, 400, 24, 400, 35, 1.7, 5, 1.3, 23],
+  springtoad: ["Springtoad", "skittish", "scavenger", 220, 44, 200, 150, 9, 200, 15, 1.5, 4, 0.7, 24],
+  siphon: ["Siphon", "aggressive", "scavenger", 40, 8, 100, 10, 0.6, 50, 3, 0.8, 1.5, 0.3, null],
+  choir: ["Choir Drone", "aggressive", "scavenger", 70, 14, 100, 50, 3, 30, 7, 2, 4, 0.4, null],
+  lampjaw: ["Lampjaw", "skittish", "scavenger", 190, 38, 300, 100, 6, 100, 6, 1, 2, 0.6, 21],
+  riptide: ["Riptide", "aggressive", "scavenger", 780, 156, 280, 550, 33, 300, 25, 2.2, 6, 1.6, 44],
+  railcrawler: ["Railcrawler", "aggressive", "scavenger", 750, 150, 150, 300, 18, 300, 20, 1.5, 4, 1, 50],
+  stingvolt: ["Stingvolt", "aggressive", "scavenger", 280, 56, 200, 300, 18, 150, 15, 2, 5, 0.8, 25],
+  wallcrawler: ["Wallcrawler", "aggressive", "scavenger", 480, 96, 400, 700, 42, 400, 10, 2, 6, 1.2, 45],
+  hoover: ["Hoover Leviathan", "docile", "grazer", 2070, 414, 240, 2000, 120, 1600, 60, 1.2, 2.5, 4, 55],
+  pylon: ["Pylon Walker", "oblivious", "grazer", 1700, 340, 300, 2000, 120, 1200, 10, 1.2, 2.5, 3, 40],
+  switchback: ["Switchback", "skittish", "grazer", 250, 50, 200, 210, 12.6, 375, 25, 2, 7, 1.2, 35],
 };
 
 const round = (value: number, step = 1) => Math.round(value / step) * step;
 
 /** A table row as a full species: ARK's per-level patterns and size-scaled tables fill what the row leaves out. */
-function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
+function fromRow(id: string, row: Row): Omit<SpeciesDef, "firmware"> {
   const [label, temperament, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
-  // Meals scale with the torpor a body carries, as ARK's do: a raptor (180 torpor) eats 7 raw meat at level 1.
-  // Carnivores count in raw meat, herbivores in mejoberries (three to a meat); a meal digests in 50 s.
+  // Meals scale with the torpor a body carries, as ARK's do: a lodestone (180 torpor) eats 7 raw meat at level 1.
+  // Scavengers count in raw meat, grazers in mejoberries (three to a meat); a meal digests in 50 s.
   const meals = Math.max(2, round(torpor / 26));
-  const need: readonly [number, number] = diet === "carnivore" ? [meals, meals * 2] : [meals * 3, meals * 7];
+  const need: readonly [number, number] = diet === "scavenger" ? [meals, meals * 2] : [meals * 3, meals * 7];
   const foods: Record<string, readonly VitalDose[]> =
-    diet === "carnivore"
-      ? { raw_prime_meat: food(2.5, 50, 0.02), raw_meat: food(1, 50), cooked_meat: food(0.5, 50) }
+    diet === "scavenger"
+      ? { prime_biogel: food(2.5, 50, 0.02), biogel: food(1, 50), gel_ration: food(0.5, 50) }
       : { mejoberry: food(1, 16.7), amarberry: food(0.75, 12.5), azulberry: food(0.75, 12.5), tintoberry: food(0.75, 12.5) };
   const big = radius >= 2;
   return {
@@ -258,25 +258,25 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
     saddleEngram:
       saddleLevel === null
         ? null
-        : { level: saddleLevel, points: Math.min(40, 6 + round(saddleLevel / 3)), cost: { hide: round(20 + weight * 0.4, 5), fiber: round(15 + weight * 0.2, 5), wood: round(5 + weight * 0.05) } },
+        : { level: saddleLevel, points: Math.min(40, 6 + round(saddleLevel / 3)), cost: { salvage: round(20 + weight * 0.4, 5), fiber: round(15 + weight * 0.2, 5), wood: round(5 + weight * 0.05) } },
     seat: [0, round(radius * 1.2 + 0.4, 0.05), -round(radius * 0.15, 0.05)],
-    carcass: { hits: Math.max(3, round(health / 30)), meat: Math.max(1, round(weight / 120)), hide: Math.max(0.5, round(weight / 150, 0.5)) },
+    carcass: { hits: Math.max(3, round(health / 30)), meat: Math.max(1, round(weight / 120)), salvage: Math.max(0.5, round(weight / 150, 0.5)) },
     radius,
   };
 }
 
 /**
- * The Broodmother Lysrix, one species per difficulty as ARK keeps them: the wiki's base health and its
+ * The Hivemind Prime, one species per difficulty as ARK keeps them: the wiki's base health and its
  * per-level gain, the lighter of her two melee attacks, torpor 100000 (+6000 a level) that nothing
  * brings down, and 32 base kill XP. Her speeds, bite timing, size and carcass are approximate.
  */
-function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPerLevel: number, melee: number): SpeciesDef {
-  const label = `${tier[0]!.toUpperCase()}${tier.slice(1)} Broodmother`;
+function hivemind(tier: "gamma" | "beta" | "alpha", health: number, healthPerLevel: number, melee: number): SpeciesDef {
+  const label = `${tier[0]!.toUpperCase()}${tier.slice(1)} Hivemind`;
   return {
-    id: `broodmother_${tier}`,
+    id: `hivemind_${tier}`,
     label,
     temperament: "aggressive",
-    diet: "carnivore",
+    diet: "scavenger",
     health: { base: health, perLevel: healthPerLevel },
     stamina: { base: 1000, perLevel: 100 },
     oxygen: { base: 150, perLevel: 15 },
@@ -292,27 +292,27 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
     saddle: null,
     saddleEngram: null,
     seat: [0, 0, 0],
-    carcass: { hits: 60, meat: 8, hide: 6 },
+    carcass: { hits: 60, meat: 8, salvage: 6 },
     radius: 7,
     torporImmune: true,
-    kibble: null,
+    firmware: null,
   };
 }
 
-/** Every species on the Island: the detailed three, the table's rest, and the Broodmother. */
-/** A tameable species with ARK's kibble in its foods: its tier and up first, the tiers below last. */
-function withBait(def: Omit<SpeciesDef, "kibble">): SpeciesDef {
-  const tier = preferredKibble(def.id, def.taming.torpor.kind === "piecewise" ? (def.taming.torpor.points[0]?.[1] ?? 0) : 0);
-  const baseline = def.diet === "carnivore" ? "raw_meat" : "mejoberry";
-  return { ...def, kibble: tier, taming: { ...def.taming, foods: withKibble(def.taming.foods, baseline, tier) } };
+/** Every species on the Island: the detailed three, the table's rest, and the Hivemind. */
+/** A tameable species with ARK's firmware in its foods: its tier and up first, the tiers below last. */
+function withBait(def: Omit<SpeciesDef, "firmware">): SpeciesDef {
+  const tier = preferredFirmware(def.id, def.taming.torpor.kind === "piecewise" ? (def.taming.torpor.points[0]?.[1] ?? 0) : 0);
+  const baseline = def.diet === "scavenger" ? "biogel" : "mejoberry";
+  return { ...def, firmware: tier, taming: { ...def.taming, foods: withFirmware(def.taming.foods, baseline, tier) } };
 }
 
 export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
   ...Object.fromEntries(Object.values(DETAILED).map((def) => [def.id, withBait(def)])),
   ...Object.fromEntries(Object.entries(ROWS).map(([id, row]) => [id, withBait(fromRow(id, row))])),
-  broodmother_gamma: broodmother("gamma", 324000, 64800, 180),
-  broodmother_beta: broodmother("beta", 648000, 97200, 320),
-  broodmother_alpha: broodmother("alpha", 972000, 243000, 540),
+  hivemind_gamma: hivemind("gamma", 324000, 64800, 180),
+  hivemind_beta: hivemind("beta", 648000, 97200, 320),
+  hivemind_alpha: hivemind("alpha", 972000, 243000, 540),
 };
 
 /** What a tame puts its level-up points into. */

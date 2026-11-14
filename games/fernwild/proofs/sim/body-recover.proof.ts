@@ -10,7 +10,7 @@ export default defineProof(game, {
     s.waitFor((p) => p.carrying === 3, { timeoutMs: 3000 });
     s.command("cheat", { goto: { cave: "cave_lower_south_cave", back: 30 } });
     s.waitFor((p) => p.z < 1050, { timeoutMs: 3000 });
-    s.command("cheat", { summon: { species: "raptor", level: 30, distance: 5 } });
+    s.command("cheat", { summon: { species: "lodestone", level: 30, distance: 5 } });
     s.waitFor((p) => p.bodyDistance > 50, { timeoutMs: 90_000 });
     s.command("cheat", { destroyWild: true });
     s.command("cheat", { goto: { cave: "cave_lower_south_cave", back: 30 } });

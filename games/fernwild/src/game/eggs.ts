@@ -7,7 +7,7 @@ import { stow } from "./bags";
 import { wildFemales } from "./creatures";
 import { incubationBand } from "./data/breeding";
 import { itemLabel, SPOILS } from "./data/items";
-import { EGG_LAY_SECONDS, EGGS_NEARBY_CAP, eggItem, eggSizeFor } from "./data/kibble";
+import { EGG_LAY_SECONDS, EGGS_NEARBY_CAP, eggItem, eggSizeFor } from "./data/firmware";
 
 /** Metres an egg can be taken from, and the ground around a mother that counts as "her" eggs. */
 const TAKE_REACH = 2.2;

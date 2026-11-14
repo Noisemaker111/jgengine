@@ -164,7 +164,7 @@ export function dossierPages(ctx: GameContext) {
   };
 }
 
-/** Whether the dossier has met this species, item, note or tame (`species:dodo`, `item:thatch`, `note:<landmark>`, `tame:dodo`). */
+/** Whether the dossier has met this species, item, note or tame (`species:mowbot`, `item:thatch`, `note:<landmark>`, `tame:mowbot`). */
 export function inDossier(ctx: GameContext, id: string): boolean {
   return dossierOf(ctx).codex.isDiscovered(id);
 }

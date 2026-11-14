@@ -92,13 +92,13 @@ test("after a death the survivor wakes back in the region they chose", () => {
 test("the save keeps who the survivor is and where they respawn", () => {
   const first = runner();
   tick(first, 0.1);
-  first.ui.tryInvoke("createSurvivor", { name: "Rex", body: "man-2", height: 0.93, region: "spawn_south_3" });
+  first.ui.tryInvoke("createSurvivor", { name: "Scrapper Rex", body: "man-2", height: 0.93, region: "spawn_south_3" });
   const saved = characterSave(first.ctx).snapshot();
 
   const second = runner();
   tick(second, 0.1);
   characterSave(second.ctx).hydrate(saved);
-  expect(survivorLook(second.ctx)).toEqual({ name: "Rex", body: "man-2", height: 0.93, region: "spawn_south_3" });
+  expect(survivorLook(second.ctx)).toEqual({ name: "Scrapper Rex", body: "man-2", height: 0.93, region: "spawn_south_3" });
   expect(me(second).look).toBe("man-2");
   second.ctx.scene.entity.resetToSpawn(second.userId);
   expect(metresFrom(second, region("spawn_south_3").position)).toBeLessThan(3);

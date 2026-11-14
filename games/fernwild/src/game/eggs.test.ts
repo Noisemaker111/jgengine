@@ -9,7 +9,7 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
 import { recipeDef } from "./data/engrams";
 import { itemDef, itemTraits } from "./data/items";
-import { EGG_LAY_SECONDS, EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./data/kibble";
+import { EGG_LAY_SECONDS, EGG_SIZES, eggItem, FIRMWARE_TIERS, firmwareItem } from "./data/firmware";
 import { SPECIES } from "./data/species";
 import { eggsOnGround, eggsSave, layerEgg, takeEgg } from "./eggs";
 
@@ -44,41 +44,41 @@ const near = (game: HeadlessRunner, radius: number) => {
 };
 
 test("egg-laying species lay eggs sized to their bodies; mammals lay none", () => {
-  expect(layerEgg("dodo", SPECIES.dodo!.radius)).toBe("egg_xs");
-  expect(layerEgg("raptor", SPECIES.raptor!.radius)).toBe("egg_s");
-  expect(layerEgg("phiomia", SPECIES.phiomia!.radius)).toBeNull();
+  expect(layerEgg("mowbot", SPECIES.mowbot!.radius)).toBe("egg_xs");
+  expect(layerEgg("lodestone", SPECIES.lodestone!.radius)).toBe("egg_s");
+  expect(layerEgg("craneback", SPECIES.craneback!.radius)).toBeNull();
   for (const size of EGG_SIZES) expect(itemDef(eggItem(size))).not.toBeNull();
 });
 
-test("every tameable species eats its kibble tier and up before anything else, and lower tiers last", () => {
+test("every tameable species eats its firmware tier and up before anything else, and lower tiers last", () => {
   for (const def of Object.values(SPECIES)) {
-    if (def.kibble === null) continue;
+    if (def.firmware === null) continue;
     const foods = Object.keys(def.taming.foods);
-    const at = KIBBLE_TIERS.indexOf(def.kibble);
-    expect(foods.slice(0, KIBBLE_TIERS.length - at)).toEqual(KIBBLE_TIERS.slice(at).map(kibbleItem));
-    expect(foods.slice(foods.length - at)).toEqual(KIBBLE_TIERS.slice(0, at).reverse().map(kibbleItem));
+    const at = FIRMWARE_TIERS.indexOf(def.firmware);
+    expect(foods.slice(0, FIRMWARE_TIERS.length - at)).toEqual(FIRMWARE_TIERS.slice(at).map(firmwareItem));
+    expect(foods.slice(foods.length - at)).toEqual(FIRMWARE_TIERS.slice(0, at).reverse().map(firmwareItem));
   }
-  expect(SPECIES.raptor!.kibble).toBe("simple");
-  expect(SPECIES.rex!.kibble).toBe("exceptional");
+  expect(SPECIES.lodestone!.firmware).toBe("simple");
+  expect(SPECIES.scrapper!.firmware).toBe("exceptional");
   // Each tier cooks in the pot from an egg of its size.
-  KIBBLE_TIERS.forEach((tier, index) => {
-    const recipe = recipeDef(`cook_${kibbleItem(tier)}`)!;
+  FIRMWARE_TIERS.forEach((tier, index) => {
+    const recipe = recipeDef(`cook_${firmwareItem(tier)}`)!;
     expect(recipe.station).toBe("cooking_pot");
     expect(recipe.inputs[0]!.itemId).toBe(eggItem(EGG_SIZES[index]!));
   });
 });
 
-test("a wild female dodo lays eggs beside her, a couple at most, and E takes one into the bag", () => {
+test("a wild female mowbot lays eggs beside her, a couple at most, and E takes one into the bag", () => {
   const game = runner();
   tick(game, 0.2);
   game.ui.tryInvoke("cheat", { destroyWild: true });
-  game.ui.tryInvoke("cheat", { summon: { species: "dodo", level: 5, distance: 1.5, sex: "female" } });
-  game.ui.tryInvoke("cheat", { summon: { species: "phiomia", level: 5, distance: 6, side: 6, sex: "female" } });
+  game.ui.tryInvoke("cheat", { summon: { species: "mowbot", level: 5, distance: 1.5, sex: "female" } });
+  game.ui.tryInvoke("cheat", { summon: { species: "craneback", level: 5, distance: 6, side: 6, sex: "female" } });
   tick(game, 1.1);
   expect(near(game, 20)).toHaveLength(0);
   for (let n = 0; n < 8; n += 1) skip(game, EGG_LAY_SECONDS * 1.6);
   const laid = near(game, 20);
-  // Only the dodo lays, and she stops at two lying near her.
+  // Only the mowbot lays, and she stops at two lying near her.
   expect(laid.length).toBeGreaterThanOrEqual(1);
   expect(laid.length).toBeLessThanOrEqual(2);
   expect(laid.every((egg) => egg.item === "egg_xs")).toBe(true);

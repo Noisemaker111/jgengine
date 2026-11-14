@@ -1,15 +1,15 @@
 import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
-import { raptorPair } from "./scenarios";
+import { lodestonePair } from "./scenarios";
 
-// A baby takes each stat whole from one parent, its card says which, and a mutation can raise one. Setup mates two level 20 raptors
+// A baby takes each stat whole from one parent, its card says which, and a mutation can raise one. Setup mates two level 20 lodestones
 // whose wild levels were rolled apart, with every mutation roll made certain (ARK's 2.5% would take dozens of
 // babies to show one), until their egg is laid, and hands over a campfire to hatch it by.
 export default defineProof(game, {
   proves: ["breeding.inherit-mutate"],
   setup(s) {
-    raptorPair(s);
+    lodestonePair(s);
     s.command("cheat", { mutationChance: 1 });
     s.waitFor((p) => p.eggs >= 1, { timeoutMs: 80_000 });
     s.command("cheat", { give: { campfire: 1, wood: 10 }, toHotbar: ["campfire"], breedingSpeed: 1000 });

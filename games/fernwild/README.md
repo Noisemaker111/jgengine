@@ -14,7 +14,7 @@ chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the j
 rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
 species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
 obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
-thatch-to-stone building, death, weather, supply drops, breeding, explorer notes and the Broodmother are in.
+thatch-to-stone building, death, weather, supply drops, breeding, explorer notes and the Hivemind are in.
 
 ## Controls
 
@@ -37,41 +37,41 @@ are drawn.
   Pick (1 wood, 1 stone, 10 thatch) and a Stone Hatchet, and gather faster. Eat berries and drink at
   the shore while food and water drain.
 - **The Survivor's path.** Top left, one step at a time, with a star on the map at its target: the
-  first tree, stones, the Stone Pick, the hatchet, berries, a drink, a dodo tamed, a stat point, a
-  campfire, meat hunted and cooked, a spear, a thatch hut, the Phiomia saddle, a phiomia tamed and
-  ridden, an explorer note, narcotics, a club, a raptor, a cave artifact, the three artifacts, and the
-  Broodmother. `Skip tutorial` hides it.
+  first tree, stones, the Stone Pick, the hatchet, berries, a drink, a mowbot tamed, a stat point, a
+  campfire, meat hunted and cooked, a spear, a thatch hut, the Craneback saddle, a craneback tamed and
+  ridden, an explorer note, narcotics, a club, a lodestone, a cave artifact, the three artifacts, and the
+  Hivemind. `Skip tutorial` hides it.
 - **Progression.**
   - ARK's XP table to level 30 and its curve to level 105; each level gives one stat point and
     ARK's engram points (8 at level 2).
   - Ten levelable stats with ARK's per-point gains (health +10, stamina +10, oxygen +20, food +10,
     water +10, weight +10, melee +5%, speed +1.5%, fortitude +2, crafting +10%).
   - Engrams by ARK level and point cost: Stone Pick and Torch known at level 1, Campfire, Spear and
-    Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Phiomia saddle at 5, Mortar and
+    Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Craneback saddle at 5, Mortar and
     Pestle at 6, Wooden Club at 8.
   - Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
   - Farming like ARK's Small Crop Plot (level 15): picking berry bushes now and then gives a Mejoberry
     Seed; planted in a plot it grows only while the plot has water (rain, or a waterskin poured in) and
     fertilizer (ground at the mortar from spoiled meat and thatch), ripening in ten minutes; E picks ten
     mejoberries and it grows the next.
-  - Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
+  - Mowbot, Craneback and Lodestone with ARK's base stats, per-level gains, speeds, temperaments
     (oblivious, skittish, aggressive) and taming tables. Danger rises with distance: zones near the
     south beach roll wild levels up to 5, a level more every 50 m out, the full 30 from 1250 m.
   - Knock-out taming: fists land 1.75x their damage as torpor, a club 20 a hit (9 hits for a level-1
-    raptor); torpor drains, food in its inventory is eaten on ARK's meal clock, narcotics keep it
+    lodestone); torpor drains, food in its inventory is eaten on ARK's meal clock, narcotics keep it
     under, taming effectiveness and bonus levels; it wakes and the tame is lost if torpor runs out.
-  - Tames stay or follow on whistles and fight what you fight; Phiomia saddle at level 5 and
-    Raptor saddle at 18 (ARK's costs) let you ride them.
+  - Tames stay or follow on whistles and fight what you fight; Craneback saddle at level 5 and
+    Lodestone saddle at 18 (ARK's costs) let you ride them.
   - Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
     out of sight. Raw meat spoils in 10 minutes and cooked meat in 20, into spoiled meat, which the
     mortar grinds with narcoberries into narcotics.
-  - Kibble, ARK's taming food. Wild female egg-layers drop an unfertilized egg beside them now and
-    then (two at most lying near one; mammals lay none), sized to the body: a dodo's extra small, a
-    raptor's small, up to extra large. E picks one up. A Cooking Pot (level 10) cooks five tiers of
-    kibble, each from an egg of its size plus berries, meat and fiber. Every species prefers one tier,
-    the wiki's where it names one (raptor Simple, rex Exceptional) and by body size otherwise; on that
+  - Firmware, ARK's taming food. Wild female egg-layers drop an unfertilized egg beside them now and
+    then (two at most lying near one; mammals lay none), sized to the body: a mowbot's extra small, a
+    lodestone's small, up to extra large. E picks one up. A Cooking Pot (level 10) cooks five tiers of
+    firmware, each from an egg of its size plus berries, meat and fiber. Every species prefers one tier,
+    the wiki's where it names one (lodestone Simple, scrapper Exceptional) and by body size otherwise; on that
     tier or higher it tames about five times faster than on raw meat or berries and far cleaner, and a
-    lower tier is worse than its plain food. Eggs rot in 30 minutes and kibble in two hours.
+    lower tier is worse than its plain food. Eggs rot in 30 minutes and firmware in two hours.
   - Thatch, wood and stone building tiers with snap sockets.
 - **Explorer notes and the dossier.** 21 notes lie at cave mouths, obelisk feet and summits; E reads
   one, opens it on screen and gives XP the first time. The Dossier tab (I) lists every species, "???"
@@ -93,8 +93,8 @@ are drawn.
 - **Breeding.** Every creature is born male or female with its levels spread over health, stamina,
   oxygen, food, weight and melee. Turn mating on in a tame's panel and leave a female and a male of a
   kind side by side: they mate for about a minute and she lays a fertilized egg, or carries her young,
-  on the ARK wiki's times for every species that breeds (the sterile Titanoboa, leech, Titanomyrma
-  and Meganeura do not). An egg hatches only inside its kind's temperature (a raptor 20-28 °C, a rex
+  on the ARK wiki's times for every species that breeds (the sterile Coilcobra, siphon, Ticklet
+  and Choir Drone do not). An egg hatches only inside its kind's temperature (a lodestone 20-28 °C, a scrapper
   32-34 °C) and loses health outside it, so a campfire or the shade decides it. Babies hatch at a
   quarter size with each stat whole from one parent (55% the higher), a 2.5% chance per roll of a
   mutation adding two levels, and now and then twins or triplets. A baby eats from its own inventory
@@ -103,18 +103,18 @@ are drawn.
   health, food, weight and melee by up to 20%. The mother waits 18 to 48 hours before mating again.
   `cheat breedingSpeed` sets ARK's hatch, maturation and mating multipliers at once (mating time,
   egg health and baby food are approximate).
-- **The Broodmother.** E at the Green Obelisk's foot opens its terminal: Gamma (level 30, the Clever,
-  Hunter and Massive artifacts), Beta (level 50, plus 5 each of Argentavis Talon, Sarcosuchus Skin,
-  Sauropod Vertebra and Titanoboa Venom) and Alpha (level 70, 10 of each). The trophies are on the
-  bodies of the creatures that carry them: E on a dead Argentavis, Sarco, Brontosaurus, Diplodocus or
-  Titanoboa opens it. Paying the tribute opens a portal for 25 seconds; then everyone within 30 m of
+- **The Hivemind.** E at the Green Obelisk's foot opens its terminal: Gamma (level 30, the Clever,
+  Hunter and Massive artifacts), Beta (level 50, plus 5 each of Homer Talon, Arcwire Skin,
+  Sauropod Vertebra and Coilcobra Venom) and Alpha (level 70, 10 of each). The trophies are on the
+  bodies of the creatures that carry them: E on a dead Homer, Arcwire, Hoover Leviathan, Pylon Walker or
+  Coilcobra opens it. Paying the tribute opens a portal for 25 seconds; then everyone within 30 m of
   the obelisk, up to 10 survivors and 20 tames (riders pulled off), goes to her lair, a walled islet in
   the far south-east sea. She has the wiki's health (324k, 648k, 972k), melee and torpor, and is never
   knocked out. She opens with a spit of acid and web that burns, drugs and slows, spits again every
-  few seconds, and calls Araneo out of the walls at full health, two thirds and one third. Kill her
+  few seconds, and calls Hive Drone out of the walls at full health, two thirds and one third. Kill her
   and each survivor gets Element (20, 56, 148), a Spider Flag and her trophy, then a minute later is
   sent back to where they stood. If every survivor dies the fight is lost and the tames left inside
-  die with it. `cheat broodHealth` sets her health for proofs. Her spit, brood sizes, speeds and the
+  die with it. `cheat hiveHealth` sets her health for proofs. Her spit, hive sizes, speeds and the
   trophy odds (one per body) are approximate.
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
@@ -128,35 +128,35 @@ are drawn.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
 - **Gap to target.** The coastline is fitted to about 230 known wiki map points, so bays and capes are
   close to ARK's but not exact. Every species has a free model (CC0 or CC-BY), but where no free
-  model of the animal exists its nearest relative stands in at the species' size and colour: the dodo
-  is a dove, the phiomia an elephant, pteranodon an eagle, argentavis a vulture, ankylosaurus and
-  doedicurus armadillos, dimetrodon and megalania salamanders, allosaurus, baryonyx, carnotaurus and
-  yutyrannus the T-Rex, diplodocus the apatosaurus, purlovia a fox, dilophosaur, troodon and compy the raptor,
-  pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
-  gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
+  model of the animal exists its nearest relative stands in at the species' size and colour: the mowbot
+  is a dove, the craneback an elephant, watchwing an eagle, homer a vulture, thermite and
+  rollgrinder armadillos, heatsink and wallcrawler salamanders, clawmaul, riptide, ripsaw and
+  warhorn the T-Scrapper Rex, pylon the apatosaurus, rootkit a fox, sparkspitter, echo and klepto the lodestone,
+  ramjack and switchback the sirenhorn, hulkloader a ground sloth, highrise a rhino,
+  liftape a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
   no metal tier, foundations snap edge to edge but not to cliffs, and the Storage Box and Preserving Bin are
   the only containers (no larger boxes, and the bin burns no fuel); rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
   arrows) hit instantly along the aim, with no arrow flight, drop or pickup, and the bow always reaches for
-  tranquilizer arrows first; no bolas or traps yet; kibble recipes stand berries, meat and fiber in
+  tranquilizer arrows first; no bolas or traps yet; firmware recipes stand berries, meat and fiber in
 for ARK's crops, which do not grow yet, and wild laying times, the pot's engram and spoil times are
 approximate; a tame's inventory holds slots, not weight; drain and regen rates where
-  ARK publishes none are approximate; trees are stylized stand-ins, not palms. The Broodmother's lair is
+  ARK publishes none are approximate; trees are stylized stand-ins, not palms. The Hivemind's lair is
 an open-sky walled islet rather than ARK's enclosed jungle cave, she is a tinted, enlarged spider
 model, the portal has no drag-weight limit, and the single-player boss damage cut is not applied.
 
 Loop proof: fernwild-loop, fernwild-tame, fernwild-build
 
 `from-zero` plays a new game with keys and mouse only, no cheats, for about 19 minutes of game
-time: gathers, crafts the pick and hatchet, drinks, tames a dodo with fists and berries, spends a
+time: gathers, crafts the pick and hatchet, drinks, tames a mowbot with fists and berries, spends a
 stat point, builds a campfire, hunts and cooks, crafts a spear, builds the thatch hut piece by piece,
-tames, saddles and rides a phiomia, reads a note, grinds narcotics and crafts a club.
+tames, saddles and rides a craneback, reads a note, grinds narcotics and crafts a club.
 
 `fernwild-build` proves building: craft a thatch foundation, doorframe, three walls, a door and a
 ceiling at ARK's prices, place them with snapping, walk inside, roof it, hang the door and open it.
 Pieces have ARK's health; wood shrugs off fists and stone tools, stone takes only metal tools and
 explosives, and a piece falls when nothing connects it to the ground.
 
-`fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it, level it
+`fernwild-tame` proves the creature loop: club a lodestone unconscious, feed it, saddle it, level it
 and spend a point in its stat sheet, ride it and sprint on its stamina (it uses the admin `cheat`
 command for levels, items, tame XP and a faster taming speed).
 

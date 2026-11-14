@@ -2,37 +2,37 @@ import type { RecipeDef } from "@jgengine/core/crafting/recipe";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 
 /**
- * ARK's kibble (ark.wiki.gg/wiki/Kibble, since the Homestead update): six tiers, each cooked in a cooking
+ * ARK's firmware (ark.wiki.gg/wiki/Firmware, since the Homestead update): six tiers, each cooked in a cooking
  * pot from an egg of its size. A creature tames about 5x faster on its preferred tier (or any higher one)
  * than on raw meat or berries, with the best effectiveness; a lower tier is worse than plain food (0.66x).
  * Fernwild has no crops yet, so each recipe's crop inputs are stood in for by berries, meat and fiber
  * (approximate); the egg sizes and the preferred tiers follow the wiki.
  */
 
-export const KIBBLE_TIERS = ["basic", "simple", "regular", "superior", "exceptional"] as const;
-export type KibbleTier = (typeof KIBBLE_TIERS)[number];
+export const FIRMWARE_TIERS = ["basic", "simple", "regular", "superior", "exceptional"] as const;
+export type FirmwareTier = (typeof FIRMWARE_TIERS)[number];
 
-/** Egg sizes, smallest first; each tier's kibble needs one egg of the matching size. */
+/** Egg sizes, smallest first; each tier's firmware needs one egg of the matching size. */
 export const EGG_SIZES = ["xs", "s", "m", "l", "xl"] as const;
 export type EggSize = (typeof EGG_SIZES)[number];
 
 export const EGG_LABEL: Readonly<Record<EggSize, string>> = { xs: "Extra Small Egg", s: "Small Egg", m: "Medium Egg", l: "Large Egg", xl: "Extra Large Egg" };
-export const KIBBLE_LABEL: Readonly<Record<KibbleTier, string>> = { basic: "Basic Kibble", simple: "Simple Kibble", regular: "Regular Kibble", superior: "Superior Kibble", exceptional: "Exceptional Kibble" };
+export const FIRMWARE_LABEL: Readonly<Record<FirmwareTier, string>> = { basic: "Basic Firmware", simple: "Simple Firmware", regular: "Regular Firmware", superior: "Superior Firmware", exceptional: "Exceptional Firmware" };
 
 export const eggItem = (size: EggSize): string => `egg_${size}`;
-export const kibbleItem = (tier: KibbleTier): string => `kibble_${tier}`;
+export const firmwareItem = (tier: FirmwareTier): string => `firmware_${tier}`;
 
 /** The wiki's preferred-tier examples; every other species is placed by its torpor (how big a body it is). */
-const PREFERRED: Readonly<Record<string, KibbleTier>> = {
-  dodo: "basic", dilophosaur: "basic", parasaur: "basic", phiomia: "basic",
-  raptor: "simple", triceratops: "simple", pachy: "simple", iguanodon: "simple",
-  ankylosaurus: "regular", carnotaurus: "regular", pteranodon: "regular", stegosaurus: "regular", sabertooth: "regular",
-  argentavis: "superior", direwolf: "superior", mammoth: "superior", allosaurus: "superior",
-  rex: "exceptional", yutyrannus: "exceptional", thylacoleo: "exceptional", megalania: "exceptional",
+const PREFERRED: Readonly<Record<string, FirmwareTier>> = {
+  mowbot: "basic", sparkspitter: "basic", sirenhorn: "basic", craneback: "basic",
+  lodestone: "simple", bulldozaur: "simple", ramjack: "simple", switchback: "simple",
+  thermite: "regular", ripsaw: "regular", watchwing: "regular", platebacker: "regular", fangsaw: "regular",
+  homer: "superior", frostbyte: "superior", timberjack: "superior", clawmaul: "superior",
+  scrapper: "exceptional", warhorn: "exceptional", mirrorcat: "exceptional", wallcrawler: "exceptional",
 };
 
 /** The tier a species tames best on (and every tier above it). */
-export function preferredKibble(species: string, torpor: number): KibbleTier {
+export function preferredFirmware(species: string, torpor: number): FirmwareTier {
   const named = PREFERRED[species];
   if (named !== undefined) return named;
   if (torpor < 150) return "basic";
@@ -56,37 +56,37 @@ const scaled = (doses: readonly VitalDose[], by: Readonly<Record<string, number>
   doses.map((dose) => ({ ...dose, amount: dose.amount * (by[dose.vital] ?? 1) }));
 
 /**
- * A species' foods with kibble added in ARK's order: its preferred tier first, then the tiers above it,
+ * A species' foods with firmware added in ARK's order: its preferred tier first, then the tiers above it,
  * then its own foods, then the tiers below (which it eats only when nothing better is carried).
- * `baseline` is the plain food the kibble is measured against (raw meat or mejoberries): its tier and up
+ * `baseline` is the plain food the firmware is measured against (raw meat or mejoberries): its tier and up
  * give four times the affinity and digest in 80% of the time at a third of the ineffectiveness (about
  * five times the speed); a lower tier gives less affinity than plain food and costs more.
  */
-export function withKibble(foods: Readonly<Record<string, readonly VitalDose[]>>, baseline: string, preferred: KibbleTier): Record<string, readonly VitalDose[]> {
+export function withFirmware(foods: Readonly<Record<string, readonly VitalDose[]>>, baseline: string, preferred: FirmwareTier): Record<string, readonly VitalDose[]> {
   const base = foods[baseline] ?? Object.values(foods)[0];
   if (base === undefined) return { ...foods };
   const good = scaled(base, { affinity: 4, belly: 0.8, ineffectiveness: 1 / 3 });
   const poor = scaled(base, { affinity: 1 / 1.3, belly: 1.15, ineffectiveness: 5 / 3 });
-  const at = KIBBLE_TIERS.indexOf(preferred);
-  const above = KIBBLE_TIERS.slice(at).map((tier) => [kibbleItem(tier), good] as const);
-  const below = KIBBLE_TIERS.slice(0, at).reverse().map((tier) => [kibbleItem(tier), poor] as const);
+  const at = FIRMWARE_TIERS.indexOf(preferred);
+  const above = FIRMWARE_TIERS.slice(at).map((tier) => [firmwareItem(tier), good] as const);
+  const below = FIRMWARE_TIERS.slice(0, at).reverse().map((tier) => [firmwareItem(tier), poor] as const);
   return { ...Object.fromEntries(above), ...foods, ...Object.fromEntries(below) };
 }
 
 /** Cooking-pot recipes, one per tier. The egg is ARK's; the rest stands in for crops Fernwild does not grow yet (approx). */
-const RECIPE_INPUTS: Readonly<Record<KibbleTier, Record<string, number>>> = {
-  basic: { mejoberry: 5, amarberry: 10, tintoberry: 10, cooked_meat: 1, fiber: 5 },
-  simple: { mejoberry: 5, cooked_meat: 1, fiber: 10 },
-  regular: { azulberry: 10, cooked_meat: 2, fiber: 10 },
-  superior: { cooked_meat: 3, raw_prime_meat: 1, fiber: 15 },
-  exceptional: { mejoberry: 10, raw_prime_meat: 2, fiber: 20 },
+const RECIPE_INPUTS: Readonly<Record<FirmwareTier, Record<string, number>>> = {
+  basic: { mejoberry: 5, amarberry: 10, tintoberry: 10, gel_ration: 1, fiber: 5 },
+  simple: { mejoberry: 5, gel_ration: 1, fiber: 10 },
+  regular: { azulberry: 10, gel_ration: 2, fiber: 10 },
+  superior: { gel_ration: 3, prime_biogel: 1, fiber: 15 },
+  exceptional: { mejoberry: 10, prime_biogel: 2, fiber: 20 },
 };
 
-/** 30 seconds a kibble in a lit pot, as ARK. Kibble needs no engram: the cooking pot knows every recipe. */
-export const KIBBLE_RECIPES: readonly RecipeDef[] = KIBBLE_TIERS.map((tier, index) => ({
-  id: `cook_${kibbleItem(tier)}`,
+/** 30 seconds a firmware in a lit pot, as ARK. Firmware needs no engram: the cooking pot knows every recipe. */
+export const FIRMWARE_RECIPES: readonly RecipeDef[] = FIRMWARE_TIERS.map((tier, index) => ({
+  id: `cook_${firmwareItem(tier)}`,
   inputs: [{ itemId: eggItem(EGG_SIZES[index]!), count: 1 }, ...Object.entries(RECIPE_INPUTS[tier]).map(([itemId, count]) => ({ itemId, count }))],
-  outputs: [{ itemId: kibbleItem(tier), count: 1 }],
+  outputs: [{ itemId: firmwareItem(tier), count: 1 }],
   seconds: 30,
   station: "cooking_pot",
   stationRange: 4,

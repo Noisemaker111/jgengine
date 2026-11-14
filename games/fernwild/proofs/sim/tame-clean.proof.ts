@@ -3,13 +3,13 @@ import { defineProof } from "@jgengine/core/suite/suiteProof";
 import { game } from "../../src/game.config";
 import { timeTame, turnAround, twoRaptorsDown } from "./scenarios";
 
-// Two level-30 raptors on raw meat: one left alone to eat, one clubbed while it eats. The clean tame
+// Two level-30 lodestones on raw meat: one left alone to eat, one clubbed while it eats. The clean tame
 // keeps more taming effectiveness and so gets more bonus levels.
 export default defineProof(game, {
   proves: ["taming.effectiveness"],
   setup(s) {
     // Two stacks of raw meat, one for each.
-    twoRaptorsDown(s, { raw_meat: 70, wooden_club: 1 }, 30);
+    twoRaptorsDown(s, { biogel: 70, wooden_club: 1 }, 30);
     s.command("cheat", { toHotbar: ["wooden_club"] });
   },
   async play(p) {

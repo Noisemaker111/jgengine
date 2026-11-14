@@ -34,7 +34,7 @@ A lush, dangerous tropical island: white beaches, turquoise shallows, dense jung
 
 ## Silhouette rules
 - Each species has one defining outline at 100 m: crest, horns, sail, neck length, wing span. Tints never stand in for a missing shape on a dangerous species.
-- The survivor is slim beside every creature over dodo size.
+- The survivor is slim beside every creature over mowbot size.
 - Obelisks are the tallest built things on the island and glow at their tips.
 - Trees: palms on the coast, broad canopies inland, conifers on the peaks.
 
@@ -55,4 +55,4 @@ A lush, dangerous tropical island: white beaches, turquoise shallows, dense jung
 5. Dress the ground: Ground033 beaches, Grass005 meadows, Ground020 jungle floor; dense ferns at the jungle edge.
 6. Set the day mood, the HDRI, a dark moonlit night and the tropical lush LUT.
 7. Build a real HUD and menu on the holo kit with Oswald and Source Sans 3; credits in game.
-8. Ambient life: birds and pteranodons overhead, fish in the shallows, insects and dust in jungle light shafts.
+8. Ambient life: birds and watchwings overhead, fish in the shallows, insects and dust in jungle light shafts.

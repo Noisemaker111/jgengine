@@ -13,7 +13,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { storeView } from "../base";
 import { BAG, HOTBAR } from "../bags";
-import { obeliskView } from "../broodmother";
+import { obeliskView } from "../hivemind";
 import { BODIES, survivorLook } from "../character";
 import { itemDef, itemLabel } from "../data/items";
 import { dossierPages } from "../dossier";
@@ -315,7 +315,7 @@ function ObeliskPanel(): ReactNode {
   const view = useGameStore(obeliskView, same);
   return (
     <Panel width={phone ? 370 : 760} fill="#0f1d17ee" border={{ width: 1, color: `${GREEN}66` }} gap={12} label="Green Obelisk">
-      <Text size={18} weight={700} color={GREEN} text="Green Obelisk · Broodmother Lysrix" />
+      <Text size={18} weight={700} color={GREEN} text="Green Obelisk · Hivemind Prime" />
       <Small color={INK} text="Offer the tribute to open a portal to her lair. Everyone within range goes through when it opens, tames too." />
       <RuneView layout={phone ? "stack" : "row"} gap={10} items="stretch">
         {view.tiers.map((tier) => (
