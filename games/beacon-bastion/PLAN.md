@@ -115,14 +115,14 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - [ ] 4. A worker animation for "looking at the phone" instead of the floating phone alone.
 
 ## Handoff
-- Done: full roster (14 workers, 18 tech), distraction on a worker status runtime (balance proves
-  dropping the Teacher/Librarian loses), Wet + shock (ZAP x2.5 pop), Data Center mains power (HUD
-  meter) and migration to The Cloud, Installing Update bar, parcels, router boosts, mining theft,
-  chatbots echoing workers' own lines, 12-wave ramp, procedural tech meshes, painted City Builder
-  street via editor markers, diner HUD, onboarding tips, comic speech bubbles (capped, stacked),
-  throw/flinch animations, promotion pips, kill-pay pops, phone "ding"; 169 tests green.
-- Shots reviewed: /tmp/claude-0/dnd-mid2.png, dnd-tech.png, dnd-finale1.png, dnd-result.png, dnd-title.png.
-- verify:fast: everything passes except two environment-only steps (library-model provisioning for
-  other games is blocked by the sandbox proxy; the boot probe waits on a render slot other agents hold).
-- Next: a "looking at phone" pose instead of only the floating phone; tech kinds' faces turned toward
-  the camera; a second map or an endless "Overtime shift" mode once the first map is polished.
+- Done: everything in the README checklist; polish round from review: real skin tones on the pack's
+  near-black Skin material, Rune speech bubbles anchored over the world (never behind meshes), tech
+  drawn 2.4x (bosses 1.3x), buildings capped at ~6 m, KayKit shrubs instead of jelly cubes, cash and
+  attention wording in every refusal (engine: world facts take a `label`), notices above the hiring
+  board. 169 game tests green; check-types clean.
+- Shots: /tmp/claude-0/dnd-polish-close.png, dnd-polish-finale.png, dnd-result.png, dnd-title.png.
+- Not done: a second map. Plots and roads are module constants read once from the scene and the
+  town's world spec declares its slots at load, so a second layout needs per-map scene documents and a
+  spec built per map; that refactor is the next step.
+- Next: second map (see above); phones lean back and read as a stack of slabs when they bunch up,
+  consider spacing or an upright pose; the Data Center can cover the near end of the street.
