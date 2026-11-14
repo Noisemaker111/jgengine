@@ -87,11 +87,26 @@ Numbers are what the build does now.
 - **References it is chasing.** *Crazy Taxi* (one arrow, one clock, always a run on), *Kiki's Delivery
   Service* (a family delivery job in a harbour town), Venice's *acqua alta* (a city that floods and
   carries on).
-- **Still from Harbor Heat (to re-theme next).** The city's older crime layer still runs underneath: the
-  story jobs from Marco, the turf war (now labelled as the rival pizzerias), HHPD heat and pursuit, the
-  gun counter, fronts, taxi fares, flower runs, the radio and the catering contracts (the old courier
-  runs, re-skinned as catering with a Crust rider who grabs the order). PLAN.md tracks retiring or
-  re-theming each.
+- **The story: saving Vell's.** Five chapters read straight off the shift (no combat anywhere):
+  First Night at Vell's (three boxes), Reading the Water (swap at a dock, deliver from a hull), Carmine's
+  Crust (deliver a stacked bag, shake a rider), Riptide Slice (four balcony or rooftop drops, for Inez
+  Corvo), The Man from MegaSlice (pay $3,000 off the note, for Victor Lux), Save Vell's (pay it all).
+  Nonna Rosa Vell gives most of them at the shop; Tony Carmine, Inez Corvo and Victor Lux phone in.
+- **Set-piece nights.** Three chapters are nights that change the rules while they run: the Night of
+  Lanterns (calls twice as fast, the crowd tips 30% more, six boxes), the Storm Surge (the tide half a metre
+  higher all night, five boxes) and the Blackout (every streetlamp out, Crust riders twice as bold, five
+  boxes). Midnight before the score rains the night out and its giver offers it again.
+- **Requests.** Once the shop has reputation, calls can carry a request (rush, extra hot, keep it dry)
+  that bends that box's rules and pays only when met.
+- **The rest of the city.** The Canal Wardens ticket reckless riding (the old pursuit system: heat,
+  cruisers, a respray at Sunset Motors, Sgt. Dee losing a ticket); Mercato Fresco sells first aid and
+  crash jackets; Sunset Motors sells the fleet; the radio runs tide bulletins; catering contracts (the old
+  courier runs) pay big for one timed drop; Tide Rush races run the four circuits. The crime story, turf
+  war, fronts, gangs, bounties, guns and night market are gone.
+
+Suite: `bun run test games/harbor-heat/src/suite.test.ts` plays ten headless proofs in `proofs/sim/`
+(13 of 21 entries proven, including all six of the delivery genre). From zero: `bun run drive
+harbor-heat --flow from-zero` plays a new career through real input to the second night.
 
 Shift proof: `src/game/pizza/shift.test.ts` (open at dusk, take and deliver an order, flood the docks,
 lose a box to a Crust rider, swap to a floating jet-ski, close at midnight and sleep, buy an oven and pay

@@ -70,9 +70,8 @@ Genres: open-world, racing, delivery. 13/21 proven · 5 cut · 8 missing.
 - **Breadth.** In: the tide clock (five stages, district flood order, water physics per vehicle class),
   pizza orders (heat, soak, stacking, tips), eight personality customers, the family fleet (scooter →
   cargo trike → jet-ski → motor gondola → pizza blimp), swap docks, rival pizzeria riders, Tide Rush races
-  on the four circuits, pizzeria upgrades (ovens, toppings, bags), reputation, MegaSlice's note. Out for
-  now: a rewrite of the inherited crime story (kept running and re-labelled until a later milestone
-  retires it), multiplayer.
+  on the four circuits, pizzeria upgrades (ovens, toppings, bags), reputation, MegaSlice's note. Out: combat
+  of any kind (the inherited crime layer is retired), multiplayer.
 - **Direction.** Warm neon canal city at night, chunky stylized vehicles on the real-scale coast; chase
   camera; keyboard, pad and touch; solo; desktop and phone.
 - **Length.** A shift is six real minutes; the note takes roughly 15–20 shifts to pay off with upgrades
@@ -189,24 +188,28 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 - [x] 2b. Depth round: flooded districts and pizza pins on the chart, impatient callers, first-time
   lessons, splash spray and doorstep thanks, the delivery slip, hot streaks, cred from deliveries,
   menu and quota rebalance.
-- [ ] 3. From-zero flow (`proofs/flows/from-zero.flow.ts`): new game → first delivery → first swap → shift
+- [x] 3. From-zero flow (`proofs/flows/from-zero.flow.ts`): new game → first delivery → first swap → shift
   close, played through real input; suite proofs under `proofs/sim/`.
-- [ ] 4. Retire the crime layer: Marco's story becomes the Vell family's (MegaSlice's buyout as acts), the
-  turf war becomes delivery-zone contests between the rival pizzerias, HHPD heat becomes the canal
-  wardens' speeding tickets, the gun counter and fronts leave.
+- [x] 4. Retire the crime layer: Marco's story becomes the Vell family's five chapters with named rivals
+  and three set-piece nights (lanterns, storm surge, blackout); the turf war, fronts, gangs, bounties,
+  guns and night market leave; HHPD becomes the Canal Wardens' tickets; the gun counter becomes
+  Mercato Fresco.
 - [ ] 5. Blimp line and rooftop drops: a mooring mast on the Heights, rooftop customers only the blimp
   reaches at the king tide, bridges as foot routes.
 - [ ] 6. Boats on the planing model and a wake/ripple flood surface (the engine gaps above).
 
 ## Handoff
 
-- Done: milestones 1, 2 and 2b. Game tests pass (`bun run test games/harbor-heat`), check-types clean.
-  verify:fast passes everything it can run here; the asset-provision step fails on the sandbox proxy (403),
-  so its boot probe never starts.
-- Screens: Rune UI PNGs in `proofs/high-tide/` (title, shift HUD at high water, phone HUD, books, shift
-  card), rendered with the native-png example. The 3D canal screenshot (`bun run shoot harbor-heat --mode
-  play --state flood`) is not captured yet: this machine has no WebGPU adapter and the shared render slot
-  was held by another worktree.
-- Next: capture `--state flood` and `--state king-tide` on a machine with a GPU and check the flood sheets'
-  edges against the kerbs; milestone 3 (from-zero flow, proofs/sim); milestone 4 (retire the crime layer:
-  starter pistol, gun counter, HHPD).
+- Done: milestones 1–4 and the depth rounds (chart, lessons, requests, streaks, specials, sounds, the
+  tide's ten-minute tell, four more customers, the story with three set-piece nights). The crime layer is
+  gone: no gangs, turf, fronts, bounties, guns or night market; HHPD is the Canal Wardens.
+- Proof: `bun run test games/harbor-heat` (217 tests, suite 13/21 proven, all six delivery entries);
+  `bun run drive harbor-heat --flow from-zero` passes headless. check-types clean. verify:fast passes all
+  it can run here; asset provisioning fails on the sandbox proxy (403), so its boot probe never runs.
+- Screens: Rune UI PNGs in `proofs/high-tide/`. No 3D screenshot: this sandbox has no GPU for headless
+  Chrome. Capture `--state flood` and `--state king-tide` on a machine with one.
+- Next: dormant combat code (enemy and weapon catalogs, `use-handlers`, `hitModel` profiles) is now
+  unreachable and can be deleted with its tests; suite entries still missing (save.continue,
+  settings.controls, menu.start-and-credits, onboarding.find-features, progression.runway,
+  racing.drive-handling/unlock/crash-recover); milestone 5 (blimp line and rooftop-only drops) and 6
+  (planing boats, flood ripples).
