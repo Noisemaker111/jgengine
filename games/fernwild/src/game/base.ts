@@ -14,6 +14,7 @@ import { FUEL, FUEL_MAX } from "./data/fuel";
 import { BASE_BUILDING, BEDS, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
 import { itemLabel, itemTraits, SPOILS } from "./data/items";
 import { setScreen } from "./screens";
+import { craneNear } from "./creatures";
 
 /** ARK's build reach: the ghost sits this far in front of the survivor. */
 const BUILD_REACH = 3.5;
@@ -246,7 +247,10 @@ function planFor(ctx: GameContext, base: Base, pieceId: string, yaw: number): St
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;
   const ahead = forward(yaw);
-  const cursor: BaseVec3 = [me.position[0] + ahead[0] * BUILD_REACH, me.position[1] + CURSOR_HEIGHT, me.position[2] + ahead[2] * BUILD_REACH];
+  // An uploaded Craneback close by lends its crane: the ghost reaches further out and higher up.
+  const crane = craneNear(ctx);
+  const reach = BUILD_REACH + (crane?.reach ?? 0);
+  const cursor: BaseVec3 = [me.position[0] + ahead[0] * reach, me.position[1] + CURSOR_HEIGHT + (crane?.lift ?? 0), me.position[2] + ahead[2] * reach];
   return base.building.plan(pieceId, cursor, { rotationY: yaw + (base.turn * Math.PI) / 2, variant: base.turn, groundHeightAt: ctx.world.groundHeightAt });
 }
 

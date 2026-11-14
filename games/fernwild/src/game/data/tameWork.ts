@@ -41,7 +41,7 @@ export function biteProfile(species: string, diet: "scavenger" | "grazer"): Tool
  * the Homer meat at half). Approximate where the wiki gives no figure.
  */
 export const LIGHTER_LOADS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  thermite: { metal: 0.25, flint: 0.25, crystal: 0.25, obsidian: 0.25 },
+  thermite: { metal: 0.25, metal_ingot: 0.25, flint: 0.25, crystal: 0.25, obsidian: 0.25 },
   rollgrinder: { stone: 0.25 },
   sawbeaver: { wood: 0.5, thatch: 0.5, stone: 0.5 },
   timberjack: { wood: 0.5 },

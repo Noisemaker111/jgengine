@@ -129,6 +129,10 @@ export interface BotProfile {
   patches?: number;
   /** Uploaded on Guard Zone, it powers every fuelled station within `radius`: they never burn out. */
   powers?: { radius: number };
+  /** Uploaded and near you, its crane lifts your build ghost higher and further out. */
+  crane?: { radius: number; reach: number; lift: number };
+  /** Uploaded, it smelts as it cuts: every `per` metal ore it bites comes out as one ingot. */
+  smelts?: { per: number };
   /** Uploaded, its back is a deck: the technician and smaller bots can climb aboard and ride as it walks. */
   platform?: true;
   /** Where it may go: land (default), amphibious (swims rivers and shallows too) or water only. */
@@ -144,7 +148,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   // The roster: the island's signature machines.
   mowbot: P("passive", [], "A lawnmower that wandered off. Trims grass into fiber; the first bot most technicians upload."),
   ticklet: P("pack", ["loudest", "weakest"], "Palm-sized spider drones in swarms. They latch on and drain your stamina; an uploaded one rides on your shoulder and patches you up.", { trick: { kind: "drainStamina", amount: 12 }, pack: { radius: 8, per: 0.15, max: 6 }, patches: 6, shoulder: true }),
-  craneback: P("skittish", [], "A long-necked forklift. Spooks easily; rigged, it hauls more than anything its size."),
+  craneback: P("skittish", [], "A long-necked forklift. Spooks easily; rigged, it hauls more than anything its size. Uploaded and near you, its crane lifts your building pieces higher.", { crane: { radius: 10, reach: 2.5, lift: 3 } }),
   bulldozaur: P("territorial", ["attacker", "loudest"], "A territorial tank that charges intruders. Ridden, its blade bulk-harvests wood and stone."),
   lodestone: P("pack", ["loudest", "attacker"], "Magnetic wolves. Packmates charge each other's coils, and a bite can yank a metal tool from your hand.", { trick: { kind: "disarm", chance: 0.2 }, pack: { radius: 12, per: 0.2, max: 4 } }),
   mirrorcat: P("ambush", ["weakest"], "Light-bending hunter that waits unseen and strikes whatever is weakest. Rigged, it hides its rider: an invisible scout.", { cloak: true }),
@@ -152,7 +156,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   arcwire: P("aggressive", ["loudest"], "River eel whose bite arcs through everything nearby, twice as hard through water. Uploaded on Guard Zone, it powers your stations.", { trick: { kind: "chain", radius: 6, share: 0.5 }, powers: { radius: 12 }, terrain: "amphibious" }),
   klepto: P("aggressive", ["richest"], "Glitchy teleporter. Grabs one stack from your bag and blinks away to its nest.", { trick: { kind: "steal", blink: 30 } }),
   rootkit: P("ambush", ["loudest"], "Robots disguised as trees. Chop near one and the forest stands up.", { dormantUntilChop: { radius: 10 } }),
-  thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore: only its shell shows until you cross its ground. Uploaded, it mines faster than any pick.", { burrows: true }),
+  thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore: only its shell shows until you cross its ground. Uploaded, it mines faster than any pick and smelts the ore into ingots as it cuts.", { burrows: true, smelts: { per: 2 } }),
   homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),

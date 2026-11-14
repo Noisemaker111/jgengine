@@ -798,6 +798,8 @@ export function mountBite(ctx: GameContext, yaw?: number): CreatureStrike | "rid
     const put = putItem(mount.inventory, { slots: CREATURE_SLOTS }, itemTraits, grant.kind, whole);
     if (put.status === "ok") mount.inventory = put.state;
   }
+  smelt(mount);
+
   return "riding";
 }
 
@@ -966,6 +968,45 @@ function makeTame(ctx: GameContext, creature: Creature): void {
   if (creature.region !== "") world.director.notifyRemoved(creature.region, creature.species);
   creature.region = "";
   mountDeck(world, creature);
+}
+
+/** The crane an uploaded crane bot near the technician lends the build ghost, or null. */
+export function craneNear(ctx: GameContext): { reach: number; lift: number } | null {
+  const me = ctx.scene.entity.get(ctx.player.userId)?.position;
+  if (me === undefined) return null;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    const crane = botProfile(creature.species)?.crane;
+    if (crane === undefined || !creature.tamed || creature.dead) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - me[0], at[2] - me[2]) <= crane.radius) return { reach: crane.reach, lift: crane.lift };
+  }
+  return null;
+}
+
+/** A smelting bot (Thermite Beetle) turns the metal ore in its inventory into ingots as it cuts. */
+function smelt(creature: Creature): void {
+  const per = botProfile(creature.species)?.smelts?.per;
+  if (per === undefined) return;
+  const ore = countItem(creature.inventory, "metal");
+  const ingots = Math.floor(ore / per);
+  if (ingots <= 0) return;
+  const taken = takeItem(creature.inventory, "metal", ingots * per);
+  if (taken.status !== "ok") return;
+  const put = putItem(taken.state, { slots: CREATURE_SLOTS }, itemTraits, "metal_ingot", ingots);
+  if (put.status === "ok") creature.inventory = put.state;
+}
+
+/** Where each Klepto with stolen goods keeps its nest, and how many stacks lie there: for the world to draw. */
+export function kleptoNests(ctx: GameContext): { id: string; at: readonly [number, number, number]; stacks: number }[] {
+  const world = worldOf(ctx);
+  const out: { id: string; at: readonly [number, number, number]; stacks: number }[] = [];
+  for (const creature of world.creatures.values()) {
+    if (botProfile(creature.species)?.trick?.kind !== "steal" || creature.tamed || creature.dead) continue;
+    const stacks = creature.inventory.slots.filter((slot) => slot !== null).length;
+    const home = world.driver.state(creature.id)?.home;
+    if (stacks > 0 && home !== undefined) out.push({ id: creature.id, at: home, stacks });
+  }
+  return out;
 }
 
 /** An uploaded platform bot gets a deck on its back; a wild one, or a dead one, has none. */
@@ -1705,6 +1746,7 @@ function tickHarvesters(ctx: GameContext, world: World, dt: number): void {
       const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, grant.kind, whole);
       if (put.status === "ok") creature.inventory = put.state;
     }
+    smelt(creature);
     ctx.game.playEntityAnimation(creature.id, "attack");
   }
 }

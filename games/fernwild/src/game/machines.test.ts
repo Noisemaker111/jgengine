@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { aboard, burrowed, creatureCard, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { aboard, burrowed, craneNear, creatureCard, kleptoNests, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
@@ -60,6 +60,10 @@ test("a Klepto that reaches you steals a stack from your bag and blinks away wit
   const me = g.ctx.scene.entity.get(g.userId)!.position;
   const at = g.ctx.scene.entity.get(klepto)!.position;
   expect(Math.hypot(at[0] - me[0], at[2] - me[2])).toBeGreaterThan(10);
+  // Where it landed is its nest, heaped with the loot.
+  const nest = kleptoNests(g.ctx).find((entry) => entry.id === klepto);
+  expect(nest?.stacks).toBe(1);
+  expect(Math.hypot(nest!.at[0] - at[0], nest!.at[2] - at[2])).toBeLessThan(0.5);
 });
 
 test("a Rootkit stands dormant like a tree until someone chops near it, then the forest stands up", () => {
@@ -275,4 +279,13 @@ test("an uploaded Hoover is a walking base: climb aboard and it carries you as i
   const rider = g.ctx.scene.entity.get(g.userId)!.position;
   expect(rider[2] - me[2]).toBeGreaterThan(4);
   expect(aboard(g.ctx)).toBe(hoover);
+});
+
+test("an uploaded Craneback near you lends its crane: the build ghost reaches further and higher", () => {
+  const g = quiet();
+  expect(craneNear(g.ctx)).toBeNull();
+  const crane = summon(g, "craneback", { tamed: true, distance: 4 });
+  expect(craneNear(g.ctx)).toEqual({ reach: 2.5, lift: 3 });
+  g.ctx.scene.entity.setPose(crane, { position: [g.ctx.scene.entity.get(g.userId)!.position[0] + 40, 0, g.ctx.scene.entity.get(g.userId)!.position[2]] });
+  expect(craneNear(g.ctx)).toBeNull();
 });
