@@ -37,4 +37,4 @@ Games run package source from the same commit, not npm releases.
   the game, fix every adopter together, no compatibility shims. A one-adopter mechanism may stay local
   with an issue naming the seam; the second adopter moves it upstream.
 - Feature model, view and draw live together in `packages/core/src/<feature>/`; model code has no
-  rendering, browser or backend dependencies. Never use Kenney assets; credit others in `CREDITS.md`.
+  rendering, browser or backend dependencies.
