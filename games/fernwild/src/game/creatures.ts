@@ -777,7 +777,8 @@ function lie(ctx: GameContext, id: string, down: boolean): void {
 
 function knockOut(ctx: GameContext, creature: Creature): void {
   lie(ctx, creature.id, true);
-  ctx.game.notices.push({ text: `The ${defOf(creature).label} is shut down. Put food in its inventory.`, tone: "success" });
+  ctx.scene.entity.floatText({ instanceId: creature.id, text: "OFFLINE · E to jack in", kind: "pickup" });
+  ctx.game.notices.push({ text: `The ${defOf(creature).label} is offline: its battery is drained. Press E to jack in and feed it firmware or biogel while the upload runs.`, tone: "success" });
 }
 
 function kill(ctx: GameContext, creature: Creature): void {
@@ -900,6 +901,7 @@ function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus
   const extra = scatterPoints(bonus, WILD_STATS, ctx.rng);
   for (const stat of WILD_STATS) creature.wild[stat] += extra[stat];
   makeTame(ctx, creature);
+  ctx.scene.entity.floatText({ instanceId: creature.id, text: "UPLOAD COMPLETE", kind: "pickup" });
   ctx.game.notices.push({ text: `${defOf(creature).label} uploaded! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% upload integrity)`, tone: "success" });
   // A sloppy upload leaves a permanent quirk.
   const quirk = rollQuirk(effectiveness, ctx.rng);
@@ -1145,7 +1147,8 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     } else if (event.type === "released") {
       lie(ctx, id, false);
       if (world.viewing === id) closeCreature(ctx);
-      ctx.game.notices.push({ text: `The ${label} woke up!`, tone: "deny" });
+      ctx.game.notices.push({ text: `The ${label} recharged and rebooted wild: the upload is lost.`, tone: "deny" });
+      ctx.scene.entity.floatText({ instanceId: id, text: "REBOOTED", kind: "damage" });
       events.push({ type: "woke", id, label });
     } else if (event.type === "ate") {
       ctx.scene.entity.floatText({ instanceId: id, text: `Ate ${itemLabel(event.itemId)}`, kind: "pickup" });
