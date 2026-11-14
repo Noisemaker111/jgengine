@@ -161,8 +161,8 @@ function StashSheet({ command, close }: { command: Command; close: () => void })
     <Text color={MUTED}>Carry every piece home in one run: each piece is worth more together, and the set pays a bonus.</Text>
     {SET_IDS.map(id => { const set = SETS[id], have = new Set(home.stash.map(i => i.baseId)); return <Section key={id}>
       <Row justify="between"><Heading size={19}>{set.name}</Heading><Tag color={home.sets.includes(id) ? GREEN : MUTED}>{home.sets.includes(id) ? "BANKED" : `+${set.bonus} CAPS`}</Tag></Row>
-      <Row gap={4}>{set.pieces.map(p => <RuneView key={p} opacity={have.has(p) ? 1 : 0.35}><ItemMark kind={p} size={26} /></RuneView>)}</Row>
-      <Text color={MUTED}>{set.pieces.map(p => ITEMS[p].name).join(" · ")}</Text></Section>; })}
+      <Row gap={4}>{set.pieces.map(p => <RuneView key={p} opacity={have.has(p) ? 1 : 0.6} tooltip={`${ITEMS[p].name}${have.has(p) ? " · in the stash" : ""}`}><ItemMark kind={p} size={26} /></RuneView>)}</Row>
+      <Text color={MUTED}>{`${set.pieces.filter(p => have.has(p)).length}/${set.pieces.length} stashed · ${set.pieces.map(p => `${have.has(p) ? "✓ " : ""}${ITEMS[p].name}`).join(" · ")}`}</Text></Section>; })}
     <Text role="status" color={error ? RED : MUTED}>{error || hint}</Text>
   </Sheet>;
 }
@@ -191,6 +191,12 @@ function WorkbenchSheet({ command, close }: { command: Command; close: () => voi
     <Text role="status" color={error ? RED : MUTED}>{error || hint}</Text>
   </Sheet>;
 }
+/** A Little's numbers in words: what they carry, how fast and how loud they are. */
+function traitsOf(l: (typeof LITTLES)[keyof typeof LITTLES], weight: number): string {
+  const pace = l.speed > 1.05 ? "quick on their feet" : l.speed < 0.95 ? "slow going" : "steady pace";
+  const sound = l.noise < 0.9 ? "quiet" : l.noise > 1.1 ? "loud" : "ordinary footsteps";
+  return `Carries ${Math.round(weight * l.carry)} · ${pace} · ${sound}${l.bulkyFree ? " · two-armed finds don't slow them" : ""}`;
+}
 function NookSheet({ command, close }: { command: Command; close: () => void }) {
   const { home, error } = useStore(viewStore, v => ({ home: v.home, error: v.error }));
   const open = littlesOf(home);
@@ -202,6 +208,7 @@ function NookSheet({ command, close }: { command: Command; close: () => void }) 
       return <Section key={id} opacity={here ? 1 : 0.55}>
         <Row justify="between"><Heading size={22} color={l.color}>{`${l.name} ${l.title}`}</Heading>{chosen ? <Tag color={GREEN}>GOES NEXT</Tag> : null}</Row>
         <Text>{l.ability}</Text>
+        <Text color={MUTED} size={14}>{traitsOf(l, pack.weight)}</Text>
         {here ? <Button disabled={chosen} onPress={() => command("chooseLittle", { id })}>{chosen ? "Chosen" : `Send ${l.name}`}</Button> : <Text color={MUTED}>{l.unlock}</Text>}
       </Section>; })}
     <Text role="status" color={RED}>{error}</Text>

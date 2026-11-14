@@ -192,7 +192,7 @@ export const game = defineGame({
       menu: ["deepward.enter", "menu.record"],
       "menu-records": ["deepward.enter", "menu.record", { name: "menu.focus", input: { verb: "records" } }],
       pause: ["deepward.enter", { name: "deepward.pause", input: { paused: true } }],
-      stash: ["deepward.enter", "deepward.openStash"],
+      stash: ["deepward.enter", { name: "deepward.dev.seed", input: { stash: ["thimble", "button", "needle", "raisin", "crumb", "coin", "marble", "paperclip", "thread-spool"], caps: 35 } }, "deepward.openStash"],
       workbench: ["deepward.enter", "deepward.openWorkbench"],
       nook: ["deepward.enter", "deepward.openNook"],
       burrow: ["deepward.enter"],

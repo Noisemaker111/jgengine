@@ -571,10 +571,14 @@ export function registerControls(ctx: GameContext): void {
     ctx.game.commands.define<{ x: number; z: number }>("deepward.dev.stand", { apply(state, input) { teleport(state, [input.x, 0, input.z]); } });
     ctx.game.commands.define<{ template: string }>("deepward.dev.room", { apply(state, input) { void stageRoom(state, input.template); return state; } });
     ctx.game.commands.define<{ stash?: ItemKind[]; caps?: number }>("deepward.dev.seed", { apply(state, input) {
-      const v = viewStore.read(state);
-      if (v.mode !== "home") return;
-      const stash = [...v.home.stash, ...(input.stash ?? []).filter(k => Object.hasOwn(ITEMS, k)).map((kind, i) => rollItem(kind, 1, `seed:${kind}:${i}`, `craft-${v.home.revision + i + 1}:${kind}`))];
-      viewStore.write(state, { ...v, home: { ...v.home, stash, caps: v.home.caps + (input.caps ?? 0) } });
+      const kinds = [...(input.stash ?? [])], caps = input.caps ?? 0;
+      // Waits for the burrow to load, so a capture state can seed it on the first command.
+      void runtime(state).boot.then(() => {
+        const v = viewStore.read(state);
+        if (v.mode !== "home") return;
+        const stash = [...v.home.stash, ...kinds.filter(k => Object.hasOwn(ITEMS, k)).map((kind, i) => rollItem(kind, 1, `seed:${kind}:${i}`, `craft-${v.home.revision + i + 1}:${kind}`))];
+        viewStore.write(state, { ...v, home: { ...v.home, stash, caps: v.home.caps + caps } });
+      });
     } });
   }
   for (const [name, id] of [["open", "stash"], ["openStash", "stash"], ["openWorkbench", "workbench"], ["openNook", "nook"]] as const) ctx.game.commands.define(`deepward.${name}`, { apply(state) {

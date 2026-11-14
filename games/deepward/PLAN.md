@@ -146,7 +146,7 @@ the floor, and for the first three nights a firefly floats over whatever the gui
 Balance (headless sims over seeded rooms, straight-line bot that never dodges): a find six rooms in
 is worth about three times one at the crack; lethal risk per room ramps from 0% at the crack to about
 17% five rooms deep; the Littles' finds differ by category (Pip 60% food, Bolt 37% parts, Dot 47%
-curios). Tests: `bun run test` in the package (44); suite 16/16; flow `proofs/flows/first-night.flow.ts`.
+curios). Tests: `bun run test` in the package (45); suite 16/16; flow `proofs/flows/first-night.flow.ts`.
 
 On screen (software WebGPU capture, `apps/dev` runner, `?state=`): `proofs/look/` holds the burrow,
 the first-night kitchen with its glinting crumbs and the firefly guide, the Cat's crouch tell, the
@@ -163,7 +163,20 @@ models at inch-high scale (KayKit couch, armchair, lamp, rug, kid's bed; Quatern
 cutlery, plates, chest, books, boxes, cans, tyres); props are slid out of doorways; an 82 degree view
 and soft floor shadows under the Cat and dog. Every room has a capture state, `room:<template>`.
 
-Next: room overviews still land beside a giant prop in dense rooms (dining table, rug); the Cat and dog
-are procedural (a library dog model exists but is unanimated); ten rooms have had no model pass yet
-(kitchen cabinets, under the fridge, bookshelf, front hall, under the bed, bathroom, laundry, both
-garage shelves rooms beyond a few cans); UI sheets beyond the workbench were not inspected.
+Look round 6: the Cat and the dog are Quaternius' animated animals (CC0, idle and walk cycles, each
+house Cat in its own coat; the procedural bodies stay as the fallback). Door and exit marks fade while
+a Little stands on them (they were the white pole and arc in the pantry view); find beams are thinner,
+shorter and fainter. Catalog props reached the bare rooms (under the fridge, under the bed, under the
+sink, the laundry) and more went into the hall, couch, bookshelf, Christmas boxes and cabinets. Two
+fixes under the look: the door-clearing pass moved every prop sharing a label as one (a room's four
+legs slid together, a sneaker left its sole), and the game's teleport skipped the engine's, so the
+camera never turned to the facing it was given. Look captures (`room:<template>`) now stand where a
+fan as wide as the view runs clear of solids, eye-level props, models and hunters, with the room's
+hunters held off. The stash capture seeds a few finds; set rows count what is stashed and tick it;
+dark finds' marks are lifted to stay readable; each Little in the nook shows carry, pace and noise.
+`proofs/look/` adds the animated Cat, under the bed, the workbench, the cabinets, stash and nook.
+
+Next: rooms with a dog (front hall, workbench, garage bikes) cannot frame round a body that size,
+so their overviews show part of it close; the dog keeps the pack's own colours; the stash lists each
+find on its own tall row (long once the stash fills); tilted panels (the sink cupboard door) still
+fill some overviews.
