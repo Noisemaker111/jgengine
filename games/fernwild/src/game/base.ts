@@ -197,6 +197,19 @@ export function fuelNear(ctx: GameContext, at: readonly [number, number, number]
   return best;
 }
 
+/** Put `seconds` of fuel on every fuelled station within `reach` of `at` (an Arcwire powering the base); returns how many. */
+export function powerStations(ctx: GameContext, at: readonly [number, number, number], reach: number, seconds: number): number {
+  const base = baseOf(ctx);
+  let powered = 0;
+  for (const piece of base.building.list()) {
+    const fire = fireOf(base, piece);
+    if (fire === null || Math.hypot(piece.position[0] - at[0], piece.position[2] - at[2]) > reach) continue;
+    fire.change("fuel", seconds);
+    powered += 1;
+  }
+  return powered;
+}
+
 /** Put `seconds` of fuel on every burning station's fire (a cheat, for proofs). */
 export function fuelStations(ctx: GameContext, seconds: number): void {
   const base = baseOf(ctx);

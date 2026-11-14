@@ -749,6 +749,12 @@ export function webSurvivor(ctx: GameContext, slow: number, seconds: number): vo
   survivorOf(ctx).web = { slow, until: ctx.time.now() + seconds };
 }
 
+/** A Ticklet riding along patches the technician up. */
+export function patchSurvivor(ctx: GameContext, health: number): void {
+  const survivor = survivorOf(ctx);
+  if (!survivor.dead) survivor.vitals.change("health", health);
+}
+
 /** A Ticklet swarm latched on: stamina drained. */
 export function drainSurvivorStamina(ctx: GameContext, amount: number): void {
   survivorOf(ctx).vitals.change("stamina", -amount);

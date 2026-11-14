@@ -38,11 +38,12 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
   const ctx = useGameContext();
   const live = () => read() ?? card;
   const taming = card.taming;
-  const status = card.dead ? " · Dead" : card.tamed ? " · Uploaded" : taming?.unconscious === true ? " · Offline" : "";
+  const status = card.dead ? " · Dead" : card.puppeted ? " · PUPPETED" : card.tamed ? " · Uploaded" : taming?.unconscious === true ? " · Offline" : "";
   return (
     <RuneView gap={4} width={220} label={card.label}>
       <Text weight={700} size={14} color={INK} text={`${card.label} · ${card.sex === "female" ? "female" : "male"} · Lvl ${card.level}${status}`} />
       {card.tamed || card.dead ? null : <Small color={TEMPERAMENT_GLOW[card.temperament]} text={instinctLine(card)} />}
+      {card.tamed && card.helper !== null ? <Small color={GOOD} text={card.helper} /> : null}
       {card.imprint > 0 || card.mutations > 0 ? (
         <Small color={INK} text={[card.imprint > 0 ? `Imprinted ${Math.round(card.imprint * 100)}%` : "", card.mutations > 0 ? `${card.mutations} glitch${card.mutations === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")} />
       ) : null}

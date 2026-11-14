@@ -68,12 +68,14 @@ export interface HivePhase extends PhaseLike {
   hive: number;
   /** Seconds between her web-and-acid spits. */
   spitEvery: number;
+  /** Seconds she puppets the technician's bots in her lair when this phase starts: they stop fighting for her. */
+  puppet: number;
 }
 
 export const HIVE_PHASES: readonly HivePhase[] = [
-  { id: "hunt", at: 1, hive: 4, spitEvery: 12 },
-  { id: "hive", at: 0.66, tell: { id: "The Hivemind calls her hive", seconds: 3 }, hive: 6, spitEvery: 9 },
-  { id: "frenzy", at: 0.33, tell: { id: "The Hivemind is enraged", seconds: 3 }, hive: 8, spitEvery: 6 },
+  { id: "hunt", at: 1, hive: 4, spitEvery: 12, puppet: 0 },
+  { id: "hive", at: 0.66, tell: { id: "The Hivemind calls her hive and seizes your bots' uplinks", seconds: 3 }, hive: 6, spitEvery: 9, puppet: 10 },
+  { id: "frenzy", at: 0.33, tell: { id: "The Hivemind is enraged: your bots freeze under her signal", seconds: 3 }, hive: 8, spitEvery: 6, puppet: 15 },
 ];
 
 /** Her spit: how far it reaches (across her whole lair), the acid's damage and torpor, and how long and how hard the web slows. Approximate. */

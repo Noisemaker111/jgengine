@@ -10,7 +10,7 @@ import { ringWallSolids } from "@jgengine/core/world/worldSolids";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
-import { creatureAlive, creatureHealth, moveCreature, removeCreatureNow, slayCreature, spawnCreature, tames } from "./creatures";
+import { creatureAlive, creatureHealth, moveCreature, puppetTames, removeCreatureNow, slayCreature, spawnCreature, tames } from "./creatures";
 import { HIVE_CAPS, HIVE_CLOCK, HIVE_LAIR, HIVE_PHASES, HIVE_TIERS, hiveTier, PORTAL_RANGE, SPIT } from "./data/bosses";
 import { itemLabel } from "./data/items";
 import { setScreen } from "./screens";
@@ -208,7 +208,12 @@ function fight(ctx: GameContext, hive: Hive, dt: number): void {
     ctx.game.notices.push({ text: step.tell.id, tone: "deny" });
   }
   const phase = step.phase;
-  if (step.changed) callHive(ctx, hive, phase.hive);
+  if (step.changed) {
+    callHive(ctx, hive, phase.hive);
+    // She reaches into the technician's bots: for a while they stand frozen, puppets of her signal.
+    const at = ctx.scene.entity.get(hive.boss!)?.position;
+    if (phase.puppet > 0 && at !== undefined) puppetTames(ctx, at, HIVE_LAIR.radius + 10, phase.puppet);
+  }
   const boss = ctx.scene.entity.get(hive.boss!);
   if (now >= hive.nextSpit && boss !== null && me !== null && arena.inside(ctx.player.userId)) {
     hive.nextSpit = now + phase.spitEvery;

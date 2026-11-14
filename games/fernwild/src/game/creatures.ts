@@ -29,8 +29,8 @@ import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperame
 import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
-import { drainSurvivorStamina, heldItem, nearestHarvestable, strikeHarvestable } from "./survivor";
-import { depositInto, homeBox } from "./base";
+import { drainSurvivorStamina, heldItem, nearestHarvestable, patchSurvivor, strikeHarvestable } from "./survivor";
+import { depositInto, homeBox, powerStations } from "./base";
 import { climateAt } from "./climate";
 import { biteProfile, loadShare, TAME_GATHER } from "./data/tameWork";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
@@ -162,12 +162,16 @@ interface World {
   storm: boolean;
   /** The Root Server is down: no more storms. */
   stormsEnded: boolean;
+  /** A storm forced on or off whatever the night (a console, a proof); null follows the schedule. */
+  stormForced: boolean | null;
   /** Hostiles each sentry last pinged, so it pings once per arrival. */
   pinged: Map<string, number>;
   /** Seconds to each sentry's next sweep. */
   sweep: number;
   /** Seconds to the harvesters' next swing. */
   harvestIn: number;
+  /** Tames frozen by the Hivemind's signal, until when (game seconds). */
+  puppeted: Map<string, number>;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -256,9 +260,11 @@ const worldOf = perContext((ctx: GameContext): World => {
     lastTrick: null,
     storm: false,
     stormsEnded: false,
+    stormForced: null,
     pinged: new Map(),
     sweep: 0,
     harvestIn: 0,
+    puppeted: new Map(),
   };
 });
 
@@ -332,14 +338,24 @@ function wildMelee(ctx: GameContext, world: World, creature: Creature): number {
   return packBonus(profile?.pack, packmates) * song * scraps;
 }
 
-/** Who a wild bot reacts to: the technician always; other machines too when it hunts machines. */
+/** Who a wild bot reacts to: the technician (unless riding a light-bending Mirrorcat); other machines too when it hunts machines. */
 function notices(ctx: GameContext, selfId: string, candidateId: string): boolean {
   const entity = ctx.scene.entity.get(candidateId);
-  if (entity?.role === "player") return true;
+  if (entity?.role === "player") {
+    // Riding, the technician steers the mount: either id may stand for the pair.
+    const riding = ridingOf(ctx);
+    const mount = riding.mountOf(candidateId) ?? (riding.riderOf(candidateId) !== null ? candidateId : null);
+    const cloaked = mount !== null && botProfile(worldOf(ctx).creatures.get(mount)?.species ?? "")?.cloak === true;
+    const hitBy = worldOf(ctx).creatures.get(selfId)?.lastHitBy;
+    return !cloaked || hitBy === candidateId || hitBy === ctx.player.userId;
+  }
   const world = worldOf(ctx);
   const self = world.creatures.get(selfId);
   const other = world.creatures.get(candidateId);
   if (self === undefined || other === undefined || other.dead || other.species === self.species) return false;
+  // A mount carries its rider into the fight: hunters go for it, unless it bends light around them both.
+  const rider = ridingOf(ctx).riderOf(candidateId);
+  if (rider !== null && HOSTILE.has(defOf(self).temperament)) return botProfile(other.species)?.cloak !== true || self.lastHitBy === rider;
   return botProfile(self.species)?.targets.includes("machines") === true || (world.storm && other.tamed);
 }
 
@@ -1153,7 +1169,10 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     }
     world.idle.delete(creature.id);
     const record = creature.tamed ? world.roster.get(creature.id) : null;
-    const mind = down || ridden
+    const puppet = world.puppeted.get(creature.id);
+    const frozen = puppet !== undefined && puppet > ctx.time.now();
+    if (puppet !== undefined && !frozen) world.puppeted.delete(creature.id);
+    const mind = down || ridden || frozen
       ? ({ kind: "still" } as const)
       : record !== null
         ? ({
@@ -1313,7 +1332,7 @@ function daysNow(ctx: GameContext): number {
  * starts, each tame out under the open sky may revert to wild. A roof over it keeps the signal off.
  */
 function tickStorm(ctx: GameContext, world: World): CreatureEvent[] {
-  const storm = !world.stormsEnded && stormAt(daysNow(ctx));
+  const storm = !world.stormsEnded && (world.stormForced ?? stormAt(daysNow(ctx)));
   if (storm === world.storm) return [];
   return storm ? startStorm(ctx, world) : stopStorm(ctx, world);
 }
@@ -1353,7 +1372,9 @@ function revertToWild(ctx: GameContext, world: World, creature: Creature): void 
 /** Start or stop a Signal Storm now, whatever the night (a console, a proof). */
 export function setStorm(ctx: GameContext, on: boolean): CreatureEvent[] {
   const world = worldOf(ctx);
-  if (world.storm === on || (on && world.stormsEnded)) return [];
+  if (on && world.stormsEnded) return [];
+  world.stormForced = on;
+  if (world.storm === on) return [];
   return on ? startStorm(ctx, world) : stopStorm(ctx, world);
 }
 
@@ -1362,6 +1383,7 @@ export function endStorms(ctx: GameContext): void {
   const world = worldOf(ctx);
   world.stormsEnded = true;
   world.storm = false;
+  world.stormForced = null;
 }
 
 export function stormView(ctx: GameContext): { storm: boolean; ended: boolean } {
@@ -1369,11 +1391,29 @@ export function stormView(ctx: GameContext): { storm: boolean; ended: boolean } 
   return { storm: world.storm, ended: world.stormsEnded };
 }
 
+/** Seconds between helper sweeps: sentries ping, Ticklets patch, Arcwires power. */
+const SWEEP = 4;
+
+/** Uploaded helpers at work: a following Ticklet patches you up, an Arcwire on Guard Zone powers the stations near it. */
+function tickHelpers(ctx: GameContext, world: World): void {
+  const me = ctx.scene.entity.get(ctx.player.userId)?.position;
+  for (const creature of world.creatures.values()) {
+    const profile = botProfile(creature.species);
+    if (!creature.tamed || creature.dead || profile === null || (profile.patches === undefined && profile.powers === undefined)) continue;
+    const record = world.roster.get(creature.id);
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (record === null || at === undefined) continue;
+    if (profile.patches !== undefined && record.command === "follow" && me !== undefined && Math.hypot(at[0] - me[0], at[2] - me[2]) <= 6) patchSurvivor(ctx, profile.patches);
+    if (profile.powers !== undefined && record.command === "stay") powerStations(ctx, at, profile.powers.radius, SWEEP);
+  }
+}
+
 /** Tamed sentries on Guard Zone sweep for hostiles every few seconds and ping when new ones arrive. */
 function tickSentries(ctx: GameContext, world: World, dt: number): void {
   world.sweep -= dt;
   if (world.sweep > 0) return;
-  world.sweep = 4;
+  world.sweep = SWEEP;
+  tickHelpers(ctx, world);
   for (const creature of world.creatures.values()) {
     const sentry = botProfile(creature.species)?.sentry;
     if (sentry === undefined || !creature.tamed || creature.dead || world.roster.get(creature.id)?.command !== "stay") {
@@ -1434,6 +1474,26 @@ export function sendHome(ctx: GameContext): number {
   return delivered;
 }
 
+/** The Hivemind's signal freezes every one of the technician's bots within `radius` of `at` for `seconds`. */
+export function puppetTames(ctx: GameContext, at: readonly [number, number, number], radius: number, seconds: number): number {
+  const world = worldOf(ctx);
+  let frozen = 0;
+  for (const creature of world.creatures.values()) {
+    if (!creature.tamed || creature.dead) continue;
+    const self = ctx.scene.entity.get(creature.id)?.position;
+    if (self === undefined || Math.hypot(self[0] - at[0], self[2] - at[2]) > radius) continue;
+    world.puppeted.set(creature.id, ctx.time.now() + seconds);
+    ctx.scene.entity.floatText({ instanceId: creature.id, text: "PUPPETED", kind: "damage" });
+    frozen += 1;
+  }
+  return frozen;
+}
+
+/** Whether a tame stands frozen under the Hivemind's signal right now. */
+export function isPuppeted(ctx: GameContext, id: string): boolean {
+  return (worldOf(ctx).puppeted.get(id) ?? -Infinity) > ctx.time.now();
+}
+
 /** Seconds between a Harvest chip's swings, metres it ranges from its post. */
 const HARVEST_EVERY = 3;
 const HARVEST_RANGE = 14;
@@ -1489,6 +1549,12 @@ function tickHarvesters(ctx: GameContext, world: World, dt: number): void {
     }
     ctx.game.playEntityAnimation(creature.id, "attack");
   }
+}
+
+/** What a creature decided on its last step (mode and target), for the HUD and tests; null when it has not stepped. */
+export function creatureStep(ctx: GameContext, id: string): { mode: string; targetId: string | null } | null {
+  const step = worldOf(ctx).steps.get(id);
+  return step === undefined ? null : { mode: step.mode, targetId: step.targetId };
 }
 
 /** A creature's traits (quirks and glitches), empty for none or an unknown id. */
@@ -1912,6 +1978,8 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     courier: botProfile(creature.species)?.courier === true,
     harvester: TAME_GATHER[creature.species] !== undefined,
     harvesting: creature.harvesting,
+    puppeted: isPuppeted(ctx, creature.id),
+    helper: botProfile(creature.species)?.patches !== undefined ? "Following you, it patches you up" : botProfile(creature.species)?.powers !== undefined ? "On Guard Zone, it powers stations near it" : botProfile(creature.species)?.sentry !== undefined ? "On Guard Zone, it pings hostiles near its post" : botProfile(creature.species)?.cloak === true ? "Ridden, wild bots cannot see you" : null,
     dormant: creature.dormant,
     overclocked: !creature.tamed && world.storm,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
@@ -2189,7 +2257,9 @@ export function resetCreatures(ctx: GameContext): void {
   world.lastTrick = null;
   world.storm = false;
   world.stormsEnded = false;
+  world.stormForced = null;
   world.pinged.clear();
+  world.puppeted.clear();
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */
