@@ -10,7 +10,7 @@ import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBo
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { hiveSave, resetHivemind, setHiveHealth, setHiveStrength, summonHivemind, tickHivemind, useObelisk } from "./game/hivemind";
-import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, sendHome, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -115,6 +115,7 @@ export const systems = [
         },
       });
       commands.define("unsaddle", { apply: (state) => (unsaddle(state), state) });
+      commands.define("sendHome", { apply: (state) => (sendHome(state), state) });
       commands.define<{ itemId: string }>("feedNarcotic", { apply: (state, input) => (feedNarcotic(state, input.itemId), state) });
       // ARK's admin console, for proofs: give items, levels, a taming speed, a creature in front of you.
       commands.define<Cheat>("cheat", { cheat: true, apply: (state, input) => (cheat(state, input), state) });

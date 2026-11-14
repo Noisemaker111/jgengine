@@ -10,6 +10,7 @@ import { content } from "./content";
 import { recipeDef } from "./data/engrams";
 import { itemTraits } from "./data/items";
 import { craftBlock } from "./survivor";
+import { creatureCard, creaturesView } from "./creatures";
 import { openScreen } from "./screens";
 
 function runner(): HeadlessRunner {
@@ -251,4 +252,33 @@ test("a hide sleeping bag is where the survivor wakes after dying, once: it is u
   game.ui.tryInvoke("cheat", { kill: true });
   tick(game, 0.2);
   expect(flat(game.ctx.scene.entity.get(game.userId)!.position, beach)).toBeLessThan(1);
+});
+
+test("a Homer flies what it carries home: every stack into the nearest storage box, then it waits beside the box", () => {
+  const game = runner();
+  tick(game, 0.1);
+  hold(game, "storage_box");
+  place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
+  const box = baseBuilding(game.ctx).list().find((piece) => piece.pieceId === "storage_box")!;
+  // Walk a long way off, upload a Homer there and load it.
+  game.ui.tryInvoke("cheat", { teleport: [box.position[0] + 80, box.position[2], 0] });
+  tick(game, 0.1);
+  game.ui.tryInvoke("cheat", { summon: { species: "homer", level: 1, distance: 3, tamed: true } });
+  tick(game, 0.1);
+  const homer = creaturesView(game.ctx).aimed!;
+  expect(homer.species).toBe("homer");
+  expect(homer.courier).toBe(true);
+  game.ctx.player.inventory.put(BAG, "wood", 40);
+  game.ui.tryInvoke("creatureUse", {});
+  game.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "wood") });
+  game.ui.tryInvoke("sendHome", {});
+  tick(game, 0.1);
+  expect(creatureCard(game.ctx, homer.id)!.inventory.every((slot) => slot === null)).toBe(true);
+  const at = game.ctx.scene.entity.get(homer.id)!.position;
+  expect(Math.hypot(at[0] - box.position[0], at[2] - box.position[2])).toBeLessThan(6);
+  // E on the box: the wood is there.
+  game.ui.tryInvoke("cheat", { teleport: [box.position[0] - 2, box.position[2], Math.PI / 2] });
+  tick(game, 0.1);
+  game.ui.tryInvoke("structureUse", {});
+  expect(storeView(game.ctx)?.slots.some((slot) => slot?.itemId === "wood" && slot.count === 40)).toBe(true);
 });

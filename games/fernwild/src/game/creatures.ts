@@ -30,6 +30,7 @@ import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
 import { drainSurvivorStamina, heldItem, strikeHarvestable } from "./survivor";
+import { depositInto, homeBox } from "./base";
 import { climateAt } from "./climate";
 import { biteProfile, loadShare } from "./data/tameWork";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
@@ -1389,6 +1390,43 @@ function tickSentries(ctx: GameContext, world: World, dt: number): void {
   }
 }
 
+/**
+ * A courier bot (Homer) flies what it carries home: every stack into the storage box nearest it, then it
+ * lands beside the box and guards there. Returns the stacks delivered.
+ */
+export function sendHome(ctx: GameContext): number {
+  const world = worldOf(ctx);
+  const creature = viewed(ctx);
+  if (creature === null || !creature.tamed || botProfile(creature.species)?.courier !== true) return 0;
+  const at = ctx.scene.entity.get(creature.id)?.position;
+  const box = at === undefined ? null : homeBox(ctx, [at[0], at[2]]);
+  if (box === null) {
+    ctx.game.notices.push({ text: "No storage box to fly home to: build one first", tone: "deny" });
+    return 0;
+  }
+  let delivered = 0;
+  for (const slot of [...creature.inventory.slots]) {
+    if (slot === null || itemDef(slot.itemId)?.kind === "saddle") continue;
+    if (depositInto(ctx, box.id, slot.itemId, slot.count) === 0) continue;
+    const taken = takeItem(creature.inventory, slot.itemId, slot.count);
+    if (taken.status === "ok") creature.inventory = taken.state;
+    delivered += 1;
+  }
+  if (delivered === 0) {
+    ctx.game.notices.push({ text: `The ${defOf(creature).label} has nothing to carry, or the box is full`, tone: "deny" });
+    return 0;
+  }
+  if (ridingOf(ctx).riderOf(creature.id) === null) {
+    closeCreature(ctx);
+    moveCreature(ctx, creature.id, [box.at[0] + 2, box.at[2] + 2]);
+    world.roster.command(creature.id, "stay");
+    world.roster.setHome(creature.id, [box.at[0] + 2, box.at[1], box.at[2] + 2]);
+  }
+  const distance = at === undefined ? 0 : Math.round(Math.hypot(box.at[0] - at[0], box.at[2] - at[2]));
+  ctx.game.notices.push({ text: `The ${defOf(creature).label} flew ${delivered} stack${delivered === 1 ? "" : "s"} home, ${distance} m, and waits by the box`, tone: "success" });
+  return delivered;
+}
+
 /** A creature's traits (quirks and glitches), empty for none or an unknown id. */
 export function traitsOf(ctx: GameContext, id: string): readonly string[] {
   return worldOf(ctx).creatures.get(id)?.traits ?? [];
@@ -1807,6 +1845,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
       return trait === null ? [] : [{ id, label: trait.label, kind: trait.kind, note: trait.note }];
     }),
     scrapped: creature.scrapped,
+    courier: botProfile(creature.species)?.courier === true,
     dormant: creature.dormant,
     overclocked: !creature.tamed && world.storm,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.

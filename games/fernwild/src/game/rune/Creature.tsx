@@ -201,6 +201,12 @@ export function CreaturePanel(): ReactNode {
           </Row>
         </RuneView>
       ) : null}
+      {card.tamed && card.courier ? (
+        <Row gap={6}>
+          <Small color={INK} grow={1} shrink text="Courier: load it, and it flies the cargo to your nearest storage box." />
+          <Button command={{ name: "sendHome" }}>Fly cargo home</Button>
+        </Row>
+      ) : null}
       {card.tamed ? <BreedingPanel mating={card.mating} /> : null}
       {card.growth !== null ? <TameSheet growth={card.growth} /> : null}
       {card.lineage !== null ? <LineageSheet rows={card.lineage} /> : null}

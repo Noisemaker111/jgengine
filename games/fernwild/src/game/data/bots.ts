@@ -112,6 +112,8 @@ export interface BotProfile {
   scraps?: { perKill: number; max: number };
   /** Tamed and left on Guard Zone, it pings hostiles within `radius` metres. */
   sentry?: { radius: number };
+  /** Uploaded, it flies what it carries home to the nearest storage box. */
+  courier?: true;
   /** What it is, in a line, for the dossier. */
   role: string;
 }
@@ -132,7 +134,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   klepto: P("aggressive", ["richest"], "Glitchy teleporter. Grabs one stack from your bag and blinks away to its nest.", { trick: { kind: "steal", blink: 30 } }),
   rootkit: P("ambush", ["loudest"], "Robots disguised as trees. Chop near one and the forest stands up.", { dormantUntilChop: { radius: 10 } }),
   thermite: P("territorial", ["attacker"], "Burrowing beetle that cuts metal ore. Uploaded, it mines faster than any pick."),
-  homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts, and it carries salvage and gel at half weight."),
+  homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. Shoot the singers first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 } }),
   lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot."),

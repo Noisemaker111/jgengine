@@ -321,7 +321,7 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
         const knee: V3 = [0, -reach * 0.5, arms ? reach * 0.25 : (legs.biped === true ? -reach * 0.12 : reach * 0.04)];
         const foot: V3 = [0, -reach + r * 0.6, arms ? reach * 0.45 : 0];
         rig.part(node, m === undefined ? MAT.body : MAT.belly).tube([0, 0, 0], knee, r * 1.15, r * 0.9).tube(knee, foot, r * 0.9, r * 0.7);
-        if (m !== undefined && m.joints !== false) rig.part(node, MAT.accent).ellipsoid([0, 0, 0], [r * 1.35, r * 1.35, r * 1.35], 8, 5).ellipsoid(knee, [r * 1.1, r * 1.1, r * 1.1], 8, 5);
+        if (m !== undefined && m.joints !== false) rig.part(node, MAT.accent).ellipsoid([0, 0, 0], [r * 1.18, r * 1.18, r * 1.18], 8, 5).ellipsoid(knee, [r * 0.98, r * 0.98, r * 0.98], 8, 5);
         if (!arms && boxy) rig.part(node, MAT.accent).box([foot[0], foot[1] - r * 0.2, foot[2] + r * 0.4], [r * 1.0, r * 0.4, r * 1.4]);
         else if (!arms) rig.part(node, MAT.accent).ellipsoid([foot[0], foot[1] - r * 0.25, foot[2] + r * 0.4], [r * 0.95, r * 0.45, r * 1.4], 8, 4);
         const diagonal = legs.biped === true ? (side < 0 ? 0 : 0.5) : (pair + (side < 0 ? 0 : 1)) % 2 === 0 ? 0 : 0.5;

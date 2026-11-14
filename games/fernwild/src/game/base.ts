@@ -407,6 +407,34 @@ export function storePut(ctx: GameContext, from: string, slot: number): void {
   ctx.touch();
 }
 
+/**
+ * The storage box nearest `from` that takes general goods (not the food-only bin), with where it stands;
+ * null when none is built. A courier bot's home.
+ */
+export function homeBox(ctx: GameContext, from: readonly [number, number]): { id: string; at: readonly [number, number, number] } | null {
+  const base = baseOf(ctx);
+  let best: { id: string; at: readonly [number, number, number]; d: number } | null = null;
+  for (const piece of base.building.list()) {
+    const spec = CONTAINERS[piece.pieceId];
+    if (spec === undefined || spec.foodOnly === true) continue;
+    const d = Math.hypot(piece.position[0] - from[0], piece.position[2] - from[1]);
+    if (best === null || d < best.d) best = { id: piece.id, at: piece.position, d };
+  }
+  return best === null ? null : { id: best.id, at: best.at };
+}
+
+/** Put a stack into a container by id; returns how many went in (0 when it is full or gone). */
+export function depositInto(ctx: GameContext, boxId: string, itemId: string, count: number): number {
+  const base = baseOf(ctx);
+  const piece = base.building.get(boxId);
+  const items = piece === null ? null : storeOf(base, piece);
+  if (piece === null || items === null) return 0;
+  const put = putItem(items, { slots: CONTAINERS[piece.pieceId]!.slots }, itemTraits, itemId, count);
+  if (put.status !== "ok") return 0;
+  base.stores.set(boxId, put.state);
+  return count;
+}
+
 /** A stack from the open container back into the survivor's bag. */
 export function storeTake(ctx: GameContext, slot: number): void {
   const base = baseOf(ctx);
