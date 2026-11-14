@@ -149,7 +149,8 @@ const MANUFACTURERS: readonly LootManufacturerDef[] = [
 /** Every roll in the house reads this one table; a bad entry throws at module load. */
 export const ITEM_CATALOG: LootCatalog = {
   bases: BASES, parts: [], pools: POOLS, rarities: RARITIES, manufacturers: MANUFACTURERS,
-  levelScale: [[1, 1], [4, 1.25], [8, 1.5], [12, 1.8]],
+  // Deeper rooms pay: a find six rooms in is worth nearly twice the same find at the crack.
+  levelScale: [[1, 1], [3, 1.35], [6, 1.8], [12, 2.6]],
 };
 assertLootCatalog(ITEM_CATALOG);
 
