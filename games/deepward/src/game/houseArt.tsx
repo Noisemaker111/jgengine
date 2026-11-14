@@ -1,7 +1,10 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef } from "@jgengine/core/ui/jsx";
-import { BoxGeometry, CircleGeometry, Color, CylinderGeometry, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Quaternion, RingGeometry, SphereGeometry, TorusGeometry, Vector3, type BufferGeometry } from "three";
-import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { AdditiveBlending, BoxGeometry, CircleGeometry, Color, CylinderGeometry, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Quaternion, RingGeometry, SphereGeometry, TorusGeometry, Vector3, type BufferGeometry } from "three";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { houseAssets } from "./assets";
 import { EngineDrawMount, disposeObjectTree } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useGameContext } from "@jgengine/ui/provider";
@@ -15,7 +18,7 @@ import { viewStore } from "./controls";
 import { kindOf, ITEMS, type ItemKind } from "./loot";
 import { LITTLES } from "./littles";
 import { lightsOn, roomOf, hasGear, type Run } from "./state";
-import { trainIn, ventOpen } from "./controls";
+import { nearby, trainIn, ventOpen } from "./controls";
 import type { UpgradeId } from "./burrow";
 
 const rotation = new Euler(0, 0, 0, "YXZ"), quat = new Quaternion(), pos = new Vector3(), scl = new Vector3();
@@ -80,6 +83,41 @@ export function RoomBuild({ templateId, levels }: { templateId: string; levels: 
   return template === undefined ? null : <EngineDrawMount create={() => roomDraw(template, levels)} deps={[templateId, key]} />;
 }
 
+const gltf = new GLTFLoader();
+/**
+ * The room's catalog models (a loaf, a mug, a couch in the haze) loaded from the provisioned packs
+ * and scaled so their longest side is the authored size: a household object at a Little's scale.
+ */
+export function ModelLayer({ templateId }: { templateId: string }) {
+  const template = TEMPLATES[templateId];
+  if (template === undefined || template.models.length === 0) return null;
+  return <EngineDrawMount create={() => {
+    const root = new Group();
+    const draws: { draw: EngineDraw; holder: Group; state: EngineFrameState | null }[] = [];
+    for (const slot of template.models) {
+      const ref = houseAssets.resolve(slot.model);
+      if (ref === null || ref.dims === undefined) continue;
+      const { dims } = ref, height = (dims.maxY ?? 1) - (dims.minY ?? 0);
+      const scale = slot.size / Math.max(dims.footprint.w, dims.footprint.d, height);
+      const holder = new Group();
+      holder.position.set(slot.at[0] - (dims.center?.x ?? 0) * scale, slot.at[1] - (dims.minY ?? 0) * scale, slot.at[2] - (dims.center?.z ?? 0) * scale);
+      holder.rotation.y = slot.turn; holder.scale.setScalar(scale);
+      root.add(holder);
+      draws.push({ holder, state: null, draw: loadDraw({ key: `gltf:${ref.url}`, load: () => gltf.loadAsync(ref.url).catch(() => null), build: (loaded, parent) => {
+        // A pack that is not provisioned leaves the spot empty rather than stopping the page.
+        if (loaded === null) return;
+        const copy = loaded.scene.clone(true);
+        copy.traverse(node => { node.castShadow = true; node.receiveShadow = true; });
+        parent.add(copy);
+      } }) });
+    }
+    return {
+      mount(state: EngineFrameState) { state.scene.add(root); for (const d of draws) { d.state = childFrameState(state, d.holder); d.draw.mount?.(d.state); } },
+      dispose(state: EngineFrameState) { for (const d of draws) d.draw.dispose?.(d.state ?? state); state.scene.remove(root); },
+    };
+  }} deps={[templateId]} />;
+}
+
 /** The room's practical lights: nightlights, moonlight, oven clocks; the big light when someone is up. */
 export function RoomLights({ templateId }: { templateId: string }) {
   const ctx = useGameContext();
@@ -111,43 +149,76 @@ export function RoomLights({ templateId }: { templateId: string }) {
 }
 
 /** Loot on its spots: open finds lie in plain sight; tucked and hoarded ones are a rummage pile with a glint. Pip and Dot see more. */
+/** The find the Little would take with E right now, so its prop can outline itself. */
+const focus = { key: null as string | null };
+const SPARKLE: Record<string, string> = { food: "#ffcf6b", part: "#9fd3ff", curio: "#ff9cf0", gear: "#9fe0a0", cap: "#ff8a6b" };
+/**
+ * Loot on its spots, made to pop from across a room: every find stands in a soft column of light with
+ * a pulsing ring and a twinkle above it, coloured by what kind of thing it is (gold food, blue parts,
+ * pink curios, green gear, red caps). Open finds lie in plain sight at a readable size; tucked and
+ * hoarded ones are a rummage pile with the same column, dimmer. Pip's food and Dot's curios burn
+ * brighter. The find E would take gets a bright outline.
+ */
 export function LootLayer({ run }: { run: Run }) {
+  const ctx = useGameContext();
   const plan = roomOf(run), little = LITTLES[run.little];
   const taken = run.taken.join("|"), dropped = run.dropped.filter(d => d.room === run.room).map(d => d.id).join("|");
   const shown = useMemo(() => plan.loot.filter(l => !run.taken.includes(l.key)), [plan, taken]);
   const drops = useMemo(() => run.dropped.filter(d => d.room === run.room), [dropped, run.room]);
+  useFrameTask(() => { const t = nearby(ctx); focus.key = t !== null && (t.act.type === "loot" || t.act.type === "pickup" || t.act.type === "toybox") ? t.id : null; });
   return <>
     {shown.map(l => {
       const kind = l.kind === "toybox" ? null : l.kind;
-      const sensed = kind !== null && ((little.foodSense && ITEMS[kind].category === "food") || (little.shinySense && ITEMS[kind].category === "curio"));
-      return <LootProp key={l.key} at={l.spot.at} kind={l.spot.tier === "open" || sensed ? kind : null} glint={sensed ? (ITEMS[kind!].category === "food" ? "#ffcf6b" : "#ff8cf0") : l.kind === "toybox" ? "#ffe066" : null} />;
+      const category = kind === null ? "curio" : ITEMS[kind].category;
+      const sensed = kind !== null && ((little.foodSense && category === "food") || (little.shinySense && category === "curio"));
+      const visible = l.spot.tier === "open" || sensed;
+      return <LootProp key={l.key} id={l.key} at={l.spot.at} kind={visible ? kind : null} color={l.kind === "toybox" ? "#ffe066" : visible ? SPARKLE[category]! : "#f3e2b8"} strength={sensed ? 1.4 : visible ? 1 : 0.6} />;
     })}
-    {drops.map(d => <LootProp key={d.id} at={d.at} kind={kindOf(d.item)} glint={null} />)}
+    {drops.map(d => <LootProp key={d.id} id={d.id} at={d.at} kind={kindOf(d.item)} color={SPARKLE[ITEMS[kindOf(d.item)].category]!} strength={1} />)}
   </>;
 }
-function LootProp({ at, kind, glint }: { at: readonly [number, number, number]; kind: ItemKind | null; glint: string | null }) {
+function LootProp({ id, at, kind, color, strength }: { id: string; at: readonly [number, number, number]; kind: ItemKind | null; color: string; strength: number }) {
   return <EngineDrawMount create={() => {
     const group = new Group();
     group.position.set(at[0], 0, at[2]);
-    if (kind !== null) { const mesh = itemMesh(kind); mesh.rotation.y = (at[0] * 13.1 + at[2] * 7.7) % (Math.PI * 2); group.add(mesh); }
-    else {
+    const holder = new Group(); group.add(holder);
+    if (kind !== null) {
+      const mesh = itemMesh(kind); mesh.rotation.y = (at[0] * 13.1 + at[2] * 7.7) % (Math.PI * 2);
+      // Readable from a few paces: small finds are shown a little larger than life.
+      const def = ITEMS[kind]; mesh.scale.setScalar(Math.max(1, 1.6 - Math.max(def.w, def.h) * 0.2)); holder.add(mesh);
+    } else {
       // A rummage pile: lint and a scrap of something.
       const lint = new Mesh(new SphereGeometry(1, 10, 8), new MeshStandardMaterial({ color: "#8d8478", roughness: 1 }));
-      lint.scale.set(1.4, 0.55, 1.1); lint.position.y = 0.3; group.add(lint);
+      lint.scale.set(1.4, 0.55, 1.1); lint.position.y = 0.3; holder.add(lint);
       const scrap = new Mesh(new BoxGeometry(0.9, 0.06, 0.6), new MeshStandardMaterial({ color: "#d8cdb0", roughness: 1 }));
-      scrap.position.set(0.5, 0.62, 0.1); scrap.rotation.y = 0.6; group.add(scrap);
+      scrap.position.set(0.5, 0.62, 0.1); scrap.rotation.y = 0.6; holder.add(scrap);
     }
-    if (glint !== null) {
-      const ring = new Mesh(new RingGeometry(1.3, 1.55, 28), new MeshBasicMaterial({ color: glint, transparent: true, opacity: 0.7, depthWrite: false }));
-      ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; group.add(ring);
-    }
-    let t = 0;
+    const glow = (opacity: number) => new MeshBasicMaterial({ color, transparent: true, opacity: opacity * strength, depthWrite: false, blending: AdditiveBlending });
+    const beam = new Mesh(new CylinderGeometry(0.55, 1.1, 7, 16, 1, true), glow(0.16));
+    beam.position.y = 3.5; group.add(beam);
+    const ring = new Mesh(new RingGeometry(1.3, 1.6, 32), glow(0.75));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; group.add(ring);
+    const twinkle = new Mesh(new SphereGeometry(0.16, 8, 6), new MeshBasicMaterial({ color: "#ffffff" }));
+    twinkle.position.y = 2.2; group.add(twinkle);
+    const outline = new Mesh(new TorusGeometry(1.9, 0.09, 6, 40), new MeshBasicMaterial({ color: "#fff6d8" }));
+    outline.rotation.x = -Math.PI / 2; outline.position.y = 0.12; outline.visible = false; group.add(outline);
+    let t = (at[0] + at[2]) % 3;
     return {
       mount(state: EngineFrameState) { state.scene.add(group); },
-      frame(_state: EngineFrameState, delta: number) { t += delta; const ring = group.children[group.children.length - 1]; if (glint !== null && ring) ring.scale.setScalar(1 + Math.sin(t * 3) * 0.08); },
+      frame(_state: EngineFrameState, delta: number) {
+        t += delta;
+        const focused = focus.key === id;
+        ring.scale.setScalar(1 + Math.sin(t * 3) * 0.08);
+        twinkle.position.y = 2 + Math.sin(t * 2.2) * 0.35;
+        twinkle.scale.setScalar(0.6 + Math.abs(Math.sin(t * 4.3)) * 0.8);
+        outline.visible = focused;
+        if (focused) outline.scale.setScalar(1 + Math.sin(t * 6) * 0.05);
+        holder.position.y = focused ? 0.15 + Math.sin(t * 5) * 0.08 : 0;
+        holder.rotation.y = focused ? t * 1.2 : 0;
+      },
       dispose(state: EngineFrameState) { state.scene.remove(group); disposeObjectTree(group); },
     };
-  }} deps={[at[0], at[2], kind, glint]} />;
+  }} deps={[id, at[0], at[2], kind, color, strength]} />;
 }
 
 /** Doors and exits glow at the floor so a Little can find the way on and the way out. */

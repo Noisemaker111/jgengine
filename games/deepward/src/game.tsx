@@ -16,7 +16,7 @@ import { BURROW, editorLayers, physics, world } from "./world";
 import { houseAssets } from "./game/assets";
 import { canSprint, captureProbe, guideOf, initialize, keybinds, moveRule, seatPlayer, setAim, templateOf, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
-import { Clockwork, LootLayer, RoomBuild, RoomLights, ThreatLayer, WayMarks } from "./game/houseArt";
+import { Clockwork, LootLayer, ModelLayer, RoomBuild, RoomLights, ThreatLayer, WayMarks } from "./game/houseArt";
 import { itemMesh } from "./game/itemArt";
 import { defOf, ITEMS, isItemKind, kindOf, SETS, type ItemKind, type SetId } from "./game/loot";
 import { GameUI } from "./game/ui/GameUI";
@@ -28,7 +28,7 @@ const placeOf = (view: View): string => view.run === null || (view.mode !== "run
 /** A room's fixed build, memoized on the template and the burrow's upgrades so it is built once per visit. */
 const Build = memo(function Build({ templateId, levels }: { templateId: string; levels: string }) {
   const parsed = useMemo(() => JSON.parse(levels) as Record<string, number>, [levels]);
-  return <><RoomBuild templateId={templateId} levels={parsed} /><RoomLights templateId={templateId} /></>;
+  return <><RoomBuild templateId={templateId} levels={parsed} /><ModelLayer templateId={templateId} /><RoomLights templateId={templateId} /></>;
 });
 
 /** What the Little holds: the needle in the right hand, a candle in the left, anything two-handed hugged in front. */
@@ -166,7 +166,8 @@ export const game = defineGame({
   camera: {
     perspective: "first",
     rigs: { firstPerson: { eyeHeight: 1.5, sensitivity: 0.0021, reticle: false, viewmodel: false } },
-    lens: { frustum: { fov: 72, near: 0.05, far: 420 } },
+    // A wide view: at an inch tall, the things that hunt you are mostly above your eye line.
+    lens: { frustum: { fov: 82, near: 0.05, far: 420 } },
   },
   rendering: {
     // An interior with its own light rig (no look preset, no mood): no sky dome, no sun. A low warm

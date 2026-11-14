@@ -1,4 +1,4 @@
-import { BoxGeometry, ConeGeometry, CylinderGeometry, Group, LineBasicMaterial, LineSegments, BufferGeometry, Float32BufferAttribute, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, type Object3D } from "three";
+import { BoxGeometry, CircleGeometry, ConeGeometry, MeshBasicMaterial, CylinderGeometry, Group, LineBasicMaterial, LineSegments, BufferGeometry, Float32BufferAttribute, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, type Object3D } from "three";
 import { hashUnit } from "@jgengine/core/random/rng";
 import type { ThreatState } from "./threats";
 import { SPIDER } from "./threats";
@@ -118,14 +118,20 @@ function dog(): Group {
   return g;
 }
 
+/** A soft dark pool on the floor under a big hunter: from a Little's eye line, the shadow is what you see coming. */
+function floorShadow(g: Group, w: number, d: number): void {
+  const pool = new Mesh(new CircleGeometry(1, 32), new MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.45, depthWrite: false }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.04; pool.scale.set(w, d, 1); pool.name = "shadow";
+  g.add(pool);
+}
 export function threatMesh(kind: ThreatKind, key: string): Group {
   switch (kind) {
-    case "cat": return cat(key);
+    case "cat": { const g = cat(key); floorShadow(g, 11, 20); return g; }
+    case "dog": { const g = dog(); floorShadow(g, 16, 30); return g; }
     case "roomba": return roomba();
     case "spider": return spider();
     case "trap": return trap();
     case "kid": return kid();
-    case "dog": return dog();
     default: return new Group();
   }
 }

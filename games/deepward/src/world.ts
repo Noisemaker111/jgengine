@@ -29,6 +29,8 @@ export interface Spot { id: string; at: Point; tier: SpotTier; bias: LootBias | 
 export interface ThreatSlot { id: string; kind: ThreatKind; at: Point; minDepth: number; label: string }
 export interface ExitSlot { id: string; kind: ExitKind; at: Point; label: string }
 export interface LampSlot { id: string; at: Point; color: string; intensity: number; distance: number }
+/** A catalog model standing in the room at giant scale: `size` is its longest side in world units. */
+export interface ModelSlot { id: string; model: string; at: Point; size: number; turn: number }
 export interface Station { id: string; role: "depart" | "stash" | "workbench" | "nook" | "spawn"; at: Point; reach: number; label: string }
 export interface RoomTemplate {
   id: string; name: string; zone: Zone | "burrow"; minDepth: number; flavor: string;
@@ -42,6 +44,7 @@ export interface RoomTemplate {
   threats: readonly ThreatSlot[];
   exits: readonly ExitSlot[];
   lamps: readonly LampSlot[];
+  models: readonly ModelSlot[];
   props: readonly EditorVolume[];
 }
 
@@ -97,6 +100,7 @@ function readTemplates(): Record<string, RoomTemplate> {
       if (kind !== "mail" && kind !== "vent" && kind !== "dogdoor" && kind !== "crack") throw new Error(`Crumb Run exit is malformed: ${m.id}`);
       return { id: m.id, kind, at: point(m), label: m.label ?? m.id };
     });
+    const models: ModelSlot[] = markers.filter(m => m.kind === "crumb-model").map(m => ({ id: m.id, model: text(m.meta, "model"), at: point(m), size: num(m.meta, "size", 10), turn: m.rotationY ?? 0 }));
     const lamps: LampSlot[] = markers.filter(m => m.kind === "crumb-lamp").map(m => ({ id: m.id, at: point(m), color: text(m.meta, "color", "#ffffff"), intensity: num(m.meta, "intensity", 4), distance: num(m.meta, "distance", 30) }));
     const solids: Solid[] = props.filter(p => p.meta?.["solid"] === true || p.meta?.["cover"] === true)
       .filter(p => p.center.y - (p.halfExtents?.y ?? (p.height ?? 0) / 2) < 3)
@@ -106,7 +110,7 @@ function readTemplates(): Record<string, RoomTemplate> {
       id, name: room.label ?? id, zone: zone as Zone | "burrow", minDepth: num(meta, "minDepth"), flavor: text(meta, "flavor"),
       root: meta?.["root"] === true, dark: meta?.["dark"] === true, elevated: num(meta, "elevated"), ceiling: num(meta, "ceiling"), weight: num(meta, "weight", 1), mood: text(meta, "mood", "night"),
       floor: text(meta, "floor", "wood"), floorColor: text(meta, "floorColor", "#8c5a33"),
-      area: rectOf(room), solids, doors, spots, threats, exits, lamps, props,
+      area: rectOf(room), solids, doors, spots, threats, exits, lamps, models, props: props.filter(p => p.meta?.["hidden"] !== true),
     };
   }
   return out;

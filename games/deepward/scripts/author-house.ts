@@ -67,6 +67,15 @@ const threat = (t: Ctx, id: string, threatKind: string, x: number, z: number, mi
 const door = (t: Ctx, id: string, role: 'entry' | 'forward', x: number, z: number, kinds: string[], label: string) => mark(t, `door-${id}`, 'crumb-door', x, z, { role, kinds }, label);
 const exit = (t: Ctx, id: string, exitKind: string, x: number, z: number, label: string) => mark(t, `exit-${id}`, 'crumb-exit', x, z, { exit: exitKind }, label);
 const lamp = (t: Ctx, id: string, at: V3, color: string, intensity: number, distance: number, label: string) => mark(t, `lamp-${id}`, 'crumb-lamp', at[0], at[2], { color, intensity, distance }, label, at[1]);
+/**
+ * A catalog model (KayKit furniture, Quaternius food and props, all CC0) at giant scale. `size` is
+ * its longest side in units; `solid` adds an invisible footprint a Little walks round.
+ */
+function model(t: Ctx, id: string, at: V3, size: number, turn = 0, solid?: [number, number]) {
+  mark(t, `model-${id.split('/')[1]!.toLowerCase()}-${++t.n}`, 'crumb-model', at[0], at[2], { model: id, size }, id, at[1], turn);
+  if (solid !== undefined) volumes.push({ id: `${t.id}-model-solid-${++t.n}`, kind: 'crumb-prop', shape: 'box', center: { x: t.cx + at[0], y: 2, z: t.cz + at[2] }, halfExtents: { x: solid[0] / 2, y: 2, z: solid[1] / 2 }, label: `${id} footprint`, meta: { template: t.id, material: 'paint', solid: true, hidden: true, turn } });
+}
+const FURN = 'kaykit-furniture', FOOD = 'quaternius-low-poly-food-pack', PROPS = 'quaternius-fantasy-props', CLUTTER = 'quaternius-toon-shooter';
 const station = (t: Ctx, id: string, x: number, z: number, role: string, reach: number, label: string) => mark(t, `station-${id}`, 'crumb-station', x, z, { role, reach }, label);
 
 // Palette: warm wood, cream enamel, terracotta tile, faded rug reds, toy primaries.
@@ -148,6 +157,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'tea-towel', [14, 0.4, 6], [12, 0.8, 9], 'fabric', '#c45a4a', { cover: true, turn: 0.3 });
   box(t, 'tea-towel-fold', [12, 1.4, 4.5], [7, 1.4, 4], 'fabric', '#b44c3d', { solid: true, turn: 0.3 });
   box(t, 'fridge-side', [-24, 50, -6], [4, 100, 22], 'metal', '#e9ecec');
+  model(t, `${FURN}/chair_A_wood`, [-2, 0, 30], 95, Math.PI);
+  model(t, `${FOOD}/Spoon`, [-8, 0, 12], 18, 0.6);
+  model(t, `${FOOD}/FryingPan`, [26, 0, 22], 40, 2.2);
   lamp(t, 'oven-clock', [8, 12, -1], '#7dffb0', 1.5, 28, 'oven clock glow');
   lamp(t, 'moon', [8, 48, 12], '#9fb9ff', 10, 90, 'moonlight from the window');
   door(t, 'entry', 'entry', -14, -2, ['crack'], 'the baseboard crack');
@@ -173,7 +185,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'toaster-slot-b', [-11, 14.1, -5], [14, 0.4, 2.2], 'paint', '#1d1d1d');
   box(t, 'toaster-lever', [-0.6, 9, -7], [1.2, 1.6, 4], 'plastic', '#222222');
   box(t, 'bread-board', [9, 0.6, 2], [22, 1.2, 14], 'wood', '#c99a63');
-  box(t, 'bread-heel', [10, 3.6, 1], [9, 5, 7], 'bread', '#c07a35', { solid: true });
+  model(t, `${FOOD}/Bread`, [11, 1.2, 1], 18, 0.3, [8, 12]);
   cyl(t, 'sugar-bowl', [16, 4.5, -8], 5, 9, 'ceramic', '#f0ebe0', { solid: true });
   cyl(t, 'sugar-lid', [16, 9.4, -8], 5.4, 0.8, 'ceramic', '#e8e0d0');
   box(t, 'knife-block', [-20, 10, 4], [7, 20, 9], 'wood', DARK_OAK, { solid: true });
@@ -181,6 +193,12 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'charger-cable', [21, 6, 0], 0.35, 30, 'plastic', '#f2f2f2', { tilt: Math.PI / 2 - 0.25 });
   box(t, 'far-floor', [0, -60, 40], [200, 1, 120], 'lino', LINO);
   box(t, 'far-table', [6, -30, 60], [70, 3, 50], 'wood', OAK);
+  model(t, `${PROPS}/Mug`, [-7, 0, 6], 9, 0.5, [6, 6]);
+  model(t, `${FOOD}/Apple`, [17, 0, 3], 6, 0, [5, 5]);
+  model(t, `${FOOD}/Banana`, [3, 0, -10], 13, 1.2);
+  model(t, `${FOOD}/Knife`, [-10, 0, 11], 14, 2.4);
+  model(t, `${FOOD}/KetchupBottle`, [-21, 0, -11], 16, 0, [5, 5]);
+  model(t, `${FOOD}/Croissant`, [20, 0, -4], 9, 0.8, [6, 4]);
   lamp(t, 'hood', [-6, 34, -6], '#ffd9a0', 4, 60, 'cooker hood bulb');
   lamp(t, 'moon', [20, 40, 18], '#9fb9ff', 9, 90, 'moonlight');
   door(t, 'entry', 'entry', 12, -12, ['climb'], 'the top of the drawer pulls');
@@ -210,6 +228,10 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'spilled-rice', [-6, 0.15, 4], [8, 0.3, 5], 'bread', '#f4efe2');
   box(t, 'web-sheet', [20, 8, -10], [0.1, 16, 9], 'glass', '#ffffff', { turn: 0.8 });
   box(t, 'far-floor', [0, -30, 40], [200, 1, 120], 'lino', LINO);
+  model(t, `${FOOD}/PeanutButter`, [4, 0, -2], 11, 0, [6, 6]);
+  model(t, `${FOOD}/KetchupMustard`, [-21, 0, -4], 16, 0.4, [6, 5]);
+  model(t, `${FOOD}/SoySauce`, [12, 0, 2], 7, 0, [5, 5]);
+  model(t, `${FOOD}/Jar_Large`, [20, 0, 9], 11, 0, [7, 7]);
   lamp(t, 'door-gap', [0, 10, 14], '#ffcf96', 4, 40, 'light under the door');
   door(t, 'entry', 'entry', -18, 10, ['crack', 'vent'], 'the pantry door gap');
   door(t, 'jars', 'forward', 18, -4, ['climb'], 'the jam-jar stack');
@@ -261,6 +283,8 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'shelf-foot', [22, 8, -4], 1.6, 16, 'wood', DARK_OAK, { solid: true });
   box(t, 'domino', [-10, 1.8, 8], [3, 3.6, 6], 'plastic', '#f5f1e6', { solid: true, turn: 0.7 });
   box(t, 'rug-edge', [0, 0.25, 15], [60, 0.5, 6], 'rug', RUG);
+  model(t, `${PROPS}/BookGroup_Medium_1`, [12, 0, -6], 22, 0.1, [18, 5]);
+  model(t, `${FURN}/armchair`, [48, 0, 30], 95, -2.4);
   lamp(t, 'standard-lamp', [-24, 40, 16], '#ffc477', 10, 90, 'a lamp left on low');
   lamp(t, 'moon', [24, 50, 18], '#9fb9ff', 6, 90, 'moonlight');
   door(t, 'entry', 'entry', 20, -2, ['crack'], 'the baseboard crack');
@@ -286,6 +310,8 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   for (const [x, z] of [[10, 4], [12, -6], [4, 7], [16, 0]] as const) ball(t, 'popcorn', [x, 1.6, z], 1.8, 'bread', '#f4e3b3');
   box(t, 'lost-sock', [-16, 1, 6], [10, 2, 6], 'fabric', '#c9a83f', { cover: true, turn: -0.5 });
   box(t, 'room-floor', [0, 0.4, 24], [80, 0.8, 30], 'wood', '#8c5a33');
+  model(t, `${FURN}/pillow_B`, [-30, 0, 30], 30, 0.6);
+  model(t, `${FURN}/table_low`, [10, 0, 56], 70, 0);
   lamp(t, 'tv-standby', [0, 6, 20], '#ff5a4a', 3, 40, 'tv standby light');
   lamp(t, 'moon', [10, 30, 30], '#9fb9ff', 7, 90, 'moonlight on the rug');
   door(t, 'entry', 'entry', -20, 12, ['crack', 'cable'], 'the couch skirt');
@@ -310,7 +336,11 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'dog-bed', [12, 3, -6], 9, 6, 'fabric', '#7a6248', { solid: true });
   cyl(t, 'dog-bed-cushion', [12, 5.6, -6], 7, 1.4, 'fabric', '#a68b6c');
   box(t, 'slipper', [-18, 2.4, 12], [8, 4.8, 18], 'fabric', '#8b4f74', { solid: true, turn: 0.6 });
-  cyl(t, 'rug-sun', [0, 0.06, 0], 9, 0.12, 'rug', '#d9a441');
+  model(t, `${FURN}/couch`, [0, 0, -52], 150, 0);
+  model(t, `${FURN}/armchair_pillows`, [-58, 0, -6], 95, Math.PI / 2);
+  model(t, `${FURN}/lamp_standing`, [-44, 0, -40], 110, 0);
+  model(t, `${FURN}/rug_rectangle_stripes_A`, [0, 0, 0], 70, 0);
+  model(t, `${FURN}/pillow_A`, [-8, 0, -14], 22, 0.7, [14, 10]);
   lamp(t, 'standard-lamp', [-26, 48, -10], '#ffc477', 9, 100, 'the standard lamp');
   lamp(t, 'moon', [24, 50, 18], '#9fb9ff', 7, 100, 'moonlight');
   door(t, 'entry', 'entry', -22, 17, ['crack', 'cable'], 'the rug fringe');
@@ -333,7 +363,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'mail-slot', [6, 46, -15.3], [14, 3, 0.6], 'chrome', BRASS);
   box(t, 'dog-flap', [-12, 9, -15.4], [12, 16, 0.6], 'plastic', '#5d5a52');
   box(t, 'doormat', [0, 0.6, -10], [36, 1.2, 9], 'rug', '#6a5236');
-  box(t, 'letter-a', [8, 1.35, -9], [14, 0.3, 9], 'paper', PAPER, { turn: 0.4 });
+  model(t, `${CLUTTER}/Debris_Papers`, [8, 1.3, -9], 18, 0.4);
   box(t, 'letter-b', [-4, 1.5, -11], [12, 0.3, 8], 'paper', '#f2e6c8', { turn: -0.2 });
   box(t, 'sneaker', [-14, 5, 6], [10, 10, 24], 'fabric', '#e8e8e8', { solid: true, turn: 0.2 });
   box(t, 'sneaker-sole', [-14, 1, 6], [10.6, 2, 24.6], 'rubber', '#3a3a3a', { turn: 0.2 });
@@ -375,8 +405,8 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'engine-funnel', [6, 6.5, 14], 0.9, 2.5, 'plastic', '#222222');
   box(t, 'wagon', [6, 2.4, 3], [4, 3.6, 6], 'plastic', '#2f6fd1', { solid: true });
   for (const [x, z, c] of [[-6, 10, '#7a3fb0'], [-3, 12, '#e67e22'], [-8, 14, '#27ae60']] as const) cyl(t, 'crayon', [x, 1, z], 1, 12, 'wax', c, { roll: Math.PI / 2, turn: 0.4, solid: true });
-  box(t, 'bed-side', [26, 22, 4], [6, 44, 40], 'wood', '#e8d2b0');
-  box(t, 'duvet', [40, 46, 4], [30, 10, 40], 'fabric', '#6a8fd6');
+  model(t, `${FURN}/bed_single_A`, [52, 0, 4], 135, 0);
+  model(t, `${FURN}/book_set`, [-20, 0, -14], 18, 0.2, [12, 6]);
   box(t, 'toy-box', [-18, 6, 10], [12, 12, 9], 'wood', '#e5c95a', { solid: true });
   box(t, 'toy-box-lid', [-18, 12.4, 10], [12.6, 0.8, 9.6], 'wood', '#d2483b', { turn: 0.05 });
   lamp(t, 'nightlight', [-22, 6, -14], '#9effc8', 7, 50, 'a moon-shaped nightlight');
@@ -456,11 +486,11 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   const t = template('dining-table', { name: 'On the dining table', zone: 'living', minDepth: 1, w, d, floor: 'wood', floorColor: '#7a4a2a', flavor: 'Last night’s supper was never cleared. Plates like frozen lakes, a fork like a fallen tower.', elevated: 50 });
   box(t, 'table-slab', [0, -1.5, 0], [56, 3, 38], 'wood', '#7a4a2a');
   box(t, 'table-edge', [0, -1.5, 19.3], [56, 3.2, 1], 'wood', '#5c3b22');
-  cyl(t, 'plate', [-10, 0.5, 2], 11, 1, 'ceramic', '#f4f1ea', { solid: false });
-  cyl(t, 'plate-rim', [-10, 1.1, 2], 11.2, 0.3, 'ceramic', '#3b5f7a');
-  cyl(t, 'gravy', [-12, 1.2, 4], 4, 0.2, 'glass', '#7a4a26');
-  box(t, 'fork-handle', [12, 0.6, 4], [3, 1.2, 26], 'chrome', CHROME, { solid: true, turn: 0.25 });
-  for (let i = 0; i < 4; i++) box(t, 'fork-tine', [8.8 + i * 1.1, 0.6, -11], [0.6, 1, 8], 'chrome', CHROME, { turn: 0.25 });
+  model(t, `${FOOD}/Plate`, [-10, 0, 2], 22);
+  model(t, `${FOOD}/Pizza_Slice`, [-11, 0.6, 3], 10, 0.4);
+  model(t, `${FOOD}/Fork`, [12, 0, 2], 26, 0.25);
+  model(t, `${FOOD}/Spoon`, [4, 0, -2], 24, -0.2);
+  model(t, `${FOOD}/Soda`, [-20, 0, 8], 16, 0, [9, 9]);
   cyl(t, 'glass', [16, 9, -8], 5, 18, 'glass', '#d9eef4', { solid: true });
   cyl(t, 'glass-water', [16, 5, -8], 4.7, 9, 'glass', '#9fd3ff');
   cyl(t, 'salt', [-20, 6, -10], 2.4, 12, 'ceramic', '#f4f1ea', { solid: true });
@@ -527,6 +557,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'extension-reel', [18, 7, -8], 7, 6, 'plastic', '#e8b52b', { solid: true, roll: Math.PI / 2 });
   cyl(t, 'cord', [8, 0.5, -8], 0.6, 22, 'plastic', '#e86a2b', { roll: Math.PI / 2, turn: Math.PI / 2 });
   box(t, 'flap', [-23.6, 9, 6], [0.6, 16, 12], 'plastic', '#5d5a52');
+  model(t, `${CLUTTER}/Gas_Can`, [-20, 0, -4], 18, 0.4, [12, 6]);
+  model(t, `${CLUTTER}/Cardboard_Boxes`, [36, 0, -18], 40, 0.2);
+  model(t, `${CLUTTER}/Tires`, [-40, 0, 20], 50, 0.8);
   lamp(t, 'charger', [18, 12, -8], '#ff4a3a', 4, 30, 'a battery charger LED');
   lamp(t, 'window', [10, 70, 10], '#9fb9ff', 6, 100, 'the garage window');
   door(t, 'entry', 'entry', -20, 14, ['crack', 'vent'], 'the garage door gap');
@@ -559,6 +592,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'rag', [2, 0.8, 8], [12, 1.6, 9], 'fabric', '#8a6d4a', { cover: true, turn: 0.3 });
   box(t, 'far-floor', [0, -40, 40], [200, 1, 120], 'concrete', '#8a8784');
   lamp(t, 'charger', [-20, 4, 10], '#ff4a3a', 3, 24, 'a charger LED');
+  model(t, `${PROPS}/Bucket_Metal`, [-18, 0, -8], 12, 0, [10, 10]);
   lamp(t, 'window', [10, 40, 20], '#9fb9ff', 6, 90, 'the garage window');
   door(t, 'entry', 'entry', -20, 11, ['climb', 'cable'], 'the shelf upright');
   door(t, 'edge', 'forward', 18, 12, ['drop', 'cable'], 'the shelf lip');
@@ -579,10 +613,9 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'box-a', [-12, 12, -8], [18, 24, 14], 'cardboard', CARD, { solid: true });
   box(t, 'box-a-tape', [-12, 24.1, -8], [3, 0.2, 14], 'paper', '#d9c79a');
   box(t, 'box-b', [-12, 30, -9], [14, 12, 12], 'cardboard', '#a07a4c', { turn: 0.2 });
-  box(t, 'box-c', [14, 8, 6], [14, 16, 12], 'cardboard', '#c39a68', { solid: true, turn: -0.3 });
-  box(t, 'trunk', [10, 8, -10], [20, 16, 10], 'wood', '#5a3420', { solid: true });
-  box(t, 'trunk-band', [10, 8, -4.9], [20.4, 1.4, 0.4], 'metal', BRASS);
-  box(t, 'trunk-lock', [10, 12, -4.7], [2, 2.6, 0.6], 'metal', BRASS);
+  model(t, `${CLUTTER}/Cardboard_Boxes`, [14, 0, 6], 18, -0.3, [14, 11]);
+  model(t, `${PROPS}/Book_Stack_1`, [-16, 0, -2], 6, 0.5, [5, 4]);
+  model(t, `${PROPS}/Chest_Wood`, [10, 0, -10], 22, 0, [21, 12]);
   box(t, 'insulation', [-4, 1.4, 12], [16, 1.6, 8], 'dust', '#e6a2a8', { cover: true });
   box(t, 'rafter', [0, 50, -20], [50, 60, 2], 'wood', '#4a3424', { tilt: 0.6 });
   box(t, 'window', [20, 30, -16], [8, 12, 0.6], 'glass', '#3c5a8a');
@@ -600,6 +633,41 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   threat(t, 'spider', 'spider', 0, -12, 4, 'the attic spider');
   threat(t, 'spider-b', 'spider', 18, 10, 5, 'another spider');
   threat(t, 'trap', 'trap', -10, 4, 4, 'an old mousetrap');
+}
+
+// Doorways stay clear: any free-standing prop or model that crowds a door (within a Little's few
+// paces of it, at floor level) is slid away from the door, so you arrive looking into the room.
+const DOOR_CLEAR = 9;
+{
+  const doors = (markers as Record<string, any>[]).filter(m => m.kind === 'crumb-door');
+  const tooBig = (v: Record<string, any>) => v.shape === 'box' ? (v.halfExtents.x * 2 > 26 || v.halfExtents.z * 2 > 26) : (v.radius ?? 0) * 2 > 26;
+  const low = (v: Record<string, any>) => v.center.y - (v.halfExtents?.y ?? (v.height ?? (v.radius ?? 0) * 2) / 2) < 3;
+  const groups = new Map<string, Record<string, any>[]>();
+  for (const v of volumes as Record<string, any>[]) {
+    if (v.kind !== 'crumb-prop' || tooBig(v) || !low(v)) continue;
+    const key = `${v.meta.template}|${v.label}`;
+    groups.set(key, [...(groups.get(key) ?? []), v]);
+  }
+  for (const door of doors) {
+    for (const v of volumes as Record<string, any>[]) {
+      if (v.kind !== 'crumb-prop' || v.meta.template !== door.meta.template || tooBig(v) || !low(v) || v.meta.material === 'emissive') continue;
+      const reach = Math.max(v.halfExtents?.x ?? v.radius ?? 1, v.halfExtents?.z ?? v.radius ?? 1);
+      const dx = v.center.x - door.x, dz = v.center.z - door.z, dist = Math.hypot(dx, dz);
+      const need = DOOR_CLEAR + reach - dist;
+      if (need <= 0) continue;
+      const ux = dist < 0.01 ? 1 : dx / dist, uz = dist < 0.01 ? 0 : dz / dist;
+      // Move every volume of the same named prop together, so a toy box keeps its lid.
+      for (const part of groups.get(`${v.meta.template}|${v.label}`) ?? [v]) { part.center.x += ux * need; part.center.z += uz * need; }
+    }
+    for (const m of markers as Record<string, any>[]) {
+      if (m.kind !== 'crumb-model' || m.meta.template !== door.meta.template || (m.meta.size ?? 0) > 30) continue;
+      const dx = m.x - door.x, dz = m.z - door.z, dist = Math.hypot(dx, dz), need = DOOR_CLEAR + m.meta.size / 2 - dist;
+      if (need <= 0 || m.y > 3) continue;
+      const ux = dist < 0.01 ? 1 : dx / dist, uz = dist < 0.01 ? 0 : dz / dist;
+      m.x += ux * need; m.z += uz * need;
+      for (const v of volumes as Record<string, any>[]) if (v.meta?.hidden === true && v.meta.template === m.meta.template && Math.hypot(v.center.x - (m.x - ux * need), v.center.z - (m.z - uz * need)) < 0.5) { v.center.x += ux * need; v.center.z += uz * need; }
+    }
+  }
 }
 
 // Every marker a Little or a hunter must stand on is nudged off any solid it was placed inside, the
@@ -628,7 +696,7 @@ function clear(template: string, x: number, z: number, radius: number): boolean 
 }
 for (const m of markers as Record<string, any>[]) {
   const template = String(m.meta.template);
-  if (!rooms.has(template) || m.kind === 'crumb-lamp') continue;
+  if (!rooms.has(template) || m.kind === 'crumb-lamp' || m.kind === 'crumb-model') continue;
   const big = m.kind === 'crumb-threat' && ['cat', 'dog', 'roomba'].includes(String(m.meta.threat));
   const radius = big ? 2.2 : 0.9;
   if (m.kind === 'crumb-threat' && ['kid', 'lights'].includes(String(m.meta.threat))) continue;
@@ -657,6 +725,8 @@ for (const m of markers as Record<string, any>[]) {
   box(t, 'tinsel-heap', [14, 1.2, 6], [10, 2.4, 8], 'dust', '#e8e2c8', { cover: true, turn: 0.4 });
   box(t, 'photo-album', [16, 2, -2], [10, 4, 14], 'paper', '#6b2f2a', { solid: true, turn: -0.2 });
   box(t, 'rafter', [0, 50, -19], [50, 60, 2], 'wood', '#4a3424', { tilt: 0.6 });
+  model(t, `${PROPS}/CandleStick`, [-16, 0, -4], 8, 0.4, [6, 4]);
+  model(t, `${PROPS}/Lantern_Wall`, [22, 0, -14], 14, -1.2);
   lamp(t, 'fairy', [-2, 3, 12], '#ffcf8f', 6, 40, 'a string of fairy lights still plugged in');
   lamp(t, 'moon', [18, 30, -12], '#a8c4ff', 6, 70, 'moonlight through a gap in the tiles');
   door(t, 'entry', 'entry', -19, 13, ['crack', 'climb'], 'along the beams');
@@ -687,6 +757,8 @@ for (const m of markers as Record<string, any>[]) {
   box(t, 'oil-puddle', [-12, 0.05, 10], [8, 0.1, 6], 'glass', '#2a2622');
   box(t, 'cardboard-flat', [2, 0.4, 10], [16, 0.8, 12], 'cardboard', CARD, { cover: true, turn: 0.2 });
   box(t, 'flap', [23.6, 9, 4], [0.6, 16, 12], 'plastic', '#5d5a52');
+  model(t, `${CLUTTER}/Shovel`, [-34, 0, -20], 80, 0.3);
+  model(t, `${CLUTTER}/Pallet`, [30, 0, 26], 60, 0.1);
   lamp(t, 'window', [0, 60, 18], '#9fb9ff', 7, 100, 'moonlight through the garage window');
   lamp(t, 'freezer', [-20, 6, -12], '#bfe8ff', 3, 26, 'a chest freezer’s light');
   door(t, 'entry', 'entry', -20, 13, ['crack', 'vent'], 'the garage door gap');
