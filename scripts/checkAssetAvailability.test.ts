@@ -154,9 +154,10 @@ describe("referencedPacks (repo integration)", () => {
     const root = join(import.meta.dir, "..");
     const refs = referencedPacks(join(root, "games"));
     expect(refs.length).toBeGreaterThan(0);
-    // The formerly-missing packs from #1339 must now be discovered as referenced.
+    // The formerly-missing packs from #1339 must now be discovered as referenced (Do Not Disturb's
+    // buildings pack stands in for the skeletons Beacon Bastion used to import).
     const packs = new Set(refs.map((r) => r.pack));
-    expect(packs.has("kaykit-skeletons")).toBe(true);
+    expect(packs.has("quaternius-lowpoly-buildings")).toBe(true);
     expect(packs.has("quaternius-modular-scifi")).toBe(true);
     expect(packs.has("kaykit-space-base")).toBe(true);
   });
