@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { planRoom, ROOT, depthOf, parentOf, threatChance, type RunSeed } from "./runGen";
+import { NIGHTS, nightOf, planRoom, ROOT, depthOf, parentOf, threatChance, type RunSeed } from "./runGen";
 import { ROOM_TEMPLATES, walkable } from "../world";
 import { ITEMS } from "./loot";
 
@@ -67,6 +67,13 @@ describe("the procedural house", () => {
       boltFood += planRoom(night(`f${i}`, { little: "bolt" }), "0-0").loot.filter(l => food(l.kind)).length;
     }
     expect(pipFood).toBeGreaterThan(boltFood);
+  });
+  test("every night rolls a kind of night, the first is quiet, and the family being away keeps the kid out of bed", () => {
+    expect(nightOf("night-1-0")).toBe("quiet");
+    const kinds = new Set(Array.from({ length: 80 }, (_, i) => nightOf(`night-${i + 2}-${i}`)));
+    expect(kinds.size).toBe(Object.keys(NIGHTS).length);
+    const away = Array.from({ length: 400 }, (_, i) => `night-${i + 2}-${i}`).find(seed => nightOf(seed) === "away")!;
+    for (const path of ["0-0-0", "0-1-0-0", "0-0-1-1", "0-1-1-0-0"]) expect(planRoom(night(away, ALL), path).threats.some(t => t.kind === "kid")).toBe(false);
   });
   test("every authored door, spot and exit stands on walkable floor", () => {
     for (const t of ROOM_TEMPLATES) {

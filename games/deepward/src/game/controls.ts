@@ -11,7 +11,7 @@ import { defOf, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type 
 import { LITTLES, isLittle, type LittleId } from "./littles";
 import { CHARTS, goalStep, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
 import { canCarry, loadOf } from "./haul";
-import { planRoom, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
+import { NIGHTS, nightOf, planRoom, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
 import { jab, spawnThreat, tickThreats, webDrag, type ThreatEvent, type ThreatState } from "./threats";
 import { openRecord, recordProfile, type RecordSession, type RunSnapshot, type StoragePort } from "./save";
 
@@ -41,6 +41,8 @@ const runtime = perContext(() => ({
   aim: [0, 0, -1] as Point, last: null as Point | null, pebble: null as Point | null, checkpoint: 0,
   /** Finds the pack turned away (too heavy, no square): the carry limit at work. */
   refusals: 0,
+  /** Ground covered since the last footstep, and seconds since the last heartbeat. */
+  stride: 0, heart: 0,
 }));
 const BED_GAIN = 0.4;
 const message = (e: unknown): string => e instanceof Error ? e.message : String(e);
@@ -223,7 +225,9 @@ function begin(ctx: GameContext): Promise<void> | void {
   const run: Run = { ...run0, threats: threatsFor(run0, plan) };
   const arrival = arrivalOf(plan, null);
   const fed = run.maxHealth > 100 ? ` Well fed: ${run.maxHealth} health.` : "";
-  const hint = `${clockText(run)}. ${plan.template.name}. ${plan.template.flavor}${fed}`;
+  const night = NIGHTS[nightOf(run.seed)];
+  const hint = `${clockText(run)}. ${night.name}: ${night.line}${fed}`;
+  ctx.game.notices.push({ text: `Tonight: ${night.name}`, tone: "info" });
   state.writing = true;
   return persist(ctx, home, runOf(ctx, { mode: "run", run, hint, pending: null, player: arrival.at, facing: arrival.facing }), () => {
     viewStore.write(ctx, { ...viewStore.read(ctx), home, run, mode: "run", panel: null, pending: null, error: "", hint });
@@ -761,13 +765,19 @@ export function tickControls(ctx: GameContext, dt: number): void {
   state.last = at;
   const speed = moved / dt;
   const sneaking = ctx.input.isDown("crumbSneak");
+  // Footsteps: a patter you can hear yourself make, softer and slower when sneaking.
+  state.stride += moved;
+  if (state.stride > (sneaking ? 3.2 : 2.1)) { state.stride = 0; ctx.game.audio.play(sneaking ? "stepSoft" : twoHanded(v.run) ? "stepHeavy" : "step"); }
+  // A heartbeat when a hunter is close to noticing you.
+  state.heart += dt;
+  if (v.danger > 0.6 && state.heart > 1.6 - v.danger) { state.heart = 0; ctx.game.audio.play("heart"); }
   // Sound: footsteps by pace, rummaging, a two-handed load thumping along.
   let noise = speed < 0.3 ? 0 : speed > 5.6 ? 18 : sneaking ? 3 : 9;
   if (noise > 0 && twoHanded(v.run)) noise *= 1.3;
   if (v.run.channel !== null) noise = Math.max(noise, v.run.channel.kind === "disarm" && !little.trapSense ? 12 : v.run.channel.kind === "search" || v.run.channel.kind === "toybox" ? 6 : 2);
-  noise *= little.noise;
+  noise *= little.noise * NIGHTS[nightOf(v.run.seed)].noise;
   const lit = lightsOn(v.run, plan), torch = hasGear(v.run, "torch");
-  const visibility = (lit ? 1.8 : template.dark ? (torch ? 1.1 : 0.6) : 1) * (torch ? 1.5 : 1) * (sneaking ? 0.6 : 1) * (isDawn(v.run) ? 1.3 : 1) / little.stillness;
+  const visibility = (lit ? 1.8 : template.dark ? (torch ? 1.1 : 0.6) : 1) * NIGHTS[nightOf(v.run.seed)].light * (torch ? 1.5 : 1) * (sneaking ? 0.6 : 1) * (isDawn(v.run) ? 1.3 : 1) / little.stillness;
   const covered = inCover(template, at);
   // A restless kid sits up and looks around now and then; at dawn every kid is awake.
   const restless = isDawn(v.run) || hashUnit(`${v.run.seed}|${v.run.room}|restless`) < 0.45 + plan.depth * 0.08;
