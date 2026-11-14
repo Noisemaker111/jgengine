@@ -115,14 +115,20 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - [ ] 4. A worker animation for "looking at the phone" instead of the floating phone alone.
 
 ## Handoff
-- Done: everything in the README checklist; polish round from review: real skin tones on the pack's
-  near-black Skin material, Rune speech bubbles anchored over the world (never behind meshes), tech
-  drawn 2.4x (bosses 1.3x), buildings capped at ~6 m, KayKit shrubs instead of jelly cubes, cash and
-  attention wording in every refusal (engine: world facts take a `label`), notices above the hiring
-  board. 169 game tests green; check-types clean.
-- Shots: /tmp/claude-0/dnd-polish-close.png, dnd-polish-finale.png, dnd-result.png, dnd-title.png.
-- Not done: a second map. Plots and roads are module constants read once from the scene and the
-  town's world spec declares its slots at load, so a second layout needs per-map scene documents and a
-  spec built per map; that refactor is the next step.
-- Next: second map (see above); phones lean back and read as a stack of slabs when they bunch up,
-  consider spacing or an upright pose; the Data Center can cover the near end of the street.
+- Done: everything in the README checklist plus the review rounds: skin tones, Rune speech bubbles,
+  bigger tech, low buildings, shrubs, cash/attention wording (engine: fact `label`), notices above the
+  hiring board; an RTS camera that frames the street (pan with arrows/edge, zoom out for both ends);
+  a denser town (more buildings, parked cars, signed DINER/SCHOOL/LIBRARY/BAKERY/HARDWARE); tech
+  walks in lanes so phones spread; the Data Center is a tall narrow tower; a second map (Downtown
+  Grid, `src/downtown.scene.json`). 176 game tests green; check-types clean.
+- The second map is interim: `src/maps.ts` picks the scene document per boot (`?map=`, stored pick,
+  `DND_MAP` for headless) and the page reloads onto another map, because `defineGame` mounts one scene
+  document and terrain statically. Lawn Order (ember-command) hit the same wall, so the owner is the
+  engine: a scene set on `defineGame` plus a runtime switch that rebuilds scene, terrain and the world
+  spec's slots. Build that upstream with tests, then replace `maps.ts`/`editorLayers.ts` selection with
+  it here and let ember-command adopt it. Downtown authoring today: edit through a copy (the editor CLI
+  saves to `editor.scene.json`).
+- Downtown is harder: the scripted Main Street crew reaches the finale and loses it
+  (`DND_MAP=downtown BEACON_TRACE=1 bun test src/game/balance.test.ts`); retune or lengthen its roads.
+- Shots: /tmp/claude-0/dnd-cam2-finale.png (Main Street, new camera), dnd-downtown-mid.png,
+  dnd-polish-close.png, dnd-result.png, dnd-title.png.
