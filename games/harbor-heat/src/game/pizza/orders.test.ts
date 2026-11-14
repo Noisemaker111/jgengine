@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { CUSTOMERS, LIGHTHOUSE_KEEPER, PIZZAS } from "./menu";
-import { ageOrder, hottest, nextCaller, parSeconds, repStars, settleOrder, type Order } from "./orders";
+import { ageOrder, coldLimitOf, hottest, nextCaller, parSeconds, repStars, rollMod, settleOrder, type Order } from "./orders";
 import {
   buyUpgrade,
   closeShift,
@@ -77,6 +77,28 @@ describe("pizza orders", () => {
     expect(repStars(10)).toBe(2);
     expect(repStars(100)).toBe(5);
     expect(parSeconds(170)).toBe(45);
+  });
+});
+
+describe("a caller's extra request", () => {
+  test("requests pay only when met, and change the rules of the one box", () => {
+    const rush = settleOrder(fresh({ age: 20, mod: "rush" }), { kitchen, floor: "door", stack: 1 });
+    const plain = settleOrder(fresh({ age: 20 }), { kitchen, floor: "door", stack: 1 });
+    expect(rush.lines.map((line) => line.label)).toContain("Rush");
+    expect(rush.tip).toBeGreaterThan(plain.tip);
+    expect(settleOrder(fresh({ age: 90, mod: "rush" }), { kitchen, floor: "door", stack: 1 }).lines.map((line) => line.label)).not.toContain("Rush");
+    // Extra hot raises the cold limit: 40 degrees is fine for Gus, too cold for an extra-hot order.
+    expect(coldLimitOf(fresh({ mod: "extra_hot" }))).toBe(40);
+    expect(settleOrder(fresh({ heat: 35, age: 20, mod: "extra_hot" }), { kitchen, floor: "door", stack: 1 }).tip).toBe(0);
+    // Keep it dry soaks twice as fast.
+    const dry = ageOrder(fresh({ mod: "keep_dry" }), 10, { kitchen, soakPerSecond: 2, altitude: false });
+    expect(dry.soak).toBe(40);
+  });
+
+  test("nobody asks for extras from a shop with no reputation; more do as it grows", () => {
+    expect(rollMod(0.01, 0)).toBeUndefined();
+    expect(rollMod(0.01, 2)).toBe("rush");
+    expect(rollMod(0.9, 5)).toBeUndefined();
   });
 });
 

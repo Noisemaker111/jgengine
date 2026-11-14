@@ -3,6 +3,7 @@ import {
   districtDepth,
   dropFloor,
   hoursUntilDusk,
+  minutesToNextStage,
   shiftOpen,
   stageAt,
   streetState,
@@ -77,5 +78,13 @@ describe("the tide clock", () => {
     expect(hoursUntilDusk(0)).toBeCloseTo(18, 5);
     expect(hoursUntilDusk(17.5)).toBeCloseTo(0.5, 5);
     expect(hoursUntilDusk(18)).toBe(24);
+  });
+  test("the tide tells you when the next stage arrives, sooner in a surge, and not at all once it falls", () => {
+    const early = minutesToNextStage(18.5)!;
+    expect(early.stage.id).toBe("canal");
+    expect(early.minutes).toBeGreaterThan(10);
+    expect(minutesToNextStage(18.5, 0.5)!.stage.id).not.toBe("wet");
+    expect(minutesToNextStage(23.99)).toBeNull();
+    expect(minutesToNextStage(1)).toBeNull();
   });
 });

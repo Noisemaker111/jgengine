@@ -64,6 +64,24 @@ export function stageAt(level: number): TideStage {
   return stage;
 }
 
+/**
+ * Game minutes from `hour` until the water first reaches the next stage, scanning minute by minute up to
+ * six hours ahead (with `surge` metres on top while the evening tide is in), or null when the tide is
+ * falling or at its peak.
+ */
+export function minutesToNextStage(hour: number, surge = 0): { stage: TideStage; minutes: number } | null {
+  const levelAt = (h: number) => tideLevelAt(h) + (tideLevelAt(h) > 0 ? surge : 0);
+  const now = stageAt(levelAt(hour));
+  const next = TIDE_STAGES[now.index + 1];
+  if (next === undefined) return null;
+  for (let minute = 1; minute <= 360; minute += 1) {
+    const level = levelAt(hour + minute / 60);
+    if (level >= next.from) return { stage: next, minutes: minute };
+    if (level < levelAt(hour + (minute - 1) / 60)) return null;
+  }
+  return null;
+}
+
 /** Where the water climbs first. Districts not listed (Palm Heights) never flood. */
 export const FLOOD_SILLS: Readonly<Record<string, number>> = {
   port_carmine: 0,

@@ -6,7 +6,7 @@ import { useStore } from "@jgengine/ui/store";
 import { customerById, pizzaById } from "../pizza/menu";
 import { nightlyQuota, nextTier, ovenCapacity, UPGRADES, type UpgradeKind } from "../pizza/pizzeria";
 import { pizzeriaBoardStore, pizzeriaStore, shiftStore, shopRep } from "../pizza/shift";
-import { repStars, REP_THRESHOLDS } from "../pizza/orders";
+import { coldLimitOf, ORDER_MODS, repStars, REP_THRESHOLDS } from "../pizza/orders";
 import { shiftOpen, TIDE_STAGES } from "../tide/tide";
 import { tideStore } from "../tide/tideRuntime";
 import { streetPlayOf } from "../streetPlay";
@@ -39,7 +39,8 @@ interface ShiftView {
   /** Tonight's set piece and its progress, when one is running. */
   night: string | null;
   water: string;
-  bag: { id: string; who: string; pizza: string; heat: number; soak: number; cold: number }[];
+  next: string | null;
+  bag: { id: string; who: string; pizza: string; heat: number; soak: number; cold: number; mod: string | null }[];
   /** The last delivery's slip while it is fresh: who, each line and the total. */
   slip: { who: string; lines: { label: string; amount: number }[]; total: number } | null;
 }
@@ -69,6 +70,7 @@ function shiftView(ctx: GameContext): ShiftView | null {
     special: shift.special === undefined || !tide.open ? null : (pizzaById(shift.special)?.label ?? null),
     quota: nightlyQuota(shop),
     water: streetPlayOf(ctx).telemetry().water,
+    next: tide.next === null ? null : `${tide.next.label} in ${tide.next.minutes} min`,
     slip: shift.lastReceipt !== null && ctx.time.now() - (shift.lastReceipt.at ?? -99) < 8
       ? { who: customerById(shift.lastReceipt.customerId)?.name ?? "", lines: shift.lastReceipt.lines, total: shift.lastReceipt.total }
       : null,
@@ -78,7 +80,8 @@ function shiftView(ctx: GameContext): ShiftView | null {
       pizza: pizzaById(order.pizzaId)?.label ?? order.pizzaId,
       heat: Math.round(order.heat),
       soak: Math.round(order.soak / 5) * 5,
-      cold: customerById(order.customerId)?.coldLimit ?? 25,
+      cold: coldLimitOf(order),
+      mod: order.mod === undefined ? null : ORDER_MODS[order.mod].label,
     })),
   };
 }
@@ -144,6 +147,7 @@ export function ShiftPanel() {
         <Text family={DISPLAY} size={18} tracking={0.5} color={view.stageIndex >= 3 ? "#6fd8ff" : HH.cream} text={view.stage.toUpperCase()} />
         <Text size={12} color={HH.dim} text={`water +${view.level.toFixed(1)} m`} />
       </Row>
+      {view.next === null ? null : <Text size={12} color="#9fd8ea" text={`Next · ${view.next}`} />}
       {view.night === null ? null : <RuneView padding={[2, 6, 2, 6]} radius={3} fill="#5b1e18"><Text family={DISPLAY} size={14} color={HH.amber} text={view.night} /></RuneView>}
       {view.special === null ? null : <Text size={12} color={HH.amber} text={`Special · ${view.special}`} />}
       {view.water === "" ? null : (
@@ -166,6 +170,7 @@ export function ShiftPanel() {
         <RuneView key={box.id} gap={2} padding={[4, 6, 4, 6]} radius={4} fill="#123742">
           <Row justify="between" gap={6}>
             <Text size={12} weight={700} shrink color={HH.cream} text={box.who} />
+            {box.mod === null ? null : <RuneView padding={[0, 4, 0, 4]} radius={2} fill={HH.coral}><Text size={10} weight={700} color={HH.night} text={box.mod.toUpperCase()} /></RuneView>}
             <Text size={12} weight={700} color={heatColor(box.heat)} text={`${box.heat}°`} />
           </Row>
           {view.slip !== null || view.bag.length > 2 ? null : <Text size={11} color={HH.dim} text={box.soak > 0 ? `${box.pizza} · ${box.soak}% soggy` : box.pizza} />}

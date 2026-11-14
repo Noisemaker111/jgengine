@@ -3,7 +3,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { DISTRICTS } from "../world/districts";
 import { nightRules } from "../pizza/nights";
-import { districtDepth, MAX_DEPTH, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
+import { districtDepth, MAX_DEPTH, minutesToNextStage, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
 
 /**
  * The tide in the running city: the level read off the world clock, the flood sheets that rise with
@@ -55,12 +55,16 @@ export interface TideSnapshot {
   open: boolean;
   /** Depth over each flooding district's streets, by district id. */
   depths: Record<string, number>;
+  /** The next stage and the game minutes until it, while the water is still rising. */
+  next: { label: string; minutes: number } | null;
 }
 
 /** HUD mirror of the tide; derived from the clock every tick, so it never needs saving. */
 export const tideStore = defineStore<TideSnapshot | null>("harbor.tide", null);
 
 interface TideRuntime {
+  /** The stage the ten-minute warning was last given for. */
+  warned: TideStageId | null;
   level: number;
   stage: TideStageId | null;
   /** Ground height under each sheet's centre: the flood starts from the district's own floor. */
@@ -69,7 +73,7 @@ interface TideRuntime {
   placed: Map<string, number>;
 }
 
-const runtimes = perContext((): TideRuntime => ({ level: 0, stage: null, floors: new Map(), placed: new Map() }));
+const runtimes = perContext((): TideRuntime => ({ warned: null, level: 0, stage: null, floors: new Map(), placed: new Map() }));
 
 const sheetId = (district: string) => `tide_sheet_${district}`;
 
@@ -162,6 +166,12 @@ export function tickTide(ctx: GameContext): TideStage | null {
   if (rose) ctx.game.audio.play("tide_bell");
   if (rose) ctx.game.notices.push({ text: `${stage.label.toUpperCase()} · ${stage.note}`, tone: stage.index >= 3 ? "warn" : "info" });
   runtime.stage = stage.id;
+  // The tell: ten game minutes before the water reaches a stage that closes roads, the city says so.
+  const next = minutesToNextStage(hour, nightRules(ctx)?.surge ?? 0);
+  if (next !== null && next.stage.index >= 2 && next.minutes <= 10 && runtime.warned !== next.stage.id) {
+    runtime.warned = next.stage.id;
+    ctx.game.notices.push({ text: `The tide reaches ${next.stage.label} in ${next.minutes} minutes. ${next.stage.note}`, tone: "warn" });
+  }
   tideStore.write(ctx, {
     level,
     stage: stage.id,
@@ -172,6 +182,7 @@ export function tickTide(ctx: GameContext): TideStage | null {
     minute: calendar.minute,
     open: shiftOpen(hour),
     depths: Object.fromEntries(FLOOD_SHEETS.map((sheet) => [sheet.district, districtDepth(sheet.district, level)])),
+    next: next === null ? null : { label: next.stage.label, minutes: next.minutes },
   });
   return rose ? stage : null;
 }

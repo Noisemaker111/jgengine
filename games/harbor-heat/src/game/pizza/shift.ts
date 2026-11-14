@@ -13,7 +13,7 @@ import { nightRules, scoreNight } from "./nights";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
 import { waterAt } from "../tide/tideRuntime";
 import { customerById, LIGHTHOUSE_KEEPER, PIZZAS, pizzaById } from "./menu";
-import { ageOrder, hottest, nextCaller, parSeconds, repStars, settleOrder, type Order, type TipLine } from "./orders";
+import { ageOrder, coldLimitOf, hottest, nextCaller, ORDER_MODS, parSeconds, repStars, rollMod, settleOrder, type Order, type OrderMod, type TipLine } from "./orders";
 import {
   buyUpgrade,
   callInterval,
@@ -80,6 +80,8 @@ export interface Call {
   customerId: string;
   pizzas: readonly string[];
   calledAt: number;
+  /** The caller's extra request, if any; every box of the call carries it. */
+  mod?: OrderMod;
 }
 
 export interface DeliveryReceipt {
@@ -205,8 +207,9 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   const interval = callInterval(pizzeriaStore.read(ctx)) * (nightRules(ctx)?.callScale ?? 1);
   if (caller === null) return { ...state, nextCallIn: interval / 2 };
   const serial = state.serial + 1;
-  const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas: caller.pizzas, calledAt: ctx.time.now() };
-  ctx.game.notices.push({ text: `New order · ${caller.name}: "${caller.call}"`, tone: "info" });
+  const mod = firstEver ? undefined : rollMod(roll(serial * 3 + 11), shopRep(ctx));
+  const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas: caller.pizzas, calledAt: ctx.time.now(), ...(mod === undefined ? {} : { mod }) };
+  ctx.game.notices.push({ text: `New order${mod === undefined ? "" : ` · ${ORDER_MODS[mod].label.toUpperCase()}`} · ${caller.name}: "${caller.call}"`, tone: "info" });
   ctx.game.audio.play("oven_bell");
   return { ...state, serial, board: [...state.board, call], nextCallIn: interval, idaDue: caller.id === LIGHTHOUSE_KEEPER ? false : state.idaDue };
 }
@@ -345,7 +348,7 @@ function tickLessons(ctx: GameContext, state: ShiftState): void {
   if (water === "ENGINE DROWNED") teach(ctx, "drowned");
   if (water === "BEACHED" || water === "AGROUND") teach(ctx, "beached");
   if (state.bag.length >= 2) teach(ctx, "stack");
-  if (state.bag.some((order) => order.heat < (customerById(order.customerId)?.coldLimit ?? 25))) teach(ctx, "cold");
+  if (state.bag.some((order) => order.heat < coldLimitOf(order))) teach(ctx, "cold");
   for (const order of state.bag) {
     const spot = customerSpot(order.customerId);
     if (spot !== null && floorAt(ctx, spot) !== "door") { teach(ctx, "rooftop"); break; }
@@ -450,7 +453,7 @@ function takeOrders(ctx: GameContext): void {
   let serial = state.serial;
   const taken = call.pizzas.slice(0, room).map((pizzaId): Order => {
     serial += 1;
-    return { id: `o${serial}`, customerId: call.customerId, pizzaId, heat: kitchen.ovenHeat, soak: 0, age: 0, par };
+    return { id: `o${serial}`, customerId: call.customerId, pizzaId, heat: kitchen.ovenHeat, soak: 0, age: 0, par: call.mod === "rush" ? Math.round(par * 0.6) : par, ...(call.mod === undefined ? {} : { mod: call.mod }) };
   });
   const left = call.pizzas.slice(room);
   const board = left.length === 0 ? state.board.slice(1) : [{ ...call, pizzas: left }, ...state.board.slice(1)];
@@ -726,13 +729,13 @@ export function shiftGoal(ctx: GameContext): ShiftGoal | null {
   const state = shiftStore.read(ctx);
   if (state.bag.length > 0) {
     // Lead with the box that is cooling fastest toward its customer's cold limit.
-    const order = [...state.bag].sort((a, b) => (a.heat - (customerById(a.customerId)?.coldLimit ?? 25)) - (b.heat - (customerById(b.customerId)?.coldLimit ?? 25)))[0]!;
+    const order = [...state.bag].sort((a, b) => (a.heat - coldLimitOf(a)) - (b.heat - coldLimitOf(b)))[0]!;
     const customer = customerById(order.customerId);
     const spot = customerSpot(order.customerId) ?? OVEN;
     const floor = floorAt(ctx, spot);
     const where = floor === "door" ? "the door" : floor === "balcony" ? "the balcony" : "the rooftop";
     return {
-      eyebrow: `${state.bag.length} in the bag · ${Math.round(order.heat)}° hot · ${Math.round(order.soak)}% soggy`,
+      eyebrow: `${order.mod === undefined ? "" : `${ORDER_MODS[order.mod].label.toUpperCase()} · `}${state.bag.length} in the bag · ${Math.round(order.heat)}° hot · ${Math.round(order.soak)}% soggy`,
       title: `${customer?.name ?? "Customer"} · ${where}`,
       target: spot,
       hint: customer?.waterOnly === true ? "Out in the bay: only a jet-ski or the blimp gets there." : "Stop at the beacon and press E. Splashing soaks the boxes.",
