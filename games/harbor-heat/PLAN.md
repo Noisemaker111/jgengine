@@ -170,9 +170,10 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 - Water surface feature: a rising, district-clipped flood plane with ripples and wakes belongs in
   `packages/core/src/water/` (beside `seaState`) as a "tidal sheet" adopters can raise; High Tide Pizza is
   the first adopter (the flood sheets are game-local authored discs for now). Second adopter moves it up.
-- Boats on the planing model: hull vehicles should drive on `@jgengine/core/physics/boatPlaning` with
-  buoyancy instead of a floated car sim; seam: the `medium === "water"` branch in
-  `src/game/driving/driving.ts`.
+- Hull collision: the engine's boat model (`createBoatDynamics`, now driving the jet-ski and gondola in deep
+  water) has no obstacle clamp like the car sim's, so `src/game/driving/driving.ts` bounces a hull off solids
+  itself; the clamp belongs in `packages/core/src/physics/boatDynamics.ts` once a second game sails among
+  buildings.
 - Delivery-order primitive: heat/soak/tip settlement could become `packages/core/src/delivery/` once a
   second game delivers perishables; seam: `src/game/pizza/orders.ts`.
 - Asset provisioning in sandboxed environments: library street props 403 without the mirror.
@@ -194,9 +195,10 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
   and three set-piece nights (lanterns, storm surge, blackout); the turf war, fronts, gangs, bounties,
   guns and night market leave; HHPD becomes the Canal Wardens' tickets; the gun counter becomes
   Mercato Fresco.
-- [ ] 5. Blimp line and rooftop drops: a mooring mast on the Heights, rooftop customers only the blimp
+- [x] 5. Blimp line and rooftop drops: a mooring mast on the beach behind Vell's, rooftop customers only the blimp
   reaches at the king tide, bridges as foot routes.
-- [ ] 6. Boats on the planing model and a wake/ripple flood surface (the engine gaps above).
+- [x] 6. Boats on the engine's boat model (planing jet-ski, displacement gondola, a wake off the stern); a
+  rippling flood surface stays an engine gap (above).
 
 ## Handoff
 

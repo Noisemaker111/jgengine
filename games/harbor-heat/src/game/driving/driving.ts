@@ -30,6 +30,7 @@ import { crashVehicle, forgetVehicleDamage, rebaseVehicleDamage, restoreVehicleD
 import { crashShare, moddedTuning } from "../progression/upgrades";
 import type { VehicleDamageState } from "@jgengine/core/physics/vehicleDamage";
 import { waterAt } from "../tide/tideRuntime";
+import { createBoatDynamics, type BoatDynamics } from "@jgengine/core/physics/boatDynamics";
 import { waterEffect } from "../tide/tide";
 
 export const drivingStore = defineStore<string | null | undefined>("harbor.driving", undefined);
@@ -136,6 +137,9 @@ export function createDriving(): Driving {
   const carTunings = new Map<string, VehicleSpec>();
   const drivingAudio: DrivingAudio = createDrivingAudio();
   const aircraft = new Map<string, RigidAircraft>();
+  /** Hulls on the engine's boat model, keyed by entity id, with the wake's clock. */
+  const boats = new Map<string, BoatDynamics>();
+  let wakeClock = 0;
   const flightThrottles = new Map<string, number>();
   const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
@@ -211,6 +215,7 @@ export function createDriving(): Driving {
   }
 
   function dropCarSim(vehicleId: string): void {
+    boats.delete(vehicleId);
     carVehicles.delete(vehicleId);
     cruiserVehicles.delete(vehicleId);
     carSolids.delete(vehicleId);
@@ -434,6 +439,81 @@ export function createDriving(): Driving {
     return step;
   }
 
+  /** The hull's boat sim, built at its pose on first use; the car sim is dropped so dry land restarts from here. */
+  function boatFor(ctx: GameContext, vehicleId: string): BoatDynamics {
+    const existing = boats.get(vehicleId);
+    if (existing !== undefined) return existing;
+    const entity = ctx.scene.entity.get(vehicleId)!;
+    const tuning = vehicleById(entity.name)!.boat!;
+    carVehicles.delete(vehicleId);
+    const created = createBoatDynamics(tuning, {
+      position: entity.position,
+      heading: entity.rotationY ?? 0,
+      waterHeight: (x, z) => waterAt(ctx, x, z)?.surface ?? ctx.world.groundHeightAt(x, z),
+    });
+    boats.set(vehicleId, created);
+    return created;
+  }
+
+  /**
+   * A hull on the water: the boat model drives it, solids stop it (it bounces off a wall instead of
+   * sailing through), and at speed it throws a wake behind the stern.
+   */
+  function tickBoat(ctx: GameContext, vehicleId: string, dt: number): void {
+    const boat = boatFor(ctx, vehicleId);
+    const before = boat.pose();
+    const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
+    const step = boat.tick(dt, axis);
+    const [x, , z] = step.motion.position;
+    const radius = vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "")?.collisionRadius ?? 1.2;
+    const blocked = gatherObstacles(ctx, vehicleId, [x, step.motion.position[1], z], radius).some((solid) =>
+      solid.halfExtents !== undefined && Math.abs(solid.position[0] - x) < solid.halfExtents[0] + radius && Math.abs(solid.position[2] - z) < solid.halfExtents[2] + radius);
+    let pose = step.motion.position;
+    if (blocked) {
+      // Bounce: back to where it was, the speed knocked out of it and a little sent back the other way.
+      const [vx, vz] = boat.velocity();
+      boat.resetTo(before.position, before.heading);
+      boat.applyImpulse(-vx * 0.25, -vz * 0.25);
+      pose = before.position;
+      if (Math.hypot(vx, vz) > 4) {
+        cameraShake(Math.min(0.5, 0.1 + Math.hypot(vx, vz) * 0.02));
+        ctx.game.audio.play("crash_soft", before.position);
+      }
+    }
+    const surface = waterAt(ctx, pose[0], pose[2]);
+    const water = waterEffect("water", surface?.depth ?? 0, Math.abs(step.motion.forwardSpeed) * 3.6, surface?.openSea === true);
+    ctx.scene.entity.setPose(vehicleId, {
+      position: [pose[0], surface?.surface ?? pose[1], pose[2]],
+      rotationX: -step.body.bodyPitch,
+      rotationY: blocked ? before.heading : step.motion.heading,
+      rotationZ: step.body.bodyRoll,
+      dt,
+    });
+    // The wake: white water off the stern while the hull is moving, heavier once it planes.
+    const speed = Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed);
+    wakeClock -= dt;
+    if (speed > 3 && wakeClock <= 0) {
+      wakeClock = 0.12;
+      const back = 1.6 + radius;
+      const heading = step.motion.heading;
+      const stern: [number, number, number] = [pose[0] - Math.sin(heading) * back, (surface?.surface ?? pose[1]) + 0.1, pose[2] - Math.cos(heading) * back];
+      ctx.scene.entity.vfx({ kind: "spark", color: 0xe8fbff, from: stern, radius: Math.min(2.6, 0.6 + speed * 0.08 + step.hull.planing * 0.8) });
+    }
+    lastTelemetry = {
+      mode: "ground",
+      speedMs: Math.abs(step.motion.forwardSpeed),
+      altitude: 0,
+      verticalSpeed: 0,
+      gear: 1,
+      rpm: 900 + step.engine.engineLoad * 6000,
+      stalled: false,
+      vtol: false,
+      water: step.hull.planing > 0.5 ? "PLANING" : "",
+      soak: water.soakPerSecond,
+    };
+    drivingAudio.tick(ctx, { position: pose, throttle: axis.throttle, normRpm: step.engine.engineLoad, slip: Math.min(1, Math.abs(step.motion.lateralSpeed) / 6), wheelspin: false, speed, gear: 1 });
+  }
+
   /** The player is out of the car: drop the handle, the engine note, the dash and the car's touch layout. */
   function stopDriving(ctx: GameContext): void {
     driving = null;
@@ -556,7 +636,11 @@ export function createDriving(): Driving {
           const definition = vehicleById(vehicle.name);
           if (definition?.dynamics.type === "aircraft") {
             tickAircraft(ctx, driving, dt);
+          } else if (definition?.boat !== undefined && (waterAt(ctx, vehicle.position[0], vehicle.position[2])?.depth ?? 0) >= 0.45) {
+            tickBoat(ctx, driving, dt);
           } else {
+            // Out of the water a hull runs on its car tuning, dragging aground; back in deep water it floats again.
+            boats.delete(driving);
             const car = carVehicleFor(ctx, driving);
             const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
             refreshClamp(ctx, driving, car.pose().position, dt);

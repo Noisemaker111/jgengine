@@ -1,4 +1,5 @@
 import { type AircraftAssistTuning, type GripCurve, type RigidAircraftTuning, type VehicleSpec } from "@jgengine/core/world";
+import type { BoatTuning } from "@jgengine/core/physics/boatDynamics";
 
 export type VehicleHandling =
   | { type: "ground"; tuning: VehicleSpec }
@@ -33,7 +34,45 @@ export interface VehicleDef {
   collisionRadius: number;
   /** Street, water or air: how the flood treats it. */
   medium: VehicleMedium;
+  /** A hull's own physics on the water (the engine's boat model); its car tuning only drives it aground. */
+  boat?: BoatTuning;
 }
+
+/**
+ * The family's hulls on the engine's boat model (`@jgengine/core/physics/boatDynamics`). The jet-ski is a
+ * light planing hull steered by its jet nozzle: it climbs onto the plane fast, slides wide in a hard turn
+ * and carves a wake. The gondola is a long displacement hull with an outboard: slow to answer, steady,
+ * a deep keel that holds its line, and no planing at all.
+ */
+const BOATS: Readonly<Record<string, BoatTuning>> = {
+  car_sport: {
+    massKg: 380,
+    length: 3.2,
+    beam: 1.2,
+    maxThrust: 4200,
+    propSpeed: 27,
+    planingSpeed: 7,
+    planingDrag: 0.3,
+    keel: 380 * 2.6,
+    yawDamping: 600,
+    steering: { kind: "outboard", maxAngle: 0.55 },
+    steerRate: 3.2,
+    bowRise: 0.14,
+    maxHeel: 0.24,
+  },
+  car_suv: {
+    massKg: 620,
+    length: 6.4,
+    beam: 1.3,
+    maxThrust: 1500,
+    propSpeed: 8,
+    keel: 620 * 9,
+    yawDamping: 3800,
+    steering: { kind: "outboard", maxAngle: 0.45 },
+    steerRate: 1.4,
+    maxHeel: 0.05,
+  },
+};
 
 /**
  * The data-first ground-car spec (#1051): a mass-and-force chassis (`massKg`/`engineForce`/`brakeForce`/
@@ -337,6 +376,7 @@ export const VEHICLES: readonly VehicleDef[] = [
       price: spec.price,
       collisionRadius: spec.collisionRadius,
       medium: spec.hull === true ? "water" : "road",
+      ...(BOATS[spec.id] === undefined ? {} : { boat: BOATS[spec.id] }),
       dynamics: { type: "ground", tuning: car(spec) },
     }),
   ),
