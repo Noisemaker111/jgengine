@@ -16,6 +16,7 @@ import { createFogState, FOG_BOUNDS, type FogState } from "./fog";
 import { createHazardState, NO_HAZARDS, type HazardState } from "./hazards";
 import { createTrailField, type AlarmPulse, type TrailField } from "./pheromone";
 import type { RouteCache } from "./yardNav";
+import { createWaspNestState, type WaspNestState } from "./ai/waspNestState";
 import type { FormationState } from "./formations";
 import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, TRAIL_CELL, type Faction } from "./tuning";
 import type { ResearchSpec } from "./upgrades";
@@ -84,6 +85,8 @@ export interface SessionState {
   trails: TrailField;
   /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
   fx: { kind: FxKind; x: number; z: number; at: number }[];
+  /** The paper wasp nest's sortie clock (see `ai/waspNest.ts`). */
+  waspNest: WaspNestState;
   /** Each walker's cached route across the yard (see `yardNav.ts`). */
   routes: Map<string, RouteCache>;
   /** Workers running for the nest after being bitten, with the battle second they calm down. */
@@ -146,6 +149,7 @@ function fresh(): SessionState {
     marked: {},
     fleeing: {},
     routes: new Map(),
+    waspNest: createWaspNestState(),
     fx: [],
     coachSeen: [],
     trailPainted: false,

@@ -75,6 +75,13 @@ export const NURSERY_HATCH_BONUS = 0.25;
 /** Each Granary Chamber ferments a little stored sugar every second. */
 export const GRANARY_TRICKLE = 1;
 
+/** Paper wasps: while their nest hangs on the fence, it sends a sortie at the red foragers. */
+export const WASP_SORTIE_FIRST = 80;
+export const WASP_SORTIE_INTERVAL = 55;
+export const WASP_SORTIE_SIZE = 2;
+/** The most nest wasps on the wing at once. */
+export const WASP_SORTIE_CAP = 6;
+
 /** The garden hose: climbing over it is slow except at its two crossings. */
 export const HOSE_SLOW = 0.35;
 export const HOSE_HALF_WIDTH = 1.6;

@@ -88,6 +88,25 @@ describe("the opening raid", () => {
     expect(isMarked(tagged[0]!)).toBe(true);
   }, 60_000);
 
+  test("in the skirmish the paper wasp nest launches a sortie at the foragers, and stops once dug out", () => {
+    resetSession();
+    const definition = defineGameDefinition({ name: "LawnOrderWasps", multiplayer: "off", world, physics, systems, loop: { onInit, onNewPlayer() {} } });
+    const runner = createHeadlessRunner({ definition, content, loop: definition.loop! });
+    runner.ctx.game.commands.run("match.skirmish", {});
+    session.waspNest.nextAt = 1;
+    for (let t = 0; t < 2; t += 0.1) runner.step(0.1);
+    expect(session.waspNest.launched).toBeGreaterThanOrEqual(1);
+    const wasp = session.units.get(session.waspNest.wing[0]!);
+    expect(wasp?.command.kind).toBe("attackMove");
+    // Dig the nest out: no further sorties.
+    runner.ctx.scene.entity.despawn("wasp_nest_1");
+    session.units.delete("wasp_nest_1");
+    const before = session.waspNest.launched;
+    session.waspNest.nextAt = session.elapsed + 0.5;
+    for (let t = 0; t < 2; t += 0.1) runner.step(0.1);
+    expect(session.waspNest.launched).toBe(before);
+  }, 60_000);
+
   test("idle red ants walk out of the mower's lane when it roars; black ants do too", () => {
     const runner = opening();
     const lane = YARD.mowerLane!;

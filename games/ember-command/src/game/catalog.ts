@@ -138,6 +138,10 @@ export const COMBATANTS = {
     id: "wasp", label: "Paper Wasp", faction: "enemy", kind: "unit",
     maxHealth: 90, walkSpeed: 6.2, damage: 12, attackRange: 2, attackCooldown: 0.9, aggroRadius: 11, bounty: 22, prefers: "worker",
   }),
+  wasp_nest: def({
+    id: "wasp_nest", label: "Paper Wasp Nest", faction: "enemy", kind: "building",
+    maxHealth: 520, scale: 1,
+  }),
   keep_enemy: def({
     id: "keep_enemy", label: "Black Ant Nest", faction: "enemy", kind: "building",
     maxHealth: 1300, scale: 1,

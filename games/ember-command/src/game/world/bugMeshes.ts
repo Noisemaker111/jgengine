@@ -343,7 +343,7 @@ function petalFlag(color: string, x: number, z: number, h = 2.4): Piece[] {
   return [rod("#6b4a2a", v(x, 0, z), v(x, h, z), 0.07, 0.05), tint(petal, color)];
 }
 
-export type ChamberKind = "keep_player" | "keep_enemy" | "barracks" | "fungus_garden" | "nursery" | "granary" | "acid_mound" | "brood_mound";
+export type ChamberKind = "keep_player" | "keep_enemy" | "barracks" | "fungus_garden" | "nursery" | "granary" | "acid_mound" | "brood_mound" | "wasp_nest";
 
 export function chamberGeometry(kind: ChamberKind): THREE.BufferGeometry {
   const red = RED_ANT.body;
@@ -414,6 +414,28 @@ export function chamberGeometry(kind: ChamberKind): THREE.BufferGeometry {
         blob("#7dff4a", [0.7, 0.62, 0.7], [0, 3.3, 0], 16),
         blob("#d5ffb8", [0.22, 0.2, 0.22], [0.25, 3.6, 0.25], 8),
       ]);
+    case "wasp_nest": {
+      // A grey paper wasp nest hanging from a bent twig: a layered teardrop with an open comb below.
+      const paper: Piece[] = [];
+      for (let i = 0; i < 6; i += 1) {
+        const band = new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, 0.15 * Math.PI + i * 0.11, 0.14);
+        band.scale(1.6 - i * 0.05, 2.2, 1.6 - i * 0.05);
+        band.translate(0, 3.2, 0);
+        paper.push(tint(band, i % 2 === 0 ? "#b9b2a6" : "#a39b8e"));
+      }
+      paper.push(blob("#c8c1b4", [1.55, 1.9, 1.55], [0, 3.3, 0], 18));
+      for (let i = 0; i < 7; i += 1) {
+        const a = (i / 7) * Math.PI * 2;
+        const cell = new THREE.CylinderGeometry(0.22, 0.22, 0.4, 6);
+        cell.translate(Math.cos(a) * 0.55, 1.35, Math.sin(a) * 0.55);
+        paper.push(tint(cell, "#6e675c"));
+      }
+      paper.push(rod("#5b3b1e", v(-1.6, 0, 0), v(-1.6, 5.8, 0), 0.18, 0.14));
+      paper.push(rod("#5b3b1e", v(-1.6, 5.8, 0), v(0, 5.4, 0), 0.14, 0.1));
+      paper.push(rod("#5b3b1e", v(0, 5.4, 0), v(0, 4.9, 0), 0.09, 0.07));
+      paper.push(blob("#ffcf1f", [0.18, 0.14, 0.3], [0.9, 2.2, 1.2], 8));
+      return merge(paper);
+    }
     case "brood_mound": {
       const eggs: Piece[] = [];
       for (let i = 0; i < 6; i += 1) {
@@ -541,7 +563,7 @@ export function bugBodyFor(kind: string): BugBody | null {
   return body;
 }
 
-const CHAMBERS = new Set<string>(["keep_player", "keep_enemy", "barracks", "fungus_garden", "nursery", "granary", "acid_mound", "brood_mound"]);
+const CHAMBERS = new Set<string>(["keep_player", "keep_enemy", "barracks", "fungus_garden", "nursery", "granary", "acid_mound", "brood_mound", "wasp_nest"]);
 const FOOD = new Set<string>(["crumbs", "popsicle", "leaves"]);
 const DECOR_KINDS = new Set<string>(["petal_red", "petal_black", "dewdrop", "seed"]);
 

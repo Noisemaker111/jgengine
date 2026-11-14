@@ -289,6 +289,8 @@ export interface CampaignStep {
   hostiles: readonly string[];
   /** Whether the black-ant wave director musters during this mission. */
   waves: boolean;
+  /** Whether the paper wasp nest sends sorties during this mission. */
+  wasps: boolean;
   /** Which of the yard's clocks run during this mission. */
   hazards: HazardToggles;
 }
@@ -308,6 +310,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     brief: "A popsicle fell from the sky and the whole lawn can smell it. Dig a Barracks Chamber, hatch four Soldiers, and stand the Marshal on the sugar. Watch the sprinkler.",
     hostiles: [...STANDING_RAID, ...BROOD_GUARD, ...CROSSING_GUARD, ...QUEEN_GUARD],
     waves: false,
+    wasps: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
   },
   {
@@ -315,6 +318,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     brief: "The garden hose runs across the lawn like a river of green rubber. Climbing it is a crawl; the two crossings are not, and the black ants hold both. Break one, or climb where they are not looking.",
     hostiles: [...CROSSING_GUARD, ...BROOD_GUARD],
     waves: false,
+    wasps: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
   },
   {
@@ -322,6 +326,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     brief: "Saturday morning. The black ants are coming, the clouds are low, and somewhere a mower coughs into life. Hold the nest for two and a half minutes, and nobody stands in the lane.",
     hostiles: [...STANDING_RAID],
     waves: true,
+    wasps: false,
     hazards: { ...NO_HAZARDS, mower: true, rain: true },
   },
   {
@@ -329,6 +334,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     brief: "The black queen's eggs lie in the brood mound past the patio, and her majors guard it. Night is falling and the antennae grow short. March the Marshal there and dig it out.",
     hostiles: [...STANDING_RAID, ...BROOD_GUARD, ...QUEEN_GUARD],
     waves: false,
+    wasps: true,
     hazards: { ...NO_HAZARDS, night: true, sprinkler: true },
   },
   {
@@ -336,6 +342,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     brief: "A giant has come to the lawn with a lens. The spot of light hunts whatever moves in the open. Keep to the shade of the clover and the flowerpot, outlast it, then finish the black ants.",
     hostiles: [...BROOD_GUARD],
     waves: true,
+    wasps: true,
     hazards: { ...NO_HAZARDS, beam: true },
   },
 ];
@@ -523,6 +530,12 @@ export function activeCampaignStep(ctx: GameContext): CampaignStep | null {
 }
 
 /** Whether the Black Ant wave director runs now. A campaign step says so; a free skirmish always does. */
+/** Whether the wasp nest sends sorties now. A campaign step says so; a free skirmish always does. */
+export function campaignWaspsRunning(ctx: GameContext): boolean {
+  const step = activeCampaignStep(ctx);
+  return step === null ? true : step.wasps;
+}
+
 export function campaignWavesRunning(ctx: GameContext): boolean {
   const step = activeCampaignStep(ctx);
   return step === null ? true : step.waves;

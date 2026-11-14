@@ -1126,6 +1126,20 @@
       "meta": {
         "stance": "guard"
       }
+    },
+    {
+      "id": "wasp_nest_1",
+      "kind": "structure",
+      "position": {
+        "x": 23,
+        "y": 0,
+        "z": -37
+      },
+      "label": "Paper wasp nest (fence)",
+      "catalogId": "wasp_nest",
+      "meta": {
+        "clearance": 4
+      }
     }
   ],
   "volumes": [
@@ -2361,6 +2375,16 @@
             "role": "enemy",
             "maxHealth": 90,
             "walkSpeed": 6.2,
+            "scale": 1
+          }
+        },
+        {
+          "id": "wasp_nest",
+          "label": "Paper Wasp Nest",
+          "meta": {
+            "role": "enemy",
+            "maxHealth": 520,
+            "walkSpeed": 0,
             "scale": 1
           }
         }

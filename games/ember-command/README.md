@@ -50,6 +50,11 @@ are what the build does now.
   Idle ants (and black ants) walk out of the mower's lane when it roars; foragers wait at its edge;
   a bitten worker runs for the nest for 4 s. Scouts tag the black ants they sense with marking scent,
   keeping them drawn and on the map for 10 s.
+- **Paper wasp nest.** A papery nest on the far fence launches two wasps at the nearest red forager
+  every 55 s (from 80 s, at most six on the wing) in the skirmish and missions IV and V; dig it out to
+  stop them. Wasps fly over the hose.
+- **Routes.** Ants path on the engine's nav grid: the hose is a wall except at its two crossings and
+  patio stones are climbs a column goes round.
 - **The boss's counter.** The kid follows the biggest knot of red fighters in the open; with the whole
   army in shade he burns the black ants instead.
 - **Readable tells.** The sprinkler hisses and dribbles for 4 s before it sprays; the mower lane flashes

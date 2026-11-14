@@ -18,6 +18,8 @@ export interface CoachFacts {
   night: boolean;
   /** A hostile has been seen by the colony. */
   enemySeen: boolean;
+  /** A wasp is on the wing. */
+  wasps: boolean;
   /** The magnifying glass is in this battle. */
   beam: boolean;
   /** The free skirmish runs no orders card, so the coach names the goal. */
@@ -60,6 +62,11 @@ export const COACH_TIPS: readonly CoachTip[] = [
     id: "night",
     text: "Night shortens every antenna. Scouts (9) on a scent trail and ants on patio stones still see far.",
     when: (f) => f.night,
+  },
+  {
+    id: "wasps",
+    text: "Paper wasps fly over the hose and hunt foragers. Acid Spitters (3) shoot them down; the nest hangs on the far fence.",
+    when: (f) => f.wasps,
   },
   {
     id: "beam",

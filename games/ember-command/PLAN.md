@@ -143,8 +143,12 @@ Genres: strategy. 0/17 proven · 17 missing.
   second adopter appears.
 - Tube and paver studios — a generic `tube` path studio and `slab` volume studio in
   `packages/core/src/scene/` would replace `yardKinds.draw.tsx`.
-- Units walk in straight lines: the hose is a slow zone rather than a true river because there is no
-  RTS path planner over authored obstacles here.
+- A second lawn map: `defineGame` takes one `editorLayers` document and mounts it statically
+  (`packages/shell/src/defineGame.tsx` `authoredSceneOverlay`, and the world's terrain sculpt reads the
+  same document), so a game cannot switch scene documents between battles. The seam is a
+  `scenes: Record<id, EditorDocument>` on `defineGame` plus a runtime selector that remounts the
+  authored scene and re-sculpts the terrain; LAWN ORDER would be the first adopter (a front-yard
+  skirmish map). Not built here.
 
 ## Milestones
 
@@ -153,8 +157,9 @@ Genres: strategy. 0/17 proven · 17 missing.
 - [x] 3. Yard hazards: sprinkler, mower, rain, night, magnifying-glass beam; HUD yard strip and night wash.
 - [x] 4. Campaign: The Popsicle Claim, Crossing the Hose, Mower Day, Raid the Black Queen, The Kid with
   the Magnifying Glass.
-- [ ] 5. Wasp raids get flight lanes over the hose and a nest of their own; scouts mark enemies on the map.
-- [ ] 6. A second lawn (front yard with a sidewalk crack river and a sprinkler grid).
+- [x] 5. Paper wasp nest on the far fence sends sorties at foragers (skirmish, missions IV-V); scouts mark enemies.
+- [ ] 6. A second lawn (front yard with a sidewalk crack river and a sprinkler grid) — blocked on the
+  multi-scene seam named under Gaps.
 
 ## Handoff
 

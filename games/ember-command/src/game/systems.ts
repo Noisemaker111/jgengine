@@ -5,7 +5,8 @@ import { activeJobs, jobProgress, queuedJobs, tick as tickQueue } from "@jgengin
 import { tickUnits } from "./ai/units";
 import { tickTowers } from "./ai/towers";
 import { nextWaveEta, planPhase, tickEnemyWaves } from "./ai/director";
-import { noteCampaignBuild, noteCampaignTrain, tickCampaign, campaignWavesRunning } from "./campaign";
+import { noteCampaignBuild, noteCampaignTrain, tickCampaign, campaignWaspsRunning, campaignWavesRunning } from "./campaign";
+import { tickWaspNest } from "./ai/waspNest";
 import { setupSkirmish } from "./world/scene";
 import { enemyDrawn, refreshSight, sightRadiusFor, type SightSource } from "./fog";
 import { holdFormation } from "./formations";
@@ -97,6 +98,15 @@ const enemyAiSystem: SystemDefinition = defineSystem({
   update(ctx, dt) {
     // A campaign mission decides whether the drums roll; a free skirmish always does.
     if (matchRunning() && campaignWavesRunning(ctx)) tickEnemyWaves(ctx, dt);
+  },
+});
+
+/** The paper wasp nest: sorties at the red foragers on a timer, while it stands and the battle runs it. */
+const waspSystem: SystemDefinition = defineSystem({
+  id: "ember-command.wasps",
+  tick: { type: "interval", every: 0.5 },
+  update(ctx) {
+    if (matchRunning() && campaignWaspsRunning(ctx)) tickWaspNest(ctx);
   },
 });
 
@@ -384,6 +394,7 @@ function coachFacts(): CoachFacts {
     enemySeen,
     skirmish: hud.campaign === null,
     beam: session.hazards.toggles.beam,
+    wasps: session.waspNest.wing.length > 0,
   };
 }
 
@@ -509,6 +520,7 @@ export const systems: readonly SystemDefinition[] = [
   aiSystem,
   formationSystem,
   enemyAiSystem,
+  waspSystem,
   fogSystem,
   heroSystem,
   productionSystem,
