@@ -10,7 +10,7 @@ import { councilAdd, councilScale, type CouncilStat } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";
 import { towerDef, voiceLine, type TowerDef } from "../entities/towers/catalog";
 import { keep, towerStats, type TowerStats } from "../keep";
-import { gameClockMs, session, type WorkerClock } from "../session";
+import { gameClockMs, say, session, type WorkerClock } from "../session";
 import { roadProgress, routeOf } from "../world/path";
 import { canHurt, type DamageType } from "./damage";
 import { pushProjectile } from "./pendingProjectiles";
@@ -113,7 +113,7 @@ export function speak(ctx: GameContext, towerId: string, kind: string, moment: "
   session.voiceSeq += 1;
   const line = voiceLine(kind, moment, session.voiceSeq);
   if (line === "") return;
-  ctx.scene.entity.floatText({ instanceId: towerId, text: `"${line}"`, element: moment === "distracted" ? "frost" : "holy", scale: 0.85 });
+  say(towerId, line, "voice", ctx.time.now());
 }
 
 /** Everything one hit does to the tech it lands on, beyond its damage. */
@@ -225,7 +225,8 @@ function confiscate(ctx: GameContext, towerId: string, at: EntityPosition, stats
   }
   if (pick === null) return false;
   const creep = session.creeps.get(pick.id)!;
-  ctx.scene.entity.floatText({ instanceId: towerId, text: "\"Phones. Away. Now.\"", element: "holy", scale: 0.9 });
+  say(towerId, "Phones. Away. Now.", "voice", ctx.time.now());
+  ctx.scene.entity.floatText({ instanceId: pick.id, text: "Confiscated!", element: "holy" });
   ctx.scene.entity.vfx({ preset: "shield", to: [pick.position[0], pick.position[1] + 0.6, pick.position[2]], radius: 1, durationMs: 500 });
   payBounty(ctx, creep.catalogId, creep, stats.income);
   removeCreep(ctx, pick.id);
@@ -246,7 +247,7 @@ function reboot(ctx: GameContext, towerId: string, at: EntityPosition, stats: To
   creep.path = createPathFollow({ waypoints: routeOf(creep.route), speed: def.speed });
   creep.installing = 0;
   if (stats.wipe > 0) creep.updated = false;
-  ctx.scene.entity.floatText({ instanceId: towerId, text: "\"Have you tried turning it off and on again?\"", element: "holy", scale: 0.85 });
+  say(towerId, "Have you tried turning it off and on again?", "voice", ctx.time.now());
   ctx.scene.entity.floatText({ instanceId: pick.id, text: "Rebooting…", element: "lightning" });
   return true;
 }
@@ -257,7 +258,7 @@ function ceaseAndDesist(ctx: GameContext, towerId: string, at: EntityPosition, s
   if (pick === null) return false;
   hold(pick, stats.cease_ms);
   ctx.scene.entity.floatText({ instanceId: pick, text: "CEASE & DESIST", crit: true });
-  ctx.scene.entity.floatText({ instanceId: towerId, text: "\"See you in court.\"", element: "holy", scale: 0.85 });
+  say(towerId, "See you in court.", "voice", ctx.time.now());
   return true;
 }
 
@@ -386,6 +387,10 @@ export function tickTowers(ctx: GameContext, dt: number): void {
       }
       if (stats.chain > 0) chain(volley, primary, pool);
     }
+    // The worker throws: their model plays its attack one-shot (a punch or a throw from the pack).
+    ctx.game.playEntityAnimation(tower.id, "attack");
+    const aimAt = ctx.scene.entity.get(primary)?.position;
+    if (aimAt !== undefined) ctx.scene.entity.setPose(tower.id, { position: entity.position, rotationY: Math.atan2(aimAt[0] - entity.position[0], aimAt[2] - entity.position[2]) });
     if (clock.voice <= 0) {
       speak(ctx, tower.id, tower.kind, "fire");
       clock.voice = VOICE_GAP + (shot % 5);

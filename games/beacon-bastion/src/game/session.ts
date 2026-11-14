@@ -74,6 +74,21 @@ export const WORKER_STATUSES: readonly StatusDef[] = [
   { id: "overheated", stack: { kind: "refresh" }, durationMs: 600 },
 ];
 
+/** A speech bubble over a worker or a piece of tech: a voice line, or a notification's ping. */
+export interface SpeechBubble {
+  id: number;
+  /** The entity it hangs over. */
+  at: string;
+  text: string;
+  /** A worker speaking, or a gadget pinging. */
+  kind: "voice" | "ping";
+  /** Game seconds it was said at. */
+  born: number;
+}
+
+/** How long a bubble stays up, in game seconds, and how many may be up at once. */
+export const BUBBLE_RULE = { seconds: 2.8, max: 7 } as const;
+
 /** A worker's own clocks: when each job's ability is next ready, and when they last spoke. */
 export interface WorkerClock {
   /** Seconds until a Teacher confiscates, an IT Guy reboots or a Lawyer files again. */
@@ -117,6 +132,8 @@ export interface SessionState {
   voiceSeq: number;
   /** Onboarding tips already shown this day. */
   tipsShown: Set<string>;
+  /** Speech bubbles up over the street, oldest first. */
+  bubbles: SpeechBubble[];
   /** Blackout and Do Not Disturb. */
   abilities: AbilityKit;
   /** The ability waiting for a click on the field, if one is armed. */
@@ -150,6 +167,7 @@ function freshState(): SessionState {
     waveClock: 0,
     voiceSeq: 0,
     tipsShown: new Set(),
+    bubbles: [],
     abilities: createAbilityKit(ABILITIES.map((ability) => ({ id: ability.id, cooldownMs: ability.cooldownMs, castType: ability.castType }))),
     armedAbility: null,
     falling: [],
@@ -167,6 +185,13 @@ export function resetSession(): void {
   session.statuses.dispose();
   session.workers.dispose();
   session = freshState();
+}
+
+/** Put a bubble over an entity; one per speaker, and the oldest go when the street gets chatty. */
+export function say(at: string, text: string, kind: SpeechBubble["kind"], nowSeconds: number): void {
+  session.bubbles = session.bubbles.filter((bubble) => bubble.at !== at && nowSeconds - bubble.born < BUBBLE_RULE.seconds);
+  session.bubbles.push({ id: session.voiceSeq * 1000 + session.bubbles.length, at, text, kind, born: nowSeconds });
+  if (session.bubbles.length > BUBBLE_RULE.max) session.bubbles.splice(0, session.bubbles.length - BUBBLE_RULE.max);
 }
 
 export function nextCreepInstanceId(): string {

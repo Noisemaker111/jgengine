@@ -24,6 +24,7 @@ import { session } from "../session";
 import { towerDef } from "../entities/towers/catalog";
 import { editorLayers } from "../../editorLayers";
 import { WORKER_HEIGHT } from "../models";
+import { speechBubblesDraw } from "../render/speechBubbles";
 import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
@@ -431,6 +432,11 @@ function workerStatusDraw(ctx: GameContext): EngineDraw {
   };
 }
 
+function SpeechBubbles() {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => speechBubblesDraw(ctx)} deps={[ctx]} />;
+}
+
 function WorkerStatus() {
   const ctx = useGameContext();
   return <EngineDrawMount create={() => workerStatusDraw(ctx)} deps={[ctx]} />;
@@ -448,6 +454,7 @@ export function BeaconBastionWorldOverlay() {
       <BuildSites />
       <InspectedTower />
       <WorkerStatus />
+      <SpeechBubbles />
       <ProjectileBolts />
     </>
   );

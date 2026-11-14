@@ -6,7 +6,7 @@ import { editorLayers } from "../../editorLayers";
 import { creepDef, type CreepDef } from "../entities/enemies/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { keep, towerStats } from "../keep";
-import { session, type CreepRuntime } from "../session";
+import { say, session, type CreepRuntime } from "../session";
 import { speak } from "./towerAI";
 import { tip } from "../tips";
 
@@ -71,7 +71,10 @@ export function distract(ctx: GameContext, worker: Worker, seconds: number, ping
   const already = session.workers.has(worker.id, "distracted");
   session.workers.apply(worker.id, "distracted", { durationScale: seconds * scale });
   ctx.scene.entity.floatText({ instanceId: worker.id, text: ping, element: "frost" });
-  if (!already) speak(ctx, worker.id, worker.kind, "distracted");
+  if (!already) {
+    speak(ctx, worker.id, worker.kind, "distracted");
+    ctx.game.playEntityAnimation(worker.id, "hit");
+  }
   tip(ctx, "distracted");
   return true;
 }
@@ -109,7 +112,7 @@ export function sendNotification(ctx: GameContext, creep: CreepRuntime, def: Cre
   const ping = def.mesh === "chatbot" ? `"${text}"` : text;
   let landed = 0;
   for (const worker of targets) if (distract(ctx, worker, notify.seconds, ping)) landed += 1;
-  ctx.scene.entity.floatText({ instanceId: creep.instanceId, text, element: "frost", scale: 0.9 });
+  say(creep.instanceId, text, "ping", ctx.time.now());
   if (notify.area === true) ctx.scene.entity.vfx({ preset: "shockwave", to: [at[0], at[1] + 0.6, at[2]], radius: notify.range, durationMs: 500, color: 0x3ae0ff });
   return landed;
 }
