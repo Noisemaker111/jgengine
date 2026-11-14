@@ -1,55 +1,53 @@
 # Art direction
 
-A municipal salvage shift inside a sealed industrial vault. Marrow's receiving rail is the safe, legible home; Bellwether's corridors feel worked, patched and abandoned. The Fitter is recognizable machinery, never a fantasy monster. Dark corridors, pools of lamp light, cyan rail gear and amber warnings.
+A family home at night, seen by someone an inch tall. The furniture is landscape: a chair leg is a
+tree trunk, the kitchen counter is a granite plateau sixty times your height, the coffee table is a
+roof over a red woven plain. It is cozy and it is dangerous at the same time: warm lamp pools and the
+moon through the window, and two green eyes in the dark.
 
 ## Reference images
-- Alien: Isolation for worn, chunky, analogue industrial interiors lit by practical lamps.
-- Prey (2017) Talos I engineering decks for patched municipal machinery and signage.
-- Hunt: Showdown's grade for heavy shadow and warm lamp pools.
-- Film: *Alien* (1979) Nostromo corridors: steam, grilles, colour-coded service markings.
+- *Arrietty* (Studio Ghibli) for the Littles' scale, their improvised gear and the cozy wall burrow.
+- *It Takes Two* (the giant-household chapters) for furniture as level geometry.
+- *Grounded* for small-scale threat readability: a spider is a monster at this size.
+- *The Borrowers* illustrations for found-object craft: thimbles, spools, matchboxes, buttons.
 
 ## World palette
-- `#0b171b` vault black: unlit space, fog, the edge of the lamp pool.
-- `#34444b` deck slate: floors and lower walls.
-- `#82918b` worn steel: machinery, rails, frames.
-- `#cca46c` brass: fittings, salvage marks, stash hardware.
-- `#84e8d0` rail cyan: rail equipment, route markers, safe lamps.
-- `#eab379` warning amber: hazards, prompts, oxygen alarms.
-- `#ee7361` danger red: the Fitter's optics, critical states.
+- `#1a120d` night cocoa: fog, unlit space, the edge of every lamp pool.
+- `#b07a45` oak and `#5c3b22` dark oak: floors, chair legs, shelves.
+- `#efe4cf` cream enamel: cabinets, baseboards, appliances.
+- `#8e3b2e` faded rug red and `#5f6f8a` carpet blue: the big soft plains.
+- `#f2c46d` candle gold: the burrow, UI accents, prompts and way-out markers' warm doors.
+- `#7dffb0` exit green: ways out of the house.
+- `#d7ff5e` cat-eye green and `#ff7a5c` danger red: hunters and harm.
 
 ## Material language
-- Characters: the original Deepward rigs only (the Fitter and the service weapons in `public/models/imported/deepward/`). The fauna ("hand", "courier", tank-crawler) are authored as rigged GLBs in the same pipeline and proportion as the Fitter; no library humans, no KayKit or Quaternius stand-ins.
-- Environment: the original Deepward machinery GLBs (rotary press, salvage printer, ink recovery, stash cabinet, service desk, receiving portal, rail transfer) plus library `industrial/*` clutter.
-- Surfaces: ambientCG scans as today: `PaintedMetal006` walls, `DiamondPlate005A` and `MetalPlates001` decks, `Rust007` on Bellwether, `Concrete025` in shafts, `Terrazzo005` in Marrow's office.
-- No primitive props: the box and cylinder architecture in `src/game.tsx`, `stationArt.tsx` and `strataArt.tsx` becomes modular authored wall, column, pipe and gantry GLBs.
+- Everything is original procedural geometry built from the editor scene's authored volumes, with
+  canvas-painted detail (wood grain, tile grout, rug weave, carpet pile, cardboard flutes) projected
+  in world space so a chair leg and a floorboard share one grain at giant scale. No model downloads,
+  never Kenney.
+- Finds are small original meshes at true size beside a Little: a sugar cube is knee-high, a coin
+  is a millstone, a needle is a spear.
+- Hunters are chunky readable bodies: the Cat's glowing eyes and swishing tail, the Roomba's blue
+  LED and spinning brush, the spider's red eyes and floor web, the dog's collar and floppy ears.
 
 ## Lighting mood
-- No sky. Darkness is the default; every lit area has a visible lamp.
-- Key: practical lamps per floor (vault `#a4ded2`, cold `#bcd8ff`, wells `#c9b8e6`, choir `#ff6a52`). Fill: a dim cool hemisphere at a third of today's 0.72 ambient.
-- Fog `#0b171b`, near 12, far 48, with volumetric beams under each lamp.
-- HDRI: Poly Haven `industrial_pipe_and_valve_01` for reflections only, intensity 0.25.
-- LUT grade "cold teal": shadows `#0e2a30`, midtones `#7f9a96`, highlights `#ffd9a0`, saturation 0.92, contrast 1.18, tint 0.4. Warm highlights keep amber and brass alive.
+- Night everywhere: low warm ambient, cool moon hemisphere, and per-room practicals (nightlights,
+  oven clocks, a porch light through the mail slot, the TV standby LED). When someone gets up for
+  water the big light snaps on and every hunter can see further. At dawn every light is on.
+- Fog `#1f1510`, near 40, far 210. Bloom catches lamp beads, cat eyes and the candle torch.
+- Grade: `warm-filmic` LUT, ACES, vignette 0.34.
 
 ## Silhouette rules
-- The Fitter is tall, asymmetric and top-heavy, with one lit optic; nothing else in the vault has that shape.
-- Fauna are low and wide; the player reads "machine" or "creature" from outline alone.
-- Interactables have a lit edge (cyan for safe, amber for warn) that cuts through the dark.
-- Corridors keep a clear floor line; clutter sits against walls.
+- The Cat is long, low and swishing; the dog is a hill; the Roomba a disc; the spider tiny and
+  many-legged. Each reads from outline alone.
+- Doors on are gold rings; the way back is blue; a way out of the house is green with a tall beacon.
+- Open finds lie in plain sight; hidden ones are a lint pile. Pip's food and Dot's curios glint.
 
 ## UI typography
-- Display: Share Tech Mono (Google Fonts, OFL). Body: Rajdhani (Google Fonts, OFL). Both already ship in `src/art/fonts/`; the `:root` Inter / Segoe UI stack goes.
-- HUD kit: `terminal`, accent `#e2bd6e` brass amber.
+- Display: Fredoka (OFL). Body: Nunito (OFL). Both from the engine font library.
+- Rune UI, cocoa panels with candle-gold actions, rounded 12-14 px corners.
 
 ## Chosen look
-- `look: "cinematic"` with no sky (`hasWorldSky` false, interior backdrop), mood `{ preset: "night", fog: { near: 12, far: 48 }, exposure: 0.9, contrast: 1.1 }`.
-- Environment source `{ kind: "hdri", url: <industrial_pipe_and_valve_01>, intensity: 0.25 }`.
-- Post: ACES, bloom 0.18 / threshold 0.9 so lamps glow, AO on, vignette 0.28, the LUT above.
-
-## Pass list
-1. Cut the ambient light to a third and let practical lamps carry every room; fog in close.
-2. Set the night mood, the reflection HDRI and the cold teal LUT.
-3. Replace the box and cylinder architecture with modular authored walls, columns, pipes and gantries.
-4. Author the three fauna as rigged GLBs; retire the sphere and cylinder creatures.
-5. Re-skin pale walls and floors with the ambientCG metal and concrete scans, with grime on Bellwether.
-6. Add steam, drips and sparks from damaged machinery; flicker on Bellwether lamps.
-7. Stencil large floor and wall markings (line numbers, hazard chevrons) as decals.
+- `look: "cinematic"`, mood night, fog 40-210, exposure 1.05.
+- Reflection HDRI `night-clear` at 0.18; post ACES, bloom 0.32 / threshold 0.82, AO, vignette 0.34,
+  LUT `warm-filmic`.

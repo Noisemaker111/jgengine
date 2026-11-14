@@ -1,9 +1,13 @@
-# Deepward Rune primitives
+# Crumb Run plan
 
-Jon's latest direction: Rune-native game UI with a high-level composition API.
-No finished widgets or screens in the new engine API; no game DOM, CSS, React or
-Solid. Deepward owns its screens and look. Old-UI pixel parity and the UI-kit plan
-are superseded. All work stays in PR #3117, landing after #3108.
+Brief: "First-person extraction game. You're one of the Littles — people an inch tall who live in the
+walls of a family home. Each run you slip out of a crack in the baseboard into a giant house,
+scavenge, and extract before you're caught." Direction update: "people with different things they
+can find, room after room procedural, cool things to pick up, extraction based per run."
+
+The package id stays `deepward`; the game is Crumb Run. Deepward's Rune UI architecture (native JSX
+on `@jgengine/core/ui/rune`, game-owned screens, the shared menu flow, save slots, notices) is kept:
+this game is still the engine's Rune UI testbed.
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 ## Suite score
@@ -13,25 +17,25 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
 | onboarding | 0/2 | 0 | 0 | 2 | 0 |
-| failure | 0/1 | 0 | 0 | 1 | 0 |
-| save | 0/1 | 0 | 0 | 1 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 0 | 0 | 1 | 0 |
 | content | 0/5 | 0 | 0 | 5 | 0 |
-| extraction | 0/4 | 0 | 0 | 4 | 0 |
-| **total** | **0/16** | 0 | 0 | 16 | 0 |
+| extraction | 4/4 | 0 | 0 | 0 | 0 |
+| **total** | **6/16** | 0 | 0 | 10 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: extraction. 0/16 proven · 16 missing.
+Genres: extraction. 6/16 proven · 10 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | missing | A new game shows a first goal, and the first player action toward it advances it. |  |
 | `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
-| `failure.lose-and-recover` | missing | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. |  |
-| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/caught.proof.ts |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
@@ -40,100 +44,97 @@ Genres: extraction. 0/16 proven · 16 missing.
 | `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
 | `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
 | `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
-| `extraction.enter-run` | missing | Go into a run with chosen gear. |  |
-| `extraction.carry-limit` | missing | What can be carried out is limited by space or weight. |  |
-| `extraction.extract-bank` | missing | Reaching an exit banks what was carried. |  |
-| `extraction.die-lose-carried` | missing | Dying in a run loses what was carried. |  |
+| `extraction.enter-run` | proven | Go into a run with chosen gear. | proofs/sim/enter-run.proof.ts |
+| `extraction.carry-limit` | proven | What can be carried out is limited by space or weight. | proofs/sim/carry-limit.proof.ts |
+| `extraction.extract-bank` | proven | Reaching an exit banks what was carried. | proofs/sim/extract-bank.proof.ts |
+| `extraction.die-lose-carried` | proven | Dying in a run loses what was carried. | proofs/sim/caught.proof.ts |
 
 </details>
 <!-- /suite-score -->
 
-## Shared owners
+## Direction
 
-Native JSX, layout, bindings and input: `packages/core/src/ui/rune/` and
-`native/crates/jg-ui/src/native.rs`. Flow uses `dialog/modalStack.ts`; pause and
-capture use `game/controlGate.ts` and the simulation clock. Transient records
-reuse the existing notice feed. Settings use the existing controller; records,
-stash, fabricator and cache keep their game commands and persistence.
+- **Genre and references.** First-person extraction (*Escape from Tarkov*'s way-out tension and
+  grid packing), giant-household scale (*Arrietty*, *It Takes Two*, *Grounded*), roguelite room
+  chains (*Spelunky*, *Hades*' door previews).
+- **Player promise.** Every night the house is different, and every door is a bet: go one room
+  deeper for better finds, or get home with what you have before the Cat, the Roomba or the dawn.
+- **Pillars.** Scale you can feel (furniture as cliffs, finds you hug with both arms). A house that
+  hunts by sound and sight, with tells you can read. Choices about what to carry.
+- **Anti-pillars.** No combat power fantasy (the needle stings, it does not kill a cat). No grind
+  wall: every run banks something unless you are caught.
+- **Falsifier.** If players stop deciding at doors (always deepest, or always straight home), the
+  depth curve is wrong.
+- **Done.** From a new burrow: run, extract, build the larder and map room, chart the kid's bedroom,
+  unlock Wren, and bring home a full set.
+
+## Design brief
+
+- **Core loop (30 s).** Enter a room, read the hunters, sneak to a spot, rummage, decide: on, back,
+  or out.
+- **Session loop (one run, 3-7 min).** Slip out at 3 AM, go room after room through doors, cables,
+  climbs and drops, fill the pack, extract through a way out before dawn (6 AM) or be caught.
+- **Long loop (hours).** Bank finds, build the burrow (workbench, larder, map room, satchel loft,
+  trophy shelf), craft gear, chart new zones (kid's bedroom, garage, attic), move in new Littles,
+  complete the five sets.
+- **Second 0.** You stand in the burrow facing the glowing crack; E slips you out. The first verb is
+  "go", because the house is the game.
+- **Onboarding.** The burrow card always shows the next goal (`nextGoal`), prompts name every verb,
+  doors read what they are ("Climb the drawer pulls"), and the first room is never deep.
+- **Pace.** Something new every run in the first hour: a new room template, a new hunter, a new
+  find; an upgrade every one to two runs.
+
+### First 10 minutes
+- 0:00 Burrow; the goal card says slip out. E at the crack.
+- 0:20 Under the kitchen cabinets: crumbs by the cat bowl, a tea towel to hide under. First find.
+- 1:30 First door: the drawer pulls up to the counter, or the gap under the pantry door.
+- 2:30 First hunter (the Cat on the counter, a mousetrap in the pantry). The noticed meter teaches sneaking.
+- 4:00 Back through the crack with three or four things: first extraction, caps and stash.
+- 5:00 Workbench: build the larder (two crumbs and a raisin) or save for the map room.
+- 6:00 Second run as Bolt: traps show, disarm one for a spring.
+- 8:30 A two-handed cheese cube: slow, no running, worth it?
+
+### Start state
+`home: 1, caps: 0, stash: 0, littles: 2, zones: 2, upgrades: 1`.
+
+### Content budget
+12 room templates in 5 zones plus the burrow; 37 item kinds (8 food, 9 parts, 11 curios, 7 gear,
+bottle caps) in 5 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights);
+6 connector kinds; 4 exit kinds; 5 burrow upgrades, 5 recipes, 3 charts.
+
+### Systems
+- Procedural house (`runGen.ts`): probe `depth`, `rooms`, `deepest`.
+- Threats (`threats.ts`): probe `threats`, `hunting`.
+- Pack and haul (`state.ts`, `haul.ts`): `carried`, `packMass`, `packRoom`.
+- Burrow (`burrow.ts`): `caps`, `stash`, `upgrades`, `zones`, `littles`, `sets`.
+- Night clock: `elapsed`, `dawn`.
+
+## Features
+
+- Procedural room chain — game-local `src/game/runGen.ts` over `crumb-room` templates in `editor.scene.json` [gap: no engine room-graph generator; this is the first adopter].
+- Seeded randomness — `@jgengine/core/random/rng` (`hashUnit`).
+- Loot rolls, rarity and affixes — `@jgengine/core/loot/lootGen`, `loot/drop`.
+- Run boundary — `@jgengine/core/run/sessionLoop`; haul bank/fail — `@jgengine/core/loot/haul`.
+- Trade ledger — `@jgengine/core/loot/salvage`.
+- Save documents and slots — `@jgengine/core/save/saveDocument`, `save/saveSlots`.
+- UI — `@jgengine/core/ui/rune` primitives, `dialog/modalStack`, settings controller.
+- Movement — shell first-person rig with `movement.beforeCommit` and `canSprint`.
+
+## Gaps
+
+- Seeded room-graph generator over authored templates: candidate `packages/core/src/generator/roomGraph.ts`; Crumb Run is the first adopter, lift it when a second game needs rooms-from-templates.
+- Small-creature hunter behaviours (stalk by sound, pounce, schedule sweeps) are game-local in `threats.ts`; the engine's `ai/temperament` + `sensor/perception` could host them when a second adopter appears.
 
 ## Milestones
 
-- [x] Publish the design, types and examples at the top of #3117 before implementation.
-- [x] Native layout, anchors, responsive overrides, all visual property bindings,
-  keyed sources, formatting, command actions, focus/navigation, holds, drag/drop,
-  hover/tooltips, flow leases/transitions, transient/world presentation and themes.
-- [x] Replace Deepward's old HUD and menu composition. Keep only game presentation
-  and game-specific panels. Delete new engine meters, dial, slider, settings screen
-  and HUD wrappers introduced by the earlier plan.
-- [x] Update the UI skill with the primitives and a page-sized game example.
-- [x] Inspect desktop/phone headless PNGs of title, settings and HUD; repair phone
-  reticle overlap and split action labels. These show native UI, without a 3D scene.
-- [x] Linux generation, focused types/tests, Rust verification and rebuilt wasm.
-- [x] Final broader Linux gate and record the passing receipt.
-- [ ] PC acceptance: run the real controls and settings, confirm idle draw submissions
-  stop, and measure production UI CPU/GPU cost. No cost claim before this step.
-- [x] Rebase onto beta after #3108 merged (base `9705d9352`).
-- [ ] Land once through `bun run lane:close` after PC acceptance.
+- [x] 1. Core loop: burrow, procedural rooms, finds, pack, extraction through the crack, caught screen, save.
+- [x] 2. Six Littles with distinct senses and finds; gear that works from the pack; sets; burrow upgrades, crafting, charts.
+- [x] 3. Threats with tells (Cat wiggle, Roomba whirr, dog bark, kid looking, lights on), dawn clock, varied exits.
+- [ ] 4. Polish rounds: playtested balance, more templates per zone, juice, from-zero flow and suite proofs.
 
-## Evidence
+## Handoff
 
-The previous implementation had 728 UI TSX lines (excluding tests); the primitives
-rewrite has 372. Count all `src/game/ui/**/*.tsx` files, including the game theme
-and specialised panels. Source size also falls from 57,323 to 35,882 bytes (37%).
-Pixel parity is not a goal.
-
-Six inspected PNGs live in `proofs/rune-primitives/`: title, settings and dive at
-1280×720 and 390×844. The settings fixture contains deterministic controller rows;
-it does not prove the real controller's complete categories or persistence.
-
-Focused tests cover live colors/fractional sizes/text without component renders,
-keyed identity, responsive safe bounds, projection visibility, command invocation,
-rich/localised text, native gestures, holds, navigation and nested flow ownership.
-The hold regression was deliberately introduced: its early-release test failed,
-then passed after restoration. Rust proves atomic addressed patches, sibling
-revision isolation and no further commits, motion or wakes after a native UI settles.
-The actual GPU submission counter still requires the PC.
-
-## PC acceptance brief
-
-Use branch `agent/rune-native-ui`, PR #3117, rebased onto beta after #3108 merged.
-Do not bring back CSS, a DOM host or finished widgets.
-
-Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. The flow
-captures title/settings/HUD and checks that `window.__jgNativeUi.stats().frames`
-stops after settings settles. Exercise a real setting, category and key rebind;
-start/continue, pause/resume, save/load, credits, stash, cache move/rotate/drag/drop,
-fabrication, reprint and save-failure boundaries. Check mouse, keyboard, pad and
-touch gestures where the game permits them. The host has no Owl/GPU/Chrome.
-
-Use `--device desktop --width 1280 --height 720` and
-`--device mobile --width 390 --height 844` for the two flow runs.
-
-Measure one production round of UI CPU/GPU cost against the React baseline
-`d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` using the existing perf harness. Attribute
-UI work separately; a total frame-time number is insufficient. No pixel matching.
-Record the numbers and method in #3117, then run `lane:close` after acceptance.
-
-## Linux verification state
-
-Focused TypeScript tests and core/UI/Deepward types pass. Rust passes all 31 tests.
-The production wasm was rebuilt from the rebased source. Generation passed all
-12 stages. `verify:fast --landing --jobs 4` passed under task-local Bun 1.4.2,
-matching CI without changing the host install. Receipt:
-`.scratch/verify-fast/runs/0947c4f1-3550-4e99-b94e-aa98eafb559e/receipt.json`.
-It proves source head `735f8b739`: 814 selected test files, 24 type checks,
-15 gates, beacon-bastion/Deepward boot probes and the site build. It took 957.3s;
-373 unchanged units reused prior passing results. This is the landing scope,
-not a claim that every CI-only check ran. Subsequent edits record evidence only.
-
-The gate exposed old test timing races. Gamepad taps now last one sample, held
-input releases in the observing browser task, and the lock fixture timestamps
-the unlock boundary before releasing. Menu, landing and browser helper tests
-pass eight repeated runs together with four workers.
-
-Removing legacy UI from Deepward reclassified 18 formerly shared chunks
-(138.774 KiB) under the nine DOM games. The bundle budget transfers 139 KiB
-from the engine (1920 to 1781) to each remaining game. Every engine-plus-game
-ceiling is unchanged; Deepward's falls. The bundle check passes without changing
-the check or increasing total download allowances. No frame-performance baseline
-was changed. Earlier incomplete receipts do not override this passing receipt.
+Done: the whole game layer is replaced (see README). Tests: `bun run test` in the package (8 files).
+Next: screenshot-driven polish of lighting and props per template, a from-zero flow in
+`proofs/flows/`, suite proofs in `proofs/sim/`, and more templates (bathroom sink, laundry basket,
+dining table) so each zone has two or more rooms.

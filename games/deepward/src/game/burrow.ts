@@ -81,17 +81,30 @@ export function packOf(satchel: number): { w: number; h: number; weight: number 
 /** Well fed bonus health at a larder level. */
 export function wellFed(larder: number): number { return larder >= 2 ? 50 : larder >= 1 ? 25 : 0; }
 
-/** The burrow's next suggestion, in the order a new player meets things. */
-export function nextGoal(home: { extractions: number; upgrades: Record<UpgradeId, number>; zones: readonly Zone[]; sets: readonly string[] }): string {
-  if (home.extractions === 0) return "First run: slip out through the crack, grab whatever you can carry, and come back the way you came.";
-  if (home.upgrades.larder === 0) return "Build the larder at the workbench (two crumbs and a raisin): every run starts well fed.";
-  if (home.upgrades.mapRoom === 0) return "Build the map room (a paperclip and a watch battery): read the rooms behind each door, and Wren moves in.";
-  if (home.zones.length < 3) return "Chart the kid's bedroom at the workbench with a crayon stub. Toys, marbles and a sleeping giant.";
-  if (home.upgrades.satchel === 0) return "Build the satchel loft for a bigger pack.";
-  if (home.sets.length === 0) return "Bring a whole set home in one run (the stash lists them) for a big bonus, and Dot moves in.";
-  if (home.zones.length < 5) return "Chart the garage and the attic. The deeper the room, the better the treasure.";
-  return "Go deeper. Six rooms in and out again, and Old Fennel moves in.";
+const GOALS = [
+  "First run: slip out through the crack, grab whatever you can carry, and come back the way you came.",
+  "Build the larder at the workbench (two crumbs and a raisin): every run starts well fed.",
+  "Build the map room (a paperclip and a watch battery): read the rooms behind each door, and Wren moves in.",
+  "Chart the kid's bedroom at the workbench with a crayon stub. Toys, marbles and a sleeping giant.",
+  "Build the satchel loft for a bigger pack.",
+  "Bring a whole set home in one run (the stash lists them) for a big bonus, and Dot moves in.",
+  "Chart the garage and the attic. The deeper the room, the better the treasure.",
+  "Go deeper. Six rooms in and out again, and Old Fennel moves in.",
+] as const;
+type GoalHome = { extractions: number; upgrades: Record<UpgradeId, number>; zones: readonly Zone[]; sets: readonly string[] };
+/** Which step of the burrow's guidance a home is on: 0 is the very first run. */
+export function goalStep(home: GoalHome): number {
+  if (home.extractions === 0) return 0;
+  if (home.upgrades.larder === 0) return 1;
+  if (home.upgrades.mapRoom === 0) return 2;
+  if (home.zones.length < 3) return 3;
+  if (home.upgrades.satchel === 0) return 4;
+  if (home.sets.length === 0) return 5;
+  if (home.zones.length < 5) return 6;
+  return 7;
 }
+/** The burrow's next suggestion, in the order a new player meets things. */
+export function nextGoal(home: GoalHome): string { return GOALS[goalStep(home)]!; }
 
 /** What the burrow has done, for the nook's move-in rules. */
 export interface Milestones { mapRoom: number; bulkyBanked: number; setsBanked: number; deepestExtraction: number }

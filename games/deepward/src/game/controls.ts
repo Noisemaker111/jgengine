@@ -9,11 +9,11 @@ import { BURROW, DEPART, groundDistance, HOME_SPAWN, inCover, NOOK, STASH, WORKB
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
 import { defOf, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
-import { CHARTS, missing, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
+import { CHARTS, goalStep, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
 import { canCarry, loadOf } from "./haul";
 import { planRoom, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
 import { jab, spawnThreat, tickThreats, webDrag, type ThreatEvent, type ThreatState } from "./threats";
-import { openRecord, recordProfile, type RecordSession, type RunSnapshot } from "./save";
+import { openRecord, recordProfile, type RecordSession, type RunSnapshot, type StoragePort } from "./save";
 
 export const keybinds: ActionCodesMap = {
   moveForward: ["KeyW", "ArrowUp"], moveBack: ["KeyS", "ArrowDown"],
@@ -39,6 +39,8 @@ const runtime = perContext(() => ({
   save: null as RecordSession | null, ready: false, boot: Promise.resolve(),
   writes: Promise.resolve() as Promise<void>, writing: false,
   aim: [0, 0, -1] as Point, last: null as Point | null, pebble: null as Point | null, checkpoint: 0,
+  /** Finds the pack turned away (too heavy, no square): the carry limit at work. */
+  refusals: 0,
 }));
 const BED_GAIN = 0.4;
 const message = (e: unknown): string => e instanceof Error ? e.message : String(e);
@@ -299,7 +301,7 @@ function interact(ctx: GameContext): void {
   const run = v.run;
   if (run === null) return;
   if (run.channel !== null) { viewStore.update(ctx, s => ({ ...s, run: s.run === null ? null : { ...s.run, channel: null }, hint: "Stopped." })); return; }
-  const deny = (text: string) => { ctx.game.notices.push({ text, tone: "deny" }); viewStore.update(ctx, s => ({ ...s, hint: text })); };
+  const deny = (text: string) => { runtime(ctx).refusals += 1; ctx.game.notices.push({ text, tone: "deny" }); viewStore.update(ctx, s => ({ ...s, hint: text })); };
   const channel = (kind: NonNullable<Run["channel"]>["kind"], id: string, seconds: number, hint: string) =>
     viewStore.update(ctx, s => ({ ...s, run: s.run === null ? null : { ...s.run, channel: { kind, id, remaining: seconds, total: seconds, anchor: at } }, hint }));
   switch (act.type) {
@@ -520,6 +522,9 @@ export function registerControls(ctx: GameContext): void {
   registerBurrow(ctx);
   ctx.game.commands.define("deepward.depart", { apply: (state) => { void begin(state); return state; } });
   ctx.game.commands.define("deepward.enter", { apply(state) { enterFromTitle(state); } });
+  // The pause menu's "Save" and the title's "Continue", as commands a test or a pad can reach.
+  ctx.game.commands.define("deepward.saveRecord", { apply(state) { void persistRecord(state).catch(() => { /* the menu shows the error */ }); return state; } });
+  ctx.game.commands.define("deepward.continue", { apply(state) { void resumeRecord(state); return state; } });
   if (import.meta.env?.DEV) {
     ctx.game.commands.define("deepward.stage", { apply(state) { void stageMidRun(state); return state; } });
     ctx.game.commands.define<{ x: number; z: number }>("deepward.dev.stand", { apply(state, input) { teleport(state, [input.x, 0, input.z]); } });
@@ -591,12 +596,26 @@ export function initialize(ctx: GameContext): void {
   ctx.game.audio.setLoop("bed", { gain: BED_GAIN });
   runtime(ctx).boot = boot(ctx);
 }
+/**
+ * The browser's storage; or, where there is none (a headless run), one in-memory store per host save
+ * backend, so a restarted session on the same host saves finds the burrow it left and a new host
+ * starts empty.
+ */
+const memoryStores = new WeakMap<object, Map<string, string>>();
+const loose = new Map<string, string>();
+function storageOf(ctx: GameContext): StoragePort {
+  if (typeof localStorage !== "undefined") return localStorage;
+  const host = ctx.game.save?.backend;
+  let store = host === undefined ? loose : memoryStores.get(host);
+  if (store === undefined && host !== undefined) { store = new Map(); memoryStores.set(host, store); }
+  const map = store ?? loose;
+  return { getItem: key => map.get(key) ?? null, setItem: (key, value) => { map.set(key, value); }, removeItem: key => { map.delete(key); } };
+}
 async function boot(ctx: GameContext): Promise<void> {
   try {
-    if (typeof localStorage === "undefined") throw new Error("The burrow needs browser storage before a run can start.");
     const state = runtime(ctx);
     let restored: RunSnapshot | null = null;
-    const save = openRecord(localStorage, { snapshot: () => snapshotRun(ctx), restore: next => { restored = next as RunSnapshot | null; } });
+    const save = openRecord(storageOf(ctx), { snapshot: () => snapshotRun(ctx), restore: next => { restored = next as RunSnapshot | null; } });
     await save.load();
     state.save = save;
     state.ready = true;
@@ -831,6 +850,8 @@ export function captureProbe(ctx: GameContext) {
   return {
     x: at?.[0] ?? 0, z: at?.[2] ?? 0,
     inRun: v.mode === "run" ? 1 : 0, caught: v.mode === "caught" ? 1 : 0, home: v.mode === "home" ? 1 : 0,
+    /** A return being written: the run is over, the burrow not yet updated. */
+    returning: v.mode === "saving" ? 1 : 0,
     health: run?.health ?? 100, elapsed: run?.elapsed ?? 0, dawn: run !== null && isDawn(run) ? 1 : 0,
     depth: plan?.depth ?? 0, rooms: run?.visited.length ?? 0, deepest: run?.deepest ?? 0,
     carried: run?.pack.length ?? 0, packMass: load.mass, packRoom: load.remaining,
@@ -841,7 +862,9 @@ export function captureProbe(ctx: GameContext) {
     threats: run?.threats.filter(t => t.mode !== "dead" && t.mode !== "sprung").length ?? 0,
     hunting: run?.threats.filter(t => t.mode === "stalk" || t.mode === "crouch" || t.mode === "pounce" || t.mode === "awake").length ?? 0,
     panel: v.panel === null ? 0 : ["stash", "workbench", "nook", "pack"].indexOf(v.panel) + 1,
-    noise: Math.round(v.noise),
+    noise: Math.round(v.noise), refusals: runtime(ctx).refusals,
+    seedHash: run === null ? 0 : hashUnit(run.seed) * 1e6 | 0, roomHash: run === null ? 0 : hashUnit(run.room) * 1e6 | 0,
+    goal: goalStep(v.home),
   };
 }
 /** The movement rule for the current room: walkable floor, slowed by load, web and sneaking. */

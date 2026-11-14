@@ -1,0 +1,42 @@
+{
+  "game": "deepward",
+  "proofs": [
+    {
+      "file": "proofs/sim/carry-limit.proof.ts",
+      "proves": [
+        "extraction.carry-limit"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/caught.proof.ts",
+      "proves": [
+        "extraction.die-lose-carried",
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/enter-run.proof.ts",
+      "proves": [
+        "extraction.enter-run"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/extract-bank.proof.ts",
+      "proves": [
+        "extraction.extract-bank"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
+      ],
+      "ok": true
+    }
+  ],
+  "data": []
+}
