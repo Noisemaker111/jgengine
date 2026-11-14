@@ -163,15 +163,18 @@ Genres: strategy. 0/17 proven · 17 missing.
   idle red ants and waiting foragers around the mower, scout trail vision, the field coach, spitter
   acid, Nursery/Granary bonuses, brood lanes per Barracks, impatient beam that hunts fighters and burns
   black ants when the colony hides, puffs and dig sites, lawn minimap with the beam, crossing and brood
-  guards, leaf canopies, notice feed capped and battle-only.
+  guards, leaf canopies, notice feed capped and battle-only, scout marking scent (tagged black ants
+  stay drawn 10 s), bitten workers flee to the nest, level-up card docked top-right on desktop.
 - Fixed on the way: the black raids never marched (the director looked up an unauthored home id).
 - Shared fixes: jg-ui under Vite's `?import`; capture Chrome WebGPU on SwiftShader; Rune marks on the
   page clock with the jg-ui wasm rebuilt; grass fingerprint fixture rewritten.
-- Evidence: 207 game tests incl. headless sims (opening raid, raids start, mower dodge, boss counter);
+- Evidence: 208 game tests incl. headless sims (opening raid, raids start, mower dodge, boss counter);
   scratch probes (not committed) won all five missions with simple plans. Shots in `shots/`:
   `ember-command-play-half-low-draft.png`, `ember-command-view-keep-enemy-half-low-draft.png`,
-  `ember-command-state-boss-half-low-draft.png`, `ember-command-sprinkler-31s-half-low-draft.png`.
+  `ember-command-state-boss-half-low-draft.png`, `ember-command-sprinkler-31s-half-low-draft.png`,
+  `ember-command-raid-19s-half-low-draft.png`.
 - Verify: `verify:fast` fails only on provisioning other games' library models (network 403); the
   ember boot probe passes when a render slot is free. The to-skirmish drive flow is flaky under
   software rendering (DOM settle), not reproduced as a game fault.
-- Next ideas: wasp flight lanes and nest, scouts marking enemies on the map, a second lawn.
+- Next ideas: wasp flight lanes and a wasp nest, a second lawn, real-GPU screenshots (all shots so
+  far are draft software renders).

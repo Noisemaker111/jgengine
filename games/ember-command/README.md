@@ -47,7 +47,9 @@ are what the build does now.
 - **Brood lanes.** The queen hatches one egg at a time; every Barracks Chamber adds a lane, so a colony
   out-hatches a growing raid by digging more barracks.
 - **Colony instincts.** A bitten red ant gives off distress: idle red fighters within 16 m come running.
-  Idle ants (and black ants) walk out of the mower's lane when it roars; foragers wait at its edge.
+  Idle ants (and black ants) walk out of the mower's lane when it roars; foragers wait at its edge;
+  a bitten worker runs for the nest for 4 s. Scouts tag the black ants they sense with marking scent,
+  keeping them drawn and on the map for 10 s.
 - **The boss's counter.** The kid follows the biggest knot of red fighters in the open; with the whole
   army in shade he burns the black ants instead.
 - **Readable tells.** The sprinkler hisses and dribbles for 4 s before it sprays; the mower lane flashes
