@@ -31,6 +31,16 @@ export const UPDATE_RULE = { fromWave: 3, atShare: 0.45, seconds: 4 } as const;
 /** Each wave after the first fields tech this much sturdier (a share of its catalog health), so a fully promoted crew still feels the late waves. */
 export const WAVE_HEALTH_RAMP = 0.03;
 
+/** How far either side of the centre line tech may walk: the street is 4 m wide. */
+const LANE_HALF_WIDTH = 1.3;
+
+/** A stable lane for one piece of tech, from its instance number (golden-ratio spread, so neighbours differ). */
+export function laneOffset(instanceId: string): number {
+  const n = Number.parseInt(instanceId.replace(/\D/g, "") || "0", 10);
+  const t = (n * 0.6180339887) % 1;
+  return (t * 2 - 1) * LANE_HALF_WIDTH;
+}
+
 /** How far from the street a drone's parcel may land on a plot. */
 const PARCEL_REACH = 9;
 
@@ -439,7 +449,11 @@ export function tickWaves(ctx: GameContext, dt: number): void {
     const next = advancePathFollow({ waypoints, speed }, creep.path, dt);
     creep.path = next;
     const lift = def.flying === true ? FLIGHT_HEIGHT : 0;
-    ctx.scene.entity.setPose(creep.instanceId, { position: [next.position[0], next.position[1] + lift, next.position[2]], rotationY: next.heading, dt });
+    // Each piece of tech keeps its own lane across the street, so a column of phones spreads into a
+    // crowd instead of stacking into one slab. Bosses take the middle.
+    const lane = session.boss?.instanceId === creep.instanceId ? 0 : laneOffset(creep.instanceId);
+    const sideX = Math.cos(next.heading) * lane, sideZ = -Math.sin(next.heading) * lane;
+    ctx.scene.entity.setPose(creep.instanceId, { position: [next.position[0] + sideX, next.position[1] + lift, next.position[2] + sideZ], rotationY: next.heading, dt });
     if (next.done) leakCreep(ctx, creep);
   }
   tickHeldPay(ctx);

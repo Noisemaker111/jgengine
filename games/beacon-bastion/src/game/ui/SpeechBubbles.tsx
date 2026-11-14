@@ -8,6 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { BUBBLE_RULE, session, type SpeechBubble } from "../session";
 import { WORKER_HEIGHT } from "../models";
 import { Text } from "./look";
+import { BUILDING_MARKERS } from "../../editorLayers";
 
 /**
  * Comic speech bubbles drawn by Rune over the street: a worker's voice line in a cream bubble, a
@@ -60,4 +61,14 @@ export function SpeechBubbles() {
   const ctx = useGameContext();
   if (ids === "") return null;
   return <>{shownBubbles(ctx.time.now()).map((bubble) => <Bubble key={bubble.id} bubble={bubble} />)}</>;
+}
+
+/** The town's landmarks named on painted signs over their roofs: the diner, the school, the library. */
+export function LandmarkSigns() {
+  return <>{BUILDING_MARKERS.filter((building) => building.sign !== null).map((building) =>
+    <RuneWorldAnchor key={building.id} position={[building.xz[0], 0, building.xz[1]]} offset={[0, 7.2, 0]}>
+      <RuneView x={-40} y={-14} padding={[2, 10, 3, 10]} radius={6} fill="#1f5c5a" border={{ width: 2, color: "#f6e7c1" }}>
+        <Text family="Lilita One" size={13} color="#fff6e6" tracking={1}>{building.sign!}</Text>
+      </RuneView>
+    </RuneWorldAnchor>)}</>;
 }

@@ -40,6 +40,12 @@ export const BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = editorLayers.m
  * The street's buildings and lamps, authored as `building` markers: each names the model it stands as
  * in `meta.model` and faces the street by its `rotationY`. Spawned as scenery by the game.
  */
-export const BUILDING_MARKERS: readonly { id: string; xz: Vec2; rotationY: number; model: string }[] = editorLayers.markers
+export const BUILDING_MARKERS: readonly { id: string; xz: Vec2; rotationY: number; model: string; sign: string | null }[] = editorLayers.markers
   .filter((marker) => marker.kind === "building" && typeof marker.meta?.["model"] === "string")
-  .map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker), rotationY: marker.rotationY ?? 0, model: marker.meta!["model"] as string }));
+  .map((marker) => ({
+    id: marker.id,
+    xz: editorMarkerXZ(marker),
+    rotationY: marker.rotationY ?? 0,
+    model: marker.meta!["model"] as string,
+    sign: typeof marker.meta?.["sign"] === "string" ? (marker.meta["sign"] as string) : null,
+  }));

@@ -30,7 +30,7 @@ import { UPDATE_RULE } from "../waves/director";
  */
 
 /** Small tech draws larger than its hitbox, so a phone reads as a phone from the street camera; the bosses are big enough already. */
-const techVisualScale = (scale: number): number => (scale >= 1.8 ? 1.3 : 2.4);
+const techVisualScale = (scale: number): number => (scale >= 1.8 ? 1 : 2.2);
 
 const geometries = new Map<string, BufferGeometry>();
 const materials = new Map<string, MeshStandardMaterial>();
@@ -305,20 +305,22 @@ function build(def: CreepDef): { root: Group; rig: Rig } {
     }
     case "datacenter": {
       rig.motion = "roll";
-      body.add(part(box(3.0, 2.0, 3.0), shell, 0, 1.0, 0), part(box(3.1, 0.15, 3.1), dark, 0, 2.05, 0));
-      for (const [x, z] of [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]] as const) {
-        body.add(part(cyl(0.5, 0.5, 0.2, 18), dark, x, 2.2, z));
-        const blade = part(box(0.85, 0.03, 0.14), mat("#8a90a0"), x, 2.32, z);
-        const blade2 = part(box(0.14, 0.03, 0.85), mat("#8a90a0"), x, 2.32, z);
+      // A tall, narrow server tower: it reads as the biggest thing on the street by height and its
+      // blinking walls, without spreading wide enough to hide the road it rolls down.
+      body.add(part(box(1.6, 3.2, 1.6), shell, 0, 1.6, 0), part(box(1.7, 0.15, 1.7), dark, 0, 3.25, 0));
+      for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]] as const) {
+        body.add(part(cyl(0.3, 0.3, 0.2, 18), dark, x, 3.4, z));
+        const blade = part(box(0.5, 0.03, 0.1), mat("#8a90a0"), x, 3.52, z);
+        const blade2 = part(box(0.1, 0.03, 0.5), mat("#8a90a0"), x, 3.52, z);
         body.add(blade, blade2);
         rig.spin.push({ node: blade, axis: "y", speed: 9 }, { node: blade2, axis: "y", speed: 9 });
       }
       for (const side of [0, 1, 2, 3]) {
         const panel = new Group();
         panel.rotation.y = (side * Math.PI) / 2;
-        for (let row = 0; row < 4; row += 1) {
-          for (let col = 0; col < 6; col += 1) {
-            const led = part(box(0.22, 0.1, 0.02), mat(def.glow, 1.3), -1.1 + col * 0.44, 0.45 + row * 0.38, 1.52);
+        for (let row = 0; row < 7; row += 1) {
+          for (let col = 0; col < 3; col += 1) {
+            const led = part(box(0.3, 0.1, 0.02), mat(def.glow, 1.3), -0.45 + col * 0.45, 0.45 + row * 0.38, 0.82);
             panel.add(led);
             rig.lights.push(led);
             rig.blink.push({ node: led, period: 0.4 + ((row + col + side) % 5) * 0.13, phase: (row * 6 + col) * 0.05 });
@@ -326,9 +328,9 @@ function build(def: CreepDef): { root: Group; rig: Rig } {
         }
         body.add(panel);
       }
-      const cord = part(cyl(0.08, 0.08, 3, 8), dark, 0, 0.12, -2.6);
+      const cord = part(cyl(0.06, 0.06, 2.4, 8), dark, 0, 0.1, -2);
       cord.rotation.x = Math.PI / 2;
-      body.add(cord, part(box(0.4, 0.3, 0.2), mat("#ffd23a"), 0, 0.15, -4.1));
+      body.add(cord, part(box(0.3, 0.25, 0.18), mat("#ffd23a"), 0, 0.13, -3.2));
       break;
     }
     case "cloud": {
@@ -367,7 +369,7 @@ function updateBar(height: number): { group: Group; fill: Mesh } {
 /** Roughly how tall each kind stands at scale 1, for where the update bar floats. */
 const HEIGHT: Record<TechMesh, number> = {
   earbuds: 0.6, watch: 1.4, phone: 2, flock: 2.1, speaker: 1.2, vacuum: 0.5, drone: 0.6, scooter: 1.6, fridge: 2.2,
-  gpu: 0.8, rig: 2.1, car: 1.6, chatbot: 2.2, router: 1.3, backup: 0.4, server: 2.5, datacenter: 2.5, cloud: 3,
+  gpu: 0.8, rig: 2.1, car: 1.6, chatbot: 2.2, router: 1.3, backup: 0.4, server: 2.5, datacenter: 3.7, cloud: 3,
 };
 
 const facing = new Quaternion();

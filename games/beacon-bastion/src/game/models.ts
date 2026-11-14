@@ -62,6 +62,8 @@ export const BUILDING_PLAN: Record<string, ModelPick> = {
   hardware: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 6.1, material: { color: "#ffd8d0" } } },
   tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 6.2, material: { color: "#e0ffe8" } } },
   lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.6 } },
+  car: { model: `${CITY}/car_sedan`, style: { targetHeight: 1.6 } },
+  wagon: { model: `${CITY}/car_stationwagon`, style: { targetHeight: 1.6 } },
 };
 
 /** Entity names the buildings spawn under, one per plan entry. */

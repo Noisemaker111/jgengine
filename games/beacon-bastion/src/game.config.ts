@@ -140,18 +140,22 @@ export const game = defineGame({
     },
   },
   camera: {
-    rig: "topDown",
+    // A tower-defense camera that frames the street, not the county: it starts over the middle of
+    // Main Street close enough that a barista reads as a barista, pans with the arrow keys or the
+    // screen edge (WASD), and scroll-zooms out to see both ends of the road. Q/E stay the town's
+    // two buttons, so rotation steps aside.
+    rig: "rts",
     follow: { followEntityId: null },
     rigs: {
-      // The street is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
-      // vertically, so the default height has to clear both ends of Main Street plus the hiring
-      // board at the foot; the offset centres the route in the band the HUD leaves free.
-      topDown: {
-        height: 62,
-        pitch: 1.08,
+      rts: {
+        height: 40,
+        pitch: 1.0,
         yaw: Math.PI / 4,
-        targetOffset: { x: -16, z: -6 },
-        zoom: { min: 0.6, max: 1.8 },
+        start: { x: 2, z: 2 },
+        bounds: { minX: -34, maxX: 40, minZ: -30, maxZ: 30 },
+        zoom: { min: 0.55, max: 1.7 },
+        panSpeed: 28,
+        edgeScroll: { margin: 0.02 },
       },
     },
   },

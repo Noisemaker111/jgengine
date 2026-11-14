@@ -216,7 +216,8 @@
       "label": "House2 3",
       "meta": {
         "model": "house2",
-        "clearance": 4.5
+        "clearance": 4.5,
+        "sign": "LIBRARY"
       }
     },
     {
@@ -231,7 +232,8 @@
       "label": "Diner 4",
       "meta": {
         "model": "diner",
-        "clearance": 4.5
+        "clearance": 4.5,
+        "sign": "DINER"
       }
     },
     {
@@ -261,7 +263,8 @@
       "label": "Bakery 6",
       "meta": {
         "model": "bakery",
-        "clearance": 4.5
+        "clearance": 4.5,
+        "sign": "BAKERY"
       }
     },
     {
@@ -291,7 +294,8 @@
       "label": "Corner 8",
       "meta": {
         "model": "corner",
-        "clearance": 4.5
+        "clearance": 4.5,
+        "sign": "SCHOOL"
       }
     },
     {
@@ -321,7 +325,8 @@
       "label": "Hardware 10",
       "meta": {
         "model": "hardware",
-        "clearance": 4.5
+        "clearance": 4.5,
+        "sign": "HARDWARE"
       }
     },
     {
@@ -442,6 +447,246 @@
       "meta": {
         "model": "lamp",
         "clearance": 1.2
+      }
+    },
+    {
+      "id": "building-13",
+      "kind": "building",
+      "position": {
+        "x": -40.5,
+        "y": 0,
+        "z": -10
+      },
+      "rotationY": 1.571,
+      "label": "House 13",
+      "meta": {
+        "model": "house",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-14",
+      "kind": "building",
+      "position": {
+        "x": 28.3,
+        "y": 0,
+        "z": -14.5
+      },
+      "rotationY": 0,
+      "label": "House2 14",
+      "meta": {
+        "model": "house2",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-15",
+      "kind": "building",
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 39.5
+      },
+      "rotationY": 3.142,
+      "label": "Shop 15",
+      "meta": {
+        "model": "shop",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-16",
+      "kind": "building",
+      "position": {
+        "x": -28,
+        "y": 0,
+        "z": 12.5
+      },
+      "rotationY": 3.142,
+      "label": "House5 16",
+      "meta": {
+        "model": "house5",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-17",
+      "kind": "building",
+      "position": {
+        "x": -20,
+        "y": 0,
+        "z": 12.5
+      },
+      "rotationY": 1.882,
+      "label": "House3 17",
+      "meta": {
+        "model": "house3",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-18",
+      "kind": "building",
+      "position": {
+        "x": -16,
+        "y": 0,
+        "z": -28.5
+      },
+      "rotationY": -1.26,
+      "label": "Bakery 18",
+      "meta": {
+        "model": "bakery",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-19",
+      "kind": "building",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": -28.5
+      },
+      "rotationY": 0,
+      "label": "House4 19",
+      "meta": {
+        "model": "house4",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-20",
+      "kind": "building",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 28.5
+      },
+      "rotationY": 3.142,
+      "label": "Diner 20",
+      "meta": {
+        "model": "diner",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-21",
+      "kind": "building",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 28.5
+      },
+      "rotationY": 1.882,
+      "label": "Corner 21",
+      "meta": {
+        "model": "corner",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-22",
+      "kind": "building",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": -12.5
+      },
+      "rotationY": -1.26,
+      "label": "Hardware 22",
+      "meta": {
+        "model": "hardware",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-23",
+      "kind": "building",
+      "position": {
+        "x": 16,
+        "y": 0,
+        "z": -12.5
+      },
+      "rotationY": 0.866,
+      "label": "House 23",
+      "meta": {
+        "model": "house",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-24",
+      "kind": "building",
+      "position": {
+        "x": 38.5,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": -0.956,
+      "label": "House2 24",
+      "meta": {
+        "model": "house2",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-25",
+      "kind": "building",
+      "position": {
+        "x": 37.7,
+        "y": 0,
+        "z": -24.5
+      },
+      "rotationY": 0,
+      "label": "Shop 25",
+      "meta": {
+        "model": "shop",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-26",
+      "kind": "building",
+      "position": {
+        "x": 28.3,
+        "y": 0,
+        "z": -24.5
+      },
+      "rotationY": 0,
+      "label": "House5 26",
+      "meta": {
+        "model": "house5",
+        "clearance": 4
+      }
+    },
+    {
+      "id": "building-car-1",
+      "kind": "building",
+      "position": {
+        "x": -18,
+        "y": 0,
+        "z": -3.4
+      },
+      "rotationY": 1.571,
+      "label": "Parked car 1",
+      "meta": {
+        "model": "car",
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "building-car-2",
+      "kind": "building",
+      "position": {
+        "x": 13.4,
+        "y": 0,
+        "z": 12
+      },
+      "rotationY": 0,
+      "label": "Parked car 2",
+      "meta": {
+        "model": "wagon",
+        "clearance": 1.5
       }
     }
   ],
@@ -593,7 +838,7 @@
       ],
       "label": "Town park (southwest)",
       "meta": {
-        "density": 0.24,
+        "density": 0.07,
         "minSpacing": 2.2,
         "seed": "beacon-bastion-forest-sw",
         "maxSlope": 6,
@@ -648,7 +893,7 @@
       ],
       "label": "Town park (northeast)",
       "meta": {
-        "density": 0.24,
+        "density": 0.07,
         "minSpacing": 2.2,
         "seed": "beacon-bastion-forest-ne",
         "maxSlope": 6,
@@ -813,7 +1058,7 @@
       ],
       "label": "Edge-of-town maples",
       "meta": {
-        "density": 0.22,
+        "density": 0.07,
         "minSpacing": 2.2,
         "seed": "beacon-muster-cairn",
         "maxSlope": 40,
@@ -864,7 +1109,7 @@
       ],
       "label": "Cell-tower woods",
       "meta": {
-        "density": 0.2,
+        "density": 0.07,
         "minSpacing": 2.6,
         "seed": "beacon-approach-pines",
         "maxSlope": 40,
@@ -1021,7 +1266,7 @@
       ],
       "label": "Town hall green",
       "meta": {
-        "density": 0.22,
+        "density": 0.07,
         "minSpacing": 2.6,
         "seed": "beacon-keep-gate-pines",
         "maxSlope": 40,
@@ -1123,7 +1368,7 @@
       ],
       "label": "Horizon trees (north)",
       "meta": {
-        "density": 0.03,
+        "density": 0.012,
         "minSpacing": 5,
         "seed": "beacon-horizon-north",
         "maxSlope": 40,
@@ -1174,7 +1419,7 @@
       ],
       "label": "Horizon trees (south)",
       "meta": {
-        "density": 0.03,
+        "density": 0.012,
         "minSpacing": 5,
         "seed": "beacon-horizon-south",
         "maxSlope": 40,
@@ -1225,7 +1470,7 @@
       ],
       "label": "Horizon trees (west)",
       "meta": {
-        "density": 0.03,
+        "density": 0.012,
         "minSpacing": 5,
         "seed": "beacon-horizon-west",
         "maxSlope": 40,
@@ -1276,7 +1521,7 @@
       ],
       "label": "Horizon trees (east)",
       "meta": {
-        "density": 0.03,
+        "density": 0.012,
         "minSpacing": 5,
         "seed": "beacon-horizon-east",
         "maxSlope": 40,
