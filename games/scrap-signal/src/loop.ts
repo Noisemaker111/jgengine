@@ -332,7 +332,7 @@ function onNewPlayer(ctx: GameContext): void {
   syncCombatTargets(ctx);
   session.reset(ctx);
   noteEquipped(null);
-  speechStore.write(ctx, { speaker: NPCS.bolt.name, line: "Hey! Over here, minion! You're alive! Come talk to me.", atMs: ctx.time.now() * 1000 });
+  speechStore.write(ctx, { speaker: NPCS.bolt.name, line: "Ding-dong! Hey! Over here! You're alive! A human! Come talk to me!", atMs: ctx.time.now() * 1000 });
   void resumeOrStart(ctx);
 }
 

@@ -229,7 +229,7 @@ const throwGrenade: ItemUseHandler<GameContext> = {
   apply(ctx, input) {
     const grenades = ctx.scene.entity.stats.get(input.from, "grenades");
     if (grenades === null || grenades.current < 1) {
-      warn(ctx, input.from, "NO GRENADES");
+      warn(ctx, input.from, "NO WATER BALLOONS");
       return { state: ctx };
     }
     const nowMs = ctx.time.now() * 1000;

@@ -45,15 +45,15 @@ export type RiftMutator = RuleDef<{ name: string; blurb: string; effect: RiftMut
 export const RIFT_MUTATORS: readonly RiftMutator[] = [
   { id: "frenzied", tags: ["tempo"], payload: { name: "Frenzied", blurb: "Crews attack 30% faster.", effect: { interval: 0.7 } } },
   { id: "juggernaut", tags: ["bulk"], payload: { name: "Juggernauts", blurb: "Crews carry 50% more health but walk slower.", effect: { health: 1.5, speed: 0.85 } } },
-  { id: "plated", tags: ["surface"], conflicts: ["surface"], payload: { name: "Plated Hulls", blurb: "Every crew is armour-plated: corrosive bites, fire sputters.", effect: { surface: "armor" } } },
-  { id: "stripped", tags: ["surface"], conflicts: ["surface"], payload: { name: "Stripped to the Frame", blurb: "No plating left: fire tears through every crew.", effect: { surface: "flesh" } } },
-  { id: "volatile", tags: ["death"], payload: { name: "Volatile Cores", blurb: "Crews burst when they drop. Don't finish them up close.", effect: { burst: { radius: 3.2, share: 0.18 } } } },
-  { id: "swarm", tags: ["count"], payload: { name: "Swarm Signal", blurb: "Half the arrivals bring a twin.", effect: { twinChance: 0.5 } } },
-  { id: "ion_storm", tags: ["player"], payload: { name: "Ion Storm", blurb: "Your shield recharges at half speed.", effect: { shieldRegen: 0.5 } } },
+  { id: "plated", tags: ["surface"], conflicts: ["surface"], payload: { name: "Steel-Cased", blurb: "Every appliance is steel-cased: corrosive bites, fire sputters.", effect: { surface: "armor" } } },
+  { id: "stripped", tags: ["surface"], conflicts: ["surface"], payload: { name: "Cheap Plastic", blurb: "No plating left: fire tears through every crew.", effect: { surface: "flesh" } } },
+  { id: "volatile", tags: ["death"], payload: { name: "Lithium Batteries", blurb: "Appliances burst when they drop. Don't finish them up close.", effect: { burst: { radius: 3.2, share: 0.18 } } } },
+  { id: "swarm", tags: ["count"], payload: { name: "Bluetooth Pairing", blurb: "Half the arrivals bring a twin.", effect: { twinChance: 0.5 } } },
+  { id: "ion_storm", tags: ["player"], payload: { name: "Power Outage", blurb: "Your shield recharges at half speed.", effect: { shieldRegen: 0.5 } } },
   { id: "self_repair", tags: ["bulk"], payload: { name: "Self-Repair", blurb: "Crews mend 3% of their health every second.", effect: { regen: 0.03 } } },
-  { id: "escort", tags: ["count"], payload: { name: "Elite Escort", blurb: "An elite husk joins every wave.", effect: { escort: true } } },
+  { id: "escort", tags: ["count"], payload: { name: "Elite Escort", blurb: "A Roomba Prime joins every wave.", effect: { escort: true } } },
   { id: "glass", tags: ["boon"], conflicts: ["boon"], payload: { name: "Glass Cannons", blurb: "Crews have 25% less health but hit 25% harder.", effect: { health: 0.75, damage: 1.25 }, boon: true } },
-  { id: "bounty", tags: ["boon"], conflicts: ["boon"], payload: { name: "Bounty Signal", blurb: "Double cash, and the crews are 20% tougher for it.", effect: { cash: 2, health: 1.2 }, boon: true } },
+  { id: "bounty", tags: ["boon"], conflicts: ["boon"], payload: { name: "Coupon Day", blurb: "Double cash, and the crews are 20% tougher for it.", effect: { cash: 2, health: 1.2 }, boon: true } },
 ];
 
 export function mutatorById(id: string): RiftMutator | undefined {

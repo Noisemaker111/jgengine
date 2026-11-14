@@ -15,7 +15,7 @@ import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
 import { cancelReload, gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
 import type { GunFamily } from "./handroll/guns";
-import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
+import { depositGun, mergeAtBench, salvageGun, vaultOpenStore, withdrawGun } from "./items/vault";
 import { openAmmoCrate } from "./items/ammoCrates";
 import { applyWalkSpeed } from "./handling";
 import { session } from "./session";
@@ -40,10 +40,10 @@ import { TRAVEL_STATIONS } from "./world/sites";
 import { zoneLevelAt } from "./world/zones";
 
 export const BLACK_MARKET_UPGRADES = [
-  { id: "ammo", name: "Ammo SDU", blurb: "+30% max ammo, every pool" },
-  { id: "health", name: "Health SDU", blurb: "+25 max health" },
-  { id: "shield", name: "Shield SDU", blurb: "+25 max shield" },
-  { id: "grenade", name: "Grenade SDU", blurb: "+1 grenade capacity" },
+  { id: "ammo", name: "Bigger Junk Drawer", blurb: "+30% max ammo, every kind" },
+  { id: "health", name: "Bike Helmet", blurb: "+25 max health" },
+  { id: "shield", name: "Thicker Oven Mitts", blurb: "+25 max shield" },
+  { id: "grenade", name: "Water-Balloon Bucket", blurb: "+1 water balloon capacity" },
 ] as const;
 
 export type BlackMarketCounts = Record<string, number>;
@@ -205,7 +205,7 @@ function crashChestShut(ctx: GameContext): boolean {
 function openRedChest(ctx: GameContext, instanceId: string): void {
   const crash = instanceId === CRASH_CHEST;
   if (crash && crashChestShut(ctx)) {
-    ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "LOCKED · TALK TO B0-LT", kind: "warn" });
+    ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "LOCKED · TALK TO DING", kind: "warn" });
     return;
   }
   if (!claimChest(ctx, instanceId)) return;
@@ -349,6 +349,18 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
+  ctx.game.commands.define<{ itemId?: string }>("workbench.salvage", {
+    apply(state: GameContext, input) {
+      if (input.itemId !== undefined) salvageGun(state, input.itemId);
+    },
+  });
+
+  ctx.game.commands.define<{ bodyId?: string; modId?: string }>("workbench.merge", {
+    apply(state: GameContext, input) {
+      if (input.bodyId !== undefined && input.modId !== undefined) mergeAtBench(state, input.bodyId, input.modId);
+    },
+  });
+
   ctx.game.commands.define<{ itemId?: string }>("vendor.buyGear", {    apply(state: GameContext, input) {
       if (input.itemId === undefined) return;
       const rejection = buyGear(state, input.itemId);
@@ -366,7 +378,7 @@ export function registerCommands(ctx: GameContext): void {
       const statId = AMMO_STAT_IDS[input.pool];
       const stat = state.scene.entity.stats.get(userId, statId);
       if (stat !== null && stat.current >= stat.max) {
-        state.game.notices.push({ text: `${AMMO_LABELS[input.pool]} ammo is full.`, tone: "deny" });
+        state.game.notices.push({ text: `${AMMO_LABELS[input.pool]} is full.`, tone: "deny" });
         return;
       }
       const rejection = spend(state, "cash", price.cash, "ammo-purchase", input.pool);
@@ -516,7 +528,7 @@ export function registerCommands(ctx: GameContext): void {
         if (typeof input?.slot === "string" && input.slot !== save.slot()) await save.switchSlot(input.slot, { flush: false });
         await save.save();
         await refreshScrapSlots(state);
-        state.scene.entity.floatText({ instanceId: state.player.userId, text: "SIGNAL KEPT", kind: "pickup" });
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: "SAVED TO THE FRIDGE", kind: "pickup" });
       });
       return state;
     },
@@ -611,7 +623,7 @@ export function registerCommands(ctx: GameContext): void {
       if (tree === null || tree.pointsSpent() === 0) return;
       const cost = respecCost(Math.round(state.scene.entity.stats.get(state.player.userId, "level")?.current ?? 1));
       if (!spend(state, "cash", cost, "respec")) {
-        state.game.notices.push({ text: `Recalibrating costs ${cost}.`, tone: "deny" });
+        state.game.notices.push({ text: `A skill reset costs ${cost}.`, tone: "deny" });
         return;
       }
       const before = 1 + bonus("maxHealth");
@@ -619,7 +631,7 @@ export function registerCommands(ctx: GameContext): void {
       talentRanksStore.write(state, tree.snapshot().ranks);
       state.scene.entity.stats.set(state.player.userId, "skillPoints", { current: tree.pointsAvailable() });
       applyPassiveEffects(state, before);
-      state.game.notices.push({ text: `CHASSIS RECALIBRATED — ${tree.pointsAvailable()} points to spend`, tone: "success" });
+      state.game.notices.push({ text: `SKILLS RESET — ${tree.pointsAvailable()} points to spend`, tone: "success" });
     },
   });
 
@@ -658,7 +670,7 @@ export function registerCommands(ctx: GameContext): void {
       },
     });
     // Dev-only: drop the chassis to its last point of health, so the game's own downed tick opens
-    // the Emergency Reserve window for a capture instead of standing in enemy fire for it.
+    // the Last Gasp window for a capture instead of standing in enemy fire for it.
     ctx.game.commands.define("reserve.capture", {
       cheat: true,
       apply(state: GameContext) {

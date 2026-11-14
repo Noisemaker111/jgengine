@@ -14,26 +14,26 @@ import {
   type WorldFeature,
 } from "@jgengine/core/world/features";
 import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
-import { FERRALON } from "./game/palette";
+import { SUBURB } from "./game/palette";
 import { SETTLEMENT_KITS } from "./game/world/buildingKit";
 import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
+/** The terrain seed. The name is the world generator's identity: changing it would move every authored site. */
 export const FERRALON_SEED = "ferralon-arid-badlands-2026";
 
 const TERRAIN_BASE = {
   bounds: WORLD_BOUNDS,
   seed: FERRALON_SEED,
   material: "rock",
-  height: 52,
+  height: 36,
   frequency: 0.0035,
-  // Six, not five: the sixth octave is the medium-scale relief — gully lips, dune shoulders, rock
-  // shelves — that separates a sculpted badlands from smooth heightmap blobs. Large forms are
-  // unchanged (same seed/frequency), so authored flatten pads and roads keep their sites.
-  octaves: 6,
+  // Lower hills than the old badlands (52 high, six octaves): the same seed and frequency keep every
+  // authored pad and road on its site, and the ridges still herd the player along the streets.
+  octaves: 5,
   ridged: true,
   segments: 340,
-  colors: { low: FERRALON.rockLow, high: FERRALON.rockHigh },
+  colors: { low: SUBURB.rockLow, high: SUBURB.rockHigh },
 } as const;
 
 export const CLIMB_SLOPE_LIMIT = 0.85;
@@ -51,12 +51,13 @@ const speckleRegions = (
   seed: string,
 ): TerrainMaterialRegion[] => {
   const rng = seededRng(seed);
+  // Patchy yards: mown stripes, clover, a scorched brown patch, dandelion yellow.
   const tones = [
-    { low: "#8f6e3e", high: "#a3854c" },
-    { low: "#ccae6e", high: "#e0c888" },
-    { low: "#7c5c34", high: "#8f7042" },
-    { low: "#b8935a", high: "#c9ac70" },
-    { low: "#9a7c52", high: "#b09262" },
+    { low: "#4f8f32", high: "#7ab848" },
+    { low: "#8fcf55", high: "#b4e070" },
+    { low: "#3b6f26", high: "#5a9638" },
+    { low: "#a49a4a", high: "#c2b660" },
+    { low: "#6aa63f", high: "#94c95a" },
   ] as const;
   const regions: TerrainMaterialRegion[] = [];
   for (let index = 0; index < count; index += 1) {
@@ -80,7 +81,7 @@ const materialRegions: readonly TerrainMaterialRegion[] = [
       shape: "circle",
       center: [zone.center.x, zone.center.z],
       radius: zone.flattenRadius * 0.92,
-      colors: { low: "#b39058", high: "#cdae74" },
+      colors: { low: "#5e9c3a", high: "#86c252" },
       falloff: zone.flattenRadius * 0.4,
     }),
   ),
@@ -89,7 +90,7 @@ const materialRegions: readonly TerrainMaterialRegion[] = [
       shape: "circle",
       center: [poi.x, poi.z],
       radius: poi.radius * 0.9,
-      colors: { low: "#9c7c48", high: "#b8975c" },
+      colors: { low: "#7a6040", high: "#947752" },
       falloff: poi.radius * 0.4,
     }),
   ),
@@ -98,7 +99,7 @@ const materialRegions: readonly TerrainMaterialRegion[] = [
       shape: "polyline",
       points: roadPoints(route.points),
       width: 16,
-      colors: { low: "#7a5c3a", high: "#8f6e46" },
+      colors: { low: "#8a8a82", high: "#a3a39a" },
       falloff: 9,
     }),
   ),
@@ -120,9 +121,9 @@ const terrainDescriptor = terrain({
   detail: {
     // Cliff faces go cooler and darker than the flats so relief separates by value, not just by
     // slope shading — the old near-ground-coloured rock made every hill a smooth brown blob.
-    rockColor: FERRALON.cliff,
-    sandColor: FERRALON.sand,
-    snowColor: "#d8cbb0",
+    rockColor: SUBURB.cliff,
+    sandColor: SUBURB.sand,
+    snowColor: "#f2f6f8",
     // Low enough that dune flanks and gully walls pick up rock, not just cliff faces — at 0.28 the
     // only geometry steep enough to qualify was the far mesas, so everything walkable was one hue.
     rockSlopeStart: 0.24,
@@ -134,7 +135,7 @@ const terrainDescriptor = terrain({
     // The shader's default "wet pocket" sweep is green-leaning — meadow moss painted onto a desert
     // is what made whole hillsides read olive. Dry stays bleached sandstone; wet becomes darker
     // compacted soil, so the patchwork breaks up the flats without leaving the warm palette.
-    sweeps: { dry: [1.16, 1.06, 0.82], wet: [0.82, 0.74, 0.64] },
+    sweeps: { dry: [1.08, 1.06, 0.78], wet: [0.78, 0.9, 0.7] },
     // Real dirt grain over the procedural base. Without this the ground is pure vertex colour, which
     // is what made the flats read as untextured mush at every distance.
     // Grain, not repaint: `tint` low keeps the biome palette, the macro sweeps, and the slope-rock
@@ -152,17 +153,15 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-// Dry-grass scrub: desert bunchgrass carries the clumps over open sand and a tall dry accent
-// species rises out of it in pockets, so vegetation reads as growth where it can rather than one
-// blade stamped everywhere. Ochre roots into straw tips keep every side-lit blade in a value the
-// light can model instead of a black strip against bright sand.
+// Overgrown lawn: nobody has mowed since the update went out. Shaded roots into sunlit tips, with
+// dandelion-yellow accents in pockets, so the yards read as growth rather than one stamped blade.
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    species: "desert-bunchgrass",
-    colour: { baseColor: "#6e5a34", tipColor: "#b9a064" },
+    species: "overgrown-lawn",
+    colour: { baseColor: "#2f6b22", tipColor: "#9fd35a" },
     seed,
-    mix: { mixShare: 0.1, mixHeight: 2.1, mixColor: "#e2c878" },
+    mix: { mixShare: 0.12, mixHeight: 1.8, mixColor: "#f4e04d" },
   });
 
 const scrubClumps = (
@@ -189,16 +188,16 @@ const vegetation: readonly GrassEnvironmentDescriptor[] = [
   ...SIDE_POIS.flatMap((poi) => scrubClumps(poi.x, poi.z, poi.radius, 3, `scrap-scrub-${poi.id}`)),
 ];
 
-// Lighter than the old #5c4529: against sun-bleached sand that value read as an asphalt-black
-// ribbon; compacted dirt should sit a step below the sand, not ten.
-const FERRALON_DIRT_ROAD = "#71583a";
+// Suburban asphalt with its centre line: a mid grey, so it reads as street against the lawns
+// without punching a black ribbon through the frame.
+const SUBURB_ASPHALT = "#5b5d63";
 
 const roadRibbon = (route: { points: readonly { x: number; z: number }[] }, width: number, elevation: number): RoadEnvironmentDescriptor =>
   road({
     path: roadPoints(route.points),
     width,
-    color: FERRALON_DIRT_ROAD,
-    markings: false,
+    color: SUBURB_ASPHALT,
+    markings: true,
     sidewalk: false,
     elevation,
   });
@@ -217,8 +216,8 @@ export const world: WorldFeature = environment({
   // give the ridgeline something to sit against.
   sky: sky({
     preset: "day",
-    horizonColor: FERRALON.horizon,
-    zenithColor: FERRALON.skyZenith,
+    horizonColor: SUBURB.horizon,
+    zenithColor: SUBURB.skyZenith,
     sunIntensity: 1.1,
     ambientIntensity: 0.62,
     radius: 2600,
@@ -235,7 +234,7 @@ export const world: WorldFeature = environment({
     // Aerial perspective is the depth cue this world has and was not using: at near 500 nothing
     // within the playable bowl hazed at all, so a ridge two kilometres out read at the same value
     // as the sand underfoot and the whole frame flattened.
-    fog: { color: FERRALON.haze, near: 90, far: 2400 },
+    fog: { color: SUBURB.haze, near: 90, far: 2400 },
   }),
   structures: ZONES.filter((zone) => zone.settlement !== undefined).map((zone) => {
     const settlement = zone.settlement!;

@@ -71,9 +71,9 @@ export function recoverChassis(ctx: GameContext): ChassisRecovery | null {
   const lost = ["XP toward the next level", "reserve ammo and grenades beyond the starting kit"];
   const where = station.name === null ? "the drop point" : station.name;
   ctx.game.notices.push({
-    text: `Your save had no chassis, so a new one was built at ${where}. Kept: level ${level}, gear, cash and missions. Fee: $${fee}. Lost: ${lost.join(", ")}.`,
+    text: `Your save had lost you, so the Lucky Gnome patched you up at ${where}. Kept: level ${level}, junk, cash and errands. Fee: $${fee}. Lost: ${lost.join(", ")}.`,
     tone: "warn",
   });
-  ctx.scene.entity.floatText({ instanceId: userId, text: fee > 0 ? `CHASSIS REBUILT — $${fee} FEE` : "CHASSIS REBUILT", kind: "warn" });
+  ctx.scene.entity.floatText({ instanceId: userId, text: fee > 0 ? `PATCHED UP — $${fee} FEE` : "PATCHED UP", kind: "warn" });
   return { level, fee, station: station.name, lost };
 }

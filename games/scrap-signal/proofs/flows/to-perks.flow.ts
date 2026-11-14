@@ -4,7 +4,7 @@ import { game } from "../../src/game.config";
 export default defineFlow(game, {
   browser: true,
   async run(f) {
-    await f.expectPage("(() => { try { window.__jgNativeUi?.press('Gunk'); } catch {} return true; })()", "start the run: a fresh profile opens on character select (pick Gunk); a resumed one is already in the field");
+    await f.expectPage("(() => { try { window.__jgNativeUi?.press('Marge'); } catch {} return true; })()", "start the run: a fresh profile opens on character select (pick Gunk); a resumed one is already in the field");
     // the chassis is standing in Rustflat Waste
     await f.waitForPage("window.__jgengineAgent?.handle({ method: 'player_pose' }).ok === true", { timeoutMs: 60000 });
     await f.waitForPage("window.__jgengineAgent.handle({ method: 'player_pose' }).ok === true");

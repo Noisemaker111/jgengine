@@ -13,10 +13,11 @@ import { useStore } from "@jgengine/ui/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
 import { CHARACTERS } from "../characters";
 import { activePerkBuffs } from "../combat/gunPerks";
+import { gunBarkStore, moodReadout } from "../combat/personalityRuntime";
 import { itemNameById } from "../content";
 import { lastHit, lastHurtAtMs } from "../feel";
 import { handlingView } from "../handling";
-import { gunById, isReloading, magLoaded, perkLines, type PerkLine } from "../handroll";
+import { bodyOf, gunById, isReloading, junkCard, magLoaded, perkLines, type PerkLine } from "../handroll";
 import { mastReadoutStore } from "../mast";
 import { ELEMENT_COLORS, RARITY_COLORS } from "../palette";
 import { NPCS, objectiveLabel, scrapQuestById } from "../quests/catalog";
@@ -47,7 +48,7 @@ export function VitalsPlate({ combat }: { combat: () => boolean }) {
   return <Plate opacity={fade} width={compact ? 220 : 250} gap={compact ? 4 : 6} padding={compact ? 7 : 10} border={bind(() => ({ width: 2, color: low() ? C.red : "#4a3b29" }))}>
     <Row>
       <RuneView width={30} height={30} fill={character?.color ?? C.amber} justify="center" items="center"><Text family="Russo One" size={16} color="#0c0a09">{String(level)}</Text></RuneView>
-      <RuneView grow={1} gap={0}><Text family="Russo One" size={14}>{(character?.name ?? "Reclaimer").toUpperCase()}</Text><Small size={10}>{character?.className ?? "Reclaimer"}</Small></RuneView>
+      <RuneView grow={1} gap={0}><Text family="Russo One" size={14}>{(character?.name ?? "Tinkerer").toUpperCase()}</Text><Small size={10}>{character?.className ?? "Tinkerer"}</Small></RuneView>
       {points > 0 ? <Stamp tone="phosphor">{`K · +${points} pts`}</Stamp> : null}
     </Row>
     <Tube gap={5}>
@@ -71,13 +72,17 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
   const fade = useMemo(() => idleFade(() => gun === undefined ? "" : `${gun.id}:${magLoaded(ctx, gun)}:${isReloading(ctx, gun)}:${stat(ctx, AMMO_STAT_IDS[gun.ammo])?.current}:${stat(ctx, "grenades")?.current}`,
     () => combat() || (gun !== undefined && (isReloading(ctx, gun) || magLoaded(ctx, gun) === 0)), 0.5, 5000), [ctx, gun]);
   const { compact } = useCompact();
-  if (gun === undefined) return <Plate padding={[4, 8, 4, 8]}><Label color={C.dim}>No weapon · find a gun</Label></Plate>;
+  if (gun === undefined) return <Plate padding={[4, 8, 4, 8]}><Label color={C.dim}>Empty-handed · find some junk</Label></Plate>;
   const loaded = () => magLoaded(ctx, gun), reloading = () => isReloading(ctx, gun);
   return <Hull opacity={fade} width={compact ? 240 : 260} gap={compact ? 4 : 6} padding={compact ? 7 : 10} border={{ width: 2, color: RARITY_COLORS[gun.rarity] }}>
     <RuneView gap={1}>
       <Text family="Russo One" size={compact ? 13 : 15} color={RARITY_COLORS[gun.rarity]}>{gun.name}</Text>
-      {compact ? null : <Small size={11}>{`${gun.manufacturer} ${gun.family} · lv${gun.level} · ${gun.weapon.damage} dmg`}</Small>}
-      {compact || gun.element === "none" ? null : <Small size={11} color={ELEMENT_COLORS[gun.element]}>{gun.element}</Small>}
+      {compact ? null : <Small size={11}>{`${junkCard(gun).condition} ${junkCard(gun).body} + ${junkCard(gun).mod} · lv${gun.level} · ${gun.weapon.damage} dmg`}</Small>}
+      <Row gap={6}>
+        <Small size={11} color={junkCard(gun).personalityColor}>{junkCard(gun).personality.toUpperCase()}</Small>
+        {gun.element === "none" ? null : <Small size={11} color={ELEMENT_COLORS[gun.element]}>{junkCard(gun).element ?? ""}</Small>}
+        <Small size={11} color={C.amber} text={bind(() => moodReadout(ctx, gun))} />
+      </Row>
     </RuneView>
     <Row>
       <Tube layout="row" items="end" gap={6} grow={1}>
@@ -91,7 +96,7 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
     </Row>
     <Pips value={() => reloading() ? 0 : loaded()} max={() => gun.magSize} count={Math.min(gun.magSize, 24)} color={C.amber} width={Math.max(4, Math.floor((compact ? 222 : 236) / Math.min(gun.magSize, 24)) - 2)} height={compact ? 4 : 6} />
     <Text size={12} color={C.red} text={bind(() => activePerkBuffs(ctx, gun).map(b => `${b.label}${b.stacks > 1 ? ` x${b.stacks}` : ""} · ${Math.ceil(b.leftMs / 1000)}s`).join("   ").toUpperCase())} />
-    {compact ? null : <Small size={11} text={bind(() => reloading() ? "Reloading…" : loaded() === 0 ? "Empty · R to reload" : "R reload · G grenade")} />}
+    {compact ? null : <Small size={11} text={bind(() => reloading() ? "Reloading…" : loaded() === 0 ? "Empty · R to reload" : "R reload · G water balloon")} />}
   </Hull>;
 }
 
@@ -107,7 +112,7 @@ export function WeaponHotbar({ combat }: { combat: () => boolean }) {
     const gun = gunById(id), active = index === selected;
     return <RuneView key={index} width={compact ? 64 : 84} height={compact ? 36 : 42} clip padding={[3, 6, 3, 6]} gap={1} y={active ? -4 : 0} fill={active ? "#2a2118f2" : "#110e0bcc"} border={{ width: active ? 2 : 1, color: gun === undefined ? "#3b3f44" : RARITY_COLORS[gun.rarity] }}>
       <Label color={active ? C.amber : C.dim}>{String(index + 1)}</Label>
-      <Text size={10} color={gun === undefined ? C.faint : C.ink}>{gun === undefined ? "empty" : gun.family.toUpperCase()}</Text>
+      <Text size={10} color={gun === undefined ? C.faint : C.ink}>{gun === undefined ? "empty" : bodyOf(gun.family).body.toUpperCase()}</Text>
     </RuneView>;
   })}</Row>;
 }
@@ -118,12 +123,21 @@ export function ItemCard() {
   const pickup = useStore(lastPickupStore);
   const gun = pickup === null ? undefined : gunById(pickup.gunId);
   if (pickup === null || gun === undefined) return null;
+  const card = junkCard(gun);
   const rows: [string, string, string?][] = [["Damage", `${gun.weapon.damage}${gun.weapon.pellets !== undefined ? ` ×${gun.weapon.pellets}` : ""}`], ["Fire rate", `${(1000 / gun.weapon.fireIntervalMs).toFixed(1)}/s`], ["Magazine", String(gun.magSize)], ["Crit", `${Math.round(gun.weapon.critChance * 100)}% ×${gun.weapon.critMult}`]];
-  if (gun.element !== "none") rows.push(["Element", gun.element, ELEMENT_COLORS[gun.element]]);
-  return <Hull width={250} hidden={bind(() => !within(ctx, pickup.atMs, 5000))} border={{ width: 2, color: RARITY_COLORS[gun.rarity] }}>
-    <Stamp tone="phosphor">Pickup scan</Stamp>
+  if (card.element !== null) rows.push(["Loaded with", card.element, ELEMENT_COLORS[gun.element]]);
+  return <Hull width={270} hidden={bind(() => !within(ctx, pickup.atMs, 6000))} border={{ width: 2, color: RARITY_COLORS[gun.rarity] }}>
+    <Stamp tone="phosphor">{card.condition}</Stamp>
     <Text family="Russo One" size={16} color={RARITY_COLORS[gun.rarity]}>{gun.name}</Text>
-    <Small>{`${gun.rarity} ${gun.manufacturer} ${gun.family} · level ${gun.level}`}</Small>
+    <Small>{`Level ${gun.level} · ${card.body} + ${card.mod}`}</Small>
+    <Small size={11} color={C.ink}>{card.bodyText}</Small>
+    {card.modText === "" ? null : <Small size={11}>{`${card.mod}: ${card.modText}`}</Small>}
+    <RuneView gap={1} padding={[4, 6, 4, 6]} fill="#00000044" border={{ width: 1, color: card.personalityColor }}>
+      <Text size={13} color={card.personalityColor}>{card.personality.toUpperCase()}</Text>
+      <Small size={11} color={C.xp}>{`+ ${card.perk}`}</Small>
+      <Small size={11} color="#ff9a8a">{`- ${card.quirk}`}</Small>
+    </RuneView>
+    {card.story === null ? null : <Small size={11} color="#ffd27a">{`"${card.story}"`}</Small>}
     <Tube layout="grid" columns={2} gap={3}>{rows.flatMap(([k, v, color]) => [<Small key={`${k}k`} color={color ?? C.phosphorDim}>{k}</Small>, <Text key={`${k}v`} size={13} color={color ?? C.phosphor}>{v}</Text>])}</Tube>
     <PerkList perks={perkLines(gun)} />
   </Hull>;
@@ -155,7 +169,7 @@ function MastCard() {
   const active = mast.status === "active";
   return <RuneView gap={3} padding={[0, 0, 6, 0]}>
     <Row justify="between"><Text size={13} color={C.amber}>{mast.title.toUpperCase()}</Text><Small>{`${mast.step}/${mast.steps}`}</Small></Row>
-    <Small color={C.ink}>{active ? mast.label : mast.outcome === "done" ? "Mast held. $450 + 2 cores paid." : (mast.reason ?? "Contract failed.")}</Small>
+    <Small color={C.ink}>{active ? mast.label : mast.outcome === "done" ? "Watch held. $450 + 2 parts paid." : (mast.reason ?? "Contract failed.")}</Small>
     {active ? <Row justify="between">
       <Small color={C.phosphor} text={bind(() => { const m = mastReadoutStore.read(ctx); return m !== null && m.count > 0 ? `${m.counted} / ${m.count}` : "signal"; })} />
       <Small color={C.phosphor} text={bind(() => { const r = mastReadoutStore.read(ctx)?.remaining; return r === null || r === undefined ? "" : `${Math.ceil(r)}s`; })} />
@@ -175,9 +189,9 @@ export function MissionTracker() {
   const finished = primary !== undefined && primary.objectives.every(o => o.progress >= o.count);
   const returnTo = def === undefined || def.turnIn === "radio" ? null : NPCS[def.turnIn].name;
   return <Plate opacity={fade} width={compact ? 200 : 260} gap={compact ? 3 : 5} padding={compact ? 7 : 10}>
-    <Stamp>Mission log</Stamp>
+    <Stamp>Errands</Stamp>
     <MastCard />
-    {active.length === 0 ? <Small color={C.ink}>No mission · find someone with a "Talk" prompt [E]</Small> : null}
+    {active.length === 0 ? <Small color={C.ink}>No errand · find a neighbour with a "Talk" prompt [E]</Small> : null}
     {primary === undefined || def === undefined ? null : <RuneView gap={3}>
       <Text size={13} color={C.amber}>{def.title.toUpperCase()}</Text>
       {primary.objectives.map(objective => {
@@ -246,6 +260,24 @@ export function ZoneBanner() {
   </RuneView>;
 }
 
+/**
+ * The held weapon talking: a speech bubble over the ammo plate, signed with the weapon's name and
+ * personality. It shows for four seconds after each line.
+ */
+export function GunBark() {
+  const ctx = useGameContext();
+  const { compact } = useCompact();
+  const said = useStore(gunBarkStore);
+  if (said === null) return null;
+  return <RuneView gap={0} items="end" hidden={bind(() => !within(ctx, said.atMs, 4000))} opacity={bind(() => { const age = gameMs(ctx) - said.atMs; return Math.max(0, Math.min(1, age / 120, (4000 - age) / 400)); })}>
+    <RuneView maxWidth={compact ? 220 : 280} padding={[6, 10, 6, 10]} gap={2} radius={10} fill="#fffdf5f2" border={{ width: 2, color: said.color }}>
+      <Label color="#6b5a44" size={10}>{`${said.name} · ${said.personality}`.toUpperCase()}</Label>
+      <Text size={compact ? 12 : 14} color="#1f1a14">{said.line}</Text>
+    </RuneView>
+    <RuneView width={12} height={10} fill="#fffdf5f2" border={{ width: 2, color: said.color }} x={-28} />
+  </RuneView>;
+}
+
 /** An incoming transmission from a crewmate, on the rig's radio strip. */
 export function EchoBox() {
   const ctx = useGameContext();
@@ -253,7 +285,7 @@ export function EchoBox() {
   const line = useStore(speechStore);
   if (line === null) return null;
   return <Plate maxWidth={compact ? 280 : 460} gap={3} padding={compact ? 7 : 10} border={{ width: 2, color: "#2c4d4a" }} hidden={bind(() => !within(ctx, line.atMs, 12000))}>
-    <Row gap={6}><RuneView width={7} height={7} radius={4} fill={C.xp} /><Label color={C.phosphor}>{`ECHO — ${line.speaker}`}</Label></Row>
+    <Row gap={6}><RuneView width={7} height={7} radius={4} fill={C.xp} /><Label color={C.phosphor}>{`WALKIE-TALKIE — ${line.speaker}`}</Label></Row>
     <Text size={compact ? 12 : 14}>{line.line}</Text>
   </Plate>;
 }
@@ -267,9 +299,9 @@ export function ReserveOverlay() {
   const left = () => reserveStore.read(ctx).secondsLeft;
   return <RuneView anchor="fill" role="alert" radial={{ center: [0.5, 0.5], radius: [width * 0.75, height * 0.75], stops: [[0.45, "#00000000"], [1, "#b4180ccc"]] }}>
     <RuneView anchor="center" items="center" gap={8}>
-      <Text family="Russo One" size={36} tracking={3} color={C.red}>REBOOT WINDOW!</Text>
+      <Text family="Russo One" size={36} tracking={3} color={C.red}>LAST GASP!</Text>
       <Pips value={left} max={() => 12} count={12} color={C.red} width={14} height={12} />
-      <Text size={14} text={bind(() => `Get a kill for a Power Surge — ${left().toFixed(1)}s`)} />
+      <Text size={14} text={bind(() => `Get a kill to make a comeback — ${left().toFixed(1)}s`)} />
     </RuneView>
   </RuneView>;
 }
@@ -348,8 +380,8 @@ export function ReactorEnding() {
   if (reactor === null) return null;
   return <RuneView anchor="fill" justify="center" items="center" gap={10} padding={24} hidden={bind(() => !within(ctx, reactor.atMs, 16000))}
     radial={{ center: [0.5, 0.5], radius: [width * 0.8, height * 0.8], stops: [[0.4, "#ffb40000"], [1, "#ffb40044"]] }}>
-    <Text family="Russo One" size={phone ? 28 : 44} tracking={4} align="center" color="#fcd34d">THE COLOSSUS FALLS</Text>
-    <Text size={14} align="center" maxWidth={480}>The Reactor opens. Legendary loot rains onto Ember Gate — Ferralon is yours to keep farming, Reclaimer.</Text>
+    <Text family="Russo One" size={phone ? 28 : 44} tracking={4} align="center" color="#fcd34d">MOTHER ROUTER IS OFFLINE</Text>
+    <Text size={14} align="center" maxWidth={480}>The Wi-Fi is down across Maple Hollow. Heirlooms rain onto the Estates lawn, and every weapon you own is cheering. Keep tinkering.</Text>
   </RuneView>;
 }
 

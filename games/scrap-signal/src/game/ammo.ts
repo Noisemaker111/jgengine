@@ -10,12 +10,12 @@ export const AMMO_STAT_IDS: Record<AmmoPool, string> = {
 };
 
 export const AMMO_LABELS: Record<AmmoPool, string> = {
-  pistol: "Pistol",
-  smg: "SMG",
-  shotgun: "Shotgun",
-  rifle: "Rifle",
-  sniper: "Sniper",
-  rocket: "Rocket",
+  pistol: "Staples",
+  smg: "Nails",
+  shotgun: "Gravel",
+  rifle: "Water",
+  sniper: "Kernels",
+  rocket: "Bread",
 };
 
 export const AMMO_START: Record<AmmoPool, { max: number; current: number }> = {

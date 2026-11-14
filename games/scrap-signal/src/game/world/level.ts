@@ -44,7 +44,7 @@ interface SidePoiMeta {
 const SIDE_POI_META: readonly SidePoiMeta[] = [
   {
     id: "poi_monglet_den",
-    name: "Monglet Den",
+    name: "The Compost Heap",
     anchorZoneId: "rustflat_waste",
     dressing: "ripper_den",
     // Old Tusk's own pack: whelps only, so the boss fight is the boss, not two bruisers beside him.
@@ -52,14 +52,14 @@ const SIDE_POI_META: readonly SidePoiMeta[] = [
   },
   {
     id: "poi_lost_cache",
-    name: "Lost Apex Cache",
+    name: "Pharmacy Delivery Locker",
     anchorZoneId: "arid_badlands",
     dressing: "cache",
     spawns: [{ catalogId: "loader", count: 3 }],
   },
   {
     id: "poi_wreck_field",
-    name: "Buzzard Wreck Field",
+    name: "News-Chopper Sand Trap",
     anchorZoneId: "glasswind_flats",
     dressing: "wreck_field",
     spawns: [{ catalogId: "marauder", count: 3 }, { catalogId: "husk", count: 3 }],

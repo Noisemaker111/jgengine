@@ -71,7 +71,7 @@ interface ZoneMeta {
 const ZONE_META: readonly ZoneMeta[] = [
   {
     id: "rustflat_waste",
-    name: "Rustflat Waste",
+    name: "Crabgrass Court",
     level: 1,
     settlement: { count: 4, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#8a5c3a", storefront: "#4a3524" } },
     clusters: [
@@ -84,7 +84,7 @@ const ZONE_META: readonly ZoneMeta[] = [
   },
   {
     id: "breakwater_shelf",
-    name: "Breakwater Shelf",
+    name: "Sprinkler Heights",
     level: 4,
     settlement: { count: 8, footprint: 7, stories: [1, 2], style: "desert", palette: { wall: "#7d8894", storefront: "#3a4450" } },
     // The landing's camps (husks, marauders) hold only the common stock, so arriving meets the two new
@@ -106,7 +106,7 @@ const ZONE_META: readonly ZoneMeta[] = [
   },
   {
     id: "arid_badlands",
-    name: "Arid Badlands — Coretown",
+    name: "Maple Court — The Cul-de-Sac",
     level: 8,
     settlement: { count: 10, footprint: 7, stories: [1, 2], style: "desert", palette: { wall: "#a06a3c", storefront: "#5a3b1e" } },
     clusters: [
@@ -126,7 +126,7 @@ const ZONE_META: readonly ZoneMeta[] = [
   },
   {
     id: "split_ridge",
-    name: "Split-Ridge Pass",
+    name: "Strip Mall Ridge",
     level: 12,
     settlement: { count: 6, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#7d6b52", storefront: "#43392c" } },
     clusters: [
@@ -145,7 +145,7 @@ const ZONE_META: readonly ZoneMeta[] = [
   },
   {
     id: "glasswind_flats",
-    name: "Glasswind Flats",
+    name: "The Fairways",
     level: 17,
     settlement: { count: 5, footprint: 8, stories: [1, 2], style: "desert", palette: { wall: "#96702a" } },
     clusters: [
@@ -164,7 +164,7 @@ const ZONE_META: readonly ZoneMeta[] = [
   },
   {
     id: "cores_blight",
-    name: "Cores Blight — Ember Gate",
+    name: "Smart Home Estates",
     level: 24,
     settlement: { count: 7, footprint: 9, stories: [2, 4], style: "ruin" },
     clusters: [

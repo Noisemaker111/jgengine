@@ -37,7 +37,7 @@ export const playerDef: PlayerDef = {
   receive: {
     damage: { order: ["shield", "health"] },
   },
-  // The Emergency Reserve owns a lethal hit: the chassis stays on the field, downed, with its level
+  // The Last Gasp owns a lethal hit: the chassis stays on the field, downed, with its level
   // and kit, instead of the engine removing it.
   onDeath: { keep: true },
 };

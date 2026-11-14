@@ -44,7 +44,7 @@ function step(ctx: GameContext, seconds: number): void {
 describe("the Overdrive ladder", () => {
   test("stays shut until the plain front has been fought to the end", () => {
     const ctx = boot({ unlocked: false });
-    expect(startRift(ctx, 1)).toEqual({ ok: false, reason: "Clear the Rustflat Front first." });
+    expect(startRift(ctx, 1)).toEqual({ ok: false, reason: "Clear the Front Lawn first." });
   });
 
   test("opens tiers by medal points: a bronze opens the next, a gold opens three ahead", () => {

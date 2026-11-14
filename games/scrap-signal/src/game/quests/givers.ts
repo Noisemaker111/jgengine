@@ -63,7 +63,7 @@ function payQuest(ctx: GameContext, quest: ScrapQuest): void {
   if (quest.reward.cores !== undefined) earn(ctx, "cores", quest.reward.cores, "quest-reward", quest.id);
   for (const id of quest.reward.unlocks ?? []) award(ctx, id);
   if (quest.reward.gun !== undefined) giveUniqueGun(ctx, quest.reward.gun, quest);
-  ctx.scene.entity.floatText({ instanceId: userId, text: `MISSION COMPLETE · +${quest.reward.xp} XP`, kind: "pickup" });
+  ctx.scene.entity.floatText({ instanceId: userId, text: `ERRAND DONE · +${quest.reward.xp} XP`, kind: "pickup" });
 }
 
 /** How far from the giver a reward is set down: past the talk prompt's reach, so E takes the gun, not the conversation. */
@@ -122,7 +122,7 @@ function accept(ctx: GameContext, quest: ScrapQuest): boolean {
   respawnForJob(ctx, quest.objectives.flatMap((objective) => (objective.kind === "kill" ? [objective.target] : [])));
   if (quest.meetAt !== undefined) moveNpcTo(ctx, NPCS[quest.giver].entity, quest.meetAt);
   say(ctx, NPCS[quest.giver].name, quest.brief);
-  ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `NEW MISSION · ${quest.title.toUpperCase()}`, kind: "pickup" });
+  ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `NEW ERRAND · ${quest.title.toUpperCase()}`, kind: "pickup" });
   return true;
 }
 
@@ -158,8 +158,8 @@ export function talkTo(ctx: GameContext, npc: NpcId): void {
     busy !== undefined
       ? `${busy.title}: still out there waiting for you.`
       : waitFor !== null
-        ? `I'll have work for you at level ${waitFor}. Go make some noise until then.`
-        : "Nothing for you right now. Ask me again after the next big job.";
+        ? `I'll have an errand for you at level ${waitFor}. Go break some appliances until then.`
+        : "Nothing for you right now, hon. Ask me again after the next big job.";
   npcDialogStore.write(ctx, { npc, questId: null, line });
 }
 

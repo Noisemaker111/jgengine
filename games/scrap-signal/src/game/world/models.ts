@@ -1,14 +1,14 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
-import { assets, CLIFF_MAPS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+import { assets, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 
 const SCIFI = "quaternius-modular-scifi";
 const NATURE = "quaternius-stylized-nature";
 const TOON = "quaternius-toon-shooter";
 const ROBOT = "quaternius-animated-lowpoly-robot";
-const DESERT = "quaternius-low-poly-desert-assets";
+
 
 /**
  * Rigged picks carry no explicit `animation`: a catalog-resolved rig is stamped `animation: "auto"`
@@ -57,186 +57,163 @@ function buildEntityModels(): Record<string, ModelConfig> {
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
 /**
- * Rim tuning for the world's own scenery. Weaker and warmer than the hostiles' cool edge on purpose:
- * scenery has to gain form without competing with the read that says "that one can kill you".
+ * Rim tuning for the suburb's scenery: a warm afternoon edge, weaker than the appliances' LED glow,
+ * so a hedge gains form without competing with the read that says "that one can kill you".
  */
-const BARK_RIM = { color: "#e8b06a", strength: 0.55, power: 3 } as const;
-const BONE_RIM = { color: "#f2e3c4", strength: 0.7, power: 2.8 } as const;
-const ROCK_RIM = { color: "#e0b47f", strength: 0.3, power: 3.6 } as const;
+const LEAF_RIM = { color: "#fff1b8", strength: 0.35, power: 3.2 } as const;
+const YARD_RIM = { color: "#ffe2a8", strength: 0.45, power: 3 } as const;
 
-/** Industrial props get real riveted panel; scavenged and improvised ones get scratched plate. */
-const PANEL = { metalness: 0.72, roughness: 0.42, maps: PANEL_MAPS } as const;
-const SCRAP = { metalness: 0.55, roughness: 0.68, maps: SCRAP_METAL_MAPS } as const;
+/** Utility boxes get riveted panel; curbside junk gets scratched plate. */
+const PANEL = { metalness: 0.5, roughness: 0.45, maps: PANEL_MAPS } as const;
+const SCRAP = { metalness: 0.4, roughness: 0.6, maps: SCRAP_METAL_MAPS } as const;
 
+/**
+ * Maple Hollow's props. The authored scene places them by catalog id, so the suburb is re-dressed
+ * here: boulders became hedges, dead trees became the overgrown maples, scrap crates became moving
+ * boxes and the convoy wrecks became cars abandoned in driveways. Bright paint, real leaves.
+ */
 export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  // A kid's toy chest, painted fire-engine red: the loot chest.
   red_chest: {
     model: `${SCIFI}/Prop_Chest`,
     fallbackModel: `${SCIFI}/Prop_Crate4`,
-    style: { scale: 2.3, material: { color: "#8f2d24", ...PANEL, emissive: "#e23c2e", emissiveIntensity: 0.35 } },
+    style: { scale: 2.3, material: { color: "#e23c2e", metalness: 0.1, roughness: 0.5, emissive: "#ff5a3c", emissiveIntensity: 0.3 } },
   },
+  // The blue recycling bin: ammo.
   ammo_chest: {
-    model: `${SCIFI}/Prop_Crate3`,
-    fallbackModel: `${SCIFI}/Prop_Crate4`,
-    style: { scale: 3, material: { color: MACHINE.scrap, ...SCRAP } },
+    model: `${TOON}/Trash_Container_Open`,
+    fallbackModel: `${SCIFI}/Prop_Crate3`,
+    style: { targetHeight: 1.3, material: { color: "#2f6fd6", metalness: 0.05, roughness: 0.6, emissive: "#2f6fd6", emissiveIntensity: 0.15 } },
   },
+  // Hank's garage counter: ammo, junk of the day.
   vendor_rigg: {
     model: `${SCIFI}/Prop_Computer`,
     fallbackModel: `${SCIFI}/Prop_AccessPoint`,
-    style: {
-      scale: 2.6,
-      material: { color: MACHINE.iron, ...PANEL, emissive: MACHINE.hazard, emissiveIntensity: 0.6 },
-    },
+    style: { scale: 2.6, material: { color: "#c94f2b", ...PANEL, emissive: "#ffb000", emissiveIntensity: 0.5 } },
   },
+  // Nana's first-aid porch cabinet.
   vendor_sparx: {
     model: `${SCIFI}/Prop_Computer`,
     fallbackModel: `${SCIFI}/Prop_ItemHolder`,
-    style: {
-      scale: 2,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#e23c2e", emissiveIntensity: 0.5 },
-    },
+    style: { scale: 2, material: { color: "#f5f0e6", ...PANEL, emissive: "#ff6b8a", emissiveIntensity: 0.45 } },
   },
+  // The Lucky Gnome's shrine, where a downed tinkerer gets patched up.
   rebuild_station: {
     model: `${SCIFI}/Prop_AccessPoint`,
     fallbackModel: `${SCIFI}/Prop_Computer`,
-    style: {
-      scale: 2.2,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#2f8cff", emissiveIntensity: 1 },
-    },
+    style: { scale: 2.2, material: { color: "#3aa84f", ...PANEL, emissive: "#7aff8a", emissiveIntensity: 0.8 } },
   },
+  // A backyard propane tank. Still goes bang.
   bandit_barrel: {
-    model: `${SCIFI}/Prop_Barrel_Large`,
-    fallbackModel: `${SCIFI}/Prop_Crate3`,
-    style: { scale: 3.2, material: { color: "#b3452a", ...SCRAP, emissive: "#e2582e", emissiveIntensity: 0.25 } },
+    model: `${TOON}/Gas_Tank`,
+    fallbackModel: `${SCIFI}/Prop_Barrel_Large`,
+    style: { targetHeight: 1.4, material: { color: "#f2efe6", metalness: 0.3, roughness: 0.4, emissive: "#ff7a3c", emissiveIntensity: 0.15 } },
   },
-  // Doors are flat panels with no depth, so a scaled, strongly-emissive one reads as an untextured
-  // slab rather than a station — which is what these two were. Every other interactive station in
-  // the game is a real prop with modelled relief, so these match that vocabulary now.
+  // The bus stop: fast travel.
   fast_travel: {
     model: `${SCIFI}/Prop_AccessPoint`,
     fallbackModel: `${SCIFI}/Prop_Computer`,
-    style: {
-      scale: 2.2,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#38e1ff", emissiveIntensity: 0.5 },
-    },
+    style: { scale: 2.2, material: { color: "#ffd23f", ...PANEL, emissive: "#38c8ff", emissiveIntensity: 0.5 } },
   },
+  // The swap meet table.
   black_market: {
     model: `${SCIFI}/Prop_ItemHolder`,
     fallbackModel: `${SCIFI}/Prop_Computer`,
-    style: {
-      scale: 2.2,
-      material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.3 },
-    },
+    style: { scale: 2.2, material: { color: "#7c3aed", ...PANEL, emissive: "#ff5ad1", emissiveIntensity: 0.35 } },
   },
+  // Hank's workbench: shelve, salvage, merge.
   vault: {
     model: `${SCIFI}/Prop_ItemHolder`,
     fallbackModel: `${SCIFI}/Prop_Computer`,
-    style: {
-      scale: 2.4,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#e0b34a", emissiveIntensity: 0.45 },
-    },
+    style: { scale: 2.4, material: { color: "#a0662f", ...PANEL, emissive: "#ffd23f", emissiveIntensity: 0.45 } },
   },
-  // Scale 4 put single boulders at building size, close enough to the camera to hide whole enemy
-  // groups behind one rock. Stratified map so they carry the same layered banding as the cliffs.
+  // Untrimmed hedges where the landscaping boulders used to be.
   rock_spire: {
-    model: `${NATURE}/Rock_Medium_1`,
-    fallbackModel: `${NATURE}/Rock_Medium_2`,
-    style: {
-      scale: 2,
-      material: { color: "#9c7a55", roughness: 0.95, metalness: 0.05, maps: CLIFF_MAPS, rim: ROCK_RIM },
-    },
+    model: `${NATURE}/Bush_Common`,
+    fallbackModel: `${NATURE}/Bush_Common_Flowers`,
+    style: { scale: 3.2, material: { rim: LEAF_RIM } },
   },
-  // No colour override: the nature pack ships its own bark texture, and a flat tint over it
-  // collapsed the whole trunk to an unlit black slab. Scale 3 also made every tree a frame-filling
-  // black column at ground level.
-  //
-  // The rim is doing real work rather than decorating. Bark is a dark, fully-rough albedo, the key
-  // is low and raking, and ambient is deliberately thin — so a backlit trunk is *correctly* almost
-  // black and reads as a hole punched in the frame. A warm edge restores the form without lying
-  // about the lighting or lifting the whole scene's ambient to rescue one prop.
+  // The overgrown maples and oaks that took the street back.
   dead_tree: {
-    model: `${NATURE}/DeadTree_1`,
-    fallbackModel: `${NATURE}/DeadTree_2`,
-    style: { scale: 1.5, material: { rim: BARK_RIM } },
+    model: `${NATURE}/CommonTree_1`,
+    fallbackModel: `${NATURE}/CommonTree_2`,
+    style: { scale: 1.6, material: { rim: LEAF_RIM } },
   },
+  // A car abandoned in a driveway the day the update went out.
   wreck: {
-    model: `${TOON}/Shipping_Container`,
-    fallbackModel: `${TOON}/Container_Small`,
-    style: { targetHeight: 2.6, material: { rim: BARK_RIM } },
+    model: `${TOON}/Broken_Car`,
+    fallbackModel: `${TOON}/Shipping_Container`,
+    style: { targetHeight: 1.9, material: { rim: YARD_RIM } },
   },
+  // Curbside sofas dragged into barricades.
   barricade: {
-    model: `${TOON}/Barrier_Large`,
-    fallbackModel: `${TOON}/Barrier_Fixed`,
-    style: { targetHeight: 2.4, material: { rim: BARK_RIM } },
+    model: `${TOON}/Sofa`,
+    fallbackModel: `${TOON}/Barrier_Large`,
+    style: { targetHeight: 1.5, material: { rim: YARD_RIM } },
   },
+  // A treehouse lookout on stilts.
   watchtower: {
     model: `${SCIFI}/Platform_Rails_4WideTall`,
     fallbackModel: `${SCIFI}/Column_Large_Straight`,
-    style: { scale: 1.8, material: { color: MACHINE.iron, ...PANEL } },
+    style: { scale: 1.8, material: { color: "#9a6b3e", metalness: 0.05, roughness: 0.8 } },
   },
+  // A carport frame.
   tent: {
     model: `${TOON}/Shipping_Container_Structure`,
     fallbackModel: `${TOON}/Shipping_Container`,
-    style: { targetHeight: 3.6, material: { rim: BARK_RIM } },
+    style: { targetHeight: 3.6, material: { rim: YARD_RIM } },
   },
-  // A standing roadside sign reads from any angle; a flat decal lay on the sand unseen.
   signpost: {
     model: `${TOON}/Sign`,
     fallbackModel: `${SCIFI}/Column_Simple`,
-    style: { targetHeight: 2.2, material: { rim: BARK_RIM } },
+    style: { targetHeight: 2.2, material: { rim: YARD_RIM } },
   },
   street_lamp: {
     model: `${TOON}/Street_Light`,
     fallbackModel: `${SCIFI}/Prop_Light_Floor`,
-    style: { targetHeight: 6, material: { rim: BARK_RIM } },
+    style: { targetHeight: 6, material: { rim: YARD_RIM } },
   },
+  // Traffic cones and tyre stacks mark the routes.
   road_marker: {
-    model: `${SCIFI}/Decal_Sign`,
-    fallbackModel: `${SCIFI}/Column_Simple`,
-    style: { scale: 2, material: { color: MACHINE.hazard, metalness: 0.4, roughness: 0.6 } },
+    model: `${TOON}/Traffic_Cone`,
+    fallbackModel: `${TOON}/Tires`,
+    style: { targetHeight: 0.9, material: { rim: YARD_RIM } },
   },
+  // The overturned school bus at the opening: painted school-bus yellow.
   bus_wreck: {
     model: `${TOON}/Broken_Car`,
     fallbackModel: `${TOON}/Shipping_Container`,
-    style: { targetHeight: 4.2, material: { rim: BARK_RIM } },
+    style: { targetHeight: 3.2, scale: 1.6, material: { color: "#ffc20e", rim: YARD_RIM } },
   },
   water_tower: {
     model: `${TOON}/Water_Tank`,
     fallbackModel: `${SCIFI}/Column_Large_Straight`,
-    style: { targetHeight: 9, material: { rim: BARK_RIM } },
+    style: { targetHeight: 9, material: { color: "#8fd3ff", rim: YARD_RIM } },
   },
-  // Bleached-bone landmark: a beast's skeleton half sunk in the sand.
+  // Giant lawn flamingos are drawn by `renderObject`; this is only their fallback.
   bone_arch: {
-    model: `${DESERT}/Bones`,
-    fallbackModel: `${NATURE}/DeadTree_4`,
-    style: { targetHeight: 3.2, material: { rim: BONE_RIM } },
+    model: `${NATURE}/Flower_4_Group`,
+    fallbackModel: `${NATURE}/Bush_Common_Flowers`,
+    style: { scale: 3, material: { rim: LEAF_RIM } },
   },
+  // The Smart Home Estates' gate: an arch lit Wi-Fi blue.
   reactor_gate: {
     model: `${SCIFI}/Door_Frame_SquareTall`,
     fallbackModel: `${SCIFI}/Door_Frame_Square`,
-    style: {
-      scale: 1.6,
-      material: { color: "#3a2c4a", ...PANEL, emissive: "#c05cff", emissiveIntensity: 1 },
-    },
+    style: { scale: 1.6, material: { color: "#e8ebee", ...PANEL, emissive: "#38c8ff", emissiveIntensity: 1 } },
   },
-  // Albedo maps multiply under the tint, so a mid-grey tint over a mid-grey map lands near black —
-  // these crates were reading as charcoal cubes. Tint high to let the scrap map carry the value.
+  // Moving boxes, stacked into cover.
   cover_crate: {
-    model: `${SCIFI}/Prop_Crate4`,
+    model: `${TOON}/Cardboard_Boxes`,
     fallbackModel: `${SCIFI}/Prop_Crate3`,
-    style: { scale: 3.2, material: { color: "#cdd6de", ...SCRAP } },
+    style: { targetHeight: 1.3, material: { rim: YARD_RIM } },
   },
-  // Brighter rust + a warm rim: the old #7a2c1e column went full black when backlit — these were
-  // the featureless "monoliths" standing around the rustflat.
+  // Yard-sale signs and telephone poles are drawn by `renderObject`; these are their fallbacks.
   banner_pole: {
     model: `${SCIFI}/Column_Simple`,
     fallbackModel: `${SCIFI}/Column_Round`,
-    style: {
-      scale: 3,
-      material: { color: "#a8502c", ...SCRAP, rim: { color: "#ffb46a", strength: 0.5, power: 3 } },
-    },
+    style: { scale: 3, material: { color: "#ff5ad1", ...SCRAP } },
   },
-  // Tall verticals for ridgelines and story clusters — an antenna mast reads at two kilometres
-  // and gives the eye a destination the smooth dunes never offered.
   wind_turbine: {
     model: `${SCIFI}/Column_Astra`,
     fallbackModel: `${SCIFI}/Column_Pipes`,

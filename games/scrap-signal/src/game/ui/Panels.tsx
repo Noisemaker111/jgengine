@@ -8,9 +8,10 @@ import { useStore } from "@jgengine/ui/store";
 import { AMMO_LABELS, AMMO_POOLS } from "../ammo";
 import { activeCharacter, characterNodes, talentTree, type CharacterNode } from "../characters";
 import { BLACK_MARKET_UPGRADES, respecCost, upgradeCost } from "../commands";
-import { gunById } from "../handroll";
+import { bodyOf, conditionOf, gunById, junkCard, junkTagline, mergeCost, mergePlan, personalityOf } from "../handroll";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { AMMO_PRICES, gearItems } from "../items/gear/catalog";
-import { VAULT, vaultOpenStore } from "../items/vault";
+import { salvageValue, VAULT, vaultOpenStore } from "../items/vault";
 import { RARITY_COLORS } from "../palette";
 import { NPCS, objectiveLabel, scrapQuestById } from "../quests/catalog";
 import { npcDialogStore } from "../quests/givers";
@@ -52,26 +53,67 @@ export function VendorPanel() {
   useReleasePointer(vendor !== null);
   if (vendor === null) return null;
   const close = () => commands.run("vendor.close", {});
-  if (vendor === "sparx") return <Sheet title="Dr. Sparx's Meds" closeLabel="Close [Esc]" close={close}>
+  if (vendor === "sparx") return <Sheet title="Nana's First-Aid Porch" closeLabel="Close [Esc]" close={close}>
     {gearItems.filter(item => item.trade !== undefined && item.kind !== "ammo").map(item => {
       const cost = item.trade?.buy["cash"] ?? 0;
       return <RowButton key={item.id} title={item.name} detail={item.kind === "health" ? `Restores ${item.heal} health` : "+25 max shield"} value={`$${cost}`} valueColor={C.xp} disabled={cash < cost} onPress={() => commands.run("vendor.buyGear", { itemId: item.id })} />;
     })}
   </Sheet>;
-  return <Sheet title="Rigg Munitions" closeLabel="Close [Esc]" close={close}>
-    {AMMO_POOLS.map(pool => <RowButton key={pool} title={`${AMMO_LABELS[pool]} ammo`} detail={`+${AMMO_PRICES[pool].amount} rounds`} value={`$${AMMO_PRICES[pool].cash}`} valueColor={C.xp} disabled={cash < AMMO_PRICES[pool].cash} onPress={() => commands.run("vendor.buyAmmo", { pool })} />)}
-    <RowButton title="Gun of the day" detail="A mystery roll from Rigg's back room" value="$300" valueColor={C.xp} disabled={cash < 300} onPress={() => commands.run("vendor.gunOfTheDay", { vendor: "rigg" })} />
+  return <Sheet title="Hank's Garage" closeLabel="Close [Esc]" close={close}>
+    {AMMO_POOLS.map(pool => <RowButton key={pool} title={`${AMMO_LABELS[pool]}`} detail={`+${AMMO_PRICES[pool].amount} rounds`} value={`$${AMMO_PRICES[pool].cash}`} valueColor={C.xp} disabled={cash < AMMO_PRICES[pool].cash} onPress={() => commands.run("vendor.buyAmmo", { pool })} />)}
+    <RowButton title="Junk of the day" detail="A mystery pick from the back of Hank's garage" value="$300" valueColor={C.xp} disabled={cash < 300} onPress={() => commands.run("vendor.gunOfTheDay", { vendor: "rigg" })} />
     <Small color={C.faint}>NO REFUNDS.</Small>
   </Sheet>;
 }
 
-function GunRow({ itemId, action, onPress }: { itemId: string; action: string; onPress: () => void }) {
+/** Which two weapons the workbench has clamped for a merge. UI-only state. */
+const benchPickStore = defineStore<{ bodyId: string | null; modId: string | null }>("junk.benchPick", () => ({ bodyId: null, modId: null }));
+
+/** One weapon on the bench: its card line and the four things the bench can do with it. */
+function BenchRow({ itemId, shelfAction, onShelf }: { itemId: string; shelfAction: string; onShelf: () => void }) {
+  const ctx = useGameContext();
+  const { commands } = useGame();
+  const pick = useStore(benchPickStore);
   const gun = gunById(itemId);
   if (gun === undefined) return null;
-  return <RowButton title={gun.name} titleColor={RARITY_COLORS[gun.rarity]} detail={`lvl ${gun.level} ${gun.rarity} ${gun.manufacturer} ${gun.family}${gun.element === "none" ? "" : ` · ${gun.element}`} · ${gun.weapon.damage} dmg`} value={action.toUpperCase()} onPress={onPress} />;
+  const value = salvageValue(gun);
+  const set = (next: Partial<{ bodyId: string | null; modId: string | null }>) => benchPickStore.write(ctx, { ...benchPickStore.read(ctx), ...next });
+  return <RuneView gap={4} padding={6} fill="#00000055" border={{ width: 1, color: RARITY_COLORS[gun.rarity] }}>
+    <Text size={14} color={RARITY_COLORS[gun.rarity]}>{gun.name}</Text>
+    <Small>{`lvl ${gun.level} · ${junkTagline(gun)} · ${gun.weapon.damage} dmg`}</Small>
+    <RuneView layout="grid" columns={4} gap={4} responsive={{ phone: { columns: 2 } }}>
+      <Button onPress={onShelf}>{shelfAction}</Button>
+      <Button onPress={() => set({ bodyId: pick.bodyId === itemId ? null : itemId })} {...(pick.bodyId === itemId ? { fill: "#3b2f12" } : {})}>{pick.bodyId === itemId ? "Body ✓" : "Use body"}</Button>
+      <Button onPress={() => set({ modId: pick.modId === itemId ? null : itemId })} {...(pick.modId === itemId ? { fill: "#3b2f12" } : {})}>{pick.modId === itemId ? "Mod ✓" : "Use mod"}</Button>
+      <Button onPress={() => { set({ bodyId: pick.bodyId === itemId ? null : pick.bodyId, modId: pick.modId === itemId ? null : pick.modId }); void commands.run("workbench.salvage", { itemId }); }}>{`Salvage $${value.cash}${value.cores > 0 ? ` +${value.cores}` : ""}`}</Button>
+    </RuneView>
+  </RuneView>;
 }
 
-/** The Coretown vault: store the guns you are not carrying, take them back when you want them. */
+/** The merge strip: the clamped body and mod, what comes out, and what it costs. */
+function MergeStrip() {
+  const ctx = useGameContext();
+  const { commands } = useGame();
+  const pick = useStore(benchPickStore);
+  const cash = useCurrency("cash");
+  const cores = useCurrency("cores");
+  const body = pick.bodyId === null ? undefined : gunById(pick.bodyId);
+  const mod = pick.modId === null ? undefined : gunById(pick.modId);
+  const plan = body !== undefined && mod !== undefined && body.id !== mod.id ? mergePlan(body, mod) : null;
+  const cost = plan === null ? null : mergeCost(plan);
+  const voice = body === undefined ? null : personalityOf(body);
+  return <RuneView gap={4} padding={8} fill="#1d2a3a" border={{ width: 2, color: C.amber }}>
+    <Label color={C.amber}>Merge · body and voice from one, mod from the other</Label>
+    <Small color={C.ink}>{`Body: ${body === undefined ? "pick one below" : `${body.name} (${bodyOf(body.family).body})`}`}</Small>
+    <Small color={C.ink}>{`Mod: ${mod === undefined ? "pick one below" : `${mod.name} (${mod.manufacturer})`}`}</Small>
+    {plan === null || cost === null || voice === null ? <Small>Two Used make a Like New. Heirlooms can't be made, only inherited: a merge tops out at Mint.</Small> : <RuneView gap={3}>
+      <Text size={13} color={RARITY_COLORS[plan.rarity]}>{`→ ${conditionOf(plan.rarity)} ${bodyOf(plan.body).body} + ${plan.mod} · ${voice.name} · lvl ${plan.level}`}</Text>
+      <RowButton title="Merge" detail={`$${cost.cash} and ${cost.cores} spare part`} value="MERGE" disabled={cash < cost.cash || cores < cost.cores} onPress={() => { void commands.run("workbench.merge", { bodyId: plan === null ? "" : body?.id ?? "", modId: mod?.id ?? "" }); benchPickStore.write(ctx, { bodyId: null, modId: null }); }} />
+    </RuneView>}
+  </RuneView>;
+}
+
+/** Hank's garage workbench: shelve, take back, salvage, and merge two weapons into one. */
 export function VaultPanel() {
   const { commands } = useGame();
   const open = useStore(vaultOpenStore);
@@ -80,12 +122,13 @@ export function VaultPanel() {
   useReleasePointer(open);
   if (!open) return null;
   const stored = vault.filter(slot => slot !== null);
-  return <Sheet title="Coretown Vault" close={() => commands.run("vault.close", {})}>
+  return <Sheet wide title="Hank's Workbench" close={() => commands.run("vault.close", {})}>
+    <MergeStrip />
     <Label color={C.dim}>Carried</Label>
-    {hotbar.map((slot, index) => slot === null ? null : <GunRow key={`h${index}`} itemId={slot.itemId} action="Store" onPress={() => commands.run("vault.deposit", { slot: index })} />)}
-    <Label color={C.dim}>{`In the vault · ${stored.length}/${vault.length}`}</Label>
+    {hotbar.map((slot, index) => slot === null ? null : <BenchRow key={`h${index}`} itemId={slot.itemId} shelfAction="Shelve" onShelf={() => commands.run("vault.deposit", { slot: index })} />)}
+    <Label color={C.dim}>{`On the shelf · ${stored.length}/${vault.length}`}</Label>
     {stored.length === 0 ? <Small color={C.faint}>Empty</Small> : null}
-    {vault.map((slot, index) => slot === null ? null : <GunRow key={`v${index}`} itemId={slot.itemId} action="Take" onPress={() => commands.run("vault.withdraw", { itemId: slot.itemId })} />)}
+    {vault.map((slot, index) => slot === null ? null : <BenchRow key={`v${index}`} itemId={slot.itemId} shelfAction="Take" onShelf={() => commands.run("vault.withdraw", { itemId: slot.itemId })} />)}
   </Sheet>;
 }
 
@@ -128,7 +171,7 @@ export function TalentsPanel() {
     </RuneView>
     <Row justify="between" gap={10} responsive={{ phone: { layout: "stack" } }}>
       <Small size={10} grow={1} shrink>EACH TIER OPENS AT 5 MORE POINTS IN ITS BRANCH · THE CAPSTONE AT 20 · EARN POINTS BY LEVELING UP</Small>
-      <Button disabled={tree.pointsSpent() === 0 || cash < respecCost(level)} onPress={() => commands.run("talent.respec", {})}>{`Recalibrate · $${respecCost(level)}`}</Button>
+      <Button disabled={tree.pointsSpent() === 0 || cash < respecCost(level)} onPress={() => commands.run("talent.respec", {})}>{`Reset skills · $${respecCost(level)}`}</Button>
     </Row>
   </Sheet>;
 }
@@ -140,10 +183,10 @@ export function TravelPanel() {
   const discovered = useStore(discoveredStationsStore);
   useReleasePointer(open);
   if (!open) return null;
-  return <Sheet title="Fast Travel Network" close={() => commands.run("travel.close", {})}>
+  return <Sheet title="Bus Routes" close={() => commands.run("travel.close", {})}>
     {TRAVEL_STATIONS.map(station => { const known = discovered.includes(station.zoneId);
       return <RowButton key={station.zoneId} title={known ? station.name : "??? — undiscovered"} {...(known ? { value: "GO" } : {})} valueColor={C.cyan} disabled={!known} onPress={() => commands.run("travel.go", { zoneId: station.zoneId })} />; })}
-    <Small color={C.faint}>WALK UP TO A STATION IN THE WORLD TO REGISTER IT</Small>
+    <Small color={C.faint}>WALK UP TO A BUS STOP IN THE WORLD TO ADD IT TO THE ROUTE</Small>
   </Sheet>;
 }
 
@@ -155,8 +198,8 @@ export function BlackMarketPanel() {
   const counts = useStore(blackMarketStore);
   useReleasePointer(open);
   if (!open) return null;
-  return <Sheet title="Switchboard Exchange" close={() => commands.run("blackmarket.close", {})}>
-    <Label color="#f0abfc">{`◆ ${cores} cores — elites and bosses drop it`}</Label>
+  return <Sheet title="Swap Meet" close={() => commands.run("blackmarket.close", {})}>
+    <Label color="#f0abfc">{`◆ ${cores} spare parts — elites and bosses drop them`}</Label>
     {BLACK_MARKET_UPGRADES.map(upgrade => { const owned = counts[upgrade.id] ?? 0, cost = upgradeCost(owned);
       return <RowButton key={upgrade.id} title={`${upgrade.name} (owned ${owned})`} detail={upgrade.blurb} value={`◆ ${cost}`} valueColor="#f0abfc" disabled={cores < cost} onPress={() => commands.run("blackmarket.buy", { upgrade: upgrade.id })} />; })}
   </Sheet>;
@@ -168,7 +211,7 @@ function clock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 function MutatorChips({ ids, wrap = false }: { ids: readonly string[]; wrap?: boolean }) {
-  if (ids.length === 0) return <Chip color={C.phosphor}>Clean signal · no mutators</Chip>;
+  if (ids.length === 0) return <Chip color={C.phosphor}>Quiet street · no mutators</Chip>;
   return <RuneView layout={wrap ? "grid" : "row"} {...(wrap ? { columns: 2 } : {})} gap={4}>{ids.map(id => { const p = mutatorById(id)?.payload; return p === undefined ? null : <Chip key={id} color={p.boon === true ? C.xp : C.red} tooltip={p.blurb}>{p.name}</Chip>; })}</RuneView>;
 }
 function Chip({ color, children, tooltip }: { color: string; children: string; tooltip?: string }) {
@@ -189,12 +232,12 @@ export function OverdriveTerminal() {
   if (!open) return null;
   const scaling = riftScaling(tier, level), targets = medalTargets(tier), eventId = riftEventId(tier);
   const tierOpen = board.isOpen(eventId), best = board.best(eventId), next = board.next(eventId);
-  return <Sheet wide title="Overdrive console" aside={<Small>{`The Rustflat wreck · medal points ${board.points()}`}</Small>} close={() => commands.run("rift.close", {})}>
+  return <Sheet wide title="Block Party speaker" aside={<Small>{`The Front Lawn · medal points ${board.points()}`}</Small>} close={() => commands.run("rift.close", {})}>
     <Row items="start" gap={10} responsive={{ phone: { layout: "stack" } }}>
       <Tube width={200} gap={2} responsive={{ phone: { width: FULL } }}>
         {Array.from({ length: RIFT_TIER_COUNT }, (_, index) => {
           const t = index + 1, id = riftEventId(t), isOpen = board.isOpen(id), medal = board.medalOf(id), b = board.best(id);
-          return <Button key={t} layout="row" items="center" gap={8} minHeight={28} padding={[3, 8, 3, 8]} fill={t === tier ? "#3a2c10" : "#0a1d17"} border={{ width: 1, color: t === tier ? C.amber : "#173a2e" }} disabled={!isOpen} label={`Overdrive ${romanTier(t)}`} onPress={() => commands.run("rift.select", { tier: t })}>
+          return <Button key={t} layout="row" items="center" gap={8} minHeight={28} padding={[3, 8, 3, 8]} fill={t === tier ? "#3a2c10" : "#0a1d17"} border={{ width: 1, color: t === tier ? C.amber : "#173a2e" }} disabled={!isOpen} label={`Block Party ${romanTier(t)}`} onPress={() => commands.run("rift.select", { tier: t })}>
             <Text width={40} size={13} color={C.phosphor}>{romanTier(t)}</Text>
             <Icon name="star" size={13} color={medal === null ? "#4a463f" : MEDAL_COLOR[medal] ?? C.dim} />
             <Small grow={1} align="right">{isOpen ? (b === null ? "—" : clock(b)) : "locked"}</Small>
@@ -202,16 +245,16 @@ export function OverdriveTerminal() {
         })}
       </Tube>
       <Hull grow={1} shrink gap={8} border={{ width: 2, color: C.amber }}>
-        <Row justify="between"><Stamp>{`Overdrive ${romanTier(tier)}`}</Stamp><Small>{`crews at level ${scaling.enemyLevel}`}</Small></Row>
-        <Row gap={8}><Small>Signal pressure</Small><Pips value={() => tier} max={() => RIFT_TIER_COUNT} count={20} color={tier > 12 ? C.red : C.amber} width={6} /></Row>
+        <Row justify="between"><Stamp>{`Block Party ${romanTier(tier)}`}</Stamp><Small>{`crews at level ${scaling.enemyLevel}`}</Small></Row>
+        <Row gap={8}><Small>Party pressure</Small><Pips value={() => tier} max={() => RIFT_TIER_COUNT} count={20} color={tier > 12 ? C.red : C.amber} width={6} /></Row>
         <MutatorChips ids={mutators} />
         {mutators.map(id => { const p = mutatorById(id)?.payload; return p === undefined ? null : <Small key={id} color={C.ink}>{`${p.name}. ${p.blurb}`}</Small>; })}
         <RuneView gap={2}>{(["bronze", "silver", "gold"] as const).map(medal => <Row key={medal} gap={6}><Icon name="star" size={13} color={MEDAL_COLOR[medal] ?? C.dim} /><Small color={MEDAL_COLOR[medal] ?? C.dim}>{`${medal === "bronze" ? "clear" : `under ${clock(targets[medal])}`} · +${MEDAL_REWARDS[medal]!.cores} cores`}</Small></Row>)}</RuneView>
-        <Small color={C.ink}>{`Pays $${scaling.cash} and ${scaling.cores} cores · loot level ${scaling.lootLevel} · luck ×${scaling.luck.toFixed(1)}${tier >= 4 ? " · Foreman drops a legendary" : ""}`}</Small>
+        <Small color={C.ink}>{`Pays $${scaling.cash} and ${scaling.cores} parts · loot level ${scaling.lootLevel} · luck ×${scaling.luck.toFixed(1)}${tier >= 4 ? " · the HOA President drops an heirloom" : ""}`}</Small>
         <Small>{`${best === null ? "No clear yet." : `Best ${clock(best)}.`} ${next === null ? (best === null ? "" : "Gold held.") : `Next: ${next.medal} under ${clock(next.value)}.`}`}</Small>
         <Row gap={8} responsive={{ phone: { layout: "stack" } }}>
-          <Button disabled={!tierOpen} onPress={() => commands.run("rift.start", { tier })}>{tierOpen ? "Overdrive the wreck" : "Locked — earn more medal points"}</Button>
-          {mutators.length > 0 ? <Button disabled={cores < RIFT_REROLL_CORES} onPress={() => commands.run("rift.reroll", { tier })}>{`Re-tune mutators · ${RIFT_REROLL_CORES} cores`}</Button> : null}
+          <Button disabled={!tierOpen} onPress={() => commands.run("rift.start", { tier })}>{tierOpen ? "Crank up the party" : "Locked — earn more medal points"}</Button>
+          {mutators.length > 0 ? <Button disabled={cores < RIFT_REROLL_CORES} onPress={() => commands.run("rift.reroll", { tier })}>{`Re-tune mutators · ${RIFT_REROLL_CORES} parts`}</Button> : null}
         </Row>
       </Hull>
     </Row>
@@ -235,7 +278,7 @@ export function OverdriveCard() {
   const countdown = () => riftStore.read(ctx).run?.countdown ?? 0;
   const pace = () => { const t = medalTargets(run.tier), e = elapsed(); return e <= t.gold ? "gold" : e <= t.silver ? "silver" : "bronze"; };
   return <Plate width={compact ? 200 : 260} gap={compact ? 3 : 5} padding={compact ? 7 : 10} border={{ width: 2, color: live ? C.red : C.amber }}>
-    <Row justify="between"><Stamp tone={live ? "red" : "amber"}>{`Overdrive ${romanTier(run.tier)}`}</Stamp>
+    <Row justify="between"><Stamp tone={live ? "red" : "amber"}>{`Block Party ${romanTier(run.tier)}`}</Stamp>
       <Text family="Russo One" size={18} color={bind(() => live ? MEDAL_COLOR[pace()] ?? C.ink : C.ink)} text={bind(() => clock(elapsed()))} /></Row>
     {live ? <>
       <Row justify="between"><Small color={C.ink}>{`Wave ${run.wave} / 4 · level ${run.enemyLevel}`}</Small><Small>{target === null ? "gold held" : `${target.medal} < ${clock(target.value)}`}</Small></Row>
@@ -244,10 +287,10 @@ export function OverdriveCard() {
         <Pips value={countdown} max={() => riftStore.read(ctx).run?.countdownTotal ?? 1} count={12} color={C.amber} width={12} />
         <Button onPress={() => commands.run("rift.callWave", {})} label="Call wave"><Text size={13} text={bind(() => `Call wave [N] · ${Math.ceil(countdown())}s`)} /></Button>
       </RuneView> : null}
-      <Text size={13} color={C.red} text={bind(() => { const s = riftLeaveSeconds(ctx); return s === null ? "" : `Back to the wreck — ${Math.ceil(s)}s`; })} />
+      <Text size={13} color={C.red} text={bind(() => { const s = riftLeaveSeconds(ctx); return s === null ? "" : `Back to the lawn — ${Math.ceil(s)}s`; })} />
     </> : <>
       <Small color={C.ink}>{run.phase === "won" ? `Cleared · ${run.medal === null || run.medal === undefined ? "no medal" : `${run.medal} medal`}${run.newBest === true ? " · new best" : ""}` : `Lost — ${run.reason}`}</Small>
-      {run.phase === "won" ? <Small color={C.xp}>{`+$${run.cash ?? 0} · +${run.cores ?? 0} cores${(run.newMedals ?? []).length > 0 ? ` · first ${(run.newMedals ?? []).join(", ")}` : ""}`}</Small> : null}
+      {run.phase === "won" ? <Small color={C.xp}>{`+$${run.cash ?? 0} · +${run.cores ?? 0} parts${(run.newMedals ?? []).length > 0 ? ` · first ${(run.newMedals ?? []).join(", ")}` : ""}`}</Small> : null}
       <Button onPress={() => commands.run("rift.dismiss", {})}>Dismiss</Button>
     </>}
   </Plate>;

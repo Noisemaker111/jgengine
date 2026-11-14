@@ -16,39 +16,33 @@ export const ELEMENT_COLORS = {
 } as const;
 
 /**
- * Ferralon reads on one rule: **the world is warm, the machines are cold.**
- * Ground, rock, and haze sit in sandstone/ochre; every robot chassis sits in
- * blue-grey steel with a saturated hazard accent. That hue split is what makes a
- * silhouette legible at 60 m against open desert — the previous single-brown
- * palette put enemies and terrain in the same hue *and* value, so nothing read.
+ * Maple Hollow reads on one rule: **the yards are soft and green, the machines are hard and loud.**
+ * Lawns, hedges and sky sit in fresh greens and a clean summer blue; every hostile appliance is
+ * enamel white, chrome or a toy-bright plastic with glowing red LED eyes. That split is what makes a
+ * Roomba legible at thirty metres against an overgrown lawn.
  */
-export const FERRALON = {
-  sky: "#5b93bd",
-  skyZenith: "#0f4c86",
-  horizon: "#dcc39c",
-  fog: "#c9a677",
+export const SUBURB = {
+  sky: "#6fb8ef",
+  skyZenith: "#2f8be0",
+  horizon: "#d9eefc",
+  fog: "#cfe6f5",
+  /** Aerial haze: a pale summer blue, so the far rooftops and hills fall back toward the sky. */
+  haze: "#c8e2f2",
   /**
-   * Aerial-perspective haze. Cooler and lighter than {@link FERRALON.fog} on purpose: distance in a
-   * dusty desert desaturates *toward the sky*, so a warm sand-coloured fog just repaints the sand
-   * over the ridgelines instead of pushing them back.
+   * Terrain low/high: shaded lawn in the hollows, sunlit overgrown grass on the rises. Far enough
+   * apart in value that the rolling yards still have relief.
    */
-  haze: "#b9bfc0",
-  /**
-   * Terrain low/high. The gap between these two is what gives an open desert its relief — the old
-   * pair sat close together in value, so every ridge read as one smooth tan blob. Deep shadowed
-   * ochre in the hollows, bleached sandstone on the ridgelines.
-   */
-  rockLow: "#5f3c22",
-  rockHigh: "#dba869",
-  /** Slope/cliff face: cooler and darker than the flats so relief separates by value, not just shading. */
-  cliff: "#6b5340",
-  sand: "#cdab74",
-  dust: "#b3663a",
-  hudAmber: "#ffb400",
-  hudRed: "#e23c2e",
-  hudShield: "#39a8e0",
-  hudXp: "#8ee43e",
-  hudPanel: "rgba(12, 14, 16, 0.82)",
+  rockLow: "#3f7a2c",
+  rockHigh: "#9fd35a",
+  /** Banks and slopes: packed garden soil, darker than the lawn so a slope separates by value. */
+  cliff: "#7a5a3a",
+  sand: "#8cc653",
+  dust: "#f6e7a8",
+  hudAmber: "#ffd23f",
+  hudRed: "#ff4a5a",
+  hudShield: "#4cc3ff",
+  hudXp: "#7ae05a",
+  hudPanel: "rgba(20, 28, 48, 0.86)",
 } as const;
 
 /**

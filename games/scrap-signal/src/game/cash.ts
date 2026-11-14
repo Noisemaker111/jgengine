@@ -19,6 +19,7 @@ export type CashReason =
   | "rift-reroll"
   | "respec"
   | "salvage"
+  | "workbench-merge"
   | "respawn-fee"
   | "shop-purchase"
   | "ammo-purchase"

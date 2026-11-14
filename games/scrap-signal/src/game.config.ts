@@ -29,6 +29,7 @@ import { GameUI } from "./game/ui/GameUI";
 import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
 import { renderEntity } from "./game/world/ApplianceMesh";
+import { renderObject } from "./game/world/yardProps";
 import { NPCS } from "./game/quests/catalog";
 import { RED_CHESTS } from "./game/world/setup";
 import { AMMO_CRATES } from "./game/items/ammoCrates";
@@ -43,11 +44,11 @@ import { loop } from "./loop";
 import { CLIMB_SLOPE_LIMIT, physics, terrainField, world } from "./world";
 
 const rarityStyle: Record<string, RarityStyle> = {
-  common: { color: RARITY_COLORS.common, label: "Common" },
-  uncommon: { color: RARITY_COLORS.uncommon, beam: true, label: "Uncommon" },
-  rare: { color: RARITY_COLORS.rare, beam: true, label: "Rare" },
-  epic: { color: RARITY_COLORS.epic, beam: true, label: "Epic" },
-  legendary: { color: RARITY_COLORS.legendary, beam: true, label: "Legendary" },
+  common: { color: RARITY_COLORS.common, label: "Busted" },
+  uncommon: { color: RARITY_COLORS.uncommon, beam: true, label: "Used" },
+  rare: { color: RARITY_COLORS.rare, beam: true, label: "Like New" },
+  epic: { color: RARITY_COLORS.epic, beam: true, label: "Mint" },
+  legendary: { color: RARITY_COLORS.legendary, beam: true, label: "Heirloom" },
 };
 
 const sceneDoc = buildScrapSignalEditorLayers();
@@ -97,7 +98,7 @@ const staticPrompts: readonly PositionedPrompt[] = [
     position: { x: VAULT_POS[0], z: VAULT_POS[2] },
     prompt: {
       radius: 3.2,
-      display: { kind: "keybind", actionId: "interact", label: "Open the vault" },
+      display: { kind: "keybind", actionId: "interact", label: "Use Hank's workbench" },
       invoke: { name: "vault.open", input: undefined },
     },
   },
@@ -230,25 +231,25 @@ export const game = defineGame({
     // 2.5 s wait was landing the capture before anything had been rasterised at all.
     settleMs: 9000,
     views: {
-      menu: { description: "Boot menu over the wastes, Continue highlighted", state: "menu", settleMs: 1800 },
-      menuNew: { description: "New run pane with the reclaimer roster", state: "menu-new", settleMs: 1200 },
+      menu: { description: "Boot menu over the suburb, Continue highlighted", state: "menu", settleMs: 1800 },
+      menuNew: { description: "New run pane with the tinkerer roster", state: "menu-new", settleMs: 1200 },
       convoy: {
-        description: "The wrecked hauler landmark that gives the opening view its midground.",
+        description: "The overturned school bus that gives the opening view its midground.",
         look: "@marker:rustflat_convoy_hauler",
         lookFrom: "24,9,0.6",
         settleMs: 20000,
       },
       front: {
-        description: "The Rustflat Front — both crews converging on the convoy wreck.",
+        description: "The Front Lawn — both appliance gangs converging on the moving truck.",
         look: "@marker:front_rustflat_center",
         lookFrom: "30,12,0.5",
         settleMs: 16000,
       },
     },
   },
-  name: "Scrap Signal",
+  name: "Junk Drawer",
   features: { quest: true, trade: true, unlocks: true },
-  // Borderlands' opening: no gun, no cash, nothing unlocked. Bolt and the crash chest hand out the rest.
+  // The opening: no weapon, no cash, nothing unlocked. DING and the toy chest hand out the rest.
   newGame: { state: { cash: {}, kit: [], unlocked: [], pieces: [], running: [] } },
   assets,
   audio: { ...audio, objectSounds },
@@ -258,6 +259,8 @@ export const game = defineGame({
     entityModels,
     // Every hostile is a procedural appliance (Roombas, mowers, fridges, ...); NPCs keep their models.
     renderEntity,
+    // Giant lawn flamingos, yard-sale signs and telephone poles are primitive-built too.
+    renderObject,
     objectModels,
     WorldOverlay: FerralonWorldOverlay,
     // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its
@@ -323,10 +326,10 @@ export const game = defineGame({
   hudTheme: false,
   uiRenderer: "rune",
   rendering: {
-    // Ink outlines and cel bands over hard desert noon: short graphic shadows under a deep blue sky.
+    // Ink outlines and cel bands over a bright suburban afternoon: Saturday-morning-cartoon colour.
     look: "comic",
-    mood: { preset: "day", sun: { azimuth: 51, elevation: 62, color: "#ffe0b0" }, skyColor: "#0f4c86", horizonColor: "#dcc39c" },
-    environmentSource: hdriEnvironment("desert-noon", { intensity: 0.8 }),
+    mood: { preset: "day", sun: { azimuth: 51, elevation: 58, color: "#fff1d0" }, skyColor: "#2f8be0", horizonColor: "#d9eefc" },
+    environmentSource: hdriEnvironment("clear-noon", { intensity: 0.85 }),
     // No `backdrop.fog`: the world's sky owns the single fog config, so the two cannot drift apart.
   // Fill was bright enough to erase the shadow side of everything, which is why silhouettes looked
   // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
@@ -335,19 +338,19 @@ export const game = defineGame({
       // Warm grey, not cool: the hemisphere already supplies the cold sky bounce that keeps machines
       // blue in shade, and stacking a second cool fill on top of it turned every shadowed hillside
       // olive-green in a world whose whole rule is that the ground stays warm.
-      ambient: { color: "#b3a693", intensity: 0.2 },
+      ambient: { color: "#d8e6d0", intensity: 0.24 },
       // Sky bounce desaturated from #7fa9c8: a saturated cyan fill times warm tan albedo lands on
       // olive — the whole desert's shadow side was reading green. A greyer blue keeps machines cool
       // in shade without repainting the ground.
-      hemisphere: { skyColor: "#9aa8b8", groundColor: "#6b4a30", intensity: 0.4 },
+      hemisphere: { skyColor: "#a8cdf0", groundColor: "#4f7a32", intensity: 0.45 },
       // High noon (azimuth 51, elevation 62): the comic outline and cel bands now describe each
       // shape, so the short hard shadows read as graphic rather than as stickers on flat sand.
       // 2.35: above it the sun-side dune faces summed past 1.0 with the terrain's dirt-grain albedo
       // boost and clipped to one white field.
       directional: [
         {
-          color: "#ffe0b0",
-          intensity: 2.35,
+          color: "#fff1d0",
+          intensity: 2.2,
           position: [44, 106, -35],
           castShadow: true,
           // The playfield sits over a kilometre from the origin — only camera-following
@@ -373,7 +376,7 @@ export const game = defineGame({
       bloom: { strength: 0.3, radius: 0.62, threshold: 1.1 },
       // The sun-bleached comic cube does the colour; the numeric stage stays neutral under it.
       grade: {
-        lut: lutGrade("sun-bleached-comic"),
+        lut: lutGrade("vivid-pop"),
         vignette: 0.2,
         saturation: 1,
         gamma: 1,

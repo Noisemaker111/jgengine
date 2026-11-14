@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { bonus } from "../characters";
 import { reserveStore } from "../stores";
 
-/** The Emergency Reserve window at rank 0, in seconds. */
+/** The Last Gasp window at rank 0, in seconds. */
 export const RESERVE_WINDOW_SECONDS = 12;
 export const POWER_SURGE_HEALTH_FRACTION = 0.4;
 export const RESPAWN_CASH_FRACTION = 0.07;
@@ -50,7 +50,7 @@ export function enterDowned(ctx: GameContext): void {
   syncReserve(ctx);
 }
 
-/** Power Surge: a kill inside the window revives the chassis and pays the shared revive fraction. */
+/** Comeback: a kill inside the window revives the chassis and pays the shared revive fraction. */
 export function powerSurge(ctx: GameContext): void {
   const event = reserve(ctx).revive(ctx.player.userId, 1);
   if (event?.kind !== "revived") return;

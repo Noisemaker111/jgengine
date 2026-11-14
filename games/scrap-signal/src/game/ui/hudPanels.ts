@@ -3,10 +3,11 @@ import { createHudLayout, type HudAnchor, type HudLayoutStore } from "@jgengine/
 /** The rig panels a player may hide, with the chip label each one had on the old HUD canvas. */
 export const HUD_PANELS = [
   { id: "dead-air", chip: "Dead air", anchor: "top-left" },
-  { id: "overdrive", chip: "Overdrive", anchor: "left" },
-  { id: "missions", chip: "Missions", anchor: "left" },
+  { id: "overdrive", chip: "Block Party", anchor: "left" },
+  { id: "missions", chip: "Errands", anchor: "left" },
   { id: "field-notes", chip: "Notes", anchor: "left" },
-  { id: "echo", chip: "Echo", anchor: "bottom" },
+  { id: "echo", chip: "Walkie", anchor: "bottom" },
+  { id: "gun-bark", chip: "Weapon chatter", anchor: "bottom-right" },
   { id: "loot-toasts", chip: "Loot", anchor: "top-right" },
   { id: "item-card", chip: "Item", anchor: "right" },
 ] as const satisfies readonly { id: string; chip: string; anchor: HudAnchor }[];

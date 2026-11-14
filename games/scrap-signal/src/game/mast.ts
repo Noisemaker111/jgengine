@@ -28,7 +28,7 @@ const START_RADIUS = 5;
 export const MAST_WATCH: MissionDef = {
   id: MAST_WATCH_ID,
   title: "Mast Watch",
-  description: "Rustflat's signal mast is dark and something is nesting in the dish.",
+  description: "Crabgrass Court's satellite dish is dark and something is nesting in it.",
   start: "reach_mast",
   objectives: [
     {

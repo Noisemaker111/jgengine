@@ -97,15 +97,15 @@ export function ContractCard() {
   const { compact } = useCompact();
   if (character === null || (!active && riftLive)) return null;
   return <Hull opacity={fade} width={compact ? 200 : 260} gap={compact ? 4 : 6} padding={compact ? 7 : 10} border={{ width: 2, color: active ? C.amber : "#22363c" }}>
-    <Stamp tone="phosphor">{relay.rewarded ? "Carrier restored" : "Salvage contract"}</Stamp>
+    <Stamp tone="phosphor">{relay.rewarded ? "Radio restored" : "Radio contract"}</Stamp>
     <Tube gap={4}>
       <Row justify="between"><Text family="Russo One" size={16} color={C.phosphor}>DEAD AIR</Text>
         <Text size={13} color={C.amber} text={active ? `${relay.wave}/3` : bind(() => `${Math.round(relayDistance(ctx))} m`)} /></Row>
-      <Small color={C.ink}>{active ? relay.phase === "defend" ? `Clear the ambush · ${relay.enemies} hostiles` : outside ? "Return to the copper ring to upload" : "Hold position · uploading carrier" : "Copper-ring relay · north of crash site"}</Small>
+      <Small color={C.ink}>{active ? relay.phase === "defend" ? `Clear the ambush · ${relay.enemies} hostiles` : outside ? "Return to the radio tower to broadcast" : "Hold position · broadcasting" : "Radio tower · north of the school bus"}</Small>
       {active ? <>
         <Row gap={6}><Pips value={() => relayStore.read(ctx).upload} max={() => RELAY.uploadSeconds} count={12} color={C.phosphor} /><Small color={C.phosphor} text={bind(() => `${relayStore.read(ctx).upload.toFixed(1)}/6s`)} /></Row>
         <Small text={bind(() => `${Math.ceil(relayStore.read(ctx).remaining)}s window`)} />
-      </> : <Small>{`Walk to the console · E to begin${relay.rewarded ? " · replay available" : " · $120 + 3 cores"}`}</Small>}
+      </> : <Small>{`Walk to the console · E to begin${relay.rewarded ? " · replay available" : " · $120 + 3 parts"}`}</Small>}
     </Tube>
     {active ? <>
       <Button layout="row" items="center" gap={6} label="Overclock" onPress={() => commands.run("relay.overclock", {})}>
@@ -130,7 +130,7 @@ function FieldTerminal({ label, signal = 1, onBack, children, foot }: { label: s
       <Row gap={8}>
         <RuneView width={8} height={8} radius={4} fill={C.xp} /><RuneView width={8} height={8} radius={4} fill={C.amber} />
         <Stamp>{label}</Stamp>
-        <Small grow={1} shrink size={11}>{portrait ? "" : `RC-${character.id.toUpperCase()} · FERRALON`}</Small>
+        <Small grow={1} shrink size={11}>{portrait ? "" : `${character.name.toUpperCase()} · MAPLE HOLLOW`}</Small>
         <SignalBars strength={signal} color={C.amber} />
       </Row>
       <Row items="stretch" gap={12}>
@@ -162,8 +162,8 @@ function TerminalId() {
 }
 
 const MENU = [
-  { id: "resume", label: "Resume run", note: "Back into the wastes" },
-  { id: "save", label: "Save checkpoint", note: "World, chassis and loot" },
+  { id: "resume", label: "Resume run", note: "Back to the block" },
+  { id: "save", label: "Save checkpoint", note: "World, tinkerer and junk" },
   { id: "settings", label: "Settings & controls", note: "Display, sound, keys" },
 ] as const;
 
@@ -179,11 +179,11 @@ function Command({ label, note, onPress }: { label: string; note: string; onPres
 export function PauseTerminal({ page, onPage, onResume, onSave, saveMessage }: { page: "menu" | "settings"; onPage: (page: "menu" | "settings") => void; onResume: () => void; onSave: () => void; saveMessage: string }) {
   const { compact } = useCompact();
   const confirm = (id: string) => { if (id === "resume") onResume(); else if (id === "save") onSave(); else onPage("settings"); };
-  return <FieldTerminal label={page === "settings" ? "Field terminal / setup" : "Field terminal / 04"} onBack={() => page === "settings" ? onPage("menu") : onResume()} foot={<ControlKeys />}>
+  return <FieldTerminal label={page === "settings" ? "Kitchen radio / setup" : "Kitchen radio / 04"} onBack={() => page === "settings" ? onPage("menu") : onResume()} foot={<ControlKeys />}>
     {page === "menu" ? <>
-      <Small color={C.phosphorDim}>&gt; carrier status</Small>
-      <Heading size={compact ? 20 : 28} color={C.phosphor}>Signal on hold_</Heading>
-      <Small color={C.phosphor}>Combat, reloads and the carrier window are paused.</Small>
+      <Small color={C.phosphorDim}>&gt; neighbourhood status</Small>
+      <Heading size={compact ? 20 : 28} color={C.phosphor}>Paused for snacks_</Heading>
+      <Small color={C.phosphor}>Fighting, reloading and the broadcast window are paused. Your weapons are napping.</Small>
       {MENU.map(item => <Command key={item.id} label={item.label} note={item.note} onPress={() => confirm(item.id)} />)}
       <Small role="status" color={C.amber}>{saveMessage === "" ? "Resume, then click the world to capture the mouse. Esc releases it." : saveMessage}</Small>
     </> : <>
@@ -197,14 +197,14 @@ export function PauseTerminal({ page, onPage, onResume, onSave, saveMessage }: {
 function DeadAirReport({ won, wave, remaining, reason, onContinue }: { won: boolean; wave: number; remaining: number; reason: string; onContinue: () => void }) {
   return <FieldTerminal label="Dead Air / field report" signal={won ? 4 : 0} onBack={onContinue}>
     <Small color={C.phosphorDim}>&gt; contract closed</Small>
-    <Heading size={28} color={C.phosphor}>{won ? "You broke the silence." : "Carrier lost."}</Heading>
+    <Heading size={28} color={C.phosphor}>{won ? "You broke the silence." : "Broadcast lost."}</Heading>
     <Small color={C.phosphor}>{reason}</Small>
     <Row gap={20}>
       <RuneView><Text family="Russo One" size={24} color={C.amber}>{won ? "03 / 03" : `${wave} / 03`}</Text><Small>ambush reached</Small></RuneView>
-      <RuneView><Text family="Russo One" size={24} color={C.amber}>{`${Math.ceil(remaining)}s`}</Text><Small>carrier remaining</Small></RuneView>
+      <RuneView><Text family="Russo One" size={24} color={C.amber}>{`${Math.ceil(remaining)}s`}</Text><Small>broadcast remaining</Small></RuneView>
     </Row>
-    <Small color={C.phosphor}>{won ? "Contract secured · $120 + 3 cores on first completion. The campaign and your loot remain yours." : "Your inventory is retained. Reconstruction charges the usual 7% cash fee when your chassis is down."}</Small>
-    <Command label="Return to the wastes" note="The console accepts another attempt when you return." onPress={onContinue} />
+    <Small color={C.phosphor}>{won ? "Contract secured · $120 + 3 parts on first completion. The campaign and your loot remain yours." : "Your junk is kept. The Lucky Gnome charges the usual 7% cash fee to patch you up."}</Small>
+    <Command label="Back to the block" note="The console accepts another attempt when you return." onPress={onContinue} />
   </FieldTerminal>;
 }
 

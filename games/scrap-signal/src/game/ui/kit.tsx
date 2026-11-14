@@ -7,12 +7,12 @@ import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 
 /**
- * Scrap Signal's salvaged hardware on Rune: carbon housings on welded rims, phosphor tubes,
- * segmented pip gauges and stamped labels. Russo One over Chakra Petch.
+ * Junk Drawer's kitchen-radio kit on Rune: navy enamel panels with sunny-yellow trim, mint screens,
+ * segmented pip gauges and label-maker tags. Russo One over Chakra Petch.
  */
 export const C = {
   ink: "#f5f5f4", dim: "#a8a29e", faint: "#78716c",
-  amber: "#ffb400", phosphor: "#9ff5d6", phosphorDim: "#4f8f7c",
+  amber: "#ffd23f", phosphor: "#9ff5d6", phosphorDim: "#5fa894",
   red: "#ff4a3a", shield: "#4cc3ff", xp: "#8ee43e", cores: "#e879f9", cyan: "#72dfdf",
   rim: "#6f5a3c", off: "#ffffff22",
 } as const;
@@ -27,11 +27,11 @@ export const scrapTheme = {
     display: { family: "Russo One", size: 64, tracking: 4, color: C.ink },
   },
   variants: {
-    plate: { padding: 10, gap: 6, fill: "#110e0bf0", border: { width: 2, color: "#4a3b29" }, radius: 2 },
-    hull: { padding: 10, gap: 6, fill: "#1b2225f2", border: { width: 2, color: "#34444a" }, radius: 2 },
+    plate: { padding: 10, gap: 6, fill: "#18213cf0", border: { width: 2, color: "#3d4f86" }, radius: 6 },
+    hull: { padding: 10, gap: 6, fill: "#1d2a4af2", border: { width: 2, color: "#4a5f99" }, radius: 6 },
     tube: { padding: 8, gap: 4, radius: 4, border: { width: 1, color: "#0b2a22" }, gradient: { angle: 1.57, stops: [[0, "#0a1d17"], [1, "#04100c"]] } },
-    action: { minHeight: 40, padding: [8, 12, 8, 12], gap: 2, justify: "center", fill: "#2a2118", border: { width: 2, color: "#ffb40099" }, hover: "#ffb40033", press: "#00000044", radius: 2 },
-    sheet: { padding: 16, gap: 10, fill: "#0c0a09f4", border: { width: 2, color: "#f59e0bcc" }, shadow: { y: 8, blur: 40, color: "#000000e6" } },
+    action: { minHeight: 40, padding: [8, 12, 8, 12], gap: 2, justify: "center", fill: "#26365f", border: { width: 2, color: "#ffd23f99" }, hover: "#ffd23f33", press: "#00000044", radius: 6 },
+    sheet: { padding: 16, gap: 10, fill: "#121a31f4", border: { width: 2, color: "#ffd23fcc" }, shadow: { y: 8, blur: 40, color: "#000000e6" } },
   },
   motion: { duration: 140, distance: 10, bounce: 0 },
 } satisfies RuneTheme;
@@ -164,7 +164,7 @@ export function Key({ children }: { children: string }) {
 }
 /** The controls, printed on the terminal's lower keys. */
 export function ControlKeys() {
-  const groups: [string[], string][] = [[["W", "A", "S", "D", "Shift"], "move / sprint"], [["LMB", "RMB"], "fire / aim"], [["E", "R"], "use / reload"], [["Q", "G", "K"], "heal / grenade / talents"]];
+  const groups: [string[], string][] = [[["W", "A", "S", "D", "Shift"], "move / sprint"], [["LMB", "RMB"], "fire / aim"], [["E", "R"], "use / reload"], [["Q", "G", "K"], "juice box / water balloon / skills"]];
   return <RuneView layout="row" gap={12} label="Controls" responsive={{ phone: { layout: "grid", columns: 1, gap: 4 } }}>
     {groups.map(([keys, note]) => <Row key={note} gap={3}>{keys.map(k => <Key key={k}>{k}</Key>)}<Small size={11}>{note}</Small></Row>)}
   </RuneView>;

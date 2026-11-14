@@ -74,14 +74,14 @@ export function ScrapMenu() {
   };
   return <RuneLayers flow={flow}>{entry => entry.kind === "credits"
     ? <Credits back={() => flow.pop()} />
-    : <Broadcast kept={recent === null ? null : { name: recent.name ?? "Reclaimer", detail }} onContinue={() => { if (recent !== null) commands.run("run.continue", { slot: recent.id }); }}
+    : <Broadcast kept={recent === null ? null : { name: recent.name ?? "Tinkerer", detail }} onContinue={() => { if (recent !== null) commands.run("run.continue", { slot: recent.id }); }}
       callSign={callSign} onCallSign={setCallSign} onPick={pick} onCredits={() => flow.push("credits")} />}
   </RuneLayers>;
 }
 
 /** The broadcast wordmark: Russo One split across the red and cyan guns of a bad tube. */
 function Wordmark({ size }: { size: number }) {
-  const mark = (color: string, x?: number) => <RuneLabel value="SCRAP SIGNAL" family="Russo One" size={size} tracking={size / 14} color={color} {...(x === undefined ? {} : { pin: [x, 0, -x, null] as const })} />;
+  const mark = (color: string, x?: number) => <RuneLabel value="JUNK DRAWER" family="Russo One" size={size} tracking={size / 14} color={color} {...(x === undefined ? {} : { pin: [x, 0, -x, null] as const })} />;
   return <RuneView>{mark("#ff3b2fcc", -3)}{mark("#3fd8ffcc", 3)}{mark(C.ink)}</RuneView>;
 }
 
@@ -97,23 +97,23 @@ function Broadcast({ kept, onContinue, callSign, onCallSign, onPick, onCredits }
   const [tuned, setTuned] = useState(CHARACTERS[0]?.id ?? "");
   return <RuneView anchor="fill" padding={compact ? 12 : 28} gap={compact ? 8 : 14}
     gradient={{ angle: 1.57, stops: [[0, "#14100c"], [0.6, "#0d1110"], [1, "#050807"]] }}>
-    <Row justify="between"><Label color={C.ink}>CH 04 ▸ NO CARRIER</Label><Row gap={6}><RuneView width={8} height={8} radius={4} fill={C.red} /><Label color={C.red}>{phone ? "REC" : "REC · FERRALON WASTES"}</Label></Row></Row>
+    <Row justify="between"><Label color={C.ink}>CH 04 ▸ SATURDAY CARTOONS</Label><Row gap={6}><RuneView width={8} height={8} radius={4} fill={C.red} /><Label color={C.red}>{phone ? "REC" : "LIVE · MAPLE HOLLOW"}</Label></Row></Row>
     <RuneView scroll maxHeight={height - (compact ? 50 : 100)} gap={compact ? 8 : 14} width={FULL}>
       <RuneView gap={4} items="center" width={FULL}>
-        <Label color={C.amber}>REACTIVATE · RECLAIM · RISE</Label>
+        <Label color={C.amber}>SALVAGE · MERGE · LISTEN</Label>
         <Wordmark size={short ? 36 : phone ? 40 : 76} />
-        {short ? null : <Text size={14} color={C.dim} align="center" maxWidth={640}>A broken carrier. A desert of stolen machines. Reclaim the copper-ring relay north of the crash site, then follow B0-LT’s campaign across Ferralon.</Text>}
+        {short ? null : <Text size={14} color={C.dim} align="center" maxWidth={640}>The appliances took a bad update and revolted. Every weapon left in Maple Hollow is junk with a trigger, and every one of them has something to say. Follow DING across the suburb and unplug Mother Router.</Text>}
       </RuneView>
       {kept === null ? null : <RuneAction label="Continue" run={onContinue} layout="row" items="center" gap={12} padding={[10, 14, 10, 14]} fill="#1b2225" border={{ width: 3, color: C.amber }} hover="#ffb40022" press="#00000044" width={FULL} maxWidth={720} responsive={{ phone: { layout: "stack", gap: 4 } }}>
-        <Stamp>Resume signal</Stamp>
+        <Stamp>Back to the block</Stamp>
         <RuneView grow={1} shrink gap={1}><Text family="Russo One" size={18}>{kept.name}</Text><Small>{kept.detail}</Small></RuneView>
         <Label color={C.amber}>▸ Continue</Label>
       </RuneAction>}
       <Row gap={10} justify="between" responsive={{ phone: { layout: "stack", gap: 6 } }}>
-        <Label color={C.dim}>{kept === null ? "Tune a reclaimer" : "Or tune a new reclaimer"}</Label>
+        <Label color={C.dim}>{kept === null ? "Pick a tinkerer" : "Or pick a new tinkerer"}</Label>
         <CallSign value={callSign} editing={editing} setEditing={setEditing} onChange={onCallSign} />
       </Row>
-      <RuneView layout="grid" columns={CHARACTERS.length} gap={phone ? 8 : 14} responsive={{ phone: { columns: 1 } }} label="Choose your reclaimer">
+      <RuneView layout="grid" columns={CHARACTERS.length} gap={phone ? 8 : 14} responsive={{ phone: { columns: 1 } }} label="Choose your tinkerer">
         {CHARACTERS.map((character, index) => {
           const on = tuned === character.id;
           return <RuneAction key={character.id} label={character.name} run={() => onPick(character.id)} onFocus={() => setTuned(character.id)} onHover={inside => { if (inside) setTuned(character.id); }}
@@ -147,13 +147,13 @@ function Broadcast({ kept, onContinue, callSign, onCallSign, onPick, onCredits }
 function CallSign({ value, editing, setEditing, onChange }: { value: string; editing: boolean; setEditing: (on: boolean) => void; onChange: (next: string) => void }) {
   const current = useRef(value);
   current.current = value;
-  return <RuneAction label="Call sign" run={() => setEditing(!editing)} layout="row" items="center" gap={8} padding={[6, 10, 6, 10]} minWidth={280} fill="#0c0a09" border={{ width: 2, color: editing ? C.amber : "#44403c" }}
+  return <RuneAction label="Your name" run={() => setEditing(!editing)} layout="row" items="center" gap={8} padding={[6, 10, 6, 10]} minWidth={280} fill="#0c0a09" border={{ width: 2, color: editing ? C.amber : "#44403c" }}
     {...(editing ? { onKey: (code: string) => {
       if (code === "Enter" || code === "NumpadEnter" || code === "Escape") { setEditing(false); return; }
       onChange(editCallSign(current.current, code));
     } } : {})}>
-    <Label color={C.dim}>Call sign</Label>
-    <Text grow={1} size={15} color={value === "" ? C.faint : C.ink}>{value === "" ? (editing ? "Type a name…" : "Name the reclaimer") : `${value}${editing ? "_" : ""}`}</Text>
+    <Label color={C.dim}>Your name</Label>
+    <Text grow={1} size={15} color={value === "" ? C.faint : C.ink}>{value === "" ? (editing ? "Type a name…" : "Name your tinkerer") : `${value}${editing ? "_" : ""}`}</Text>
     <Label color={editing ? C.amber : C.faint}>{editing ? "Enter ✓" : "Edit"}</Label>
   </RuneAction>;
 }
@@ -161,7 +161,7 @@ function CallSign({ value, editing, setEditing, onChange }: { value: string; edi
 function Credits({ back }: { back: () => void }) {
   const { width } = useRuneViewport(), phone = width < 600;
   return <RuneView anchor="fill" fill="#0c0a09f8" padding={phone ? 16 : 40} gap={12} onBack={back}>
-    <Row justify="between"><Heading size={phone ? 22 : 30} color={C.amber}>Scrap Signal credits</Heading><Button onPress={back}>Back</Button></Row>
+    <Row justify="between"><Heading size={phone ? 22 : 30} color={C.amber}>Junk Drawer credits</Heading><Button onPress={back}>Back</Button></Row>
     <RuneView scroll grow={1} gap={14}>
       {SCRAP_CREDITS.sections.map(s => <RuneView key={s.heading} gap={4}><Label>{s.heading}</Label>{s.entries.map(e => <Small key={`${e.label}${e.detail ?? ""}`} color={C.ink}>{[e.label, e.detail, e.href].filter(Boolean).join(" · ")}</Small>)}</RuneView>)}
       {SCRAP_CREDITS.notice === undefined ? null : <Small>{SCRAP_CREDITS.notice}</Small>}

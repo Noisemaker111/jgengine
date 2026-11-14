@@ -64,7 +64,7 @@ export const FRONT_WAVES: EncounterDefinition = {
     },
     {
       id: "foreman",
-      label: "The Foreman",
+      label: "The HOA President",
       groups: [
         { unit: "husk", entry: FRONT_MARKERS.scrapjack, count: 2 },
         { unit: "marauder", entry: FRONT_MARKERS.scrapjack, count: 2, at: 1, escalates: true },

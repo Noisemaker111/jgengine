@@ -24,7 +24,7 @@ import { scrapProfileSystem } from "./scrapProfile";
 
 /**
  * What the live game holds outside the world snapshot: the chosen character and its talent build,
- * the selected hotbar slot, the Emergency Reserve timer, each gun's loaded rounds, and the carried
+ * the selected hotbar slot, the Last Gasp timer, each gun's loaded rounds, and the carried
  * statuses the damage model owns. These used to be re-derived by hand on boot (`resumeBuild`,
  * `session.selectSlot`, per-session maps reset to full); the save document now snapshots each one
  * through the pair its module already exposes.

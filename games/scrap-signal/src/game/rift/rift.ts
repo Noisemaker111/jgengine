@@ -338,8 +338,8 @@ function finish(ctx: GameContext, outcome: "won" | "lost", reason: string): void
 /** Start a tier: the front resets to its first wave with the tier's crews and mutators laid over it. */
 export function startRift(ctx: GameContext, tier: number): { ok: true } | { ok: false; reason: string } {
   const state = riftStore.read(ctx);
-  if (!state.unlocked && !frontEverCleared(ctx)) return { ok: false, reason: "Clear the Rustflat Front first." };
-  if (riftActive(ctx)) return { ok: false, reason: "An Overdrive run is already live." };
+  if (!state.unlocked && !frontEverCleared(ctx)) return { ok: false, reason: "Clear the Front Lawn first." };
+  if (riftActive(ctx)) return { ok: false, reason: "A Block Party is already going." };
   if (tier < 1 || tier > RIFT_TIER_COUNT) return { ok: false, reason: "No such tier." };
   const board = riftBoard(ctx);
   if (!board.isOpen(riftEventId(tier))) return { ok: false, reason: `Overdrive ${romanTier(tier)} is still locked.` };
@@ -471,7 +471,7 @@ export function registerRift(ctx: GameContext): void {
       if (riftActive(state)) return;
       const rift = riftStore.read(state);
       if (!rift.unlocked && !frontEverCleared(state)) {
-        state.game.notices.push({ text: "The wreck's signal is jammed. Clear the Rustflat Front to overdrive it.", tone: "deny" });
+        state.game.notices.push({ text: "The block party speaker is jammed. Clear the Front Lawn to crank it up.", tone: "deny" });
         return;
       }
       if (!rift.unlocked) riftStore.write(state, { ...rift, unlocked: true });

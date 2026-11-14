@@ -1,7 +1,6 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import {
   quaterniusAnimatedLowpolyRobot,
-  quaterniusLowPolyDesertAssets,
   quaterniusModularScifi,
   quaterniusStylizedNature,
   quaterniusToonShooter,
@@ -14,7 +13,6 @@ const MODEL_PACKS = [
   quaterniusStylizedNature,
   quaterniusToonShooter,
   quaterniusAnimatedLowpolyRobot,
-  quaterniusLowPolyDesertAssets,
 ];
 
 const MATERIAL_SOURCES = {

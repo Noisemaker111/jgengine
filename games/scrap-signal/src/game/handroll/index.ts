@@ -9,3 +9,4 @@ export * from "./bossDrops";
 export * from "./uniques";
 export * from "./personality";
 export * from "./merge";
+export * from "./labels";

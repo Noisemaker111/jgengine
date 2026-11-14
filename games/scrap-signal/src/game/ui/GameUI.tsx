@@ -14,7 +14,7 @@ import { riftStore } from "../rift/rift";
 import { relayStore } from "../relay";
 import { speechStore } from "../stores";
 import { hostilesNear } from "./hostiles";
-import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, FieldNotes, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
+import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, FieldNotes, GunBark, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
 import { C, Plate, Sheet, Text, scrapTheme, useCompact } from "./kit";
 import { ScrapMenu } from "./Menu";
 import { BlackMarketPanel, NpcDialog, OverdriveCard, OverdriveTerminal, TalentsPanel, TravelPanel, VaultPanel, VendorPanel } from "./Panels";
@@ -72,7 +72,7 @@ function Field() {
     </RuneView>
     <RuneView anchor="top-right" safe inset={compact ? 8 : 12} gap={compact ? 4 : 6} items="end" padding={[compact ? 38 : 44, 0, 0, 0]} maxWidth={210}>
       <Counter icon="coin" color={C.xp} label="Cash" read={cashOf} />
-      <Counter icon="gem" color={C.cores} label="Cores" read={coresOf} />
+      <Counter icon="gem" color={C.cores} label="Spare parts" read={coresOf} />
       {notesRight ? <Hideable id="field-notes" end><FieldNotes /></Hideable> : null}
       <Hideable id="loot-toasts" end><LootToasts /></Hideable>
     </RuneView>
@@ -80,7 +80,7 @@ function Field() {
     {compact ? null : <RuneView anchor="right" safe inset={12}><Hideable id="item-card"><ItemCard /></Hideable></RuneView>}
     <RuneView anchor="bottom" safe inset={compact ? 8 : 12} gap={compact ? 4 : 8} items="center" padding={[0, 0, portrait ? 220 : 0, 0]}><Hideable id="echo" when={speaking}><EchoBox /></Hideable><WeaponHotbar combat={combat} /></RuneView>
     <RuneView anchor="bottom-left" safe inset={compact ? 8 : 12}><VitalsPlate combat={combat} /></RuneView>
-    <RuneView anchor="bottom-right" safe inset={compact ? 8 : 12} padding={[0, 0, portrait ? 112 : 0, 0]}><AmmoPlate combat={combat} /></RuneView>
+    <RuneView anchor="bottom-right" safe inset={compact ? 8 : 12} gap={6} items="end" padding={[0, 0, portrait ? 112 : 0, 0]}><Hideable id="gun-bark" end><GunBark /></Hideable><AmmoPlate combat={combat} /></RuneView>
     <Operations />
     <ReserveOverlay />
     <LevelUpBurst />

@@ -152,7 +152,7 @@ export function tickRelay(ctx: GameContext, dt: number): void {
   if (state.phase === "upload" && inside && upload >= RELAY.uploadSeconds) {
     // The wave's boundary: its banked signal settles, then the next ambush opens or the contract pays.
     loop.settle();
-    if (loop.snapshot().session === WAVES.length) finish(ctx, next, true, "Coretown hears you. The salvage carrier is back on the air.");
+    if (loop.snapshot().session === WAVES.length) finish(ctx, next, true, "The cul-de-sac hears you. Neighbourhood radio is back on the air.");
     else spawnWave(ctx, next, state.wave + 1);
   } else publishRelay(ctx, next);
 }

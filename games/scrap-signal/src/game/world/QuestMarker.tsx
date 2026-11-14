@@ -9,7 +9,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
-import { ELEMENT_COLORS, FERRALON } from "../palette";
+import { ELEMENT_COLORS, SUBURB } from "../palette";
 import { questWaypoint } from "../quests/waypoint";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
@@ -52,7 +52,7 @@ export function QuestMarker(): ReactNode {
         project={project}
         viewport={{ width: size.width, height: size.height }}
         distanceOf={distanceOf}
-        theme={{ color: FERRALON.hudAmber }}
+        theme={{ color: SUBURB.hudAmber }}
         kindColors={{ enemy: ELEMENT_COLORS.incendiary }}
       />
     </HudOverlay>
