@@ -7,7 +7,6 @@ import { courierPrompts } from "./jobs/courier";
 import { shiftPromptLabel, shiftPrompts } from "./pizza/shift";
 import { gigPromptLabel, gigPrompts } from "./jobs/gigs";
 import { cityOf } from "./cityRuntime";
-import { frontPromptLabel, frontPrompts } from "./city/fronts";
 import { garagePrompts, garagePromptLabel } from "./city/garage";
 import { streetPromptLabel, streetPrompts } from "./city/street";
 import { GARAGE_POS, GUNSHOP_POS, RACE_ROUTES, SAFEHOUSE_POS } from "./world/districts";
@@ -97,7 +96,7 @@ export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   }
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return staticPrompts;
-  const nearbyPrompts = [...shiftPrompts(ctx), ...staticPrompts, ...gigPrompts(ctx), ...cityPrompts(ctx), ...frontPrompts(ctx, player.position), ...garagePrompts(ctx)];
+  const nearbyPrompts = [...shiftPrompts(ctx), ...staticPrompts, ...gigPrompts(ctx), ...cityPrompts(ctx), ...garagePrompts(ctx)];
   let nearestCar: { id: string; x: number; z: number } | null = null;
   let nearestDist = 6;
   for (const entity of ctx.scene.entity.list()) {
@@ -131,7 +130,7 @@ export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
 export function systemPromptLabel(ctx: GameContext, id: string): string | null {
   if (id === "shop:ammunation") {
     const hour = ctx.time.calendar().hour;
-    return hour >= SHOP_OPENS && hour < SHOP_CLOSES ? null : `Ammu-Isle · shut until ${SHOP_OPENS}:00`;
+    return hour >= SHOP_OPENS && hour < SHOP_CLOSES ? null : `Mercato Fresco · shut until ${SHOP_OPENS}:00`;
   }
-  return shiftPromptLabel(ctx, id) ?? gigPromptLabel(id) ?? frontPromptLabel(ctx, id) ?? streetPromptLabel(ctx, id) ?? garagePromptLabel(ctx, id);
+  return shiftPromptLabel(ctx, id) ?? gigPromptLabel(id) ?? streetPromptLabel(ctx, id) ?? garagePromptLabel(ctx, id);
 }

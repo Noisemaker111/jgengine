@@ -37,7 +37,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     ammoPerShot: 1,
     fireIntervalMs: 95,
     weapon: { damage: 9 },
-    trade: { buy: { cash: 1200 }, shops: ["shop_ammunation"] },
+    trade: { buy: { cash: 1200 } },
   },
   {
     id: "shotgun_boardwalk",
@@ -48,7 +48,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     ammoPerShot: 1,
     fireIntervalMs: 850,
     weapon: { damage: 42 },
-    trade: { buy: { cash: 2000 }, shops: ["shop_ammunation"] },
+    trade: { buy: { cash: 2000 } },
   },
   {
     id: "grenade_pineapple",
@@ -59,7 +59,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     ammoPerShot: 0,
     fireIntervalMs: 900,
     weapon: { damage: 80, projectile: { mass: 1, gravity: -18, fuseTime: 1.4 }, explosion: { radius: 6 } },
-    trade: { buy: { cash: 150 }, shops: ["shop_ammunation"] },
+    trade: { buy: { cash: 150 } },
   },
 ];
 
@@ -81,10 +81,10 @@ export interface GearDef {
 }
 
 export const GEAR: readonly GearDef[] = [
-  { id: "medkit_street", label: "Street Medkit", kind: "gear", use: "useMedkit", heal: 45, stack: 5, trade: { buy: { cash: 120 }, shops: ["shop_ammunation"] } },
-  { id: "vest_kevlar", label: "Kevlar Vest", kind: "gear", use: "wearVest", armor: 100, stack: 2, trade: { buy: { cash: 400 }, shops: ["shop_ammunation"] } },
-  { id: "ammo_box_9mm", label: "9mm Box", kind: "gear", use: "loadAmmo", ammoGrant: { stat: "ammo_9mm", amount: 48 }, stack: 10, trade: { buy: { cash: 60 }, shops: ["shop_ammunation"] } },
-  { id: "ammo_box_shell", label: "Shell Box", kind: "gear", use: "loadAmmo", ammoGrant: { stat: "ammo_shell", amount: 12 }, stack: 10, trade: { buy: { cash: 90 }, shops: ["shop_ammunation"] } },
+  { id: "medkit_street", label: "First-aid kit", kind: "gear", use: "useMedkit", heal: 45, stack: 5, trade: { buy: { cash: 120 }, shops: ["shop_ammunation"] } },
+  { id: "vest_kevlar", label: "Crash jacket", kind: "gear", use: "wearVest", armor: 100, stack: 2, trade: { buy: { cash: 400 }, shops: ["shop_ammunation"] } },
+  { id: "ammo_box_9mm", label: "9mm Box", kind: "gear", use: "loadAmmo", ammoGrant: { stat: "ammo_9mm", amount: 48 }, stack: 10 },
+  { id: "ammo_box_shell", label: "Shell Box", kind: "gear", use: "loadAmmo", ammoGrant: { stat: "ammo_shell", amount: 12 }, stack: 10 },
   { id: "briefcase_carmine", label: "Carmine Ledger", kind: "gear", stack: 1, trade: { sell: { cash: 0 } } },
 ];
 

@@ -13,7 +13,6 @@ import { NPCS } from "../entities/npcs/catalog";
 import { playerCatalog } from "../entities/players/catalog";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { AMMO_STAT_IDS, type AmmoKind, type WeaponDef, weaponById } from "../items/weapons/catalog";
-import { gunDamageScale } from "../progression/upgrades";
 
 /**
  * Harbor Heat's damage chart. Every crew member and pedestrian is unarmoured `flesh`, a car presents
@@ -136,7 +135,7 @@ export function landWeaponHit(
 ): DamageRuntimeResolution | null {
   const hit = weaponHit(input.weaponId);
   if (hit === null) return null;
-  return landHit(ctx, { from: input.from, to: input.to, type: hit.type, base: input.from === ctx.player.userId ? Math.round(hit.base * gunDamageScale(ctx)) : hit.base, ...(input.position === undefined ? {} : { position: input.position }) });
+  return landHit(ctx, { from: input.from, to: input.to, type: hit.type, base: hit.base, ...(input.position === undefined ? {} : { position: input.position }) });
 }
 
 /**

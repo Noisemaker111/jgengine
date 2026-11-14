@@ -15,7 +15,6 @@ import { createSessionLoop, installSessionProbe, type SessionLoop, type SessionL
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
 import { groundCarId, streetPlayOf } from "../streetPlay";
-import { bankContraband, failContraband, loadContraband } from "../items/cargoHaul";
 import { grantCred } from "../progression/cred";
 import { earn, spend } from "../cash";
 import { sessionStore, syncSession } from "../session";
@@ -43,7 +42,7 @@ export const COURIER_HEAT_TIER = 2;
 const POLICE_TIER_FACT = "police_tier";
 
 function heatSweep() {
-  return [{ kind: "fact" as const, fact: POLICE_TIER_FACT, atLeast: COURIER_HEAT_TIER, to: "heat_sweep", message: "HHPD swept the drop while you were hot — the catering went back to the kitchen." }];
+  return [{ kind: "fact" as const, fact: POLICE_TIER_FACT, atLeast: COURIER_HEAT_TIER, to: "heat_sweep", message: "The Wardens swept the drop while you were hot — the catering went back to the kitchen." }];
 }
 
 export interface CourierState {
@@ -164,7 +163,6 @@ function settleCourier(ctx: GameContext, carried: number, input: CourierSettleme
   const { lines, claim } = input.settlement;
   const reward = lines.reduce((sum, line) => sum + line.amount, 0);
   if (!input.won) {
-    failContraband(ctx);
     ctx.game.feedback.cue("deny", input.reason ?? "The catering is gone.");
     return { won: false, reward, reason: input.reason ?? null, lines };
   }
@@ -172,7 +170,6 @@ function settleCourier(ctx: GameContext, carried: number, input: CourierSettleme
   const charge = Math.min(claim, ctx.game.economy.balance(ctx.player.userId, "cash"));
   if (charge > 0) spend(ctx, charge, "courier-damage", input.route.label);
   grantCred(ctx, 15);
-  bankContraband(ctx);
   ctx.game.feedback.cue("objective", `Delivered to ${input.route.recipient} — $${reward}.`);
   return { won: true, reward, reason: null, lines };
 }
@@ -256,7 +253,7 @@ function routeMission(route: (typeof DELIVERY_ROUTES)[number], index: number, ru
     fail: [
       { id: failLate, message: rush ? "The rush deadline expired and the $60 bond is forfeited." : "The deadline expired and the catering went back to the kitchen." },
       { id: "cargo_lost", message: "The catering is gone." },
-      { id: "heat_sweep", message: "HHPD swept the drop while you were hot. The catering went back to the kitchen." },
+      { id: "heat_sweep", message: "The Wardens swept the drop while you were hot. The catering went back to the kitchen." },
     ],
     rewards: { economy: { cash: route.payout } },
   };
@@ -437,7 +434,6 @@ function acceptParcel(state: GameContext, input: { service?: string } | undefine
   publishCourier(state, contract);
   syncObjective(state);
   commit(state);
-  loadContraband(state);
   state.game.feedback.cue("pickup", `Catering loaded — ${route.label}, $${route.payout}.`);
   void state.game.save?.checkpoint();
 }

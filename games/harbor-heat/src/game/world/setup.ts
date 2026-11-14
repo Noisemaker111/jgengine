@@ -23,6 +23,7 @@ import {
   GARAGE_POS,
   GUNSHOP_POS,
   MARCO_POS,
+  NONNA_POS,
   INEZ_POS,
   PLAYER_SPAWN,
   PROMENADES,
@@ -536,8 +537,11 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
     });
   }
 
-  ctx.scene.entity.spawn("contact_marco", { id: "npc_marco", position: ground(ctx, MARCO_POS[0], MARCO_POS[2]), role: "npc" });
+  // The story's people stand where the world model says they are, so "talk" prompts land on a body.
+  ctx.scene.entity.spawn("contact_nonna", { id: "npc_nonna", position: ground(ctx, NONNA_POS[0], NONNA_POS[2]), role: "npc" });
+  ctx.scene.entity.spawn("contact_tony", { id: "npc_tony", position: ground(ctx, DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]), role: "npc" });
   ctx.scene.entity.spawn("contact_inez", { id: "npc_inez", position: ground(ctx, INEZ_POS[0], INEZ_POS[2]), role: "npc" });
+  ctx.scene.entity.spawn("contact_victor", { id: "npc_victor", position: ground(ctx, MARCO_POS[0], MARCO_POS[2]), role: "npc" });
 
   // Sidewalk life is not a patrol loop per street any more: `game/world/residents.ts` runs the named
   // residents on authored routines through the engine's off-screen world, so each one walks its own
@@ -551,23 +555,7 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
   // graph (D1.1) with the engine's `createTraffic`, so cars follow lanes, signals, kerbs and each
   // other instead of a per-block patrol rectangle.
 
-  const gangSpots: readonly (readonly [number, number])[] = [
-    [DOCK_FIGHT_CENTER[0] - 12, DOCK_FIGHT_CENTER[2] - 8],
-    [DOCK_FIGHT_CENTER[0] + 10, DOCK_FIGHT_CENTER[2] - 14],
-    [DOCK_FIGHT_CENTER[0] - 4, DOCK_FIGHT_CENTER[2] + 12],
-    [DOCK_FIGHT_CENTER[0] + 16, DOCK_FIGHT_CENTER[2] + 6],
-    [DOCK_FIGHT_CENTER[0] + 2, DOCK_FIGHT_CENTER[2] - 24],
-  ];
-  gangSpots.forEach(([x, z], i) => {
-    ctx.scene.entity.spawn("ganger_dock", { id: `ganger_${i}`, position: ground(ctx, x, z), role: "npc" });
-  });
-  ctx.scene.entity.spawn("ganger_enforcer", {
-    id: "enforcer_boss",
-    position: ground(ctx, BRIEFCASE_POS[0], BRIEFCASE_POS[2] - 6),
-    role: "npc",
-  });
 
-  ctx.scene.object.place("obj_gunshop_sign", GUNSHOP_POS[0], ctx.world.groundHeightAt(GUNSHOP_POS[0], GUNSHOP_POS[2]), GUNSHOP_POS[2]);
   ctx.scene.object.place(
     "obj_safehouse_sign",
     SAFEHOUSE_POS[0],
@@ -598,11 +586,6 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
     });
   });
 
-  ctx.scene.worldItem.spawn({
-    itemId: "briefcase_carmine",
-    position: [BRIEFCASE_POS[0], ctx.world.groundHeightAt(BRIEFCASE_POS[0], BRIEFCASE_POS[2]) + 0.4, BRIEFCASE_POS[2]],
-    rarity: "legendary",
-  });
 
   return buildings;
 }

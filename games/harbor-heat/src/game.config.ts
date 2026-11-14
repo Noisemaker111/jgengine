@@ -49,9 +49,6 @@ export const game = defineGame({
       meshLods: { screenSizes: [0.2, 0.07], hysteresis: 0.1, impostorDistance: 120 },
     },
     worldHealthBars: { roles: ["enemy", "hostile"] },
-    // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
-  // automatically so a lobbed round never draws a straight fake beam.
-    presentationEffects: { tracers: true },
     worldItem: {
       pickupRadius: 2.4,
       rarityStyle: {
@@ -96,11 +93,9 @@ export const game = defineGame({
   // modes via setTouchControlsMode). Slot switching on touch is the tappable hotbar cards.
     touch: {
       buttons: [
-        { action: "fire", label: "Fire" },
-        { action: "jump", label: "Jump" },
         { action: "interact", label: "Use" },
-        { action: "throwGrenade", label: "Grenade", icon: "bomb" },
-        { action: "useMedkit", label: "Medkit", icon: "heart" },
+        { action: "jump", label: "Jump" },
+        { action: "useMedkit", label: "First aid", icon: "heart" },
         { action: "sprint", label: "Sprint" },
       ],
       modes: {
@@ -172,7 +167,7 @@ export const game = defineGame({
       night: ["game.start", { name: "time.stage", input: { at: secondsAtHour(23.3) } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
-      dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:marco" } }],
+      dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:nonna" } }],
       result: ["game.start", { name: "result.stage", input: { won: true } }],
       "result-missed": ["game.start", { name: "result.stage", input: { won: false } }],
     },

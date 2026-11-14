@@ -21,20 +21,15 @@ export function resolveCredProgress(level: number, xp: number): LevelProgress {
 /** Cred paid per finished job in the city's world model — the story is the progression spine. */
 export const CRED_BY_JOB: Record<string, number> = {
   welcome: 100,
-  dock_sweep: 220,
-  front_money: 260,
-  ledger: 300,
-  shake_heat: 340,
-  ocean_loop: 380,
-  hot_wheels: 420,
-  protection: 460,
-  convoy: 520,
-  kingpin: 800,
-  clean_hands: 60,
-  marina_turf: 200,
-  riptide_intro: 360,
-  corvo_offer: 320,
-  low_flats: 240,
+  learn_water: 180,
+  crust_war: 260,
+  festival_night: 340,
+  riptide_run: 380,
+  storm_surge: 460,
+  megaslice_man: 420,
+  blackout: 560,
+  save_vells: 900,
+  ocean_loop: 300,
 };
 
 export const BOUNTY_CRED = 140;
@@ -44,8 +39,6 @@ export const PIZZA_CRED = { happy: 15, plain: 4 } as const;
 
 /** Cred level required to buy an item/vehicle; ids absent here are always in stock. */
 export const CRED_GATES: Record<string, number> = {
-  smg_carmine: 2,
-  shotgun_boardwalk: 3,
   car_sport: 2,
   car_suv: 3,
   air_helicopter: 4,

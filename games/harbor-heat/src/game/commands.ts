@@ -7,7 +7,6 @@ import { GARAGE_POS } from "./world/districts";
 import { sessionStore, startedThisBoot, syncSession } from "./session";
 import { registerCourier } from "./jobs/courier";
 import { registerGigs } from "./jobs/gigs";
-import { buyNightMarket } from "./items/nightMarket";
 import { buyFromShop, earn, spend } from "./cash";
 import { stealCar } from "./city/garage";
 import { awayStore, passTime, secondsUntilMorning } from "./away";
@@ -156,7 +155,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("shop.open", {
     validate(state) {
       const hour = state.time.calendar().hour;
-      return hour >= SHOP_OPENS && hour < SHOP_CLOSES ? null : { reason: "closed", message: `Ammu-Isle is shut. Open ${SHOP_OPENS}:00 to ${SHOP_CLOSES}:00; the night market runs after dark.` };
+      return hour >= SHOP_OPENS && hour < SHOP_CLOSES ? null : { reason: "closed", message: `Mercato Fresco is shut. Open ${SHOP_OPENS}:00 to ${SHOP_CLOSES}:00.` };
     },
     apply(state) {
       shopStore.write(state, "shop_ammunation");
@@ -166,12 +165,6 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("shop.close", {
     apply(state) {
       shopStore.clear(state);
-    },
-  });
-
-  ctx.game.commands.define<{ itemId?: string }>("market.buy", {
-    apply(state, input) {
-      if (input.itemId !== undefined) buyNightMarket(state, input.itemId);
     },
   });
 
@@ -293,7 +286,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("safehouse.sleep", {
     validate(state) {
       if (safehouseStore.read(state) !== true) return { reason: "no-house", message: "You need a bed of your own." };
-      if (streetPlayOf(state).wanted().stars > 0) return { reason: "hot", message: "Nobody sleeps with HHPD on the street. Lose the heat first." };
+      if (streetPlayOf(state).wanted().stars > 0) return { reason: "hot", message: "Nobody sleeps with the Wardens on the street. Lose them first." };
       return null;
     },
     apply(state) {
@@ -342,7 +335,7 @@ export function registerCommands(ctx: GameContext): void {
         return;
       }
       streetPlayOf(state).clearWanted(state);
-      state.game.notices.push({ text: `Bribed HHPD for $${cost}`, tone: "success" });
+      state.game.notices.push({ text: `Paid the Wardens' fine: $${cost}`, tone: "success" });
     },
   });
 

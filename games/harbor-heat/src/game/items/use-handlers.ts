@@ -4,7 +4,6 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { cityEvent } from "../cityRuntime";
 import { landExplosion, landWeaponHit } from "../combat/hitModel";
 import { AMMO_STAT_IDS, gearById, weaponById } from "./weapons/catalog";
-import { gunIntervalScale } from "../progression/upgrades";
 
 const lastFiredAt = new Map<string, number>();
 
@@ -24,7 +23,7 @@ const fireGun: ItemUseHandler<GameContext> = {
   apply(ctx, input) {
     const def = weaponById(input.itemId);
     if (def === undefined) return { state: ctx, error: "unknown-weapon" };
-    if (!gate(ctx, input.from, def.id, def.fireIntervalMs * (input.from === ctx.player.userId ? gunIntervalScale(ctx) : 1))) return { state: ctx };
+    if (!gate(ctx, input.from, def.id, def.fireIntervalMs)) return { state: ctx };
 
     if (def.ammo !== "none") {
       const statId = AMMO_STAT_IDS[def.ammo];

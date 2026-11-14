@@ -358,18 +358,18 @@ export function createPursuit(driving: Driving): Pursuit {
     const rising = stars > lastNoticeTier;
     lastNoticeTier = stars;
     if (!rising) {
-      if (stars === 0) ctx.game.notices.push({ text: "HHPD lost the trail. Nobody is looking.", tone: "success" });
+      if (stars === 0) ctx.game.notices.push({ text: "The Wardens lost you. Nobody is looking.", tone: "success" });
       return;
     }
     const text =
       stars === 1
-        ? "Someone called it in. HHPD is on the way."
+        ? "Someone called in a reckless rider. The Wardens are on the way."
         : stars === 2
-          ? "HHPD is asking around the block."
+          ? "The Wardens are asking around the block."
           : stars === 3
-            ? "HHPD is hunting you now."
+            ? "The Wardens are hunting you now."
             : stars >= 5
-              ? "HHPD has the causeway. Lose them."
+              ? "The Wardens hold the causeway. Lose them."
               : "More units are joining the search.";
     ctx.game.notices.push({ text, tone: "warn" });
     ctx.game.feedback.cue("deny", text);

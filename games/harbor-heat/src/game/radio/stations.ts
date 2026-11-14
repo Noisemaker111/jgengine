@@ -168,7 +168,7 @@ const HARBOR_TALK: RadioDef["stations"][number] = {
       title: "The Sully Hour",
       artist: "Big Sully Marchetti",
       lines: [
-        "HHPD says response times are down twelve percent.",
+        "The Canal Wardens say flood response times are down twelve percent.",
         "Down from what? From never? I called them in nineteen ninety-eight, they still haven't shown up.",
         "Sergeant Kalani, if you're listening, my door is open. Literally. Somebody took it.",
       ],
@@ -245,7 +245,7 @@ const MNN: RadioDef["stations"][number] = {
     {
       id: "news.hhpd",
       kind: "news",
-      title: "HHPD briefing",
+      title: "Wardens' briefing",
       artist: "Dana Okafor",
       lines: [
         "Sergeant Dee Kalani of the Harbor Patrol says flood patrols in Palm Heights will double this week.",

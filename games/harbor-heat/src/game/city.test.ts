@@ -1,132 +1,90 @@
 import { describe, expect, test } from "bun:test";
 import { validateMissionCatalog } from "@jgengine/core/mission/mission";
 import { missionMarkers } from "@jgengine/core/mission/triggers";
-import { acrossSeeds } from "@jgengine/core/random/seedSweep";
 import { createWorldModel } from "@jgengine/core/worldModel/worldModel";
 import { editorLayers } from "../editorLayers";
-import { city, turfWar } from "./city";
-import { PUSHERS } from "./city/street";
+import { city, SET_PIECES } from "./city";
 
 const markers = missionMarkers(editorLayers);
 
-describe("Mainsail's world model", () => {
-  test("every job's mission is valid against the authored scene markers", () => {
+/** Every pizza fact at zero, the way a new career reports them. */
+const zero = {
+  "pizza.delivered": 0, "pizza.happy": 0, "pizza.rep": 0, "pizza.swaps": 0, "pizza.hull_drops": 0, "pizza.stack_drops": 0,
+  "pizza.shaken": 0, "pizza.upstairs_drops": 0, "pizza.paid": 0, "pizza.saved": 0, "pizza.night_score": 0, "pizza.night_failed": false,
+};
+
+describe("Mainsail's story: saving Vell's", () => {
+  test("every chapter's mission is valid against the authored scene markers", () => {
     const missions = Object.values(city.jobs ?? {}).map((job) => job.mission);
     expect(validateMissionCatalog(missions, { markerIds: Object.keys(markers) }).filter((issue) => issue.severity === "error")).toEqual([]);
   });
 
-  test("the story opens with one thing to do and Marco on the phone", () => {
+  test("the story opens on the first night with Nonna on the phone and no gangs anywhere", () => {
     const world = createWorldModel(city, { markers });
     expect(world.next()?.jobId).toBe("welcome");
-    expect(world.contacts().map((contact) => contact.name)).toEqual(["Marco Vance"]);
+    expect(world.contacts().map((contact) => contact.name)).toEqual(["Nonna Rosa Vell"]);
+    expect(Object.keys(city.factions ?? {})).toEqual(["carmine", "riptide", "megaslice", "hhpd", "locals"]);
+    expect(Object.values(city.jobs ?? {}).flatMap((job) => job.mission.objectives).some((objective) => objective.kind === "kill")).toBe(false);
   });
 
-  test("clearing the docks hands Port Carmine over, changes what Marco says and introduces Dee", () => {
+  test("three boxes finish the first night, introduce Rita and Dee, and open Reading the Water", () => {
     const world = createWorldModel(city, { markers });
-    world.set("jobs.welcome", "done");
-    world.startJob("dock_sweep");
-    world.signal("go");
-    world.signal("clear");
-    expect(world.fact("port.owner")).toBe("player");
-    expect(world.says("marco")[0]).toContain("clean front");
-    expect(world.contacts().map((contact) => contact.id)).toEqual(["marco", "dee"]);
-    expect(world.says("dee")[0]).toContain("quiet");
-    expect(world.job("clean_hands")?.status).toBe("available");
+    world.startJob("welcome");
+    expect(world.tick(0.1, { facts: { ...zero, "pizza.delivered": 2 } }).jobs).toEqual([]);
+    const done = world.tick(0.1, { facts: { ...zero, "pizza.delivered": 3 } });
+    expect(done.jobs.map((event) => event.kind)).toEqual(["job-done"]);
+    expect(world.contacts().map((contact) => contact.id)).toEqual(["nonna", "rita", "dee"]);
+    expect(world.job("learn_water")?.status).toBe("available");
+    expect(world.says("nonna")[0]).toContain("swap docks");
   });
 
-  test("shooting a cop spreads: heat, a scared block, an angry HHPD and Dee cutting you off", () => {
+  test("the chapters chain to the end on the shift's own facts", () => {
+    const world = createWorldModel(city, { markers });
+    const facts = { ...zero };
+    const play = (jobId: string, patch: Partial<typeof zero>) => {
+      expect(world.job(jobId)?.status).toBe("available");
+      world.startJob(jobId);
+      Object.assign(facts, patch);
+      for (let i = 0; i < 4 && world.job(jobId)?.status === "active"; i += 1) world.tick(0.1, { facts });
+      expect(world.job(jobId)?.status).toBe("done");
+    };
+    play("welcome", { "pizza.delivered": 3 });
+    play("learn_water", { "pizza.swaps": 1, "pizza.hull_drops": 1 });
+    play("crust_war", { "pizza.stack_drops": 2, "pizza.shaken": 1 });
+    expect(world.contacts().map((contact) => contact.id)).toContain("tony");
+    play("festival_night", { "pizza.night_score": 6 });
+    facts["pizza.night_score"] = 0;
+    play("riptide_run", { "pizza.upstairs_drops": 4 });
+    play("storm_surge", { "pizza.night_score": 5 });
+    facts["pizza.night_score"] = 0;
+    expect(world.contacts().map((contact) => contact.id)).toContain("victor");
+    play("megaslice_man", { "pizza.paid": 3000 });
+    play("blackout", { "pizza.night_score": 5 });
+    play("save_vells", { "pizza.saved": 1 });
+    expect(world.fact("story.act")).toBe(5);
+    expect(world.says("nonna")[0]).toContain("Vell's is ours");
+  });
+
+  test("midnight before the score rains a set-piece night out, and its giver offers it again", () => {
+    const world = createWorldModel(city, { markers });
+    for (const id of ["welcome", "learn_water", "crust_war"]) world.set(`jobs.${id}`, "done");
+    world.startJob("festival_night");
+    world.tick(0.1, { facts: { ...zero, "pizza.night_score": 3 } });
+    const rained = world.tick(0.1, { facts: { ...zero, "pizza.night_score": 3, "pizza.night_failed": true } });
+    expect(rained.jobs.map((event) => event.kind)).toEqual(["job-failed"]);
+    expect(world.job("festival_night")?.status).toBe("failed");
+    expect(Object.keys(SET_PIECES)).toEqual(["festival_night", "storm_surge", "blackout"]);
+  });
+
+  test("knocking a warden down spreads: heat, a scared block, an angry Warden post and Dee cutting you off", () => {
     const heat: number[] = [];
     const world = createWorldModel(city, { markers, onOutput: (name, amount) => name === "heat" && heat.push(amount) });
-    world.set("jobs.welcome", "done");
-    world.set("jobs.dock_sweep", "done");
-    expect(world.job("clean_hands")?.status).toBe("available");
+    world.set("dee.known", true);
     world.emit({ kind: "cop_down", place: "downtown", faction: "hhpd" });
     expect(heat).toEqual([110]);
     expect(world.num("downtown.fear")).toBe(35);
     expect(world.num("hhpd.mood")).toBe(-25);
-    expect(world.says("dee")[0]).toBe("You shot a cop. Don't call me again.");
-    expect(world.job("clean_hands")?.status).toBe("locked");
-    expect(world.log().at(-1)?.text).toBe("Officer down in Downtown Vice.");
-  });
-
-  test("killing Carmine crew wears a block down until it flips, and a held block pays protection into the safe", () => {
-    const live = { "clock.hour": 12, "clock.night": false, "police.stars": 0, "turf.held": 0 };
-    const world = createWorldModel(city, { markers, live: () => live });
-    expect(world.fact("marina.owner")).toBe("carmine");
-    world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
-    world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
-    world.tick(0.3);
-    expect(world.fact("marina.owner")).toBe("player");
-    expect(world.log().map((entry) => entry.text)).toContain("You took the Marina from Carmine's Crust.");
-    live["turf.held"] = 1;
-    world.tick(10);
-    expect(world.num("fronts.takings")).toBeGreaterThanOrEqual(4.5);
-  });
-
-  /** Take the Marina once, then leave it for ten minutes; `defend` drops every crew the Carmines send. */
-  const holdTheMarina = (seed: string, defend: boolean) => {
-    const live = { "clock.hour": 12, "clock.night": false, "police.stars": 0, "turf.held": 0 };
-    const pushes: string[] = [];
-    const world = createWorldModel(city, {
-      markers,
-      seed,
-      live: () => live,
-      hooks: { crewPush: (call) => pushes.push(call.place ?? "") },
-    });
-    world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
-    world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
-    world.tick(0.3);
-    const taken = world.fact("marina.owner") === "player";
-    const fired: string[] = [];
-    let answered = 0;
-    for (let t = 0; t < 600 && world.fact("marina.owner") === "player"; t += 1) {
-      fired.push(...(world.tick(1).fired ?? []));
-      for (; defend && answered < pushes.length; answered += 1) {
-        for (let soldier = 0; soldier < PUSHERS; soldier += 1) world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
-      }
-    }
-    return { world, taken, pushes, fired, retaken: world.fact("marina.owner") === "carmine" };
-  };
-
-  test("one lost block makes the Carmines push back, and an undefended block falls back to them in most runs", () => {
-    expect(acrossSeeds(40, (seed) => holdTheMarina(seed, false).retaken).rate).toBeGreaterThanOrEqual(0.85);
-    const run = holdTheMarina("sweep:0", false);
-    expect(run.taken).toBe(true);
-    expect(run.retaken).toBe(true);
-    expect(run.fired).toContain("turf:marina:player:carmine");
-    expect(turfWar.handover("turf:marina:player:carmine")).toEqual({ block: "marina", from: "player", to: "carmine" });
-    expect(run.pushes.length).toBeGreaterThan(0);
-    expect(run.pushes.every((place) => place === "marina")).toBe(true);
-    expect(run.world.log().map((entry) => entry.text)).toContain("Carmine's Crust took the Marina from you.");
-    expect(run.world.num("marina.grip")).toBe(40);
-  });
-
-  test("dropping the crews they send holds the block in most runs", () => {
-    expect(acrossSeeds(40, (seed) => !holdTheMarina(seed, true).retaken).rate).toBeGreaterThanOrEqual(0.85);
-  });
-
-  test("a bought front earns more at night, stops under heavy heat, and a raid that runs out its clock wrecks it", () => {
-    const live = { "clock.hour": 12, "clock.night": false, "police.stars": 0, "turf.held": 0 };
-    const raids: string[] = [];
-    const world = createWorldModel(city, { markers, live: () => live, hooks: { raidStarted: (call) => raids.push(call.target ?? ""), raidLost: () => undefined } });
-    const placed = world.place("lounge", { slot: "front_lounge" }, { free: true });
-    expect(placed.ok).toBe(true);
-    world.tick(10);
-    const day = world.num("fronts.takings");
-    expect(day).toBeCloseTo(30, 0);
-    live["clock.night"] = true;
-    world.tick(10);
-    expect(world.num("fronts.takings") - day).toBeCloseTo(60, 0);
-    live["police.stars"] = 3;
-    const hot = world.num("fronts.takings");
-    world.tick(10);
-    expect(world.num("fronts.takings")).toBeCloseTo(hot, 3);
-    const id = world.occupant("front_lounge")!;
-    world.emit({ kind: "raid", target: id });
-    expect(raids).toEqual([id]);
-    expect(world.fact(`${id}.raid`)).toBe(true);
-    world.emit({ kind: "raid_lost", target: id });
-    expect(world.fact(`${id}.hit`)).toBe(true);
-    expect(world.log().at(-1)?.text).toBe("The Carmines wrecked the Neon Lounge.");
+    expect(world.says("dee")[0]).toBe("You hurt one of my wardens. Don't call me again.");
+    expect(world.log().at(-1)?.text).toBe("A warden went down in Downtown Vice.");
   });
 });

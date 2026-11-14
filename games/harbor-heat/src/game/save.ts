@@ -12,7 +12,6 @@ import { harborProfileSystem } from "./menuProfile";
 import { catchUpAway, noteSavedAt } from "./away";
 import type { PursuitSave } from "./hhpd/pursuit";
 import { ledgerState, restoreLedger, resetLedger, type CashReason } from "./cash";
-import { cargoStore } from "./items/cargoHaul";
 import { courierLoopState, courierMissionStore, courierObjectiveStore, courierStore, restoreCourierLoop, type CourierState } from "./jobs/courier";
 import { gigSave, resetGigs, restoreGigs } from "./jobs/gigs";
 import {
@@ -66,15 +65,10 @@ export const STORE_POLICY: Readonly<Record<string, { kind: SystemPolicy; reason:
     kind: "document",
     reason: "HUD mirror of the side-job board; the run section carries the board and the taxi light.",
   },
-  "harbor.cargo": {
-    kind: "document",
-    reason: "Contraband loaded in the parcel is carried by the run section, not the profile.",
-  },
   "harbor.safehouse": { kind: "world-snapshot", reason: "Durable ownership the shell's world snapshot already keeps." },
   "harbor.stored": { kind: "world-snapshot", reason: "Cars parked in Sunset Motors' bay are durable profile progress." },
   "harbor.bestRace": { kind: "world-snapshot", reason: "A durable lap record the world snapshot already keeps." },
   "harbor.stashes": { kind: "world-snapshot", reason: "Which stashes are claimed is durable profile progress." },
-  "harbor.bounty": { kind: "world-snapshot", reason: "The bounty board's progress is durable profile progress." },
   "harbor.residentAgents": {
     kind: "world-snapshot",
     reason: "Each resident's needs, mood and held action are durable profile progress the world snapshot keeps.",
@@ -83,19 +77,19 @@ export const STORE_POLICY: Readonly<Record<string, { kind: SystemPolicy; reason:
   "harbor.phone": { kind: "transient", reason: "Whether the phone is out is a menu, not run state." },
   "harbor.shop": { kind: "transient", reason: "Which shop panel is open is a menu, not run state." },
   "harbor.garage": { kind: "transient", reason: "Which garage panel is open is a menu, not run state." },
-  "harbor.market": { kind: "transient", reason: "The night market's stock re-rolls from a daily seed each boot." },
   "harbor.race": { kind: "transient", reason: "A lap in progress does not survive; the start line runs it again." },
   "harbor.driving": { kind: "transient", reason: "Which car is piloted is a live handle, not saved state." },
   "harbor.started": { kind: "transient", reason: "The title gate resets each boot so a reload lands on the menu." },
   "harbor.slot": { kind: "transient", reason: "The selected hotbar slot resets to the first slot each boot." },
   "harbor.radio": { kind: "transient", reason: "The in-car display is a HUD mirror the radio rebuilds every tick." },
   "harbor.continue": { kind: "transient", reason: "Whether Continue shows is derived from the loaded save itself." },
-  "harbor.upgrades": { kind: "world-snapshot", reason: "Car mods, gun work and bungalow rooms bought are durable profile progress." },
+  "harbor.upgrades": { kind: "world-snapshot", reason: "Bike mods and bungalow rooms bought are durable profile progress." },
   "harbor.house": { kind: "transient", reason: "Whether the bungalow board is open is a menu, not run state." },
   "harbor.away": { kind: "transient", reason: "The morning paper on screen is a menu; the catch-up already landed in the world." },
   "harbor.tide": { kind: "transient", reason: "HUD mirror of the tide; the level is read off the world clock every tick." },
   "harbor.shift": { kind: "world-snapshot", reason: "Tonight's board, the boxes in the bag and the shift's tally are durable run progress." },
   "harbor.pizzeria": { kind: "world-snapshot", reason: "Ovens, toppings, bags, the note MegaSlice holds and the shop's reputation are durable profile progress." },
+  "harbor.night": { kind: "world-snapshot", reason: "Tonight's set-piece night and its score ride the world snapshot with the story job that runs it." },
   "harbor.pizzeriaBoard": { kind: "transient", reason: "Whether the shop's books are open on screen is a menu, not run state." },
 };
 
@@ -160,7 +154,6 @@ function runSystem(ctx: GameContext): GameSaveSystem {
       courierSession: courierLoopState(ctx),
       courierMission: courierMissionStore.peek(ctx) ?? null,
       courierObjective: courierObjectiveStore.peek(ctx) ?? null,
-      cargo: cargoStore.peek(ctx) ?? null,
       gigs: gigSave(ctx),
     }),
     restore(section) {
@@ -171,7 +164,6 @@ function runSystem(ctx: GameContext): GameSaveSystem {
       if (isRecord(courierSession)) restoreCourierLoop(ctx, courierSession as unknown as SessionLoopState);
       restoreNullable(courierMissionStore, ctx, section["courierMission"]);
       restoreNullable(courierObjectiveStore, ctx, section["courierObjective"]);
-      restoreNullable(cargoStore, ctx, section["cargo"]);
       restoreGigs(ctx, section["gigs"]);
     },
     reset() {
@@ -180,7 +172,6 @@ function runSystem(ctx: GameContext): GameSaveSystem {
       courierStore.clear(ctx);
       courierMissionStore.clear(ctx);
       courierObjectiveStore.clear(ctx);
-      cargoStore.clear(ctx);
       resetGigs(ctx);
     },
   };

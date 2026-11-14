@@ -20,7 +20,7 @@ export function resultOf(notice: string, courier: CourierState): Slip {
     return {
       kind: "tabloid",
       tone: "warn",
-      stamp: busted ? "HHPD blotter" : "Mainsail General",
+      stamp: busted ? "Wardens' ticket" : "Mainsail General",
       title: busted ? "Courier busted on the boulevard" : "Courier walks out of Mainsail General",
       summary: body ?? notice,
       actions: [{ id: "roam", label: "Back to it", primary: true }, title],

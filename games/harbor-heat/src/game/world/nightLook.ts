@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { roadSource, WET_ROAD } from "./cityLayout";
+import { nightRules } from "../pizza/nights";
 
 /** Hours (game clock) the city's lamps are lit and its asphalt shines: dusk to just before dawn. */
 const LAMPS_ON = 19;
@@ -47,10 +48,11 @@ export function setLampSpots(ctx: GameContext, spots: readonly (readonly [number
 /** Wet the roads and light the lamp pools after dark, and put both away at dawn; one swap per change, never per frame. */
 export function tickNightLook(ctx: GameContext): void {
   const night = nightStore(ctx);
-  const dark = isNightHour(ctx.time.calendar().hour);
+  // A blackout night keeps the wet roads but puts every streetlamp out.
+  const dark = isNightHour(ctx.time.calendar().hour) && nightRules(ctx)?.dark !== true;
   if (dark === night.lit) return;
   night.lit = dark;
-  roadSource.setSurface(dark ? WET_ROAD : undefined);
+  roadSource.setSurface(isNightHour(ctx.time.calendar().hour) ? WET_ROAD : undefined);
   if (dark) lightPools(ctx);
   else clearPools(ctx);
 }

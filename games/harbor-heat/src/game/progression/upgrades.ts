@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
 /** Where an upgrade is sold: Rita's bay, the Ammu-Isle counter, or the bungalow itself. */
-export type UpgradeShop = "garage" | "guns" | "house";
+export type UpgradeShop = "garage" | "house";
 
 export interface HarborUpgrade extends UpgradeNodeDef {
   shop: UpgradeShop;
@@ -26,8 +26,6 @@ export const UPGRADES: readonly HarborUpgrade[] = [
   { id: "car_brakes", shop: "garage", label: "Race brakes", maxRank: 2, cost: priced(600, 1400), lines: ["+20% stopping", "+40% stopping"] },
   { id: "car_grip", shop: "garage", label: "Sticky tyres", maxRank: 2, cost: priced(800, 1700), lines: ["+10% grip", "+20% grip"] },
   { id: "car_armor", shop: "garage", label: "Armored panels", maxRank: 3, cost: priced(1000, 2000, 4000), lines: ["Crashes hurt 20% less", "Crashes hurt 40% less", "Crashes hurt 60% less"] },
-  { id: "gun_damage", shop: "guns", label: "Hot loads", maxRank: 3, cost: priced(700, 1500, 3000), lines: ["+15% damage a shot", "+30% damage a shot", "+45% damage a shot"] },
-  { id: "gun_rate", shop: "guns", label: "Trigger job", maxRank: 2, cost: priced(900, 2200), lines: ["Fires 10% faster", "Fires 20% faster"] },
   { id: "house_med", shop: "house", label: "Med cabinet", cost: priced(1000), lines: ["Resting stocks a medkit when you have none"] },
   { id: "house_locker", shop: "house", label: "Gun locker", cost: priced(1500), lines: ["Resting tops up your 9 mm and shells"] },
   { id: "house_wire", shop: "house", label: "Wire room", cost: priced(3000), lines: ["Empty the fronts' safe from the bungalow"] },
@@ -80,12 +78,3 @@ export function crashShare(ctx: GameContext): number {
   return 1 - 0.2 * upgradeRank(ctx, "car_armor");
 }
 
-/** The player's per-shot damage multiplier. */
-export function gunDamageScale(ctx: GameContext): number {
-  return 1 + 0.15 * upgradeRank(ctx, "gun_damage");
-}
-
-/** The player's time-between-shots multiplier. */
-export function gunIntervalScale(ctx: GameContext): number {
-  return 1 - 0.1 * upgradeRank(ctx, "gun_rate");
-}

@@ -10,6 +10,8 @@ import { repStars, REP_THRESHOLDS } from "../pizza/orders";
 import { shiftOpen, TIDE_STAGES } from "../tide/tide";
 import { tideStore } from "../tide/tideRuntime";
 import { streetPlayOf } from "../streetPlay";
+import { nightRules, nightStore } from "../pizza/nights";
+import { city } from "../city";
 import { Button, clockText, Heading, Label, money, Row, Scrim, Text, useRoom } from "./kit";
 import { PriceBoard, type BoardSection } from "./PriceBoard";
 import { DISPLAY, HH } from "./theme";
@@ -34,6 +36,8 @@ interface ShiftView {
   quota: number;
   streak: number;
   special: string | null;
+  /** Tonight's set piece and its progress, when one is running. */
+  night: string | null;
   water: string;
   bag: { id: string; who: string; pizza: string; heat: number; soak: number; cold: number }[];
   /** The last delivery's slip while it is fresh: who, each line and the total. */
@@ -55,6 +59,13 @@ function shiftView(ctx: GameContext): ShiftView | null {
     capacity: ovenCapacity(shop),
     takings: shift.takings,
     streak: shift.streak ?? 0,
+    night: (() => {
+      const rules = nightRules(ctx);
+      if (rules === null) return null;
+      const target = Object.values(city.jobs ?? {}).find((job) => job.title === rules.label)?.mission.objectives[0];
+      const count = target !== undefined && target.kind === "survive" ? Number((target.until as { atLeast?: number }).atLeast ?? 0) : 0;
+      return `${rules.label.toUpperCase()} · ${nightStore.read(ctx).score}/${count}`;
+    })(),
     special: shift.special === undefined || !tide.open ? null : (pizzaById(shift.special)?.label ?? null),
     quota: nightlyQuota(shop),
     water: streetPlayOf(ctx).telemetry().water,
@@ -133,6 +144,7 @@ export function ShiftPanel() {
         <Text family={DISPLAY} size={18} tracking={0.5} color={view.stageIndex >= 3 ? "#6fd8ff" : HH.cream} text={view.stage.toUpperCase()} />
         <Text size={12} color={HH.dim} text={`water +${view.level.toFixed(1)} m`} />
       </Row>
+      {view.night === null ? null : <RuneView padding={[2, 6, 2, 6]} radius={3} fill="#5b1e18"><Text family={DISPLAY} size={14} color={HH.amber} text={view.night} /></RuneView>}
       {view.special === null ? null : <Text size={12} color={HH.amber} text={`Special · ${view.special}`} />}
       {view.water === "" ? null : (
         <RuneView padding={[2, 6, 2, 6]} radius={3} fill={HH.siren}><Text mono size={12} weight={700} color={HH.cream} text={view.water} /></RuneView>

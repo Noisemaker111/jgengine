@@ -5408,6 +5408,16 @@
       "meta": {
         "catalogId": "obj_string_lights"
       }
+    },
+    {
+      "id": "nonna",
+      "kind": "npc",
+      "position": {
+        "x": -180,
+        "y": 0,
+        "z": 64
+      },
+      "label": "Nonna Rosa Vell"
     }
   ],
   "volumes": [

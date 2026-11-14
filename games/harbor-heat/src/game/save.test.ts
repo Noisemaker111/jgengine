@@ -66,7 +66,7 @@ describe("harbor-heat whole-world save", () => {
     const host = bootContext(backend);
     host.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
     expect(cityOf(host).startJob("welcome")?.kind).toBe("job-started");
-    expect(cityOf(host).signal("meet").jobs).toEqual([{ kind: "job-done", jobId: "welcome", beat: { "story.act": 1 } }]);
+    expect(cityOf(host).tick(0.1, { facts: { "pizza.delivered": 3 } }).jobs).toEqual([{ kind: "job-done", jobId: "welcome", beat: { "story.act": 1, "rita.known": true, "dee.known": true } }]);
     host.game.economy.grant("p1", "cash", 1234);
     grantCred(host, 500);
     safehouseStore.write(host, true);
@@ -77,10 +77,10 @@ describe("harbor-heat whole-world save", () => {
     reboot.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
     expect(await reboot.game.save!.load()).toBe(true);
 
-    expect(reboot.game.economy.balance("p1", "cash")).toBe(1234 + 200);
+    expect(reboot.game.economy.balance("p1", "cash")).toBe(1234 + 150);
     expect(reboot.scene.entity.stats.get("p1", "level")?.current).toBeGreaterThanOrEqual(2);
     expect(cityOf(reboot).job("welcome")?.status).toBe("done");
-    expect(cityOf(reboot).job("dock_sweep")?.status).toBe("available");
+    expect(cityOf(reboot).job("learn_water")?.status).toBe("available");
     expect(safehouseStore.read(reboot)).toBe(true);
     expect(bestRaceStore.read(reboot)).toBe(61.4);
   });

@@ -13,22 +13,17 @@ import {
   shopStore,
   startedStore,
 } from "./game/commands";
-import { enemyById } from "./game/entities/enemies/catalog";
-import { landHit } from "./game/combat/hitModel";
 import { earn, openBooks, recordWalletChange, spend } from "./game/cash";
 import { lootTables } from "./game/entities/enemies/loot-tables";
 import { drivingStore, raceStore, streetPlayOf } from "./game/streetPlay";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
-import { ensureNightMarket } from "./game/items/nightMarket";
-import { onBountyKilled, tickBounties } from "./game/jobs/bounties";
 import { resetStashRuntime, tickStashes } from "./game/jobs/stashes";
 import { loadouts } from "./game/loadouts";
 import { registerCaptureCommands } from "./game/capture";
 import { grantCred, RACE_WIN_CRED } from "./game/progression/cred";
-import { crewHostile, gangOf } from "./game/city/street";
-import { cityEvent, gangAggroRadius, failActiveJob, fearAt, PANIC_FEAR, registerCity, startCareer, tickCity } from "./game/cityRuntime";
+import { cityEvent, failActiveJob, fearAt, PANIC_FEAR, registerCity, startCareer, tickCity } from "./game/cityRuntime";
 import {
   CICADA_STAGE_POS,
   DOCK_FIGHT_CENTER,
@@ -65,8 +60,6 @@ import { bulletinForTide } from "./game/radio/bulletins";
 import { resetTide, tickTide } from "./game/tide/tideRuntime";
 import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game/pizza/shift";
 
-const AGGRO_RADIUS = 18;
-const GANGER_SHOT_RANGE = 14;
 const CICADA_STAGE_ID = "cicada_stage_car";
 const RACE_BANNER_SEC = 6;
 
@@ -82,40 +75,6 @@ function syncPhase(ctx: GameContext): void {
 }
 
 export { resetMissionState };
-
-function tickGangers(ctx: GameContext, dt: number): void {
-  const player = ctx.scene.entity.get(ctx.player.userId);
-  if (player === null) return;
-  const now = ctx.time.now();
-  for (const entity of ctx.scene.entity.list()) {
-    const gang = gangOf(entity.name);
-    const hostile = gang !== null || entity.name === "bounty_mark";
-    if (!hostile || !crewHostile(ctx, entity)) continue;
-    const aggro = gangAggroRadius(ctx, gang ?? "carmine", AGGRO_RADIUS);
-    const dist = Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]);
-    if (dist > aggro) continue;
-    if (dist > 6) {
-      ctx.scene.entity.moveToward(entity.id, player.position, {
-        speed: entity.name === "ganger_enforcer" ? 3.8 : 4.4,
-        stopDistance: 5,
-        dt,
-      });
-    }
-    if (dist < GANGER_SHOT_RANGE && ctx.scene.entity.hasLineOfSight(entity.id, ctx.player.userId)) {
-      const meta = (entity.meta ?? {}) as { nextShotAt?: number };
-      if ((meta.nextShotAt ?? 0) <= now) {
-        ctx.scene.entity.update(entity.id, { meta: { ...meta, nextShotAt: now + 1.4 } });
-        // Crew fire resolves through the same chart as the player's: the target presents a profile.
-        landHit(ctx, {
-          from: entity.id,
-          to: ctx.player.userId,
-          type: "ballistic",
-          base: entity.name === "kingpin_sal" ? 16 : entity.name === "ganger_enforcer" || entity.name === "bounty_mark" ? 12 : 6,
-        });
-      }
-    }
-  }
-}
 
 /** Peds near the player scatter while the block is scared, whatever the stars say. */
 function tickPedPanic(ctx: GameContext, dt: number): void {
@@ -202,7 +161,7 @@ function tickBusted(ctx: GameContext, dt: number): void {
   finishCourier(ctx, false);
   failGigs(ctx, "busted");
   failActiveJob(ctx);
-  sessionStore.write(ctx, { ...sessionStore.read(ctx), notice: `Busted · $${fine} fine. You are free to go at HHPD.` });
+  sessionStore.write(ctx, { ...sessionStore.read(ctx), notice: `Ticketed · $${fine} fine. The Wardens let you go at their post.` });
   syncPhase(ctx);
 }
 
@@ -287,11 +246,6 @@ function onInit(ctx: GameContext): void {
   ctx.game.events.on("entity.died", (event) => {
     const dead = event as { instanceId?: string; catalogId?: string; at?: readonly [number, number, number] };
     const catalogId = dead.catalogId ?? "";
-    const enemy = enemyById(catalogId);
-    if (enemy !== undefined && enemy.bounty > 0) {
-      earn(ctx, enemy.bounty, "bounty", catalogId);
-    }
-    if (dead.instanceId !== undefined) onBountyKilled(ctx, dead.instanceId);
     if (vehicleById(catalogId) !== undefined && dead.instanceId !== undefined) {
       const at = dead.at ?? ctx.scene.entity.get(dead.instanceId)?.position ?? [0, 0, 0];
       streetPlayOf(ctx).explodeVehicle(ctx, dead.instanceId, at);
@@ -307,7 +261,6 @@ function onInit(ctx: GameContext): void {
   openBooks(ctx);
   registerCaptureCommands(ctx);
   convoyFeedback(ctx);
-  ensureNightMarket(ctx);
   const buildings = setupWorld(ctx);
   setupTraffic(ctx);
   setupHarbourLife(ctx);
@@ -355,14 +308,11 @@ function onTick(ctx: GameContext, dt: number): void {
   tickNightLook(ctx);
   tickHarbourLife(ctx, dt);
   tickResidents(ctx, dt);
-  tickGangers(ctx, dt);
   tickCity(ctx, dt);
-  tickBounties(ctx);
   tickStashes(ctx);
   tickRaceEconomy(ctx);
   tickBusted(ctx, dt);
   tickPedPanic(ctx, dt);
-  ensureNightMarket(ctx);
   tickWasted(ctx);
   tickCourier(ctx, dt);
   tickShift(ctx, dt);

@@ -9,6 +9,7 @@ import { secondsAtHour } from "../clock";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { streetPlayOf } from "../streetPlay";
 import { grantCred, PIZZA_CRED } from "../progression/cred";
+import { nightRules, scoreNight } from "./nights";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
 import { waterAt } from "../tide/tideRuntime";
 import { customerById, LIGHTHOUSE_KEEPER, PIZZAS, pizzaById } from "./menu";
@@ -197,7 +198,7 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   if (nextCallIn > 0) return { ...state, nextCallIn };
   const busy = new Set([...state.board.map((call) => call.customerId), ...state.bag.map((order) => order.customerId)]);
   const caller = nextCaller({ rep: shopRep(ctx), hour: hourOf(ctx), busy, roll: roll(state.serial + 1), idaDue: state.idaDue });
-  const interval = callInterval(pizzeriaStore.read(ctx));
+  const interval = callInterval(pizzeriaStore.read(ctx)) * (nightRules(ctx)?.callScale ?? 1);
   if (caller === null) return { ...state, nextCallIn: interval / 2 };
   const serial = state.serial + 1;
   const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas: caller.pizzas, calledAt: ctx.time.now() };
@@ -262,10 +263,14 @@ function tickRival(ctx: GameContext, state: ShiftState, dt: number): ShiftState 
   const leave = (next: ShiftState, text: string, tone: "success" | "warn") => {
     ctx.scene.entity.despawn(RIVAL_ID);
     ctx.game.notices.push({ text, tone });
-    return { ...next, rivalIn: 50 + roll(next.serial + 7) * 40, rivalGrip: 0 };
+    return { ...next, rivalIn: (50 + roll(next.serial + 7) * 40) * (nightRules(ctx)?.rivalScale ?? 1), rivalGrip: 0 };
   };
   if (state.bag.length === 0) return leave(state, "The Crust rider peels off. Nothing left to steal.", "success");
-  if (distance > RIVAL_GIVE_UP) return leave(state, "You lost the Carmine's Crust rider.", "success");
+  if (distance > RIVAL_GIVE_UP) {
+    const shop = pizzeriaStore.read(ctx);
+    pizzeriaStore.write(ctx, { ...shop, shaken: (shop.shaken ?? 0) + 1 });
+    return leave(state, "You lost the Carmine's Crust rider.", "success");
+  }
   // Their scooter drowns in a canal just like yours.
   const water = waterAt(ctx, rival.position[0], rival.position[2]);
   const speed = water !== null && water.depth >= 0.45 && !water.openSea ? 3 : RIVAL_SPEED;
@@ -483,6 +488,15 @@ function deliverHere(ctx: GameContext): void {
     lines.push({ label: "Tonight's special", amount: bonus });
     total += bonus;
   }
+  // A set-piece night's crowd tips on top.
+  const rules = nightRules(ctx);
+  if (rules !== null && rules.tipScale > 1) {
+    const extra = Math.round((total - price) * (rules.tipScale - 1));
+    if (extra > 0) {
+      lines.push({ label: rules.tipLine, amount: extra });
+      total += extra;
+    }
+  }
   // A hot streak of great drops lifts the tips; a bad one ends it.
   const streak = state.streak ?? 0;
   const lift = Math.round((total - price) * STREAK_STEP * Math.min(STREAK_CAP, streak));
@@ -495,7 +509,17 @@ function deliverHere(ctx: GameContext): void {
   grantCred(ctx, good * PIZZA_CRED.happy + (handed.length - good) * PIZZA_CRED.plain);
   if (total - price > 0) earn(ctx, total - price, "pizza-tip", customerId);
   const shop = pizzeriaStore.read(ctx);
-  pizzeriaStore.write(ctx, { ...shop, deliveries: shop.deliveries + handed.length, goodDeliveries: shop.goodDeliveries + good });
+  const driving = streetPlayOf(ctx).drivingVehicleId();
+  const hull = driving !== null && vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium === "water";
+  pizzeriaStore.write(ctx, {
+    ...shop,
+    deliveries: shop.deliveries + handed.length,
+    goodDeliveries: shop.goodDeliveries + good,
+    hullDrops: (shop.hullDrops ?? 0) + (hull ? handed.length : 0),
+    stackDrops: (shop.stackDrops ?? 0) + (stack >= 2 ? handed.length : 0),
+    upstairsDrops: (shop.upstairsDrops ?? 0) + (floor === "door" ? 0 : 1),
+  });
+  scoreNight(ctx, handed.length);
   const thanks = customer?.thanks[worst] ?? "Thanks.";
   shiftStore.write(ctx, {
     ...state,
@@ -553,6 +577,8 @@ function swapAtDock(ctx: GameContext): void {
     want = water !== null && water.depth >= 0.45 ? "car_sport" : "car_compact";
   }
   const target = dockVehicle(ctx, dock, want);
+  const shop = pizzeriaStore.read(ctx);
+  pizzeriaStore.write(ctx, { ...shop, swaps: (shop.swaps ?? 0) + 1 });
   if (driving !== null) street.exitVehicle(ctx, true);
   street.enterVehicle(ctx, target);
   ctx.game.feedback.cue("pickup", want === "car_sport" ? "Swapped to the jet-ski. Hold on to the boxes!" : "Back on the scooter.");

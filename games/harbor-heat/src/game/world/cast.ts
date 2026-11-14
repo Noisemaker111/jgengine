@@ -9,16 +9,15 @@ export const CAST: Record<string, string> = {
   ped_beach: "human/woman-casual-2",
   ped_city: "human/woman-casual",
   ped_docks: "human/construction-worker",
-  contact_marco: "human/man-casual",
+  // The story's people: Nonna Vell at the oven, Tony Carmine at the docks, Inez Corvo at the
+  // Saltworks and MegaSlice's Victor Lux in a suit downtown.
+  contact_nonna: "human/nurse",
+  contact_tony: "human/man-casual",
   contact_inez: "human/businesswoman",
-  // The Riptides run in tracksuits; the Carmines in street clothes.
-  riptide_soldier: "human/jogger",
-  ganger_dock: "human/man-casual",
-  ganger_enforcer: "human/security-guard",
-  kingpin_sal: "human/businessman",
+  contact_victor: "human/businessman",
+  // The Canal Wardens, on foot and in the heavy boats.
   cop_patrol: "human/police-officer",
-  cop_swat: "human/soldier",
-  bounty_mark: "human/woman-casual-2",
+  cop_swat: "human/police-officer-female",
 };
 
 /** Every library person the city casts, so `provision` pulls them and the credits list them. */

@@ -43,21 +43,6 @@ describe("Harbor Heat upgrades", () => {
     expect(cash(ctx)).toBe(maxed);
   });
 
-  test("hot loads make the player's shots hit harder, not anyone else's", () => {
-    const ctx = boot();
-    const shoot = (from: string) => {
-      const id = ctx.scene.entity.spawn("ganger_dock", { position: [0, 0, 0], role: "npc" });
-      const start = ctx.scene.entity.stats.get(id, "health")!.current;
-      landWeaponHit(ctx, { from, to: id, weaponId: "pistol_vice" });
-      return start - ctx.scene.entity.stats.get(id, "health")!.current;
-    };
-    const stock = shoot(ctx.player.userId);
-    earn(ctx, 5_000, "reconcile", "test");
-    ctx.game.commands.run("upgrade.buy", { id: "gun_damage" });
-    expect(shoot(ctx.player.userId)).toBeGreaterThan(stock);
-    expect(shoot("someone_else")).toBe(stock);
-  });
-
   test("bungalow rooms need the bungalow", () => {
     const ctx = boot();
     earn(ctx, 5_000, "reconcile", "test");
@@ -69,35 +54,33 @@ describe("Harbor Heat upgrades", () => {
   });
 });
 
-describe("Harbor Heat time passing", () => {
+describe("High Tide Pizza time passing", () => {
   test("sleeping in the bungalow skips to morning, the safe fills, and the paper says so", () => {
     const ctx = boot();
     safehouseStore.write(ctx, true);
-    cityOf(ctx).set("port.owner", "player");
     ctx.game.commands.run("safehouse.rest", {});
     expect(houseStore.read(ctx)).toBe(true);
-    const takings = cityOf(ctx).num("fronts.takings");
+    const cash = ctx.game.economy.balance(ctx.player.userId, "cash");
     ctx.game.commands.run("safehouse.sleep", {});
     expect(ctx.time.calendar().hour).toBe(8);
     expect(houseStore.read(ctx)).toBeUndefined();
-    expect(cityOf(ctx).num("fronts.takings")).toBeGreaterThan(takings);
+    expect(ctx.game.economy.balance(ctx.player.userId, "cash")).toBeGreaterThan(cash);
     const paper = awayStore.read(ctx)!;
     expect(paper.kind).toBe("sleep");
-    expect(paper.lines.some((line) => line.label === "Fronts' safe")).toBe(true);
+    expect(paper.lines.some((line) => line.label === "Nonna's walk-in slices")).toBe(true);
     ctx.game.commands.run("away.dismiss", {});
     expect(awayStore.read(ctx)).toBeUndefined();
   });
 
   test("Continue catches the city up on real time away, capped, and only once per save", () => {
     const ctx = boot();
-    cityOf(ctx).set("port.owner", "player");
     const now = 1_000_000_000;
     noteSavedAt(ctx, now - 3 * 60 * 60 * 1000);
     const clock = ctx.time.now();
     const paper = catchUpAway(ctx, now);
     expect(paper?.kind).toBe("away");
     expect(ctx.time.now() - clock).toBeCloseTo(AWAY_CAP_MS / 1000);
-    expect(paper?.lines.find((line) => line.label === "Fronts' safe")).toBeDefined();
+    expect(paper?.lines.find((line) => line.label === "Nonna's walk-in slices")).toBeDefined();
     expect(catchUpAway(ctx, now + 10_000)).toBeNull();
   });
 

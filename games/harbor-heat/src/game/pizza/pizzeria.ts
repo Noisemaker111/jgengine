@@ -85,6 +85,14 @@ export interface PizzeriaState {
   saved: boolean;
   /** First-time lessons the rider has already been told. */
   hints?: string[];
+  /** Career tallies the story chapters read (absent in older saves, read as 0). */
+  swaps?: number;
+  hullDrops?: number;
+  stackDrops?: number;
+  shaken?: number;
+  upstairsDrops?: number;
+  /** Cash paid toward the note, ever. */
+  paid?: number;
 }
 
 export const STARTING_DEBT = 12000;
@@ -127,7 +135,7 @@ export function buyUpgrade(state: PizzeriaState, kind: UpgradeKind): PizzeriaSta
 export function payDebt(state: PizzeriaState, amount: number): PizzeriaState {
   const paid = Math.max(0, Math.min(state.debt, Math.floor(amount)));
   const debt = state.debt - paid;
-  return { ...state, debt, saved: state.saved || debt === 0, pressure: debt === 0 ? 0 : Math.max(0, state.pressure - Math.floor(paid / 250)) };
+  return { ...state, debt, paid: (state.paid ?? 0) + paid, saved: state.saved || debt === 0, pressure: debt === 0 ? 0 : Math.max(0, state.pressure - Math.floor(paid / 250)) };
 }
 
 /** The tips a shift must bring in to keep MegaSlice back: it climbs with each night worked. */

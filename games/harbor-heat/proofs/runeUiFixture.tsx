@@ -72,7 +72,7 @@ async function renderFixture(state: HarborFixture, width: number, height: number
     if (state === "pause" || state === "pause-settings") run("session.pause", { paused: true });
     if (state === "shop") run("shop.open");
     if (state === "garage") run("garage.open");
-    if (state === "dialogue") run("dialogue.open", { id: "person:marco" });
+    if (state === "dialogue") run("dialogue.open", { id: "person:nonna" });
     if (state === "result" || state === "result-missed") run("result.stage", { won: state === "result" });
   }
   const settings: SettingsController = {

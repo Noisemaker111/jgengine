@@ -44,11 +44,10 @@ describe("Harbor Heat radio content", () => {
   });
 
   test("each station words the same story its own way", () => {
-    const bulletin = bulletinForLog({ kind: "turf:marina:carmine:player", text: "You took the Marina from Carmine's Crust." }, "the Marina")!;
-    expect(bulletin.byStation?.mnn?.[0]).toContain("lost control of the Marina");
-    expect(bulletin.byStation?.harbor_talk?.[0]).toContain("Carmine's Crust just lost the Marina");
-    expect(bulletinForLog({ kind: "turf:flats:player:riptide", text: "" }, "the Low Flats")?.byStation?.harbor_talk?.[0]).toBe("Riptide Slice took the Low Flats. Of course they did. Nothing changes in this town but the paint.");
-    expect(bulletinForLog({ kind: "turf_push:riptide_war", text: "" }, "Canal Row")?.topic).toBe("crew_war");
+    const bulletin = bulletinForLog({ kind: "job-done", text: "Night of Lanterns" }, null)!;
+    expect(bulletin.byStation?.mnn?.[0]).toContain("Vell's Pizzeria");
+    expect(bulletin.byStation?.harbor_talk?.[0]).toContain("MegaSlice");
+    expect(bulletinForLog({ kind: "cop_down", text: "" }, "Canal Row")?.priority).toBe(3);
     expect(bulletinForLog({ kind: "gunfire", text: "" }, null)).toBeNull();
     expect(bulletinForWanted(1, 4, "Canal Row")?.priority).toBe(3);
     expect(bulletinForWanted(3, 0, null)?.topic).toBe("chase_lost");

@@ -2,9 +2,13 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { accrueSince } from "@jgengine/core/time/accrueSince";
-import { TURF } from "./city";
 import { DAY_SECONDS } from "./clock";
 import { cityOf } from "./cityRuntime";
+import { earn } from "./cash";
+import { pizzeriaStore } from "./pizza/shift";
+
+/** What Nonna takes over the counter in walk-in slices for each game hour you are away, per toppings tier. */
+export const WALK_IN_PER_HOUR = 6;
 
 /** What changed while the player slept or was away, for the morning paper. */
 export interface AwaySummary {
@@ -24,29 +28,25 @@ const AWAY_MIN_MS = 60 * 1000;
 /** Game-clock seconds in one in-game day (`game.config.ts` time.dayLength). */
 const DAY = DAY_SECONDS;
 
-const SIDE: Record<string, string> = { player: "you", carmine: "Carmine's Crust", riptide: "Riptide Slice", locals: "the locals" };
 
 /**
- * Let `seconds` of game time pass at once: the clock jumps, the city's world model catches up (fronts
- * pay into the safe, crews push, blocks change hands, moods cool), and the morning paper is set.
+ * Let `seconds` of game time pass at once: the clock jumps, the city's world model catches up (moods
+ * cool, fear settles), and the morning paper is set.
  */
 export function passTime(ctx: GameContext, seconds: number, kind: AwaySummary["kind"]): AwaySummary {
   const world = cityOf(ctx);
-  const owners = Object.fromEntries(TURF.map((id) => [id, world.fact(`${id}.owner`)]));
   const clock = ctx.time.snapshot();
   ctx.time.hydrate({ ...clock, now: clock.now + seconds });
   const result = world.advance(seconds, { maxFires: kind === "sleep" ? 1 : 2 });
   const lines: { label: string; value: string }[] = [];
-  const takings = Math.floor(result.gained["fronts.takings"] ?? 0);
-  if (takings > 0) lines.push({ label: "Fronts' safe", value: `+$${takings.toLocaleString("en-US")}` });
-  for (const id of TURF) {
-    const now = world.fact(`${id}.owner`);
-    if (now === owners[id]) continue;
-    const label = world.def.places?.[id]?.label ?? id;
-    lines.push({ label: label.charAt(0).toUpperCase() + label.slice(1), value: `${SIDE[String(owners[id])] ?? owners[id]} → ${SIDE[String(now)] ?? now}` });
+  // Nonna keeps the counter open while you sleep or are away: walk-in slices, better with better toppings.
+  const walkIns = Math.floor((seconds / DAY) * 24 * WALK_IN_PER_HOUR * pizzeriaStore.read(ctx).toppings);
+  if (walkIns > 0) {
+    earn(ctx, walkIns, "pizza-sale", "walk-ins");
+    lines.push({ label: "Nonna's walk-in slices", value: `+$${walkIns.toLocaleString("en-US")}` });
   }
-  const pushes = result.log.filter((entry) => entry.kind.startsWith("turf_push:")).length;
-  if (pushes > 0) lines.push({ label: "Crew pushes", value: `${pushes}` });
+  const news = result.log.length;
+  if (news > 0) lines.push({ label: "On the news wire", value: `${news}` });
   const hours = Math.round((seconds / DAY) * 24);
   const span = kind === "sleep" ? `${hours} hours` : `${Math.round(seconds / 60)} minutes`;
   const quiet = lines.length === 0;

@@ -14,11 +14,8 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { city } from "../city";
 import { cityOf } from "../cityRuntime";
-import { frontViews } from "../city/fronts";
 import { RACE_ENTRY_FEE, SAFEHOUSE_PRICE, slotStore } from "../commands";
 import { drivingStore, MAX_HEAT, MAX_STARS, raceStore, streetPlayOf, wantedStore, type VehicleTelemetry, type WantedSnapshot } from "../streetPlay";
-import { cargoStore } from "../items/cargoHaul";
-import { bountyPayout, bountyStore } from "../jobs/bounties";
 import { courierDeadline, courierObjectiveStore, courierStore, DELIVERY_ROUTES, DISPATCH, RUSH_BOND, THIEF } from "../jobs/courier";
 import { GIG_RACE_STAKE, gigStore, spotLabel } from "../jobs/gigs";
 import { shiftGoal } from "../pizza/shift";
@@ -101,7 +98,7 @@ function gigGoal(ctx: GameContext): Goal | null {
   return null;
 }
 
-/** The one thing to do now, most urgent first: a race, a parcel in hand, the live job, a bounty, the next job, then the booth. */
+/** The one thing to do now, most urgent first: a race, the pizza in the bag, a catering order in hand, the live chapter, the next chapter, then the counter. */
 export function goalOf(ctx: GameContext, at: XZ): Goal {
   const race = raceStore.read(ctx);
   const circuit = race?.active === true ? RACE_ROUTES.find((r) => r.id === race.routeId) : undefined;
@@ -122,16 +119,11 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
       return { key: "runner", eyebrow: `Catering snatched · ${Math.round(courier.condition ?? 100)}% intact`, title: "Catch the Crust rider", target: runner === null ? undefined : xz(runner.position), deadline: step.remaining === null ? undefined : { remaining: step.remaining, total: 60 }, hint: "Get within 3 m. Keep them upright or the pizzas hit the canal. It cools every second they have it." };
     }
     const rush = courier.service === "rush";
-    const crates = cargoStore.read(ctx).carried;
     const intact = `${Math.round(courier.condition ?? 100)}% intact`;
-    const load = rush ? `Piping-hot rush · ${intact}` : crates > 0 ? `Catering + ${crates} crates · ${intact}` : `Catering · ${intact}`;
+    const load = rush ? `Piping-hot rush · ${intact}` : `Catering · ${intact}`;
     return { key: `parcel:${courier.route}`, eyebrow: load, title: `Deliver to ${route.recipient}`, target: route.position, deadline: { remaining: courier.remaining, total: courierDeadline(route.seconds, rush) }, hint: rush ? "Stay under 35 km/h and avoid hits: damage spoils the cargo." : `${route.hint} Stop beside it to hand over. Knocks cost you a damage claim.` };
   }
   if (gig !== null) return gig;
-  const raid = frontViews(ctx).find((front) => front.status === "raid");
-  if (raid !== undefined) {
-    return { key: `raid:${raid.slot}`, eyebrow: "Carmine raid", title: `Defend ${raid.label}`, target: raid.position, deadline: { remaining: raid.raidSeconds, total: 60 }, hint: "Drop every raider before the clock runs out, or they wreck it and empty the safe." };
-  }
   const atBooth = Math.hypot(at[0] - DISPATCH[0], at[1] - DISPATCH[1]) < 9;
   const world = cityOf(ctx);
   const live = world.missionView();
@@ -142,11 +134,6 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
     if (live.remaining !== null) timerTotals.set(key, total);
     const step = live.steps > 1 ? ` · step ${live.step} of ${live.steps}` : "";
     return { key, eyebrow: `${live.title}${step}`, title: live.count > 1 ? `${live.label} · ${live.counted}/${live.count}` : live.label, target: next?.target ?? undefined, deadline: live.remaining === null ? undefined : { remaining: live.remaining, total } };
-  }
-  const bounty = bountyStore.read(ctx);
-  const spot = BOUNTY_SPOTS.find((s) => s.id === bounty?.spotId);
-  if (bounty?.targetId != null && spot !== undefined && !atBooth) {
-    return { key: `bounty:${spot.id}`, eyebrow: `Bounty · $${bountyPayout(bounty.completed)}`, title: `Take down the mark at ${spot.label}`, target: xz(spot.position) };
   }
   if (next !== null && !atBooth) {
     return { key: `next:${next.jobId}`, eyebrow: "Next job", title: next.text, target: next.target ?? undefined, hint: "Talk to them in person, or open the phone." };
@@ -165,7 +152,7 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
 function promptLabel(id: string): string {
   if (id.startsWith("enter:")) return "Get in";
   if (id.startsWith("race:")) return `Race ${RACE_ROUTES.find((r) => `race:${r.id}` === id)?.label ?? "the streets"} · $${RACE_ENTRY_FEE}`;
-  const labels: Record<string, string> = { "shop:ammunation": "Browse Ammu-Isle", "garage:dealer": "Browse Sunset Motors", "safehouse:buy": `Buy Palmview Bungalow · $${SAFEHOUSE_PRICE.toLocaleString()}`, "safehouse:rest": "Step inside the bungalow", "courier:accept": "Take a catering order", "courier:deliver": "Hand over the catering" };
+  const labels: Record<string, string> = { "shop:ammunation": "Browse Mercato Fresco", "garage:dealer": "Browse Sunset Motors", "safehouse:buy": `Buy Palmview Bungalow · $${SAFEHOUSE_PRICE.toLocaleString()}`, "safehouse:rest": "Step inside the bungalow", "courier:accept": "Take a catering order", "courier:deliver": "Hand over the catering" };
   if (id.startsWith("talk:")) return `Talk to ${city.people?.[id.slice(5)]?.name ?? "them"}`;
   if (id.startsWith("job:")) return `Start ${city.jobs?.[id.slice(4)]?.title ?? "the job"}`;
   return labels[id] ?? "Talk";
@@ -341,9 +328,9 @@ export function StatusPanel() {
 
 /** HHPD's own words for what it is doing, so the stars read as a search rather than a score. */
 function heatLine(wanted: Pick<WantedSnapshot, "response" | "stars">): string {
-  if (wanted.response === "roadblock") return "HHPD has the causeway";
-  if (wanted.response === "pursue") return "HHPD is hunting you";
-  return wanted.stars >= 2 ? "HHPD is asking around" : "Someone called it in";
+  if (wanted.response === "roadblock") return "Wardens hold the causeway";
+  if (wanted.response === "pursue") return "Wardens are hunting you";
+  return wanted.stars >= 2 ? "Wardens are asking around" : "Someone called it in";
 }
 
 const SEGMENTS = Array.from({ length: 20 }, (_, i) => i);

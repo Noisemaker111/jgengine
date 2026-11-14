@@ -10,14 +10,12 @@ import { UPGRADES, upgradesStore, type UpgradeShop } from "../progression/upgrad
 import { ITEM_LABELS } from "../content";
 import { VEHICLES, type VehicleDef } from "../entities/vehicles/catalog";
 import { wantedStore } from "../streetPlay";
-import { marketStore } from "../items/nightMarket";
 import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../items/weapons/catalog";
 import { CRED_GATES } from "../progression/cred";
 import { FaceToFace, type Reply, type Speaker } from "./FaceToFace";
 import { PriceBoard, type BoardRow, type BoardSection } from "./PriceBoard";
 import { PizzeriaBooks, usePizzeriaBooksOpen } from "./ShiftUI";
 
-const GUNS = WEAPONS.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
 const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
 const CARS = VEHICLES.filter((car) => car.price > 0);
 
@@ -44,8 +42,8 @@ export function conversation(ctx: GameContext, dialogueId: string): DialogueDef 
 }
 
 /** Whose face a contact's portrait is shot from: their own cast body, else their crew's. */
-const PORTRAITS: Record<string, string> = { marco: "contact_marco", sal: "kingpin_sal", rita: "ped_city", dee: "cop_patrol", inez: "contact_inez" };
-const CREW_PORTRAITS: Record<string, string> = { carmine: "ganger_dock", riptide: "riptide_soldier", hhpd: "cop_patrol", locals: "ped_city" };
+const PORTRAITS: Record<string, string> = { nonna: "contact_nonna", tony: "contact_tony", victor: "contact_victor", rita: "ped_city", dee: "cop_patrol", inez: "contact_inez" };
+const CREW_PORTRAITS: Record<string, string> = { carmine: "contact_tony", riptide: "contact_inez", megaslice: "contact_victor", hhpd: "cop_patrol", locals: "ped_city" };
 
 const NO_RANKS: Readonly<Record<string, number>> = {};
 const ROMAN = ["", "I", "II", "III", "IV"];
@@ -92,8 +90,8 @@ function weaponLine(item: WeaponDef): string {
   return `${item.weapon.damage} a shot · ${perSecond} a second · ${item.ammo === "shell" ? "12-gauge" : "9 mm"}`;
 }
 function gearLine(item: GearDef): string {
-  if (item.heal !== undefined) return `Patches ${item.heal} health · Q to use`;
-  if (item.armor !== undefined) return `${item.armor} armor over your health`;
+  if (item.heal !== undefined) return `Patches ${item.heal} health after a spill · Q to use`;
+  if (item.armor !== undefined) return `Soaks ${item.armor} of the next crashes`;
   if (item.ammoGrant !== undefined) return `${item.ammoGrant.amount} rounds into your pocket`;
   return "";
 }
@@ -113,47 +111,20 @@ function countIn(slots: readonly ({ itemId: string; count?: number } | null | un
   return total;
 }
 
-/** The Ammu-Isle gun counter: tonight's night-market pieces, the rack, the shelf, and the bribe. */
-function GunCounter() {
+/** Mercato Fresco: the corner store on the strip that keeps riders patched up and dry. */
+function GearCounter() {
   const { commands } = useGame();
   const cash = useCurrency("cash");
   const cred = useEntityStat(usePlayer().userId, "level")?.current ?? 1;
-  const market = useStore(marketStore);
-  const stars = useStore(wantedStore, (wanted) => wanted?.stars ?? 0);
-  const hotbar = useInventory("hotbar");
   const backpack = useInventory("backpack");
-  const workRows = useUpgradeRows("guns");
   const sections: BoardSection[] = [
     {
-      id: "market",
-      title: "Night market",
-      note: "one of each · tonight only",
-      rows: (market?.items ?? []).map((item) => ({ id: item.id, name: item.name, tag: item.rarity, line: `Level ${item.level} · ${item.damage} a shot`, price: item.price, pick: () => commands.run("market.buy", { itemId: item.id }) })),
-    },
-    {
-      id: "rack",
-      title: "The rack",
-      rows: GUNS.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: weaponLine(item), price: item.trade?.buy?.["cash"] ?? 0, gate: CRED_GATES[item.id], owned: item.id.startsWith("grenade") ? undefined : countIn(hotbar, item.id) > 0, count: item.id.startsWith("grenade") ? countIn(hotbar, item.id) : undefined, pick: () => commands.run("shop.buy", { item: item.id }) })),
-    },
-    {
       id: "shelf",
-      title: "The shelf",
+      title: "Rider gear",
       rows: KIT.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: gearLine(item), price: item.trade?.buy?.["cash"] ?? 0, gate: CRED_GATES[item.id], count: countIn(backpack, item.id), pick: () => commands.run("shop.buy", { item: item.id }) })),
     },
-    {
-      id: "work",
-      title: "Gunsmith's bench",
-      note: "every gun you carry",
-      rows: workRows,
-    },
-    {
-      id: "under",
-      title: "Under the counter",
-      note: "HHPD takes cash",
-      rows: stars === 0 ? [] : [{ id: "bribe", name: "Make HHPD forget you", line: `Clears all ${stars} star${stars === 1 ? "" : "s"} of heat`, price: stars * 250, pick: () => commands.run("shop.bribe", {}) }],
-    },
   ];
-  return <PriceBoard look="pawn" kicker="Mainsail · guns · ammo · armor" title="Ammu-Isle" sub="Cash only. No names, no questions." sections={sections} cash={cash} cred={cred} onLeave={() => commands.run("shop.close", {})} />;
+  return <PriceBoard look="pawn" kicker="Mainsail · since the last flood" title="Mercato Fresco" sub="First aid, crash jackets and coffee for night riders." sections={sections} cash={cash} cred={cred} onLeave={() => commands.run("shop.close", {})} />;
 }
 
 /** Sunset Motors: Rita's lot, each car with its price on the windscreen. */
@@ -224,7 +195,7 @@ export function Counters() {
   const books = usePizzeriaBooksOpen();
   const dialogue = useGameStore((ctx) => (dialogueId === null ? null : conversation(ctx, dialogueId)), (a, b) => a?.id === b?.id);
   if (dialogue !== null && dialogueId !== null) return <Talk dialogue={dialogue} dialogueId={dialogueId} />;
-  if (shop !== null) return <GunCounter />;
+  if (shop !== null) return <GearCounter />;
   if (garage) return <CarLot />;
   if (house) return <House />;
   if (books) return <PizzeriaBooks />;

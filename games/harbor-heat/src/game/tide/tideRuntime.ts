@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { DISTRICTS } from "../world/districts";
+import { nightRules } from "../pizza/nights";
 import { districtDepth, MAX_DEPTH, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
 
 /**
@@ -90,7 +91,7 @@ function insideSheet(sheet: FloodSheet, x: number, z: number): boolean {
 
 /** The water level now, in metres above the city floor. */
 export function tideLevel(ctx: GameContext): number {
-  return tideLevelAt(ctx.time.calendar().hour + ctx.time.calendar().minute / 60);
+  return runtimes(ctx).level;
 }
 
 export interface WaterHere {
@@ -152,7 +153,8 @@ export function tickTide(ctx: GameContext): TideStage | null {
   const runtime = runtimes(ctx);
   const calendar = ctx.time.calendar();
   const hour = calendar.hour + calendar.minute / 60;
-  const level = tideLevelAt(hour);
+  // A storm surge runs the water higher all night; it comes in with the evening tide.
+  const level = tideLevelAt(hour) + (tideLevelAt(hour) > 0 ? (nightRules(ctx)?.surge ?? 0) : 0);
   runtime.level = level;
   syncSheets(ctx, level);
   const stage = stageAt(level);

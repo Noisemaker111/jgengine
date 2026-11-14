@@ -7,8 +7,10 @@ import { actionGlyph, useInputDevice } from "@jgengine/core/input/inputDevice.vi
 import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { useStore } from "@jgengine/ui/store";
 import { cityOf, phoneStore } from "../cityRuntime";
-import { frontViews } from "../city/fronts";
-import { payoffCost, turfViews } from "../city/street";
+import { payoffCost } from "../city/street";
+import { nightlyQuota } from "../pizza/pizzeria";
+import { pizzeriaStore, shopRep } from "../pizza/shift";
+import { nightRules, nightStore } from "../pizza/nights";
 import { streetPlayOf } from "../streetPlay";
 import { GIG_RACE_STAKE, gigStore } from "../jobs/gigs";
 import { BurnerPhone, LcdLine } from "./BurnerPhone";
@@ -25,9 +27,11 @@ function readPhone(ctx: GameContext) {
     contacts: world.contacts(),
     news: [...world.log()].reverse().slice(0, 4),
     factions,
-    turf: turfViews(ctx),
-    fronts: frontViews(ctx).filter((front) => front.owned),
-    takings: Math.floor(world.num("fronts.takings")),
+    shop: (() => {
+      const shop = pizzeriaStore.read(ctx);
+      const rules = nightRules(ctx);
+      return { debt: shop.debt, pressure: shop.pressure, rep: shopRep(ctx), quota: nightlyQuota(shop), saved: shop.saved, night: rules === null ? null : `${rules.label} · ${nightStore.read(ctx).score} delivered` };
+    })(),
     payoff: dee && stars > 0 ? payoffCost(stars) : null,
     gigs: { duty: gigs.duty, busy: gigs.view !== null, streak: gigs.streak, driving: streetPlayOf(ctx).drivingVehicleId() !== null },
   };
@@ -45,8 +49,8 @@ function Line({ left, right, bad = false }: { left: string; right: string; bad?:
 
 /**
  * The burner's City app: a read of the town on the same handset as pause and settings. A message from
- * Dee sits on top while she can lose a report for you; then contacts and their jobs, how each crew
- * feels, who holds which block, what your fronts earn, and the news wire. It scrolls; the right
+ * Dee sits on top while she can lose a ticket for you; then contacts and their chapters, the shop
+ * (reputation, quota, the note and MegaSlice's pressure), how each rival feels, and the news wire. It scrolls; the right
  * softkey (or T) puts it away.
  */
 export function CityPhone() {
@@ -70,9 +74,9 @@ export function CityPhone() {
       <RuneView scroll maxHeight={Math.max(160, height - (compact ? 250 : 330))} gap={5} label="City">
         {phone.payoff === null ? null : (
           <RuneView gap={3} padding={6} border={{ width: 1, color: HH.lcdInk }}>
-            <LcdText size={11} text="Dee · HHPD records" />
-            <LcdText size={13} text={"“Cash and a report goes missing.”"} />
-            <LcdLine label="Pay Dee to lose a report" run={() => commands.run("city.payoff", {})}><LcdText size={12} weight={800} text={`Pay Dee to lose a report · $${phone.payoff}`} /></LcdLine>
+            <LcdText size={11} text="Dee · Canal Wardens" />
+            <LcdText size={13} text={"“Cash and a pie, and a ticket goes missing.”"} />
+            <LcdLine label="Pay Dee to lose a ticket" run={() => commands.run("city.payoff", {})}><LcdText size={12} weight={800} text={`Pay Dee to lose a ticket · $${phone.payoff}`} /></LcdLine>
           </RuneView>
         )}
         {phone.contacts.map((contact) => (
@@ -90,15 +94,14 @@ export function CityPhone() {
         <LcdLine label="Find a street race" disabled={!phone.gigs.driving || phone.gigs.busy} run={() => commands.run("gigs.race", {})}>
           <LcdText size={12} weight={800} text={`▸ Find a street race · ${GIG_RACE_STAKE} stake`} />
         </LcdLine>
-        <Head text="Street" />
+        <Head text="Vell's" />
+        {phone.shop.night === null ? null : <Line left="Tonight" right={phone.shop.night} />}
+        <Line left="Reputation" right={`${phone.shop.rep} of 5 stars`} />
+        <Line left="Tonight's quota" right={`$${phone.shop.quota}`} />
+        <Line left={phone.shop.saved ? "The note" : "Owed to MegaSlice"} right={phone.shop.saved ? "paid in full" : `$${phone.shop.debt.toLocaleString("en-US")}`} bad={!phone.shop.saved} />
+        <Line left="MegaSlice pressure" right={`${phone.shop.pressure}%`} bad={phone.shop.pressure >= 70} />
+        <Head text="Rivals" />
         {phone.factions.map((faction) => <Line key={faction.id} left={faction.label} right={`${moodWord(faction.mood)} (${faction.mood})`} bad={faction.mood <= -10} />)}
-        <Head text="Turf" />
-        {phone.turf.map((block) => (
-          <Line key={block.id} left={block.label} bad={block.owner !== "player"}
-            right={`${block.owner === "player" ? "yours" : block.owner === "riptide" ? "Riptide" : "Carmine"} · hold ${block.grip}${block.attacker !== "" && block.attacker !== block.owner ? ` · ${block.attacker === "player" ? "you" : block.attacker === "riptide" ? "Riptides" : "Carmines"} pushing` : ""}`} />
-        ))}
-        {phone.fronts.length > 0 ? <Head text={`Fronts · safe $${phone.takings}`} /> : null}
-        {phone.fronts.map((front) => <Line key={front.slot} left={front.label} right={front.status === "raid" ? `RAID ${front.raidSeconds}s` : front.status === "wrecked" ? "wrecked" : `$${front.income}/s`} bad={front.status !== "open"} />)}
         {phone.news.length > 0 ? <Head text="News wire" /> : null}
         {phone.news.map((entry, i) => <LcdText key={`${entry.at}-${i}`} size={12} text={entry.text} />)}
       </RuneView>

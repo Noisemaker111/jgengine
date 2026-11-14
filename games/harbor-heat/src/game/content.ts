@@ -9,7 +9,6 @@ import { NPCS, npcEntry } from "./entities/npcs/catalog";
 import { playerCatalog } from "./entities/players/catalog";
 import { VEHICLES, vehicleEntry } from "./entities/vehicles/catalog";
 import { GEAR, WEAPONS, gearById, weaponById } from "./items/weapons/catalog";
-import { marketGunById } from "./items/nightMarket";
 import { objectById as objectDefById } from "./objects/catalog";
 
 type WeaponRecord = Record<string, number | Record<string, number>>;
@@ -33,10 +32,6 @@ function itemById(itemId: string): GameContextItemEntry | null {
   const weapon = weaponById(itemId);
   if (weapon !== undefined) {
     return { ...useAndTrade(weapon), weapon: weaponRecord(weapon.weapon) };
-  }
-  const market = marketGunById(itemId);
-  if (market !== null) {
-    return { ...useAndTrade({ use: market.use }), weapon: weaponRecord(market.weapon) };
   }
   const gear = gearById(itemId);
   if (gear !== undefined) {

@@ -218,7 +218,7 @@ describe("harbor-heat save document", () => {
     const document = harborSave(boot(memorySaveBackend())).capture();
     expect(Object.keys(document.systems).sort()).toEqual(["cash", "convoy", "profile", "run", "vehicles", "wanted"]);
     const run = document.systems.run as Record<string, unknown>;
-    expect(Object.keys(run).sort()).toEqual(["cargo", "courier", "courierMission", "courierObjective", "courierSession", "gigs", "mission"]);
+    expect(Object.keys(run).sort()).toEqual(["courier", "courierMission", "courierObjective", "courierSession", "gigs", "mission"]);
     for (const [key, policy] of Object.entries(STORE_POLICY)) {
       if (policy.kind !== "transient") expect(policy.reason.length).toBeGreaterThan(20);
       expect(key.startsWith("harbor.")).toBe(true);

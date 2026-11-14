@@ -8,13 +8,12 @@ import { useGameStore } from "@jgengine/ui/hooks";
 import { cityOf } from "../cityRuntime";
 import { safehouseStore } from "../commands";
 import { drivingStore, raceStore, wantedStore } from "../streetPlay";
-import { bountyStore } from "../jobs/bounties";
 import { courierStore, DELIVERY_ROUTES, DISPATCH } from "../jobs/courier";
 import { stashStore } from "../jobs/stashes";
 import { customerSpot, OVEN, shiftStore, SWAP_DOCKS } from "../pizza/shift";
 import { FLOOD_SHEETS, tideStore } from "../tide/tideRuntime";
 import { gigStore } from "../jobs/gigs";
-import { BOUNTY_SPOTS, DISTRICTS, districtAt, RACE_ROUTES, ROADS, SAFEHOUSE_POS, SHORE_X, STASH_SPOTS } from "../world/districts";
+import { DISTRICTS, districtAt, RACE_ROUTES, ROADS, SAFEHOUSE_POS, SHORE_X, STASH_SPOTS } from "../world/districts";
 import { StreetSign, Text, useRoom, useVersioned } from "./kit";
 import { HH, DISPLAY } from "./theme";
 
@@ -40,13 +39,10 @@ function readMap(ctx: GameContext) {
   const race = raceStore.read(ctx);
   const circuit = race?.active === true ? RACE_ROUTES.find((r) => r.id === race.routeId) : undefined;
   const world = cityOf(ctx);
-  const bounty = bountyStore.read(ctx);
-  const spot = bounty?.targetId == null ? undefined : BOUNTY_SPOTS.find((s) => s.id === bounty.spotId);
   const taken = new Set(stashStore.read(ctx) ?? []);
   const pins: Pin[] = ctx.scene.entity.list().filter((e) => e.name.startsWith("cop_")).map((cop, i) => pin(`cop-${i}`, [cop.position[0], cop.position[2]], "#4f7de8", 4));
   for (const stash of STASH_SPOTS) if (!taken.has(stash.id)) pins.push(pin(`stash-${stash.id}`, [stash.position[0], stash.position[2]], "#76d4c3", 3));
   if (safehouseStore.read(ctx) === true) pins.push(pin("safehouse", [SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]], "#2fb39a", 4.5));
-  if (spot !== undefined) pins.push(pin("bounty", [spot.position[0], spot.position[2]], "#ef5a3c", 5));
   for (const blip of world.blips()) pins.push(pin(`${blip.kind}-${blip.id}`, [blip.x, blip.z], ...BLIP[blip.kind]));
   // Scared places: where the city is still reacting to gunfire, a body or a wreck.
   const scared = Object.entries(world.def.places ?? {}).flatMap(([id, place]) => { const at = world.position(id); const fear = world.num(`${id}.fear`); return at === null || fear < 10 ? [] : [{ at, radius: Math.min(place.radius ?? 30, 60), fear }]; });

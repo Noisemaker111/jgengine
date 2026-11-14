@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { city } from "../city";
-import { BOUNTY_CRED, CRED_BY_JOB, CRED_GATES, credRequiredForLevel, MAX_CRED, resolveCredProgress } from "./cred";
+import { CRED_BY_JOB, PIZZA_CRED, CRED_GATES, credRequiredForLevel, MAX_CRED, resolveCredProgress } from "./cred";
 
 describe("harbor-heat street cred", () => {
   test("every story mission pays cred", () => {
@@ -15,17 +15,12 @@ describe("harbor-heat street cred", () => {
     }
   });
 
-  test("the smg gate opens by the docks arc (m1 + m2 + one bounty)", () => {
-    const xp = CRED_BY_JOB.welcome! + CRED_BY_JOB.dock_sweep! + BOUNTY_CRED;
-    const progress = resolveCredProgress(1, xp);
-    expect(progress.level).toBeGreaterThanOrEqual(CRED_GATES.smg_carmine!);
-  });
-
-  test("the cicada gate opens by the time m6 asks you to steal one", () => {
-    const chain = ["welcome", "dock_sweep", "ledger", "shake_heat", "ocean_loop"] as const;
-    const xp = chain.reduce((total, id) => total + CRED_BY_JOB[id]!, 0);
-    const progress = resolveCredProgress(1, xp);
-    expect(progress.level).toBeGreaterThanOrEqual(CRED_GATES.car_sport!);
+  test("the jet-ski opens by the time Reading the Water asks for a hull, and the blimp by the blackout", () => {
+    const water = resolveCredProgress(1, CRED_BY_JOB.welcome! + 12 * PIZZA_CRED.happy);
+    expect(water.level).toBeGreaterThanOrEqual(CRED_GATES.car_sport!);
+    const chain = ["welcome", "learn_water", "crust_war", "festival_night", "riptide_run", "storm_surge"] as const;
+    const xp = chain.reduce((total, id) => total + CRED_BY_JOB[id]!, 0) + 40 * PIZZA_CRED.happy;
+    expect(resolveCredProgress(1, xp).level).toBeGreaterThanOrEqual(CRED_GATES.air_helicopter!);
   });
 
   test("finishing the whole story cannot hit the cred cap", () => {

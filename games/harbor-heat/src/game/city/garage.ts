@@ -6,7 +6,6 @@ import { editorLayers } from "../../editorLayers";
 import { cityEvent } from "../cityRuntime";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { streetPlayOf } from "../streetPlay";
-import { quietOnYourBlock } from "./street";
 
 /**
  * Cars the player keeps: a car is theirs once bought or boosted, so getting back in costs no heat;
@@ -35,10 +34,6 @@ export function stealCar(ctx: GameContext, vehicle: { id: string; name: string; 
   if (meta.owned === true) return;
   ctx.scene.entity.update(vehicle.id, { meta: { ...meta, owned: true } });
   const label = vehicleById(vehicle.name)?.label ?? "car";
-  if (quietOnYourBlock(ctx, vehicle)) {
-    ctx.game.notices.push({ text: `Boosted a ${label}. Nobody on your block saw a thing.`, tone: "info" });
-    return;
-  }
   cityEvent(ctx, { kind: "carjack", at: [vehicle.position[0], vehicle.position[1], vehicle.position[2]] });
   ctx.game.notices.push({ text: `Boosted a ${label}. Somebody's calling it in.`, tone: "info" });
 }
