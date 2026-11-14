@@ -143,20 +143,20 @@ Proven in play by `src/game/machines.test.ts`, `rootServer.test.ts`, `creatures.
 | --- | --- | --- |
 | Mowbot | passive first upload; Harvest chip trims bushes into fiber around its post | |
 | Ticklet | pack, stamina-drain bite; uploaded and following, rides your shoulder and patches you up | |
-| Craneback | skittish forklift mount with forks, heavy carry | crane build helper |
+| Craneback | skittish forklift mount with forks, heavy carry; uploaded and near you, its crane lifts the build ghost higher and further | |
 | Bulldozaur | tracked dozer with canopy and hazard bumper; ridden, its blade bulk-harvests wood and stone | |
 | Lodestone | pack buff, magnetic disarm into its own inventory | |
 | Mirrorcat | ambush, targets the weakest; ridden, hunters cannot see you | |
 | Watchwing | skittish flyer mount; perches still by day; Guard Zone sentry pings hostiles | |
-| Arcwire | chain lightning, doubled in water; swimmer mount; on Guard Zone powers stations | |
-| Klepto | steals a stack, blinks 30 m and makes that spot its nest; down it to get it back | a visible nest prop |
+| Arcwire | amphibious: spawns in the rivers and swims them; chain lightning, doubled in water; swimmer mount; on Guard Zone powers stations | |
+| Klepto | steals a stack, blinks 30 m and makes that spot its nest, drawn as a growing heap of loot; down it to get it back | |
 | Rootkit | trunk-and-canopy body on root legs; dormant until chopping nearby, then the forest stands up | |
-| Thermite Beetle | metal-ore gatherer mount with a drill; wild, lies burrowed until you cross its ground | ingot mining |
+| Thermite Beetle | metal-ore gatherer mount with a drill that smelts ore into ingots as it cuts; wild, lies burrowed until you cross its ground | |
 | Homer | flyer mount, airlift; flies its cargo to the nearest storage box | |
 | Echo Mimic | copies the last trick used near it and turns it on you | |
 | Choir Drone | aura: other wild bots near hit harder; the highest-level singer conducts and shields the ring (hits on the others land at a quarter); the Root Server's firewall | |
-| Lampjaw | ambush, drawn to light, glowing lure antenna | deep-water only |
-| Hoover Leviathan | vacuum whale: panelled tank hull on tracks, ribbed hose, slatted nozzle head, tail fluke; retaliator giant | mobile base platform |
+| Lampjaw | water-only: spawns and stays in deep water off the beaches; ambush, drawn to light, glowing lure antenna | |
+| Hoover Leviathan | vacuum whale: panelled tank hull on tracks, ribbed hose, slatted nozzle head, tail fluke; uploaded, a walking base you climb aboard and ride | building on its back |
 | Scrapper Rex | hunts other machines first, grows on every wreck | |
 | The Hivemind | boss at the green obelisk; later phases puppet (freeze) your bots in her lair | turning puppets hostile |
 | The Root Server | boots at the bottom of the Lava Cave, shock pulse, Choir firewall by phase; destroying it ends the storms | its own arena dressing |
@@ -341,7 +341,7 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 
 ## Handoff
 
-Branch `worktree-agent-a4f17f89a076b4bef`. All 166 game tests pass, including the 67/67 suite (about 14 minutes here;
+Branch `worktree-agent-a4f17f89a076b4bef`. All 169 game tests pass, including the 67/67 suite (about 14 minutes here;
 `bun run test` can hit its 900 s guard on a busy machine, `bun test --preload ./scripts/three-preload.ts games/fernwild`
 runs it unguarded).
 
@@ -359,9 +359,10 @@ software capture Chrome gets SwiftShader WebGPU. On a container without a GPU, r
 `bun run drive fernwild --flow wildwire-machines` (roster on the beach), `wildwire-upload` (jacked into a
 Mowbot) and `wildwire-storm` (a Signal Storm night).
 
-Next (both need an engine part first): wild-bot swimming (the core creature driver takes one `blocked(ctx, x, z)`
-for every creature, so water species cannot be allowed into water while land ones are kept out; give it the
-creature id or a per-body water mode), then Lampjaw deep-water and Arcwire river spawns; the Hoover mobile-base
-platform (no engine part carries a standing player or structures on a moving body; `bun run find moving platform
-carrier` finds none). Smaller: a Klepto nest prop, Craneback crane helper, Thermite ingot mining, eye pulse tied
-to real charge, puppeted bots turning hostile.
+Engine parts added on this branch: the creature driver's terrain modes (`CreatureBody.terrain` land / amphibious /
+water, `waterSurface` config) and `createCarrierField` (`@jgengine/core/movement/carrier`), both tested in core.
+
+Next: base pieces built on the Hoover's back (attach structures to the carrier: needs base building to accept
+moving pieces); eye pulse tied to real charge (a runtime material hook); puppeted bots turning hostile; stronger
+per-species scale contrast. Note: the seeded spawns several suite proofs rely on shift if a new herd wakes at a
+new game's start; keep new spawn zones beyond 220 m of the first beach or re-check those proofs.
