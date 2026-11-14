@@ -60,7 +60,7 @@ function playerHealthAfterMelee(armorRank: number, ticks: number): number {
 describe("upgrade math", () => {
   beforeEach(() => resetSession());
 
-  test("Iron Weapons adds player damage; Iron Armor removes damage taken; enemy gets neither", () => {
+  test("Sharpened Mandibles adds player damage; Thick Chitin removes damage taken; enemy gets neither", () => {
     session.research.ranks.weapons = 2;
     session.research.ranks.armor = 1;
     // Player attacker: base 9 + 2×3 weapon = 15 onto an unarmoured enemy.
@@ -100,11 +100,11 @@ describe("upgrade math", () => {
 });
 
 describe("research effect on real combat", () => {
-  test("Iron Weapons makes player hits land harder", () => {
+  test("Sharpened Mandibles makes player hits land harder", () => {
     expect(enemyHealthAfterMelee(2, 12)).toBeLessThan(enemyHealthAfterMelee(0, 12));
   });
 
-  test("Iron Armor lets a soldier weather a raider longer", () => {
+  test("Thick Chitin lets a soldier weather a raider longer", () => {
     expect(playerHealthAfterMelee(3, 16)).toBeGreaterThan(playerHealthAfterMelee(0, 16));
   });
 });
@@ -112,7 +112,7 @@ describe("research effect on real combat", () => {
 describe("research economy + gating", () => {
   beforeEach(() => resetSession());
 
-  test("Iron Weapons needs a Barracks, is affordable, and completes to a rank that costs sugar", () => {
+  test("Sharpened Mandibles needs a Barracks, is affordable, and completes to a rank that costs sugar", () => {
     const ctx = boot();
     registerCommands(ctx);
     // No Barracks yet → gated.
@@ -155,7 +155,7 @@ describe("research economy + gating", () => {
     const sugar = ctx.game.economy.balance("commander", SUGAR);
     ctx.game.commands.run("research.assault", {});
     expect(ctx.game.economy.balance("commander", SUGAR)).toBe(sugar);
-    // Iron Weapons still stacks with either doctrine.
+    // Sharpened Mandibles still stacks with either doctrine.
     expect(canResearch(ctx, "weapons")).toBe(true);
   });
 

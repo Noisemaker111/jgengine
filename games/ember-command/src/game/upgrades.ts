@@ -8,7 +8,7 @@ import type { Faction } from "./tuning";
 
 /**
  * Player research. A Barracks funds permanent, ranked upgrades over the shared work-queue: Iron
- * Weapons and Iron Armor stack with anything, while the two doctrines are a fork. Assault hits harder
+ * Weapons and Thick Chitin stack with anything, while the two doctrines are a fork. Assault hits harder
  * and marches slower; Bulwark takes and deals less. Starting either one's first rank closes the other
  * for the battle. Ranks live on the serializable `session.research` clock; each upgrade states what it
  * changes as named contributions, and {@link factionDamage} and {@link factionSpeed} fold them.
@@ -33,7 +33,7 @@ export interface UpgradeDef {
   effect: (stat: ResearchStat, rank: number) => StatContribution | null;
 }
 
-/** Damage added per Iron Weapons rank; damage removed per Iron Armor rank. */
+/** Damage added per Sharpened Mandibles rank; damage removed per Thick Chitin rank. */
 export const WEAPON_DMG_PER_RANK = 3;
 export const ARMOR_REDUCE_PER_RANK = 2;
 /** Assault: damage added and march speed lost per rank. */
@@ -55,49 +55,49 @@ function doctrine(rival: UpgradeId): Predicate {
 export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
   weapons: {
     id: "weapons",
-    label: "Iron Weapons",
+    label: "Sharpened Mandibles",
     blurb: `+${WEAPON_DMG_PER_RANK} dmg`,
     maxRank: 3,
     requires: atBarracks,
     cost: (have) => ({ sugar: 90 + have * 70, leaf: 40 + have * 30 }),
     researchSeconds: (have) => 18 + have * 8,
-    effect: (stat, rank) => (stat === "dealt" ? { source: "Iron Weapons", op: "add", value: rank * WEAPON_DMG_PER_RANK } : null),
+    effect: (stat, rank) => (stat === "dealt" ? { source: "Sharpened Mandibles", op: "add", value: rank * WEAPON_DMG_PER_RANK } : null),
   },
   armor: {
     id: "armor",
-    label: "Iron Armor",
+    label: "Thick Chitin",
     blurb: `-${ARMOR_REDUCE_PER_RANK} dmg taken`,
     maxRank: 3,
     requires: atBarracks,
     cost: (have) => ({ sugar: 80 + have * 70, leaf: 50 + have * 30 }),
     researchSeconds: (have) => 18 + have * 8,
-    effect: (stat, rank) => (stat === "taken" ? { source: "Iron Armor", op: "add", value: -rank * ARMOR_REDUCE_PER_RANK } : null),
+    effect: (stat, rank) => (stat === "taken" ? { source: "Thick Chitin", op: "add", value: -rank * ARMOR_REDUCE_PER_RANK } : null),
   },
   assault: {
     id: "assault",
-    label: "Assault Doctrine",
+    label: "Swarm Instinct",
     blurb: `+${ASSAULT_DMG_PER_RANK} dmg, slower`,
     maxRank: 2,
     requires: doctrine("bulwark"),
     cost: (have) => ({ sugar: 120 + have * 90, leaf: 40 + have * 40 }),
     researchSeconds: (have) => 22 + have * 10,
     effect: (stat, rank) => {
-      if (stat === "dealt") return { source: "Assault Doctrine", op: "add", value: rank * ASSAULT_DMG_PER_RANK };
-      if (stat === "speed") return { source: "Assault Doctrine", op: "mul", value: 1 - rank * ASSAULT_SLOW_PER_RANK };
+      if (stat === "dealt") return { source: "Swarm Instinct", op: "add", value: rank * ASSAULT_DMG_PER_RANK };
+      if (stat === "speed") return { source: "Swarm Instinct", op: "mul", value: 1 - rank * ASSAULT_SLOW_PER_RANK };
       return null;
     },
   },
   bulwark: {
     id: "bulwark",
-    label: "Bulwark Doctrine",
+    label: "Turtle Instinct",
     blurb: `-${BULWARK_GUARD_PER_RANK} dmg taken, -${BULWARK_DULL_PER_RANK} dealt`,
     maxRank: 2,
     requires: doctrine("assault"),
     cost: (have) => ({ sugar: 100 + have * 90, leaf: 60 + have * 40 }),
     researchSeconds: (have) => 22 + have * 10,
     effect: (stat, rank) => {
-      if (stat === "taken") return { source: "Bulwark Doctrine", op: "add", value: -rank * BULWARK_GUARD_PER_RANK };
-      if (stat === "dealt") return { source: "Bulwark Doctrine", op: "add", value: -rank * BULWARK_DULL_PER_RANK };
+      if (stat === "taken") return { source: "Turtle Instinct", op: "add", value: -rank * BULWARK_GUARD_PER_RANK };
+      if (stat === "dealt") return { source: "Turtle Instinct", op: "add", value: -rank * BULWARK_DULL_PER_RANK };
       return null;
     },
   },

@@ -73,6 +73,53 @@ function mowerBody(): THREE.Group {
   return group;
 }
 
+/** A giant broad leaf held up on its stalk over each authored shade spot: it casts the real shadow the
+ * magnifying glass cannot burn through. */
+function shadeCanopies(ground: (x: number, z: number) => number): THREE.Object3D[] {
+  const leafMaterial = new THREE.MeshStandardMaterial({ color: "#3f9a2a", roughness: 0.6, side: THREE.DoubleSide });
+  const veinMaterial = new THREE.MeshStandardMaterial({ color: "#2c6e1c", roughness: 0.7 });
+  const stalkMaterial = new THREE.MeshStandardMaterial({ color: "#4f8a2a", roughness: 0.8 });
+  return YARD.shade.map((spot, i) => {
+    const group = new THREE.Group();
+    const y = ground(spot.x, spot.z);
+    const height = 6.5 + (i % 2) * 1.2;
+    const leafGeometry = new THREE.CircleGeometry(1, 24);
+    leafGeometry.scale(spot.radius * 0.95, spot.radius * 1.25, 1);
+    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+    leaf.rotation.x = -Math.PI / 2 + 0.12;
+    leaf.rotation.z = i * 1.3;
+    leaf.position.set(spot.x, y + height, spot.z);
+    leaf.castShadow = true;
+    const vein = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, spot.radius * 2.4), veinMaterial);
+    vein.position.set(spot.x, y + height + 0.08, spot.z);
+    vein.rotation.y = -i * 1.3;
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, height, 8), stalkMaterial);
+    stalk.position.set(spot.x + Math.cos(i) * spot.radius * 0.7, y + height / 2, spot.z + Math.sin(i) * spot.radius * 0.7);
+    stalk.castShadow = true;
+    group.add(leaf, vein, stalk);
+    return group;
+  });
+}
+
+/** Popsicle sticks laid over the hose at each authored crossing: the quick way across. */
+function crossingBridges(ground: (x: number, z: number) => number): THREE.Object3D[] {
+  const wood = new THREE.MeshStandardMaterial({ color: "#e8c48a", roughness: 0.85 });
+  return YARD.crossings.map((crossing, i) => {
+    const group = new THREE.Group();
+    const y = ground(crossing.x, crossing.z);
+    for (const offset of [-0.7, 0.7]) {
+      const stick = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, crossing.radius * 2.2), wood);
+      stick.position.set(crossing.x + offset, y + 2.6, crossing.z);
+      stick.rotation.y = 0.3 + i * 0.5;
+      stick.rotation.x = 0.04;
+      stick.castShadow = true;
+      stick.receiveShadow = true;
+      group.add(stick);
+    }
+    return group;
+  });
+}
+
 function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
   const root = new THREE.Group();
   const sprinkler = YARD.sprinkler;
@@ -132,7 +179,7 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         warn.position.set(mx, ground(mx, mz) + 0.12, mz);
         root.add(mower, warn);
       }
-      root.add(beamGroup, trails);
+      root.add(beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
       state.scene.add(root);
     },
     frame(state: EngineFrameState, delta: number) {

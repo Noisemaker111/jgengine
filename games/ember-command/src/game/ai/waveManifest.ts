@@ -15,8 +15,8 @@ export const RIVAL_WAVES: EncounterDefinition = {
   id: "rival-march",
   waves: [
     {
-      id: "colony",
-      label: "Red",
+      id: "scouts",
+      label: "Scouting party",
       groups: [{ unit: "raider", entry: MARCH_ENTRY, count: 2 }],
     },
     {
@@ -37,17 +37,19 @@ export const RIVAL_WAVES: EncounterDefinition = {
     },
     {
       id: "hammer",
-      label: "Hammer",
+      label: "Swarm",
       groups: [
         { unit: "raider", entry: MARCH_ENTRY, count: 4, escalates: true },
+        { unit: "wasp", entry: MARCH_ENTRY, count: 1, at: 2 },
         { unit: "major", entry: MARCH_ENTRY, count: 2, at: 4 },
       ],
     },
     {
       id: "tide",
-      label: "Tide",
+      label: "Wasp tide",
       groups: [
         { unit: "raider", entry: MARCH_ENTRY, count: 5, escalates: true },
+        { unit: "wasp", entry: MARCH_ENTRY, count: 2, at: 2 },
         { unit: "major", entry: MARCH_ENTRY, count: 3, at: 4 },
       ],
     },

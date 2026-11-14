@@ -185,6 +185,15 @@ not vendor or run this model itself; the reference documents how to run it
 externally and bring its output in as a catalogued asset. Apache-2.0 permits
 commercial use; credited here per its terms.
 
+## LAWN ORDER (`games/ember-command`)
+
+The backyard's plants are Quaternius **stylized nature** models (grass, clover, ferns, flowers,
+mushrooms, pebbles) and the bees are the Quaternius **cute monster pack** Bee, all CC0-1.0 through
+the catalog above. The command board keeps game-icons.net glyphs (CC BY 3.0, by **Lorc**,
+**Delapouite** and **sbed**) for its generic verbs; the colony glyphs (ants, beetle, sugar cube,
+leaf, fungus, eggs, seed, trail, chambers) and every ant, beetle, wasp, chamber and food mesh are
+drawn procedurally for the game. Fonts: Lilita One and Nunito (OFL) from the engine font library.
+
 ## game-icons.net (Ironhold HUD)
 
 The **[Ironhold](games/ironhold)** command-console HUD uses vector glyphs from
