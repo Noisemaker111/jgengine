@@ -1,246 +1,735 @@
 {
   "version": 1,
+  "simulation": {
+    "emitters": [
+      {
+        "id": "freezer-fog-1",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 165
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-2",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 190
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-3",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 215
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-4",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 240
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-5",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 265
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-6",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 290
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "scrubber-suds",
+        "position": {
+          "x": 0,
+          "y": 0.6,
+          "z": 0
+        },
+        "config": {
+          "rate": 60,
+          "max": 160,
+          "direction": [
+            0,
+            0.5,
+            1
+          ],
+          "spread": 0.9,
+          "spawnJitter": [
+            20,
+            0.3,
+            0.5
+          ],
+          "speed": {
+            "min": 1.5,
+            "max": 4
+          },
+          "gravity": [
+            0,
+            -3,
+            0
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 0.6,
+            "max": 1.4
+          },
+          "size": {
+            "start": 0.35,
+            "end": 0.6
+          },
+          "colorStart": 16777215,
+          "colorEnd": 12577023,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            0.6,
+            3.4
+          ],
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "scrubber-spray",
+        "position": {
+          "x": 0,
+          "y": 2,
+          "z": 0
+        },
+        "config": {
+          "rate": 16,
+          "max": 70,
+          "direction": [
+            0,
+            1,
+            0.4
+          ],
+          "spread": 0.35,
+          "spawnJitter": [
+            22,
+            0.4,
+            1
+          ],
+          "speed": {
+            "min": 1,
+            "max": 2.2
+          },
+          "gravity": [
+            0,
+            0.3,
+            0
+          ],
+          "drag": 0.4,
+          "lifetime": {
+            "min": 1.6,
+            "max": 2.6
+          },
+          "size": {
+            "start": 1.5,
+            "end": 4
+          },
+          "colorStart": 14677247,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.08,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            2,
+            2.8
+          ],
+          "blending": "normal",
+          "space": "world"
+        }
+      }
+    ],
+    "habitats": [
+      {
+        "id": "gulls-1",
+        "species": "gull",
+        "position": {
+          "x": -26,
+          "y": 13,
+          "z": 90
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-1",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      },
+      {
+        "id": "gulls-2",
+        "species": "gull",
+        "position": {
+          "x": 27,
+          "y": 13,
+          "z": 230
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-2",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      },
+      {
+        "id": "gulls-3",
+        "species": "gull",
+        "position": {
+          "x": -26,
+          "y": 13,
+          "z": 390
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-3",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      }
+    ]
+  },
   "markers": [
     {
-      "id": "d03-1-wreck_pile",
+      "id": "d03-1-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 26
       },
       "rotationY": 0,
-      "catalogId": "prop_wreck_pile",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-2-tire_wall",
+      "id": "d03-2-cart_corral",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 52
       },
       "rotationY": 0.7,
-      "catalogId": "prop_tire_wall",
+      "catalogId": "prop_cart_corral",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_cart_corral"
       }
     },
     {
-      "id": "d03-3-dumpster",
+      "id": "d03-3-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 78
       },
       "rotationY": 1.4,
-      "catalogId": "prop_dumpster",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-4-stripped_car",
+      "id": "d03-4-wet_floor",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 104
       },
       "rotationY": 2.0999999999999996,
-      "catalogId": "prop_stripped_car",
+      "catalogId": "prop_wet_floor",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_wet_floor"
       }
     },
     {
-      "id": "d03-5-appliance_stack",
+      "id": "d03-5-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 130
       },
       "rotationY": 2.8,
-      "catalogId": "prop_appliance_stack",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-6-scrap_heap",
+      "id": "d03-6-box_pile",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 156
       },
       "rotationY": 3.5,
-      "catalogId": "prop_scrap_heap",
+      "catalogId": "prop_box_pile",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_box_pile"
       }
     },
     {
-      "id": "d03-7-wreck_pile",
+      "id": "d03-7-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 182
       },
       "rotationY": 4.199999999999999,
-      "catalogId": "prop_wreck_pile",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-8-tire_wall",
+      "id": "d03-8-cart_corral",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 208
       },
       "rotationY": 4.8999999999999995,
-      "catalogId": "prop_tire_wall",
+      "catalogId": "prop_cart_corral",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_cart_corral"
       }
     },
     {
-      "id": "d03-9-dumpster",
+      "id": "d03-9-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 234
       },
       "rotationY": 5.6,
-      "catalogId": "prop_dumpster",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-10-stripped_car",
+      "id": "d03-10-wet_floor",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 260
       },
       "rotationY": 6.3,
-      "catalogId": "prop_stripped_car",
+      "catalogId": "prop_wet_floor",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_wet_floor"
       }
     },
     {
-      "id": "d03-11-appliance_stack",
+      "id": "d03-11-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 286
       },
       "rotationY": 7,
-      "catalogId": "prop_appliance_stack",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-12-scrap_heap",
+      "id": "d03-12-box_pile",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 312
       },
       "rotationY": 7.699999999999999,
-      "catalogId": "prop_scrap_heap",
+      "catalogId": "prop_box_pile",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_box_pile"
       }
     },
     {
-      "id": "d03-13-wreck_pile",
+      "id": "d03-13-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 338
       },
       "rotationY": 8.399999999999999,
-      "catalogId": "prop_wreck_pile",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-14-tire_wall",
+      "id": "d03-14-cart_corral",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 364
       },
       "rotationY": 9.1,
-      "catalogId": "prop_tire_wall",
+      "catalogId": "prop_cart_corral",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_cart_corral"
       }
     },
     {
-      "id": "d03-15-dumpster",
+      "id": "d03-15-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 390
       },
       "rotationY": 9.799999999999999,
-      "catalogId": "prop_dumpster",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-16-stripped_car",
+      "id": "d03-16-wet_floor",
       "kind": "prop",
       "position": {
-        "x": 25.5,
+        "x": 20.5,
         "y": 0,
         "z": 416
       },
       "rotationY": 10.5,
-      "catalogId": "prop_stripped_car",
+      "catalogId": "prop_wet_floor",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_wet_floor"
       }
     },
     {
-      "id": "d03-17-appliance_stack",
+      "id": "d03-17-endcap",
       "kind": "prop",
       "position": {
-        "x": -25.5,
+        "x": -20.5,
         "y": 0,
         "z": 442
       },
       "rotationY": 11.2,
-      "catalogId": "prop_appliance_stack",
+      "catalogId": "prop_endcap",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_endcap"
       }
     },
     {
-      "id": "d03-18-yard_tower",
+      "id": "d03-18-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -31,
@@ -248,14 +737,14 @@
         "z": 58
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-19-yard_tower",
+      "id": "d03-19-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 33,
@@ -263,14 +752,14 @@
         "z": 76
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-20-yard_tower",
+      "id": "d03-20-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -30,
@@ -278,14 +767,14 @@
         "z": 118
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-21-yard_tower",
+      "id": "d03-21-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -33,
@@ -293,14 +782,14 @@
         "z": 182
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-22-yard_tower",
+      "id": "d03-22-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 35,
@@ -308,14 +797,14 @@
         "z": 214
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-23-yard_tower",
+      "id": "d03-23-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -30,
@@ -323,14 +812,14 @@
         "z": 262
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-24-yard_tower",
+      "id": "d03-24-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -34,
@@ -338,14 +827,14 @@
         "z": 322
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-25-yard_tower",
+      "id": "d03-25-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 32,
@@ -353,14 +842,14 @@
         "z": 356
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-26-yard_tower",
+      "id": "d03-26-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -31,
@@ -368,14 +857,14 @@
         "z": 402
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-27-yard_tower",
+      "id": "d03-27-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 36,
@@ -383,98 +872,98 @@
         "z": 436
       },
       "rotationY": 0,
-      "label": "yard water tower",
-      "catalogId": "prop_yard_tower",
+      "label": "section crown shelving",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_yard_tower"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-28-crane_leg",
+      "id": "d03-28-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": -23.5,
+        "x": -21.5,
         "y": 0,
         "z": 150
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-29-crane_leg",
+      "id": "d03-29-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": 23.5,
+        "x": 21.5,
         "y": 0,
         "z": 150
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-30-crane_leg",
+      "id": "d03-30-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": -23.5,
+        "x": -21.5,
         "y": 0,
         "z": 300
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-31-crane_leg",
+      "id": "d03-31-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": 23.5,
+        "x": 21.5,
         "y": 0,
         "z": 300
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-32-crane_leg",
+      "id": "d03-32-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": -23.5,
+        "x": -21.5,
         "y": 0,
         "z": 470
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-33-crane_leg",
+      "id": "d03-33-gondola_tall",
       "kind": "prop",
       "position": {
-        "x": 23.5,
+        "x": 21.5,
         "y": 0,
         "z": 470
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-34-container_stack",
+      "id": "d03-34-pallet_stack",
       "kind": "prop",
       "position": {
         "x": -30,
@@ -482,13 +971,13 @@
         "z": 84
       },
       "rotationY": 0.4,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-35-container_stack",
+      "id": "d03-35-pallet_stack",
       "kind": "prop",
       "position": {
         "x": -34,
@@ -496,13 +985,13 @@
         "z": 96
       },
       "rotationY": 0.4,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-36-container_stack",
+      "id": "d03-36-pallet_stack",
       "kind": "prop",
       "position": {
         "x": 30,
@@ -510,69 +999,69 @@
         "z": 66
       },
       "rotationY": 0.4,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-37-appliance_stack",
+      "id": "d03-37-freezer",
       "kind": "prop",
       "position": {
         "x": -29,
         "y": 0,
         "z": 226
       },
-      "rotationY": 0.9,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d03-38-appliance_stack",
+      "id": "d03-38-freezer",
       "kind": "prop",
       "position": {
         "x": -33,
         "y": 0,
         "z": 238
       },
-      "rotationY": 0.9,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d03-39-appliance_stack",
+      "id": "d03-39-freezer",
       "kind": "prop",
       "position": {
         "x": 31,
         "y": 0,
         "z": 232
       },
-      "rotationY": 0.9,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d03-40-appliance_stack",
+      "id": "d03-40-freezer",
       "kind": "prop",
       "position": {
         "x": 35,
         "y": 0,
         "z": 246
       },
-      "rotationY": 0.9,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d03-41-crane_leg",
+      "id": "d03-41-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -29,
@@ -580,13 +1069,13 @@
         "z": 312
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-42-container_stack",
+      "id": "d03-42-pallet_stack",
       "kind": "prop",
       "position": {
         "x": 30,
@@ -594,13 +1083,13 @@
         "z": 320
       },
       "rotationY": 0,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-43-crane_leg",
+      "id": "d03-43-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 29,
@@ -608,13 +1097,13 @@
         "z": 334
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-44-container_stack",
+      "id": "d03-44-pallet_stack",
       "kind": "prop",
       "position": {
         "x": -31,
@@ -622,13 +1111,13 @@
         "z": 342
       },
       "rotationY": 0.5,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-45-crane_leg",
+      "id": "d03-45-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -29,
@@ -636,13 +1125,13 @@
         "z": 356
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-46-container_stack",
+      "id": "d03-46-pallet_stack",
       "kind": "prop",
       "position": {
         "x": 30,
@@ -650,13 +1139,13 @@
         "z": 364
       },
       "rotationY": 1,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-47-crane_leg",
+      "id": "d03-47-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 29,
@@ -664,13 +1153,13 @@
         "z": 378
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-48-container_stack",
+      "id": "d03-48-pallet_stack",
       "kind": "prop",
       "position": {
         "x": -31,
@@ -678,13 +1167,13 @@
         "z": 386
       },
       "rotationY": 1.5,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-49-crane_leg",
+      "id": "d03-49-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -29,
@@ -692,13 +1181,13 @@
         "z": 400
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-50-container_stack",
+      "id": "d03-50-pallet_stack",
       "kind": "prop",
       "position": {
         "x": 30,
@@ -706,13 +1195,13 @@
         "z": 408
       },
       "rotationY": 2,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-51-crane_leg",
+      "id": "d03-51-gondola_tall",
       "kind": "prop",
       "position": {
         "x": 29,
@@ -720,13 +1209,13 @@
         "z": 422
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-52-container_stack",
+      "id": "d03-52-pallet_stack",
       "kind": "prop",
       "position": {
         "x": -31,
@@ -734,13 +1223,13 @@
         "z": 430
       },
       "rotationY": 2.5,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
-      "id": "d03-53-crane_leg",
+      "id": "d03-53-gondola_tall",
       "kind": "prop",
       "position": {
         "x": -29,
@@ -748,13 +1237,13 @@
         "z": 444
       },
       "rotationY": 0,
-      "catalogId": "prop_crane_leg",
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_crane_leg"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
-      "id": "d03-54-container_stack",
+      "id": "d03-54-pallet_stack",
       "kind": "prop",
       "position": {
         "x": 30,
@@ -762,1549 +1251,4391 @@
         "z": 452
       },
       "rotationY": 3,
-      "catalogId": "prop_container_stack",
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
       "id": "d04-1-inner",
       "kind": "prop",
       "position": {
-        "x": -24.169924169033767,
+        "x": -23.2,
         "y": 0,
         "z": -30
       },
-      "rotationY": 2.674241457713724,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-2-inner",
       "kind": "prop",
       "position": {
-        "x": -23.937134565226735,
+        "x": -23.2,
         "y": 0,
-        "z": -21
+        "z": -25.5
       },
-      "rotationY": 6.259443224923705,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-3-inner",
       "kind": "prop",
       "position": {
-        "x": -24.254962189868095,
+        "x": -23.2,
         "y": 0,
-        "z": -12
+        "z": -21
       },
-      "rotationY": 0.11713823077463643,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-4-inner",
       "kind": "prop",
       "position": {
-        "x": -23.82734708879143,
+        "x": -23.2,
         "y": 0,
-        "z": -3
+        "z": -16.5
       },
-      "rotationY": 2.0747712613166844,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-5-inner",
       "kind": "prop",
       "position": {
-        "x": -23.84736648052931,
+        "x": -23.2,
         "y": 0,
-        "z": 6
+        "z": -12
       },
-      "rotationY": 1.9597496579537899,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-6-inner",
       "kind": "prop",
       "position": {
-        "x": -24.780971175991,
+        "x": -23.2,
         "y": 0,
-        "z": 15
+        "z": -7.5
       },
-      "rotationY": 1.7278654068611132,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-7-inner",
       "kind": "prop",
       "position": {
-        "x": -24.64523273641244,
+        "x": -23.2,
         "y": 0,
-        "z": 33
+        "z": -3
       },
-      "rotationY": 5.779789470242394,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-8-inner",
       "kind": "prop",
       "position": {
-        "x": -24.714815651532263,
+        "x": -23.2,
         "y": 0,
-        "z": 42
+        "z": 1.5
       },
-      "rotationY": 4.218364669809187,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-9-inner",
       "kind": "prop",
       "position": {
-        "x": -24.031086615193637,
+        "x": -23.2,
         "y": 0,
-        "z": 51
+        "z": 6
       },
-      "rotationY": 1.7353987810449576,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-10-inner",
       "kind": "prop",
       "position": {
-        "x": -24.24471328286454,
+        "x": -23.2,
         "y": 0,
-        "z": 60
+        "z": 10.5
       },
-      "rotationY": 4.505262034270282,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-11-inner",
       "kind": "prop",
       "position": {
-        "x": -24.149401010666043,
+        "x": -23.2,
         "y": 0,
-        "z": 69
+        "z": 15
       },
-      "rotationY": 4.191724776516415,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-12-inner",
       "kind": "prop",
       "position": {
-        "x": -23.982652252633127,
+        "x": -23.2,
         "y": 0,
-        "z": 96
+        "z": 19.5
       },
-      "rotationY": 4.838553870675927,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-13-inner",
       "kind": "prop",
       "position": {
-        "x": -23.91015210999176,
+        "x": -23.2,
         "y": 0,
-        "z": 105
+        "z": 28.5
       },
-      "rotationY": 3.2681234401735084,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-14-inner",
       "kind": "prop",
       "position": {
-        "x": -24.26198963392526,
+        "x": -23.2,
         "y": 0,
-        "z": 123
+        "z": 33
       },
-      "rotationY": 5.12441414178935,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-15-inner",
       "kind": "prop",
       "position": {
-        "x": -23.728605397511274,
+        "x": -23.2,
         "y": 0,
-        "z": 141
+        "z": 37.5
       },
-      "rotationY": 2.0031528852095644,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-16-inner",
       "kind": "prop",
       "position": {
-        "x": -24.500834684446456,
+        "x": -23.2,
         "y": 0,
-        "z": 159
+        "z": 42
       },
-      "rotationY": 4.90303025438754,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-17-inner",
       "kind": "prop",
       "position": {
-        "x": -23.80785348210484,
+        "x": -23.2,
         "y": 0,
-        "z": 168
+        "z": 46.5
       },
-      "rotationY": 4.1918381921663475,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-18-inner",
       "kind": "prop",
       "position": {
-        "x": -24.4365278756246,
+        "x": -23.2,
         "y": 0,
-        "z": 195
+        "z": 51
       },
-      "rotationY": 3.3795976178747424,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-19-inner",
       "kind": "prop",
       "position": {
-        "x": -24.065631262585523,
+        "x": -23.2,
         "y": 0,
-        "z": 204
+        "z": 55.5
       },
-      "rotationY": 1.8882895096032053,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-20-inner",
       "kind": "prop",
       "position": {
-        "x": -24.73849914390594,
+        "x": -23.2,
         "y": 0,
-        "z": 213
+        "z": 60
       },
-      "rotationY": 0.8942627176088175,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-21-inner",
       "kind": "prop",
       "position": {
-        "x": -24.502275523822757,
+        "x": -23.2,
         "y": 0,
-        "z": 249
+        "z": 64.5
       },
-      "rotationY": 2.3539568282533145,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-22-inner",
       "kind": "prop",
       "position": {
-        "x": -23.97863128045574,
+        "x": -23.2,
         "y": 0,
-        "z": 258
+        "z": 69
       },
-      "rotationY": 1.6513371031729445,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-23-inner",
       "kind": "prop",
       "position": {
-        "x": -23.76519452771172,
+        "x": -23.2,
         "y": 0,
-        "z": 267
+        "z": 73.5
       },
-      "rotationY": 1.5944677925321737,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-24-inner",
       "kind": "prop",
       "position": {
-        "x": -24.162549093086273,
+        "x": -23.2,
         "y": 0,
-        "z": 276
+        "z": 82.5
       },
-      "rotationY": 2.6831871359371293,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-25-inner",
       "kind": "prop",
       "position": {
-        "x": -24.03766893213615,
+        "x": -23.2,
         "y": 0,
-        "z": 321
+        "z": 87
       },
-      "rotationY": 3.9926788465059078,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-26-inner",
       "kind": "prop",
       "position": {
-        "x": -23.914224569965157,
+        "x": -23.2,
         "y": 0,
-        "z": 330
+        "z": 91.5
       },
-      "rotationY": 2.804409782786947,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-27-inner",
       "kind": "prop",
       "position": {
-        "x": -23.873446299508217,
+        "x": -23.2,
         "y": 0,
-        "z": 348
+        "z": 96
       },
-      "rotationY": 4.633694583635765,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-28-inner",
       "kind": "prop",
       "position": {
-        "x": -24.116189512517305,
+        "x": -23.2,
         "y": 0,
-        "z": 366
+        "z": 100.5
       },
-      "rotationY": 5.4014681727160925,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-29-inner",
       "kind": "prop",
       "position": {
-        "x": -23.649739916343243,
+        "x": -23.2,
         "y": 0,
-        "z": 375
+        "z": 105
       },
-      "rotationY": 4.280591742365104,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-30-inner",
       "kind": "prop",
       "position": {
-        "x": -24.444480371661484,
+        "x": -23.2,
         "y": 0,
-        "z": 411
+        "z": 109.5
       },
-      "rotationY": 3.005045420523734,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-31-inner",
       "kind": "prop",
       "position": {
-        "x": -23.600735066086056,
+        "x": -23.2,
         "y": 0,
-        "z": 420
+        "z": 114
       },
-      "rotationY": 5.336301198044309,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-32-inner",
       "kind": "prop",
       "position": {
-        "x": -23.8125797925517,
+        "x": -23.2,
         "y": 0,
-        "z": 429
+        "z": 118.5
       },
-      "rotationY": 3.468730255498298,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-33-inner",
       "kind": "prop",
       "position": {
-        "x": -23.75944235865027,
+        "x": -23.2,
         "y": 0,
-        "z": 456
+        "z": 123
       },
-      "rotationY": 2.488737777918009,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola"
       }
     },
     {
       "id": "d04-34-inner",
       "kind": "prop",
       "position": {
-        "x": -23.663925396464766,
+        "x": -23.2,
         "y": 0,
-        "z": 483
+        "z": 127.5
       },
-      "rotationY": 2.6380586045412264,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola"
       }
     },
     {
-      "id": "d04-35-outer",
+      "id": "d04-35-inner",
       "kind": "prop",
       "position": {
-        "x": -32.44266715552658,
+        "x": -23.2,
         "y": 0,
-        "z": -24
+        "z": 136.5
       },
-      "rotationY": 4.723398789204563,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_gondola"
       }
     },
     {
-      "id": "d04-36-outer",
+      "id": "d04-36-inner",
       "kind": "prop",
       "position": {
-        "x": -32.027379002887756,
+        "x": -23.2,
         "y": 0,
-        "z": -10
+        "z": 141
       },
-      "rotationY": 3.6505006297982825,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_gondola"
       }
     },
     {
-      "id": "d04-37-outer",
+      "id": "d04-37-inner",
       "kind": "prop",
       "position": {
-        "x": -30.91387783549726,
+        "x": -23.2,
         "y": 0,
-        "z": 4
+        "z": 145.5
       },
-      "rotationY": 4.6335035791996635,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_gondola"
       }
     },
     {
-      "id": "d04-38-outer",
+      "id": "d04-38-inner",
       "kind": "prop",
       "position": {
-        "x": -32.616406868677586,
+        "x": -23.2,
         "y": 0,
-        "z": 18
+        "z": 154.5
       },
-      "rotationY": 4.924529166817822,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-39-outer",
+      "id": "d04-39-inner",
       "kind": "prop",
       "position": {
-        "x": -31.82640176732093,
+        "x": -23.2,
         "y": 0,
-        "z": 32
+        "z": 159
       },
-      "rotationY": 0.23028668164463953,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-40-outer",
+      "id": "d04-40-inner",
       "kind": "prop",
       "position": {
-        "x": -30.542394439224154,
+        "x": -23.2,
         "y": 0,
-        "z": 46
+        "z": 163.5
       },
-      "rotationY": 1.7009703192127583,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-41-outer",
+      "id": "d04-41-inner",
       "kind": "prop",
       "position": {
-        "x": -30.799500518012792,
+        "x": -23.2,
         "y": 0,
-        "z": 144
+        "z": 168
       },
-      "rotationY": 2.739362316818895,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-42-outer",
+      "id": "d04-42-inner",
       "kind": "prop",
       "position": {
-        "x": -32.7852912414819,
+        "x": -23.2,
         "y": 0,
-        "z": 158
+        "z": 172.5
       },
-      "rotationY": 5.470416705773532,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-43-outer",
+      "id": "d04-43-inner",
       "kind": "prop",
       "position": {
-        "x": -32.11888835532591,
+        "x": -23.2,
         "y": 0,
-        "z": 172
+        "z": 177
       },
-      "rotationY": 4.917331352394246,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-44-outer",
+      "id": "d04-44-inner",
       "kind": "prop",
       "position": {
-        "x": -31.644556980812922,
+        "x": -23.2,
         "y": 0,
-        "z": 200
+        "z": 186
       },
-      "rotationY": 6.108704492747601,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-45-outer",
+      "id": "d04-45-inner",
       "kind": "prop",
       "position": {
-        "x": -30.706681456184015,
+        "x": -23.2,
         "y": 0,
-        "z": 214
+        "z": 190.5
       },
-      "rotationY": 3.4747242390231996,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-46-outer",
+      "id": "d04-46-inner",
       "kind": "prop",
       "position": {
-        "x": -32.32438220735639,
+        "x": -23.2,
         "y": 0,
-        "z": 270
+        "z": 195
       },
-      "rotationY": 2.0983824519032597,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-47-outer",
+      "id": "d04-47-inner",
       "kind": "prop",
       "position": {
-        "x": -30.309228946454823,
+        "x": -23.2,
         "y": 0,
-        "z": 368
+        "z": 199.5
       },
-      "rotationY": 2.136914742733552,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-48-outer",
+      "id": "d04-48-inner",
       "kind": "prop",
       "position": {
-        "x": -32.874318938702345,
+        "x": -23.2,
         "y": 0,
-        "z": 410
+        "z": 204
       },
-      "rotationY": 0.9207954433747741,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-49-outer",
+      "id": "d04-49-inner",
       "kind": "prop",
       "position": {
-        "x": -30.974088328890502,
+        "x": -23.2,
         "y": 0,
-        "z": 452
+        "z": 208.5
       },
-      "rotationY": 0.1756158296642109,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-50-outer",
+      "id": "d04-50-inner",
       "kind": "prop",
       "position": {
-        "x": -32.76551674352959,
+        "x": -23.2,
         "y": 0,
-        "z": 466
+        "z": 213
       },
-      "rotationY": 0.9754174075588298,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_freezer"
       }
     },
     {
-      "id": "d04-51-outer",
+      "id": "d04-51-inner",
       "kind": "prop",
       "position": {
-        "x": -30.785082975402474,
+        "x": -23.2,
         "y": 0,
-        "z": 480
+        "z": 217.5
       },
-      "rotationY": 6.17393269931851,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-52-inner",
       "kind": "prop",
       "position": {
-        "x": 23.98550597410649,
+        "x": -23.2,
         "y": 0,
-        "z": -25.5
+        "z": 222
       },
-      "rotationY": 1.1248533950932469,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-53-inner",
       "kind": "prop",
       "position": {
-        "x": 24.14268347658217,
+        "x": -23.2,
         "y": 0,
-        "z": -16.5
+        "z": 226.5
       },
-      "rotationY": 4.697411453927737,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-54-inner",
       "kind": "prop",
       "position": {
-        "x": 23.81477048341185,
+        "x": -23.2,
         "y": 0,
-        "z": -7.5
+        "z": 231
       },
-      "rotationY": 1.6869445394627336,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-55-inner",
       "kind": "prop",
       "position": {
-        "x": 23.7997415214777,
+        "x": -23.2,
         "y": 0,
-        "z": 1.5
+        "z": 240
       },
-      "rotationY": 3.347467685614097,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-56-inner",
       "kind": "prop",
       "position": {
-        "x": 24.332598762772978,
+        "x": -23.2,
         "y": 0,
-        "z": 10.5
+        "z": 244.5
       },
-      "rotationY": 0.20360796835771672,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-57-inner",
       "kind": "prop",
       "position": {
-        "x": 24.231114059314134,
+        "x": -23.2,
         "y": 0,
-        "z": 19.5
+        "z": 249
       },
-      "rotationY": 1.1145398021535602,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-58-inner",
       "kind": "prop",
       "position": {
-        "x": 23.84263909328729,
+        "x": -23.2,
         "y": 0,
-        "z": 28.5
+        "z": 253.5
       },
-      "rotationY": 5.864492647932593,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-59-inner",
       "kind": "prop",
       "position": {
-        "x": 23.927677001804113,
+        "x": -23.2,
         "y": 0,
-        "z": 37.5
+        "z": 258
       },
-      "rotationY": 2.3284938072048535,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-60-inner",
       "kind": "prop",
       "position": {
-        "x": 24.46239321064204,
+        "x": -23.2,
         "y": 0,
-        "z": 46.5
+        "z": 262.5
       },
-      "rotationY": 2.8390861243843335,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-61-inner",
       "kind": "prop",
       "position": {
-        "x": 24.59081562170759,
+        "x": -23.2,
         "y": 0,
-        "z": 64.5
+        "z": 267
       },
-      "rotationY": 4.48202851061505,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-62-inner",
       "kind": "prop",
       "position": {
-        "x": 23.63504589945078,
+        "x": -23.2,
         "y": 0,
-        "z": 82.5
+        "z": 271.5
       },
-      "rotationY": 3.4508556172792972,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-63-inner",
       "kind": "prop",
       "position": {
-        "x": 24.6447799121961,
+        "x": -23.2,
         "y": 0,
-        "z": 91.5
+        "z": 276
       },
-      "rotationY": 5.06126169455072,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-64-inner",
       "kind": "prop",
       "position": {
-        "x": 24.118440775200725,
+        "x": -23.2,
         "y": 0,
-        "z": 100.5
+        "z": 280.5
       },
-      "rotationY": 3.7417549404380352,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-65-inner",
       "kind": "prop",
       "position": {
-        "x": 24.099730022903533,
+        "x": -23.2,
         "y": 0,
-        "z": 118.5
+        "z": 289.5
       },
-      "rotationY": 5.234181699740163,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-66-inner",
       "kind": "prop",
       "position": {
-        "x": 24.73645241307095,
+        "x": -23.2,
         "y": 0,
-        "z": 127.5
+        "z": 294
       },
-      "rotationY": 0.7128718023148238,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_freezer"
       }
     },
     {
       "id": "d04-67-inner",
       "kind": "prop",
       "position": {
-        "x": 24.040867230575532,
+        "x": -23.2,
         "y": 0,
-        "z": 136.5
+        "z": 307.5
       },
-      "rotationY": 0.0536966480180661,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-68-inner",
       "kind": "prop",
       "position": {
-        "x": 24.09375716308132,
+        "x": -23.2,
         "y": 0,
-        "z": 145.5
+        "z": 312
       },
-      "rotationY": 5.36772258202536,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-69-inner",
       "kind": "prop",
       "position": {
-        "x": 24.411090770084414,
+        "x": -23.2,
         "y": 0,
-        "z": 172.5
+        "z": 316.5
       },
-      "rotationY": 3.913148548606916,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-70-inner",
       "kind": "prop",
       "position": {
-        "x": 23.96428707195446,
+        "x": -23.2,
         "y": 0,
-        "z": 181.5
+        "z": 321
       },
-      "rotationY": 2.2081551212898427,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-71-inner",
       "kind": "prop",
       "position": {
-        "x": 24.690892637614162,
+        "x": -23.2,
         "y": 0,
-        "z": 190.5
+        "z": 325.5
       },
-      "rotationY": 6.026131181877762,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-72-inner",
       "kind": "prop",
       "position": {
-        "x": 23.756300807651133,
+        "x": -23.2,
         "y": 0,
-        "z": 199.5
+        "z": 330
       },
-      "rotationY": 4.634566852929282,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-73-inner",
       "kind": "prop",
       "position": {
-        "x": 23.86541332183406,
+        "x": -23.2,
         "y": 0,
-        "z": 226.5
+        "z": 334.5
       },
-      "rotationY": 1.00953719660214,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-74-inner",
       "kind": "prop",
       "position": {
-        "x": 23.82424415657297,
+        "x": -23.2,
         "y": 0,
-        "z": 235.5
+        "z": 343.5
       },
-      "rotationY": 1.5079706866776665,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-75-inner",
       "kind": "prop",
       "position": {
-        "x": 24.65838515451178,
+        "x": -23.2,
         "y": 0,
-        "z": 244.5
+        "z": 348
       },
-      "rotationY": 4.3594587298002665,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-76-inner",
       "kind": "prop",
       "position": {
-        "x": 24.35381366731599,
+        "x": -23.2,
         "y": 0,
-        "z": 253.5
+        "z": 352.5
       },
-      "rotationY": 1.9785264382534862,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-77-inner",
       "kind": "prop",
       "position": {
-        "x": 23.791941882297397,
+        "x": -23.2,
         "y": 0,
-        "z": 271.5
+        "z": 357
       },
-      "rotationY": 3.900353470634846,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-78-inner",
       "kind": "prop",
       "position": {
-        "x": 24.39802182931453,
+        "x": -23.2,
         "y": 0,
-        "z": 280.5
+        "z": 361.5
       },
-      "rotationY": 4.02501549933158,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-79-inner",
       "kind": "prop",
       "position": {
-        "x": 24.56390205398202,
+        "x": -23.2,
         "y": 0,
-        "z": 289.5
+        "z": 366
       },
-      "rotationY": 4.9725442067455345,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-80-inner",
       "kind": "prop",
       "position": {
-        "x": 23.68105553528294,
+        "x": -23.2,
         "y": 0,
-        "z": 343.5
+        "z": 370.5
       },
-      "rotationY": 4.4408946511218375,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-81-inner",
       "kind": "prop",
       "position": {
-        "x": 24.103072190005335,
+        "x": -23.2,
         "y": 0,
-        "z": 352.5
+        "z": 375
       },
-      "rotationY": 4.81894234200561,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-82-inner",
       "kind": "prop",
       "position": {
-        "x": 24.588361516129225,
+        "x": -23.2,
         "y": 0,
-        "z": 361.5
+        "z": 379.5
       },
-      "rotationY": 3.8532501314945597,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-83-inner",
       "kind": "prop",
       "position": {
-        "x": 23.739011869486422,
+        "x": -23.2,
         "y": 0,
-        "z": 388.5
+        "z": 384
       },
-      "rotationY": 1.12750950280508,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-84-inner",
       "kind": "prop",
       "position": {
-        "x": 23.721603955794127,
+        "x": -23.2,
         "y": 0,
-        "z": 397.5
+        "z": 393
       },
-      "rotationY": 3.7060310061299218,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-85-inner",
       "kind": "prop",
       "position": {
-        "x": 23.919830917101354,
+        "x": -23.2,
         "y": 0,
-        "z": 406.5
+        "z": 397.5
       },
-      "rotationY": 0.21242244038442853,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-86-inner",
       "kind": "prop",
       "position": {
-        "x": 24.032186132576317,
+        "x": -23.2,
         "y": 0,
-        "z": 433.5
+        "z": 402
       },
-      "rotationY": 2.647358139241317,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-87-inner",
       "kind": "prop",
       "position": {
-        "x": 24.107126836199313,
+        "x": -23.2,
         "y": 0,
-        "z": 442.5
+        "z": 406.5
       },
-      "rotationY": 6.180068966255802,
-      "catalogId": "prop_dumpster",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_dumpster"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-88-inner",
       "kind": "prop",
       "position": {
-        "x": 24.710030133556575,
+        "x": -23.2,
         "y": 0,
-        "z": 451.5
+        "z": 411
       },
-      "rotationY": 4.143445633062017,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-89-inner",
       "kind": "prop",
       "position": {
-        "x": 23.605025651399046,
+        "x": -23.2,
         "y": 0,
-        "z": 460.5
+        "z": 415.5
       },
-      "rotationY": 2.12411752597525,
-      "catalogId": "prop_tire_wall",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_tire_wall"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-90-inner",
       "kind": "prop",
       "position": {
-        "x": 24.570543998945507,
+        "x": -23.2,
+        "y": 0,
+        "z": 420
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-91-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 424.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-92-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 429
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-93-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 433.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-94-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 438
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-95-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 447
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-96-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 451.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-97-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 456
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-98-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 460.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-99-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 465
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-100-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 474
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-101-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 478.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-102-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
+        "y": 0,
+        "z": 483
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-103-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.2,
         "y": 0,
         "z": 487.5
       },
-      "rotationY": 5.409436830859832,
-      "catalogId": "prop_stripped_car",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_stripped_car"
-      }
-    },
-    {
-      "id": "d04-91-outer",
-      "kind": "prop",
-      "position": {
-        "x": 30.232501902384683,
-        "y": 0,
-        "z": -24
-      },
-      "rotationY": 6.151805544033676,
-      "catalogId": "prop_appliance_stack",
-      "meta": {
-        "catalogId": "prop_appliance_stack"
-      }
-    },
-    {
-      "id": "d04-92-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.359640669310465,
-        "y": 0,
-        "z": -10
-      },
-      "rotationY": 3.336974418538833,
-      "catalogId": "prop_wreck_pile",
-      "meta": {
-        "catalogId": "prop_wreck_pile"
-      }
-    },
-    {
-      "id": "d04-93-outer",
-      "kind": "prop",
-      "position": {
-        "x": 32.28498130640946,
-        "y": 0,
-        "z": 4
-      },
-      "rotationY": 0.45501808110090614,
-      "catalogId": "prop_container_stack",
-      "meta": {
-        "catalogId": "prop_container_stack"
-      }
-    },
-    {
-      "id": "d04-94-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.30414994736202,
-        "y": 0,
-        "z": 18
-      },
-      "rotationY": 6.07235655512153,
-      "catalogId": "prop_scrap_heap",
-      "meta": {
-        "catalogId": "prop_scrap_heap"
-      }
-    },
-    {
-      "id": "d04-95-outer",
-      "kind": "prop",
-      "position": {
-        "x": 30.105288623599336,
-        "y": 0,
-        "z": 32
-      },
-      "rotationY": 4.7216055807959485,
-      "catalogId": "prop_appliance_stack",
-      "meta": {
-        "catalogId": "prop_appliance_stack"
-      }
-    },
-    {
-      "id": "d04-96-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.871149914572015,
-        "y": 0,
-        "z": 46
-      },
-      "rotationY": 1.0885763109785092,
-      "catalogId": "prop_wreck_pile",
-      "meta": {
-        "catalogId": "prop_wreck_pile"
-      }
-    },
-    {
-      "id": "d04-97-outer",
-      "kind": "prop",
-      "position": {
-        "x": 30.585061070742086,
-        "y": 0,
-        "z": 88
-      },
-      "rotationY": 3.1143254902829938,
-      "catalogId": "prop_appliance_stack",
-      "meta": {
-        "catalogId": "prop_appliance_stack"
-      }
-    },
-    {
-      "id": "d04-98-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.919757862575352,
-        "y": 0,
-        "z": 116
-      },
-      "rotationY": 5.580321299649586,
-      "catalogId": "prop_container_stack",
-      "meta": {
-        "catalogId": "prop_container_stack"
-      }
-    },
-    {
-      "id": "d04-99-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.03061121935025,
-        "y": 0,
-        "z": 130
-      },
-      "rotationY": 1.7762415973750543,
-      "catalogId": "prop_scrap_heap",
-      "meta": {
-        "catalogId": "prop_scrap_heap"
-      }
-    },
-    {
-      "id": "d04-100-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.527667354792356,
-        "y": 0,
-        "z": 144
-      },
-      "rotationY": 4.632675602676832,
-      "catalogId": "prop_appliance_stack",
-      "meta": {
-        "catalogId": "prop_appliance_stack"
-      }
-    },
-    {
-      "id": "d04-101-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.88871345925145,
-        "y": 0,
-        "z": 172
-      },
-      "rotationY": 1.003140768702386,
-      "catalogId": "prop_container_stack",
-      "meta": {
-        "catalogId": "prop_container_stack"
-      }
-    },
-    {
-      "id": "d04-102-outer",
-      "kind": "prop",
-      "position": {
-        "x": 31.98581704334356,
-        "y": 0,
-        "z": 186
-      },
-      "rotationY": 1.7221694782656813,
-      "catalogId": "prop_scrap_heap",
-      "meta": {
-        "catalogId": "prop_scrap_heap"
-      }
-    },
-    {
-      "id": "d04-103-outer",
-      "kind": "prop",
-      "position": {
-        "x": 32.59502318291925,
-        "y": 0,
-        "z": 200
-      },
-      "rotationY": 1.4069153164472983,
-      "catalogId": "prop_appliance_stack",
-      "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-104-outer",
       "kind": "prop",
       "position": {
-        "x": 32.812542096711695,
+        "x": -32.9599499781616,
         "y": 0,
-        "z": 256
+        "z": -24
       },
-      "rotationY": 4.904514027826945,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-105-outer",
       "kind": "prop",
       "position": {
-        "x": 30.751757292542607,
+        "x": -33.20953538827598,
         "y": 0,
-        "z": 270
+        "z": -15
       },
-      "rotationY": 3.1742095078926957,
-      "catalogId": "prop_wreck_pile",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_wreck_pile"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-106-outer",
       "kind": "prop",
       "position": {
-        "x": 31.523122675716877,
+        "x": -32.364306022878736,
         "y": 0,
-        "z": 284
+        "z": -6
       },
-      "rotationY": 1.0053129021518916,
-      "catalogId": "prop_container_stack",
+      "rotationY": 1.4999034205407937,
+      "catalogId": "prop_pallet_stack",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_pallet_stack"
       }
     },
     {
       "id": "d04-107-outer",
       "kind": "prop",
       "position": {
-        "x": 30.293535155709833,
+        "x": -32.4197263517417,
         "y": 0,
-        "z": 298
+        "z": 3
       },
-      "rotationY": 4.844884243435648,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-108-outer",
       "kind": "prop",
       "position": {
-        "x": 31.401292111258954,
+        "x": -33.477768801152706,
         "y": 0,
-        "z": 396
+        "z": 12
       },
-      "rotationY": 3.0571827266060922,
-      "catalogId": "prop_container_stack",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_container_stack"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-109-outer",
       "kind": "prop",
       "position": {
-        "x": 30.249260131269693,
+        "x": -33.585874653887004,
         "y": 0,
-        "z": 466
+        "z": 21
       },
-      "rotationY": 0.8968317217152931,
-      "catalogId": "prop_scrap_heap",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_scrap_heap"
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
       "id": "d04-110-outer",
       "kind": "prop",
       "position": {
-        "x": 31.642696449067444,
+        "x": -32.48039721045643,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 2.5743324469138273,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-111-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.1174685228616,
+        "y": 0,
+        "z": 39
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-112-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.7651521502994,
+        "y": 0,
+        "z": 48
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-113-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.0293867723085,
+        "y": 0,
+        "z": 66
+      },
+      "rotationY": 0.768610669342366,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-114-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.776257793884724,
+        "y": 0,
+        "z": 75
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-115-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.9765019165352,
+        "y": 0,
+        "z": 84
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-116-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.113685792312026,
+        "y": 0,
+        "z": 102
+      },
+      "rotationY": 0.4957183777573433,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-117-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.13082106318325,
+        "y": 0,
+        "z": 111
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-118-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.40233104163781,
+        "y": 0,
+        "z": 120
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-119-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.549218118190765,
+        "y": 0,
+        "z": 129
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-120-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.76031742943451,
+        "y": 0,
+        "z": 138
+      },
+      "rotationY": 2.892410038430819,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-121-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.248293448705226,
+        "y": 0,
+        "z": 147
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-122-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.12484201230109,
+        "y": 0,
+        "z": 156
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-123-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.12266141315922,
+        "y": 0,
+        "z": 165
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-124-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.460874798707664,
+        "y": 0,
+        "z": 174
+      },
+      "rotationY": 0.15151087716189846,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-125-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.38101391820237,
+        "y": 0,
+        "z": 192
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-126-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.664331746287644,
+        "y": 0,
+        "z": 201
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-127-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.27212538616732,
+        "y": 0,
+        "z": 210
+      },
+      "rotationY": 3.1110345390302356,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-128-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.96934682643041,
+        "y": 0,
+        "z": 219
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-129-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.49840002413839,
+        "y": 0,
+        "z": 228
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-130-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.93271968513727,
+        "y": 0,
+        "z": 246
+      },
+      "rotationY": 2.6798398937910584,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-131-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.14375370834023,
+        "y": 0,
+        "z": 255
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-132-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.113510963041335,
+        "y": 0,
+        "z": 264
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-133-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.30789232440293,
+        "y": 0,
+        "z": 273
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-134-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.94341273000464,
+        "y": 0,
+        "z": 282
+      },
+      "rotationY": 2.4293102156186457,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-135-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.478285460267216,
+        "y": 0,
+        "z": 291
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-136-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.5778872333467,
+        "y": 0,
+        "z": 300
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-137-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.21922236261889,
+        "y": 0,
+        "z": 309
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-138-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.57527415920049,
+        "y": 0,
+        "z": 318
+      },
+      "rotationY": 2.6577546189249976,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-139-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.050991555675864,
+        "y": 0,
+        "z": 327
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-140-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.19134731357917,
+        "y": 0,
+        "z": 336
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-141-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.85927131678909,
+        "y": 0,
+        "z": 345
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-142-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.06071430677548,
+        "y": 0,
+        "z": 354
+      },
+      "rotationY": 1.4979449960159799,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-143-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.136937260162085,
+        "y": 0,
+        "z": 363
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-144-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.96510724071413,
+        "y": 0,
+        "z": 372
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-145-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.60198563756421,
+        "y": 0,
+        "z": 381
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-146-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.61550251580775,
+        "y": 0,
+        "z": 390
+      },
+      "rotationY": 1.2523343945142837,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-147-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.06711598020047,
+        "y": 0,
+        "z": 399
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-148-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.69907913217321,
+        "y": 0,
+        "z": 408
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-149-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.1646165587008,
+        "y": 0,
+        "z": 417
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-150-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.84950739471242,
+        "y": 0,
+        "z": 426
+      },
+      "rotationY": 1.2068736585607276,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-151-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.71056918101385,
+        "y": 0,
+        "z": 435
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-152-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.63816302828491,
+        "y": 0,
+        "z": 444
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-153-outer",
+      "kind": "prop",
+      "position": {
+        "x": -33.78679188108072,
+        "y": 0,
+        "z": 453
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-154-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.22799182590097,
+        "y": 0,
+        "z": 462
+      },
+      "rotationY": 0.8892965400961618,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-155-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.91578679531813,
+        "y": 0,
+        "z": 471
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-156-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.48761285049841,
         "y": 0,
         "z": 480
       },
-      "rotationY": 4.220390239348003,
-      "catalogId": "prop_appliance_stack",
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
       "meta": {
-        "catalogId": "prop_appliance_stack"
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-157-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.252111808396876,
+        "y": 0,
+        "z": 489
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-158-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -30
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-159-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -25.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-160-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -21
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-161-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -16.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-162-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -12
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-163-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -7.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-164-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": -3
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-165-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 1.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-166-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 6
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-167-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 10.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-168-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 15
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-169-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 19.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-170-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 24
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-171-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 28.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-172-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 33
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-173-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 37.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-174-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-175-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 46.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-176-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 55.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-177-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 60
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-178-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 64.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-179-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 69
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-180-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 73.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-181-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 78
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-182-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 82.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-183-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 87
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-184-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 91.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-185-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 96
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-186-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 100.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-187-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 109.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-188-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 114
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-189-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 118.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-190-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 123
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-191-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 127.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-192-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 132
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-193-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 136.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-194-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 141
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-195-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 145.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola",
+      "meta": {
+        "catalogId": "prop_gondola"
+      }
+    },
+    {
+      "id": "d04-196-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 159
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-197-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 163.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-198-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 168
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-199-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 172.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-200-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 177
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-201-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 181.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-202-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 186
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-203-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 190.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-204-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 195
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-205-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 199.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-206-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 204
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-207-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 213
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-208-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 217.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-209-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 222
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-210-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 226.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-211-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 231
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-212-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 235.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-213-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 240
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-214-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 244.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-215-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 249
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-216-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 253.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-217-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 262.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-218-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 267
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-219-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 271.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-220-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 276
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-221-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 280.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-222-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 285
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-223-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 289.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-224-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 294
+      },
+      "rotationY": 0,
+      "catalogId": "prop_freezer",
+      "meta": {
+        "catalogId": "prop_freezer"
+      }
+    },
+    {
+      "id": "d04-225-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 307.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-226-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 316.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-227-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 321
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-228-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 325.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-229-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 330
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-230-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 334.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-231-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 339
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-232-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 343.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-233-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 348
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-234-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 352.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-235-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 357
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-236-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 361.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-237-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 370.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-238-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 375
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-239-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 379.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-240-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 384
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-241-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 388.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-242-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 393
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-243-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 397.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-244-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 402
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-245-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 406.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-246-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 411
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-247-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 420
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-248-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 424.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-249-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 429
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-250-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 433.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-251-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 438
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-252-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 442.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-253-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 447
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-254-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 451.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-255-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 456
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-256-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 460.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-257-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 465
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-258-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 474
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-259-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 478.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-260-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 483
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-261-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 487.5
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-262-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.88000775547698,
+        "y": 0,
+        "z": -24
+      },
+      "rotationY": 2.1697743741433815,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-263-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.25601359596476,
+        "y": 0,
+        "z": -15
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-264-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.50295918714255,
+        "y": 0,
+        "z": -6
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-265-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.61311440030113,
+        "y": 0,
+        "z": 3
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-266-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.71929718181491,
+        "y": 0,
+        "z": 12
+      },
+      "rotationY": 2.5347883887736513,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-267-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.48409927356988,
+        "y": 0,
+        "z": 21
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-268-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.81547485338524,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-269-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.75246701203287,
+        "y": 0,
+        "z": 39
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-270-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.62533995276317,
+        "y": 0,
+        "z": 48
+      },
+      "rotationY": 2.288664481502138,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-271-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.4797958903946,
+        "y": 0,
+        "z": 57
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-272-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.94559382740408,
+        "y": 0,
+        "z": 84
+      },
+      "rotationY": 0.059212306338803054,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-273-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.94876288808882,
+        "y": 0,
+        "z": 93
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-274-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.018431992735714,
+        "y": 0,
+        "z": 102
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-275-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.98484435956925,
+        "y": 0,
+        "z": 111
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-276-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.529747954104096,
+        "y": 0,
+        "z": 120
+      },
+      "rotationY": 0.29129014464945013,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-277-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.761819917242974,
+        "y": 0,
+        "z": 129
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-278-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.76988480705768,
+        "y": 0,
+        "z": 138
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-279-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.98060362832621,
+        "y": 0,
+        "z": 147
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-280-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.72657562606037,
+        "y": 0,
+        "z": 156
+      },
+      "rotationY": 2.7741897976032637,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-281-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.86166115757078,
+        "y": 0,
+        "z": 165
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-282-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.01044144714251,
+        "y": 0,
+        "z": 174
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-283-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.52194083482027,
+        "y": 0,
+        "z": 183
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-284-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.04021515650675,
+        "y": 0,
+        "z": 192
+      },
+      "rotationY": 0.9511491239102624,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-285-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.2139960792847,
+        "y": 0,
+        "z": 201
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-286-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.29600730724633,
+        "y": 0,
+        "z": 210
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-287-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.035230138804764,
+        "y": 0,
+        "z": 219
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-288-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.918929944746196,
+        "y": 0,
+        "z": 228
+      },
+      "rotationY": 2.102376750030381,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-289-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.047575797885656,
+        "y": 0,
+        "z": 237
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-290-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.104588587768376,
+        "y": 0,
+        "z": 255
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-291-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.79119110153988,
+        "y": 0,
+        "z": 264
+      },
+      "rotationY": 1.3201390390098884,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-292-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.5826499289833,
+        "y": 0,
+        "z": 273
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-293-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.845176874659956,
+        "y": 0,
+        "z": 282
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-294-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.50942930812016,
+        "y": 0,
+        "z": 291
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-295-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.29123465716839,
+        "y": 0,
+        "z": 300
+      },
+      "rotationY": 2.8900440061617925,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-296-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.03599900845438,
+        "y": 0,
+        "z": 309
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-297-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.721683476585895,
+        "y": 0,
+        "z": 318
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-298-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.66100008226931,
+        "y": 0,
+        "z": 327
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-299-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.634075270500034,
+        "y": 0,
+        "z": 336
+      },
+      "rotationY": 0.9609582383278221,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-300-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.633627301547676,
+        "y": 0,
+        "z": 345
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-301-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.50100812641904,
+        "y": 0,
+        "z": 363
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-302-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.0237635942176,
+        "y": 0,
+        "z": 372
+      },
+      "rotationY": 2.464266838422298,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-303-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.94622334651649,
+        "y": 0,
+        "z": 381
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-304-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.88799630617723,
+        "y": 0,
+        "z": 390
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-305-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.52367559727281,
+        "y": 0,
+        "z": 399
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-306-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.59568647528067,
+        "y": 0,
+        "z": 408
+      },
+      "rotationY": 0.7891720122048276,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-307-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.004715121816844,
+        "y": 0,
+        "z": 417
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-308-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.91027812752873,
+        "y": 0,
+        "z": 426
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-309-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.1664523947984,
+        "y": 0,
+        "z": 444
+      },
+      "rotationY": 1.0125160686612609,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-310-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.83997709909454,
+        "y": 0,
+        "z": 462
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-311-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.35300628468394,
+        "y": 0,
+        "z": 471
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
+      }
+    },
+    {
+      "id": "d04-312-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.25814948556945,
+        "y": 0,
+        "z": 480
+      },
+      "rotationY": 1.169620332638743,
+      "catalogId": "prop_pallet_stack",
+      "meta": {
+        "catalogId": "prop_pallet_stack"
+      }
+    },
+    {
+      "id": "d04-313-outer",
+      "kind": "prop",
+      "position": {
+        "x": 33.49632515059784,
+        "y": 0,
+        "z": 489
+      },
+      "rotationY": 0,
+      "catalogId": "prop_gondola_tall",
+      "meta": {
+        "catalogId": "prop_gondola_tall"
       }
     },
     {
@@ -2324,947 +5655,947 @@
       }
     },
     {
-      "id": "d05-2-tyre",
+      "id": "d05-2-scuff",
       "kind": "decal",
       "position": {
-        "x": -1.8386190969496965,
+        "x": -2.343939110264182,
         "y": 0,
-        "z": 33.15465686889365
+        "z": 30.178845398593694
       },
-      "rotationY": 0.03282206090167165,
+      "rotationY": 0.021070040110498667,
       "meta": {
         "style": "scorch",
-        "size": 6.820841862354428,
-        "opacity": 0.4,
-        "seed": "tyre-2"
+        "size": 4.28071807557717,
+        "opacity": 0.25,
+        "seed": "scuff-2"
       }
     },
     {
-      "id": "d05-3-tyre",
+      "id": "d05-3-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.5638428695499895,
+        "x": 2.2361316204071042,
         "y": 0,
-        "z": 35.1785963200964
+        "z": 31.34369851509109
       },
-      "rotationY": 0.02912232605740428,
+      "rotationY": -0.03625520328059793,
       "meta": {
         "style": "scorch",
-        "size": 6.468480960000306,
-        "opacity": 0.4,
-        "seed": "tyre-3"
+        "size": 4.601458657998592,
+        "opacity": 0.25,
+        "seed": "scuff-3"
       }
     },
     {
-      "id": "d05-4-tyre",
+      "id": "d05-4-scuff",
       "kind": "decal",
       "position": {
-        "x": -1.9547517266124486,
+        "x": -2.133095369115472,
         "y": 0,
-        "z": 56.827709906268865
+        "z": 55.57002318324521
       },
-      "rotationY": 0.0449628003872931,
+      "rotationY": -0.014890018533915281,
       "meta": {
         "style": "scorch",
-        "size": 6.227380263153464,
-        "opacity": 0.4,
-        "seed": "tyre-4"
+        "size": 5.337133190128952,
+        "opacity": 0.25,
+        "seed": "scuff-4"
       }
     },
     {
-      "id": "d05-5-tyre",
+      "id": "d05-5-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.7627968788146973,
+        "x": 1.8572612039744854,
         "y": 0,
-        "z": 58.78995300689712
+        "z": 56.94413598859683
       },
-      "rotationY": 0.05890426537021994,
+      "rotationY": 0.047456539403647184,
       "meta": {
         "style": "scorch",
-        "size": 5.510725368279964,
-        "opacity": 0.4,
-        "seed": "tyre-5"
+        "size": 4.742983542848378,
+        "opacity": 0.25,
+        "seed": "scuff-5"
       }
     },
     {
-      "id": "d05-6-tyre",
+      "id": "d05-6-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.0305367086082695,
+        "x": -2.3077226143330334,
         "y": 0,
-        "z": 82.84192693652585
+        "z": 78.4932943736203
       },
-      "rotationY": 0.01700857060030103,
+      "rotationY": -0.015326836612075567,
       "meta": {
         "style": "scorch",
-        "size": 5.6551103801466525,
-        "opacity": 0.4,
-        "seed": "tyre-6"
+        "size": 5.093607360962778,
+        "opacity": 0.25,
+        "seed": "scuff-6"
       }
     },
     {
-      "id": "d05-7-tyre",
+      "id": "d05-7-scuff",
       "kind": "decal",
       "position": {
-        "x": 1.846589731425047,
+        "x": 2.558785508573055,
         "y": 0,
-        "z": 78.27990921819583
+        "z": 82.6596956611611
       },
-      "rotationY": 0.046156504880636925,
+      "rotationY": 0.046736040171235796,
       "meta": {
         "style": "scorch",
-        "size": 6.076909982133657,
-        "opacity": 0.4,
-        "seed": "tyre-7"
+        "size": 4.5932363835163414,
+        "opacity": 0.25,
+        "seed": "scuff-7"
       }
     },
     {
-      "id": "d05-8-tyre",
+      "id": "d05-8-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.9639118175953625,
+        "x": -2.2419549096375704,
         "y": 0,
-        "z": 103.82549323188141
+        "z": 106.43658545287326
       },
-      "rotationY": -0.04923589518293738,
+      "rotationY": -0.0036529660038650035,
       "meta": {
         "style": "scorch",
-        "size": 6.164979631546885,
-        "opacity": 0.4,
-        "seed": "tyre-8"
+        "size": 4.5848428891040385,
+        "opacity": 0.25,
+        "seed": "scuff-8"
       }
     },
     {
-      "id": "d05-9-tyre",
+      "id": "d05-9-scuff",
       "kind": "decal",
       "position": {
-        "x": 1.9160019144415854,
+        "x": 1.8492731072008608,
         "y": 0,
-        "z": 107.84958723792806
+        "z": 103.01022540265694
       },
-      "rotationY": 0.01227240091189742,
+      "rotationY": 0.037095307689160105,
       "meta": {
         "style": "scorch",
-        "size": 6.440933879930526,
-        "opacity": 0.4,
-        "seed": "tyre-9"
+        "size": 4.589324266184121,
+        "opacity": 0.25,
+        "seed": "scuff-9"
       }
     },
     {
-      "id": "d05-10-tyre",
+      "id": "d05-10-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.4368236172944306,
+        "x": -2.1322163578122852,
         "y": 0,
-        "z": 129.25852277548984
+        "z": 129.25147036509588
       },
-      "rotationY": -0.019214398842304945,
+      "rotationY": 0.0425173812545836,
       "meta": {
         "style": "scorch",
-        "size": 5.018252818379551,
-        "opacity": 0.4,
-        "seed": "tyre-10"
+        "size": 4.206015708390623,
+        "opacity": 0.25,
+        "seed": "scuff-10"
       }
     },
     {
-      "id": "d05-11-tyre",
+      "id": "d05-11-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.2467895008623597,
+        "x": 2.2614869087934495,
         "y": 0,
-        "z": 130.88602243596688
+        "z": 129.90070491889492
       },
-      "rotationY": 0.018232712130993603,
+      "rotationY": -0.0545693720318377,
       "meta": {
         "style": "scorch",
-        "size": 5.891466647852212,
-        "opacity": 0.4,
-        "seed": "tyre-11"
+        "size": 5.405781034845859,
+        "opacity": 0.25,
+        "seed": "scuff-11"
       }
     },
     {
-      "id": "d05-12-tyre",
+      "id": "d05-12-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.4035087104886768,
+        "x": -2.9105023507028815,
         "y": 0,
-        "z": 154.73477701144293
+        "z": 154.78988926531747
       },
-      "rotationY": -0.057572402413934465,
+      "rotationY": -0.023084792029112577,
       "meta": {
         "style": "scorch",
-        "size": 6.086668374482542,
-        "opacity": 0.4,
-        "seed": "tyre-12"
+        "size": 5.2479316354729235,
+        "opacity": 0.25,
+        "seed": "scuff-12"
       }
     },
     {
-      "id": "d05-13-tyre",
+      "id": "d05-13-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.488902899622917,
+        "x": 2.926602908223867,
         "y": 0,
-        "z": 151.91138201812282
+        "z": 154.94546450162306
       },
-      "rotationY": -0.00859752545133233,
+      "rotationY": -0.045680560637265444,
       "meta": {
         "style": "scorch",
-        "size": 5.204604629892856,
-        "opacity": 0.4,
-        "seed": "tyre-13"
+        "size": 5.552223541308194,
+        "opacity": 0.25,
+        "seed": "scuff-13"
       }
     },
     {
-      "id": "d05-14-tyre",
+      "id": "d05-14-scuff",
       "kind": "decal",
       "position": {
-        "x": -1.8037749890238046,
+        "x": -2.1826608192175625,
         "y": 0,
-        "z": 179.59838359476998
+        "z": 178.91586726950482
       },
-      "rotationY": -0.002610153090208769,
+      "rotationY": -0.03233639320358634,
       "meta": {
         "style": "scorch",
-        "size": 5.387594616506249,
-        "opacity": 0.4,
-        "seed": "tyre-14"
+        "size": 4.55718261981383,
+        "opacity": 0.25,
+        "seed": "scuff-14"
       }
     },
     {
-      "id": "d05-15-tyre",
+      "id": "d05-15-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.640705605596304,
+        "x": 2.323428936302662,
         "y": 0,
-        "z": 176.90718377614394
+        "z": 178.16740377852693
       },
-      "rotationY": 0.009827876519411803,
+      "rotationY": 0.043817207571119066,
       "meta": {
         "style": "scorch",
-        "size": 6.241527177859098,
-        "opacity": 0.4,
-        "seed": "tyre-15"
+        "size": 4.096007895190269,
+        "opacity": 0.25,
+        "seed": "scuff-15"
       }
     },
     {
-      "id": "d05-16-tyre",
+      "id": "d05-16-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.101282883808017,
+        "x": -2.991673483327031,
         "y": 0,
-        "z": 200.9555551414378
+        "z": 203.89223320456222
       },
-      "rotationY": 0.03676419178023934,
+      "rotationY": -0.002175364773720503,
       "meta": {
         "style": "scorch",
-        "size": 5.744185993913561,
-        "opacity": 0.4,
-        "seed": "tyre-16"
+        "size": 4.321302993688732,
+        "opacity": 0.25,
+        "seed": "scuff-16"
       }
     },
     {
-      "id": "d05-17-tyre",
+      "id": "d05-17-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.198192949593067,
+        "x": 2.6026234097778795,
         "y": 0,
-        "z": 200.01351483771577
+        "z": 201.07221046322957
       },
-      "rotationY": -0.03596686625853181,
+      "rotationY": -0.009245699364691972,
       "meta": {
         "style": "scorch",
-        "size": 6.671152901370078,
-        "opacity": 0.4,
-        "seed": "tyre-17"
+        "size": 4.5098857139237225,
+        "opacity": 0.25,
+        "seed": "scuff-17"
       }
     },
     {
-      "id": "d05-18-tyre",
+      "id": "d05-18-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.8468266148120165,
+        "x": -1.8059371020644903,
         "y": 0,
-        "z": 226.06130797835067
+        "z": 227.14233835833147
       },
-      "rotationY": 0.021581439692527054,
+      "rotationY": -0.05655380940064788,
       "meta": {
         "style": "scorch",
-        "size": 6.57053933897987,
-        "opacity": 0.4,
-        "seed": "tyre-18"
+        "size": 4.978925722185522,
+        "opacity": 0.25,
+        "seed": "scuff-18"
       }
     },
     {
-      "id": "d05-19-tyre",
+      "id": "d05-19-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.0792108483612535,
+        "x": 2.2859140813350676,
         "y": 0,
-        "z": 226.60325041646138
+        "z": 226.09757910529152
       },
-      "rotationY": 0.03631736425682902,
+      "rotationY": -0.05446713605895638,
       "meta": {
         "style": "scorch",
-        "size": 5.817795917857438,
-        "opacity": 0.4,
-        "seed": "tyre-19"
+        "size": 5.644660372752696,
+        "opacity": 0.25,
+        "seed": "scuff-19"
       }
     },
     {
-      "id": "d05-20-tyre",
+      "id": "d05-20-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.8666154410690066,
+        "x": -2.532544723525643,
         "y": 0,
-        "z": 249.0811808933504
+        "z": 248.38677522959188
       },
-      "rotationY": -0.05914176201447844,
+      "rotationY": -0.01089111490175128,
       "meta": {
         "style": "scorch",
-        "size": 6.781850116793066,
-        "opacity": 0.4,
-        "seed": "tyre-20"
+        "size": 5.25493865320459,
+        "opacity": 0.25,
+        "seed": "scuff-20"
       }
     },
     {
-      "id": "d05-21-tyre",
+      "id": "d05-21-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.1226745545864105,
+        "x": 2.5403167895972727,
         "y": 0,
-        "z": 248.7312725619413
+        "z": 250.43742984021083
       },
-      "rotationY": -0.04244853654876351,
+      "rotationY": 0.02642369521781802,
       "meta": {
         "style": "scorch",
-        "size": 5.633822102565318,
-        "opacity": 0.4,
-        "seed": "tyre-21"
+        "size": 5.826843254733831,
+        "opacity": 0.25,
+        "seed": "scuff-21"
       }
     },
     {
-      "id": "d05-22-tyre",
+      "id": "d05-22-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.2755549106746913,
+        "x": -2.5555669348686934,
         "y": 0,
-        "z": 270.22795388521627
+        "z": 271.1550962780602
       },
-      "rotationY": -0.012856051158159972,
+      "rotationY": -0.059027079250663514,
       "meta": {
         "style": "scorch",
-        "size": 6.82956867525354,
-        "opacity": 0.4,
-        "seed": "tyre-22"
+        "size": 5.320640767458826,
+        "opacity": 0.25,
+        "seed": "scuff-22"
       }
     },
     {
-      "id": "d05-23-tyre",
+      "id": "d05-23-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.562787406891584,
+        "x": 1.8273542091250419,
         "y": 0,
-        "z": 274.9586889096536
+        "z": 272.24112713942304
       },
-      "rotationY": 0.041474979054182765,
+      "rotationY": 0.011363119538873433,
       "meta": {
         "style": "scorch",
-        "size": 6.797305338550359,
-        "opacity": 0.4,
-        "seed": "tyre-23"
+        "size": 4.081310000736266,
+        "opacity": 0.25,
+        "seed": "scuff-23"
       }
     },
     {
-      "id": "d05-24-tyre",
+      "id": "d05-24-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.9155281107872724,
+        "x": -2.3993331123143435,
         "y": 0,
-        "z": 297.2733669136651
+        "z": 298.6725326743908
       },
-      "rotationY": -0.010432475712150335,
+      "rotationY": -0.04267503557726741,
       "meta": {
         "style": "scorch",
-        "size": 5.861556495074183,
-        "opacity": 0.4,
-        "seed": "tyre-24"
+        "size": 5.078898428473622,
+        "opacity": 0.25,
+        "seed": "scuff-24"
       }
     },
     {
-      "id": "d05-25-tyre",
+      "id": "d05-25-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.278259579837322,
+        "x": 2.9272746004164216,
         "y": 0,
-        "z": 294.55205143103376
+        "z": 297.1876985603012
       },
-      "rotationY": 0.036492986138910055,
+      "rotationY": -0.03275013567879796,
       "meta": {
         "style": "scorch",
-        "size": 5.934683766681701,
-        "opacity": 0.4,
-        "seed": "tyre-25"
+        "size": 4.478956759441644,
+        "opacity": 0.25,
+        "seed": "scuff-25"
       }
     },
     {
-      "id": "d05-26-tyre",
+      "id": "d05-26-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.4186769176274536,
+        "x": -1.8167126711457966,
         "y": 0,
-        "z": 323.43483864935115
+        "z": 318.12171305017546
       },
-      "rotationY": 0.024384381193667648,
+      "rotationY": 0.056625022832304236,
       "meta": {
         "style": "scorch",
-        "size": 6.007242439780384,
-        "opacity": 0.4,
-        "seed": "tyre-26"
+        "size": 5.574301632586867,
+        "opacity": 0.25,
+        "seed": "scuff-26"
       }
     },
     {
-      "id": "d05-27-tyre",
+      "id": "d05-27-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.216526833921671,
+        "x": 2.3382705599069595,
         "y": 0,
-        "z": 320.0575751834549
+        "z": 321.4350534961559
       },
-      "rotationY": -0.005027037877589464,
+      "rotationY": 0.016741934325546024,
       "meta": {
         "style": "scorch",
-        "size": 5.968416035640985,
-        "opacity": 0.4,
-        "seed": "tyre-27"
+        "size": 5.609356437344104,
+        "opacity": 0.25,
+        "seed": "scuff-27"
       }
     },
     {
-      "id": "d05-28-tyre",
+      "id": "d05-28-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.2956832464784385,
+        "x": -2.7023963157087563,
         "y": 0,
-        "z": 347.63718522386625
+        "z": 345.27938224794343
       },
-      "rotationY": 0.04302327627316117,
+      "rotationY": -0.03694668246433139,
       "meta": {
         "style": "scorch",
-        "size": 5.787779005710036,
-        "opacity": 0.4,
-        "seed": "tyre-28"
+        "size": 5.528320258948952,
+        "opacity": 0.25,
+        "seed": "scuff-28"
       }
     },
     {
-      "id": "d05-29-tyre",
+      "id": "d05-29-scuff",
       "kind": "decal",
       "position": {
-        "x": 1.9929692655801772,
+        "x": 2.8506977699697016,
         "y": 0,
-        "z": 346.25035706022754
+        "z": 344.9442019262351
       },
-      "rotationY": 0.040041661765426395,
+      "rotationY": -0.03744651334360242,
       "meta": {
         "style": "scorch",
-        "size": 5.589637551922351,
-        "opacity": 0.4,
-        "seed": "tyre-29"
+        "size": 5.178414948750287,
+        "opacity": 0.25,
+        "seed": "scuff-29"
       }
     },
     {
-      "id": "d05-30-tyre",
+      "id": "d05-30-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.4490503016859293,
+        "x": -2.0311772894114255,
         "y": 0,
-        "z": 371.1493389797397
+        "z": 367.52812007116154
       },
-      "rotationY": -0.04236681891605258,
+      "rotationY": 0.009557159934192896,
       "meta": {
         "style": "scorch",
-        "size": 6.651198572013527,
-        "opacity": 0.4,
-        "seed": "tyre-30"
+        "size": 4.999460319522768,
+        "opacity": 0.25,
+        "seed": "scuff-30"
       }
     },
     {
-      "id": "d05-31-tyre",
+      "id": "d05-31-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.865130057185888,
+        "x": 2.4962937489151953,
         "y": 0,
-        "z": 369.45859454059973
+        "z": 367.1784731657244
       },
-      "rotationY": -0.010118007827550173,
+      "rotationY": -0.030748294238001107,
       "meta": {
         "style": "scorch",
-        "size": 5.855816729832441,
-        "opacity": 0.4,
-        "seed": "tyre-31"
+        "size": 5.731027465779334,
+        "opacity": 0.25,
+        "seed": "scuff-31"
       }
     },
     {
-      "id": "d05-32-tyre",
+      "id": "d05-32-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.5113838266581294,
+        "x": -2.421232624724507,
         "y": 0,
-        "z": 394.5960672204383
+        "z": 395.2430600342341
       },
-      "rotationY": -0.05586984297260642,
+      "rotationY": -0.02160217372700572,
       "meta": {
         "style": "scorch",
-        "size": 6.63256965065375,
-        "opacity": 0.4,
-        "seed": "tyre-32"
+        "size": 4.168420209083706,
+        "opacity": 0.25,
+        "seed": "scuff-32"
       }
     },
     {
-      "id": "d05-33-tyre",
+      "id": "d05-33-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.6819342270493505,
+        "x": 1.8723966009914874,
         "y": 0,
-        "z": 395.262804439757
+        "z": 395.1777346157469
       },
-      "rotationY": 0.03952988779172301,
+      "rotationY": 0.022553678434342146,
       "meta": {
         "style": "scorch",
-        "size": 5.913411241490394,
-        "opacity": 0.4,
-        "seed": "tyre-33"
+        "size": 5.498734668362886,
+        "opacity": 0.25,
+        "seed": "scuff-33"
       }
     },
     {
-      "id": "d05-34-tyre",
+      "id": "d05-34-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.8086733538657427,
+        "x": -1.9224043931812047,
         "y": 0,
-        "z": 415.3446909603663
+        "z": 417.55360811250284
       },
-      "rotationY": 0.0027442303486168384,
+      "rotationY": -0.04080256735906005,
       "meta": {
         "style": "scorch",
-        "size": 5.139153136406094,
-        "opacity": 0.4,
-        "seed": "tyre-34"
+        "size": 5.248246955219656,
+        "opacity": 0.25,
+        "seed": "scuff-34"
       }
     },
     {
-      "id": "d05-35-tyre",
+      "id": "d05-35-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.0079073794186115,
+        "x": 2.241163766384125,
         "y": 0,
-        "z": 416.57004165882245
+        "z": 416.00761051336303
       },
-      "rotationY": -0.019828814584761857,
+      "rotationY": -0.03387673119083047,
       "meta": {
         "style": "scorch",
-        "size": 5.8455242668278515,
-        "opacity": 0.4,
-        "seed": "tyre-35"
+        "size": 4.372378994245082,
+        "opacity": 0.25,
+        "seed": "scuff-35"
       }
     },
     {
-      "id": "d05-36-tyre",
+      "id": "d05-36-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.5485734548419714,
+        "x": -2.629480955377221,
         "y": 0,
-        "z": 443.2668036748655
+        "z": 442.48016149224713
       },
-      "rotationY": -0.023933732863515616,
+      "rotationY": -0.015514190029352903,
       "meta": {
         "style": "scorch",
-        "size": 6.86055855685845,
-        "opacity": 0.4,
-        "seed": "tyre-36"
+        "size": 5.519492468331009,
+        "opacity": 0.25,
+        "seed": "scuff-36"
       }
     },
     {
-      "id": "d05-37-tyre",
+      "id": "d05-37-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.2223944544792174,
+        "x": 2.803790771216154,
         "y": 0,
-        "z": 440.06311793485656
+        "z": 441.5837006815709
       },
-      "rotationY": -0.044061500821262596,
+      "rotationY": -0.004132006634026766,
       "meta": {
         "style": "scorch",
-        "size": 6.644560743588954,
-        "opacity": 0.4,
-        "seed": "tyre-37"
+        "size": 4.999760888982564,
+        "opacity": 0.25,
+        "seed": "scuff-37"
       }
     },
     {
-      "id": "d05-38-tyre",
+      "id": "d05-38-scuff",
       "kind": "decal",
       "position": {
-        "x": -2.433684990182519,
+        "x": -2.1204782109707594,
         "y": 0,
-        "z": 462.8749900502153
+        "z": 465.44582732068375
       },
-      "rotationY": 0.024594848323613406,
+      "rotationY": 0.0027473790384829042,
       "meta": {
         "style": "scorch",
-        "size": 6.803900322411209,
-        "opacity": 0.4,
-        "seed": "tyre-38"
+        "size": 5.4903697916306555,
+        "opacity": 0.25,
+        "seed": "scuff-38"
       }
     },
     {
-      "id": "d05-39-tyre",
+      "id": "d05-39-scuff",
       "kind": "decal",
       "position": {
-        "x": 2.7937784783542154,
+        "x": 1.9497299775481223,
         "y": 0,
-        "z": 465.0248205908574
+        "z": 463.8707992793061
       },
-      "rotationY": -0.0017919044382870197,
+      "rotationY": 0.05173589592799544,
       "meta": {
         "style": "scorch",
-        "size": 5.3098836173303425,
-        "opacity": 0.4,
-        "seed": "tyre-39"
+        "size": 5.0082950559444726,
+        "opacity": 0.25,
+        "seed": "scuff-39"
       }
     },
     {
-      "id": "d05-40-oil",
+      "id": "d05-40-spill",
       "kind": "decal",
       "position": {
-        "x": 15.669089467264712,
+        "x": -4.3262829119339585,
         "y": 0,
-        "z": 24.981928723864257
+        "z": 20.74733545538038
       },
-      "rotationY": 4.567731130530315,
+      "rotationY": 0.5714850811732324,
       "meta": {
         "style": "wet",
-        "size": 3.8573986262083055,
-        "opacity": 0.7,
-        "seed": "oil-40"
+        "size": 3.7618186667561533,
+        "opacity": 0.6,
+        "seed": "spill-40"
       }
     },
     {
-      "id": "d05-41-oil",
+      "id": "d05-41-spill",
       "kind": "decal",
       "position": {
-        "x": -11.739676838740706,
+        "x": -12.701242266222835,
         "y": 0,
-        "z": 42.352350457105786
+        "z": 43.76333353156224
       },
-      "rotationY": 5.344033663675397,
+      "rotationY": 3.2090133457265266,
       "meta": {
         "style": "wet",
-        "size": 3.9400764333084224,
-        "opacity": 0.7,
-        "seed": "oil-41"
+        "size": 3.9583148868754505,
+        "opacity": 0.6,
+        "seed": "spill-41"
       }
     },
     {
-      "id": "d05-42-oil",
+      "id": "d05-42-spill",
       "kind": "decal",
       "position": {
-        "x": -4.349874666891992,
+        "x": 13.228691234253347,
         "y": 0,
-        "z": 68.96893672272563
+        "z": 72.4245926886797
       },
-      "rotationY": 1.1052591727438081,
+      "rotationY": 4.716035928363283,
       "meta": {
         "style": "wet",
-        "size": 3.8451742764562367,
-        "opacity": 0.7,
-        "seed": "oil-42"
+        "size": 2.7023459415882827,
+        "opacity": 0.6,
+        "seed": "spill-42"
       }
     },
     {
-      "id": "d05-43-oil",
+      "id": "d05-43-spill",
       "kind": "decal",
       "position": {
-        "x": 10.10602605715394,
+        "x": 7.705275293439627,
         "y": 0,
-        "z": 92.54633319703862
+        "z": 91.15885689062998
       },
-      "rotationY": 4.7912306651887535,
+      "rotationY": 5.420224734025015,
       "meta": {
         "style": "wet",
-        "size": 3.6450507430359718,
-        "opacity": 0.7,
-        "seed": "oil-43"
+        "size": 4.753345556370913,
+        "opacity": 0.6,
+        "seed": "spill-43"
       }
     },
     {
-      "id": "d05-44-oil",
+      "id": "d05-44-spill",
       "kind": "decal",
       "position": {
-        "x": 8.715575215406716,
+        "x": 14.135192056186497,
         "y": 0,
-        "z": 114.39020044822246
+        "z": 117.49178291950375
       },
-      "rotationY": 0.4786261746899076,
+      "rotationY": 1.4606940005224955,
       "meta": {
         "style": "wet",
-        "size": 3.90973439142108,
-        "opacity": 0.7,
-        "seed": "oil-44"
+        "size": 3.5185879446566104,
+        "opacity": 0.6,
+        "seed": "spill-44"
       }
     },
     {
-      "id": "d05-45-oil",
+      "id": "d05-45-spill",
       "kind": "decal",
       "position": {
-        "x": 6.814125524833798,
+        "x": -5.424963274970651,
         "y": 0,
-        "z": 137.60169971035793
+        "z": 134.85673849703744
       },
-      "rotationY": 0.9871281647988747,
+      "rotationY": 3.146280521909754,
       "meta": {
         "style": "wet",
-        "size": 3.947614792920649,
-        "opacity": 0.7,
-        "seed": "oil-45"
+        "size": 3.921285160817206,
+        "opacity": 0.6,
+        "seed": "spill-45"
       }
     },
     {
-      "id": "d05-46-oil",
+      "id": "d05-46-spill",
       "kind": "decal",
       "position": {
-        "x": 15.001469600014389,
+        "x": 7.944985221140087,
         "y": 0,
-        "z": 158.6823163535446
+        "z": 159.79836156405509
       },
-      "rotationY": 3.1347210742866474,
+      "rotationY": 0.0899051680882646,
       "meta": {
         "style": "wet",
-        "size": 3.2046508390456436,
-        "opacity": 0.7,
-        "seed": "oil-46"
+        "size": 4.026707333698869,
+        "opacity": 0.6,
+        "seed": "spill-46"
       }
     },
     {
-      "id": "d05-47-oil",
+      "id": "d05-47-spill",
       "kind": "decal",
       "position": {
-        "x": 5.317872598767281,
+        "x": -7.89482719451189,
         "y": 0,
-        "z": 182.93356565153226
+        "z": 177.39063381543383
       },
-      "rotationY": 3.5982523423616763,
+      "rotationY": 4.468799137615706,
       "meta": {
         "style": "wet",
-        "size": 4.380294098518789,
-        "opacity": 0.7,
-        "seed": "oil-47"
+        "size": 4.326540166698396,
+        "opacity": 0.6,
+        "seed": "spill-47"
       }
     },
     {
-      "id": "d05-48-oil",
+      "id": "d05-48-spill",
       "kind": "decal",
       "position": {
-        "x": -6.208830379880965,
+        "x": -13.399528072215617,
         "y": 0,
-        "z": 196.18407253082842
+        "z": 202.91435031127185
       },
-      "rotationY": 3.5751681899569285,
+      "rotationY": 0.8246991723279351,
       "meta": {
         "style": "wet",
-        "size": 3.436583675444126,
-        "opacity": 0.7,
-        "seed": "oil-48"
+        "size": 3.315480101108551,
+        "opacity": 0.6,
+        "seed": "spill-48"
       }
     },
     {
-      "id": "d05-49-oil",
+      "id": "d05-49-spill",
       "kind": "decal",
       "position": {
-        "x": -14.595722703263164,
+        "x": -11.953944882377982,
         "y": 0,
-        "z": 221.47122065955773
+        "z": 220.44846323737875
       },
-      "rotationY": 3.7253194551941045,
+      "rotationY": 0.3963920779496985,
       "meta": {
         "style": "wet",
-        "size": 2.6686750503256915,
-        "opacity": 0.7,
-        "seed": "oil-49"
+        "size": 3.3299165384843943,
+        "opacity": 0.6,
+        "seed": "spill-49"
       }
     },
     {
-      "id": "d05-50-oil",
+      "id": "d05-50-spill",
       "kind": "decal",
       "position": {
-        "x": -7.824002250097692,
+        "x": 9.202736563049257,
         "y": 0,
-        "z": 241.81513294577599
+        "z": 249.9253543652594
       },
-      "rotationY": 4.1011905595057385,
+      "rotationY": 1.7816054538069188,
       "meta": {
         "style": "wet",
-        "size": 4.561776201054453,
-        "opacity": 0.7,
-        "seed": "oil-50"
+        "size": 3.5712574269622563,
+        "opacity": 0.6,
+        "seed": "spill-50"
       }
     },
     {
-      "id": "d05-51-oil",
+      "id": "d05-51-spill",
       "kind": "decal",
       "position": {
-        "x": 15.94682427868247,
+        "x": -14.846529323607683,
         "y": 0,
-        "z": 264.0960746775381
+        "z": 270.37932812748477
       },
-      "rotationY": 0.6680966724280837,
+      "rotationY": 2.2067057703128423,
       "meta": {
         "style": "wet",
-        "size": 3.9773201359435912,
-        "opacity": 0.7,
-        "seed": "oil-51"
+        "size": 4.681947070173919,
+        "opacity": 0.6,
+        "seed": "spill-51"
       }
     },
     {
-      "id": "d05-52-oil",
+      "id": "d05-52-spill",
       "kind": "decal",
       "position": {
-        "x": 7.593327273614705,
+        "x": -14.109142911620438,
         "y": 0,
-        "z": 285.5941076586023
+        "z": 290.61481723655015
       },
-      "rotationY": 2.771585118045048,
+      "rotationY": 0.6417321076324208,
       "meta": {
         "style": "wet",
-        "size": 3.140545622259378,
-        "opacity": 0.7,
-        "seed": "oil-52"
+        "size": 2.941782512515783,
+        "opacity": 0.6,
+        "seed": "spill-52"
       }
     },
     {
-      "id": "d05-53-oil",
+      "id": "d05-53-spill",
       "kind": "decal",
       "position": {
-        "x": -13.355940351262689,
+        "x": 11.21746546216309,
         "y": 0,
-        "z": 312.2050010007806
+        "z": 314.77601891057566
       },
-      "rotationY": 1.037670615146233,
+      "rotationY": 3.291010366351564,
       "meta": {
         "style": "wet",
-        "size": 2.9242744708433746,
-        "opacity": 0.7,
-        "seed": "oil-53"
+        "size": 2.6047319004312155,
+        "opacity": 0.6,
+        "seed": "spill-53"
       }
     },
     {
-      "id": "d05-54-oil",
+      "id": "d05-54-spill",
       "kind": "decal",
       "position": {
-        "x": 14.070225874893367,
+        "x": -13.618193390779197,
         "y": 0,
-        "z": 332.6310187969357
+        "z": 336.48883534781635
       },
-      "rotationY": 5.606894083038389,
+      "rotationY": 0.6396306111823727,
       "meta": {
         "style": "wet",
-        "size": 4.64576541222632,
-        "opacity": 0.7,
-        "seed": "oil-54"
+        "size": 3.606733487918973,
+        "opacity": 0.6,
+        "seed": "spill-54"
       }
     },
     {
-      "id": "d05-55-oil",
+      "id": "d05-55-spill",
       "kind": "decal",
       "position": {
-        "x": 9.04385594278574,
+        "x": 7.8538797199726105,
         "y": 0,
-        "z": 355.95498425653204
+        "z": 354.9780859029852
       },
-      "rotationY": 1.5898241540774216,
+      "rotationY": 0.5016156762949272,
       "meta": {
         "style": "wet",
-        "size": 3.0918003564700482,
-        "opacity": 0.7,
-        "seed": "oil-55"
+        "size": 4.674303930066525,
+        "opacity": 0.6,
+        "seed": "spill-55"
       }
     },
     {
-      "id": "d05-56-oil",
+      "id": "d05-56-spill",
       "kind": "decal",
       "position": {
-        "x": 11.287460939027369,
+        "x": -14.92458859924227,
         "y": 0,
-        "z": 381.7936251712963
+        "z": 376.7258078446612
       },
-      "rotationY": 3.9577355106557106,
+      "rotationY": 4.815002427126627,
       "meta": {
         "style": "wet",
-        "size": 2.7955542147159576,
-        "opacity": 0.7,
-        "seed": "oil-56"
+        "size": 2.5720822378993033,
+        "opacity": 0.6,
+        "seed": "spill-56"
       }
     },
     {
-      "id": "d05-57-oil",
+      "id": "d05-57-spill",
       "kind": "decal",
       "position": {
-        "x": 9.034814288839698,
+        "x": -8.613660199567676,
         "y": 0,
-        "z": 398.2391221434809
+        "z": 403.6470842161216
       },
-      "rotationY": 4.490314393766771,
+      "rotationY": 3.2770075544153836,
       "meta": {
         "style": "wet",
-        "size": 3.7633203344419597,
-        "opacity": 0.7,
-        "seed": "oil-57"
+        "size": 3.5928746106103064,
+        "opacity": 0.6,
+        "seed": "spill-57"
       }
     },
     {
-      "id": "d05-58-oil",
+      "id": "d05-58-spill",
       "kind": "decal",
       "position": {
-        "x": 9.888081110082567,
+        "x": 10.130037306807935,
         "y": 0,
-        "z": 420.2021465487778
+        "z": 418.65077512711287
       },
-      "rotationY": 0.2166342561434607,
+      "rotationY": 2.405917903909254,
       "meta": {
         "style": "wet",
-        "size": 3.3983548846095797,
-        "opacity": 0.7,
-        "seed": "oil-58"
+        "size": 4.098327739164233,
+        "opacity": 0.6,
+        "seed": "spill-58"
       }
     },
     {
-      "id": "d05-59-oil",
+      "id": "d05-59-spill",
       "kind": "decal",
       "position": {
-        "x": -8.756118584424257,
+        "x": 9.040439289063215,
         "y": 0,
-        "z": 442.26629538415
+        "z": 444.70036968542263
       },
-      "rotationY": 4.828616601708787,
+      "rotationY": 3.2743612789759613,
       "meta": {
         "style": "wet",
-        "size": 4.087642955593765,
-        "opacity": 0.7,
-        "seed": "oil-59"
+        "size": 3.4864093227311965,
+        "opacity": 0.6,
+        "seed": "spill-59"
       }
     },
     {
-      "id": "d05-60-oil",
+      "id": "d05-60-spill",
       "kind": "decal",
       "position": {
-        "x": 13.122758132405579,
+        "x": 8.171013717539608,
         "y": 0,
-        "z": 468.17763172555715
+        "z": 462.86750274244696
       },
-      "rotationY": 3.021371908130333,
+      "rotationY": 1.4847488912366764,
       "meta": {
         "style": "wet",
-        "size": 2.8103060089051723,
-        "opacity": 0.7,
-        "seed": "oil-60"
+        "size": 2.4593812532722947,
+        "opacity": 0.6,
+        "seed": "spill-60"
       }
     }
   ],
@@ -3285,10 +6616,10 @@
       },
       "label": "launch apron",
       "meta": {
-        "baseColor": "#93806a",
-        "crackScale": 1.5,
-        "crackColor": "#584735",
-        "crackIntensity": 0.16,
+        "baseColor": "#d8d2c6",
+        "crackScale": 3,
+        "crackColor": "#bdb6a8",
+        "crackIntensity": 0.06,
         "mossCoverage": 0,
         "seed": "launch_apron"
       }
@@ -3309,10 +6640,10 @@
       },
       "label": "left worn shoulder",
       "meta": {
-        "baseColor": "#685b4d",
-        "crackScale": 1.5,
-        "crackColor": "#584735",
-        "crackIntensity": 0.16,
+        "baseColor": "#d8d2c6",
+        "crackScale": 3,
+        "crackColor": "#bdb6a8",
+        "crackIntensity": 0.06,
         "mossCoverage": 0,
         "seed": "left_worn_shoulder"
       }
@@ -3333,10 +6664,10 @@
       },
       "label": "right worn shoulder",
       "meta": {
-        "baseColor": "#685b4d",
-        "crackScale": 1.5,
-        "crackColor": "#584735",
-        "crackIntensity": 0.16,
+        "baseColor": "#d8d2c6",
+        "crackScale": 3,
+        "crackColor": "#bdb6a8",
+        "crackIntensity": 0.06,
         "mossCoverage": 0,
         "seed": "right_worn_shoulder"
       }
@@ -3346,250 +6677,5 @@
   "annotations": [],
   "prefabs": [],
   "collections": [],
-  "catalogs": [],
-  "simulation": {
-    "emitters": [
-      {
-        "id": "dump-smoke-1",
-        "position": {
-          "x": -36,
-          "y": 0.5,
-          "z": 70
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-2",
-        "position": {
-          "x": 37,
-          "y": 0.5,
-          "z": 120
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-3",
-        "position": {
-          "x": -38,
-          "y": 0.5,
-          "z": 200
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-4",
-        "position": {
-          "x": 36,
-          "y": 0.5,
-          "z": 260
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-5",
-        "position": {
-          "x": -37,
-          "y": 0.5,
-          "z": 340
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-6",
-        "position": {
-          "x": 38,
-          "y": 0.5,
-          "z": 400
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "dump-smoke-7",
-        "position": {
-          "x": -36,
-          "y": 0.5,
-          "z": 450
-        },
-        "effect": "smoke/plume"
-      },
-      {
-        "id": "compactor-sparks",
-        "position": {
-          "x": 0,
-          "y": 0.6,
-          "z": 0
-        },
-        "config": {
-          "rate": 70,
-          "max": 160,
-          "direction": [
-            0,
-            0.6,
-            1
-          ],
-          "spread": 0.9,
-          "spawnJitter": [
-            18,
-            0.3,
-            0.5
-          ],
-          "speed": {
-            "min": 4,
-            "max": 9
-          },
-          "gravity": [
-            0,
-            -14,
-            0
-          ],
-          "lifetime": {
-            "min": 0.4,
-            "max": 0.9
-          },
-          "size": {
-            "start": 0.3,
-            "end": 0.05
-          },
-          "colorStart": 16773808,
-          "colorEnd": 16738842,
-          "alpha": {
-            "start": 1,
-            "end": 0
-          }
-        },
-        "options": {
-          "follow": "compactor_wall",
-          "offset": [
-            0,
-            0.6,
-            2.4
-          ],
-          "blending": "additive",
-          "space": "world"
-        }
-      },
-      {
-        "id": "compactor-heat",
-        "position": {
-          "x": 0,
-          "y": 24,
-          "z": 0
-        },
-        "config": {
-          "rate": 18,
-          "max": 80,
-          "direction": [
-            0,
-            1,
-            0
-          ],
-          "spread": 0.25,
-          "spawnJitter": [
-            24,
-            0.5,
-            2
-          ],
-          "speed": {
-            "min": 1.2,
-            "max": 2.4
-          },
-          "gravity": [
-            0,
-            0.8,
-            0
-          ],
-          "drag": 0.4,
-          "lifetime": {
-            "min": 2,
-            "max": 3.2
-          },
-          "size": {
-            "start": 3,
-            "end": 7
-          },
-          "colorStart": 16747066,
-          "colorEnd": 16756838,
-          "alpha": {
-            "start": 0.07,
-            "end": 0
-          }
-        },
-        "options": {
-          "follow": "compactor_wall",
-          "offset": [
-            0,
-            24,
-            0
-          ],
-          "blending": "additive",
-          "space": "world"
-        }
-      }
-    ],
-    "habitats": [
-      {
-        "id": "gulls-1",
-        "species": "gull",
-        "position": {
-          "x": -30,
-          "y": 26,
-          "z": 90
-        },
-        "radius": 26,
-        "count": 6,
-        "seed": "gulls-1",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 7,
-          "separationRadius": 3,
-          "neighborRadius": 14,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 36
-        }
-      },
-      {
-        "id": "gulls-2",
-        "species": "gull",
-        "position": {
-          "x": 31,
-          "y": 26,
-          "z": 230
-        },
-        "radius": 26,
-        "count": 6,
-        "seed": "gulls-2",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 7,
-          "separationRadius": 3,
-          "neighborRadius": 14,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 36
-        }
-      },
-      {
-        "id": "gulls-3",
-        "species": "gull",
-        "position": {
-          "x": -30,
-          "y": 26,
-          "z": 390
-        },
-        "radius": 26,
-        "count": 6,
-        "seed": "gulls-3",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 7,
-          "separationRadius": 3,
-          "neighborRadius": 14,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 36
-        }
-      }
-    ]
-  }
+  "catalogs": []
 }

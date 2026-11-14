@@ -1,4 +1,4 @@
-/** D0.3 corridor content: authored landmarks and shoulder rhythm for Drift Foundry.
+/** Aisle 9's authored landmarks: end-cap displays at the shelf ends, tall gondola crowns and the section clusters.
  * Authored in the published editor session; runtime reads only the document.
  * Run from drift-foundry with `bun scripts/author-corridor.ts`.
  */
@@ -18,26 +18,26 @@ function prop(catalogId: string, x: number, z: number, turn = 0, label?: string)
   if (!result.ok) throw new Error(JSON.stringify(result));
 }
 
-/** Alternating junk sentries just outside the fence line: the yard edge reads at 100 km/h. */
-const SENTRY = ["prop_wreck_pile", "prop_tire_wall", "prop_dumpster", "prop_stripped_car", "prop_appliance_stack", "prop_scrap_heap"];
+/** End-caps at the shelf ends, alternating sides just outside the drivable aisle: the edge reads at 100 km/h. */
+const ENDCAPS = ["prop_endcap", "prop_cart_corral", "prop_endcap", "prop_wet_floor", "prop_endcap", "prop_box_pile"];
 for (let index = 0, z = 26; z < 452; z += 26, index += 1) {
-  prop(SENTRY[index % SENTRY.length]!, index % 2 === 0 ? -25.5 : 25.5, z, index * 0.7);
+  prop(ENDCAPS[index % ENDCAPS.length]!, index % 2 === 0 ? -20.5 : 20.5, z, index * 0.7);
 }
-/** Zone crown: the tallest silhouettes sit where a driver first sees each yard. */
-const TOWERS: Array<[number, number]> = [
+/** Section crowns: the tallest shelving stands where a shopper first sees each section. */
+const CROWNS: Array<[number, number]> = [
   [-31, 58], [33, 76], [-30, 118],
   [-33, 182], [35, 214], [-30, 262],
   [-34, 322], [32, 356], [-31, 402], [36, 436],
 ];
-for (const [x, z] of TOWERS) prop("prop_yard_tower", x, z, 0, "yard water tower");
-/** Zone pylons: a crane-leg pair either side of the road at each yard seam. */
-for (const z of [150, 300, 470]) for (const x of [-23.5, 23.5]) prop("prop_crane_leg", x, z, 0);
-/** Landmark clusters inside the near wall band, one per yard. */
-for (const [x, z, id] of [[-30, 84, "prop_container_stack"], [-34, 96, "prop_container_stack"], [30, 66, "prop_container_stack"]] as const) prop(id, x, z, 0.4);
-for (const [x, z] of [[-29, 226], [-33, 238], [31, 232], [35, 246]] as const) prop("prop_appliance_stack", x, z, 0.9);
+for (const [x, z] of CROWNS) prop("prop_gondola_tall", x, z, 0, "section crown shelving");
+/** Section seams: a pair of tall gondolas either side of the aisle where the floor changes. */
+for (const z of [150, 300, 470]) for (const x of [-21.5, 21.5]) prop("prop_gondola_tall", x, z, 0);
+/** Landmark clusters, one per section: the snack pallets, the frozen cases, the bulk racking. */
+for (const [x, z] of [[-30, 84], [-34, 96], [30, 66]] as const) prop("prop_pallet_stack", x, z, 0.4);
+for (const [x, z] of [[-29, 226], [-33, 238], [31, 232], [35, 246]] as const) prop("prop_freezer", x, z, 0);
 for (let z = 312, index = 0; z < 452; z += 22, index += 1) {
-  prop("prop_crane_leg", index % 2 === 0 ? -29 : 29, z, 0);
-  prop("prop_container_stack", index % 2 === 0 ? 30 : -31, z + 8, index * 0.5);
+  prop("prop_gondola_tall", index % 2 === 0 ? -29 : 29, z, 0);
+  prop("prop_pallet_stack", index % 2 === 0 ? 30 : -31, z + 8, index * 0.5);
 }
 
 writeFileSync(path, session.exportJson(true) + "\n");

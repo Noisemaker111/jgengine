@@ -3,8 +3,12 @@
   "provider": "drift-foundry",
   "declarations": [
     {
-      "provenance": { "kind": "runtime", "providerId": "drift-foundry", "instanceId": "corridor-world" },
-      "reason": "The run's yard dressing, pickups and barricades are regenerated every run from the zone catalog and run seed, and they move or vanish with the compactor, so they stay runtime-owned. The static silhouette is authored: editor.scene.json places the water-tower crowns, one landmark cluster per yard, crane-leg pylons at each yard seam and the alternating shoulder sentries (scripts/author-corridor.ts), all outside the fenced driving line. The five route-course tracks are runtime-owned whole: their edges, lamps, scatter, landmarks and hazard set-pieces are placed from each track's course and dressing tables in src/game/world/setup.ts, so moving a piece of a course moves its scenery with it."
+      "provenance": {
+        "kind": "runtime",
+        "providerId": "drift-foundry",
+        "instanceId": "corridor-world"
+      },
+      "reason": "The run's Aisle 9 clutter, mod displays, shelf grabs and barricades are regenerated every run from the zone catalog, the shelf stock and the run seed, and they move or vanish with the shutters, so they stay runtime-owned. The static store is authored: editor.scene.json places the shelving runs either side of the walkway, the end-caps at the shelf ends, the section crowns and seams, the frozen cases and pallet clusters, the floor decals and the ambient freezer fog, scrubber suds and pigeons (scripts/author-corridor.ts, author-yard.ts, author-ambience.ts), all outside the drivable aisle. The five route-course departments are runtime-owned whole: their shelving edges, ceiling lights, scatter, landmarks and hazard set-pieces are placed from each department's course and dressing tables in src/game/world/setup.ts, so moving a piece of a course moves its scenery with it."
     }
   ]
 }
