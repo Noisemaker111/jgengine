@@ -6,7 +6,6 @@ import { AWAY_CAP_MS, awayStore, catchUpAway, noteSavedAt } from "./away";
 import { earn } from "./cash";
 import { cityOf } from "./cityRuntime";
 import { houseStore, safehouseStore } from "./commands";
-import { landWeaponHit } from "./combat/hitModel";
 import { content } from "./content";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { moddedTuning, upgradeRank } from "./progression/upgrades";

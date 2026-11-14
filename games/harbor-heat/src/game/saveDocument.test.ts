@@ -19,7 +19,7 @@ import {
   loadHarborSave,
   saveHarborState,
 } from "./save";
-import { convoyRunners, mission, patchMission } from "./runState";
+import { mission, patchMission } from "./runState";
 import { courierStore, DISPATCH } from "./jobs/courier";
 import { earn, cashEntries } from "./cash";
 
@@ -120,7 +120,7 @@ describe("harbor-heat save document", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const stored = (await harborSave(host).peek("default")) as {
-      systems: { wanted?: { alert?: { value?: number } }; convoy?: unknown };
+      systems: { wanted?: { alert?: { value?: number } } };
     } | null;
     expect(stored).not.toBeNull();
     expect(stored!.systems.wanted?.alert?.value).toBeCloseTo(heat, 6);
@@ -145,21 +145,6 @@ describe("harbor-heat save document", () => {
     expect(carried.route).toBe(parcel.route);
     expect(carried.remaining).toBeCloseTo(parcel.remaining, 6);
     expect(mission(reboot).kingpinSpawned).toBe(true);
-  });
-
-  test("the convoy resumes from the wave it reached", () => {
-    const host = boot(memorySaveBackend());
-    const runner = convoyRunners(host);
-    // The director is driven per tick in play; step it that way so ids are distinct.
-    for (let i = 0; i < 14; i += 1) runner.update(1, { alive: 0 });
-    const wave = runner.state().wave;
-    expect(wave).toBeGreaterThan(0);
-    const saved = harborSave(host).capture().systems.convoy as { wave: number };
-    expect(saved.wave).toBe(wave);
-
-    const reboot = boot(memorySaveBackend());
-    convoyRunners(reboot).restore(saved as never);
-    expect(convoyRunners(reboot).state().wave).toBe(wave);
   });
 
   test("the digest covers the run, and reloading the same state reproduces it", async () => {
@@ -216,7 +201,7 @@ describe("harbor-heat save document", () => {
 
     // Every key the policy calls the document's is actually carried by a section.
     const document = harborSave(boot(memorySaveBackend())).capture();
-    expect(Object.keys(document.systems).sort()).toEqual(["cash", "convoy", "profile", "run", "vehicles", "wanted"]);
+    expect(Object.keys(document.systems).sort()).toEqual(["cash", "profile", "run", "vehicles", "wanted"]);
     const run = document.systems.run as Record<string, unknown>;
     expect(Object.keys(run).sort()).toEqual(["courier", "courierMission", "courierObjective", "courierSession", "gigs", "mission"]);
     for (const [key, policy] of Object.entries(STORE_POLICY)) {

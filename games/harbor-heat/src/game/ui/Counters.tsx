@@ -10,13 +10,13 @@ import { UPGRADES, upgradesStore, type UpgradeShop } from "../progression/upgrad
 import { ITEM_LABELS } from "../content";
 import { VEHICLES, type VehicleDef } from "../entities/vehicles/catalog";
 import { wantedStore } from "../streetPlay";
-import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../items/weapons/catalog";
+import { GEAR, GEAR_SHOP, type GearDef } from "../items/gear";
 import { CRED_GATES } from "../progression/cred";
 import { FaceToFace, type Reply, type Speaker } from "./FaceToFace";
 import { PriceBoard, type BoardRow, type BoardSection } from "./PriceBoard";
 import { PizzeriaBooks, usePizzeriaBooksOpen } from "./ShiftUI";
 
-const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
+const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes(GEAR_SHOP));
 const CARS = VEHICLES.filter((car) => car.price > 0);
 
 /**
@@ -83,16 +83,10 @@ function speakerOf(ctx: GameContext, dialogueId: string): Speaker | null {
   };
 }
 
-/** What a gun or a box does, in a line short enough for the board. */
-function weaponLine(item: WeaponDef): string {
-  if (item.weapon.explosion !== undefined) return `Thrown · ${item.weapon.damage} blast · ${item.weapon.explosion.radius} m`;
-  const perSecond = Math.round((item.weapon.damage * 1000) / item.fireIntervalMs);
-  return `${item.weapon.damage} a shot · ${perSecond} a second · ${item.ammo === "shell" ? "12-gauge" : "9 mm"}`;
-}
+/** What a piece of rider gear does, in a line short enough for the board. */
 function gearLine(item: GearDef): string {
   if (item.heal !== undefined) return `Patches ${item.heal} health after a spill · Q to use`;
   if (item.armor !== undefined) return `Soaks ${item.armor} of the next crashes`;
-  if (item.ammoGrant !== undefined) return `${item.ammoGrant.amount} rounds into your pocket`;
   return "";
 }
 function carLine(car: VehicleDef): string {

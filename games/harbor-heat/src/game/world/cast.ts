@@ -15,6 +15,7 @@ export const CAST: Record<string, string> = {
   contact_tony: "human/man-casual",
   contact_inez: "human/businesswoman",
   contact_victor: "human/businessman",
+  crust_runner: "human/jogger",
   // The Canal Wardens, on foot and in the heavy boats.
   cop_patrol: "human/police-officer",
   cop_swat: "human/police-officer-female",

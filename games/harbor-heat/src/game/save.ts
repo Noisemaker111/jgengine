@@ -4,7 +4,6 @@ import { isRecord } from "@jgengine/core/data/untyped";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { StoreHandle } from "@jgengine/core/store/defineStore";
-import type { SpawnDirectorState } from "@jgengine/core/waves/spawnDirector";
 import type { SessionLoopState } from "@jgengine/core/run/sessionLoop";
 
 import { streetPlayOf } from "./streetPlay";
@@ -15,11 +14,9 @@ import { ledgerState, restoreLedger, resetLedger, type CashReason } from "./cash
 import { courierLoopState, courierMissionStore, courierObjectiveStore, courierStore, restoreCourierLoop, type CourierState } from "./jobs/courier";
 import { gigSave, resetGigs, restoreGigs } from "./jobs/gigs";
 import {
-  convoySnapshot,
   mission,
   missionStore,
   patchMission,
-  restoreConvoy,
   type MissionFlags,
 } from "./runState";
 
@@ -29,7 +26,7 @@ export const HARBOR_SAVE_VERSION = 2;
 /**
  * Where every stateful system Harbor Heat mounts keeps its state across a reload. The document holds
  * what the shell's whole-world snapshot cannot see - a primitive's own state (the heat curve and its
- * search area, the convoy director), the cash journal - and the run's own sections. A store that is
+ * search area), the cash journal - and the run's own sections. A store that is
  * durable profile data stays in the world snapshot; a store that is a menu, a handle or a HUD mirror
  * is transient and says why. `save.test.ts` fails when a store the game defines is in none of them,
  * which is the invariant engine #2243 asks for.
@@ -131,18 +128,6 @@ function wantedSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The convoy director: wave, alert, budget and the spawn counters it escalates on. */
-function convoySystem(ctx: GameContext): GameSaveSystem<SpawnDirectorState | null> {
-  return {
-    name: "convoy",
-    snapshot: () => convoySnapshot(ctx),
-    restore(section) {
-      if (!isRecord(section) || typeof section["wave"] !== "number") return;
-      restoreConvoy(ctx, section as unknown as SpawnDirectorState);
-    },
-  };
-}
-
 /** The run: mission flags, the parcel, the mission machine behind it and what it is carrying. */
 function runSystem(ctx: GameContext): GameSaveSystem {
   return {
@@ -220,10 +205,10 @@ export function createHarborSave(ctx: GameContext, options: { backend?: SaveBack
     clock: () => ctx.time.now(),
     playtime: () => ctx.time.now(),
     // Play touches the document every few seconds; with autosave off, a touch only marked the
-    // in-memory copy dirty and the file was never written, so a reload mid-pursuit lost heat and the
-    // convoy's wave while the world snapshot kept cash and quests. A zero debounce flushes each touch.
+    // in-memory copy dirty and the file was never written, so a reload mid-pursuit lost heat
+    // while the world snapshot kept cash and quests. A zero debounce flushes each touch.
     autosave: { debounceMs: 0 },
-    systems: [wantedSystem(ctx), convoySystem(ctx), runSystem(ctx), vehiclesSystem(ctx), cashSystem(ctx), harborProfileSystem()],
+    systems: [wantedSystem(ctx), runSystem(ctx), vehiclesSystem(ctx), cashSystem(ctx), harborProfileSystem()],
     devtoolsName: "harbor.save",
   });
 }

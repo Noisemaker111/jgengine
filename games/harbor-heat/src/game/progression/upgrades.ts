@@ -26,8 +26,8 @@ export const UPGRADES: readonly HarborUpgrade[] = [
   { id: "car_brakes", shop: "garage", label: "Race brakes", maxRank: 2, cost: priced(600, 1400), lines: ["+20% stopping", "+40% stopping"] },
   { id: "car_grip", shop: "garage", label: "Sticky tyres", maxRank: 2, cost: priced(800, 1700), lines: ["+10% grip", "+20% grip"] },
   { id: "car_armor", shop: "garage", label: "Armored panels", maxRank: 3, cost: priced(1000, 2000, 4000), lines: ["Crashes hurt 20% less", "Crashes hurt 40% less", "Crashes hurt 60% less"] },
-  { id: "house_med", shop: "house", label: "Med cabinet", cost: priced(1000), lines: ["Resting stocks a medkit when you have none"] },
-  { id: "house_locker", shop: "house", label: "Gun locker", cost: priced(1500), lines: ["Resting tops up your 9 mm and shells"] },
+  { id: "house_med", shop: "house", label: "Med cabinet", cost: priced(1000), lines: ["Resting stocks a first-aid kit when you have none"] },
+  { id: "house_locker", shop: "house", label: "Gear locker", cost: priced(1500), lines: ["Resting hangs a fresh crash jacket when you have none"] },
   { id: "house_wire", shop: "house", label: "Wire room", cost: priced(3000), lines: ["Empty the fronts' safe from the bungalow"] },
 ];
 

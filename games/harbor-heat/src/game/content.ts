@@ -8,17 +8,8 @@ import { ENEMIES, enemyEntry } from "./entities/enemies/catalog";
 import { NPCS, npcEntry } from "./entities/npcs/catalog";
 import { playerCatalog } from "./entities/players/catalog";
 import { VEHICLES, vehicleEntry } from "./entities/vehicles/catalog";
-import { GEAR, WEAPONS, gearById, weaponById } from "./items/weapons/catalog";
+import { GEAR, gearById } from "./items/gear";
 import { objectById as objectDefById } from "./objects/catalog";
-
-type WeaponRecord = Record<string, number | Record<string, number>>;
-
-function weaponRecord(stats: { damage: number; projectile?: { mass: number; gravity: number; fuseTime: number }; explosion?: { radius: number } }): WeaponRecord {
-  const record: WeaponRecord = { damage: stats.damage };
-  if (stats.projectile !== undefined) record["projectile"] = { ...stats.projectile };
-  if (stats.explosion !== undefined) record["explosion"] = { ...stats.explosion };
-  return record;
-}
 
 /** The use and trade an entry carries, each only when the catalog sets it. */
 function useAndTrade(def: { use?: GameContextItemEntry["use"] | undefined; trade?: GameContextItemEntry["trade"] | undefined }): GameContextItemEntry {
@@ -29,15 +20,8 @@ function useAndTrade(def: { use?: GameContextItemEntry["use"] | undefined; trade
 }
 
 function itemById(itemId: string): GameContextItemEntry | null {
-  const weapon = weaponById(itemId);
-  if (weapon !== undefined) {
-    return { ...useAndTrade(weapon), weapon: weaponRecord(weapon.weapon) };
-  }
   const gear = gearById(itemId);
-  if (gear !== undefined) {
-    return useAndTrade(gear);
-  }
-  return null;
+  return gear === undefined ? null : useAndTrade(gear);
 }
 
 /** The boats in the bay and the helicopter over the city: scenery that moves along authored circuits. */
@@ -65,6 +49,5 @@ function objectById(catalogId: string): GameContextObjectEntry | null {
 export const content: GameContextContent = { itemById, entityById, objectById };
 
 export const ITEM_LABELS: Record<string, string> = Object.fromEntries([
-  ...WEAPONS.map((w) => [w.id, w.label] as const),
   ...GEAR.map((g) => [g.id, g.label] as const),
 ]);

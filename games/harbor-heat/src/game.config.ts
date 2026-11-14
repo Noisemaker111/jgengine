@@ -18,7 +18,6 @@ import { physics, world } from "./world";
 import { drivingStore, RIVAL_RACER_ID, raceStore, streetPlayOf } from "./game/streetPlay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
-import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
 import { pizzeriaStore, shiftStore } from "./game/pizza/shift";
@@ -113,8 +112,6 @@ export const game = defineGame({
     flightAirbrake: ["KeyX"],
     flightVectorToggle: ["KeyV"],
     interact: ["KeyE"],
-    fire: { hold: ["mouse0"], repeatMs: 60 },
-    throwGrenade: ["KeyG"],
     useMedkit: ["KeyQ"],
     exitVehicle: ["KeyF"],
     phone: ["KeyT"],
@@ -192,8 +189,8 @@ export const game = defineGame({
       "king-tide": ["game.start", { name: "shift.stage", input: { hour: 23.6 } }],
       // `taxi` (dev-only `gigs.stage`): in the nearest car, taxi light on, a fare hailing at the closest kerb.
       taxi: ["game.start", { name: "gigs.stage", input: { mode: "taxi" } }],
-      // Presentation states: the courier behind the wheel, at the gun counter, the garage, talking
-      // to Marco, and holding a paid or missed receipt.
+      // Presentation states: the rider on the scooter, at Mercato Fresco, the garage, talking to Nonna,
+      // and holding a paid or missed catering receipt.
       drive: ["game.start", { name: "drive.stage", input: { vehicle: "car_compact" } }],
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
@@ -268,10 +265,9 @@ export const game = defineGame({
         z: entity?.position[2] ?? 0,
         // The nearest resident's mood, so a drive can prove the cast is alive: -1 when nobody is near.
         residentMood: nearest === undefined ? -1 : Math.round(nearest.mood),
-        // Heat, its tier and the convoy's wave: a save/reload proof compares these before and after.
+        // Heat and its tier: a save/reload proof compares these before and after.
         heat: wanted?.heat ?? 0,
         stars: wanted?.stars ?? 0,
-        wave: convoySnapshot(ctx)?.wave ?? 0,
         // The run is stopped behind the pause phone: a flow tells "never paused" from "paused then resumed".
         paused: sessionStore.read(ctx).paused ? 1 : 0,
         ...pizzaProbe(ctx, vehicleId),

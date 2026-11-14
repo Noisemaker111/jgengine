@@ -18,7 +18,7 @@ import { lootTables } from "./game/entities/enemies/loot-tables";
 import { drivingStore, raceStore, streetPlayOf } from "./game/streetPlay";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
-import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
+import { itemUseHandlers } from "./game/items/use-handlers";
 import { resetStashRuntime, tickStashes } from "./game/jobs/stashes";
 import { loadouts } from "./game/loadouts";
 import { registerCaptureCommands } from "./game/capture";
@@ -46,14 +46,11 @@ import { courierLoop, courierStore, finishCourier, registerCourier, restoreCouri
 import { failGigs, tickGigs } from "./game/jobs/gigs";
 import { sessionStore, startedThisBoot, syncSession } from "./game/session";
 import {
-  convoyRunners,
   mission,
   patchMission,
   resetMissionState,
 } from "./game/runState";
 import { harborSave, holdSavesUntil, loadHarborSave, saveHarborState } from "./game/save";
-import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
-import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { radioOf, registerRadio, tickRadio } from "./game/radio/runtime";
 import { bulletinForTide } from "./game/radio/bulletins";
@@ -63,9 +60,6 @@ import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game
 const CICADA_STAGE_ID = "cicada_stage_car";
 const RACE_BANNER_SEC = 6;
 
-const convoyFeedback = perContext((ctx: GameContext) => ({
-  detach: attachWaveFeedback(convoyRunners(ctx), ctx.game.feedback),
-}));
 
 /**
  * Keep simulation and touch controls behind the title, pause, settings and result gates.
@@ -232,7 +226,6 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 }
 
 function onInit(ctx: GameContext): void {
-  resetWeaponState();
   resetMissionState(ctx);
   // Build the mission session here so its probe is on the window from boot, not from the first parcel.
   courierLoop(ctx);
@@ -260,7 +253,6 @@ function onInit(ctx: GameContext): void {
   // The cash journal is live before the first movement, opened at the wallet's balance.
   openBooks(ctx);
   registerCaptureCommands(ctx);
-  convoyFeedback(ctx);
   const buildings = setupWorld(ctx);
   setupTraffic(ctx);
   setupHarbourLife(ctx);
@@ -320,7 +312,6 @@ function onTick(ctx: GameContext, dt: number): void {
 }
 
 function onDispose(ctx: GameContext): void {
-  convoyFeedback(ctx).detach();
   disposeTraffic(ctx);
   disposeResidents(ctx);
   disposeStreaming(ctx);

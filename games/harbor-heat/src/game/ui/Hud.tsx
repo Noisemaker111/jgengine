@@ -24,7 +24,6 @@ import { radioStore } from "../radio/runtime";
 import { BOUNTY_SPOTS, RACE_ROUTES } from "../world/districts";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { ITEM_LABELS } from "../content";
-import { AMMO_STAT_IDS, weaponById } from "../items/weapons/catalog";
 import { deadlineStage, formatCountdown, KeyCap, Label, Lcd, LcdText, money, Row, Text, useIdleFade, useRoom, useVersioned } from "./kit";
 import { DISPLAY, HH } from "./theme";
 
@@ -384,8 +383,8 @@ function markOf(itemId: string): Pt[] {
 }
 
 /**
- * What you carry, as the pouches of a courier's belt: each filled slot with its item mark, the rounds
- * left on an amber tab and the key that draws it. The held one sits up and glows; the belt dims while
+ * What you carry, as the pouches of a rider's belt: each filled slot with its item mark and the key
+ * that draws it. The held one sits up and glows; the belt dims while
  * nothing changes. Tappable on touch.
  */
 export function BeltHotbar() {
@@ -395,15 +394,12 @@ export function BeltHotbar() {
   const device = useInputDevice();
   const slots = useGameStore((c) => c.player.inventory.state("hotbar").slots.slice(0, 4).map((slot) => slot?.itemId ?? null), sameView);
   const selected = useStore(slotStore, (v) => v ?? 0);
-  const rounds = (stat: string) => ctx.scene.entity.stats.get(userId, stat)?.current ?? 0;
-  const fade = useIdleFade(() => `${slotStore.read(ctx) ?? 0}:${rounds("ammo_9mm")}:${rounds("ammo_shell")}`, 5000, 0.62);
+  const fade = useIdleFade(() => `${slotStore.read(ctx) ?? 0}`, 5000, 0.62);
   const filled = slots.map((itemId, index) => ({ itemId, index })).filter((slot): slot is { itemId: string; index: number } => slot.itemId !== null);
   if (filled.length === 0) return null;
   return (
     <Row gap={6} opacity={fade} items="end">
       {filled.map(({ itemId, index }) => {
-        const weapon = weaponById(itemId);
-        const ammo = weapon === undefined || weapon.ammo === "none" ? undefined : AMMO_STAT_IDS[weapon.ammo];
         const action = `selectSlot${index + 1}`;
         const glyph = device === "touch" ? null : actionGlyph(keybinds, action, device);
         const label = ITEM_LABELS[itemId] ?? itemId;
@@ -414,9 +410,6 @@ export function BeltHotbar() {
             <RuneView width={26} height={26} fill={held ? HH.amber : "#c9d6d9"} shape={{ points: markOf(itemId), viewBox: [24, 24] }} />
             <Text size={10} weight={600} color={HH.cream} text={label} />
             {glyph === null ? null : <RuneView pin={[3, 3, null, null]}><Text mono size={10} color="#9fb3b8" text={glyph} /></RuneView>}
-            {ammo === undefined ? null : (
-              <RuneView pin={[null, 3, 3, null]} padding={[0, 4, 0, 4]} fill={HH.amber} radius={2}><Text family={DISPLAY} size={12} color={HH.night} text={bind(() => String(rounds(ammo)))} /></RuneView>
-            )}
           </RuneAction>
         );
       })}

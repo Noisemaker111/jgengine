@@ -4,7 +4,7 @@ import { DISTRICTS } from "../../src/game/world/districts";
 
 /*
  * Several minutes of ordinary play for a stall hunt (`drive --hitches`, `perf desktop --flow`):
- * walking, sprinting and looking around the spawn, the phone, the gun counter and the garage, gunfire,
+ * walking, sprinting and looking around the spawn, the phone, the corner store and the garage,
  * stealing a parked car and driving it, then a stop in every district the city streams in. Only real
  * input, production commands and teleports, so it plays in a shipped build as well as on the dev
  * server.
@@ -26,7 +26,7 @@ export default defineFlow(game, {
     await f.wait(2000);
     await f.press("KeyT");
     await f.wait(600);
-    // the gun counter (shut at night, so it may refuse) and the garage sheet
+    // the corner store (shut at night, so it may refuse) and the garage sheet
     if ((await f.tryCommand("shop.open")).status === "applied") {
       await f.wait(2000);
       await f.command("shop.close");
@@ -35,10 +35,9 @@ export default defineFlow(game, {
     await f.wait(2000);
     await f.command("garage.close");
     await f.wait(600);
-    // gunfire
-    await f.hold("mouse0", { ms: 1500 });
+    // look around the strip
     await f.look(300, 0);
-    await f.hold("mouse0", { ms: 1000 });
+    await f.wait(1000);
     // walk up to the nearest parked car, take it with E and drive
     const here = await f.probe();
     if (here.carDistance >= 0) {

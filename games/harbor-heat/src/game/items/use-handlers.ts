@@ -1,98 +1,6 @@
-import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { cityEvent } from "../cityRuntime";
-import { landExplosion, landWeaponHit } from "../combat/hitModel";
-import { AMMO_STAT_IDS, gearById, weaponById } from "./weapons/catalog";
-
-const lastFiredAt = new Map<string, number>();
-
-export function resetWeaponState(): void {
-  lastFiredAt.clear();
-}
-
-function gate(ctx: GameContext, from: string, id: string, intervalMs: number): boolean {
-  const nowMs = ctx.time.now() * 1000;
-  const key = `${from}:${id}`;
-  if (nowMs < (lastFiredAt.get(key) ?? 0)) return false;
-  lastFiredAt.set(key, nowMs + intervalMs);
-  return true;
-}
-
-const fireGun: ItemUseHandler<GameContext> = {
-  apply(ctx, input) {
-    const def = weaponById(input.itemId);
-    if (def === undefined) return { state: ctx, error: "unknown-weapon" };
-    if (!gate(ctx, input.from, def.id, def.fireIntervalMs)) return { state: ctx };
-
-    if (def.ammo !== "none") {
-      const statId = AMMO_STAT_IDS[def.ammo];
-      const ammo = ctx.scene.entity.stats.get(input.from, statId);
-      if (ammo === null || ammo.current < def.ammoPerShot) {
-        ctx.scene.entity.floatText({ instanceId: input.from, text: "OUT OF AMMO", kind: "warn" });
-        return { state: ctx };
-      }
-      ctx.scene.entity.stats.delta(input.from, statId, -def.ammoPerShot);
-    }
-
-    cameraShake(def.ammo === "shell" ? 0.28 : 0.1);
-    const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
-    // The projectile owns delivery, the cone and the muzzle→impact tracer. It carries no payload:
-    // the shot reports who it reached, and the shared damage chart decides what the hit is worth.
-    const shotId = ctx.scene.entity.fireProjectile({
-      from: input.from,
-      via: { amount: 0 },
-      aim,
-      effect: "damage",
-    });
-    const shooter = ctx.scene.entity.get(input.from);
-    if (shooter !== null) cityEvent(ctx, { kind: "gunfire", at: shooter.position, by: input.from });
-    const settled = ctx.scene.entity.settleProjectile(shotId);
-    if (settled.status === "settled" && settled.hits.length > 0) {
-      const hit = settled.hits[0];
-      if (hit !== undefined) {
-        const target = ctx.scene.entity.get(hit.instanceId);
-        landWeaponHit(ctx, { from: input.from, to: hit.instanceId, weaponId: def.id });
-        if (target !== null && (target.name.startsWith("ped_") || target.name.startsWith("cop_"))) {
-          cityEvent(ctx, { kind: target.name.startsWith("cop_") ? "cop_shot" : "assault", at: target.position });
-        }
-      }
-    }
-    return { state: ctx };
-  },
-};
-
-const throwGrenade: ItemUseHandler<GameContext> = {
-  can(ctx, input) {
-    if (ctx.player.inventory.count("backpack", input.itemId) < 1) return { reason: "no-grenades" };
-    return null;
-  },
-  apply(ctx, input) {
-    const def = weaponById(input.itemId);
-    if (def?.weapon.projectile === undefined || def.weapon.explosion === undefined) {
-      return { state: ctx, error: "not-throwable" };
-    }
-    if (ctx.player.inventory.count("backpack", input.itemId) < 1) return { state: ctx };
-    if (!gate(ctx, input.from, def.id, def.fireIntervalMs)) return { state: ctx };
-    ctx.player.inventory.take("backpack", input.itemId, 1);
-    const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
-    const shotId = ctx.scene.entity.fireProjectile({
-      from: input.from,
-      via: { amount: 0 },
-      aim,
-      effect: "damage",
-    });
-    const explosion = def.weapon.explosion;
-    ctx.time.after(def.weapon.projectile.fuseTime, () => {
-      const settled = ctx.scene.entity.settleProjectile(shotId);
-      if (settled.status !== "settled") return;
-      landExplosion(ctx, { from: input.from, at: settled.at, radius: explosion.radius, weaponId: def.id });
-      cameraShake(0.55);
-      cityEvent(ctx, { kind: "explosion", at: settled.at });
-    });
-    return { state: ctx };
-  },
-};
+import { gearById } from "./gear";
 
 const useMedkit: ItemUseHandler<GameContext> = {
   can(ctx, input) {
@@ -132,25 +40,7 @@ const wearVest: ItemUseHandler<GameContext> = {
   },
 };
 
-const loadAmmo: ItemUseHandler<GameContext> = {
-  can(ctx, input) {
-    if (ctx.player.inventory.count("backpack", input.itemId) < 1) return { reason: "no-ammo-box" };
-    return null;
-  },
-  apply(ctx, input) {
-    const def = gearById(input.itemId);
-    if (def?.ammoGrant === undefined) return { state: ctx, error: "not-ammo" };
-    ctx.player.inventory.take("backpack", input.itemId, 1);
-    ctx.scene.entity.stats.delta(input.from, def.ammoGrant.stat, def.ammoGrant.amount);
-    ctx.scene.entity.floatText({ instanceId: input.from, text: `+${def.ammoGrant.amount} AMMO`, kind: "info" });
-    return { state: ctx };
-  },
-};
-
 export const itemUseHandlers: Record<string, ItemUseHandler<GameContext>> = {
-  fireGun,
-  throwGrenade,
   useMedkit,
   wearVest,
-  loadAmmo,
 };

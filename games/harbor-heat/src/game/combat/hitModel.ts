@@ -12,19 +12,15 @@ import { ENEMIES } from "../entities/enemies/catalog";
 import { NPCS } from "../entities/npcs/catalog";
 import { playerCatalog } from "../entities/players/catalog";
 import { vehicleById } from "../entities/vehicles/catalog";
-import { AMMO_STAT_IDS, type AmmoKind, type WeaponDef, weaponById } from "../items/weapons/catalog";
 
 /**
- * Harbor Heat's damage chart. Every crew member and pedestrian is unarmoured `flesh`, a car presents
- * `chassis`, and every street weapon is neutral against both: the chart exists so a resistance or an
- * armoured target is a data change here instead of another hand-written hit path, not so this adoption
- * moves a number. The player's `armor` stat is a pool the effect system drains first, not a table
+ * High Tide Pizza's damage chart. Nobody carries a weapon: what hurts is a bumper, a warden boat's ram,
+ * a crash or an exploding engine. Every person is unarmoured `flesh` and a vehicle presents `chassis`;
+ * the chart exists so a resistance or an armoured target is a data change here, not a hand-written path. The player's `armor` stat is a pool the effect system drains first, not a table
  * mitigation, so the player is registered at zero armor points and the pools keep deciding absorption.
  */
 export const DAMAGE_TABLE: DamageTableDef = {
   types: [
-    { id: "ballistic", vs: { flesh: 1, chassis: 1 } },
-    { id: "pellet", vs: { flesh: 1, chassis: 1 } },
     { id: "blast", vs: { flesh: 1, chassis: 1 } },
     // A car bumper, a cruiser ram: a blow with no cartridge behind it.
     { id: "impact", vs: { flesh: 1, chassis: 1 } },
@@ -56,25 +52,6 @@ export function profileFor(catalogId: string): TargetProfileDef | null {
   if (NPCS.some((npc) => npc.id === catalogId)) return CREW_PROFILE;
   if (vehicleById(catalogId) !== undefined) return CHASSIS_PROFILE;
   return null;
-}
-
-/** The chart type one ammo kind lands as. Grenades have no cartridge, so they are blast. */
-export function damageTypeFor(ammo: AmmoKind): string {
-  if (ammo === "shell") return "pellet";
-  if (ammo === "none") return "blast";
-  return "ballistic";
-}
-
-/** One weapon's row in the chart: what a single pellet of it is worth before zones and armor. */
-export function weaponHit(weaponId: string): { type: string; base: number } | null {
-  const def: WeaponDef | undefined = weaponById(weaponId);
-  if (def === undefined) return null;
-  return { type: damageTypeFor(def.ammo), base: def.weapon.damage };
-}
-
-/** The ammo stat a weapon spends, for a HUD line or a reserve check. */
-export function ammoStatFor(ammo: AmmoKind): string | null {
-  return ammo === "none" ? null : AMMO_STAT_IDS[ammo];
 }
 
 function createHarborDamage(ctx: GameContext): DamageRuntime {
@@ -128,16 +105,6 @@ export function landHit(
   }).resolution;
 }
 
-/** Land one weapon pellet on one target. */
-export function landWeaponHit(
-  ctx: GameContext,
-  input: { from: string; to: string; weaponId: string; position?: readonly [number, number, number] },
-): DamageRuntimeResolution | null {
-  const hit = weaponHit(input.weaponId);
-  if (hit === null) return null;
-  return landHit(ctx, { from: input.from, to: input.to, type: hit.type, base: hit.base, ...(input.position === undefined ? {} : { position: input.position }) });
-}
-
 /**
  * Land a blast: each body inside the radius takes its share of one payload on the shared linear
  * falloff, resolved through the chart like any other hit. Harbor injects no occluder, so no wall
@@ -153,14 +120,4 @@ export function landBlast(
     { source: input.from, at: input.at, radius: input.radius, type: input.type, base: input.base },
     (instanceId) => registerAsTarget(ctx, instanceId),
   ).map((landed) => landed.resolution);
-}
-
-/** Land a thrown weapon's explosion, with the payload read from the weapon's own chart row. */
-export function landExplosion(
-  ctx: GameContext,
-  input: { from: string; at: readonly [number, number, number]; radius: number; weaponId: string },
-): DamageRuntimeResolution[] {
-  const hit = weaponHit(input.weaponId);
-  if (hit === null) return [];
-  return landBlast(ctx, { from: input.from, at: input.at, radius: input.radius, type: hit.type, base: hit.base });
 }

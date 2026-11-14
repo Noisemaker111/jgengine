@@ -52,13 +52,6 @@ export function credGateBlocking(ctx: GameContext, id: string): number | null {
   return gate;
 }
 
-function selectedHotbarItem(ctx: GameContext): string | null {
-  const slots = ctx.player.inventory.state("hotbar").slots;
-  const selected = slotStore.read(ctx) ?? 0;
-  const slot = slots[selected];
-  return slot?.itemId ?? null;
-}
-
 export function registerCommands(ctx: GameContext): void {
   registerCourier(ctx);
   registerGigs(ctx);
@@ -81,22 +74,6 @@ export function registerCommands(ctx: GameContext): void {
     startedStore.write(state, false);
     syncSession(state, false);
   } });
-  ctx.game.commands.define("fire", {
-    apply(state, input) {
-      const itemId = selectedHotbarItem(state);
-      if (itemId === null) return;
-      const aim = (input as { aim?: { yaw: number; pitch: number } }).aim;
-      state.item.use.use({ from: state.player.userId, itemId, ...(aim === undefined ? {} : { aim }) });
-    },
-  });
-
-  ctx.game.commands.define("throwGrenade", {
-    apply(state) {
-      if (streetPlayOf(state).drivingVehicleId() !== null) return;
-      state.item.use.use({ from: state.player.userId, itemId: "grenade_pineapple" });
-    },
-  });
-
   ctx.game.commands.define("useMedkit", {
     apply(state) {
       state.item.use.use({ from: state.player.userId, itemId: "medkit_street" });
@@ -353,11 +330,6 @@ function restUp(ctx: GameContext): void {
   const me = ctx.player.userId;
   const health = ctx.scene.entity.stats.get(me, "health");
   if (health !== null) ctx.scene.entity.stats.set(me, "health", { current: health.max });
-  if (upgradeRank(ctx, "house_locker") > 0) {
-    for (const stat of ["ammo_9mm", "ammo_shell"]) {
-      const ammo = ctx.scene.entity.stats.get(me, stat);
-      if (ammo !== null) ctx.scene.entity.stats.set(me, stat, { current: ammo.max });
-    }
-  }
+  if (upgradeRank(ctx, "house_locker") > 0 && ctx.player.inventory.count("backpack", "vest_kevlar") < 1) ctx.player.inventory.put("backpack", "vest_kevlar", 1);
   if (upgradeRank(ctx, "house_med") > 0 && ctx.player.inventory.count("backpack", "medkit_street") < 1) ctx.player.inventory.put("backpack", "medkit_street", 1);
 }

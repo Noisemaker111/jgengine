@@ -358,7 +358,7 @@ function spawnThief(ctx: GameContext): void {
   }
   const x = position[0] + dx * 8;
   const z = position[2] + dz * 8;
-  ctx.scene.entity.spawn("ganger_dock", { id: THIEF, position: [x, ctx.world.groundHeightAt(x, z), z], role: "npc" });
+  ctx.scene.entity.spawn("crust_runner", { id: THIEF, position: [x, ctx.world.groundHeightAt(x, z), z], role: "npc" });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "PARCEL SNATCHED — CATCH THE RUNNER", kind: "warn" });
 }
 

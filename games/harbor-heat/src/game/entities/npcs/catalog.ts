@@ -14,6 +14,8 @@ export const NPCS: readonly NpcDef[] = [
   { id: "contact_tony", role: "npc", walkSpeed: 0, health: 200 },
   { id: "contact_inez", role: "npc", walkSpeed: 0, health: 200 },
   { id: "contact_victor", role: "npc", walkSpeed: 0, health: 200 },
+  // A Carmine's Crust runner who grabs a catering order at the drop and legs it.
+  { id: "crust_runner", role: "npc", walkSpeed: 5.4, health: 40 },
 ];
 
 export const npcById = (id: string): NpcDef | undefined => NPCS.find((n) => n.id === id);

@@ -18,10 +18,10 @@ const RESTORES_PER_STEP = 48;
 
 /** The fixed-post cast and the parked story cars: frozen and hidden while their block is away. Traffic and residents run their own distance rules. */
 const FROZEN_CAST = new Set<string>([
-  "npc_marco",
+  "npc_nonna",
+  "npc_tony",
   "npc_inez",
-  "enforcer_boss",
-  ...Array.from({ length: 5 }, (_, i) => `ganger_${i}`),
+  "npc_victor",
   ...AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id),
 ]);
 
