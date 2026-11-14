@@ -341,7 +341,7 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 
 ## Handoff
 
-Branch `worktree-agent-a4f17f89a076b4bef`. All 158 game tests pass, including the 67/67 suite.
+Branch `worktree-agent-a4f17f89a076b4bef`. All 160 game tests pass, including the 67/67 suite (the whole run takes about 15 minutes here, past `bun run test`'s 900 s guard when the machine is busy; `bun test --preload ./scripts/three-preload.ts games/fernwild` runs it unguarded).
 
 Done: rename to Wildwire (ids, items, text, docs), machine instincts (`data/bots.ts`), procedural robot bodies
 (`data/robotBodies.ts`), core creature-driver `focus`/`lightOf`, tricks, storms, quirks, glitches, charge wear,
