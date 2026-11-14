@@ -13,7 +13,7 @@ import { raiseBuilding } from "./systems";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
 import { castHeroAct, chooseHeroPick, heroActViews, pendingHeroOffer } from "./heroActs";
-import { MUSTER_MARKER, noteCampaignBuild, noteCampaignTrain, startCampaignMission, tickCampaign } from "./campaign";
+import { CAMPAIGN, campaignStore, MUSTER_MARKER, noteCampaignBuild, noteCampaignTrain, startCampaignMission, syncCampaignHud, tickCampaign } from "./campaign";
 import { HERO_ID } from "./hero";
 import { missionMarkers } from "@jgengine/core/mission/triggers";
 import { editorLayers } from "../editorLayers";
@@ -413,6 +413,15 @@ export function registerCommands(ctx: GameContext): void {
   // Dev-only: play the first muster's world reports and walk Mandible to the ground, so a flow can reach
   // the mission's own boundary instead of a counter. The machine still decides the outcome.
   if (import.meta.env.DEV) {
+    // Dev-only: mark the first `index` missions won, so a capture can open a later mission (the boss).
+    ctx.game.commands.define<{ index: number }>("campaign.skipTo", {
+      apply: (state, input) => {
+        const progress = campaignStore.read(state);
+        campaignStore.write(state, { ...progress, mode: "campaign", won: CAMPAIGN.slice(0, input.index).map((step) => step.mission.id) });
+        syncCampaignHud(state);
+        return state;
+      },
+    });
     ctx.game.commands.define("campaign.capture", {
       apply: (state) => {
         if (!startCampaignMission(state)) return state;

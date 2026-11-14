@@ -117,6 +117,8 @@ export const game = defineGame({
       // Dev-only: a Barracks up and a war chest, so the research row is live; `doctrine` has Bulwark under way.
       research: ["match.start", "research.capture"],
       doctrine: ["match.start", { name: "research.capture", input: { doctrine: "bulwark" } }],
+      // Dev-only: the finale as the player receives it, with the kid's beam over the lawn.
+      boss: [{ name: "campaign.skipTo", input: { index: 4 } }, "match.start"],
     },
     views: {
       "keep-player": {
