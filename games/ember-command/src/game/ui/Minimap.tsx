@@ -150,7 +150,19 @@ export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
         fill={FOG_INK} opacity={run.kind === "unseen" ? FOG_ALPHA.unseen * 0.8 : FOG_ALPHA.explored * 0.45} />}
     </RuneFor>
     <RuneFor source={dots} keyBy={(dot) => dot.id}>{(dot) => <Blip ctx={ctx} dot={dot} />}</RuneFor>
+    <BeamBlip />
   </RuneView>;
+}
+
+/** The magnifying glass's spot on the lawn map: a hot ring that pulses while it burns. */
+function BeamBlip() {
+  const at = () => {
+    const hz = session.hazards;
+    return hz.toggles.beam ? projectToMinimap([hz.beam.x, hz.beam.z], VIEW) : { x: -99, y: -99 };
+  };
+  const r = 6;
+  return <RuneView pin={[0, 0, null, null]} width={r * 2} height={r * 2} radius={r} fill="#ffd84a99" border={{ width: 2, color: "#ff3b2f" }}
+    x={bind(() => at().x - r)} y={bind(() => at().y - r)} opacity={bind(() => (session.hazards.beam.focused ? 1 : 0.45))} label="the beam" />;
 }
 
 function Blip({ ctx, dot }: { ctx: GameContext; dot: Dot }) {

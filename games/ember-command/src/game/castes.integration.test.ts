@@ -7,7 +7,7 @@ import { forageHoldsAtLane, tickUnits } from "./ai/units";
 import { YARD } from "./yardInstance";
 import { combatantDef } from "./catalog";
 import { content } from "./content";
-import { beamSpeedAt, BEAM_SPEED } from "./hazards";
+import { advanceHazards, beamRefocusIn, beamSpeedAt, BEAM_BLUR, BEAM_CYCLE, BEAM_GRACE, BEAM_SPEED, createHazardState, NO_HAZARDS } from "./hazards";
 import { raiseAlarm } from "./pheromone";
 import { resetSession, session, type UnitRuntime } from "./session";
 import { ACID_SECONDS } from "./tuning";
@@ -67,6 +67,17 @@ describe("caste depth", () => {
     expect(forageHoldsAtLane(forager, [0, 0, lane.from.z], across.x, across.z)).toBe(false);
     // Soldiers march wherever they are ordered.
     expect(forageHoldsAtLane({ ...forager, command: { kind: "move", x: 0, z: -20 } }, edge, across.x, across.z)).toBe(false);
+  });
+
+  test("a blurred beam counts down to its refocus, and reads zero while it burns", () => {
+    const state = createHazardState({ ...NO_HAZARDS, beam: true });
+    for (let t = 0; t < BEAM_GRACE + BEAM_CYCLE - BEAM_BLUR + 0.5; t += 0.25) advanceHazards(state, YARD, 0.25, null);
+    expect(state.beam.focused).toBe(false);
+    expect(beamRefocusIn(state)).toBeGreaterThan(0);
+    expect(beamRefocusIn(state)).toBeLessThanOrEqual(BEAM_BLUR);
+    for (let t = 0; t < BEAM_BLUR; t += 0.25) advanceHazards(state, YARD, 0.25, null);
+    expect(state.beam.focused).toBe(true);
+    expect(beamRefocusIn(state)).toBe(0);
   });
 
   test("the kid gets impatient: the beam drags faster as the battle wears on, up to double", () => {

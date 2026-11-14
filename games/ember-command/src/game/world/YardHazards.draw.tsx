@@ -6,7 +6,7 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useGameContext } from "@jgengine/ui/provider";
 
-import { BEAM_RADIUS, MOWER_DECK_HALF_LENGTH, mowerPosition, SPRINKLER_JET_HALF_ANGLE, sprinklerWarming } from "../hazards";
+import { BEAM_RADIUS, beamRefocusIn, MOWER_DECK_HALF_LENGTH, mowerPosition, SPRINKLER_JET_HALF_ANGLE, sprinklerWarming } from "../hazards";
 import { ALARM_RADIUS, ALARM_SECONDS } from "../pheromone";
 import { cellCentre } from "../pheromone";
 import { activeJobs, jobProgress, queuedJobs } from "@jgengine/core/gameplay";
@@ -325,7 +325,11 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         const flicker = 0.85 + Math.sin(t * 23) * 0.08 + Math.sin(t * 7) * 0.07;
         beamMaterial.opacity = focused ? 0.32 * flicker : 0.06;
         spotMaterial.opacity = focused ? 0.8 * flicker : 0.18;
-        spot.scale.setScalar(focused ? 1 : 2.4);
+        // Blurred, the spot is a wide soft glow; in its last 1.5 s it tightens toward focus: the tell.
+        const refocus = beamRefocusIn(hz);
+        const tighten = !focused && refocus < 1.5 ? 1 - refocus / 1.5 : 0;
+        spot.scale.setScalar(focused ? 1 : 2.4 - 1.2 * tighten);
+        if (!focused && tighten > 0) spotMaterial.opacity = 0.18 + 0.5 * tighten * (0.6 + 0.4 * Math.sin(t * 30));
         coreSpot.visible = focused;
       }
 

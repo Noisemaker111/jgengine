@@ -293,6 +293,17 @@ export function inMowerLane(layout: YardLayout, x: number, z: number): boolean {
   return lane !== null && distanceToSegment(x, z, lane.from, lane.to) <= lane.halfWidth;
 }
 
+/**
+ * Seconds until the blurred beam snaps back into focus (0 while focused, or with no beam). The overlay
+ * shrinks the spot over the last second as the tell: when it tightens, get out from under it.
+ */
+export function beamRefocusIn(state: HazardState): number {
+  if (!state.toggles.beam || state.beam.focused) return 0;
+  if (state.t < BEAM_GRACE) return BEAM_GRACE - state.t;
+  const phase = (state.t - BEAM_GRACE) % BEAM_CYCLE;
+  return Math.max(0, BEAM_CYCLE - phase);
+}
+
 /** True when the focused beam is burning a point (shade blocks it). */
 export function underBeam(state: HazardState, layout: YardLayout, x: number, z: number): boolean {
   if (!state.toggles.beam || !state.beam.focused) return false;
