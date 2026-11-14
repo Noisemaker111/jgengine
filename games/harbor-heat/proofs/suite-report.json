@@ -24,6 +24,20 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/rebind-phone.proof.ts",
+      "proves": [
+        "settings.controls"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/scooter.proof.ts",
       "proves": [
         "open-world.vehicle-enter-drive"
@@ -64,6 +78,13 @@
       "proves": [
         "racing.lap-timing",
         "racing.opponents"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tow.proof.ts",
+      "proves": [
+        "racing.crash-recover"
       ],
       "ok": true
     },

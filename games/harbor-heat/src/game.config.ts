@@ -23,7 +23,8 @@ import { sessionStore } from "./game/session";
 import { pizzeriaStore, shiftStore } from "./game/pizza/shift";
 import { tideStore } from "./game/tide/tideRuntime";
 import { nightStore } from "./game/pizza/nights";
-import { cityOf } from "./game/cityRuntime";
+import { cityOf, phoneStore } from "./game/cityRuntime";
+import { startedStore } from "./game/commands";
 import { DAY_SECONDS, secondsAtHour } from "./game/clock";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
@@ -116,6 +117,7 @@ export const game = defineGame({
     exitVehicle: ["KeyF"],
     phone: ["KeyT"],
     taxiDuty: ["KeyY"],
+    tow: ["KeyH"],
     radio: ["KeyR"],
     ...hotbarSlotBindings(4, { action: (slot) => `selectSlot${slot}` }),
   },
@@ -138,6 +140,7 @@ export const game = defineGame({
         car: {
           buttons: [
             { action: "jump", label: "Handbrake", shape: "lever" },
+            { action: "tow", label: "Tow", kind: "utility" },
             { action: "taxiDuty", label: "Taxi", kind: "utility" },
             { action: "radio", label: "Radio", kind: "utility" },
             { action: "exitVehicle", label: "Exit", kind: "utility" },
@@ -270,6 +273,9 @@ export const game = defineGame({
         stars: wanted?.stars ?? 0,
         // The run is stopped behind the pause phone: a flow tells "never paused" from "paused then resumed".
         paused: sessionStore.read(ctx).paused ? 1 : 0,
+        // Past the title and in the run; the city phone is out.
+        started: startedStore.read(ctx) === true ? 1 : 0,
+        phone: phoneStore.read(ctx) === true ? 1 : 0,
         ...pizzaProbe(ctx, vehicleId),
       };
     },

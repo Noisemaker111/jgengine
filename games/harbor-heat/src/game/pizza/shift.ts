@@ -6,6 +6,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
 import { earn, spend } from "../cash";
 import { secondsAtHour } from "../clock";
+import { GARAGE_POS } from "../world/districts";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { streetPlayOf } from "../streetPlay";
 import { grantCred, PIZZA_CRED } from "../progression/cred";
@@ -328,8 +329,8 @@ function closeTheShift(ctx: GameContext, state: ShiftState): ShiftState {
 
 /** First-time lessons, each said once per career: what the water just did and what to do about it. */
 const HINTS: Record<string, string> = {
-  drowned: "Your engine drowned: wheels can't run a canal. Ride for a pink swap dock on the chart and take the jet-ski.",
-  beached: "A hull on dry stone barely moves. Get back to the water, or swap to the scooter at a dock.",
+  drowned: "Your engine drowned: wheels can't run a canal. Push for a pink swap dock on the chart, or press H for the tow ($40).",
+  beached: "A hull on dry stone barely moves. Get back to the water, swap at a dock, or press H for the tow ($40).",
   stack: "Two boxes in the bag: a stack bonus on every tip, and Carmine's Crust riders will come for the hottest one.",
   rooftop: "The water's up, so customers lean out of balconies and rooftops now. They tip extra for the climb.",
   cold: "A box is below its customer's cold limit: they'll pay the menu price and not a cent of tip.",
@@ -623,7 +624,40 @@ export function sleepTillDusk(ctx: GameContext): void {
   ctx.game.notices.push({ text: `You sleep upstairs until ${DUSK_HOUR}:00. The ovens are hot.`, tone: "info" });
 }
 
+/** What the family's tow boat charges to haul a drowned bike or a beached hull back into play. */
+export const TOW_FEE = 40;
+/** Where the tow leaves a hull: the open bay off the boardwalk, always deep enough to float. */
+const TOW_BAY: readonly [number, number] = [-300, 30];
+
+function towRefusal(ctx: GameContext) {
+  const street = streetPlayOf(ctx);
+  const driving = street.drivingVehicleId();
+  if (driving === null) return { reason: "on-foot", message: "The tow is for a vehicle you're riding." };
+  const medium = vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium;
+  if (medium === "air") return { reason: "aircraft", message: "The blimp doesn't need a tow." };
+  if (!street.telemetry().stalled) return { reason: "running", message: "You're not stuck. Ride on." };
+  if (ctx.game.economy.balance(ctx.player.userId, "cash") < TOW_FEE) return { reason: "no-cash", message: `The tow costs $${TOW_FEE}.` };
+  return null;
+}
+
+/** Cousin Sal's tow boat: a drowned bike goes back to Vell's kerb, a beached hull into the bay. Boxes stay aboard. */
+function tow(ctx: GameContext): void {
+  const street = streetPlayOf(ctx);
+  const driving = street.drivingVehicleId()!;
+  const hull = vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium === "water";
+  if (!spend(ctx, TOW_FEE, "tow")) return;
+  // Wheels go to the first dry kerb: Vell's while its street is dry, else Sunset Motors, which never floods.
+  const kerb: readonly [number, number] = waterAt(ctx, OVEN[0] + 4, OVEN[1] - 10) === null ? [OVEN[0] + 4, OVEN[1] - 10] : [GARAGE_POS[0] + 6, GARAGE_POS[2]];
+  const [x, z] = hull ? TOW_BAY : kerb;
+  const water = waterAt(ctx, x, z);
+  const y = hull && water !== null ? water.surface : ctx.world.groundHeightAt(x, z);
+  street.placeVehicle(ctx, driving, [x, y, z], hull ? Math.PI / 2 : Math.PI);
+  const where = hull ? "out to the bay" : kerb[0] === OVEN[0] + 4 ? "back to Vell's kerb" : "to Sunset Motors, high and dry";
+  ctx.game.notices.push({ text: `Towed ${where}. -$${TOW_FEE}`, tone: "info" });
+}
+
 export function registerShift(ctx: GameContext): void {
+  ctx.game.commands.define("tow", { validate: towRefusal, apply: tow });
   ctx.game.commands.define("pizza.take", { validate: takeRefusal, apply: takeOrders });
   ctx.game.commands.define("pizza.deliver", { validate: deliverRefusal, apply: deliverHere });
   ctx.game.commands.define("pizza.swap", { validate: swapRefusal, apply: swapAtDock });

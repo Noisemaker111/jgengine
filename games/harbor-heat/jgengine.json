@@ -48,7 +48,9 @@
       "content.placeables-place": "Nothing is placed by the player.",
       "content.weapons-have-ammo": "High Tide Pizza has no weapons."
     },
-    "notSimulatable": {}
+    "notSimulatable": {
+      "menu.start-and-credits": "src/game/ui/HarborMenu.tsx: the Credits object is local state on the title sign (useState in HarborTitle); no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx credits renders it)"
+    }
   },
   "assetBuild": {
     "lods": {

@@ -1,5 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { rebindAction } from "@jgengine/core/game/controlGate";
+import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { groundCarId, raceStore, streetPlayOf } from "./streetPlay";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { CRED_GATES, credLevel } from "./progression/cred";
@@ -74,6 +76,13 @@ export function registerCommands(ctx: GameContext): void {
     startedStore.write(state, false);
     syncSession(state, false);
   } });
+  // The phone's Controls page rebinds an action to new keys (null restores the default).
+  ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", {
+    apply(state, input) {
+      rebindAction(state, input.action, input.codes);
+    },
+  });
+
   ctx.game.commands.define("useMedkit", {
     apply(state) {
       state.item.use.use({ from: state.player.userId, itemId: "medkit_street" });

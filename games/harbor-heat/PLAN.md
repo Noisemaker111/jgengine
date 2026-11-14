@@ -15,28 +15,28 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | --- | --- | --- | --- | --- | --- |
 | onboarding | 1/2 | 0 | 0 | 1 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
-| save | 0/1 | 0 | 0 | 1 | 0 |
-| settings | 0/1 | 0 | 0 | 1 | 0 |
-| menu | 0/1 | 0 | 0 | 1 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
+| settings | 1/1 | 0 | 0 | 0 | 0 |
+| menu | 0/1 | 0 | 1 | 0 | 0 |
 | progression | 0/1 | 0 | 0 | 1 | 0 |
 | content | 0/0 | 0 | 0 | 0 | 5 |
-| racing | 2/5 | 0 | 0 | 3 | 0 |
+| racing | 3/5 | 0 | 0 | 2 | 0 |
 | open-world | 3/3 | 0 | 0 | 0 | 0 |
 | delivery | 6/6 | 0 | 0 | 0 | 0 |
-| **total** | **13/21** | 0 | 0 | 8 | 5 |
+| **total** | **16/21** | 0 | 1 | 4 | 5 |
 
 <details><summary>Every required entry</summary>
 
-Genres: open-world, racing, delivery. 13/21 proven · 5 cut · 8 missing.
+Genres: open-world, racing, delivery. 16/21 proven · 1 not simulatable · 5 cut · 4 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
 | `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/shift-over.proof.ts |
-| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
-| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
-| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
+| `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-phone.proof.ts |
+| `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/HarborMenu.tsx: the Credits object is local state on the title sign (useState in HarborTitle); no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx credits renders it) |
 | `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
 | `content.item-source` | cut | Every item can be obtained by playing. | No crafting or item economy: the only items are first-aid kits and crash jackets sold at Mercato Fresco. |
 | `content.item-use` | cut | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | No crafting or item economy: first aid and crash jackets are covered by the store tests. |
@@ -47,7 +47,7 @@ Genres: open-world, racing, delivery. 13/21 proven · 5 cut · 8 missing.
 | `racing.lap-timing` | proven | Laps and checkpoints are timed. | proofs/sim/tide-rush.proof.ts |
 | `racing.opponents` | proven | Opponents race and finish in an order. | proofs/sim/tide-rush.proof.ts |
 | `racing.unlock-vehicles-tracks` | missing | Results unlock new vehicles or tracks. |  |
-| `racing.crash-recover` | missing | A crash or wrong way is recoverable. |  |
+| `racing.crash-recover` | proven | A crash or wrong way is recoverable. | proofs/sim/tow.proof.ts |
 | `open-world.vehicle-enter-drive` | proven | Walk to a vehicle, get in and drive. | proofs/sim/scooter.proof.ts |
 | `open-world.jobs-pay` | proven | Take a job, do it, get paid. | proofs/sim/deliver-hot.proof.ts |
 | `open-world.pursuit` | proven | Breaking the rules brings pursuit the player can escape. | proofs/sim/wardens.proof.ts |

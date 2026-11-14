@@ -1,7 +1,7 @@
 # High Tide Pizza
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **13/21 proven · 5 cut · 8 missing** · `jgengine suite harbor-heat`
+Game suite: **16/21 proven · 1 not simulatable · 5 cut · 4 missing** · `jgengine suite harbor-heat`
 <!-- /suite-score -->
 
 You are the newest delivery rider at Vell's, a family pizzeria in Mainsail, a canal city that floods
