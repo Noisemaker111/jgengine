@@ -142,21 +142,21 @@ Proven in play by `src/game/machines.test.ts`, `rootServer.test.ts`, `creatures.
 | Bot | Built | Not yet |
 | --- | --- | --- |
 | Mowbot | passive first upload; Harvest chip trims bushes into fiber around its post | |
-| Ticklet | pack, stamina-drain bite; uploaded and following, patches you up | riding on the shoulder (follows on foot) |
+| Ticklet | pack, stamina-drain bite; uploaded and following, rides your shoulder and patches you up | |
 | Craneback | skittish forklift mount with forks, heavy carry | crane build helper |
-| Bulldozaur | territorial charger; ridden, its blade bulk-harvests wood and stone | |
+| Bulldozaur | tracked dozer with canopy and hazard bumper; ridden, its blade bulk-harvests wood and stone | |
 | Lodestone | pack buff, magnetic disarm into its own inventory | |
 | Mirrorcat | ambush, targets the weakest; ridden, hunters cannot see you | |
-| Watchwing | skittish flyer mount; Guard Zone sentry pings hostiles | nocturnal schedule |
+| Watchwing | skittish flyer mount; perches still by day; Guard Zone sentry pings hostiles | |
 | Arcwire | chain lightning, doubled in water; swimmer mount; on Guard Zone powers stations | |
-| Klepto | steals a stack and blinks 30 m; down it to get it back | a visible nest prop |
-| Rootkit | dormant until chopping nearby, then the forest stands up | tree-shaped body (has branch plates) |
-| Thermite Beetle | metal-ore gatherer mount with a drill | burrowing, ingot mining |
+| Klepto | steals a stack, blinks 30 m and makes that spot its nest; down it to get it back | a visible nest prop |
+| Rootkit | trunk-and-canopy body on root legs; dormant until chopping nearby, then the forest stands up | |
+| Thermite Beetle | metal-ore gatherer mount with a drill; wild, lies burrowed until you cross its ground | ingot mining |
 | Homer | flyer mount, airlift; flies its cargo to the nearest storage box | |
 | Echo Mimic | copies the last trick used near it and turns it on you | |
 | Choir Drone | aura: other wild bots near hit harder; the highest-level singer conducts and shields the ring (hits on the others land at a quarter); the Root Server's firewall | |
 | Lampjaw | ambush, drawn to light, glowing lure antenna | deep-water only |
-| Hoover Leviathan | retaliator giant | mobile base platform |
+| Hoover Leviathan | tracked vacuum hull with a nozzle hose; retaliator giant | mobile base platform |
 | Scrapper Rex | hunts other machines first, grows on every wreck | |
 | The Hivemind | boss at the green obelisk; later phases puppet (freeze) your bots in her lair | turning puppets hostile |
 | The Root Server | boots at the bottom of the Lava Cave, shock pulse, Choir firewall by phase; destroying it ends the storms | its own arena dressing |
@@ -341,17 +341,22 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 
 ## Handoff
 
-Branch `worktree-agent-a4f17f89a076b4bef`. All 160 game tests pass, including the 67/67 suite (the whole run takes about 15 minutes here, past `bun run test`'s 900 s guard when the machine is busy; `bun test --preload ./scripts/three-preload.ts games/fernwild` runs it unguarded).
+Branch `worktree-agent-a4f17f89a076b4bef`. All 166 game tests pass, including the 67/67 suite (about 14 minutes here;
+`bun run test` can hit its 900 s guard on a busy machine, `bun test --preload ./scripts/three-preload.ts games/fernwild`
+runs it unguarded).
 
-Done: rename to Wildwire (ids, items, text, docs), machine instincts (`data/bots.ts`), procedural robot bodies
-(`data/robotBodies.ts`), core creature-driver `focus`/`lightOf`, tricks, storms, quirks, glitches, charge wear,
-behaviour chips and Harvest chip, helpers (Ticklet, Arcwire, Watchwing, Homer, Mirrorcat), the Hivemind's
-puppet signal and the Root Server boss.
+Done: rename to Wildwire (ids, items, text, docs); machine instincts (`data/bots.ts`); procedural robot bodies
+(`data/robotBodies.ts`) with machine anatomy (treads, grilles, canopies, hazard bumpers, rack lights, seams) and
+motion (spinning rotors and saws, rolling wheels, swaying antennae, pulsing eyes); core creature-driver
+`focus`/`lightOf`; tricks, storms (HUD banner and sky veil), quirks, glitches, charge wear; behaviour chips and the
+Harvest chip; helpers (Ticklet on the shoulder, Arcwire power, Watchwing sentry, Homer courier, Mirrorcat cloak);
+Choir conductors; Thermite burrowing; nocturnal Watchwings; the Hivemind's puppet signal; the Root Server boss;
+rusted fabricators with cable vines (`fabricator` markers in editor.scene.json, `machineRuins.ts`).
 
-Screenshots: in-game capture is blocked in this container (the Rune UI wasm panics with "time not
-implemented" under software WebGPU). An offline lineup of the roster bodies rendered with three.js is the visual
-evidence for now; recapture in game on a machine with a GPU (`bun run shoot fernwild --mode play`).
+Screenshots: in-game capture is blocked in this container (the Rune UI wasm panics with "time not implemented"
+under software WebGPU). Offline three.js renders of the bodies and the fabricator are the visual evidence;
+recapture in game on a machine with a GPU (`bun run shoot fernwild --mode play`).
 
-Next: machine flavour in the editor scene (rusted fabricators, cable vines); robot gait polish (wheels and
-treads, rotor spin); a nest prop for Klepto loot; Hoover platform; Craneback crane; Lampjaw deep-water spawns;
-storm sky tint and HUD banner.
+Next: Hoover mobile-base platform (standing on a moving body), Craneback crane build helper, Lampjaw deep-water
+spawns (spawn zones keep bots out of water today), a visible Klepto nest prop, Thermite ingot mining, eye pulse
+tied to the bot's real charge (needs a runtime material hook), turning puppeted bots hostile.
