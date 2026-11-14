@@ -53,6 +53,7 @@ import {
 import { harborSave, holdSavesUntil, loadHarborSave, saveHarborState } from "./game/save";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { radioOf, registerRadio, tickRadio } from "./game/radio/runtime";
+import { circuitLabel, recordTideRushWin } from "./game/race/tideRush";
 import { bulletinForTide } from "./game/radio/bulletins";
 import { resetTide, tickTide } from "./game/tide/tideRuntime";
 import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game/pizza/shift";
@@ -101,6 +102,8 @@ function tickRaceEconomy(ctx: GameContext): void {
     patchMission(ctx, { raceSettled: true, raceClearAt: ctx.time.now() + RACE_BANNER_SEC });
     if (snapshot.won) {
       earn(ctx, RACE_WIN_PAYOUT, "race-purse", snapshot.routeId);
+      const opened = recordTideRushWin(ctx, snapshot.routeId);
+      if (opened !== null) ctx.game.notices.push({ text: `Tide Rush unlocked: ${circuitLabel(opened)}. Its start line is on the chart.`, tone: "success" });
       grantCred(ctx, RACE_WIN_CRED);
       // The persisted best time (and its bonus) stays an Ocean Loop record — other circuits pay the flat purse.
       const best = snapshot.routeId === OCEAN_LOOP_ID ? bestRaceStore.read(ctx) : undefined;

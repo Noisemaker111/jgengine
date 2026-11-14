@@ -23,6 +23,7 @@ import { sessionStore } from "./game/session";
 import { pizzeriaStore, shiftStore } from "./game/pizza/shift";
 import { tideStore } from "./game/tide/tideRuntime";
 import { nightStore } from "./game/pizza/nights";
+import { openCircuits, tideRushStore } from "./game/race/tideRush";
 import { cityOf, phoneStore } from "./game/cityRuntime";
 import { startedStore } from "./game/commands";
 import { DAY_SECONDS, secondsAtHour } from "./game/clock";
@@ -61,9 +62,12 @@ function pizzaProbe(ctx: GameContext, vehicleId: string | null | undefined) {
     medium: medium === "road" ? 1 : medium === "water" ? 2 : medium === "air" ? 3 : 0,
     // The engine is drowned or the hull aground (aircraft read their own stall here).
     stuck: streetPlayOf(ctx).telemetry().stalled ? 1 : 0,
+    speed: Math.round(streetPlayOf(ctx).carSpeedKmh()),
+    yaw: ctx.scene.entity.get(vehicleId ?? ctx.player.userId)?.rotationY ?? 0,
     chapterSteps: goal === null ? 0 : goal.step,
     storyAct: Number(cityOf(ctx).fact("story.act") ?? 0),
     nightScore: nightStore.read(ctx).score,
+    circuitsOpen: openCircuits(tideRushStore.read(ctx).won).length,
   };
 }
 
@@ -199,7 +203,7 @@ export const game = defineGame({
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
       // On the Palm Heights Climb's start line with the race just started against the circuit's own rival.
-      "race-heights": ["game.start", { name: "drive.stage", input: { vehicle: "car_compact" } }, { name: "race.stage", input: { route: "race-heights" } }],
+      "race-loop": ["game.start", { name: "drive.stage", input: { vehicle: "car_compact" } }, { name: "race.stage", input: { route: "race-loop" } }],
       noon: ["game.start", { name: "time.stage", input: { at: secondsAtHour(12) } }],
       night: ["game.start", { name: "time.stage", input: { at: secondsAtHour(23.3) } }],
       shop: ["game.start", "shop.open"],

@@ -5,6 +5,7 @@ import { vehicleById } from "./entities/vehicles/catalog";
 import { streetPlayOf } from "./streetPlay";
 import { courierPrompts } from "./jobs/courier";
 import { shiftPromptLabel, shiftPrompts } from "./pizza/shift";
+import { circuitOpen } from "./race/tideRush";
 import { gigPromptLabel, gigPrompts } from "./jobs/gigs";
 import { cityOf } from "./cityRuntime";
 import { garagePrompts, garagePromptLabel } from "./city/garage";
@@ -92,7 +93,7 @@ function safehousePrompt(ctx: GameContext): PositionedPrompt {
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (streetPlayOf(ctx).drivingVehicleId() !== null) {
     if (streetPlayOf(ctx).raceActive()) return [];
-    return [...shiftPrompts(ctx), ...streetPrompts(ctx), ...garagePrompts(ctx), ...courierPrompts(ctx), ...gigPrompts(ctx), ...racePrompts];
+    return [...shiftPrompts(ctx), ...streetPrompts(ctx), ...garagePrompts(ctx), ...courierPrompts(ctx), ...gigPrompts(ctx), ...racePrompts.filter((prompt) => circuitOpen(ctx, prompt.id.slice("race:".length)))];
   }
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return staticPrompts;

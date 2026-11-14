@@ -16,6 +16,8 @@ export interface StreetPlay {
   restorePursuit(ctx: GameContext, state: PursuitSave): void;
   enterVehicle(ctx: GameContext, vehicleId: string): void;
   exitVehicle(ctx: GameContext, force?: boolean): void;
+  /** Where the player is: their vehicle while riding, else their body. */
+  playerWorldPos(ctx: GameContext): readonly [number, number, number] | null;
   /** Put a ground car somewhere else, at rest (dev staging and warps). */
   placeVehicle(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], heading: number): void;
   drivingVehicleId(): string | null;
@@ -59,6 +61,7 @@ export function createStreetPlay(): StreetPlay {
     enterVehicle: (ctx, vehicleId) => driving.enterVehicle(ctx, vehicleId),
     exitVehicle: (ctx, force) => driving.exitVehicle(ctx, force),
     placeVehicle: (ctx, vehicleId, position, heading) => driving.placeVehicle(ctx, vehicleId, position, heading),
+    playerWorldPos: (ctx) => driving.playerWorldPos(ctx),
     drivingVehicleId: () => driving.drivingVehicleId(),
     carSpeedKmh: () => driving.carSpeedKmh(),
     telemetry: () => driving.telemetry(),

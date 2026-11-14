@@ -86,6 +86,7 @@ export const STORE_POLICY: Readonly<Record<string, { kind: SystemPolicy; reason:
   "harbor.tide": { kind: "transient", reason: "HUD mirror of the tide; the level is read off the world clock every tick." },
   "harbor.shift": { kind: "world-snapshot", reason: "Tonight's board, the boxes in the bag and the shift's tally are durable run progress." },
   "harbor.pizzeria": { kind: "world-snapshot", reason: "Ovens, toppings, bags, the note MegaSlice holds and the shop's reputation are durable profile progress." },
+  "harbor.tideRush": { kind: "world-snapshot", reason: "Which Tide Rush circuits are won, and so open, is durable profile progress." },
   "harbor.night": { kind: "world-snapshot", reason: "Tonight's set-piece night and its score ride the world snapshot with the story job that runs it." },
   "harbor.pizzeriaBoard": { kind: "transient", reason: "Whether the shop's books are open on screen is a menu, not run state." },
 };

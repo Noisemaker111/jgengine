@@ -24,6 +24,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/handling.proof.ts",
+      "proves": [
+        "racing.drive-handling"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/rebind-phone.proof.ts",
       "proves": [
         "settings.controls"
@@ -70,6 +77,13 @@
       "file": "proofs/sim/tide-closes-route.proof.ts",
       "proves": [
         "delivery.route-changes"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tide-rush-unlock.proof.ts",
+      "proves": [
+        "racing.unlock-vehicles-tracks"
       ],
       "ok": true
     },

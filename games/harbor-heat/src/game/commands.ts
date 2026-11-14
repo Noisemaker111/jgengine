@@ -9,6 +9,7 @@ import { GARAGE_POS } from "./world/districts";
 import { sessionStore, startedThisBoot, syncSession } from "./session";
 import { registerCourier } from "./jobs/courier";
 import { registerGigs } from "./jobs/gigs";
+import { CIRCUIT_ORDER, circuitLabel, circuitOpen, nearestStart } from "./race/tideRush";
 import { buyFromShop, earn, spend } from "./cash";
 import { stealCar } from "./city/garage";
 import { awayStore, passTime, secondsUntilMorning } from "./away";
@@ -220,6 +221,15 @@ export function registerCommands(ctx: GameContext): void {
         return;
       }
       if (streetPlayOf(state).raceActive()) return;
+      // The Tide Rush ladder: a circuit opens once the one before it is won.
+      const at = streetPlayOf(state).playerWorldPos(state);
+      const nearest = at === null ? null : nearestStart(at[0], at[2]);
+      if (nearest !== null && nearest.distance < 12 && !circuitOpen(state, nearest.id)) {
+        const order = CIRCUIT_ORDER as readonly string[];
+        const before = order[order.indexOf(nearest.id) - 1];
+        state.game.notices.push({ text: `${nearest.label} opens once you win ${before === undefined ? "the Ocean Loop" : circuitLabel(before)}.`, tone: "deny" });
+        return;
+      }
       if (!spend(state, RACE_ENTRY_FEE, "race-entry")) {
         state.game.notices.push({ text: `Race entry is $${RACE_ENTRY_FEE}.`, tone: "deny" });
         return;
