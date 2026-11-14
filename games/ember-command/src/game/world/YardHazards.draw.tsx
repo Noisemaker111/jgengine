@@ -83,29 +83,70 @@ function mowerBody(): THREE.Group {
 /** A giant broad leaf held up on its stalk over each authored shade spot: it casts the real shadow the
  * magnifying glass cannot burn through. */
 function shadeCanopies(ground: (x: number, z: number) => number): THREE.Object3D[] {
-  const leafMaterial = new THREE.MeshStandardMaterial({ color: "#3f9a2a", roughness: 0.6, side: THREE.DoubleSide });
-  const veinMaterial = new THREE.MeshStandardMaterial({ color: "#2c6e1c", roughness: 0.7 });
+  const leafMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, side: THREE.DoubleSide });
   const stalkMaterial = new THREE.MeshStandardMaterial({ color: "#4f8a2a", roughness: 0.8 });
   return YARD.shade.map((spot, i) => {
     const group = new THREE.Group();
     const y = ground(spot.x, spot.z);
     const height = 6.5 + (i % 2) * 1.2;
-    const leafGeometry = new THREE.CircleGeometry(1, 24);
-    leafGeometry.scale(spot.radius * 0.95, spot.radius * 1.25, 1);
-    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
-    leaf.rotation.x = -Math.PI / 2 + 0.12;
-    leaf.rotation.z = i * 1.3;
+    const leaf = new THREE.Mesh(leafGeometry(spot.radius * 1.3, i), leafMaterial);
+    leaf.rotation.y = i * 1.3;
     leaf.position.set(spot.x, y + height, spot.z);
     leaf.castShadow = true;
-    const vein = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, spot.radius * 2.4), veinMaterial);
-    vein.position.set(spot.x, y + height + 0.08, spot.z);
-    vein.rotation.y = -i * 1.3;
+    leaf.receiveShadow = true;
     const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, height, 8), stalkMaterial);
-    stalk.position.set(spot.x + Math.cos(i) * spot.radius * 0.7, y + height / 2, spot.z + Math.sin(i) * spot.radius * 0.7);
+    stalk.position.set(spot.x, y + height / 2, spot.z);
     stalk.castShadow = true;
-    group.add(leaf, vein, stalk);
+    group.add(leaf, stalk);
     return group;
   });
+}
+
+/**
+ * A broad pointed leaf (dock or plantain) seen from above: a lens outline with a saw of veins, cupped so
+ * its edges droop, shaded darker at the rim and lighter along the midrib. `length` is tip to tip.
+ */
+function leafGeometry(length: number, seed: number): THREE.BufferGeometry {
+  const half = length / 2;
+  const width = length * 0.36;
+  const segmentsL = 28;
+  const segmentsW = 10;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const index: number[] = [];
+  const dark = new THREE.Color("#2f7d22");
+  const light = new THREE.Color("#7cc94a");
+  const rib = new THREE.Color("#c9e88a");
+  const c = new THREE.Color();
+  for (let i = 0; i <= segmentsL; i += 1) {
+    const t = i / segmentsL;
+    const z = -half + t * length;
+    const span = width * Math.sin(Math.PI * t) ** 0.8;
+    for (let j = 0; j <= segmentsW; j += 1) {
+      const u = j / segmentsW * 2 - 1;
+      const x = u * span;
+      // Cupped: the rim droops, the midrib arches; a gentle twist so no two leaves match.
+      const yv = -(Math.abs(u) ** 1.6) * width * 0.35 + Math.sin(t * Math.PI) * width * 0.12 + Math.sin(seed + t * 3) * 0.15;
+      positions.push(x, yv, z);
+      const veins = 0.5 + 0.5 * Math.cos((t * 9 + Math.abs(u) * 2.5) * Math.PI);
+      c.copy(dark).lerp(light, (1 - Math.abs(u)) * 0.7 + veins * 0.12);
+      if (Math.abs(u) < 0.06) c.copy(rib);
+      colors.push(c.r, c.g, c.b);
+    }
+  }
+  const row = segmentsW + 1;
+  for (let i = 0; i < segmentsL; i += 1) {
+    for (let j = 0; j < segmentsW; j += 1) {
+      const a = i * row + j;
+      index.push(a, a + row, a + 1, a + 1, a + row, a + row + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  return geo;
 }
 
 /** Popsicle sticks laid over the hose at each authored crossing: the quick way across. */
