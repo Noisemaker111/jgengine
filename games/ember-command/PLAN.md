@@ -155,3 +155,21 @@ Genres: strategy. 0/17 proven · 17 missing.
   the Magnifying Glass.
 - [ ] 5. Wasp raids get flight lanes over the hose and a nest of their own; scouts mark enemies on the map.
 - [ ] 6. A second lawn (front yard with a sidewalk crack river and a sprinkler grid).
+
+## Handoff
+
+- Done (committed): full LAWN ORDER re-theme of ember-command — castes (worker, scout, soldier,
+  spitter, tank beetle, Marshal Mandible; black raider/major, paper wasp), chambers (barracks, fungus
+  garden, nursery, granary, acid mound), sugar/leaf economy with crumbs/popsicle/leaf nodes, pheromone
+  trails (`pheromone.ts`, P verb), yard hazards (`hazards.ts`: sprinkler, mower, rain, night, beam),
+  backyard scene kinds (`world/yardKinds.draw.tsx`), procedural bug/chamber meshes
+  (`world/bugMeshes.ts`, `renderEntity.tsx`), hazard/trail/shade/bridge draws, scene re-authored via the
+  editor CLI, five new missions, garden-journal Rune HUD + glyphs, README/art-direction/CREDITS.
+  `bun run test games/ember-command` 194/194 pass; check-types clean; `bun run gen` passed.
+- Shared fixes: `games/shared/viteJgUiWasm.ts` strips Vite's `?import` query (jg-ui bundle 404'd);
+  `scripts/browser-lib.ts` gives software capture Chrome WebGPU on SwiftShader (Rune needs WebGPU).
+- Not done: no screenshot yet (render slot starved by other agents; the guard killed shoot at 420 s);
+  `verify:fast` started but was stopped before it finished.
+- Next: `bun run verify:fast`; `JG_BROKER=0 bun run shoot ember-command --mode play --inspect` (retry
+  when a render slot frees), inspect the shot and fix visual defects (ant scale vs camera, bridge
+  height, scatter density over the hose/lane); then report.
