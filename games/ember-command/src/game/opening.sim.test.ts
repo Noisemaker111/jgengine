@@ -5,7 +5,7 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { physics, world } from "../world";
 import { content } from "./content";
 import { onInit } from "../loop";
-import { resetSession, session } from "./session";
+import { isMarked, resetSession, session } from "./session";
 import { systems } from "./systems";
 import { createHazardState, MOWER_FIRST, MOWER_WARNING, NO_HAZARDS } from "./hazards";
 import { YARD } from "./yardInstance";
@@ -70,6 +70,20 @@ describe("the opening raid", () => {
     for (let t = 0; t < 12; t += 0.1) runner.step(0.1);
     // The beam's target sits on the black side of the lawn, not on the hidden colony.
     expect(session.hazards.beam.tz).toBeLessThan(0);
+  }, 60_000);
+
+  test("a scout tags the black ants it senses, and the tag outlives its sight", () => {
+    const runner = opening();
+    const ctx = runner.ctx;
+    ctx.scene.entity.spawn("scout", { id: "scout_x", position: [0, 0, -14], role: "npc" });
+    session.units.set("scout_x", { id: "scout_x", catalogId: "scout", faction: "player", kind: "unit", command: { kind: "hold" }, leash: 0, attackCooldown: 0 });
+    runner.step(0.3);
+    const tagged = Object.keys(session.marked).filter((id) => id.startsWith("raider_guard") || id.startsWith("major_guard"));
+    expect(tagged.length).toBeGreaterThan(0);
+    ctx.scene.entity.despawn("scout_x");
+    session.units.delete("scout_x");
+    runner.step(1);
+    expect(isMarked(tagged[0]!)).toBe(true);
   }, 60_000);
 
   test("idle red ants walk out of the mower's lane when it roars; black ants do too", () => {

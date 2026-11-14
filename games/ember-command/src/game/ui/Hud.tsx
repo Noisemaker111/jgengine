@@ -225,7 +225,7 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
       {train("worker", "1", "Forages crumbs, sugar and leaf pulp, lays scent on the way home, and digs chambers.")}
       {train("soldier", "2", "Big-jawed front line. Bites black majors 50% harder; screens spitters from raiders. Needs a Barracks Chamber.")}
       {train("spitter", "3", "Acid at range: full damage past 3 m, weak up close and against armoured majors, strong against nests; acid slows what it hits. Needs a Barracks Chamber.")}
-      {train("scout", "9", "Fast and fragile, with antennae that sense twice as far. Light the fog, find the black ants, dodge the mower.")}
+      {train("scout", "9", "Fast and fragile, with antennae that sense twice as far. Black ants it senses carry marking scent and stay on your map for 10 s.")}
       {train("beetle", "0", "A tamed rhinoceros beetle: slow, huge, and it tears chambers apart. Needs a Barracks and a Nursery Chamber.")}
       <Slot {...p} icon="attackMove" hotkey="R" command={{ name: "unit.attackMove" }} tone={() => (!playing() ? "locked" : hud().attackMoveArmed ? "active" : "ready")}
         tip={() => ({ title: "Attack-Move", desc: "Arm, then right-click a destination: the column bites anything it meets on the way.", chips: [] })} />

@@ -6,7 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 
 import { enemyDrawn, fogLevel, fogSnapshot, FOG_ALPHA, type FogCellsSnapshot } from "../fog";
-import { session } from "../session";
+import { isMarked, session } from "../session";
 import { YARD } from "../yardInstance";
 import { hudStore } from "../hudStore";
 import { INK, RIVAL_INK, OCHRE, BRASS, RED_INK } from "./theme";
@@ -94,7 +94,7 @@ function tacticalDots(ctx: GameContext): Dot[] {
   for (const e of ctx.scene.entity.list()) {
     const unit = session.units.get(e.id);
     if (unit !== undefined) {
-      if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, e.position[0], e.position[2])) continue;
+      if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, e.position[0], e.position[2]) && !isMarked(e.id)) continue;
       const role = unit.kind === "building" ? "Building" : unit.catalogId === "hero" ? "Hero" : "Unit";
       dots.push({ id: e.id, kind: `${unit.faction === "player" ? "player" : "enemy"}${role}` });
     } else if ((e.name === "crumbs" || e.name === "popsicle" || e.name === "leaves") && fogLevel(session.fog, e.position[0], e.position[2]) !== "unseen") {

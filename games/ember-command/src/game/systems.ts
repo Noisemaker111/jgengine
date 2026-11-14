@@ -15,7 +15,7 @@ import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore, type ResearchView } from "./hudStore";
 import { trainingConfigFor } from "./production";
-import { SUGAR, GRANARY_TRICKLE, INCOME_TRICKLE, LEAF, NURSERY_HATCH_BONUS, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
+import { SIGHT_RADIUS_SCOUT, SUGAR, GRANARY_TRICKLE, INCOME_TRICKLE, LEAF, NURSERY_HATCH_BONUS, PATIO_SIGHT_BONUS, TRAIL_HALF_LIFE, TRAIL_RAIN_DECAY } from "./tuning";
 import {
   advanceHazards,
   BEAM_BUILDING_DPS,
@@ -37,7 +37,7 @@ import { decayTrails, pruneAlarms, scentAt, washTrails } from "./pheromone";
 import { dueTips, type CoachFacts } from "./coach";
 import { onPatio } from "./yard";
 import { YARD } from "./yardInstance";
-import { broodLanes, matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
+import { broodLanes, isMarked, MARK_SECONDS, matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 
 /** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
@@ -132,11 +132,22 @@ function playerSightSources(ctx: GameContext): SightSource[] {
  * landmarks. The entity `hidden` flag is engine render-only (stealth cloaks), so positions, AI and
  * damage keep working for units the player cannot see. */
 function applyEnemyFog(ctx: GameContext): void {
+  // Scouts tag every black ant they sense with marking scent: it stays drawn (and on the map) a while
+  // after it slips back into the fog.
+  const scouts: [number, number][] = [];
+  for (const unit of session.units.values()) {
+    if (unit.catalogId !== "scout") continue;
+    const at = ctx.scene.entity.get(unit.id)?.position;
+    if (at !== undefined) scouts.push([at[0], at[2]]);
+  }
   for (const unit of session.units.values()) {
     if (unit.faction !== "enemy" || unit.kind !== "unit") continue;
     const entity = ctx.scene.entity.get(unit.id);
     if (entity === null) continue;
-    const hidden = !enemyDrawn(session.fog, entity.position[0], entity.position[2]);
+    if (scouts.some(([x, z]) => Math.hypot(x - entity.position[0], z - entity.position[2]) <= SIGHT_RADIUS_SCOUT * nightSightFactor(session.hazards))) {
+      session.marked[unit.id] = session.elapsed + MARK_SECONDS;
+    }
+    const hidden = !enemyDrawn(session.fog, entity.position[0], entity.position[2]) && !isMarked(unit.id);
     if (entity.hidden !== hidden) ctx.scene.entity.update(unit.id, { hidden });
   }
 }

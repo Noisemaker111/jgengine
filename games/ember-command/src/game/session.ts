@@ -83,6 +83,8 @@ export interface SessionState {
   trails: TrailField;
   /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
   fx: { kind: FxKind; x: number; z: number; at: number }[];
+  /** Black ants a Scout has tagged with marking scent, and the battle second the tag fades. */
+  marked: Record<string, number>;
   /** Where red ants were bitten lately: idle fighters nearby smell it and come running. */
   distress: { x: number; z: number; at: number }[];
   /** Units slowed by spitter acid, with the battle second the acid wears off. */
@@ -136,6 +138,7 @@ function fresh(): SessionState {
     alarms: [],
     acid: {},
     distress: [],
+    marked: {},
     fx: [],
     coachSeen: [],
     trailPainted: false,
@@ -275,4 +278,12 @@ export function distressNear(x: number, z: number): { x: number; z: number } | n
     if (best === null || d.at > best.at) best = d;
   }
   return best === null ? null : { x: best.x, z: best.z };
+}
+
+/** How long a Scout's marking scent keeps a black ant drawn after it leaves sight. */
+export const MARK_SECONDS = 10;
+
+/** Whether a black ant carries a live scout mark. */
+export function isMarked(id: string): boolean {
+  return (session.marked[id] ?? 0) > session.elapsed;
 }
