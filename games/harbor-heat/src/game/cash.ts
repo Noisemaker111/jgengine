@@ -42,6 +42,10 @@ export type CashReason =
   | "front-repair"
   | "payoff"
   | "respray"
+  | "pizza-sale"
+  | "pizza-tip"
+  | "pizzeria-upgrade"
+  | "pizzeria-debt"
   | "reconcile";
 
 export const CASH = "cash";

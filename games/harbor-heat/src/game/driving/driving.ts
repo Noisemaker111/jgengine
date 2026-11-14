@@ -29,6 +29,8 @@ import { landBlast, landHit } from "../combat/hitModel";
 import { crashVehicle, forgetVehicleDamage, rebaseVehicleDamage, restoreVehicleDamage, vehicleDamageSave } from "./bodywork";
 import { crashShare, moddedTuning } from "../progression/upgrades";
 import type { VehicleDamageState } from "@jgengine/core/physics/vehicleDamage";
+import { waterAt } from "../tide/tideRuntime";
+import { waterEffect } from "../tide/tide";
 
 export const drivingStore = defineStore<string | null | undefined>("harbor.driving", undefined);
 
@@ -42,10 +44,14 @@ export interface VehicleTelemetry {
   rpm: number;
   stalled: boolean;
   vtol: boolean;
+  /** The dash's water warning ("ENGINE DROWNED", "BEACHED"), empty when the water is no trouble. */
+  water: string;
+  /** Soak per second the water is putting into the boxes right now. */
+  soak: number;
 }
 
 /** The dash with nobody driving. */
-const ON_FOOT: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
+const ON_FOOT: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false, water: "", soak: 0 };
 
 /** Road-grip sampler for the car sims: full bite on asphalt, a linear washout across the curb, less off-road. */
 const SURFACE_SAMPLER = roadSurfaceSampler(streets, { onRoad: 1, offRoad: 0.72, shoulder: 3 });
@@ -294,7 +300,7 @@ export function createDriving(): Driving {
       const reachSq = reach * reach;
       for (const obj of ctx.scene.object.list()) {
         const objDef = objectDefById(obj.catalogId);
-        if (objDef === undefined || objDef.solid || !obj.catalogId.startsWith("obj_")) continue;
+        if (objDef === undefined || objDef.solid || objDef.fixture === true || !obj.catalogId.startsWith("obj_")) continue;
         const dx = obj.position[0] - pos[0];
         const dz = obj.position[2] - pos[2];
         if (dx * dx + dz * dz > reachSq) continue;
@@ -422,6 +428,8 @@ export function createDriving(): Driving {
       // Only wings stall: a rotor in a hover reads its tail surfaces at any angle.
       stalled: !hovering && step.stalled,
       vtol: vtolModes.get(vehicleId) === true,
+      water: "",
+      soak: 0,
     };
     return step;
   }
@@ -552,10 +560,17 @@ export function createDriving(): Driving {
             const car = carVehicleFor(ctx, driving);
             const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
             refreshClamp(ctx, driving, car.pose().position, dt);
+            // A hull rides the flood (or the bay); wheels stay on the street under it.
+            const hull = definition?.medium === "water";
             const result = tickDrivableVehicle(car, dt, axis, {
-              groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
+              groundHeight: hull
+                ? (x, z) => Math.max(ctx.world.groundHeightAt(x, z), waterAt(ctx, x, z)?.surface ?? Number.NEGATIVE_INFINITY)
+                : (x, z) => ctx.world.groundHeightAt(x, z),
               tires: { id: driving, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles },
             });
+            const here = waterAt(ctx, result.pose.position[0], result.pose.position[2]);
+            const wet = waterEffect(hull ? "water" : "road", here?.depth ?? 0, Math.abs(result.step.motion.forwardSpeed) * 3.6, here?.openSea === true);
+            if (wet.keepPerSecond < 1) car.scaleVelocity(Math.pow(wet.keepPerSecond, dt));
             lastTelemetry = {
               mode: "ground",
               speedMs: Math.abs(result.step.motion.forwardSpeed),
@@ -563,8 +578,10 @@ export function createDriving(): Driving {
               verticalSpeed: 0,
               gear: result.step.engine.gear,
               rpm: result.step.engine.rpm,
-              stalled: false,
+              stalled: wet.stuck,
               vtol: false,
+              water: wet.label,
+              soak: wet.soakPerSecond,
             };
             ctx.scene.entity.setPose(driving, result.pose);
             tickDrivingReactions(ctx, driving, car, result.step, axis, definition);

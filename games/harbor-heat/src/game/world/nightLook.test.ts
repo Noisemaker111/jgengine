@@ -6,6 +6,7 @@ import { loop } from "../../loop";
 import { content } from "../content";
 import { roadSource } from "./cityLayout";
 import { isNightHour, tickNightLook } from "./nightLook";
+import { secondsAtHour } from "../clock";
 
 function boot() {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "night-test", isNew: true } });
@@ -25,12 +26,12 @@ describe("night look", () => {
 
   test("lamps throw a pool of light and the roads wet at night, and both dry at dawn", () => {
     const ctx = boot();
-    ctx.time.hydrate({ ...ctx.time.snapshot(), now: 700 });
+    ctx.time.hydrate({ ...ctx.time.snapshot(), now: secondsAtHour(23.3) });
     tickNightLook(ctx);
     const night = pools(ctx);
     expect(night).toBeGreaterThan(20);
     expect(roadSource.current()[0]?.materials?.road?.maps.color).toContain("asphalt025c");
-    ctx.time.hydrate({ ...ctx.time.snapshot(), now: 360 });
+    ctx.time.hydrate({ ...ctx.time.snapshot(), now: secondsAtHour(12) });
     tickNightLook(ctx);
     expect(pools(ctx)).toBe(0);
     expect(roadSource.current()[0]?.materials?.road?.maps.color).toContain("asphalt012");

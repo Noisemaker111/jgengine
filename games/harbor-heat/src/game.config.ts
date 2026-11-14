@@ -21,6 +21,7 @@ import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
+import { DAY_SECONDS, secondsAtHour } from "./game/clock";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
@@ -164,8 +165,8 @@ export const game = defineGame({
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
       // On the Palm Heights Climb's start line with the race just started against the circuit's own rival.
       "race-heights": ["game.start", { name: "drive.stage", input: { vehicle: "car_sport" } }, { name: "race.stage", input: { route: "race-heights" } }],
-      noon: ["game.start", { name: "time.stage", input: { at: 360 } }],
-      night: ["game.start", { name: "time.stage", input: { at: 700 } }],
+      noon: ["game.start", { name: "time.stage", input: { at: secondsAtHour(12) } }],
+      night: ["game.start", { name: "time.stage", input: { at: secondsAtHour(23.3) } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
       dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:marco" } }],
@@ -271,7 +272,7 @@ export const game = defineGame({
   },
   // The city opens at golden hour, the art direction's hero time; the day curve runs on into night
   // and round through a bright noon (the `noon` capture state jumps there).
-  time: { dayLength: 720, start: 500 },
+  time: { dayLength: DAY_SECONDS, start: secondsAtHour(17.5) },
 });
 
 

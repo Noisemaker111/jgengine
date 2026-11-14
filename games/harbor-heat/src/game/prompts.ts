@@ -4,6 +4,7 @@ import { safehouseStore, SHOP_CLOSES, SHOP_OPENS } from "./commands";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { streetPlayOf } from "./streetPlay";
 import { courierPrompts } from "./jobs/courier";
+import { shiftPromptLabel, shiftPrompts } from "./pizza/shift";
 import { gigPromptLabel, gigPrompts } from "./jobs/gigs";
 import { cityOf } from "./cityRuntime";
 import { frontPromptLabel, frontPrompts } from "./city/fronts";
@@ -92,11 +93,11 @@ function safehousePrompt(ctx: GameContext): PositionedPrompt {
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (streetPlayOf(ctx).drivingVehicleId() !== null) {
     if (streetPlayOf(ctx).raceActive()) return [];
-    return [...streetPrompts(ctx), ...garagePrompts(ctx), ...courierPrompts(ctx), ...gigPrompts(ctx), ...racePrompts];
+    return [...shiftPrompts(ctx), ...streetPrompts(ctx), ...garagePrompts(ctx), ...courierPrompts(ctx), ...gigPrompts(ctx), ...racePrompts];
   }
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return staticPrompts;
-  const nearbyPrompts = [...staticPrompts, ...gigPrompts(ctx), ...cityPrompts(ctx), ...frontPrompts(ctx, player.position), ...garagePrompts(ctx)];
+  const nearbyPrompts = [...shiftPrompts(ctx), ...staticPrompts, ...gigPrompts(ctx), ...cityPrompts(ctx), ...frontPrompts(ctx, player.position), ...garagePrompts(ctx)];
   let nearestCar: { id: string; x: number; z: number } | null = null;
   let nearestDist = 6;
   for (const entity of ctx.scene.entity.list()) {
@@ -132,5 +133,5 @@ export function systemPromptLabel(ctx: GameContext, id: string): string | null {
     const hour = ctx.time.calendar().hour;
     return hour >= SHOP_OPENS && hour < SHOP_CLOSES ? null : `Ammu-Isle · shut until ${SHOP_OPENS}:00`;
   }
-  return gigPromptLabel(id) ?? frontPromptLabel(ctx, id) ?? streetPromptLabel(ctx, id) ?? garagePromptLabel(ctx, id);
+  return shiftPromptLabel(ctx, id) ?? gigPromptLabel(id) ?? frontPromptLabel(ctx, id) ?? streetPromptLabel(ctx, id) ?? garagePromptLabel(ctx, id);
 }

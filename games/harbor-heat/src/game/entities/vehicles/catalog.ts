@@ -15,6 +15,13 @@ export type VehicleHandling =
 
 export type AircraftKind = "fixedWing" | "rotorcraft" | "vtol";
 
+/**
+ * What a vehicle travels on when the tide comes in: wheels drown in a canal, a hull floats on it and
+ * runs aground on dry stone, and an aircraft does not care. `game/tide/tide.ts` turns this into drag,
+ * soak and the dash's warning.
+ */
+export type VehicleMedium = "road" | "water" | "air";
+
 export interface VehicleDef {
   id: string;
   label: string;
@@ -24,6 +31,8 @@ export interface VehicleDef {
   dynamics: VehicleHandling;
   /** Body radius (world units) the driving obstacle clamp inflates solids by, and the crash/knockdown reach (#1051). */
   collisionRadius: number;
+  /** Street, water or air: how the flood treats it. */
+  medium: VehicleMedium;
 }
 
 /**
@@ -67,6 +76,8 @@ interface CarSpec {
   redlineRpm?: number;
   /** Torque curve; muscle overrides with a punchy low end that chirps on launch. */
   torqueCurve?: GripCurve;
+  /** A hull rather than wheels: it floats on a flooded street and runs aground on a dry one. */
+  hull?: boolean;
 }
 
 /** Street torque: strong enough off-idle that launch is not a crawl. */
@@ -135,17 +146,21 @@ function car(spec: CarSpec): VehicleSpec {
  * controlled rear-lock slides.
  */
 const CAR_SPECS: readonly CarSpec[] = [
-  { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 9800, brakeForce: 11000, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 34, handbrakeGrip: 0.28, collisionRadius: 1.4 },
-  { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15500, brakeForce: 14000, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 42, handbrakeGrip: 0.22, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
-  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 14200, brakeForce: 17000, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 52, handbrakeGrip: 0.24, collisionRadius: 1.4, downforce: 0.5 },
+  // The family fleet. The Vespetta is the starter scooter; the cargo trike carries the big stacks; the
+  // jet-ski and the motor gondola are hulls that only come alive once the streets are canals.
+  { id: "car_compact", label: "Vespetta scooter", body: "#e8483c", cabin: "#fff1d6", price: 600, massKg: 230, engineForce: 1700, brakeForce: 2100, tireGrip: 0.95, comHeight: 0.5, trackWidth: 0.95, wheelbase: 1.6, topSpeed: 22, handbrakeGrip: 0.5, collisionRadius: 0.9 },
+  { id: "car_muscle", label: "Cargo trike", body: "#2f9e8f", cabin: "#f4e3c0", price: 1500, massKg: 330, engineForce: 1750, brakeForce: 2700, tireGrip: 0.9, comHeight: 0.62, trackWidth: 1.05, wheelbase: 1.65, topSpeed: 18, handbrakeGrip: 0.3, collisionRadius: 1.1 },
+  { id: "car_sport", label: "Riptide jet-ski", body: "#ffb020", cabin: "#1c2228", price: 3200, massKg: 380, engineForce: 3400, brakeForce: 1900, tireGrip: 0.55, comHeight: 0.4, trackWidth: 1.1, wheelbase: 2.0, topSpeed: 26, handbrakeGrip: 0.18, collisionRadius: 1.2, hull: true },
+  // A rival pizzeria's scooter: only Carmine's Crust riders ride it, never sold.
+  { id: "car_rival", label: "Carmine's Crust scooter", body: "#2b2b30", cabin: "#f2c14e", price: 0, massKg: 230, engineForce: 1700, brakeForce: 2100, tireGrip: 0.95, comHeight: 0.5, trackWidth: 0.95, wheelbase: 1.6, topSpeed: 21, handbrakeGrip: 0.5, collisionRadius: 0.9 },
   // Traffic-only bodies (price 0, never in a shop): the city's other cars, one class each.
   { id: "car_taxi", label: "Sunbeam Cab", body: "#ffb020", cabin: "#26292f", price: 0, massKg: 1550, engineForce: 12600, brakeForce: 13500, tireGrip: 0.9, comHeight: 0.58, trackWidth: 1.55, wheelbase: 2.65, topSpeed: 34, handbrakeGrip: 0.28, collisionRadius: 1.4 },
   { id: "car_sedan", label: "Marlin", body: "#7fd1c4", cabin: "#26292f", price: 0, massKg: 1450, engineForce: 12000, brakeForce: 13000, tireGrip: 0.9, comHeight: 0.56, trackWidth: 1.55, wheelbase: 2.6, topSpeed: 36, handbrakeGrip: 0.28, collisionRadius: 1.4 },
   { id: "car_hatch", label: "Dinghy", body: "#ff4f8b", cabin: "#26292f", price: 0, massKg: 1050, engineForce: 9000, brakeForce: 10200, tireGrip: 0.9, comHeight: 0.54, trackWidth: 1.45, wheelbase: 2.35, topSpeed: 31, handbrakeGrip: 0.28, collisionRadius: 1.3 },
   { id: "car_coupe", label: "Verve", body: "#f2c9a8", cabin: "#26292f", price: 0, massKg: 1300, engineForce: 13000, brakeForce: 15000, tireGrip: 1.0, comHeight: 0.5, trackWidth: 1.58, wheelbase: 2.5, topSpeed: 44, handbrakeGrip: 0.25, collisionRadius: 1.4 },
   { id: "car_cop", label: "HHPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 13800, brakeForce: 15500, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 40, handbrakeGrip: 0.26, collisionRadius: 1.4 },
-  { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 15200, brakeForce: 16500, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 36, handbrakeGrip: 0.3, collisionRadius: 1.6, gears: GEARS_SUV },
-  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, gears: GEARS_BUS, redlineRpm: 4600 },
+  { id: "car_suv", label: "Motor gondola", body: "#15161c", cabin: "#d6a64a", price: 5000, massKg: 620, engineForce: 3100, brakeForce: 2700, tireGrip: 0.62, comHeight: 0.45, trackWidth: 1.2, wheelbase: 4.4, topSpeed: 15, handbrakeGrip: 0.3, collisionRadius: 1.6, maxAngle: 0.42, gears: GEARS_SUV, hull: true },
+  { id: "car_bus", label: "Islander night bus", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, gears: GEARS_BUS, redlineRpm: 4600 },
 ];
 
 const AIR_DENSITY = 1.225;
@@ -209,17 +224,19 @@ const PLANE_ASSISTS: AircraftAssistTuning = { sas: { pitch: 0.5, roll: 0.4, yaw:
 const AIRCRAFT: readonly VehicleDef[] = [
   {
     id: "air_helicopter",
-    label: "Maverick 44",
-    body: "#e7e9ee",
-    cabin: "#17202b",
+    label: "Pizza blimp",
+    body: "#fff0d2",
+    cabin: "#d93a2f",
     price: 12000,
-    collisionRadius: 2.2,
+    collisionRadius: 2.6,
+    medium: "air",
     dynamics: {
       type: "aircraft",
       kind: "rotorcraft",
-      topSpeed: 62,
-      // A light single-rotor helicopter: about 0.55 collective carries it, a third of right pedal holds the
-      // nose against rotor torque, and full SAS with hover hold keeps it parked hands-off.
+      topSpeed: 30,
+      // The blimp flies on the light-helicopter rig: about 0.55 collective carries it, a third of right pedal
+      // holds the nose, and full SAS with hover hold parks it hands-off over a rooftop. The envelope's drag
+      // keeps it a slow, steady thing.
       tuning: {
         massKg: 1450,
         inertia: { pitch: 4000, yaw: 4500, roll: 1500 },
@@ -229,7 +246,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
         ],
         rotor: { maxThrust: 26000, radius: 5.1, at: [0, 1.5, 0], torque: 10000, damping: 3500, spoolRate: 0.9, cyclic: 0.2, tail: { maxThrust: 2500, at: [0, 0, -7.5] } },
         controls: { pitch: { rate: 1.5 }, roll: { rate: 1.5 }, yaw: { rate: 2 } },
-        dragArea: 2.4,
+        dragArea: 7,
         gear: { height: 1 },
         assists: { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 },
       },
@@ -242,6 +259,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     cabin: "#243447",
     price: 16000,
     collisionRadius: 2.4,
+    medium: "air",
     dynamics: {
       type: "aircraft",
       kind: "fixedWing",
@@ -256,6 +274,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     cabin: "#e7f1f5",
     price: 26000,
     collisionRadius: 2.6,
+    medium: "air",
     dynamics: {
       type: "aircraft",
       kind: "fixedWing",
@@ -270,6 +289,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     cabin: "#10151b",
     price: 90000,
     collisionRadius: 3,
+    medium: "air",
     dynamics: {
       type: "aircraft",
       kind: "fixedWing",
@@ -285,6 +305,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     cabin: "#111b18",
     price: 110000,
     collisionRadius: 3,
+    medium: "air",
     dynamics: {
       type: "aircraft",
       kind: "vtol",
@@ -311,6 +332,7 @@ export const VEHICLES: readonly VehicleDef[] = [
       cabin: spec.cabin,
       price: spec.price,
       collisionRadius: spec.collisionRadius,
+      medium: spec.hull === true ? "water" : "road",
       dynamics: { type: "ground", tuning: car(spec) },
     }),
   ),

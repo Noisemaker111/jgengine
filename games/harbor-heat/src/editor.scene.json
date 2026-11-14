@@ -4858,6 +4858,556 @@
       "meta": {
         "tags": "florist"
       }
+    },
+    {
+      "id": "pizzeria_oven",
+      "kind": "poi",
+      "position": {
+        "x": -186,
+        "y": 0,
+        "z": 54
+      },
+      "label": "Vell's oven window"
+    },
+    {
+      "id": "cust_lighthouse",
+      "kind": "customer",
+      "position": {
+        "x": -196,
+        "y": 0,
+        "z": -296
+      },
+      "label": "Gull Point lighthouse gallery"
+    },
+    {
+      "id": "cust_submarine",
+      "kind": "customer",
+      "position": {
+        "x": -252,
+        "y": 0,
+        "z": 160
+      },
+      "label": "Submarine Sardine conning tower"
+    },
+    {
+      "id": "swap_dock_boardwalk",
+      "kind": "swap_dock",
+      "position": {
+        "x": -205,
+        "y": 0,
+        "z": 24
+      },
+      "label": "Boardwalk swap dock"
+    },
+    {
+      "id": "swap_dock_port",
+      "kind": "swap_dock",
+      "position": {
+        "x": 112,
+        "y": 0,
+        "z": 150
+      },
+      "label": "Port swap dock"
+    },
+    {
+      "id": "swap_dock_downtown",
+      "kind": "swap_dock",
+      "position": {
+        "x": -28,
+        "y": 0,
+        "z": -58
+      },
+      "label": "Downtown swap dock"
+    },
+    {
+      "id": "htp_lighthouse",
+      "kind": "prop",
+      "position": {
+        "x": -200,
+        "y": 0,
+        "z": -302
+      },
+      "rotationY": 0,
+      "catalogId": "obj_lighthouse",
+      "meta": {
+        "catalogId": "obj_lighthouse"
+      }
+    },
+    {
+      "id": "htp_submarine",
+      "kind": "prop",
+      "position": {
+        "x": -256,
+        "y": 0,
+        "z": 166
+      },
+      "rotationY": 0.6,
+      "catalogId": "obj_submarine",
+      "meta": {
+        "catalogId": "obj_submarine"
+      }
+    },
+    {
+      "id": "htp_shop_sign",
+      "kind": "prop",
+      "position": {
+        "x": -199,
+        "y": 0,
+        "z": 50
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_pizza_sign",
+      "meta": {
+        "catalogId": "obj_pizza_sign"
+      }
+    },
+    {
+      "id": "htp_swap_boardwalk",
+      "kind": "prop",
+      "position": {
+        "x": -202,
+        "y": 0,
+        "z": 27
+      },
+      "rotationY": 0,
+      "catalogId": "obj_swap_dock",
+      "meta": {
+        "catalogId": "obj_swap_dock"
+      }
+    },
+    {
+      "id": "htp_swap_port",
+      "kind": "prop",
+      "position": {
+        "x": 115,
+        "y": 0,
+        "z": 153
+      },
+      "rotationY": 0,
+      "catalogId": "obj_swap_dock",
+      "meta": {
+        "catalogId": "obj_swap_dock"
+      }
+    },
+    {
+      "id": "htp_swap_downtown",
+      "kind": "prop",
+      "position": {
+        "x": -25,
+        "y": 0,
+        "z": -55
+      },
+      "rotationY": 0,
+      "catalogId": "obj_swap_dock",
+      "meta": {
+        "catalogId": "obj_swap_dock"
+      }
+    },
+    {
+      "id": "htp_lights_bw_0",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_1",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -76
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_2",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -60
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_3",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -44
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_4",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -28
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_5",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": -12
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_6",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 4
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_7",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 20
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_8",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 36
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_9",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 52
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_10",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 68
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_11",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 84
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_12",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 100
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_13",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 116
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_14",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 132
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_15",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 148
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_bw_16",
+      "kind": "prop",
+      "position": {
+        "x": -201,
+        "y": 0,
+        "z": 164
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_17",
+      "kind": "prop",
+      "position": {
+        "x": -190,
+        "y": 0,
+        "z": 58
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_18",
+      "kind": "prop",
+      "position": {
+        "x": -180,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_19",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": -16
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_20",
+      "kind": "prop",
+      "position": {
+        "x": 20,
+        "y": 0,
+        "z": -16
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_21",
+      "kind": "prop",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 2
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_22",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 2
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_23",
+      "kind": "prop",
+      "position": {
+        "x": 118,
+        "y": 0,
+        "z": 122
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_24",
+      "kind": "prop",
+      "position": {
+        "x": 134,
+        "y": 0,
+        "z": 122
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_25",
+      "kind": "prop",
+      "position": {
+        "x": 150,
+        "y": 0,
+        "z": 122
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_26",
+      "kind": "prop",
+      "position": {
+        "x": 104,
+        "y": 0,
+        "z": 136
+      },
+      "rotationY": 1.571,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_27",
+      "kind": "prop",
+      "position": {
+        "x": 52,
+        "y": 0,
+        "z": -52
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
+    },
+    {
+      "id": "htp_lights_28",
+      "kind": "prop",
+      "position": {
+        "x": 68,
+        "y": 0,
+        "z": -52
+      },
+      "rotationY": 0,
+      "catalogId": "obj_string_lights",
+      "meta": {
+        "catalogId": "obj_string_lights"
+      }
     }
   ],
   "volumes": [

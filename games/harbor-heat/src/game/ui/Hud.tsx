@@ -21,6 +21,7 @@ import { cargoStore } from "../items/cargoHaul";
 import { bountyPayout, bountyStore } from "../jobs/bounties";
 import { courierDeadline, courierObjectiveStore, courierStore, DELIVERY_ROUTES, DISPATCH, RUSH_BOND, THIEF } from "../jobs/courier";
 import { GIG_RACE_STAKE, gigStore, spotLabel } from "../jobs/gigs";
+import { shiftGoal } from "../pizza/shift";
 import { prompts, systemPromptLabel } from "../prompts";
 import { radioStore } from "../radio/runtime";
 import { BOUNTY_SPOTS, RACE_ROUTES } from "../world/districts";
@@ -107,6 +108,9 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
   if (race !== undefined && circuit !== undefined) {
     return { key: `race:${circuit.id}`, eyebrow: `${race.label} · ${race.position === 1 ? "leading" : "second"}`, title: `Gate ${Math.min(race.checkpoint + 1, race.total)} of ${race.total}`, target: circuit.checkpoints[Math.min(race.checkpoint, circuit.checkpoints.length - 1)], hint: `Drive through each gate in order. Racing ${race.rival}; leaving the car forfeits.` };
   }
+  // The pizza in the bag outranks everything but a race: it is cooling.
+  const pizza = shiftGoal(ctx);
+  if (pizza !== null) return { key: `pizza:${pizza.title}`, eyebrow: pizza.eyebrow, title: pizza.title, target: pizza.target, hint: pizza.hint };
   const gig = gigGoal(ctx);
   if (gig !== null && gig.key.startsWith("gig:job")) return gig;
   const courier = courierStore.read(ctx);
@@ -161,7 +165,7 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
 function promptLabel(id: string): string {
   if (id.startsWith("enter:")) return "Get in";
   if (id.startsWith("race:")) return `Race ${RACE_ROUTES.find((r) => `race:${r.id}` === id)?.label ?? "the streets"} · $${RACE_ENTRY_FEE}`;
-  const labels: Record<string, string> = { "shop:ammunation": "Browse Ammu-Isle", "garage:dealer": "Browse Sunset Motors", "safehouse:buy": `Buy Palmview Bungalow · $${SAFEHOUSE_PRICE.toLocaleString()}`, "safehouse:rest": "Step inside the bungalow", "courier:accept": "Take standard parcel", "courier:deliver": "Hand over the parcel" };
+  const labels: Record<string, string> = { "shop:ammunation": "Browse Ammu-Isle", "garage:dealer": "Browse Sunset Motors", "safehouse:buy": `Buy Palmview Bungalow · $${SAFEHOUSE_PRICE.toLocaleString()}`, "safehouse:rest": "Step inside the bungalow", "courier:accept": "Take a catering order", "courier:deliver": "Hand over the catering" };
   if (id.startsWith("talk:")) return `Talk to ${city.people?.[id.slice(5)]?.name ?? "them"}`;
   if (id.startsWith("job:")) return `Start ${city.jobs?.[id.slice(4)]?.title ?? "the job"}`;
   return labels[id] ?? "Talk";
@@ -253,7 +257,7 @@ export function Objective() {
   return (
     <RuneView width={room === "stacked" ? 214 : compact ? 236 : 330} gap={6}>
       <RuneView padding={[6, 8, 8, 8]} gap={4} fill="#1d2b30" radius={10} border={{ width: 2, color: "#0b1114" }} shadow={{ x: 4, y: 5, blur: 0, color: "#00000066" }}>
-        <Text family={DISPLAY} size={11} tracking={2} color="#9fb3b8" text="MAINSAIL page" />
+        <Text family={DISPLAY} size={11} tracking={2} color="#9fb3b8" text="VELL'S ORDER PAGER" />
         <Lcd alarm={stage === "urgent"} gap={3}>
           <Row justify="between">
             <LcdText size={compact ? 11 : 12} grow={1} shrink text={view.eyebrow ?? "Dispatch"} />

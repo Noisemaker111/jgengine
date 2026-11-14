@@ -61,6 +61,8 @@ import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { registerRadio, tickRadio } from "./game/radio/runtime";
+import { resetTide, tickTide } from "./game/tide/tideRuntime";
+import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game/pizza/shift";
 
 const AGGRO_RADIUS = 18;
 const GANGER_SHOT_RANGE = 14;
@@ -237,6 +239,9 @@ export function normalizeAfterRestore(ctx: GameContext, alreadyLive = startedSto
   else startedStore.clear(ctx);
   shopStore.clear(ctx);
   garageStore.clear(ctx);
+  pizzeriaBoardStore.clear(ctx);
+  resetTide(ctx);
+  setupShift(ctx);
   raceStore.clear(ctx);
   drivingStore.clear(ctx);
   sessionStore.clear(ctx);
@@ -296,6 +301,7 @@ function onInit(ctx: GameContext): void {
   registerCommands(ctx);
   registerCity(ctx);
   registerRadio(ctx);
+  registerShift(ctx);
   // The cash journal is live before the first movement, opened at the wallet's balance.
   openBooks(ctx);
   registerCaptureCommands(ctx);
@@ -306,6 +312,7 @@ function onInit(ctx: GameContext): void {
   setupHarbourLife(ctx);
   setupResidents(ctx, buildings);
   setupCourierLandmarks(ctx);
+  setupShift(ctx);
   setupStreaming(ctx);
 }
 
@@ -340,6 +347,7 @@ function onTick(ctx: GameContext, dt: number): void {
     harborSave(ctx).touch();
   }
   tickStreaming(ctx);
+  tickTide(ctx);
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickNightLook(ctx);
@@ -355,6 +363,7 @@ function onTick(ctx: GameContext, dt: number): void {
   ensureNightMarket(ctx);
   tickWasted(ctx);
   tickCourier(ctx, dt);
+  tickShift(ctx, dt);
   tickGigs(ctx, dt);
 }
 

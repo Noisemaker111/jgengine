@@ -15,6 +15,7 @@ import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../items/weapons/ca
 import { CRED_GATES } from "../progression/cred";
 import { FaceToFace, type Reply, type Speaker } from "./FaceToFace";
 import { PriceBoard, type BoardRow, type BoardSection } from "./PriceBoard";
+import { PizzeriaBooks, usePizzeriaBooksOpen } from "./ShiftUI";
 
 const GUNS = WEAPONS.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
 const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
@@ -220,10 +221,12 @@ export function Counters() {
   const shop = useStore(shopStore, (v) => v ?? null);
   const garage = useStore(garageStore, (v) => v === true);
   const house = useStore(houseStore, (v) => v === true);
+  const books = usePizzeriaBooksOpen();
   const dialogue = useGameStore((ctx) => (dialogueId === null ? null : conversation(ctx, dialogueId)), (a, b) => a?.id === b?.id);
   if (dialogue !== null && dialogueId !== null) return <Talk dialogue={dialogue} dialogueId={dialogueId} />;
   if (shop !== null) return <GunCounter />;
   if (garage) return <CarLot />;
   if (house) return <House />;
+  if (books) return <PizzeriaBooks />;
   return null;
 }

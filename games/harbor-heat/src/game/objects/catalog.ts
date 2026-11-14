@@ -4,6 +4,8 @@ export interface ObjectDef {
   color: string;
   footprint: { w: number; h: number; d: number };
   solid: boolean;
+  /** Not solid, but not a light prop a vehicle flattens either: overhead lights, the flood, a beacon, a dock. */
+  fixture?: boolean;
 }
 
 import { BUILDING_SPECS } from "../world/buildings";
@@ -18,8 +20,18 @@ const BUILDING_OBJECTS: readonly ObjectDef[] = BUILDING_SPECS.map((b) => ({
 }));
 
 export const OBJECTS: readonly ObjectDef[] = [
-  { id: "obj_dispatch", label: "Mainsail Dispatch", color: "#38b6ac", footprint: { w: 3, h: 3.5, d: 2.4 }, solid: true },
-  ...[1, 2, 3].map((i) => ({ id: `obj_delivery_${i}`, label: "Parcel drop", color: "#ffb020", footprint: { w: 1, h: 4, d: 1 }, solid: false })),
+  { id: "obj_dispatch", label: "Vell's Pizzeria", color: "#d93a2f", footprint: { w: 3, h: 3.5, d: 2.4 }, solid: true },
+  ...[1, 2, 3].map((i) => ({ id: `obj_delivery_${i}`, label: "Catering drop", color: "#ffb020", footprint: { w: 1, h: 4, d: 1 }, solid: false })),
+  // HIGH TIDE PIZZA's own pieces: the order beacon and the flood sheet are placed by the shift and the
+  // tide at runtime; the lighthouse, the submarine, the festoon lights, the swap docks and the shop sign
+  // are `prop` markers in the scene document.
+  { id: "obj_order_beacon", label: "Order drop", color: "#ffcf4a", footprint: { w: 1, h: 3, d: 1 }, solid: false, fixture: true },
+  { id: "obj_tide_water", label: "Flood water", color: "#0d3442", footprint: { w: 2, h: 0.05, d: 2 }, solid: false, fixture: true },
+  { id: "obj_lighthouse", label: "Gull Point lighthouse", color: "#f4efe6", footprint: { w: 6, h: 19, d: 6 }, solid: true },
+  { id: "obj_submarine", label: "Submarine Sardine", color: "#2c8c97", footprint: { w: 4, h: 3, d: 18 }, solid: false, fixture: true },
+  { id: "obj_string_lights", label: "Festoon lights", color: "#ffcf7a", footprint: { w: 14, h: 4.4, d: 0.3 }, solid: false, fixture: true },
+  { id: "obj_swap_dock", label: "Swap dock", color: "#ff4f8b", footprint: { w: 5, h: 0.3, d: 3 }, solid: false, fixture: true },
+  { id: "obj_pizza_sign", label: "Vell's sign", color: "#ffcf4a", footprint: { w: 1, h: 7, d: 1 }, solid: false, fixture: true },
   { id: "obj_gunshop_sign", label: "Ammu-Isle", color: "#ffb020", footprint: { w: 2, h: 2, d: 1 }, solid: false },
   { id: "obj_safehouse_sign", label: "Palmview Bungalow", color: "#3fbf5a", footprint: { w: 2, h: 2, d: 1 }, solid: false },
   { id: "obj_hhpd_sign", label: "HHPD Station", color: "#4f7de8", footprint: { w: 2, h: 2, d: 1 }, solid: false },

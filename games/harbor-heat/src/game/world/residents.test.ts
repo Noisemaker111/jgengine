@@ -3,6 +3,7 @@ import { createOffScreenWorld, type NearAgents, type NearSpawn, type NeedDefinit
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { game } from "../../game.config";
+import { DAY_SECONDS } from "../clock";
 import { loop } from "../../loop";
 import { content } from "../content";
 import { RESIDENTS, RESIDENT_PLACES, residentAt, residentMind, routineFor, tickResidents } from "./residents";
@@ -59,7 +60,7 @@ describe("Mainsail residents", () => {
   test("each resident's day resolves home, work and a meal inside one game day", () => {
     RESIDENTS.forEach((spec, index) => {
       const routine = routineFor(spec, index);
-      expect(routine.cycleSeconds).toBe(720);
+      expect(routine.cycleSeconds).toBe(DAY_SECONDS);
       expect(routine.stops).toHaveLength(5);
       // Walking must fit between the authored stops, or `resolveRoutine` would have thrown.
       for (let stop = 0; stop < routine.stops.length; stop += 1) {

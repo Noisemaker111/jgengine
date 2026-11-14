@@ -3,6 +3,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { accrueSince } from "@jgengine/core/time/accrueSince";
 import { TURF } from "./city";
+import { DAY_SECONDS } from "./clock";
 import { cityOf } from "./cityRuntime";
 
 /** What changed while the player slept or was away, for the morning paper. */
@@ -21,7 +22,7 @@ export const AWAY_CAP_MS = 20 * 60 * 1000;
 /** Shorter gaps than this are a reload, not time away. */
 const AWAY_MIN_MS = 60 * 1000;
 /** Game-clock seconds in one in-game day (`game.config.ts` time.dayLength). */
-const DAY = 720;
+const DAY = DAY_SECONDS;
 
 const SIDE: Record<string, string> = { player: "you", carmine: "the Carmines", riptide: "the Riptides", locals: "the locals" };
 

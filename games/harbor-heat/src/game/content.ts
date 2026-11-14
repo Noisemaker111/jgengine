@@ -59,7 +59,7 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
 }
 
 /** Placed per job and removed on delivery; everything else is fixed city dressing. */
-const TRANSIENT_OBJECTS = new Set(["obj_delivery_1", "obj_delivery_2", "obj_delivery_3"]);
+const TRANSIENT_OBJECTS = new Set(["obj_delivery_1", "obj_delivery_2", "obj_delivery_3", "obj_order_beacon", "obj_tide_water"]);
 
 function objectById(catalogId: string): GameContextObjectEntry | null {
   const def = objectDefById(catalogId);

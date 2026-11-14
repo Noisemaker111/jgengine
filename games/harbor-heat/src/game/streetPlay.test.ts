@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { secondsAtHour } from "./clock";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { game } from "../game.config";
@@ -210,7 +211,7 @@ describe("residents in the live world", () => {
   test("named residents walk their own routine legs near the player", () => {
     const ctx = boot();
     // The routines are scheduled by the clock; this proof reads the midday round, not the golden-hour start.
-    ctx.time.hydrate({ ...ctx.time.snapshot(), now: 360 });
+    ctx.time.hydrate({ ...ctx.time.snapshot(), now: secondsAtHour(12) });
     // The first frame splits the population by distance; nobody is simulated before it.
     tickResidents(ctx, STEP);
     const stats = residentStats(ctx);

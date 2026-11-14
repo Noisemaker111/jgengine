@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { vehicleById } from "./entities/vehicles/catalog";
 import { harborProfile } from "./menuProfile";
+import { DAY_SECONDS } from "./clock";
 import { focusHarborVerb } from "./ui/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
@@ -115,12 +116,12 @@ export function registerCaptureCommands(ctx: GameContext): void {
       return state;
     },
   });
-  // Jump the day clock (a 720 s cycle, noon at 360) to see the evening or the night.
+  // Jump the day clock (one `DAY_SECONDS` cycle) to see the evening or the night.
   ctx.game.commands.define<{ at?: number }>("time.stage", {
     apply(state, input) {
       const clock = state.time.snapshot();
-      const cycle = 720;
-      const at = typeof input?.at === "number" ? input.at : 360;
+      const cycle = DAY_SECONDS;
+      const at = typeof input?.at === "number" ? input.at : DAY_SECONDS / 2;
       state.time.hydrate({ ...clock, now: Math.floor(clock.now / cycle) * cycle + cycle + at });
       return state;
     },

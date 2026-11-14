@@ -37,7 +37,7 @@ export interface BoardSection {
 }
 
 /** Which shop the board hangs in: the gun counter's felt letter board, or the car lot's enamel sign. */
-export type BoardLook = "pawn" | "lot" | "house";
+export type BoardLook = "pawn" | "lot" | "house" | "pizzeria";
 
 /** Why a row can't be bought right now, or null when it can. */
 export function rowBlock(row: BoardRow, cash: number, cred: number): "owned" | "cred" | "cash" | null {
@@ -51,6 +51,7 @@ const LOOK: Record<BoardLook, { board: string; felt: string; edge: string }> = {
   pawn: { board: "#5b3a22", felt: "#1d1a16", edge: "#2a170b" },
   lot: { board: "#14505c", felt: "#0c2a31", edge: HH.cream },
   house: { board: "#2c5a3c", felt: "#13261a", edge: HH.cream },
+  pizzeria: { board: "#7a2a20", felt: "#2a1210", edge: HH.cream },
 };
 
 /**

@@ -51,12 +51,20 @@ function cruiser(): ModelConfig {
   };
 }
 
+/** The family fleet is authored for HIGH TIDE PIZZA (`scripts/author-tide.mjs`): chunky, round and bright. */
+const fleet = (file: string, paint?: { slot: string; color: string }): ModelConfig => ({
+  url: art(file),
+  anchor: "origin",
+  ...(paint === undefined ? {} : { material: { color: paint.color, materials: [paint.slot] } }),
+});
+
 const castModels: Record<string, ModelConfig> = {
   ...Object.fromEntries(Object.entries(CAST).map(([id, name]) => [id, libraryModel(name)])),
-  car_compact: car("#f2c14e"),
-  car_muscle: car("#b8282e"),
-  car_sport: car("#2fa8b8"),
-  car_suv: car("#59664a"),
+  car_compact: fleet("vespetta-scooter"),
+  car_rival: fleet("vespetta-scooter", { slot: "scooter paint", color: "#2b2b30" }),
+  car_muscle: fleet("cargo-trike"),
+  car_sport: fleet("jet-ski"),
+  car_suv: fleet("motor-gondola"),
   car_cop: cruiser(),
   car_bus: { url: new URL("../../art/islander-bus.glb", import.meta.url).href, anchor: "origin" },
 };
@@ -78,7 +86,7 @@ const TRAFFIC_BODIES: Record<string, ModelPick> = {
 
 export const entityModels: Record<string, ModelConfig> = {
   ...resolveModelPlan(assets, TRAFFIC_BODIES),
-  air_helicopter: aircraft("helicopter", "heli paint"),
+  air_helicopter: fleet("pizza-blimp"),
   air_trainer: aircraft("floatplane", "plane paint"),
   air_prop: aircraft("floatplane", "plane paint", "#7fd1c4"),
   air_jet: aircraft("jet", "jet paint"),
@@ -177,5 +185,12 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_delivery_1: { url: new URL("../../art/parcel-tower-1.glb", import.meta.url).href, anchor: "origin" },
     obj_delivery_2: { url: new URL("../../art/parcel-tower-2.glb", import.meta.url).href, anchor: "origin" },
     obj_delivery_3: { url: new URL("../../art/parcel-tower-3.glb", import.meta.url).href, anchor: "origin" },
+    obj_order_beacon: { url: art("order-beacon"), anchor: "origin" },
+    obj_tide_water: { url: art("tide-water"), anchor: "origin" },
+    obj_lighthouse: { url: art("lighthouse"), anchor: "origin" },
+    obj_submarine: { url: art("submarine"), anchor: "origin" },
+    obj_string_lights: { url: art("string-lights"), anchor: "origin" },
+    obj_swap_dock: { url: art("swap-dock"), anchor: "origin" },
+    obj_pizza_sign: { url: art("pizza-sign"), anchor: "origin" },
   };
 })();

@@ -17,6 +17,7 @@ import type { NavMeshData } from "@jgengine/core/nav/navMesh";
 import { createNavTiles, navTileFromGrid, type NavTileRequest, type NavTiles } from "@jgengine/core/nav/navTiles";
 
 import { editorLayers } from "../../editorLayers";
+import { DAY_SECONDS, secondsAtHour } from "../clock";
 import { fearAt, PANIC_FEAR } from "../cityRuntime";
 import { createResidentAgents, residentAgentStore, type ResidentAgentSystem } from "./residentAgents";
 import { cityRoadWidth, type CityLayout } from "../../engine-local/city/cityLayout";
@@ -36,8 +37,8 @@ import { onCityRelaid, type BuildingFootprintXZ } from "./setup";
  * walks on from there.
  */
 
-/** One game day in game-seconds — the same 720 s the clock in `game.config.ts` runs on. */
-export const CYCLE_SECONDS = 720;
+/** One game day in game-seconds — the same day the clock in `game.config.ts` runs on. */
+export const CYCLE_SECONDS = DAY_SECONDS;
 /** Walking pace in metres per game-second. */
 const WALK_SPEED = 1.35;
 /** Distance at which a resident is simulated for real, and the band past which it goes cheap again. */
@@ -126,13 +127,13 @@ export function walkTime(from: string, to: string): number {
  */
 export function residentStops(spec: ResidentSpec, index: number): AgentScheduleStop[] {
   // Up to twenty minutes off the shared work day, so neighbours leave for lunch at different times.
-  const jitter = ((index * 13) % 21) - 10;
+  const jitter = (((index * 13) % 21) - 10) * (DAY_SECONDS / 720);
   return [
     { place: spec.home, arriveAt: 0, activity: "sleep" },
-    { place: spec.work, arriveAt: 240 + jitter, activity: "work" },
-    { place: spec.meal, arriveAt: 372 + jitter, activity: "meal", refill: { hunger: 45 } },
-    { place: spec.work, arriveAt: 450 + jitter, activity: "work" },
-    { place: spec.home, arriveAt: 630 + jitter, activity: "home" },
+    { place: spec.work, arriveAt: secondsAtHour(8) + jitter, activity: "work" },
+    { place: spec.meal, arriveAt: secondsAtHour(12.4) + jitter, activity: "meal", refill: { hunger: 45 } },
+    { place: spec.work, arriveAt: secondsAtHour(15) + jitter, activity: "work" },
+    { place: spec.home, arriveAt: secondsAtHour(21) + jitter, activity: "home" },
   ];
 }
 

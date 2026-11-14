@@ -28,8 +28,8 @@ const SPEED_BY_LEVEL = { avenue: 16, street: 13 };
 
 /** The car models a traffic variant picks from, indexed by the injected generator's `variant`. */
 const CAR_KINDS = [
-  "car_compact", "car_taxi", "car_sedan", "car_sport", "car_hatch", "car_suv", "car_muscle", "car_coupe",
-  "car_taxi", "car_sedan", "car_compact", "car_hatch", "car_sport", "car_coupe", "car_suv", "car_muscle",
+  "car_compact", "car_taxi", "car_sedan", "car_rival", "car_hatch", "car_coupe", "car_muscle", "car_coupe",
+  "car_taxi", "car_sedan", "car_compact", "car_hatch", "car_rival", "car_coupe", "car_sedan", "car_muscle",
 ];
 
 /**

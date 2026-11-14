@@ -15,6 +15,7 @@ import { HarborMenu, SettingsPhone, useGameStarted } from "./HarborMenu";
 import { BeltHotbar, HudKeys, Objective, RadioReadout, Speedo, StatusPanel, WantedStars } from "./Hud";
 import { Text, useRoom } from "./kit";
 import { SessionUI } from "./SessionUI";
+import { ShiftPanel, ShiftSummaryCard } from "./ShiftUI";
 import { harborTheme, HH, registerHarborFonts } from "./theme";
 
 registerHarborFonts();
@@ -44,6 +45,7 @@ function Hud() {
     <RuneView anchor="fill">
       <RuneView anchor="top-left" safe inset={edge} gap={8}>
         <Objective />
+        <ShiftPanel />
         {stacked && !phone ? <StatusPanel /> : null}
       </RuneView>
       {stacked ? null : <RuneView anchor="top" safe inset={edge} padding={wide ? 0 : [56, 0, 0, 0]}><WantedStars /></RuneView>}
@@ -96,6 +98,7 @@ export function GameUI() {
       {playing && !settings.isOpen ? <Hud /> : null}
       {/* Counters, talk and receipts are full-screen moments over the HUD. */}
       {playing ? <Counters /> : null}
+      {playing ? <ShiftSummaryCard /> : null}
       <SessionUI />
       <HarborMenu />
       {settings.isOpen ? <SettingsPhone close={settings.close} /> : null}

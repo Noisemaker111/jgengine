@@ -122,3 +122,25 @@ export const TURF_KIND = definePlaceableMarkerKind({
   accent: "#1fb5a8",
   fields: [{ type: "number", key: "radius", label: "Radius (m)", default: 45, min: 10, step: 5 }],
 });
+
+/**
+ * A swap dock: the family fleet keeps a scooter and a jet-ski tied up here. Pull in on either and press
+ * E to jump to the other mid-delivery, the boxes coming with you. `game/pizza/shift.ts` reads them.
+ */
+export const SWAP_DOCK_KIND = definePlaceableMarkerKind({
+  kind: "swap_dock",
+  label: "Swap dock",
+  category: "Harbor Heat",
+  accent: "#ff4f8b",
+});
+
+/**
+ * Where a High Tide Pizza customer takes the box when no other marker already stands there: the
+ * lighthouse gallery, the surfaced submarine. Customers in `game/pizza/menu.ts` name markers by id.
+ */
+export const CUSTOMER_KIND = definePlaceableMarkerKind({
+  kind: "customer",
+  label: "Pizza customer",
+  category: "Harbor Heat",
+  accent: "#ffb020",
+});

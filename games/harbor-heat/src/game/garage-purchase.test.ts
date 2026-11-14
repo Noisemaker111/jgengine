@@ -15,9 +15,9 @@ function buy(ctx: GameContext, vehicle='car_compact'): void { ctx.game.commands.
 function cars(ctx:GameContext) { return ctx.scene.entity.list().filter(e=>e.name==='car_compact'); }
 
 test('two same-model paid purchases at one game time create two distinct cars', () => {
-  const ctx=boot(); ctx.game.economy.grant('p1','cash',1600);
+  const ctx=boot(); ctx.game.economy.grant('p1','cash',1200);
   buy(ctx); const first=cars(ctx)[0]!;
-  expect(ctx.game.economy.balance('p1','cash')).toBe(800);
+  expect(ctx.game.economy.balance('p1','cash')).toBe(600);
   expect(()=>buy(ctx)).not.toThrow();
   expect(ctx.game.economy.balance('p1','cash')).toBe(0);
   expect(cars(ctx)).toHaveLength(2);
@@ -27,7 +27,7 @@ test('two same-model paid purchases at one game time create two distinct cars', 
 
 test('a fresh-runtime reload preserves the old purchased car when another is bought', async () => {
   const backend=memorySaveBackend(); const ctx=boot(backend);
-  ctx.game.economy.grant('p1','cash',1600); buy(ctx);
+  ctx.game.economy.grant('p1','cash',1200); buy(ctx);
   const old=cars(ctx)[0]!;
   await ctx.game.save!.save();
   const restored=boot(backend); expect(await restored.game.save!.load()).toBe(true);
@@ -45,7 +45,7 @@ test('a fresh-runtime reload preserves the old purchased car when another is bou
 test('legacy time-derived car identities coexist with new purchases after reload', async () => {
   const backend=memorySaveBackend(); const ctx=boot(backend);
   ctx.scene.entity.spawn('car_compact',{id:'bought_0_car_compact',position:[20,0,20],role:'prop'});
-  ctx.game.economy.grant('p1','cash',800); await ctx.game.save!.save();
+  ctx.game.economy.grant('p1','cash',600); await ctx.game.save!.save();
   const restored=boot(backend); expect(await restored.game.save!.load()).toBe(true);
   expect(()=>buy(restored)).not.toThrow();
   expect(cars(restored)).toHaveLength(2);
@@ -58,16 +58,16 @@ test('unaffordable and cred-locked purchases spend nothing and create no vehicle
   buy(ctx,'car_sport');
   expect(ctx.game.economy.balance('p1','cash')).toBe(7000);
   expect(ctx.scene.entity.list().filter(e=>e.name==='car_sport')).toHaveLength(0);
-  ctx.game.economy.charge('p1','cash',6300);
+  ctx.game.economy.charge('p1','cash',6500);
   buy(ctx); buy(ctx);
-  expect(ctx.game.economy.balance('p1','cash')).toBe(700);
+  expect(ctx.game.economy.balance('p1','cash')).toBe(500);
   expect(cars(ctx)).toHaveLength(0);
   const refusals=ctx.game.notices.list().filter(n=>n.tone==='deny').map(n=>[n.text,n.count]);
   expect(refusals).toEqual([['Needs street cred 4.',1],['Not enough cash.',2]]);
 });
 
 test('different available models keep their catalog identity and authored garage placement', () => {
-  const ctx=boot(); ctx.game.economy.grant('p1','cash',3200);
+  const ctx=boot(); ctx.game.economy.grant('p1','cash',2100);
   buy(ctx); buy(ctx,'car_muscle');
   const purchased=ctx.scene.entity.list().filter(e=>e.name==='car_compact'||e.name==='car_muscle');
   expect(purchased.map(e=>e.name)).toEqual(['car_compact','car_muscle']);
