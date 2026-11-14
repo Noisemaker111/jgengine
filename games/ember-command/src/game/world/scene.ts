@@ -139,7 +139,8 @@ export function setupSkirmish(ctx: GameContext): void {
           unit.command = { kind: "attackMove", x: rallyOnPlayer.x, z: rallyOnPlayer.z };
         } else {
           unit.guardPoint = { x: pos[0], z: pos[2] };
-          unit.leash = GUARD_LEASH;
+          const leash = (marker.meta as { leash?: number } | undefined)?.leash;
+          unit.leash = typeof leash === "number" && leash > 0 ? leash : GUARD_LEASH;
         }
       }
       session.units.set(marker.id, unit);

@@ -1040,7 +1040,8 @@
       "label": "Crossing guard (west)",
       "catalogId": "raider",
       "meta": {
-        "stance": "guard"
+        "stance": "guard",
+        "leash": 7
       }
     },
     {
@@ -1053,7 +1054,8 @@
       },
       "catalogId": "raider",
       "meta": {
-        "stance": "guard"
+        "stance": "guard",
+        "leash": 7
       }
     },
     {
@@ -1067,7 +1069,8 @@
       "label": "Crossing guard (east)",
       "catalogId": "raider",
       "meta": {
-        "stance": "guard"
+        "stance": "guard",
+        "leash": 7
       }
     },
     {
@@ -1080,7 +1083,8 @@
       },
       "catalogId": "major",
       "meta": {
-        "stance": "guard"
+        "stance": "guard",
+        "leash": 7
       }
     },
     {

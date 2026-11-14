@@ -83,6 +83,8 @@ export interface SessionState {
   trails: TrailField;
   /** Short-lived puffs the overlay draws: a body falling, acid landing. Battle-clock stamped. */
   fx: { kind: FxKind; x: number; z: number; at: number }[];
+  /** Where red ants were bitten lately: idle fighters nearby smell it and come running. */
+  distress: { x: number; z: number; at: number }[];
   /** Units slowed by spitter acid, with the battle second the acid wears off. */
   acid: Record<string, number>;
   /** Live alarm-pheromone clouds where red ants died (see `pheromone.ts`). */
@@ -133,6 +135,7 @@ function fresh(): SessionState {
     trails: createTrailField(FOG_BOUNDS, TRAIL_CELL),
     alarms: [],
     acid: {},
+    distress: [],
     fx: [],
     coachSeen: [],
     trailPainted: false,
@@ -244,3 +247,27 @@ export function pushFx(kind: FxKind, x: number, z: number): void {
   if (session.fx.length > 48) session.fx.shift();
 }
 
+
+/** How far a bitten ant's distress scent carries, and how long it lingers. */
+export const DISTRESS_RADIUS = 16;
+export const DISTRESS_SECONDS = 3;
+
+/** Record that a red ant was bitten at a point (merged with a fresh cloud close by). */
+export function raiseDistress(x: number, z: number): void {
+  const now = session.elapsed;
+  const near = session.distress.find((d) => now - d.at < 1 && Math.hypot(d.x - x, d.z - z) < 4);
+  if (near !== undefined) { near.at = now; near.x = x; near.z = z; return; }
+  session.distress.push({ x, z, at: now });
+  if (session.distress.length > 16) session.distress.shift();
+}
+
+/** The freshest distress an idle fighter at a point can smell, or null. */
+export function distressNear(x: number, z: number): { x: number; z: number } | null {
+  const now = session.elapsed;
+  let best: { x: number; z: number; at: number } | null = null;
+  for (const d of session.distress) {
+    if (now - d.at > DISTRESS_SECONDS || Math.hypot(d.x - x, d.z - z) > DISTRESS_RADIUS) continue;
+    if (best === null || d.at > best.at) best = d;
+  }
+  return best === null ? null : { x: best.x, z: best.z };
+}

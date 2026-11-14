@@ -8,7 +8,7 @@ import { hazardSpeedFactor, inMowerLane } from "../hazards";
 import { alarmDamageFactor, deposit, scentAt, trailSpeedFactor } from "../pheromone";
 import { onHose } from "../yard";
 import { YARD } from "../yardInstance";
-import { matchRunning, playerDepot, pushFx, session, type UnitRuntime } from "../session";
+import { distressNear, matchRunning, playerDepot, pushFx, raiseDistress, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
@@ -230,6 +230,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
           session.acid[target.id] = session.elapsed + ACID_SECONDS;
           pushFx("acid", ent.position[0], ent.position[2]);
         }
+        // A bitten red ant gives off distress: idle red fighters nearby come running.
+        if (target.faction === "player") raiseDistress(ent.position[0], ent.position[2]);
         // A fight is loud: the Black Ants' own ears hear it through the shared hearing owner.
         if (u.faction === "player" && target.faction === "enemy") {
           raiseCombatNoise(ctx, { x: ent.position[0], z: ent.position[2] }, u.id);
@@ -241,7 +243,15 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
     }
   }
 
-  // 3) No target: advance to a commanded destination, or hold the post.
+  // 3) No target. An idle red fighter that smells a comrade's distress goes to help.
+  if (u.faction === "player" && u.command.kind === "idle" && def.worker !== true) {
+    const call = distressNear(self.position[0], self.position[2]);
+    if (call !== null && distToPoint(self.position, call.x, call.z) > def.attackRange) {
+      u.command = { kind: "attackMove", x: call.x, z: call.z };
+    }
+  }
+
+  // Advance to a commanded destination, or hold the post.
   if (u.command.kind === "move" || u.command.kind === "attackMove") {
     const { x, z } = u.command;
     if (distToPoint(self.position, x, z) <= ARRIVE_RADIUS) u.command = { kind: "idle" };
