@@ -113,3 +113,13 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - [x] 2. Balance pass (headless `balance.test.ts`) and tests for the new mechanics.
 - [ ] 3. Playtest pass: voice-line frequency, distraction feel, Data Center readability.
 - [ ] 4. A worker animation for "looking at the phone" instead of the floating phone alone.
+
+## Handoff
+- Done: full roster (14 workers, 18 tech), distraction on a worker status runtime, Wet + shock, Data
+  Center power and migration to The Cloud, Installing Update, parcels, router boosts, mining theft,
+  12-wave ramp (6 authored, 5 composed, finale), balance test (mixed crew holds Full-Time ~11/20),
+  procedural tech meshes, town scene via editor markers, diner HUD, onboarding tips, comic speech
+  bubbles, worker throw/flinch animations; 165 tests green; check-types clean.
+- In progress: verify:fast after the asset-provision fix; mid-wave screenshot review.
+- Next: read shots and fix what is ugly or unreadable; playtest feel of distraction; worker
+  "looking at phone" pose; a second map or mode only after the first map is polished.
