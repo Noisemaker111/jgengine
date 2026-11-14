@@ -156,7 +156,7 @@ Proven in play by `src/game/machines.test.ts`, `rootServer.test.ts`, `creatures.
 | Echo Mimic | copies the last trick used near it and turns it on you | |
 | Choir Drone | aura: other wild bots near hit harder; the highest-level singer conducts and shields the ring (hits on the others land at a quarter); the Root Server's firewall | |
 | Lampjaw | ambush, drawn to light, glowing lure antenna | deep-water only |
-| Hoover Leviathan | tracked vacuum hull with a nozzle hose; retaliator giant | mobile base platform |
+| Hoover Leviathan | vacuum whale: panelled tank hull on tracks, ribbed hose, slatted nozzle head, tail fluke; retaliator giant | mobile base platform |
 | Scrapper Rex | hunts other machines first, grows on every wreck | |
 | The Hivemind | boss at the green obelisk; later phases puppet (freeze) your bots in her lair | turning puppets hostile |
 | The Root Server | boots at the bottom of the Lava Cave, shock pulse, Choir firewall by phase; destroying it ends the storms | its own arena dressing |
@@ -353,9 +353,11 @@ Harvest chip; helpers (Ticklet on the shoulder, Arcwire power, Watchwing sentry,
 Choir conductors; Thermite burrowing; nocturnal Watchwings; the Hivemind's puppet signal; the Root Server boss;
 rusted fabricators with cable vines (`fabricator` markers in editor.scene.json, `machineRuins.ts`).
 
-Screenshots: in-game capture is blocked in this container (the Rune UI wasm panics with "time not implemented"
-under software WebGPU). Offline three.js renders of the bodies and the fabricator are the visual evidence;
-recapture in game on a machine with a GPU (`bun run shoot fernwild --mode play`).
+Screenshots: in-game capture works now that Rune's first-frame marks use the page clock (rebuilt jg-ui) and
+software capture Chrome gets SwiftShader WebGPU. On a container without a GPU, run with
+`CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader JG_BROKER=0` and `--cold`. Review flows:
+`bun run drive fernwild --flow wildwire-machines` (roster on the beach), `wildwire-upload` (jacked into a
+Mowbot) and `wildwire-storm` (a Signal Storm night).
 
 Next: Hoover mobile-base platform (standing on a moving body), Craneback crane build helper, Lampjaw deep-water
 spawns (spawn zones keep bots out of water today), a visible Klepto nest prop, Thermite ingot mining, eye pulse
