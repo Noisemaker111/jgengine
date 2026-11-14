@@ -63,10 +63,8 @@ export interface TowerDef {
   /** Colour of what they throw. */
   boltColor: string;
   icon: WorkerIcon;
-  /** The worker's model, a `quaternius-animated-characters-pack` character in work clothes. */
+  /** The worker's model, a `quaternius-animated-characters-pack` character in work clothes; one body per trade. */
   model: string;
-  /** Uniform tint multiplied over the model, so two workers on one body still read apart. */
-  tint?: string;
   /** The two shared promotions every worker climbs before choosing a path. */
   ranks: readonly [string, string];
   voice: VoiceLines;
@@ -136,7 +134,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#5ab8ff",
     icon: "wrench",
     model: `${PACK}/Worker_Female`,
-    tint: "#9ec4ff",
     ranks: ["Journeyman Plumber", "Master Plumber"],
     voice: {
       place: ["Gonna need a bigger wrench.", "Who's been flushing gadgets?"],
@@ -216,7 +213,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ffe14a",
     icon: "bolt",
     model: `${PACK}/Casual2_Male`,
-    tint: "#ffe08a",
     ranks: ["Licensed Electrician", "Master Electrician"],
     voice: {
       place: ["Who wired this?", "Let's see what we're dealing with."],
@@ -269,7 +265,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#b68cff",
     icon: "book",
     model: `${PACK}/Casual3_Female`,
-    tint: "#d6b8ff",
     ranks: ["Reference Librarian", "Head Librarian"],
     voice: {
       place: ["Shhhhh.", "Inside voices."],
@@ -323,7 +318,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#9fe0ff",
     icon: "hose",
     model: `${PACK}/BlueSoldier_Male`,
-    tint: "#ff9a7a",
     ranks: ["Engineer", "Captain"],
     voice: {
       place: ["It's running hot!", "Station's open."],
@@ -351,7 +345,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#9ad07a",
     icon: "broom",
     model: `${PACK}/Casual_Male`,
-    tint: "#a6c8a0",
     ranks: ["Custodian", "Head Custodian"],
     voice: {
       place: ["I just cleaned that.", "Who left all these cords out?"],
@@ -378,7 +371,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#f4f0e0",
     icon: "envelope",
     model: `${PACK}/Casual_Female`,
-    tint: "#9fb4ff",
     ranks: ["Route Carrier", "Postmaster"],
     voice: {
       place: ["Neither rain nor sleet…", "Special delivery."],
@@ -405,7 +397,6 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ffc06a",
     icon: "lotus",
     model: `${PACK}/Kimono_Male`,
-    tint: "#ffb060",
     ranks: ["Initiate", "Elder"],
     voice: {
       place: ["Be present.", "Breathe."],

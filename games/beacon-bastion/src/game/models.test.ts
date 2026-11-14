@@ -18,9 +18,9 @@ describe("do not disturb models", () => {
     expect(scatterModels.lamp).toBeDefined();
   });
 
-  test("two trades on one body read apart by tint, and no two workers share both body and tint", () => {
-    const looks = Object.values(TOWER_CATALOG).map((def) => `${def.model}|${def.tint ?? ""}`);
-    expect(new Set(looks).size).toBe(looks.length);
+  test("every trade has its own body", () => {
+    const bodies = Object.values(TOWER_CATALOG).map((def) => def.model);
+    expect(new Set(bodies).size).toBe(bodies.length);
   });
 
   test("tech has no catalog model: every piece draws its own procedural body", () => {

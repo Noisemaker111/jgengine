@@ -11,10 +11,11 @@ import { BUBBLE_RULE, session, type SpeechBubble } from "../session";
  * texture and shown on a camera-facing sprite that pops in, holds, and fades out.
  */
 
-/** World height of a bubble's sprite; its width follows the text. */
-const BUBBLE_HEIGHT = 1.25;
 /** How far above the entity's feet a bubble hangs. */
-const LIFT = { voice: 4.1, ping: 2.9 } as const;
+const LIFT = { voice: 4.1, ping: 3.2 } as const;
+/** A ping bubble is smaller than a worker's line; bubbles close together stack upward instead of overlapping. */
+const SIZE = { voice: 1.25, ping: 0.85 } as const;
+const STACK_REACH = 4;
 const PIXELS = 64;
 
 interface Painted {
@@ -102,6 +103,7 @@ export function speechBubblesDraw(ctx: GameContext): EngineDraw {
     frame() {
       const now = ctx.time.now();
       const live = new Set<number>();
+      const placed: [number, number, number][] = [];
       for (const bubble of session.bubbles) {
         const age = now - bubble.born;
         const at = ctx.scene.entity.get(bubble.at)?.position;
@@ -119,9 +121,12 @@ export function speechBubblesDraw(ctx: GameContext): EngineDraw {
         }
         const pop = Math.min(1, age / 0.15);
         const fade = Math.min(1, (BUBBLE_RULE.seconds - age) / 0.4);
-        const scale = BUBBLE_HEIGHT * (0.6 + 0.4 * pop);
+        const scale = SIZE[bubble.kind] * (0.6 + 0.4 * pop);
         sprite.scale.set(scale * art.aspect, scale, 1);
-        sprite.position.set(at[0], at[1] + LIFT[bubble.kind] + age * 0.12, at[2]);
+        let y = at[1] + LIFT[bubble.kind] + age * 0.12;
+        for (const [px, py, pz] of placed) if (Math.hypot(px - at[0], pz - at[2]) < STACK_REACH && Math.abs(py - y) < 1.1) y = py + 1.1;
+        placed.push([at[0], y, at[2]]);
+        sprite.position.set(at[0], y, at[2]);
         (sprite.material as SpriteMaterial).opacity = fade;
       }
       for (const [id, sprite] of sprites) {

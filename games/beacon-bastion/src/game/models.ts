@@ -15,39 +15,32 @@ const FOREST = "kaykit-forest";
  */
 export const WORKER_HEIGHT = 2.7;
 
-/** A worker in their work clothes: one Quaternius character, tinted so two trades on one body read apart. */
+/** A worker in their work clothes: one Quaternius character per trade, in its own colours. */
 function workerPick(def: TowerDef): ModelPick {
-  return {
-    model: def.model,
-    style: {
-      targetHeight: WORKER_HEIGHT,
-      ...(def.tint === undefined ? {} : { material: { color: def.tint } }),
-      animation: { auto: true, clock: "game" },
-    },
-  };
+  return { model: def.model, style: { targetHeight: WORKER_HEIGHT, animation: { auto: true, clock: "game" } } };
 }
 
 /** The town hall at the end of Main Street: the thing the tech is marching on. */
-const TOWN_HALL: ModelPick = { model: `${HOUSES}/Bank`, style: { targetHeight: 8 } };
+const TOWN_HALL: ModelPick = { model: `${HOUSES}/Bank`, style: { targetHeight: 8, material: { color: "#f6e4c6" } } };
 
 /**
  * The street's buildings, placed as `building-*` markers in the scene document (each names one of
- * these in its `meta.model`) and spawned as scenery facing the street. Cartoon houses and shops,
- * scaled up so a front door is about a worker's height.
+ * these in its `meta.model`) and spawned as scenery facing the street: KayKit City Builder shops and
+ * houses in their own painted colours, scaled up so a front door is about a worker's height.
  */
 export const BUILDING_PLAN: Record<string, ModelPick> = {
-  house: { model: `${HOUSES}/House`, style: { targetHeight: 6 } },
-  house2: { model: `${HOUSES}/House2`, style: { targetHeight: 5.6 } },
-  house3: { model: `${HOUSES}/House3`, style: { targetHeight: 7.5 } },
-  house4: { model: `${HOUSES}/House4`, style: { targetHeight: 5.4 } },
-  house5: { model: `${HOUSES}/House5`, style: { targetHeight: 5.4 } },
-  shop: { model: `${HOUSES}/Shop`, style: { targetHeight: 5.4 } },
-  flat: { model: `${HOUSES}/Flat`, style: { targetHeight: 9 } },
+  house: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 6.5 } },
+  house2: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5 } },
+  house3: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 8.5 } },
+  house4: { model: `${CITY}/building_D_withoutBase`, style: { targetHeight: 8.5 } },
+  house5: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 6.5, material: { color: "#ffe2c8" } } },
+  shop: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5, material: { color: "#d8f0ff" } } },
+  flat: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10 } },
   diner: { model: `${CITY}/building_E_withoutBase`, style: { targetHeight: 7.5 } },
-  bakery: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5 } },
+  bakery: { model: `${CITY}/building_F_withoutBase`, style: { targetHeight: 7.5 } },
   corner: { model: `${CITY}/building_G_withoutBase`, style: { targetHeight: 8.5 } },
-  hardware: { model: `${CITY}/building_F_withoutBase`, style: { targetHeight: 7.5 } },
-  tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10 } },
+  hardware: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 8.5, material: { color: "#ffd8d0" } } },
+  tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10, material: { color: "#e0ffe8" } } },
   lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.6 } },
 };
 

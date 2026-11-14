@@ -29,6 +29,9 @@ import { UPDATE_RULE } from "../waves/director";
  * blink, phones hop). Geometries and materials are shared across every instance of the street.
  */
 
+/** Tech draws a size larger than its hitbox, so a phone reads as a phone from the street camera. */
+const TECH_VISUAL_SCALE = 1.4;
+
 const geometries = new Map<string, BufferGeometry>();
 const materials = new Map<string, MeshStandardMaterial>();
 
@@ -343,7 +346,7 @@ function build(def: CreepDef): { root: Group; rig: Rig } {
       break;
     }
   }
-  root.scale.setScalar(def.scale);
+  root.scale.setScalar(def.scale * TECH_VISUAL_SCALE);
   return { root, rig };
 }
 
