@@ -35,7 +35,7 @@ export function householdName(household: HouseholdState, save?: OrbitSave): stri
   const written = save?.profile?.name ?? orbitProfile.name;
   if (written.trim().length > 0) return written.trim();
   const first = household.order.map((id) => household.members[id]).find((member) => member !== undefined);
-  return first === undefined ? "An unnamed household" : `${first.name}'s household`;
+  return first === undefined ? "An unnamed house" : `${first.name}'s house`;
 }
 
 /** The day and hour a household stands at, in the game's own words. */

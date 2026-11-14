@@ -207,7 +207,7 @@ export interface StationPay {
 /** A post's value at a rung (1-based); a rung the post does not have is a bug, not a zero. */
 function atRung(values: readonly number[], rung: number): number {
   const value = values[rung - 1];
-  if (value === undefined) throw new Error(`Odd Orbit: no post value for rung ${rung}`);
+  if (value === undefined) throw new Error(`NO VACANCY: no post value for rung ${rung}`);
   return value;
 }
 

@@ -2,7 +2,7 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
 /**
- * Every Odd Orbit screen on native Rune, driven through Rune's own hit test: the porch and each of its
+ * Every NO VACANCY screen on native Rune, driven through Rune's own hit test: the porch and each of its
  * pages, typing a household name, the habitat HUD and its panels, the handbook with save, settings and
  * credits, stepping outside and continuing the saved household.
  */
