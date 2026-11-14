@@ -11,14 +11,14 @@ export interface Pizza {
 }
 
 export const PIZZAS: readonly Pizza[] = [
-  { id: "margherita", label: "Margherita", price: 14 },
-  { id: "anchovy_storm", label: "Anchovy Storm", price: 18 },
-  { id: "tide_pool", label: "Tide Pool (clams & lemon)", price: 21 },
-  { id: "neon_diavola", label: "Neon Diavola", price: 19 },
-  { id: "lighthouse_white", label: "Lighthouse White", price: 17 },
-  { id: "wedding_cake", label: "Wedding Cake Calzone", price: 26 },
-  { id: "pineapple_sub", label: "Pineapple Periscope", price: 20 },
-  { id: "nonna_special", label: "Nonna's Sunday Special", price: 24 },
+  { id: "margherita", label: "Margherita", price: 21 },
+  { id: "anchovy_storm", label: "Anchovy Storm", price: 27 },
+  { id: "tide_pool", label: "Tide Pool (clams & lemon)", price: 30 },
+  { id: "neon_diavola", label: "Neon Diavola", price: 28 },
+  { id: "lighthouse_white", label: "Lighthouse White", price: 25 },
+  { id: "wedding_cake", label: "Wedding Cake Calzone", price: 38 },
+  { id: "pineapple_sub", label: "Pineapple Periscope", price: 29 },
+  { id: "nonna_special", label: "Nonna's Sunday Special", price: 34 },
 ];
 
 export const pizzaById = (id: string): Pizza | undefined => PIZZAS.find((pizza) => pizza.id === id);

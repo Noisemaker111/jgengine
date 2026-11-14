@@ -132,7 +132,7 @@ export function payDebt(state: PizzeriaState, amount: number): PizzeriaState {
 
 /** The tips a shift must bring in to keep MegaSlice back: it climbs with each night worked. */
 export function nightlyQuota(state: PizzeriaState): number {
-  return Math.min(1400, 180 + state.shifts * 90);
+  return Math.min(1400, 150 + state.shifts * 80);
 }
 
 export interface ShiftClose {

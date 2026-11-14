@@ -63,7 +63,7 @@ Numbers are what the build does now.
   customers: Theo the DJ and Ida at the lighthouse at 1, the bridge club and the rooftop wedding at 2,
   Captain Brine's submarine at 3. Vehicles from the lot: scooter 600, cargo trike 1,500, jet-ski 3,200,
   motor gondola 5,000, pizza blimp 12,000. The note starts at 12,000.
-- **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (180 + 90 a shift worked, up to
+- **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (150 + 80 a shift worked, up to
   1,400) takes 12 off; a short one adds 18. At 100% MegaSlice calls the note in: +1,500 debt and the
   pressure resets to 55. Every 250 paid off eases it by 1. Paying the note off saves the shop for good.
 - **Customers with personality.** Gus at the dock office (first to flood), the Okafor twins' night-market

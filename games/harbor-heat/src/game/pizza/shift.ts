@@ -193,6 +193,19 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   return { ...state, serial, board: [...state.board, call], nextCallIn: interval, idaDue: caller.id === LIGHTHOUSE_KEEPER ? false : state.idaDue };
 }
 
+const splashClock = perContext(() => ({ t: 0 }));
+
+/** Spray off the wheels or the hull while the boxes are soaking, so the soak meter has a cause on screen. */
+function splash(ctx: GameContext, soak: number, dt: number): void {
+  const clock = splashClock(ctx);
+  clock.t -= dt;
+  if (soak <= 0 || clock.t > 0) return;
+  clock.t = 0.18;
+  const from = riderPosition(ctx);
+  if (from === null) return;
+  ctx.scene.entity.vfx({ kind: "spark", color: 0x9fe8ff, from: [from[0], from[1] + 0.2, from[2]], radius: Math.min(2.2, 0.8 + soak * 0.15) });
+}
+
 /** Every box cools; water, spray and wading soak it; the blimp's altitude chills it. */
 function tickBag(ctx: GameContext, state: ShiftState, dt: number): ShiftState {
   if (state.bag.length === 0) return state;
@@ -209,6 +222,7 @@ function tickBag(ctx: GameContext, state: ShiftState, dt: number): ShiftState {
     altitude = telemetry.altitude > 15;
     soak = 0;
   }
+  splash(ctx, soak, dt);
   return { ...state, bag: state.bag.map((order) => ageOrder(order, dt, { kitchen, soakPerSecond: soak, altitude })) };
 }
 
@@ -454,6 +468,10 @@ function deliverHere(ctx: GameContext): void {
     lastReceipt: { customerId, lines, total, thanks, floor },
   });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${total}`, kind: "loot" });
+  // The customer's line floats up from their door, the box burst in the shop's colours.
+  const top = (waterAt(ctx, spot[0], spot[1])?.surface ?? ctx.world.groundHeightAt(spot[0], spot[1])) + FLOOR_HEIGHT[floor] + 2.6;
+  ctx.scene.entity.floatText({ position: [spot[0], top, spot[1]], text: `"${thanks}"`, kind: worst === "bad" ? "warn" : "info", scale: 0.8 });
+  ctx.scene.entity.vfx({ kind: "spark", color: worst === "great" ? 0xffcf4a : worst === "fine" ? 0xfff1d6 : 0x7fb6d9, from: [spot[0], top - 2, spot[1]], radius: worst === "great" ? 2.4 : 1.4 });
   ctx.game.feedback.cue("objective", `${customer?.name ?? "Customer"}: "${thanks}" +$${total}`);
   void ctx.game.save?.checkpoint();
 }

@@ -42,7 +42,7 @@ describe("pizza orders", () => {
     const late = settleOrder(fresh({ age: 140 }), { kitchen, floor: "door", stack: 1 });
     expect(perfect.verdict).toBe("great");
     expect(cold.tip).toBe(0);
-    expect(cold.price).toBe(14);
+    expect(cold.price).toBe(21);
     expect(cold.verdict).toBe("bad");
     expect(soggy.tip).toBeLessThan(perfect.tip);
     expect(late.tip).toBeLessThan(perfect.tip);
@@ -94,7 +94,7 @@ describe("the family pizzeria", () => {
 
   test("missing quota lets MegaSlice lean in until it calls the note; paying it off saves the shop", () => {
     let shop = freshPizzeria();
-    expect(nightlyQuota(shop)).toBe(180);
+    expect(nightlyQuota(shop)).toBe(150);
     const good = closeShift(shop, 500);
     expect(good.metQuota).toBe(true);
     expect(good.state.pressure).toBeLessThan(shop.pressure);
