@@ -783,6 +783,19 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Play & test from the CLI: \`bun run drive\` (\`npx jgengine drive\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels; \`--right-click-at\` for right-click orders), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
+/** The small engine-owned pointer in `jgengine/`: where the engine's own rules live, plus the few facts a game agent needs first. */
+const jgengineAgentsMd = (variant: TemplateVariant) => `# JGengine — pointer
+
+This game is built on **JGengine**, a TypeScript game framework. This file is engine-owned and rewritten by \`jgengine sync\`; do not edit it.
+
+- Rules: ${variant === "in-repo" ? "the monorepo's root \`AGENTS.md\` and this game's \`PLAN.md\`" : "this project's root \`AGENTS.md\` and \`PLAN.md\`; engine docs at https://jgengine.com"}.
+- UI is JSX on the engine's own runtime, not React. Every game draws through Rune (\`uiRenderer: "rune"\`).
+- 3D is plain three.js on the engine's frame loop.
+- Find a shipped capability before building one: \`${variant === "in-repo" ? "bun run find" : "npx jgengine find"} <words>\`.
+- World content lives in \`src/editor.scene.json\`, authored through the editor (F2+E), not in code.
+- Skills: \`.claude/skills/jgengine/SKILL.md\` routes to the right one.
+`;
+
 const artDirectionMd = `# Art direction
 
 ## Reference images
@@ -814,6 +827,7 @@ export {
   editorLayersTestFor,
   editorLayersTs,
   grownEditorLayersTs,
+  jgengineAgentsMd,
   editorSceneJson,
   gameAssetsTs,
   gameConfigTs,

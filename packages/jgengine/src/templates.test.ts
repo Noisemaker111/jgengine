@@ -36,6 +36,7 @@ const PROJECT_FILES = [".gitignore", "AGENTS.md"];
 
 const IN_REPO_THIN_FILES = [
   "index.html",
+  "jgengine/AGENTS.md",
   "vite.config.ts",
   "package.json",
   "tsconfig.json",
@@ -224,6 +225,17 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     const agents = fileOf(render("standalone"), "AGENTS.md");
     expect(agents).toContain("npx @jgengine/assets pull starter");
     expect(agents).toContain("public/models");
+  });
+
+  test("every game carries a minimal engine-owned jgengine/AGENTS.md pointer", () => {
+    const standalone = fileOf(render("standalone"), "jgengine/AGENTS.md");
+    expect(standalone).toContain("npx jgengine find");
+    expect(standalone).toContain("not React");
+    expect(standalone).not.toContain("Probe Game");
+    const inRepo = fileOf(render("in-repo"), "jgengine/AGENTS.md");
+    expect(inRepo).toContain("bun run find");
+    expect(inRepo).toContain("monorepo's root");
+    expect(inRepo.split("\n").length).toBeLessThan(20);
   });
 
   test("in-repo: wiring is the games' shared wiring, named by the game's id", () => {

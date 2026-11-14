@@ -15,6 +15,7 @@ export const TEMPLATE_SHARED_FILES = [
   ".gitignore",
   "AGENTS.md",
   "index.html",
+  "jgengine/AGENTS.md",
   "src/index.css",
   "src/index.tsx",
   "src/main.tsx",
