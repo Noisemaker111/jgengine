@@ -9,7 +9,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { stormView } from "../creatures";
 
 /** How strongly the broadcast tints the sky at full storm, and how fast it fades in and out (per second). */
-const TINT = 0.16;
+const TINT = 0.35;
 const FADE = 0.35;
 
 /**
@@ -18,12 +18,13 @@ const FADE = 0.35;
  */
 export function stormSkyDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const veil = new THREE.Mesh(
-    new THREE.SphereGeometry(600, 24, 12),
-    new THREE.MeshBasicMaterial({ color: "#c43cff", transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false }),
+    new THREE.SphereGeometry(450, 24, 12),
+    new THREE.MeshBasicMaterial({ color: "#8a2bd6", transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false, fog: false }),
   );
-  veil.renderOrder = 999;
+  // Drawn behind the world (it tests depth), the veil tints only the open sky.
+  veil.renderOrder = -1;
   veil.frustumCulled = false;
-  const flash = new THREE.HemisphereLight("#e7a6ff", "#3a1050", 0);
+  const flash = new THREE.HemisphereLight("#efd6ff", "#2a1040", 0);
   let strength = 0;
   let nextFlash = 3;
   let flashLeft = 0;
@@ -46,7 +47,7 @@ export function stormSkyDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
         }
       }
       flashLeft = Math.max(0, flashLeft - delta);
-      flash.intensity = flashLeft > 0 ? 2.5 * strength : 0;
+      flash.intensity = flashLeft > 0 ? 1.1 * strength : 0;
     },
     dispose(state: EngineFrameState) {
       state.scene.remove(veil, flash);

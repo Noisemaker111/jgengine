@@ -11,7 +11,7 @@ import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBo
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { hiveSave, resetHivemind, setHiveHealth, setHiveStrength, summonHivemind, tickHivemind, useObelisk } from "./game/hivemind";
-import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, sendHome, toggleHarvest, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, sendHome, setStorm, toggleHarvest, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -266,6 +266,8 @@ interface Cheat {
   kill?: boolean;
   /** ARK's admin DestroyWildDinos: every wild creature gone; their zones refill later. */
   destroyWild?: boolean;
+  /** Start or stop a Signal Storm now, whatever the night. */
+  storm?: boolean;
   /** ARK's admin settimeofday, as a whole world clock: jump to this many seconds, weather schedule and all. */
   clock?: number;
   /** ARK's admin SetPlayerPos: stand on the ground at this x, z, facing this yaw (radians) when given, the camera behind. */
@@ -301,6 +303,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.hut !== undefined) buildHut(ctx, input.hut);
   if (input.destroyWild === true) destroyWild(ctx);
+  if (input.storm !== undefined) setStorm(ctx, input.storm);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
   if (input.teleport !== undefined) {
     const [x, z, facing] = input.teleport;

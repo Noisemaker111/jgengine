@@ -153,7 +153,7 @@ function Setting({ row }: { row: SettingsRow }): ReactNode {
   );
 }
 
-/** The engine's settings (graphics, sound, keys, accessibility) composed as Fernwild's own page. */
+/** The engine's settings (graphics, sound, keys, accessibility) composed as Wildwire's own page. */
 export function SettingsPage(): ReactNode {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null);
@@ -235,8 +235,8 @@ export function TitleMenu(): ReactNode {
               <RuneView layout={phone ? "stack" : "row"} gap={phone ? 16 : 48} items="start">
                 <RuneView gap={14} width={phone ? width - 32 : 360}>
                   <RuneView gap={2}>
-                    <Tag color={TEAL} text="WAKE ON THE BEACH. SURVIVE THE ISLAND." />
-                    <Text family={DISPLAY} size={phone ? 54 : 84} weight={700} tracking={2} color={INK} text="FERNWILD" />
+                    <Tag color={TEAL} text="A FERAL MACHINE ISLAND. ONE TECHNICIAN." />
+                    <Text family={DISPLAY} size={phone ? 54 : 84} weight={700} tracking={2} color={INK} text="WILDWIRE" />
                     <Text size={15} color={DIM} text="Gather, craft, learn schematics, build, and upload the island's feral machines." />
                   </RuneView>
                   <RuneView gap={6}>

@@ -67,6 +67,12 @@ export interface MachineStyle {
   hazard?: boolean;
   /** Rows of status lights down the front face (a server rack), in the eye glow. */
   lights?: number;
+  /** A corrugated hose for a neck: ring bands down its length. */
+  ribbed?: boolean;
+  /** A wide intake mouth across the front of the head, slatted. */
+  mouth?: boolean;
+  /** A flat fluke at the tail's tip, this wide (a whale's). */
+  fluke?: number;
 }
 
 /** What sets a species apart. Every length is metres. */
@@ -409,6 +415,14 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
     const dir: V3 = [0, Math.sin(deg(plan.neck.rise)), Math.cos(deg(plan.neck.rise))];
     const tip: V3 = [0, dir[1] * plan.neck.length, dir[2] * plan.neck.length];
     rig.part(neckNode, MAT.body).tube([0, 0, -plan.neck.thickness * 0.6], tip, plan.neck.thickness, plan.neck.thickness * 0.7);
+    if (m?.ribbed === true) {
+      for (let ring = 1; ring < 9; ring += 1) {
+        const t = ring / 9;
+        const r = plan.neck.thickness * (1 - 0.3 * t) * 1.12;
+        const at: V3 = [0, tip[1] * t, -plan.neck.thickness * 0.6 + (tip[2] + plan.neck.thickness * 0.6) * t];
+        rig.part(neckNode, MAT.belly).tube([at[0], at[1] - dir[1] * r * 0.12, at[2] - dir[2] * r * 0.12], [at[0], at[1] + dir[1] * r * 0.12, at[2] + dir[2] * r * 0.12], r, r, 10);
+      }
+    }
     if (f.mane === true) rig.part(neckNode, MAT.accent).tube([0, plan.neck.thickness * 0.4, 0], [0, tip[1] + plan.neck.thickness * 0.3, tip[2] * 0.8], plan.neck.thickness * 1.1, plan.neck.thickness * 0.6);
     headParent = neckNode;
     headAt = tip;
@@ -438,9 +452,9 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
   const eyes = m === undefined ? headNode : rig.add("eyes", headNode, eyeAt);
   const eyeOffset = (p: V3): V3 => (m === undefined ? p : [p[0] - eyeAt[0], p[1] - eyeAt[1], p[2] - eyeAt[2]]);
   if (m !== undefined) swayers.push({ node: eyes, axis: [0, 0, 0], degrees: 0, pulse: 0.14 });
-  if (m?.cyclops === true) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([0, hh * 0.16, hl * (boxy ? 0.79 : 0.7)]), [hh * 0.2, hh * 0.2, hh * 0.08], 10, 6);
-  else if (boxy) for (const side of [-1, 1]) rig.part(eyes, MAT.eye).box(eyeOffset([side * hw * 0.24, hh * 0.16, hl * 0.79]), [hw * 0.12, hh * 0.08, hl * 0.02]);
-  else for (const side of [-1, 1]) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([side * hw * 0.38, hh * 0.18, hl * 0.48]), [hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13), hh * (m === undefined ? 0.09 : 0.13)], 6, 4);
+  if (m?.cyclops === true) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([0, hh * 0.16, hl * (boxy ? 0.79 : 0.7)]), [hh * 0.24, hh * 0.24, hh * 0.08], 10, 6);
+  else if (boxy) for (const side of [-1, 1]) rig.part(eyes, MAT.eye).box(eyeOffset([side * hw * 0.24, hh * 0.16, hl * 0.79]), [hw * 0.15, hh * 0.11, hl * 0.02]);
+  else for (const side of [-1, 1]) rig.part(eyes, MAT.eye).ellipsoid(eyeOffset([side * hw * 0.38, hh * 0.18, hl * 0.48]), [hh * (m === undefined ? 0.09 : 0.16), hh * (m === undefined ? 0.09 : 0.16), hh * (m === undefined ? 0.09 : 0.16)], 6, 4);
   if (m?.antennae !== undefined) {
     const spots = m.antennae.count === 1 ? [0] : [-1, 1];
     for (const side of spots) {
@@ -451,6 +465,11 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
       rig.part(antenna, MAT.eye).ellipsoid(tip, [hh * 0.07, hh * 0.07, hh * 0.07], 6, 4);
       swayers.push({ node: antenna, axis: [0, 0, 1], degrees: 9 });
     }
+  }
+  if (m?.mouth === true) {
+    // A nozzle intake: a dark slot across the lower face with slats over it.
+    rig.part(headNode, MAT.belly).box([0, -hh * 0.18, hl * 0.78], [hw * 0.44, hh * 0.2, hl * 0.04]);
+    for (let slat = 0; slat < 4; slat += 1) rig.part(headNode, MAT.accent).box([((slat + 0.5) / 4 - 0.5) * hw * 0.8, -hh * 0.18, hl * 0.81], [hw * 0.02, hh * 0.19, hl * 0.02]);
   }
   if (m?.drill !== undefined) rig.part(headNode, MAT.accent).cone([0, -hh * 0.1, hl * (0.75 + snout)], [0, -hh * 0.1, hl * (0.75 + snout) + m.drill], hh * 0.28, 8);
   if (m?.saw !== undefined) {
@@ -501,6 +520,7 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
       rig.part(node, MAT.body).tube([0, 0, 0], [0, -seg * droop, -seg], ra, rb);
       if (f.tailSpikes !== undefined && i >= chain - 2) for (const side of [-1, 1]) rig.part(node, MAT.accent).cone([side * ra * 0.6, ra * 0.4, -seg * 0.5], [side * (ra + f.tailSpikes), ra * 0.4 + f.tailSpikes * 0.5, -seg * 0.6], ra * 0.35);
       if (f.club !== undefined && i === chain - 1) rig.part(node, MAT.accent).ellipsoid([0, -seg * droop, -seg], [f.club, f.club * 0.7, f.club], 8, 5);
+      if (m?.fluke !== undefined && i === chain - 1) rig.part(node, MAT.accent).box([0, -seg * droop, -seg * 1.05], [m.fluke / 2, ra * 0.25, seg * 0.35]);
       swaying.push({ node, phase: i / chain, amp: plan.serpent !== undefined ? 22 : 6 + i * 2 });
       parent = node;
       at = [0, -seg * droop, -seg];

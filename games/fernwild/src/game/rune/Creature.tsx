@@ -147,7 +147,7 @@ function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
   if (best === undefined) return "It eats nothing you can give it.";
   const plain = rest.filter((item) => !item.startsWith("firmware_"));
-  return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it uploads best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
+  return plain.length === 0 ? `Jacked in, waiting for feed: give it ${itemLabel(best)}.` : `Jacked in, waiting for feed: it uploads best on ${itemLabel(best)}; it also takes ${plain.map(itemLabel).join(", ")}.`;
 }
 
 const STANCE_LINE = { passive: "Passive chip: never fights, even when hit", neutral: "Escort chip: fights what threatens you or itself", aggressive: "Aggressive chip: goes for any wild machine it sees" } as const;
@@ -169,7 +169,7 @@ export function CreaturePanel(): ReactNode {
       {taming !== null ? (
         <RuneView gap={2}>
           <Small color={INK} text={bind(() => { const t = read()?.taming; return t == null ? "" : t.eating === null ? hungryLine(t.foods) : `Eats ${itemLabel(t.eating)} in ${t.nextMeal}s.`; })} />
-          {taming.unconscious ? <Small color={INK} text={bind(() => `Wakes in ${clock(read()?.taming?.wakesIn ?? 0)} unless you keep it under.`)} /> : null}
+          {taming.unconscious ? <Small color={INK} text={bind(() => `Reboots wild in ${clock(read()?.taming?.wakesIn ?? 0)} unless you keep its battery flat.`)} /> : null}
           <Small text="Keep its discharge up with Narcoberries or Drain Spikes: put them in, then Feed." />
         </RuneView>
       ) : null}

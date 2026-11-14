@@ -36,7 +36,7 @@ export default defineFlow(game, {
     };
     const at = (name: string) => `rune-${name}-${width < 600 ? "phone" : "desktop"}`;
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
-    await f.see("FERNWILD", SLOW);
+    await f.see("WILDWIRE", SLOW);
     await snap("title");
     await tap("Controls");
     await f.see(/Whistle your bots/, SLOW);
