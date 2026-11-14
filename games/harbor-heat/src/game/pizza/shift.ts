@@ -50,6 +50,9 @@ export const HANDOFF_SPEED = 10;
 export const BOARD_SIZE = 4;
 /** Game seconds a call waits on the board before the customer gives up and calls a rival. */
 export const CALL_PATIENCE = 150;
+/** Each great drop in a row adds this share to the tips, up to the cap. */
+export const STREAK_STEP = 0.06;
+export const STREAK_CAP = 5;
 
 export interface SwapDock {
   id: string;
@@ -119,6 +122,8 @@ export interface ShiftState {
   rivalIn: number;
   /** How long the rival has been close enough to grab. */
   rivalGrip: number;
+  /** Great deliveries in a row this shift: each adds to the tips until a bad one breaks it. */
+  streak?: number;
 }
 
 export function freshShift(): ShiftState {
@@ -325,7 +330,7 @@ export function tickShift(ctx: GameContext, dt: number): void {
   let state = shiftStore.read(ctx);
   const open = shiftOpen(hourOf(ctx));
   if (open && state.openDay === null) {
-    state = { ...state, openDay: dayOf(ctx), summary: null, takings: 0, delivered: 0, best: 0, lost: 0, nextCallIn: 3, idaDue: true };
+    state = { ...state, openDay: dayOf(ctx), summary: null, takings: 0, delivered: 0, best: 0, lost: 0, nextCallIn: 3, idaDue: true, streak: 0 };
     ctx.game.notices.push({ text: "Vell's is open! Orders land at the oven window. The tide is coming in.", tone: "success" });
   } else if (!open && state.openDay !== null) {
     shiftStore.write(ctx, closeTheShift(ctx, state));
@@ -456,6 +461,14 @@ function deliverHere(ctx: GameContext): void {
     if (settled.verdict !== "bad") good += 1;
     if (settled.verdict === "bad" || (settled.verdict === "fine" && worst === "great")) worst = settled.verdict;
   }
+  // A hot streak of great drops lifts the tips; a bad one ends it.
+  const streak = state.streak ?? 0;
+  const lift = Math.round((total - price) * STREAK_STEP * Math.min(STREAK_CAP, streak));
+  if (lift > 0) {
+    lines.push({ label: `Hot streak ×${Math.min(STREAK_CAP, streak)}`, amount: lift });
+    total += lift;
+  }
+  const nextStreak = worst === "great" ? streak + 1 : worst === "bad" ? 0 : streak;
   if (price > 0) earn(ctx, price, "pizza-sale", customerId);
   grantCred(ctx, good * PIZZA_CRED.happy + (handed.length - good) * PIZZA_CRED.plain);
   if (total - price > 0) earn(ctx, total - price, "pizza-tip", customerId);
@@ -470,6 +483,7 @@ function deliverHere(ctx: GameContext): void {
     best: Math.max(state.best, total),
     idaDue: customerId === LIGHTHOUSE_KEEPER ? true : state.idaDue,
     lastReceipt: { customerId, lines, total, thanks, floor, at: ctx.time.now() },
+    streak: nextStreak,
   });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${total}`, kind: "loot" });
   // The customer's line floats up from their door, the box burst in the shop's colours.

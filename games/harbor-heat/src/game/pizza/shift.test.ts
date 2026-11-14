@@ -179,4 +179,20 @@ describe("a night at Vell's", () => {
     run(ctx, 2);
     expect(ctx.game.notices.list().filter((n) => n.text.startsWith("Two boxes in the bag")).length).toBe(notices);
   });
+  test("great drops in a row build a hot streak on the tips; a cold box ends it", () => {
+    const ctx = boot();
+    at(ctx, 18.2);
+    run(ctx, 1);
+    const hot = { id: "h1", customerId: "gus", pizzaId: "margherita", heat: 95, soak: 0, age: 10, par: 60 };
+    const spot = customerSpot("gus")!;
+    moveTo(ctx, spot);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [hot], streak: 3, board: [], nextCallIn: 999 });
+    ctx.game.commands.run("pizza.deliver", {});
+    const slip = shiftStore.read(ctx).lastReceipt!;
+    expect(slip.lines.some((line) => line.label === "Hot streak ×3")).toBe(true);
+    expect(shiftStore.read(ctx).streak).toBe(4);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ ...hot, id: "h2", heat: 5 }] });
+    ctx.game.commands.run("pizza.deliver", {});
+    expect(shiftStore.read(ctx).streak).toBe(0);
+  });
 });
