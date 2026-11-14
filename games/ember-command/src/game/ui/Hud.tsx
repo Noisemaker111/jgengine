@@ -358,10 +358,10 @@ function MapPanel({ ctx }: { ctx: GameContext }) {
 }
 
 /** The level-up card: two picks, an act for the command board or a trait the Marshal carries. */
-function LevelUpWrit({ width }: { width: number }) {
+function LevelUpWrit({ width, docked = false }: { width: number; docked?: boolean }) {
   const offer = useHudSlice((h) => (h.heroOffer !== null && h.phase === "playing" ? h.heroOffer : null));
   if (offer === null) return null;
-  return <RuneView anchor="center" variant="sheet" width={width} gap={10} label="Level-up card">
+  return <RuneView anchor={docked ? "top-right" : "center"} {...(docked ? { inset: 84, safe: true } : {})} variant="sheet" width={width} gap={10} label="Level-up card">
     <Row justify="between"><Eyebrow text={`Marshal Mandible molts to level ${offer.level}`} /><Small text="Choose one" /></Row>
     {offer.options.map((option, index) => {
       const disabled = !option.allocatable || option.taken;
@@ -432,7 +432,7 @@ export function RtsHud({ ctx, width, height, pause, mapOpen, toggleMap }: { ctx:
     <RuneView anchor="bottom-left" safe inset={12}><MapPanel ctx={ctx} /></RuneView>
     <RuneView anchor="bottom" safe inset={12}><HeroPanel ctx={ctx} width={heroWidth} /></RuneView>
     <RuneView anchor="bottom-right" safe inset={12}><CommandBoard columns={6} size={52} /></RuneView>
-    <LevelUpWrit width={460} />
+    <LevelUpWrit width={380} docked />
   </>;
 }
 
