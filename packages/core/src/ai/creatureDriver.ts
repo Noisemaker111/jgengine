@@ -21,9 +21,16 @@ export interface CreatureBody {
  * from `scene/companion`), or nothing at all (knocked out, ridden, dead).
  */
 export type CreatureMind =
-  | { kind: "wild"; temperament: TemperamentConfig }
+  | { kind: "wild"; temperament: TemperamentConfig; focus?: CreatureFocus; lightOf?: (targetId: string) => number }
   | { kind: "tamed"; intent: CompanionIntent }
   | { kind: "still" };
+
+/**
+ * A wild creature's targeting preference: a bonus added to the confidence of each remembered target, so
+ * with several in mind the one it prefers (the loudest, the most hurt, another creature...) leads the
+ * temperament's decision instead of simply the freshest. Return 0 for no preference.
+ */
+export type CreatureFocus = (targetId: string) => number;
 
 /** What the creature decided and did this tick, for a HUD line, an animation or a debug overlay. */
 export interface CreatureStep {
@@ -242,11 +249,16 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
       const health = ctx.scene.entity.stats.get(id, "health");
       // It strikes from where its body reaches, so the temperament's charge stops where the bite lands.
       const temperament = body.attack === null ? mind.temperament : { ...mind.temperament, attackRange: body.attack.reach };
+      const focus = mind.focus;
       const intent = decideTemperament(temperament, {
         position: self.position,
         home: state.home,
         health: health === null || health.max <= 0 ? 1 : health.current / health.max,
-        memories: entry.senses.memory(id).map((memory) => (grudge !== null && memory.targetId === grudge.id ? { ...memory, cue: "damage" as const } : memory)),
+        memories: entry.senses.memory(id).map((memory) => {
+          const remembered = grudge !== null && memory.targetId === grudge.id ? { ...memory, cue: "damage" as const } : memory;
+          return focus === undefined ? remembered : { ...remembered, confidence: remembered.confidence + focus(memory.targetId) };
+        }),
+        ...(mind.lightOf === undefined ? {} : { lightOf: mind.lightOf }),
       });
       if (intent.mode === "idle") return graze(ctx, id, state, body, dt);
       if (intent.mode === "attack" && intent.targetId !== null) {

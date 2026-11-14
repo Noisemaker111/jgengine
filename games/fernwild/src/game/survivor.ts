@@ -26,7 +26,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { toolDurability } from "./data/toolWear";
 import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure, takeBed } from "./base";
-import { mountCanSprint, shootCreature, strikeCreature } from "./creatures";
+import { disturbForest, makeNoise, mountCanSprint, shootCreature, strikeCreature } from "./creatures";
 import { caveExposure } from "./caves";
 import { climateAt, inWater, type ClimateHere } from "./climate";
 import { leaveBody } from "./deathBody";
@@ -321,6 +321,8 @@ function fire(ctx: GameContext, survivor: Survivor, tool: ToolDef, yaw: number):
   if (ctx.player.inventory.take(BAG, ammo, 1).status !== "ok") ctx.player.inventory.take(HOTBAR, ammo, 1);
   if (yaw !== me.rotationY) ctx.scene.entity.setPose(me.id, { position: me.position, rotationY: yaw });
   ctx.game.playEntityAnimation(ctx.player.userId, "swing");
+  // A shot carries: every bot that hunts the loudest hears it.
+  makeNoise(ctx, ctx.player.userId, 1, 5);
   const hit = shootCreature(ctx, ctx.player.userId, yaw, ranged.range, shot);
   if (hit?.killed === true) grantXp(ctx, hit.xp);
   wearHeld(ctx, survivor);
@@ -394,6 +396,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
   // Like ARK's third-person swing: the survivor turns to where the camera aims before striking.
   if (yaw !== undefined && yaw !== me.rotationY) ctx.scene.entity.setPose(me.id, { position: me.position, rotationY: yaw });
   const melee = statValue(survivor, "melee") / 100;
+  makeNoise(ctx, ctx.player.userId, 0.5, 3);
   const struck = strikeCreature(ctx, ctx.player.userId, yaw ?? me.rotationY, tool, melee);
   if (struck !== null) {
     grantGather(ctx, survivor, struck.granted);
@@ -418,6 +421,8 @@ export function swing(ctx: GameContext, yaw?: number): void {
   if (hit === null) return;
   grantGather(ctx, survivor, hit.granted);
   wearHeld(ctx, survivor);
+  // Chopping wakes the Rootkits standing among the trees.
+  if (hit.granted.some((grant) => grant.kind === "wood" || grant.kind === "thatch")) disturbForest(ctx, me.position);
 }
 
 /**
@@ -742,6 +747,11 @@ function respawn(ctx: GameContext, survivor: Survivor, bed: readonly [number, nu
 /** Webbed: the survivor moves at `slow` of their speed for `seconds`. */
 export function webSurvivor(ctx: GameContext, slow: number, seconds: number): void {
   survivorOf(ctx).web = { slow, until: ctx.time.now() + seconds };
+}
+
+/** A Ticklet swarm latched on: stamina drained. */
+export function drainSurvivorStamina(ctx: GameContext, amount: number): void {
+  survivorOf(ctx).vitals.change("stamina", -amount);
 }
 
 /** Torpor from venom or acid: enough of it and the survivor passes out. */

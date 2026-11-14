@@ -24,12 +24,13 @@ import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
 import { IMPRINT_BONUS, IMPRINTED_STATS, MUTATIONS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
-import { HOSTILE } from "./data/bots";
+import { botProfile, HOSTILE, packBonus, revertChance, rollQuirk, SIGNAL_STORM, stormAt, targetScore, traitDef, traitMultiplier, type StrikeTrick, type TargetFacts } from "./data/bots";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
-import { strikeHarvestable } from "./survivor";
+import { drainSurvivorStamina, heldItem, strikeHarvestable } from "./survivor";
+import { climateAt } from "./climate";
 import { biteProfile, loadShare } from "./data/tameWork";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
 import { SWIM_DEPTH, SWIM_SLOW, SWIMMERS } from "./data/swim";
@@ -83,6 +84,12 @@ interface Creature {
   mating: boolean;
   /** How much of its imprint it had as a baby, 0 to 1: every stat but stamina, oxygen and speed up to 20% more. */
   imprint: number;
+  /** Quirks from a sloppy upload and glitches from forging (bots.ts), for good. */
+  traits: string[];
+  /** Machines it has torn apart (a Scrapper Rex grows on them). */
+  scrapped: number;
+  /** A Rootkit standing still as a tree until the forest is disturbed. */
+  dormant: boolean;
 }
 
 /** ARK's tamed levelling: the level it was tamed at, levels gained since, XP into the next, points spent. */
@@ -107,7 +114,10 @@ export type CreatureEvent =
   | { type: "tamed"; id: string; label: string; level: number; effectiveness: number }
   | { type: "knockedOut"; id: string; label: string }
   | { type: "woke"; id: string; label: string }
-  | { type: "killed"; id: string; label: string; level: number; byPlayer: boolean };
+  | { type: "killed"; id: string; label: string; level: number; byPlayer: boolean }
+  | { type: "trick"; id: string; label: string; trick: StrikeTrick["kind"]; detail: string }
+  | { type: "storm"; on: boolean; reverted: string[] }
+  | { type: "ping"; id: string; hostiles: number };
 
 interface World {
   creatures: Map<string, Creature>;
@@ -141,6 +151,18 @@ interface World {
   carried: Map<string, string>;
   /** The last creature a flyer lifted and where it was lifted from, for the HUD and proofs. */
   lastLift: { id: string; from: [number, number] } | null;
+  /** Who is making noise and until when (game seconds): swings, shots and sprints draw the loud-seekers. */
+  noise: Map<string, { amount: number; until: number }>;
+  /** The last trick a bot pulled and where, for an Echo Mimic to copy. */
+  lastTrick: { trick: StrikeTrick; at: readonly [number, number, number]; time: number } | null;
+  /** A Signal Storm is on. */
+  storm: boolean;
+  /** The Root Server is down: no more storms. */
+  stormsEnded: boolean;
+  /** Hostiles each sentry last pinged, so it pings once per arrival. */
+  pinged: Map<string, number>;
+  /** Seconds to each sentry's next sweep. */
+  sweep: number;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -201,7 +223,7 @@ const worldOf = perContext((ctx: GameContext): World => {
   ctx.sim.addStage({ id: "airlift", phase: "afterMovement", run: () => holdLifted(ctx) });
   return {
     creatures: new Map(),
-    driver: createCreatureDriver({ sight: 24, memorySeconds: 10, blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE }),
+    driver: createCreatureDriver({ sight: 24, memorySeconds: 10, blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE, notices: (context, self, candidate) => notices(context, self, candidate) }),
     taming: createKnockoutTaming(TAMING),
     roster: createCompanionRoster(),
     carcasses: createResourceNodeField({ nodes: [], resolve: (id) => carcassNode(worldOf(ctx), id), rng: () => ctx.rng() }),
@@ -225,6 +247,12 @@ const worldOf = perContext((ctx: GameContext): World => {
     lastTame: null,
     carried: new Map(),
     lastLift: null,
+    noise: new Map(),
+    lastTrick: null,
+    storm: false,
+    stormsEnded: false,
+    pinged: new Map(),
+    sweep: 0,
   };
 });
 
@@ -247,7 +275,8 @@ function statOf(creature: Creature, stat: TameStat): number {
   const level = stat === "speed" ? 1 : 1 + creature.wild[stat];
   const wild = stat === "speed" ? 1 : stat === "melee" ? statAt(def.melee, level) / def.melee.base : statAt(def[stat], level);
   const tamed = creature.growth === null ? wild : TAME_POINTS.value(creature.growth.points, stat, wild);
-  return IMPRINTED_STATS.includes(stat) ? tamed * (1 + IMPRINT_BONUS * creature.imprint) : tamed;
+  const imprinted = IMPRINTED_STATS.includes(stat) ? tamed * (1 + IMPRINT_BONUS * creature.imprint) : tamed;
+  return stat === "health" || stat === "melee" || stat === "speed" || stat === "weight" ? imprinted * traitMultiplier(creature.traits, stat) : imprinted;
 }
 
 /** What a creature carries against its weight stat: its specialty items weigh what it feels them at (`LIGHTER_LOADS`). */
@@ -260,14 +289,91 @@ function maxHealth(creature: Creature): number {
   return Math.round(statOf(creature, "health"));
 }
 
-function body(world: World, creature: Creature): CreatureBody {
+function body(ctx: GameContext, world: World, creature: Creature): CreatureBody {
   const def = defOf(creature);
+  const overclocked = !creature.tamed && world.storm;
+  const pace = overclocked ? SIGNAL_STORM.speed : 1;
+  const melee = statOf(creature, "melee") * (creature.tamed ? 1 : wildMelee(ctx, world, creature)) * (overclocked ? SIGNAL_STORM.melee : 1);
   return {
-    walk: def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier,
-    sprint: def.sprint * statOf(creature, "speed") * loadOf(creature).moveMultiplier,
-    attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * statOf(creature, "melee"), interval: def.attack.interval, reach: def.attack.reach + def.radius },
-    wander: { radius: world.regions.get(creature.region)?.radius ?? 16 },
+    walk: def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier * pace,
+    sprint: def.sprint * statOf(creature, "speed") * loadOf(creature).moveMultiplier * pace,
+    attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * melee, interval: def.attack.interval, reach: def.attack.reach + def.radius },
+    // An ambusher holds its post; everything else grazes its zone.
+    wander: { radius: botProfile(creature.species)?.temperament === "ambush" ? 0.5 : (world.regions.get(creature.region)?.radius ?? 16) },
   };
+}
+
+/**
+ * A wild bot's melee on top of its stats: a pack's buff for packmates close by, a Choir's song from any
+ * singer near it, and the parts a Scrapper Rex has torn from other machines.
+ */
+function wildMelee(ctx: GameContext, world: World, creature: Creature): number {
+  const profile = botProfile(creature.species);
+  const self = ctx.scene.entity.get(creature.id)?.position;
+  if (self === undefined) return 1;
+  let packmates = 0;
+  let song = 1;
+  for (const other of world.creatures.values()) {
+    if (other === creature || other.dead || other.tamed) continue;
+    const at = ctx.scene.entity.get(other.id)?.position;
+    if (at === undefined) continue;
+    const distance = Math.hypot(at[0] - self[0], at[2] - self[2]);
+    if (profile?.pack !== undefined && other.species === creature.species && distance <= profile.pack.radius) packmates += 1;
+    const aura = botProfile(other.species)?.aura;
+    if (aura !== undefined && other.species !== creature.species && distance <= aura.radius) song = Math.max(song, aura.damage);
+  }
+  const scraps = profile?.scraps === undefined ? 1 : 1 + Math.min(profile.scraps.max - 1, creature.scrapped * profile.scraps.perKill);
+  return packBonus(profile?.pack, packmates) * song * scraps;
+}
+
+/** Who a wild bot reacts to: the technician always; other machines too when it hunts machines. */
+function notices(ctx: GameContext, selfId: string, candidateId: string): boolean {
+  const entity = ctx.scene.entity.get(candidateId);
+  if (entity?.role === "player") return true;
+  const world = worldOf(ctx);
+  const self = world.creatures.get(selfId);
+  const other = world.creatures.get(candidateId);
+  if (self === undefined || other === undefined || other.dead || other.species === self.species) return false;
+  return botProfile(self.species)?.targets.includes("machines") === true || (world.storm && other.tamed);
+}
+
+/** Item worth to a thief, per unit: gear and relics first, refined goods a little. */
+function lootValue(itemId: string): number {
+  const def = itemDef(itemId);
+  if (def === null) return 0;
+  if (itemId.startsWith("artifact_") || itemId === "element" || itemId.includes("trophy")) return 10;
+  if (def.kind === "tool" || def.kind === "armor" || def.kind === "saddle") return 5;
+  return ["metal_ingot", "crystal", "obsidian", "oil", "metal", "sparkpowder"].includes(itemId) ? 0.2 : 0;
+}
+
+/** What a candidate looks like to a wild bot choosing whom to go for. */
+function targetFacts(ctx: GameContext, world: World, self: Creature, candidateId: string): TargetFacts {
+  const entity = ctx.scene.entity.get(candidateId);
+  const other = world.creatures.get(candidateId);
+  const health = ctx.scene.entity.stats.get(candidateId, "health");
+  const speed = entity === null ? 0 : Math.hypot(entity.velocity[0], entity.velocity[2]);
+  const noise = world.noise.get(candidateId);
+  const loud = Math.min(1, speed / 8 + (noise !== undefined && noise.until > ctx.time.now() ? noise.amount : 0));
+  const fraction = ctx.time.calendar().dayFraction;
+  const night = fraction < 0.25 || fraction > 0.78;
+  const isMe = candidateId === ctx.player.userId;
+  const bright = isMe && night && heldItem(ctx) === "torch" ? 1 : 0;
+  let rich = 0;
+  if (isMe) for (const bag of CREATURE_SOURCES) for (const slot of ctx.player.inventory.state(bag).slots) if (slot !== null) rich += lootValue(slot.itemId) * slot.count;
+  return {
+    loud,
+    bright,
+    rich: Math.min(1, rich / 40),
+    hurt: health === null || health.max <= 0 ? 0 : 1 - Math.max(0, health.current) / health.max,
+    machine: other !== undefined,
+    attacker: self.lastHitBy === candidateId,
+    size: other === undefined ? 0.15 : Math.min(1, defOf(other).radius / 4),
+  };
+}
+
+/** Someone made a racket: swings, shots and sprints draw the bots that hunt the loudest. */
+export function makeNoise(ctx: GameContext, id: string, amount: number, seconds = 3): void {
+  worldOf(ctx).noise.set(id, { amount, until: ctx.time.now() + seconds });
 }
 
 // --- spawning -----------------------------------------------------------------------------
@@ -332,7 +438,7 @@ export function spawnCreature(
   ctx: GameContext,
   species: string,
   at: readonly [number, number],
-  options: { region?: string; level?: number; sex?: "female" | "male"; genes?: CreatureGenes; size?: number } = {},
+  options: { region?: string; level?: number; sex?: "female" | "male"; genes?: CreatureGenes; size?: number; traits?: readonly string[] } = {},
 ): string | null {
   const def = speciesDef(species);
   const position = def === null ? null : openGround(ctx, at, def.radius);
@@ -362,6 +468,9 @@ export function spawnCreature(
     lineage: genes.lineage,
     mating: false,
     imprint: 0,
+    traits: [...(options.traits ?? [])],
+    scrapped: 0,
+    dormant: botProfile(species)?.dormantUntilChop !== undefined && options.genes === undefined,
   };
   const health = maxHealth(creature);
   creature.stamina = statOf(creature, "stamina");
@@ -646,6 +755,11 @@ function kill(ctx: GameContext, creature: Creature): void {
   lie(ctx, creature.id, true);
   const killer = creature.lastHitBy === null ? undefined : world.creatures.get(creature.lastHitBy);
   if (killer?.growth != null && !killer.dead) grantTameXp(ctx, killer, killXp(defOf(creature), creature.level));
+  // A Scrapper Rex tears the wreck apart and bolts the parts onto itself.
+  if (killer !== undefined && !killer.dead && botProfile(killer.species)?.scraps !== undefined) {
+    killer.scrapped += 1;
+    ctx.scene.entity.floatText({ instanceId: killer.id, text: "Scrapped!", kind: "pickup" });
+  }
 }
 
 /** XP for a tame: ARK levels it on its own curve and gives a point per level to spend. */
@@ -738,7 +852,15 @@ function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus
   const extra = scatterPoints(bonus, WILD_STATS, ctx.rng);
   for (const stat of WILD_STATS) creature.wild[stat] += extra[stat];
   makeTame(ctx, creature);
-  ctx.game.notices.push({ text: `${defOf(creature).label} tamed! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% taming effectiveness)`, tone: "success" });
+  ctx.game.notices.push({ text: `${defOf(creature).label} uploaded! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% upload integrity)`, tone: "success" });
+  // A sloppy upload leaves a permanent quirk.
+  const quirk = rollQuirk(effectiveness, ctx.rng);
+  if (quirk !== null && !creature.traits.includes(quirk)) {
+    creature.traits.push(quirk);
+    const health = maxHealth(creature);
+    ctx.scene.entity.stats.set(creature.id, "health", { max: health, current: health });
+    ctx.game.notices.push({ text: `The upload was sloppy: your ${defOf(creature).label} picked up a quirk, ${traitDef(quirk)?.label ?? quirk}.`, tone: "deny" });
+  }
 }
 
 /** A creature becomes the survivor's: its tame levels start, full health, and it waits where it stands. */
@@ -985,6 +1107,8 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     }
   }
 
+  events.push(...tickStorm(ctx, world));
+  tickSentries(ctx, world, dt);
   const mine = [ctx.player.userId, ...world.roster.list(ctx.player.userId).map((record) => record.id)];
   const threats = threatsTo(world, mine);
   for (const creature of world.creatures.values()) {
@@ -1033,13 +1157,19 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
               nearby: record.stance === "aggressive" ? wildAround(ctx, world, self?.position, AGGRESSIVE_RANGE) : [],
             })!,
           } as const)
-        : ({ kind: "wild", temperament: temperamentOf(def) } as const);
-    const step = world.driver.step(ctx, creature.id, mind, body(world, creature), stepDt);
+        : creature.dormant
+          ? ({ kind: "still" } as const)
+          : wildMind(ctx, world, creature, def);
+    const step = world.driver.step(ctx, creature.id, mind, body(ctx, world, creature), stepDt);
     world.steps.set(creature.id, step);
     const bitten = step.struck && step.targetId !== null ? world.creatures.get(step.targetId) : undefined;
     if (bitten !== undefined) {
       bitten.lastHitBy = creature.id;
       world.driver.hurt(ctx, bitten.id, creature.id);
+    }
+    if (step.struck && step.targetId !== null && !creature.tamed) {
+      const trick = trickEvent(ctx, world, creature, step.targetId);
+      if (trick !== null) events.push(trick);
     }
     if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
   }
@@ -1055,6 +1185,218 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   const aim = me === null ? 0 : me.id === ctx.player.userId ? playerMovementHeading(ctx, me.id) || me.rotationY : me.rotationY;
   world.aimed = me === null ? null : (creatureInFront(ctx, me.id, aim, USE_REACH, (creature) => riding.riderOf(creature.id) === null)?.id ?? null);
   return events;
+}
+
+// --- machine instincts: targeting, tricks, storms, sentries ----------------------------------------
+
+/** A wild bot's mind: its temperament (every one hunts in a Signal Storm), its targeting rules, and light. */
+function wildMind(ctx: GameContext, world: World, creature: Creature, def: SpeciesDef) {
+  const profile = botProfile(creature.species);
+  const temperament = world.storm ? { kind: "predator" as const, breakAt: 0 } : temperamentOf(def);
+  const rules = profile?.targets ?? [];
+  const lightSeeker = rules.includes("brightest");
+  return {
+    kind: "wild" as const,
+    temperament: lightSeeker ? { ...temperament, light: "attracted" as const } : temperament,
+    ...(rules.length === 0 ? {} : { focus: (candidateId: string) => targetScore(rules, targetFacts(ctx, world, creature, candidateId)) }),
+    ...(lightSeeker ? { lightOf: (candidateId: string) => targetFacts(ctx, world, creature, candidateId).bright } : {}),
+  };
+}
+
+/** The forest stands up: every dormant Rootkit within its reach of `at` wakes and hunts. */
+export function disturbForest(ctx: GameContext, at: readonly [number, number, number]): number {
+  const world = worldOf(ctx);
+  let woke = 0;
+  for (const creature of world.creatures.values()) {
+    const reach = botProfile(creature.species)?.dormantUntilChop?.radius;
+    if (!creature.dormant || creature.dead || reach === undefined) continue;
+    const self = ctx.scene.entity.get(creature.id)?.position;
+    if (self === undefined || Math.hypot(self[0] - at[0], self[2] - at[2]) > reach) continue;
+    creature.dormant = false;
+    world.driver.hurt(ctx, creature.id, ctx.player.userId);
+    woke += 1;
+  }
+  if (woke > 0) ctx.game.notices.push({ text: woke === 1 ? "A tree stands up: Rootkit!" : `The forest stands up: ${woke} Rootkits!`, tone: "deny" });
+  return woke;
+}
+
+/** The trick a bot pulls when its strike lands on `targetId`, with an Echo Mimic copying the last one near it. */
+function trickEvent(ctx: GameContext, world: World, creature: Creature, targetId: string): CreatureEvent | null {
+  const profile = botProfile(creature.species);
+  let trick = profile?.trick;
+  const self = ctx.scene.entity.get(creature.id)?.position;
+  if (trick === undefined || self === undefined) return null;
+  if (trick.kind === "mimic") {
+    const last = world.lastTrick;
+    if (last === null || last.trick.kind === "mimic" || ctx.time.now() - last.time > 30 || Math.hypot(last.at[0] - self[0], last.at[2] - self[2]) > trick.radius) return null;
+    trick = last.trick;
+  } else {
+    world.lastTrick = { trick, at: [self[0], self[1], self[2]], time: ctx.time.now() };
+  }
+  const label = defOf(creature).label;
+  const detail = applyTrick(ctx, world, creature, trick, targetId);
+  if (detail === null) return null;
+  ctx.game.notices.push({ text: `${label}: ${detail}`, tone: "deny" });
+  return { type: "trick", id: creature.id, label, trick: trick.kind, detail };
+}
+
+/** Do it; returns what happened in words, or null when it did nothing. */
+function applyTrick(ctx: GameContext, world: World, creature: Creature, trick: StrikeTrick, targetId: string): string | null {
+  const me = targetId === ctx.player.userId;
+  switch (trick.kind) {
+    case "drainStamina":
+      if (!me) return null;
+      drainSurvivorStamina(ctx, trick.amount);
+      return `latched on and drained ${trick.amount} stamina`;
+    case "disarm": {
+      const held = me ? heldItem(ctx) : null;
+      if (held === null || !/^(metal_|element_)/.test(held) || ctx.rng() >= trick.chance) return null;
+      if (ctx.player.inventory.take(HOTBAR, held, 1).status !== "ok") return null;
+      const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, held, 1);
+      if (put.status === "ok") creature.inventory = put.state;
+      return `magnetic pull yanked your ${itemLabel(held)} away. Down it to get it back`;
+    }
+    case "steal": {
+      if (!me) return null;
+      const stacks = ctx.player.inventory.state(BAG).slots.flatMap((slot, index) => (slot === null ? [] : [{ index, slot }]));
+      if (stacks.length === 0) return null;
+      const pick = stacks[Math.floor(ctx.rng() * stacks.length)]!;
+      const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, pick.slot.itemId, pick.slot.count);
+      if (put.status !== "ok") return null;
+      ctx.player.inventory.take(BAG, pick.slot.itemId, pick.slot.count);
+      creature.inventory = put.state;
+      const self = ctx.scene.entity.get(creature.id)?.position;
+      if (self !== undefined) {
+        const angle = ctx.rng() * Math.PI * 2;
+        moveCreature(ctx, creature.id, [self[0] + Math.sin(angle) * trick.blink, self[2] + Math.cos(angle) * trick.blink]);
+      }
+      return `stole ${pick.slot.count} ${itemLabel(pick.slot.itemId)} and blinked away`;
+    }
+    case "chain": {
+      const target = ctx.scene.entity.get(targetId);
+      const attack = defOf(creature).attack;
+      if (target === null || attack === null) return null;
+      const wet = climateAt(ctx, target.position).wet;
+      const amount = attack.damage * trick.share * (wet ? 2 : 1);
+      let arcs = 0;
+      for (const id of ctx.scene.entity.inRadius(targetId, trick.radius, (candidate) => candidate !== creature.id && candidate !== targetId)) {
+        const other = world.creatures.get(id);
+        if (other !== undefined && (other.dead || (!other.tamed && other.species === creature.species))) continue;
+        if (other === undefined && ctx.scene.entity.get(id)?.role !== "player") continue;
+        ctx.scene.entity.effect({ from: creature.id, to: id, effect: "damage", via: { amount } });
+        arcs += 1;
+      }
+      ctx.scene.entity.effect({ from: creature.id, to: targetId, effect: "damage", via: { amount: wet ? amount : 0 } });
+      return arcs === 0 && !wet ? null : `lightning arced${wet ? " through the water" : ""}${arcs > 0 ? ` to ${arcs} more` : ""}`;
+    }
+    case "mimic":
+      return null;
+  }
+}
+
+/** A clock's whole days since the start, as a fraction. */
+function daysNow(ctx: GameContext): number {
+  const calendar = ctx.time.calendar();
+  return calendar.day + calendar.dayFraction;
+}
+
+/**
+ * Signal Storms: on a storm night every wild bot goes Overclocked (wildMind, body) and, as the broadcast
+ * starts, each tame out under the open sky may revert to wild. A roof over it keeps the signal off.
+ */
+function tickStorm(ctx: GameContext, world: World): CreatureEvent[] {
+  const storm = !world.stormsEnded && stormAt(daysNow(ctx));
+  if (storm === world.storm) return [];
+  return storm ? startStorm(ctx, world) : stopStorm(ctx, world);
+}
+
+function startStorm(ctx: GameContext, world: World): CreatureEvent[] {
+  world.storm = true;
+  const reverted: string[] = [];
+  for (const creature of world.creatures.values()) {
+    if (!creature.tamed || creature.dead || ridingOf(ctx).riderOf(creature.id) !== null) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at === undefined || climateAt(ctx, at).covered) continue;
+    if (ctx.rng() >= revertChance(creature.traits)) continue;
+    revertToWild(ctx, world, creature);
+    reverted.push(creature.id);
+  }
+  ctx.game.notices.push({ text: reverted.length === 0 ? "Signal Storm! Wild machines are Overclocked." : `Signal Storm! Wild machines are Overclocked, and ${reverted.length} of your bots reverted to wild.`, tone: "deny" });
+  return [{ type: "storm", on: true, reverted }];
+}
+
+function stopStorm(ctx: GameContext, world: World): CreatureEvent[] {
+  world.storm = false;
+  ctx.game.notices.push({ text: "The Signal Storm passes. Wild machines calm down.", tone: "success" });
+  return [{ type: "storm", on: false, reverted: [] }];
+}
+
+/** The broadcast rewrote it: a tame goes wild again, keeping its levels and whatever it carried. */
+function revertToWild(ctx: GameContext, world: World, creature: Creature): void {
+  if (world.viewing === creature.id) closeCreature(ctx);
+  world.roster.release(creature.id);
+  creature.tamed = false;
+  creature.saddled = false;
+  creature.growth = null;
+  creature.mating = false;
+  world.taming.track(creature.id, creature.species, creature.level);
+}
+
+/** Start or stop a Signal Storm now, whatever the night (a console, a proof). */
+export function setStorm(ctx: GameContext, on: boolean): CreatureEvent[] {
+  const world = worldOf(ctx);
+  if (world.storm === on) return [];
+  return on ? startStorm(ctx, world) : stopStorm(ctx, world);
+}
+
+/** The Root Server is down: the broadcasts stop for good. */
+export function endStorms(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  world.stormsEnded = true;
+  world.storm = false;
+}
+
+export function stormView(ctx: GameContext): { storm: boolean; ended: boolean } {
+  const world = worldOf(ctx);
+  return { storm: world.storm, ended: world.stormsEnded };
+}
+
+/** Tamed sentries on Guard Zone sweep for hostiles every few seconds and ping when new ones arrive. */
+function tickSentries(ctx: GameContext, world: World, dt: number): void {
+  world.sweep -= dt;
+  if (world.sweep > 0) return;
+  world.sweep = 4;
+  for (const creature of world.creatures.values()) {
+    const sentry = botProfile(creature.species)?.sentry;
+    if (sentry === undefined || !creature.tamed || creature.dead || world.roster.get(creature.id)?.command !== "stay") {
+      world.pinged.delete(creature.id);
+      continue;
+    }
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at === undefined) continue;
+    let hostiles = 0;
+    for (const other of world.creatures.values()) {
+      if (other.dead || other.tamed || other.dormant || !HOSTILE.has(defOf(other).temperament)) continue;
+      const there = ctx.scene.entity.get(other.id)?.position;
+      if (there !== undefined && Math.hypot(there[0] - at[0], there[2] - at[2]) <= sentry.radius) hostiles += 1;
+    }
+    const before = world.pinged.get(creature.id) ?? 0;
+    world.pinged.set(creature.id, hostiles);
+    if (hostiles > before) {
+      ctx.game.notices.push({ text: `${defOf(creature).label} pings: ${hostiles} hostile${hostiles === 1 ? "" : "s"} near its post`, tone: "deny" });
+      ctx.scene.entity.floatText({ instanceId: creature.id, text: "PING", kind: "damage" });
+    }
+  }
+}
+
+/** A creature's traits (quirks and glitches), empty for none or an unknown id. */
+export function traitsOf(ctx: GameContext, id: string): readonly string[] {
+  return worldOf(ctx).creatures.get(id)?.traits ?? [];
+}
+
+/** Hostiles the sentries last counted, by sentry: for the HUD and proofs. */
+export function sentryPings(ctx: GameContext): Record<string, number> {
+  return Object.fromEntries(worldOf(ctx).pinged);
 }
 
 // --- E, orders, riding --------------------------------------------------------------------------
@@ -1460,6 +1802,12 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     mating: creature.mating,
     imprint: creature.imprint,
     mutations: creature.mutations,
+    traits: creature.traits.flatMap((id) => {
+      const trait = traitDef(id);
+      return trait === null ? [] : [{ id, label: trait.label, kind: trait.kind, note: trait.note }];
+    }),
+    scrapped: creature.scrapped,
+    dormant: creature.dormant,
     // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
     lineage:
       creature.lineage === null
@@ -1663,6 +2011,8 @@ interface CreaturesSave {
   director: PopulationDirectorState;
   riding: { riders: MountedRider[]; seats: Record<string, SeatOffset> };
   tamingSpeed: number;
+  storm?: boolean;
+  stormsEnded?: boolean;
 }
 
 export function creaturesSave(ctx: GameContext) {
@@ -1680,6 +2030,8 @@ export function creaturesSave(ctx: GameContext) {
         director: world.director.snapshot(),
         riding: ridingOf(ctx).snapshot(),
         tamingSpeed: world.tamingSpeed,
+        storm: world.storm,
+        stormsEnded: world.stormsEnded,
       };
     },
     hydrate: (data: CreaturesSave) => {
@@ -1689,6 +2041,9 @@ export function creaturesSave(ctx: GameContext) {
         creature.lastHitBy ??= null;
         creature.lineage ??= null;
         creature.growth = creature.growth == null ? (creature.tamed ? { tamedAt: creature.level, gained: 0, xp: 0, points: TAME_POINTS.empty() } : null) : { ...creature.growth, points: TAME_POINTS.normalize(creature.growth.points) };
+        creature.traits ??= [];
+        creature.scrapped ??= 0;
+        creature.dormant ??= false;
         creature.stamina ??= statOf(creature, "stamina");
         return [creature.id, creature];
       }));
@@ -1701,6 +2056,8 @@ export function creaturesSave(ctx: GameContext) {
       world.director.hydrate(data.director);
       ridingOf(ctx).restore(data.riding);
       world.tamingSpeed = data.tamingSpeed;
+      world.storm = data.storm ?? false;
+      world.stormsEnded = data.stormsEnded ?? false;
     },
   };
 }
@@ -1721,6 +2078,11 @@ export function resetCreatures(ctx: GameContext): void {
   world.lastTame = null;
   world.carried.clear();
   world.lastLift = null;
+  world.noise.clear();
+  world.lastTrick = null;
+  world.storm = false;
+  world.stormsEnded = false;
+  world.pinged.clear();
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */

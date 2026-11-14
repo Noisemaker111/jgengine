@@ -3,22 +3,27 @@ import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stat
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
-import { creatureSupply, foodMaxOf, starveCreature, tames } from "./creatures";
+import { climateAt } from "./climate";
+import { creatureSupply, foodMaxOf, starveCreature, tames, traitsOf } from "./creatures";
+import { chargeDrain, traitMultiplier } from "./data/bots";
 import { speciesDef } from "./data/species";
 import { STARVE_HEALTH_SHARE, TAME_DIET, TAME_FOOD_DRAIN_SECONDS } from "./data/tameFood";
 
 /**
- * Every tame's food, a body of one vital: it drains, the tame eats what its diet takes from its own
- * inventory whenever a meal fits ({@link eatWhileRoom} over {@link TAME_DIET}), and an empty meter starves
- * it to death. A growing baby's faster hunger is a pace on the same drain, set by breeding.
+ * Every bot's charge, a body of one vital (`food`): it runs down, faster in rain (rust) and hard sun (heat)
+ * and by its traits, the bot refuels from what its diet takes from its own inventory whenever a meal fits
+ * ({@link eatWhileRoom} over {@link TAME_DIET}), and an empty cell shuts it down for good. A growing bot's
+ * faster draw is a pace on the same drain, set by breeding.
  */
 interface Hunger {
   bodies: Map<string, Vitals>;
   /** Drain multiplier per tame; 1 when unset. */
   pace: Map<string, number>;
+  /** What is wearing each bot down where it stands right now: rust, heat or nothing. */
+  cause: Map<string, "rust" | "heat" | null>;
 }
 
-const hungerOf = perContext((): Hunger => ({ bodies: new Map(), pace: new Map() }));
+const hungerOf = perContext((): Hunger => ({ bodies: new Map(), pace: new Map(), cause: new Map() }));
 
 const foodBody = (max: number, start: number): Vitals => createVitals([{ id: "food", max, start, rate: -max / TAME_FOOD_DRAIN_SECONDS }]);
 
@@ -48,7 +53,9 @@ export function tickTameHunger(ctx: GameContext, dt: number): void {
     const diet = speciesDef(tame.species)?.diet;
     const supply = creatureSupply(ctx, tame.id);
     if (body === null || diet === undefined || supply === null) continue;
-    body.tick(dt, { drain: { food: hunger.pace.get(tame.id) ?? 1 } });
+    const weather = chargeDrain(climateAt(ctx, tame.at));
+    hunger.cause.set(tame.id, weather.cause);
+    body.tick(dt, { drain: { food: (hunger.pace.get(tame.id) ?? 1) * weather.multiplier * traitMultiplier(traitsOf(ctx, tame.id), "drain") } });
     eatWhileRoom(body, TAME_DIET, diet, supply, "food");
     if (body.value("food") <= 0) starveCreature(ctx, tame.id, STARVE_HEALTH_SHARE * dt);
   }
@@ -56,7 +63,13 @@ export function tickTameHunger(ctx: GameContext, dt: number): void {
     if (alive.has(id)) continue;
     hunger.bodies.delete(id);
     hunger.pace.delete(id);
+    hunger.cause.delete(id);
   }
+}
+
+/** What is running a bot's charge down faster where it stands: rust (rain, water), heat (hard sun) or null. */
+export function chargeWear(ctx: GameContext, id: string): "rust" | "heat" | null {
+  return hungerOf(ctx).cause.get(id) ?? null;
 }
 
 /** A tame's food and max, or null when it is not a tame. */
@@ -107,4 +120,5 @@ export function resetTameHunger(ctx: GameContext): void {
   const hunger = hungerOf(ctx);
   hunger.bodies.clear();
   hunger.pace.clear();
+  hunger.cause.clear();
 }

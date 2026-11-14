@@ -130,3 +130,25 @@ test("a hunter that has just bitten cannot bite again until its interval has run
   const gaps = struck.slice(1).map((step, i) => step - (struck[i] ?? 0));
   for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(8);
 });
+
+test("a hunter with a targeting preference goes for the target it prefers, not the nearest", () => {
+  const ctx = world();
+  ctx.scene.entity.spawn("player", { id: "p2", position: [0, 0, 14], role: "player" });
+  ctx.scene.entity.spawn("raptor", { id: "r1", position: [0, 0, 4], role: "npc" });
+  const driver = createCreatureDriver();
+  driver.add("r1", [0, 0, 4]);
+  const plain = { kind: "wild" as const, temperament: { kind: "predator" as const, attackRange: 2, breakAt: 0 } };
+  expect(driver.step(ctx, "r1", plain, HUNTER, 0.1).targetId).toBe("p1");
+  const prefersP2 = { ...plain, focus: (id: string) => (id === "p2" ? 1 : 0) };
+  expect(driver.step(ctx, "r1", prefersP2, HUNTER, 0.1).targetId).toBe("p2");
+});
+
+test("a light-drawn grazer walks toward a lit survivor the driver is told about", () => {
+  const ctx = world();
+  ctx.scene.entity.spawn("moth", { id: "m1", position: [0, 0, 16], role: "npc" });
+  const driver = createCreatureDriver({ rng: () => 0.5 });
+  driver.add("m1", [0, 0, 16]);
+  const drawn = { kind: "wild" as const, temperament: { kind: "passive" as const, fleeRange: 2, light: "attracted" as const }, lightOf: () => 1 };
+  expect(driver.step(ctx, "m1", drawn, GRAZER, 0.1).mode).toBe("investigate");
+  expect(driver.step(ctx, "m1", { ...drawn, lightOf: () => 0 }, GRAZER, 0.1).mode).not.toBe("investigate");
+});
