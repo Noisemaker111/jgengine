@@ -57,8 +57,8 @@ export function KeepSigns() {
         <Text family="Lilita One" weight={400} size={phone ? 18 : 22} text={bind(() => String(num(ctx, "keep.gold")))} />
       </RuneView>
     </Row>
-    <Caption size={12} color={DIM} tooltip={`Scrap pay this wave; a clear street pays ${HELD_PAY_RULE.interestRate * 100}% interest on the till, up to ${HELD_PAY_RULE.interestMax}`}
-      text={bind(() => `×${bountyScale(Math.min(currentWaveNumber(), TOTAL_WAVES), relicBountyScale(legacy.read(ctx))).toFixed(2)} scrap · +${interestOn(num(ctx, "keep.gold"))} interest`)} />
+    <Caption size={12} color={DIM} tooltip={`Kill pay this wave; a clear street pays ${HELD_PAY_RULE.interestRate * 100}% interest on the till, up to ${HELD_PAY_RULE.interestMax}`}
+      text={bind(() => `×${bountyScale(Math.min(currentWaveNumber(), TOTAL_WAVES), relicBountyScale(legacy.read(ctx))).toFixed(2)} cash per kill · +$${interestOn(num(ctx, "keep.gold"))} interest`)} />
     <CoffeeBreak />
     {relic === null ? null : <Row gap={4}><Glyph name="star" size={13} color={FIRE} /><Tag color={FIRE}>{relic}</Tag></Row>}
   </RuneView>;

@@ -45,7 +45,7 @@ describe("the town is one declaration the engine runs", () => {
     expect(run("beacon.act", { action: rank("worker_barista", 1), target: "worker_barista-2" })).toEqual({
       status: "rejected",
       reason: "cost",
-      message: "Shift Lead needs 33 more gold",
+      message: "Shift Lead needs 33 more cash",
     });
     expect(level("worker_barista-2")).toBe(1);
 

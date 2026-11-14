@@ -35,6 +35,8 @@ export interface WorldFactSpec {
   decay?: number;
   min?: number;
   max?: number;
+  /** What a player calls this fact in a refusal ("needs 15 more cash"); defaults to the fact's own name. */
+  label?: string;
 }
 
 /** Facts a subject starts with: a plain value, or a {@link WorldFactSpec} for one that calms down. */
@@ -1007,7 +1009,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return true;
   };
 
-  const factWord = (key: string): string => key.slice(key.lastIndexOf(".") + 1).replace(/_/g, " ");
+  const factWord = (key: string): string => specFor(key)?.label ?? key.slice(key.lastIndexOf(".") + 1).replace(/_/g, " ");
   /** What is missing to pay `cost` × `scale`: each spend must keep its fact at or above its floor. */
   const shortfall = (cost: WorldChanges | undefined, scale: number, current: WorldModelState): Record<string, number> | null => {
     if (cost === undefined) return null;

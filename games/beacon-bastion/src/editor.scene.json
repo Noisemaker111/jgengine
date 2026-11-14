@@ -546,7 +546,7 @@
       ],
       "label": "Front-yard shrubs",
       "meta": {
-        "density": 0.03,
+        "density": 0.012,
         "minSpacing": 3,
         "seed": "beacon-bastion-meadow",
         "maxSlope": 5,

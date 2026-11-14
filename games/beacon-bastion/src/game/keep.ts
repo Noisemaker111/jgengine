@@ -70,8 +70,8 @@ export const keep = defineGameSpec({
       keep: {
         label: "The Town",
         facts: {
-          gold: { value: STARTING_GOLD, min: 0 },
-          lives: { value: STARTING_LIVES, min: 0 },
+          gold: { value: STARTING_GOLD, min: 0, label: "cash" },
+          lives: { value: STARTING_LIVES, min: 0, label: "attention" },
           lives_max: STARTING_LIVES,
           /** The wave the director has open (0 before the first release). */
           wave: 0,

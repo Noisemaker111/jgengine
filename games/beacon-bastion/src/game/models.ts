@@ -35,7 +35,9 @@ export const WORKER_ANIMATION = {
 
 /** A worker in their work clothes: one Quaternius character per trade, in its own colours. */
 function workerPick(def: TowerDef): ModelPick {
-  return { model: def.model, style: { targetHeight: WORKER_HEIGHT, animation: WORKER_ANIMATION } };
+  // The pack ships every body's "Skin" material near-black, so the face and hands read as a black
+  // hole from the street camera; each worker gets a real skin tone on that one material.
+  return { model: def.model, style: { targetHeight: WORKER_HEIGHT, animation: WORKER_ANIMATION, material: { color: def.skin, roughness: 0.75, materials: ["Skin"] } } };
 }
 
 /** The town hall at the end of Main Street: the thing the tech is marching on. */
@@ -44,21 +46,21 @@ const TOWN_HALL: ModelPick = { model: `${HOUSES}/Bank`, style: { targetHeight: 8
 /**
  * The street's buildings, placed as `building-*` markers in the scene document (each names one of
  * these in its `meta.model`) and spawned as scenery facing the street: KayKit City Builder shops and
- * houses in their own painted colours, scaled up so a front door is about a worker's height.
+ * houses in their own painted colours, kept low (6 m at most) so no rooftop hides the street from the camera.
  */
 export const BUILDING_PLAN: Record<string, ModelPick> = {
-  house: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 6.5 } },
-  house2: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5 } },
-  house3: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 8.5 } },
-  house4: { model: `${CITY}/building_D_withoutBase`, style: { targetHeight: 8.5 } },
-  house5: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 6.5, material: { color: "#ffe2c8" } } },
-  shop: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 6.5, material: { color: "#d8f0ff" } } },
-  flat: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10 } },
-  diner: { model: `${CITY}/building_E_withoutBase`, style: { targetHeight: 7.5 } },
-  bakery: { model: `${CITY}/building_F_withoutBase`, style: { targetHeight: 7.5 } },
-  corner: { model: `${CITY}/building_G_withoutBase`, style: { targetHeight: 8.5 } },
-  hardware: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 8.5, material: { color: "#ffd8d0" } } },
-  tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 10, material: { color: "#e0ffe8" } } },
+  house: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 4.7 } },
+  house2: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 4.7 } },
+  house3: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 6.1 } },
+  house4: { model: `${CITY}/building_D_withoutBase`, style: { targetHeight: 6.1 } },
+  house5: { model: `${CITY}/building_A_withoutBase`, style: { targetHeight: 4.7, material: { color: "#ffe2c8" } } },
+  shop: { model: `${CITY}/building_B_withoutBase`, style: { targetHeight: 4.7, material: { color: "#d8f0ff" } } },
+  flat: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 6.2 } },
+  diner: { model: `${CITY}/building_E_withoutBase`, style: { targetHeight: 5.4 } },
+  bakery: { model: `${CITY}/building_F_withoutBase`, style: { targetHeight: 5.4 } },
+  corner: { model: `${CITY}/building_G_withoutBase`, style: { targetHeight: 6.1 } },
+  hardware: { model: `${CITY}/building_C_withoutBase`, style: { targetHeight: 6.1, material: { color: "#ffd8d0" } } },
+  tall: { model: `${CITY}/building_H_withoutBase`, style: { targetHeight: 6.2, material: { color: "#e0ffe8" } } },
   lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.6 } },
 };
 
@@ -83,8 +85,8 @@ const SCATTER_PLAN: Record<string, ModelPick> = {
   tree: { model: `${FOREST}/Tree_1_A_Color1`, style: { targetHeight: 5.2, material: LAWN } },
   maple: { model: `${FOREST}/Tree_3_A_Color1`, style: { targetHeight: 4.6, material: LAWN } },
   pine: { model: `${FOREST}/Tree_4_A_Color1`, style: { targetHeight: 6.4, material: LAWN } },
-  bush: { model: `${FOREST}/Bush_2_A_Color1`, style: { targetHeight: 0.9, material: LAWN } },
-  hedge: { model: `${CITY}/bush`, style: { targetHeight: 1.3 } },
+  bush: { model: `${FOREST}/Bush_1_E_Color1`, style: { targetHeight: 1.1 } },
+  hedge: { model: `${FOREST}/Bush_4_E_Color1`, style: { targetHeight: 1.3 } },
   lamp: { model: `${CITY}/streetlight`, style: { targetHeight: 4.2 } },
   hydrant: { model: `${CITY}/firehydrant`, style: { targetHeight: 0.9 } },
   bench: { model: `${CITY}/bench`, style: { targetHeight: 0.8 } },

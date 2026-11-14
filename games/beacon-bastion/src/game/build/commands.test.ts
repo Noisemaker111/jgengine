@@ -64,7 +64,7 @@ describe("tower.build on plots", () => {
   test("a tower the player cannot afford rejects and names the shortfall", () => {
     world().set("keep.gold", archer.cost - 15);
     runner.ui.invoke("buildTower1", {});
-    expect(runner.ui.tryInvoke("tower.build", { point: plotPoint(1) })).toEqual({ status: "rejected", reason: "cost", message: `${archer.label} needs 15 more gold` });
+    expect(runner.ui.tryInvoke("tower.build", { point: plotPoint(1) })).toEqual({ status: "rejected", reason: "cost", message: `${archer.label} needs 15 more cash` });
     expect(occupant(1)).toBeNull();
   });
 });
@@ -123,7 +123,7 @@ describe("upgradeTower (keybind)", () => {
   test("rejects without enough gold, at the fork, and once mastered", () => {
     const id = build(2, 0);
     world().set("keep.gold", 10);
-    expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "cost", message: expect.stringMatching(/^Journeyman Plumber needs \d+ more gold$/) });
+    expect(runner.ui.tryInvoke("upgradeTower", { instanceId: id })).toMatchObject({ status: "rejected", reason: "cost", message: expect.stringMatching(/^Journeyman Plumber needs \d+ more cash$/) });
     world().set("keep.gold", 10_000);
     runner.ui.invoke("upgradeTower", { instanceId: id });
     runner.ui.invoke("upgradeTower", { instanceId: id });

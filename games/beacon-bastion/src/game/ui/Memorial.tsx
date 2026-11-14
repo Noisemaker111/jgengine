@@ -33,8 +33,8 @@ function MemorialStone({ victory }: { victory: boolean }) {
   const choose = (boon: string | null) => ctx.game.commands.run("legacy.choose", { boon });
   const lines: [string, string][] = [
     ["Waves reached", `${wave} / ${TOTAL_WAVES}`],
-    ["Scrap paid", `${readout.earned} cash`],
-    ["Scrap pay", `${readout.opening} → ${readout.closing} cash (×${readout.scale.toFixed(2)})`],
+    ["Kill pay earned", `${readout.earned} cash`],
+    ["Kill pay", `${readout.opening} → ${readout.closing} cash (×${readout.scale.toFixed(2)})`],
     ["Cash banked", `${view.account.bankedGold}`],
     ["Seniority", String(view.account.standing)],
     ["Perk carried", relic === null ? "none" : relic.label],

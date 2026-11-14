@@ -110,7 +110,7 @@ export function TowerPanel() {
     {options.length === 0 ? <Plank disabled>Top of the ladder</Plank> : null}
     <RuneView layout={fork ? "grid" : "stack"} columns={2} gap={6}>{options.map((option) => {
       const ready = option.refusal === null, cost = -((option.cost["keep.gold"] as number | undefined) ?? 0);
-      // A refused step still runs, so its "needs N more gold" reaches the notice feed.
+      // A refused step still runs, so its "needs N more cash" reaches the notice feed.
       const run = { name: "beacon.act", input: { action: option.action, target: tower.id } };
       return fork
         ? <Plank key={option.action} variant="parchment" layout="stack" command={run} opacity={ready ? 1 : 0.6} gap={3} padding={[8, 10, 8, 10]} items="start" label={option.branchLabel ?? option.label} {...(option.detail == null ? {} : { tooltip: option.detail })}>

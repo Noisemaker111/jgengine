@@ -54,6 +54,14 @@ describe("tower defense: slots, refusing costs, timed builds, upgrades by level"
     expect(world.num("archer-1.level")).toBe(1);
   });
 
+  test("a fact's label names it in a refusal, so a renamed currency need not rename its fact", () => {
+    const shop = defineWorldModel({
+      factions: { town: { facts: { gold: { value: 10, min: 0, label: "cash" } } } },
+      actions: { hire: { label: "Hire", cost: { "town.gold": -25 } } },
+    });
+    expect(createWorldModel(shop).act("hire")).toMatchObject({ ok: false, reason: "cost", message: "Hire needs 15 more cash" });
+  });
+
   test("upgrades cost more per level, stop at the cap, and feed the totals; selling refunds half of everything paid", () => {
     const world = createWorldModel(keep);
     world.place("archer", { slot: "a1" });

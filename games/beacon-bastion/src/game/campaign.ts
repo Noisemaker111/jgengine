@@ -68,7 +68,7 @@ export const COUNCIL_NODES: readonly (SkillNodeDef<CouncilStat> & { label: strin
   { id: "civic_ordinance", label: "Civic Ordinance", detail: "Civic +25% and trades +5%. Closes the Blue-Collar Ordinance", branch: "union", cost: 2, excludes: ["blue_collar"], passives: { civic_damage: { multiply: 1.25 }, trades_damage: { multiply: 1.05 } } },
   { id: "bake_sale", label: "Bake Sale", detail: "+25 cash in the opening till a rank", branch: "budget", maxRank: 3, passives: { opening_gold: { add: 25 } } },
   { id: "yoga", label: "Lunchtime Yoga", detail: "+3 attention span a rank", branch: "budget", maxRank: 2, passives: { lives: { add: 3 } } },
-  { id: "recycling", label: "Recycling Program", detail: "Scrap pay +10%", branch: "budget", cost: 2, requires: [{ nodeId: "bake_sale" }], passives: { bounty: { multiply: 1.1 } } },
+  { id: "recycling", label: "Recycling Program", detail: "Cash per kill +10%", branch: "budget", cost: 2, requires: [{ nodeId: "bake_sale" }], passives: { bounty: { multiply: 1.1 } } },
   { id: "early_bird", label: "Early Bird Special", detail: "Calling a wave early pays half again", branch: "budget", passives: { early_bonus: { multiply: 1.5 } } },
   { id: "grid", label: "Old Power Grid", detail: "Blackout hits 25% harder a rank", branch: "rituals", maxRank: 2, passives: { blackout_damage: { multiply: 1.25 } } },
   { id: "fuse_box", label: "Spare Fuses", detail: "Blackout is back 20% sooner", branch: "rituals", cost: 2, requires: [{ nodeId: "grid" }], passives: { blackout_cooldown: { multiply: 0.8 } } },

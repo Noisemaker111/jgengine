@@ -65,6 +65,8 @@ export interface TowerDef {
   icon: WorkerIcon;
   /** The worker's model, a `quaternius-animated-characters-pack` character in work clothes; one body per trade. */
   model: string;
+  /** Skin tone painted on the model's "Skin" material (the pack ships it near-black). */
+  skin: string;
   /** The two shared promotions every worker climbs before choosing a path. */
   ranks: readonly [string, string];
   voice: VoiceLines;
@@ -107,6 +109,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#7a4a24",
     icon: "coffee",
     model: `${PACK}/Chef_Female`,
+    skin: "#f1c7a1",
     ranks: ["Shift Lead", "Head Barista"],
     voice: {
       place: ["Extra hot, for here.", "That's a tall order.", "Who's next?"],
@@ -134,6 +137,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#5ab8ff",
     icon: "wrench",
     model: `${PACK}/Worker_Female`,
+    skin: "#8d5a3b",
     ranks: ["Journeyman Plumber", "Master Plumber"],
     voice: {
       place: ["Gonna need a bigger wrench.", "Who's been flushing gadgets?"],
@@ -160,6 +164,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#d9b44a",
     icon: "pitchfork",
     model: `${PACK}/Cowboy_Male`,
+    skin: "#e0ac7e",
     ranks: ["Farmhand", "Farm Boss"],
     voice: {
       place: ["Get off my land.", "Sun's up. Gadgets down."],
@@ -186,6 +191,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#e8a0c8",
     icon: "teacup",
     model: `${PACK}/OldClassy_Female`,
+    skin: "#f6d7c3",
     ranks: ["Great-Aunt", "Matriarch"],
     voice: {
       place: ["How do I make it stop?", "Back in my day…"],
@@ -213,6 +219,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ffe14a",
     icon: "bolt",
     model: `${PACK}/Casual2_Male`,
+    skin: "#c68a5e",
     ranks: ["Licensed Electrician", "Master Electrician"],
     voice: {
       place: ["Who wired this?", "Let's see what we're dealing with."],
@@ -239,6 +246,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ff6a5a",
     icon: "apple",
     model: `${PACK}/Suit_Female`,
+    skin: "#6b4430",
     ranks: ["Department Head", "Vice Principal"],
     voice: {
       place: ["Phones. Away. Now.", "Eyes up here, please."],
@@ -265,6 +273,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#b68cff",
     icon: "book",
     model: `${PACK}/Casual3_Female`,
+    skin: "#f3cfb3",
     ranks: ["Reference Librarian", "Head Librarian"],
     voice: {
       place: ["Shhhhh.", "Inside voices."],
@@ -292,6 +301,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ffb020",
     icon: "hardhat",
     model: `${PACK}/Worker_Male`,
+    skin: "#a86b45",
     ranks: ["Foreman", "Site Boss"],
     voice: {
       place: ["Coffee break's over.", "Hard hats on."],
@@ -318,6 +328,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#9fe0ff",
     icon: "hose",
     model: `${PACK}/BlueSoldier_Male`,
+    skin: "#e9b48c",
     ranks: ["Engineer", "Captain"],
     voice: {
       place: ["It's running hot!", "Station's open."],
@@ -345,6 +356,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#9ad07a",
     icon: "broom",
     model: `${PACK}/Casual_Male`,
+    skin: "#5a3a28",
     ranks: ["Custodian", "Head Custodian"],
     voice: {
       place: ["I just cleaned that.", "Who left all these cords out?"],
@@ -371,6 +383,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#f4f0e0",
     icon: "envelope",
     model: `${PACK}/Casual_Female`,
+    skin: "#d29a6c",
     ranks: ["Route Carrier", "Postmaster"],
     voice: {
       place: ["Neither rain nor sleet…", "Special delivery."],
@@ -397,6 +410,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#ffc06a",
     icon: "lotus",
     model: `${PACK}/Kimono_Male`,
+    skin: "#c99366",
     ranks: ["Initiate", "Elder"],
     voice: {
       place: ["Be present.", "Breathe."],
@@ -424,6 +438,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#5aff9a",
     icon: "laptop",
     model: `${PACK}/Casual_Bald`,
+    skin: "#f0c8a8",
     ranks: ["Help Desk", "Sysadmin"],
     voice: {
       place: ["Have you tried turning it off and on again?", "Ticket received."],
@@ -451,6 +466,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     boltColor: "#f6e6b0",
     icon: "gavel",
     model: `${PACK}/Suit_Male`,
+    skin: "#7a4b33",
     ranks: ["Associate", "Partner"],
     voice: {
       place: ["See you in court.", "I'll need a retainer."],

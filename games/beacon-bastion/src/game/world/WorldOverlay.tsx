@@ -24,7 +24,9 @@ import { session } from "../session";
 import { towerDef } from "../entities/towers/catalog";
 import { editorLayers } from "../../editorLayers";
 import { WORKER_HEIGHT } from "../models";
-import { speechBubblesDraw } from "../render/speechBubbles";
+import { townProjection } from "../ui/SpeechBubbles";
+import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
@@ -441,9 +443,17 @@ function workerStatusDraw(ctx: GameContext): EngineDraw {
   };
 }
 
-function SpeechBubbles() {
-  const ctx = useGameContext();
-  return <EngineDrawMount create={() => speechBubblesDraw(ctx)} deps={[ctx]} />;
+/** Hands the live camera projection to the HUD, whose speech bubbles anchor to workers and tech. */
+function ShareProjection() {
+  const project = useWorldProjection();
+  useEffect(() => {
+    townProjection.current = (position) => {
+      const point = project(position);
+      return point === null ? { x: 0, y: 0, behind: true } : { x: point.x, y: point.y, behind: point.behind === true };
+    };
+    return () => { townProjection.current = null; };
+  }, [project]);
+  return null;
 }
 
 function WorkerStatus() {
@@ -463,7 +473,7 @@ export function BeaconBastionWorldOverlay() {
       <BuildSites />
       <InspectedTower />
       <WorkerStatus />
-      <SpeechBubbles />
+      <ShareProjection />
       <ProjectileBolts />
     </>
   );

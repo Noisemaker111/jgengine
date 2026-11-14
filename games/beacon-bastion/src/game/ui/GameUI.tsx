@@ -10,10 +10,11 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { pauseRun } from "../menu";
 import { AbilityStones, BuildBar, KeepSigns, ReleaseHorn, WaveBoard } from "./Hud";
-import { BLOOD, FIRE, Glyph, townTheme, Text, usePhone } from "./look";
+import { BLOOD, Glyph, INK, townTheme, Text, usePhone } from "./look";
 import { Memorial } from "./Memorial";
 import { BeaconMenu } from "./menu/BeaconMenu";
 import { TowerPanel } from "./TowerPanel";
+import { SpeechBubbles, townRuneProjection } from "./SpeechBubbles";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
@@ -24,7 +25,7 @@ for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined
  * pause owns the frame.
  */
 export function GameUI() {
-  const ctx = useGameContext(), phase = useOptionalGamePhase();
+  const ctx = useGameContext(), phase = useOptionalGamePhase(), phone = usePhone();
   const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -37,10 +38,11 @@ export function GameUI() {
     return () => window.removeEventListener("keydown", key, true);
   }, [ctx]);
   const live = phase === "playing" || phase === "ended";
-  return <RuneRoot context={ctx} theme={townTheme}>
-    {live ? <PlayHud notices={<RuneView anchor="top" safe inset={96} gap={6} items="center">
+  const project = useMemo(() => townRuneProjection(ctx), [ctx]);
+  return <RuneRoot context={ctx} theme={townTheme} project={project}>
+    {live ? <PlayHud notices={<RuneView anchor="bottom" safe inset={phone ? 250 : 196} gap={6} items="center" maxWidth={phone ? 360 : 620}>
       <RuneTransient source={notices} expire={ctx.game.notices.prune}>{(notice) =>
-        <RuneView variant="sign" padding={[6, 14, 6, 14]}><Text size={14} color={notice.tone === "deny" ? BLOOD : FIRE}>{notice.text}</Text></RuneView>}
+        <RuneView variant="sign" padding={[6, 14, 6, 14]}><Text size={14} align="center" color={notice.tone === "deny" ? BLOOD : INK}>{notice.text}</Text></RuneView>}
       </RuneTransient>
     </RuneView>} /> : null}
     <BeaconMenu />
@@ -51,6 +53,7 @@ export function GameUI() {
 function PlayHud({ notices }: { notices: ReactNode }) {
   const ctx = useGameContext(), phone = usePhone();
   return <>
+    <SpeechBubbles />
     <RuneView anchor="top-left" safe inset={phone ? 10 : 16} gap={10}><KeepSigns /><ReleaseHorn /></RuneView>
     <RuneView anchor={phone ? "top-right" : "top"} safe inset={phone ? 10 : 0} padding={phone ? [56, 0, 0, 0] : 0}><WaveBoard /></RuneView>
     <RuneView anchor="top-right" safe inset={phone ? 10 : 16}>

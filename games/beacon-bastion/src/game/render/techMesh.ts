@@ -30,7 +30,7 @@ import { UPDATE_RULE } from "../waves/director";
  */
 
 /** Small tech draws larger than its hitbox, so a phone reads as a phone from the street camera; the bosses are big enough already. */
-const techVisualScale = (scale: number): number => (scale >= 1.8 ? 1 : 1.6);
+const techVisualScale = (scale: number): number => (scale >= 1.8 ? 1.3 : 2.4);
 
 const geometries = new Map<string, BufferGeometry>();
 const materials = new Map<string, MeshStandardMaterial>();
