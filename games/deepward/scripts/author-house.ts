@@ -89,10 +89,10 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
 {
   const t = template('burrow', { name: 'The Burrow', zone: 'burrow', minDepth: 99, w: 30, d: 26, floor: 'wood', floorColor: '#6f4a2c', flavor: 'Home, inside the kitchen wall.', mood: 'home' });
   // Wall studs and the plaster back of the kitchen wall make a timber cave.
-  box(t, 'plaster-back', [0, 30, -14], [40, 60, 1.5], 'plaster', '#c9b89a');
+  box(t, 'plaster-back', [0, 30, -14], [40, 60, 1.5], 'plaster', '#8f7a60');
   box(t, 'drywall-front', [0, 30, 14], [40, 60, 1.5], 'cardboard', '#8b7457');
   for (const x of [-16, 16]) box(t, 'stud', [x, 30, 0], [3, 60, 26], 'wood', '#8a5d36');
-  box(t, 'sole-plate', [0, 0.8, 0], [36, 1.6, 4], 'wood', '#7a5130');
+  box(t, 'sole-plate', [0, 0.4, -13], [36, 0.8, 1.6], 'wood', '#7a5130');
   box(t, 'ceiling-board', [0, 14, 0], [36, 1, 30], 'wood', '#4e3420');
   // Fairy lights: a lost string of beads glowing along the ceiling board.
   for (let i = 0; i < 9; i++) ball(t, 'fairy-bead', [-12 + i * 3, 12.4 - Math.sin(i * 0.9) * 0.8, -6 + (i % 2) * 2], 0.35, 'emissive', i % 3 === 0 ? '#ffcf7a' : i % 3 === 1 ? '#ff9f6b' : '#ffe8b0', { glow: 1.6 });
@@ -119,7 +119,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   // Littles' nook: matchbox beds.
   for (let i = 0; i < 3; i++) box(t, 'matchbox-bed', [3 + i * 3.6, 0.9, 8], [3, 1.8, 5], 'cardboard', ['#d3a35f', '#8db4c4', '#c98a8a'][i]!, { solid: true });
   box(t, 'trophy-shelf', [-12, 4, 10], [6, 0.4, 2.2], 'wood', '#9a6a3c', { upgrade: 'trophies', level: 1 });
-  lamp(t, 'fairy', [0, 10, -4], '#ffb36b', 9, 26, 'fairy lights');
+  lamp(t, 'fairy', [0, 10, -4], '#ffb36b', 5, 26, 'fairy lights');
   lamp(t, 'crack', [0, 3, -11], '#ffcf8f', 3, 12, 'crack glow');
   station(t, 'crack', 0, -11, 'depart', 2.6, 'the baseboard crack');
   station(t, 'stash', -11, -5.4, 'stash', 2.8, 'matchbox chest');
@@ -148,7 +148,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   box(t, 'tea-towel', [14, 0.4, 6], [12, 0.8, 9], 'fabric', '#c45a4a', { cover: true, turn: 0.3 });
   box(t, 'tea-towel-fold', [12, 1.4, 4.5], [7, 1.4, 4], 'fabric', '#b44c3d', { solid: true, turn: 0.3 });
   box(t, 'fridge-side', [-24, 50, -6], [4, 100, 22], 'metal', '#e9ecec');
-  lamp(t, 'oven-clock', [8, 12, -1], '#7dffb0', 4, 28, 'oven clock glow');
+  lamp(t, 'oven-clock', [8, 12, -1], '#7dffb0', 1.5, 28, 'oven clock glow');
   lamp(t, 'moon', [8, 48, 12], '#9fb9ff', 10, 90, 'moonlight from the window');
   door(t, 'entry', 'entry', -14, -2, ['crack'], 'the baseboard crack');
   door(t, 'up', 'forward', 14, -1.2, ['climb'], 'the drawer pulls');
@@ -181,7 +181,7 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   cyl(t, 'charger-cable', [21, 6, 0], 0.35, 30, 'plastic', '#f2f2f2', { tilt: Math.PI / 2 - 0.25 });
   box(t, 'far-floor', [0, -60, 40], [200, 1, 120], 'lino', LINO);
   box(t, 'far-table', [6, -30, 60], [70, 3, 50], 'wood', OAK);
-  lamp(t, 'hood', [-6, 34, -6], '#ffd9a0', 8, 60, 'cooker hood bulb');
+  lamp(t, 'hood', [-6, 34, -6], '#ffd9a0', 4, 60, 'cooker hood bulb');
   lamp(t, 'moon', [20, 40, 18], '#9fb9ff', 9, 90, 'moonlight');
   door(t, 'entry', 'entry', 12, -12, ['climb'], 'the top of the drawer pulls');
   door(t, 'drop', 'forward', -4, 13.6, ['drop'], 'the counter edge');

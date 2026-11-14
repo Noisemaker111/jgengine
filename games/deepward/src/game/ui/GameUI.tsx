@@ -18,7 +18,7 @@ import { Button, CREAM, crumbTheme, Frame, GOLD, GREEN, Heading, Meter, MUTED, R
 import { nearby, storageChanged, viewStore } from "../controls";
 import { clockText, footprint, hasGear, isDawn, lightsOn, littlesOf, roomOf, twoHanded, type Run } from "../state";
 import { loadOf } from "../haul";
-import { completeSets, defOf, ITEMS, kindOf, SETS, SET_IDS, tradeValue, type Item, type ItemKind } from "../loot";
+import { completeSets, defOf, displayName, ITEMS, kindOf, SETS, SET_IDS, tradeValue, type Item, type ItemKind } from "../loot";
 import { LITTLES, LITTLE_IDS } from "../littles";
 import { NIGHTS, nightOf } from "../runGen";
 import { CHARTS, missing, nextGoal, packOf, RECIPES, UPGRADES, UPGRADE_IDS, wellFed, type Cost } from "../burrow";
@@ -79,9 +79,9 @@ function RunHud() {
       <Text color={MUTED} text={bind(() => { const r = run(); if (r === null) return ""; const p = roomOf(r); const lit = lightsOn(r, p) ? "The light is ON. " : ""; return `${lit}${p.exits.length > 0 ? `Way out here: ${p.exits.map(e => e.label).join(", ")}.` : "No way out here: go back, or find one deeper."}`; })} />
     </RuneView>
     <RuneView anchor="bottom-left" safe inset={20} responsive={{ phone: { padding: [0, 0, 150, 0] } }}>
-      <Frame width={270} responsive={{ phone: { width: width - 40, padding: 12, gap: 8 } }} scale={bind(() => 1 + pulse.get() * 0.03)}>
+      <Frame width={310} responsive={{ phone: { width: width - 40, padding: 12, gap: 8 } }} scale={bind(() => 1 + pulse.get() * 0.03)}>
         <Row justify="between"><Tag text={bind(() => { const r = run(); return r === null ? "" : `${LITTLES[r.little].name.toUpperCase()} ${LITTLES[r.little].title.toUpperCase()}`; })} />
-          <RuneLabel value={bind(() => { const r = run(); return r === null ? "" : clockText(r); })} family="Fredoka" size={phone ? 22 : 30} color={bind(() => { const r = run(); return r !== null && r.elapsed > r.nightSeconds - 60 ? RED : GOLD; })} /></Row>
+          <RuneLabel value={bind(() => { const r = run(); return r === null ? "" : clockText(r); })} family="Fredoka" size={phone ? 20 : 26} color={bind(() => { const r = run(); return r !== null && r.elapsed > r.nightSeconds - 60 ? RED : GOLD; })} /></Row>
         <Meter value={bind(() => { const r = run(); return { fraction: r === null ? 0 : Math.min(1, r.elapsed / r.nightSeconds) }; })} color={bind(() => { const r = run(); return r !== null && isDawn(r) ? RED : SKY; })} height={4} />
         <Tag color={SKY} text={bind(() => { const r = run(); return r === null ? "" : NIGHTS[nightOf(r.seed)].name.toUpperCase(); })} />
         <Row justify="between"><Tag>HEALTH</Tag><RuneLabel value={bind(() => Math.ceil(run()?.health ?? 0))} format={n => `${Math.ceil(n)}`} family="Fredoka" size={20} color={bind(() => (run()?.health ?? 100) < 35 ? RED : GREEN)} /></Row>
@@ -128,7 +128,7 @@ function HomeHud() {
 }
 function Radio() {
   const ctx = useGameContext();
-  return <Text align="center" text={bind(() => { const v = viewStore.read(ctx); return v.error && v.mode !== "saving" && v.mode !== "blocked" ? v.error : v.hint; })} />;
+  return <RuneView fill="#1a120dcc" radius={10} padding={[6, 12, 6, 12]}><Text align="center" size={15} text={bind(() => { const v = viewStore.read(ctx); return v.error && v.mode !== "saving" && v.mode !== "blocked" ? v.error : v.hint; })} /></RuneView>;
 }
 function Prompt({ command }: { command: Command }) {
   const ctx = useGameContext();
@@ -153,7 +153,7 @@ function StashSheet({ command, close }: { command: Command; close: () => void })
     <Row gap={6}>{(["all", "gear", "food", "part", "curio"] as const).map(f => <Button key={f} fill={filter === f ? GOLD : "#bfa684"} onPress={() => setFilter(f)}>{f === "all" ? "All" : f === "part" ? "Parts" : f === "curio" ? "Curios" : f[0]!.toUpperCase() + f.slice(1)}</Button>)}</Row>
     {shown.length === 0 ? <Text color={MUTED}>Empty shelves. Bring something home from the house.</Text> : shown.map(item => { const def = defOf(item), packed = home.bring.includes(item.id);
       return <Section key={item.id}>
-        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{item.name}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.noisy ? " · jingles" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
+        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{displayName(item)}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.noisy ? " · jingles" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
         <Text>{def.flavor}</Text>
         <Row gap={6}>{def.gear !== undefined ? <Button onPress={() => command("bring", { uid: item.id, on: !packed })}>{packed ? "Packed / unpack" : "Pack for the run"}</Button> : null}<Button onPress={() => command("trade", { id: item.id })}>{`Trade · ${tradeValue(item)} caps`}</Button></Row>
       </Section>; })}
@@ -221,9 +221,9 @@ function PackSheet({ command, close }: { command: Command; close: () => void }) 
     {sets.length > 0 ? <Text color={GREEN}>{`Complete set in your pack: ${sets.map(s => SETS[s].name).join(", ")}. Get it home!`}</Text> : null}
     <RuneView width={cell * w} height={cell * h}>
       {cells.map(c => <RuneAction key={`${c.x}:${c.y}`} pin={[c.x * cell, c.y * cell, null, null]} width={cell - 4} height={cell - 4} fill="#3a2a1f" radius={8} label={`Move to column ${c.x + 1}, row ${c.y + 1}`} run={() => { if (chosen) move(chosen, c); }} acceptDrop={id => { const i = pack.find(p => p.id === id); if (i) move(i, c); }} />)}
-      {pack.map(i => { const f = footprint(i); return <RuneAction key={i.id} pin={[i.x * cell, i.y * cell, null, null]} width={cell * f.w - 4} height={cell * f.h - 4} padding={6} radius={8} fill="#5a4231" border={{ width: selected === i.id ? 3 : 1, color: ITEMS[kindOf(i)].color }} dragValue={i.id} run={() => setSelected(i.id)} label={`Select ${i.name}`} tooltip={i.name}><ItemMark kind={kindOf(i)} size={24} /><Tag size={10}>{ITEMS[kindOf(i)].name}</Tag></RuneAction>; })}
+      {pack.map(i => { const f = footprint(i); return <RuneAction key={i.id} pin={[i.x * cell, i.y * cell, null, null]} width={cell * f.w - 4} height={cell * f.h - 4} padding={6} radius={8} fill="#5a4231" border={{ width: selected === i.id ? 3 : 1, color: ITEMS[kindOf(i)].color }} dragValue={i.id} run={() => setSelected(i.id)} label={`Select ${displayName(i)}`} tooltip={displayName(i)}><ItemMark kind={kindOf(i)} size={24} /><Tag size={10}>{ITEMS[kindOf(i)].name}</Tag></RuneAction>; })}
     </RuneView>
-    {chosen === undefined ? <Text color={MUTED}>Select or drag something to repack it.</Text> : <Section><Heading>{chosen.name}</Heading><Text color={MUTED}>{defOf(chosen).flavor}</Text>
+    {chosen === undefined ? <Text color={MUTED}>Select or drag something to repack it.</Text> : <Section><Heading>{displayName(chosen)}</Heading><Text color={MUTED}>{defOf(chosen).flavor}</Text>
       <Row>{([[-1, 0, "←"], [0, -1, "↑"], [0, 1, "↓"], [1, 0, "→"]] as const).map(([dx, dy, label]) => <Button key={label} label={`Move ${label}`} onPress={() => move(chosen, { x: chosen.x + dx, y: chosen.y + dy })}>{label}</Button>)}</Row>
       <Row><Button onPress={() => command("packMove", { uid: chosen.id, rotate: true })}>Turn it</Button><Button onPress={() => { command("drop", { uid: chosen.id }); setSelected(null); }}>Set it down here</Button></Row></Section>}
     {run !== null && hasGear(run, "slingshot") ? <Text color={SKY}>G flings a pebble to draw hunters away.</Text> : null}

@@ -53,9 +53,18 @@ function roomDraw(template: RoomTemplate, levels: Partial<Record<UpgradeId, numb
         group.add(mesh);
       }
       // The floor itself, a little larger than the walkable patch so the edges read as the room going on.
-      const a = template.area, grow = template.elevated > 0 ? 0 : 30;
+      const a = template.area, grow = template.elevated > 0 ? 0 : 54;
       const floor = new Mesh(new BoxGeometry(a.w + grow * 2, 1, a.d + grow * 2), houseMaterial(isHouseMaterial(template.floor) ? template.floor : "wood", template.floorColor));
       floor.position.set(a.x, -0.5, a.z); floor.receiveShadow = true; group.add(floor);
+      // Floor-level rooms are a corner of a giant room: its far walls stand off in the haze, so the
+      // edge of the patch never opens onto the void.
+      if (template.elevated === 0 && template.zone !== "burrow") {
+        const reach = 52, height = 220, far = houseMaterial("plaster", "#6d5a48");
+        for (const [x, z, w, d] of [[a.x, a.z - a.d / 2 - reach, a.w + reach * 2, 2], [a.x, a.z + a.d / 2 + reach, a.w + reach * 2, 2], [a.x - a.w / 2 - reach, a.z, 2, a.d + reach * 2], [a.x + a.w / 2 + reach, a.z, 2, a.d + reach * 2]] as const) {
+          const wall = new Mesh(new BoxGeometry(w, height, d), far);
+          wall.position.set(x, height / 2, z); wall.receiveShadow = true; group.add(wall);
+        }
+      }
       if (template.ceiling > 0) {
         const lid = new Mesh(new BoxGeometry(a.w + 60, 1, a.d + 60), new MeshStandardMaterial({ color: "#1d1712", roughness: 1 }));
         lid.position.set(a.x, template.ceiling + 3.5, a.z); group.add(lid);
@@ -91,7 +100,7 @@ export function RoomLights({ templateId }: { templateId: string }) {
     mount(state: EngineFrameState) {
       template.lamps.slice(0, 4).forEach((lamp, i) => {
         const light = lights[i]!;
-        light.color = new Color(lamp.color); light.intensity = lamp.intensity * lamp.distance * 1.6; light.distance = lamp.distance * 2.2;
+        light.color = new Color(lamp.color); light.intensity = lamp.intensity * lamp.distance * 0.35; light.distance = lamp.distance * 2.2;
         light.position.set(lamp.at[0], lamp.at[1], lamp.at[2]);
       });
       big.position.set(template.area.x, 110, template.area.z + 20);

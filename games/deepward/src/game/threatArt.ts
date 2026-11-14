@@ -31,7 +31,7 @@ function cat(key: string): Group {
   add(head, new Mesh(new SphereGeometry(0.7, 8, 6), mat("#d88a8a")), "nose", [0, -0.9, 6.9]);
   for (const s of [-1, 1]) {
     add(head, new Mesh(new ConeGeometry(2.2, 4.5, 4), mat(coat, { rough: 1 })), "ear", [s * 3.4, 5.2, -0.5], [0, 0, -s * 0.25]);
-    add(head, new Mesh(new SphereGeometry(1.15, 12, 10), mat("#d7ff5e", { glow: 2.2, rough: 0.2 })), "eye", [s * 2.4, 1, 5.1]);
+    add(head, new Mesh(new SphereGeometry(1.15, 12, 10), mat("#d7ff5e", { glow: 1.1, rough: 0.2 })), "eye", [s * 2.4, 1, 5.1]);
     add(head, new Mesh(new BoxGeometry(0.35, 1.7, 0.3), mat("#111")), "pupil", [s * 2.4, 1, 6.15]);
     for (const w of [-1, 1]) add(head, new Mesh(new CylinderGeometry(0.05, 0.05, 6, 4), mat("#eeeeee")), "whisker", [s * 4, -1.6 + w * 0.5, 5], [0, 0, Math.PI / 2 + s * w * 0.12]);
   }

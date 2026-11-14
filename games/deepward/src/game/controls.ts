@@ -10,7 +10,7 @@ import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { BURROW, DEPART, groundDistance, HOME_SPAWN, inCover, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
-import { defOf, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
+import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
 import { CHARTS, goalStep, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
 import { canCarry, loadOf } from "./haul";
@@ -274,7 +274,7 @@ function finish(ctx: GameContext, kind: Result["kind"], reason: string, via = ""
     teleport(ctx, HOME_SPAWN, Math.PI);
     syncPlayer(ctx, null);
     // The night's report: what came home, what it was worth, and who it moved in.
-    const report: NightReport = { items: v.run!.pack.map(i => ({ id: i.id, kind: kindOf(i), name: i.name, rarity: i.rarity })), caps: last.caps ?? 0, sets: last.sets ?? [], depth: last.depth ?? 0, rooms: v.run!.visited.length, via: last.via ?? "crack", clock: clockText(v.run!), littles: littlesOf(home).filter(id => !littlesOf(v.home).includes(id)) };
+    const report: NightReport = { items: v.run!.pack.map(i => ({ id: i.id, kind: kindOf(i), name: displayName(i), rarity: i.rarity })), caps: last.caps ?? 0, sets: last.sets ?? [], depth: last.depth ?? 0, rooms: v.run!.visited.length, via: last.via ?? "crack", clock: clockText(v.run!), littles: littlesOf(home).filter(id => !littlesOf(v.home).includes(id)) };
     viewStore.write(ctx, { ...viewStore.read(ctx), home, run: null, mode: "home", pending: null, paused: false, panel: "report", report, error: "", hint });
     freeze(ctx);
     ctx.game.audio.play("banked");
@@ -362,8 +362,8 @@ function completeChannel(ctx: GameContext, run: Run): Run {
     if (!result.ok) { ctx.game.notices.push({ text: result.message, tone: "deny" }); return done; }
     const def = defOf(item);
     ctx.game.audio.play(def.category === "curio" || item.rarity !== "common" ? "shiny" : "pickup");
-    ctx.game.notices.push({ text: `${item.name}${item.rarity !== "common" ? ` (${item.rarity})` : ""} · ${def.flavor}`, tone: "info" });
-    viewStore.update(ctx, s => ({ ...s, hint: `${item.name} in the pack.${def.bulky === true && !LITTLES[run.little].bulkyFree ? " Two arms: you're slower now." : ""}${def.gear !== undefined ? " Gear works while it's in your pack." : ""}` }));
+    ctx.game.notices.push({ text: `${displayName(item)} · ${def.flavor}`, tone: "info" });
+    viewStore.update(ctx, s => ({ ...s, hint: `${displayName(item)} in the pack.${def.bulky === true && !LITTLES[run.little].bulkyFree ? " Two arms: you're slower now." : ""}${def.gear !== undefined ? " Gear works while it's in your pack." : ""}` }));
     return result.run;
   }
   if (ch.kind === "toybox") {
@@ -543,6 +543,7 @@ export function registerControls(ctx: GameContext): void {
   ctx.game.commands.define("deepward.continue", { apply(state) { void resumeRecord(state); return state; } });
   if (import.meta.env?.DEV) {
     ctx.game.commands.define("deepward.stage", { apply(state) { void stageMidRun(state); return state; } });
+    ctx.game.commands.define("deepward.dev.extract", { apply(state) { void stageExtraction(state); return state; } });
     ctx.game.commands.define<{ x: number; z: number }>("deepward.dev.stand", { apply(state, input) { teleport(state, [input.x, 0, input.z]); } });
     ctx.game.commands.define<{ template: string }>("deepward.dev.room", { apply(state, input) { void stageRoom(state, input.template); return state; } });
     ctx.game.commands.define<{ stash?: ItemKind[]; caps?: number }>("deepward.dev.seed", { apply(state, input) {
@@ -742,6 +743,27 @@ export async function stageMidRun(ctx: GameContext): Promise<void> {
     interact(ctx);
     for (let t = 0; t < 2.4; t += 0.1) tickControls(ctx, 0.1);
   }
+  standForCapture(ctx);
+}
+/** Dev-only: back at the room's entry, looking into it, with play running (a capture's framing). */
+function standForCapture(ctx: GameContext): void {
+  const run = viewStore.read(ctx).run;
+  if (run === null) return;
+  const arrival = arrivalOf(roomOf(run), null);
+  teleport(ctx, arrival.at, arrival.facing);
+  resume(ctx);
+}
+/** Dev-only: the mid-run stage, then home through the crack, so a capture lands on the night report. */
+export async function stageExtraction(ctx: GameContext): Promise<void> {
+  await stageMidRun(ctx);
+  const run = viewStore.read(ctx).run;
+  if (run === null) return;
+  const crack = roomOf(run).exits.find(e => e.kind === "crack");
+  if (crack === undefined) return;
+  teleport(ctx, crack.at);
+  interact(ctx);
+  for (let t = 0; t < 2; t += 0.1) tickControls(ctx, 0.1);
+  await whenWritten(ctx);
 }
 /** Dev-only: depart, then stand in a run room built from `template`, for look captures. */
 export async function stageRoom(ctx: GameContext, template: string): Promise<void> {
@@ -759,7 +781,7 @@ export async function stageRoom(ctx: GameContext, template: string): Promise<voi
   for (let i = 0; i < 400 && queue.length > 0; i++) {
     const path = queue.shift()!;
     const plan = planRoom(runSeedOf(run), path);
-    if (plan.template.id === template) { enterRoom(ctx, viewStore.read(ctx).run!, path, null); return; }
+    if (plan.template.id === template) { enterRoom(ctx, viewStore.read(ctx).run!, path, null); standForCapture(ctx); return; }
     queue.push(...plan.forwards.map(f => f.to));
   }
 }

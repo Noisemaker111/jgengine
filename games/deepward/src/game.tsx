@@ -170,9 +170,8 @@ export const game = defineGame({
     lens: { frustum: { fov: 72, near: 0.05, far: 420 } },
   },
   rendering: {
-    look: "cinematic",
-    mood: { preset: "night", fog: { near: 40, far: 210 }, exposure: 1.05, contrast: 1.06 },
-    // The house at night: a low warm fill, moonlight blue from above, and practical lamps doing the rest.
+    // An interior with its own light rig (no look preset, no mood): no sky dome, no sun. A low warm
+    // fill, moonlight blue from above, and the room's practical lamps doing the rest.
     lighting: { ambient: { color: "#ffd9b0", intensity: 0.32 }, hemisphere: { skyColor: "#a9bdf0", groundColor: "#5a3a24", intensity: 0.35 } },
     backdrop: { background: "#1a120d", fog: { color: "#1f1510", near: 40, far: 210 } },
     environmentSource: hdriEnvironment("night-clear", { intensity: 0.18 }),
@@ -181,7 +180,7 @@ export const game = defineGame({
       bloom: { strength: 0.32, radius: 0.45, threshold: 0.82 },
       ao: { radius: 2, intensity: 1.1, distanceFalloff: 6, blend: 1 },
       grade: { vignette: 0.34, lut: lutGrade("warm-filmic") },
-      atmosphere: { indoor: true, fogDensity: 0.004, fogFalloff: 0.01, fogHeight: 0, fogMax: 0.35, shafts: 0, lamps: 1.4, beams: 0.5 },
+      atmosphere: { indoor: true, fogDensity: 0.004, fogFalloff: 0.01, fogHeight: 0, fogMax: 0.3, shafts: 0, lamps: 0.6, beams: 0.2 },
     },
   },
   capture: {
@@ -195,7 +194,9 @@ export const game = defineGame({
       stash: ["deepward.enter", "deepward.openStash"],
       workbench: ["deepward.enter", "deepward.openWorkbench"],
       nook: ["deepward.enter", "deepward.openNook"],
+      burrow: ["deepward.enter"],
       "mid-run": ["deepward.enter", "deepward.stage"],
+      report: ["deepward.enter", "deepward.dev.extract"],
       "room-counter": ["deepward.enter", { name: "deepward.dev.room", input: { template: "counter-top" } }],
       "room-rug": ["deepward.enter", { name: "deepward.dev.room", input: { template: "living-rug" } }],
       "room-toys": ["deepward.enter", { name: "deepward.dev.room", input: { template: "toy-shelf" } }],

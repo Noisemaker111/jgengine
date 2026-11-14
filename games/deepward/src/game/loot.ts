@@ -177,6 +177,11 @@ export const TRADE: SalvageTable = {
 export function tradeValue(item: Item): number {
   return Math.max(salvageValue(item, TRADE).amount, Math.round(itemValue(item) * 0.6));
 }
+/** What a Little calls a find: its rarity's word and the thing itself ("Gleaming Toast crumb"), not the full roll name. */
+export function displayName(item: Pick<LootItem, "baseId" | "rarity">): string {
+  const word = RARITIES.find(r => r.id === item.rarity)?.namePart;
+  return word === undefined ? defOf(item).name : `${word} ${defOf(item).name.toLowerCase()}`;
+}
 export function itemIssues(item: LootItem): string[] {
   return validateLootItem(item, ITEM_CATALOG).map(issue => `${issue.code}: ${issue.detail}`);
 }
