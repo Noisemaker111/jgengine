@@ -8,6 +8,7 @@ import { earn, spend } from "../cash";
 import { secondsAtHour } from "../clock";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { streetPlayOf } from "../streetPlay";
+import { grantCred, PIZZA_CRED } from "../progression/cred";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
 import { waterAt } from "../tide/tideRuntime";
 import { customerById, LIGHTHOUSE_KEEPER } from "./menu";
@@ -454,6 +455,7 @@ function deliverHere(ctx: GameContext): void {
     if (settled.verdict === "bad" || (settled.verdict === "fine" && worst === "great")) worst = settled.verdict;
   }
   if (price > 0) earn(ctx, price, "pizza-sale", customerId);
+  grantCred(ctx, good * PIZZA_CRED.happy + (handed.length - good) * PIZZA_CRED.plain);
   if (total - price > 0) earn(ctx, total - price, "pizza-tip", customerId);
   const shop = pizzeriaStore.read(ctx);
   pizzeriaStore.write(ctx, { ...shop, deliveries: shop.deliveries + handed.length, goodDeliveries: shop.goodDeliveries + good });

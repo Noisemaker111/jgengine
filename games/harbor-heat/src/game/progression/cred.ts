@@ -39,12 +39,16 @@ export const CRED_BY_JOB: Record<string, number> = {
 
 export const BOUNTY_CRED = 140;
 export const RACE_WIN_CRED = 150;
+/** Cred for each box a customer was happy with, and for one that only paid the price. */
+export const PIZZA_CRED = { happy: 15, plain: 4 } as const;
 
 /** Cred level required to buy an item/vehicle; ids absent here are always in stock. */
 export const CRED_GATES: Record<string, number> = {
   smg_carmine: 2,
   shotgun_boardwalk: 3,
-  car_sport: 4,
+  car_sport: 2,
+  car_suv: 3,
+  air_helicopter: 4,
 };
 
 export function credLevel(ctx: GameContext): number {

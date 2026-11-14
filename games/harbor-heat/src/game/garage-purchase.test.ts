@@ -63,7 +63,7 @@ test('unaffordable and cred-locked purchases spend nothing and create no vehicle
   expect(ctx.game.economy.balance('p1','cash')).toBe(500);
   expect(cars(ctx)).toHaveLength(0);
   const refusals=ctx.game.notices.list().filter(n=>n.tone==='deny').map(n=>[n.text,n.count]);
-  expect(refusals).toEqual([['Needs street cred 4.',1],['Not enough cash.',2]]);
+  expect(refusals).toEqual([['Needs street cred 2.',1],['Not enough cash.',2]]);
 });
 
 test('different available models keep their catalog identity and authored garage placement', () => {
