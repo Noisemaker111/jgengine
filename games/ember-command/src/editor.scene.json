@@ -1028,6 +1028,100 @@
       "meta": {
         "radius": 6
       }
+    },
+    {
+      "id": "raider_bridge_west_1",
+      "kind": "unit",
+      "position": {
+        "x": -17,
+        "y": 0,
+        "z": 6
+      },
+      "label": "Crossing guard (west)",
+      "catalogId": "raider",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "raider_bridge_west_2",
+      "kind": "unit",
+      "position": {
+        "x": -11,
+        "y": 0,
+        "z": 5
+      },
+      "catalogId": "raider",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "raider_bridge_east_1",
+      "kind": "unit",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 2
+      },
+      "label": "Crossing guard (east)",
+      "catalogId": "raider",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "major_bridge_east_1",
+      "kind": "unit",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": 1
+      },
+      "catalogId": "major",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "major_brood_1",
+      "kind": "unit",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": -24
+      },
+      "label": "Brood guard",
+      "catalogId": "major",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "raider_brood_1",
+      "kind": "unit",
+      "position": {
+        "x": -19,
+        "y": 0,
+        "z": -22
+      },
+      "catalogId": "raider",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "raider_brood_2",
+      "kind": "unit",
+      "position": {
+        "x": -20,
+        "y": 0,
+        "z": -30
+      },
+      "catalogId": "raider",
+      "meta": {
+        "stance": "guard"
+      }
     }
   ],
   "volumes": [

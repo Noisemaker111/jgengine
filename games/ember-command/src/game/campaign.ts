@@ -297,19 +297,23 @@ export interface CampaignStep {
 const STANDING_RAID = ["raider_raid_1", "raider_raid_2", "major_raid_1"] as const;
 /** The black nest's guard detail authored in the scene (stance: guard). */
 const BROOD_GUARD = ["raider_guard_1", "raider_guard_2", "raider_guard_3", "major_guard_1"] as const;
+/** Black ants holding the two hose crossings (the escort has to break through one). */
+const CROSSING_GUARD = ["raider_bridge_west_1", "raider_bridge_west_2", "raider_bridge_east_1", "major_bridge_east_1"] as const;
+/** The black queen's own guard around the brood mound. */
+const QUEEN_GUARD = ["major_brood_1", "raider_brood_1", "raider_brood_2"] as const;
 
 export const CAMPAIGN: readonly CampaignStep[] = [
   {
     mission: POPSICLE_CLAIM,
     brief: "A popsicle fell from the sky and the whole lawn can smell it. Dig a Barracks Chamber, hatch four Soldiers, and stand the Marshal on the sugar. Watch the sprinkler.",
-    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD, ...CROSSING_GUARD, ...QUEEN_GUARD],
     waves: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
   },
   {
     mission: HOSE_CROSSING,
-    brief: "The garden hose runs across the lawn like a river of green rubber. Climbing it is a crawl; the two crossings are not. Get the Marshal over to the far bank.",
-    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    brief: "The garden hose runs across the lawn like a river of green rubber. Climbing it is a crawl; the two crossings are not, and the black ants hold both. Break one, or climb where they are not looking.",
+    hostiles: [...CROSSING_GUARD, ...BROOD_GUARD],
     waves: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
   },
@@ -322,8 +326,8 @@ export const CAMPAIGN: readonly CampaignStep[] = [
   },
   {
     mission: BLACK_QUEEN_RAID,
-    brief: "The black queen's eggs lie in the brood mound past the patio. Night is falling and the antennae grow short. March the Marshal there and dig it out.",
-    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    brief: "The black queen's eggs lie in the brood mound past the patio, and her majors guard it. Night is falling and the antennae grow short. March the Marshal there and dig it out.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD, ...QUEEN_GUARD],
     waves: false,
     hazards: { ...NO_HAZARDS, night: true, sprinkler: true },
   },
