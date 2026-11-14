@@ -43,6 +43,8 @@ with the published assets CLI before launching a fresh checkout; the original mo
   Every happy box also pays 15 cred (a plain one 4); the jet-ski needs cred 2, the gondola 3, the blimp 4.
 - **Tonight's special.** Each shift draws a special from the menu; every box of it pays a quarter of its
   price again. The tide card names it.
+- **Tow and Tide Rush.** Stranded (a drowned bike, a beached hull)? **H** calls the tow for $40. The
+  four Tide Rush circuits open one at a time: win the Ocean Loop to open the Dockside Dash, and so on.
 - **Lessons.** The first drowned engine, beached hull, stacked bag, cold box and upstairs drop each explain
   themselves once. The chart tints each flooded district and pins the oven, the swap docks and every door
   in the bag; after a hand-over the tide card shows the paid slip line by line.
@@ -104,8 +106,8 @@ Numbers are what the build does now.
   courier runs) pay big for one timed drop; Tide Rush races run the four circuits. The crime story, turf
   war, fronts, gangs, bounties, guns and night market are gone.
 
-Suite: `bun run test games/harbor-heat/src/suite.test.ts` plays ten headless proofs in `proofs/sim/`
-(13 of 21 entries proven, including all six of the delivery genre). From zero: `bun run drive
+Suite: `bun run test games/harbor-heat/src/suite.test.ts` plays fifteen headless proofs in `proofs/sim/`
+(18 of 21 entries proven, including all six of the delivery genre). From zero: `bun run drive
 harbor-heat --flow from-zero` plays a new career through real input to the second night.
 
 Shift proof: `src/game/pizza/shift.test.ts` (open at dusk, take and deliver an order, flood the docks,

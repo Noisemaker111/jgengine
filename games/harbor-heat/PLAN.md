@@ -200,16 +200,16 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 
 ## Handoff
 
-- Done: milestones 1–4 and the depth rounds (chart, lessons, requests, streaks, specials, sounds, the
-  tide's ten-minute tell, four more customers, the story with three set-piece nights). The crime layer is
-  gone: no gangs, turf, fronts, bounties, guns or night market; HHPD is the Canal Wardens.
-- Proof: `bun run test games/harbor-heat` (217 tests, suite 13/21 proven, all six delivery entries);
-  `bun run drive harbor-heat --flow from-zero` passes headless. check-types clean. verify:fast passes all
-  it can run here; asset provisioning fails on the sandbox proxy (403), so its boot probe never runs.
-- Screens: Rune UI PNGs in `proofs/high-tide/`. No 3D screenshot: this sandbox has no GPU for headless
-  Chrome. Capture `--state flood` and `--state king-tide` on a machine with one.
-- Next: dormant combat code (enemy and weapon catalogs, `use-handlers`, `hitModel` profiles) is now
-  unreachable and can be deleted with its tests; suite entries still missing (save.continue,
-  settings.controls, menu.start-and-credits, onboarding.find-features, progression.runway,
-  racing.drive-handling/unlock/crash-recover); milestone 5 (blimp line and rooftop-only drops) and 6
-  (planing boats, flood ripples).
+- Done: milestones 1–4 and the depth rounds: the chart, lessons, requests, streaks, specials, sounds,
+  the tide's ten-minute tell, twelve customers, the five-chapter story with three set-piece nights, the
+  tow, the Tide Rush ladder. The crime layer and all combat code are deleted; HHPD is the Canal Wardens.
+- Proof: `bun run test games/harbor-heat` (216 tests; suite 18/21 proven, all six delivery entries);
+  `bun run drive harbor-heat --flow from-zero` passes headless. check-types and gen clean. verify:fast
+  passes everything it can run here; asset provisioning fails on the sandbox proxy (403), so its boot
+  probe never runs.
+- Screens: Rune UI PNGs in `proofs/high-tide/` (from before the depth rounds). No 3D screenshot: this
+  sandbox has no GPU for headless Chrome. Capture `--state flood` and `--state king-tide` on a machine
+  with one, and re-render the UI fixtures (`shift`, `books`, `shift-over`) to check the new card lines.
+- Still missing in the suite: onboarding.find-features and progression.runway (needs a content sheet).
+  The long-play browser flow was not re-run. Next milestones: 5 (blimp line, rooftop-only drops) and
+  6 (planing boats, flood ripples).
