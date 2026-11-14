@@ -11,6 +11,7 @@ import { bind, type RuneSource } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/ui/hooks";
+import { stormView } from "../creatures";
 import { useGameContext } from "@jgengine/ui/provider";
 
 import { baseView } from "../base";
@@ -114,13 +115,14 @@ function Vitals(): ReactNode {
   const detail = useGameStore(extendedHud);
   const shown = useGameStore((ctx) => {
     const v = s(ctx);
-    return { oxygen: v.underwater || v.oxygen.value < v.oxygen.max, torpor: v.torpor.value > 0, levelUp: v.statPoints > 0, hazards: v.hazards.join(" · ") };
+    return { oxygen: v.underwater || v.oxygen.value < v.oxygen.max, torpor: v.torpor.value > 0, levelUp: v.statPoints > 0, hazards: v.hazards.join(" · "), storm: stormView(ctx).storm };
   }, same);
   const order: VitalId[] = ["temperature", "xp", "weight", "water", "food", "stamina", ...(shown.oxygen ? (["oxygen"] as const) : []), ...(shown.torpor ? (["torpor"] as const) : []), "health"];
   const size = phone ? 26 : 34;
   return (
     <RuneView items="end" gap={6}>
       {shown.levelUp ? <Text weight={700} size={13} color={GOOD} fill="#0b141899" radius={4} padding={[2, 6, 2, 6]} text="▲ Level up — press I" /> : null}
+      {shown.storm ? <Text weight={700} size={13} color="#ff4fd8" fill="#0b141899" radius={4} padding={[2, 6, 2, 6]} text="⚡ SIGNAL STORM — wild machines Overclocked · roof your bots" /> : null}
       {shown.hazards === "" ? null : <Text weight={700} size={13} color="#ff8a6a" fill="#0b141899" radius={4} padding={[2, 6, 2, 6]} text={shown.hazards} />}
       <RuneView gap={detail ? 4 : 6} items="end">
         {order.map((id) => <VitalTile key={id} vital={VITALS[id]} art={art[id] ?? null} size={size} detail={detail} />)}
