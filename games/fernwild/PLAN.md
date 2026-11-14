@@ -359,6 +359,9 @@ software capture Chrome gets SwiftShader WebGPU. On a container without a GPU, r
 `bun run drive fernwild --flow wildwire-machines` (roster on the beach), `wildwire-upload` (jacked into a
 Mowbot) and `wildwire-storm` (a Signal Storm night).
 
-Next: Hoover mobile-base platform (standing on a moving body), Craneback crane build helper, Lampjaw deep-water
-spawns (spawn zones keep bots out of water today), a visible Klepto nest prop, Thermite ingot mining, eye pulse
-tied to the bot's real charge (needs a runtime material hook), turning puppeted bots hostile.
+Next (both need an engine part first): wild-bot swimming (the core creature driver takes one `blocked(ctx, x, z)`
+for every creature, so water species cannot be allowed into water while land ones are kept out; give it the
+creature id or a per-body water mode), then Lampjaw deep-water and Arcwire river spawns; the Hoover mobile-base
+platform (no engine part carries a standing player or structures on a moving body; `bun run find moving platform
+carrier` finds none). Smaller: a Klepto nest prop, Craneback crane helper, Thermite ingot mining, eye pulse tied
+to real charge, puppeted bots turning hostile.
