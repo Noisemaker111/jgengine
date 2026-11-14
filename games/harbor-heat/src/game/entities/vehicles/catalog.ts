@@ -221,13 +221,17 @@ function wingAirframe(spec: WingSpec): RigidAircraftTuning {
 // Keyboard pilots: rate damping and a gentle wings-level hands-off on every plane, firmer on the trainer.
 const PLANE_ASSISTS: AircraftAssistTuning = { sas: { pitch: 0.5, roll: 0.4, yaw: 0.6 }, autoLevel: 0.45, maxG: 6 };
 
+/**
+ * The pizza blimp is the one aircraft for sale; the other airframes stand at the Low Flats airstrip as
+ * joyrides for anyone who walks up, never on Sunset Motors' lot (price 0).
+ */
 const AIRCRAFT: readonly VehicleDef[] = [
   {
     id: "air_helicopter",
     label: "Pizza blimp",
     body: "#fff0d2",
     cabin: "#d93a2f",
-    price: 12000,
+    price: 9000,
     collisionRadius: 2.6,
     medium: "air",
     dynamics: {
@@ -257,7 +261,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     label: "Pelican Trainer",
     body: "#f4d35e",
     cabin: "#243447",
-    price: 16000,
+    price: 0,
     collisionRadius: 2.4,
     medium: "air",
     dynamics: {
@@ -272,7 +276,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     label: "Marlin Prop",
     body: "#e85d4a",
     cabin: "#e7f1f5",
-    price: 26000,
+    price: 0,
     collisionRadius: 2.6,
     medium: "air",
     dynamics: {
@@ -287,7 +291,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     label: "Barracuda XR",
     body: "#697582",
     cabin: "#10151b",
-    price: 90000,
+    price: 0,
     collisionRadius: 3,
     medium: "air",
     dynamics: {
@@ -303,7 +307,7 @@ const AIRCRAFT: readonly VehicleDef[] = [
     label: "Harrier V",
     body: "#3d5a45",
     cabin: "#111b18",
-    price: 110000,
+    price: 0,
     collisionRadius: 3,
     medium: "air",
     dynamics: {

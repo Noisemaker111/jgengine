@@ -148,8 +148,6 @@ function House() {
   const cash = useCurrency("cash");
   const cred = useEntityStat(usePlayer().userId, "level")?.current ?? 1;
   const roomRows = useUpgradeRows("house");
-  const wired = useStore(upgradesStore, (state) => (state?.ranks["house_wire"] ?? 0) > 0);
-  const takings = useGameStore((ctx) => Math.floor(cityOf(ctx).num("fronts.takings")));
   const sections: BoardSection[] = [
     {
       id: "rest",
@@ -157,7 +155,6 @@ function House() {
       rows: [
         { id: "sleep", name: "Sleep till morning", line: "The city keeps moving while you sleep", price: 0, pick: () => commands.run("safehouse.sleep", {}) },
         { id: "patch", name: "Patch up and save", line: "Back to full health", price: 0, pick: () => commands.run("safehouse.patch", {}) },
-        ...(wired && takings > 0 ? [{ id: "wire", name: "Call in the takings", line: `${takings.toLocaleString("en-US")} waiting in the fronts' safe`, price: 0, pick: () => commands.run("front.collect", {}) }] : []),
       ],
     },
     { id: "rooms", title: "Fit out the place", note: "one of each", rows: roomRows },

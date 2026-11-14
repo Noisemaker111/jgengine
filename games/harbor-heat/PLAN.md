@@ -13,31 +13,31 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| onboarding | 2/2 | 0 | 0 | 0 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
 | save | 1/1 | 0 | 0 | 0 | 0 |
 | settings | 1/1 | 0 | 0 | 0 | 0 |
 | menu | 0/1 | 0 | 1 | 0 | 0 |
-| progression | 0/1 | 0 | 0 | 1 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
 | content | 0/0 | 0 | 0 | 0 | 5 |
 | racing | 5/5 | 0 | 0 | 0 | 0 |
 | open-world | 3/3 | 0 | 0 | 0 | 0 |
 | delivery | 6/6 | 0 | 0 | 0 | 0 |
-| **total** | **18/21** | 0 | 1 | 2 | 5 |
+| **total** | **20/21** | 0 | 1 | 0 | 5 |
 
 <details><summary>Every required entry</summary>
 
-Genres: open-world, racing, delivery. 18/21 proven · 1 not simulatable · 5 cut · 2 missing.
+Genres: open-world, racing, delivery. 20/21 proven · 1 not simulatable · 5 cut.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
-| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/shift-over.proof.ts |
 | `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
 | `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-phone.proof.ts |
 | `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/HarborMenu.tsx: the Credits object is local state on the title sign (useState in HarborTitle); no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx credits renders it) |
-| `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
 | `content.item-source` | cut | Every item can be obtained by playing. | No crafting or item economy: the only items are first-aid kits and crash jackets sold at Mercato Fresco. |
 | `content.item-use` | cut | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | No crafting or item economy: first aid and crash jackets are covered by the store tests. |
 | `content.recipes-reachable` | cut | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | No recipes: pizzas are menu data, not crafted items. |

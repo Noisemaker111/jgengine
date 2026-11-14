@@ -20,7 +20,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
-import { pizzeriaStore, shiftStore } from "./game/pizza/shift";
+import { pizzeriaBoardStore, pizzeriaStore, shiftGoal, shiftStore } from "./game/pizza/shift";
 import { tideStore } from "./game/tide/tideRuntime";
 import { nightStore } from "./game/pizza/nights";
 import { openCircuits, tideRushStore } from "./game/race/tideRush";
@@ -68,6 +68,10 @@ function pizzaProbe(ctx: GameContext, vehicleId: string | null | undefined) {
     storyAct: Number(cityOf(ctx).fact("story.act") ?? 0),
     nightScore: nightStore.read(ctx).score,
     circuitsOpen: openCircuits(tideRushStore.read(ctx).won).length,
+    // Where the pager points right now, so a proof can follow the game's own guidance.
+    goalX: shiftGoal(ctx)?.target[0] ?? cityOf(ctx).next()?.target?.[0] ?? 0,
+    goalZ: shiftGoal(ctx)?.target[1] ?? cityOf(ctx).next()?.target?.[1] ?? 0,
+    books: pizzeriaBoardStore.read(ctx) === true ? 1 : 0,
   };
 }
 

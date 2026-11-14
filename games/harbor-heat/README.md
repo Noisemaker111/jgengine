@@ -1,7 +1,7 @@
 # High Tide Pizza
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **18/21 proven · 1 not simulatable · 5 cut · 2 missing** · `jgengine suite harbor-heat`
+Game suite: **20/21 proven · 1 not simulatable · 5 cut** · `jgengine suite harbor-heat`
 <!-- /suite-score -->
 
 You are the newest delivery rider at Vell's, a family pizzeria in Mainsail, a canal city that floods
@@ -72,7 +72,7 @@ Numbers are what the build does now.
   2,000 (cooling ×0.72 / 0.5). Reputation stars (0–5 at 4, 10, 18, 30, 45 happy deliveries) unlock
   customers: Theo the DJ and Ida at the lighthouse at 1, the bridge club and the rooftop wedding at 2,
   Captain Brine's submarine at 3. Vehicles from the lot: scooter 600, cargo trike 1,500, jet-ski 3,200,
-  motor gondola 5,000, pizza blimp 12,000. The note starts at 12,000.
+  motor gondola 5,000, pizza blimp 9,000. The note starts at 12,000.
 - **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (150 + 80 a shift worked, up to
   1,400) takes 12 off; a short one adds 18. At 100% MegaSlice calls the note in: +1,500 debt and the
   pressure resets to 55. Every 250 paid off eases it by 1. Paying the note off saves the shop for good.

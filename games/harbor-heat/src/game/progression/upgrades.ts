@@ -18,8 +18,8 @@ export interface HarborUpgrade extends UpgradeNodeDef {
 const priced = (...prices: number[]): Curve => ({ kind: "steps", values: [0, ...prices] });
 
 /**
- * Everything the safe can buy beyond another front. Car mods apply to every car you own (bought or
- * boosted), gun work to every gun you fire, and the bungalow's rooms to what resting there does.
+ * What Sunset Motors and the bungalow sell beyond the shop's own books: bike mods apply to every vehicle
+ * you own, and the bungalow's rooms to resting there and to the tide warning.
  */
 export const UPGRADES: readonly HarborUpgrade[] = [
   { id: "car_engine", shop: "garage", label: "Engine tune", maxRank: 3, cost: priced(900, 1800, 3600), lines: ["+12% pull", "+24% pull", "+36% pull"] },
@@ -28,7 +28,7 @@ export const UPGRADES: readonly HarborUpgrade[] = [
   { id: "car_armor", shop: "garage", label: "Armored panels", maxRank: 3, cost: priced(1000, 2000, 4000), lines: ["Crashes hurt 20% less", "Crashes hurt 40% less", "Crashes hurt 60% less"] },
   { id: "house_med", shop: "house", label: "Med cabinet", cost: priced(1000), lines: ["Resting stocks a first-aid kit when you have none"] },
   { id: "house_locker", shop: "house", label: "Gear locker", cost: priced(1500), lines: ["Resting hangs a fresh crash jacket when you have none"] },
-  { id: "house_wire", shop: "house", label: "Wire room", cost: priced(3000), lines: ["Empty the fronts' safe from the bungalow"] },
+  { id: "house_wire", shop: "house", label: "Tide scanner", cost: priced(3000), lines: ["The tide warns you 25 minutes ahead instead of 10"] },
 ];
 
 export const upgradeById = (id: string): HarborUpgrade | undefined => UPGRADES.find((node) => node.id === id);

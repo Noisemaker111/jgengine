@@ -3,6 +3,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { DISTRICTS } from "../world/districts";
 import { nightRules } from "../pizza/nights";
+import { upgradeRank } from "../progression/upgrades";
 import { districtDepth, MAX_DEPTH, minutesToNextStage, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
 
 /**
@@ -168,7 +169,8 @@ export function tickTide(ctx: GameContext): TideStage | null {
   runtime.stage = stage.id;
   // The tell: ten game minutes before the water reaches a stage that closes roads, the city says so.
   const next = minutesToNextStage(hour, nightRules(ctx)?.surge ?? 0);
-  if (next !== null && next.stage.index >= 2 && next.minutes <= 10 && runtime.warned !== next.stage.id) {
+  const lead = upgradeRank(ctx, "house_wire") > 0 ? 25 : 10;
+  if (next !== null && next.stage.index >= 2 && next.minutes <= lead && runtime.warned !== next.stage.id) {
     runtime.warned = next.stage.id;
     ctx.game.notices.push({ text: `The tide reaches ${next.stage.label} in ${next.minutes} minutes. ${next.stage.note}`, tone: "warn" });
   }
