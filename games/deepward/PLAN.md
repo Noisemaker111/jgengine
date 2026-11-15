@@ -98,7 +98,7 @@ Genres: extraction. 16/16 proven.
 `home: 1, caps: 0, stash: 0, littles: 2, zones: 2, upgrades: 1`.
 
 ### Content budget
-21 room templates in 6 zones plus the burrow; 47 item kinds (8 food, 11 parts, 20 curios, 7 gear,
+24 room templates in 6 zones plus the burrow; 47 item kinds (8 food, 11 parts, 20 curios, 7 gear,
 bottle caps) in 7 sets; 7 Littles; 8 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights, the
 Exterminator); 10 kinds of night and 8 omens; 6 connector kinds; 4 exit kinds; 8 burrow upgrades,
 5 recipes, 4 charts; 4 collection thresholds.
@@ -190,4 +190,4 @@ pack weight shows one decimal. RunLayers no longer re-renders every tick. Tests:
 
 Next: rooms with a dog (front hall, workbench, garage bikes) cannot frame round a body that size; the
 Exterminator is procedural (boots, coveralls, canister, torch) and reads best side-on; omens have no
-icon of their own; the basement has three rooms and could take a fourth with its own exit kind.
+icon of their own; the basement's six rooms are small, so the Exterminator stands close in their overviews.
