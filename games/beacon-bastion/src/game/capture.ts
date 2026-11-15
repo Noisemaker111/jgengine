@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { unlockAllTrades } from "./union";
 
 import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";
@@ -62,6 +63,8 @@ const STAGED_CREW: readonly [string, string][] = [
 
 function hireCrew(ctx: GameContext): void {
   const world = keep.of(ctx);
+  // A staged street shows a seasoned career: every trade already in the union.
+  unlockAllTrades(ctx);
   world.set("keep.gold", 5000);
   for (const [slot, kind] of STAGED_CREW) ctx.game.commands.run("beacon.place", { kind, slot });
   advance(ctx, 4);

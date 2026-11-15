@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { freshUnion, readUnion, type UnionState } from "./union";
 import { createSkillTree, type SkillNodeDef, type SkillResolution, type SkillTree, type SkillTreeState } from "@jgengine/core/progression/skillTree";
 
 /**
@@ -83,10 +84,12 @@ export interface CampaignState {
   council: SkillTreeState;
   /** The season: best stars each district (map) has been held for. A district is open once the one before it is held. */
   districts: Record<string, number>;
+  /** The union hall: dues on hand, trades hired, training and town upgrades. */
+  union: UnionState;
 }
 
 export function freshCampaign(): CampaignState {
-  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} }, districts: {} };
+  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} }, districts: {}, union: freshUnion() };
 }
 
 export const campaign = defineStore<CampaignState>("beacon:campaign", freshCampaign);
@@ -184,5 +187,5 @@ export function readCampaign(value: unknown): CampaignState | null {
   for (const [id, best] of Object.entries((raw.districts ?? {}) as Record<string, unknown>)) {
     if (typeof best === "number" && Number.isFinite(best) && best > 0) districts[id] = Math.max(0, Math.min(4, Math.round(best)));
   }
-  return { difficulty, stars, council: { points: 0, ranks }, districts };
+  return { difficulty, stars, council: { points: 0, ranks }, districts, union: readUnion((raw as { union?: unknown }).union) };
 }

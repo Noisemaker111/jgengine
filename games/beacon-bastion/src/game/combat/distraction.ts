@@ -9,6 +9,8 @@ import { keep, towerStats } from "../keep";
 import { say, session, type CreepRuntime } from "../session";
 import { speak } from "./towerAI";
 import { tip } from "../tips";
+import { campaign } from "../campaign";
+import { distractionShare, unionReach } from "../union";
 
 /**
  * Technology fights back without shooting. Phones, watches, speakers and chatbots fire
@@ -42,7 +44,7 @@ function coveredBy(ctx: GameContext, job: string, at: EntityPosition): boolean {
   const world = keep.of(ctx);
   for (const worker of workersOnField(ctx)) {
     if (towerDef(worker.kind, editorLayers).job !== job || session.workers.has(worker.id, "distracted")) continue;
-    if (vec3.distance(worker.position, at) <= towerStats(world, worker.id).range) return true;
+    if (vec3.distance(worker.position, at) <= towerStats(world, worker.id).range + unionReach(campaign.read(ctx), worker.kind)) return true;
   }
   return false;
 }
@@ -67,7 +69,7 @@ export function distract(ctx: GameContext, worker: Worker, seconds: number, ping
     ctx.scene.entity.floatText({ instanceId: worker.id, text: "Shhh!", element: "arcane", scale: 0.8 });
     return false;
   }
-  const scale = session.workers.has(worker.id, "spotted") ? SPOTTED_DISTRACTION : 1;
+  const scale = (session.workers.has(worker.id, "spotted") ? SPOTTED_DISTRACTION : 1) * distractionShare(campaign.read(ctx));
   const already = session.workers.has(worker.id, "distracted");
   session.workers.apply(worker.id, "distracted", { durationScale: seconds * scale });
   ctx.scene.entity.floatText({ instanceId: worker.id, text: ping, element: "frost" });

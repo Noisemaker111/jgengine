@@ -1,6 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
+import { campaign } from "../campaign";
+import { hiredTrades } from "../union";
 import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { summarizeWave } from "@jgengine/core/waves/wavePreview";
@@ -178,13 +180,16 @@ export function BuildBar() {
     return buildPrompt(false, false);
   };
   const columns = phone ? 5 : 7;
+  // The trades in the union change only between days, so the bar re-renders on the career's list.
+  const hiredList = useGameStore((c) => hiredTrades(campaign.read(c)).join(","));
   return <RuneView items="center" gap={6}>
     <Caption align="center" maxWidth={phone ? 360 : 640} text={bind(prompt)} />
     <RuneView layout="grid" columns={columns} gap={phone ? 3 : 5}>
       {TOWER_IDS.map((id, index) => {
         const def = towerDef(id, editorLayers), cost = buildCost(id), key = actionLabel(keys, `buildTower${index + 1}`);
-        const affordable = () => gold() >= cost, chosen = () => session.selectedTowerId === id;
-        return <Plank key={id} label={`${def.label}, ${cost} cash`} tooltip={`${def.label} — ${def.role}`} width={phone ? 70 : 92} minHeight={phone ? 56 : 64} padding={[4, 3, 4, 3]} gap={1}
+        const hired = () => hiredList.split(",").includes(id);
+        const affordable = () => hired() && gold() >= cost, chosen = () => session.selectedTowerId === id;
+        return <Plank key={id} label={hired() ? `${def.label}, ${cost} cash` : `${def.label}, not in the union yet`} tooltip={hired() ? `${def.label} — ${def.role}` : `${def.label} — hire this trade at the union hall between days`} width={phone ? 70 : 92} minHeight={phone ? 56 : 64} padding={[4, 3, 4, 3]} gap={1}
           layout="stack" opacity={bind(() => (affordable() ? 1 : 0.55))}
           border={bind(() => (chosen() ? { width: 3, color: "#ffe08a" } : { width: 2, color: "#ffd9b0" }))}
           run={() => { ctx.game.commands.run(`buildTower${index + 1}`, {}); if (!affordable()) ctx.game.audio.play("denied"); }}>
@@ -193,7 +198,7 @@ export function BuildBar() {
             {key === null ? null : <Tag size={9} color="#ffe0c8">{key}</Tag>}
           </Row>
           <Text size={phone ? 10 : 11} weight={800} align="center">{def.label}</Text>
-          <Text size={11} weight={700} color={bind(() => (affordable() ? GOLD : "#ffd0d0"))}>{`$${cost}`}</Text>
+          <Text size={11} weight={700} color={bind(() => (affordable() ? GOLD : hired() ? "#ffd0d0" : "#d8c8c0"))} text={bind(() => (hired() ? `$${cost}` : "Union"))} />
         </Plank>;
       })}
     </RuneView>

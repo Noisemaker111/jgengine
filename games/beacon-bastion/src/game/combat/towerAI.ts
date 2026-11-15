@@ -6,7 +6,8 @@ import { createPathFollow } from "@jgengine/core/nav/pathFollow";
 import { vec3 } from "@jgengine/core/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
-import { councilAdd, councilScale, type CouncilStat } from "../campaign";
+import { campaign, councilAdd, councilScale, type CouncilStat } from "../campaign";
+import { unionDamage, unionReach } from "../union";
 import { creepDef } from "../entities/enemies/catalog";
 import { towerDef, voiceLine, type TowerDef } from "../entities/towers/catalog";
 import { keep, towerStats, type TowerStats } from "../keep";
@@ -305,6 +306,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
   }
 
   const reach = councilAdd(ctx, "range");
+  const career = campaign.read(ctx);
   const scales = Object.fromEntries(
     (Object.keys(COUNCIL_DAMAGE) as DamageType[]).map((type) => [type, councilScale(ctx, COUNCIL_DAMAGE[type])]),
   ) as Record<DamageType, number>;
@@ -322,7 +324,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     const clock = workerClock(tower.id);
     clock.ability -= dt;
     clock.voice -= dt;
-    const range = stats.range + reach;
+    const range = stats.range + reach + unionReach(career, tower.kind);
     if (stats.snap > 0 && !isDistracted(tower.id)) snapOut(ctx, tower.id, entity.position, range);
     if (isDistracted(tower.id)) continue;
     clock.heat = heatFactor(ctx, entity.position);
@@ -361,7 +363,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
       towerId: tower.id,
       def,
       stats: inReach,
-      damage: stats.damage * scales[def.damageType] * (crit ? stats.crit_mult : 1),
+      damage: stats.damage * scales[def.damageType] * unionDamage(career, tower.kind) * (crit ? stats.crit_mult : 1),
       shot,
       nowMs,
       from: entity.position,

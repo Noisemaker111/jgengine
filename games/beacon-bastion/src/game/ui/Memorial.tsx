@@ -14,6 +14,8 @@ import { AttentionMug, DIM, FIRE, Glyph, GOLD, Heading, INK, Plank, Row, Sheet, 
 import { activeMap, MAP_IDS, MAPS, type MapId } from "../../maps";
 import { districtOpen, districtStars, nextDistrict, seasonProgress } from "../season";
 import { travelTo } from "../travel";
+import { duesFor } from "../union";
+import { UnionHall } from "./UnionHall";
 
 /**
  * The end-of-day chalkboard: what the day paid, what it banked, the town council between days and
@@ -48,7 +50,9 @@ function MemorialStone({ victory }: { victory: boolean }) {
     ["Cash banked", `${view.account.bankedGold}`],
     ["Seniority", String(view.account.standing)],
     ["Perk carried", relic === null ? "none" : relic.label],
+    ["Union dues earned", `+${duesFor(victory, wave, view.stars)}`],
   ];
+  const [board, setBoard] = useState<"union" | "council">("union");
   const difficulty = DIFFICULTIES[view.difficulty];
   return <Sheet label={victory ? "The Street Held" : "Total Distraction"} width={720}>
     <RuneView items="center" gap={4}>
@@ -64,7 +68,11 @@ function MemorialStone({ victory }: { victory: boolean }) {
       {lines.map(([label, value]) => <Row key={label} justify="between" gap={10} padding={[2, 10, 2, 0]}><Tag>{label.toUpperCase()}</Tag><Text size={14}>{value}</Text></Row>)}
     </RuneView>
     <SeasonMap target={target} setTarget={setTarget} />
-    <WarCouncil />
+    <Row gap={6} label="Between days">
+      <Plank tone={board === "union" ? "enamel" : "plank"} minHeight={30} padding={[3, 12, 3, 12]} run={() => setBoard("union")}>Union Hall</Plank>
+      <Plank tone={board === "council" ? "enamel" : "plank"} minHeight={30} padding={[3, 12, 3, 12]} run={() => setBoard("council")}>Town Council</Plank>
+    </Row>
+    {board === "union" ? <UnionHall /> : <WarCouncil />}
     <Tag color={FIRE}>TAKE ONE PERK INTO TOMORROW</Tag>
     <RuneView layout="grid" columns={3} responsive={{ phone: { columns: 1 } }} gap={8}>
       {view.account.offer.map((id) => {

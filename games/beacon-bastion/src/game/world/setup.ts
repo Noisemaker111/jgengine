@@ -5,7 +5,8 @@ import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { registerBuildCommands } from "../build/commands";
 import { BASE_CATALOG_ID, BASE_ENTITY_ID } from "../entities/base/catalog";
 import { creepDef, CREEP_CATALOG } from "../entities/enemies/catalog";
-import { DIFFICULTY_IDS, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
+import { campaign, DIFFICULTY_IDS, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
+import { buyUnion, unionRefusal, type TownUpgradeId } from "../union";
 import { registerAbilityCommands } from "../combat/cast";
 import { resetSession, session } from "../session";
 import { exposeKeepReadout, keep, resetKeep, runEnded } from "../keep";
@@ -61,6 +62,13 @@ export function restartDefense(ctx: GameContext): void {
   setGamePhase(ctx, "playing");
 }
 
+function unionOffer(input: { hire?: string; train?: string; town?: string } | undefined): Parameters<typeof buyUnion>[1] | null {
+  if (typeof input?.hire === "string") return { hire: input.hire };
+  if (typeof input?.train === "string") return { train: input.train };
+  if (typeof input?.town === "string") return { town: input.town as TownUpgradeId };
+  return null;
+}
+
 /** The campaign's own commands: pick a shift and seat the town council between days. */
 function registerCampaignCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ difficulty?: string } | undefined>("campaign.difficulty", {
@@ -74,6 +82,19 @@ function registerCampaignCommands(ctx: GameContext): void {
     apply: (state, input) => {
       if (typeof input?.node === "string" && rankCouncil(state, input.node)) state.game.audio.play("upgrade");
       else state.game.audio.play("denied");
+      return state;
+    },
+  });
+  // The union hall between days: spend dues on a hire, a trade's training or a town upgrade.
+  ctx.game.commands.define<{ hire?: string; train?: string; town?: string } | undefined>("union.buy", {
+    validate: (state, input) => {
+      const offer = unionOffer(input);
+      if (offer === null) return { reason: "no-offer" };
+      const refusal = unionRefusal(campaign.read(state), offer);
+      return refusal === null ? null : { reason: "refused", message: refusal };
+    },
+    apply: (state, input) => {
+      if (buyUnion(state, unionOffer(input)!)) state.game.audio.play("upgrade");
       return state;
     },
   });

@@ -8,6 +8,10 @@ import { castAt } from "../combat/cast";
 import { AIM_POLICIES, aimAction, keep, runEnded, sellAction, towerOptions, towerStats } from "../keep";
 import { nearestPlot } from "../world/path";
 import { session } from "../session";
+import { campaign } from "../campaign";
+import { isHired } from "../union";
+
+const NOT_HIRED = { reason: "not-hired", message: "Bring that trade into the union hall between days first" };
 
 const PLOT_CLICK_RADIUS = 4.5;
 
@@ -38,6 +42,7 @@ function rejectBuild(ctx: GameContext, input: BuildPlaceInput): Refusal | null {
   if (runEnded(world)) return { reason: "run-ended" };
   const kind = session.selectedTowerId;
   if (kind === null) return { reason: "no-tower-selected", message: "Pick a worker to hire first" };
+  if (!isHired(campaign.read(ctx), kind)) return NOT_HIRED;
   return refusal(world.canPlace(kind, { slot: plot.id }));
 }
 
@@ -107,6 +112,9 @@ function towerAction(actionOf: (ctx: GameContext, id: string, kind: string) => s
 
 function selectTowerCommand(id: string) {
   return {
+    validate(state: GameContext): Refusal | null {
+      return isHired(campaign.read(state), id) ? null : NOT_HIRED;
+    },
     apply(state: GameContext): GameContext {
       session.selectedTowerId = session.selectedTowerId === id ? null : id;
       if (session.selectedTowerId !== null) state.game.audio.play("select");

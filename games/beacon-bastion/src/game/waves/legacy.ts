@@ -11,6 +11,7 @@ import { keep } from "../keep";
 import { currentWaveNumber } from "../session";
 import { DIRECTOR_SEED, TOTAL_WAVES } from "./manifest";
 import { recordDistrict } from "../season";
+import { duesFor, earnDues, unionOpening } from "../union";
 import { activeMap } from "../../maps";
 
 export interface BoonEffect {
@@ -147,6 +148,7 @@ export function finishRun(ctx: GameContext): void {
   const difficulty = campaign.read(ctx).difficulty;
   world.set("keep.stars", recordStars(ctx, starsFor(held, world.num("keep.lives"), world.num("keep.lives_max"), difficulty)));
   recordDistrict(ctx, activeMap(), world.num("keep.stars"));
+  earnDues(ctx, duesFor(held, Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber())), world.num("keep.stars")));
   const loop = relicLoop(ctx);
   const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
   loop.carry(world.num("keep.gold"));
@@ -210,9 +212,10 @@ export function openingLives(state: LegacyState): number {
 export function openingKeep(ctx: GameContext): { gold: number; lives: number } {
   const banked = legacy.read(ctx);
   const difficulty = difficultyOf(ctx);
+  const union = unionOpening(campaign.read(ctx));
   return {
-    gold: Math.max(0, openingGold(banked) + difficulty.gold + councilAdd(ctx, "opening_gold")),
-    lives: Math.max(1, openingLives(banked) - STARTING_LIVES + difficulty.lives + councilAdd(ctx, "lives")),
+    gold: Math.max(0, openingGold(banked) + difficulty.gold + councilAdd(ctx, "opening_gold") + union.gold),
+    lives: Math.max(1, openingLives(banked) - STARTING_LIVES + difficulty.lives + councilAdd(ctx, "lives") + union.lives),
   };
 }
 
