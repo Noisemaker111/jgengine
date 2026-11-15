@@ -124,24 +124,26 @@ The game keeps the folder and package id `odd-orbit`; every player-facing name i
   reputation, move-outs, friends cover rent, feuds sabotage, applicants, modules, deed, three new
   front-desk events, lease goals, HUD (Rooms plan, buzzer slip, comfort pills), procedural tenant
   figures, room modules and neon sign, space mood. Tests and balance bot updated.
-- [ ] 2. From-zero flow (`proofs/flows/from-zero.flow.ts`) that swaps Glorp, admits an applicant and
-  reaches the first rent night through real input; suite proofs for the life-sim entries.
-- [ ] 3. Tenant comfort animations and voice barks in world (speech bubbles over a complaining
-  tenant), and a room-click in the world that opens its card.
-- [ ] 4. Station dressing outside the house through the editor (gantries, pipes, a docked shuttle at
-  the airlock that the applicant steps off).
+- [x] 2. From-zero flow (`proofs/flows/from-zero.flow.ts`: Pip-9 gets a door and Sister Fog swaps
+  between Krrt and Glorp through the UI); suite proofs 12/16 (missing: find-features, save.continue,
+  settings.controls, menu.start-and-credits).
+- [x] 3. Tenant barks in the feed and as Rune speech bubbles over heads; clicking a module opens its
+  room card; tenants scaled up; the applicant waits at the airlock in person.
+- [x] 4. Station dressing: trusses, beacons, docking arm with a moored shuttle, starfield and planet
+  limb (procedural backdrop); the deck shrunk to the authored plate.
+- [ ] 4b. Move the backdrop's truss and dock geometry into the scene document once the editor has a
+  kind for it.
 - [ ] 5. Deeper long loop: tenant-specific requests (Velvet's chandelier, Basalt's annual sentence as
   a collectible), a second station section after the deed.
 
 ## Handoff
 
-- Verified: game tests 131 pass, check-types clean, `capabilities-probe odd-orbit` boots and probes
-  OK. Live captures (software WebGPU, `CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader
-  JG_BROKER=0 --cold`): play view and `--state airlock` show the four modules, room tints, the neon
-  sign and the applicant in person. The `rooms-tour` flow passes (Rooms plan and Glorp's card through
-  real presses); the drawer itself does not appear in live software captures (Rune stops presenting
-  frames once the sim runs, as noted in ui-tour); the headless native UI test covers its content.
-- `verify:fast` stops at "provision models for tests": other games' model pulls are refused by the
-  sandbox network proxy (403), unrelated to this game.
-- Next: from-zero flow and suite proofs; a room click in the world opening its card; in-world barks;
-  station dressing outside the house.
+- Verified: game tests 135 pass, check-types clean, suite 12/16 proven, `from-zero` and `rooms-tour`
+  flows pass in a live browser, capabilities probe boots. Captures use
+  `CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader JG_BROKER=0 --cold`; Rune panels
+  and bubbles do not repaint in live software captures once the sim runs, so their content is proven
+  by the headless native UI test and the flows.
+- `verify:fast` stops at "provision models for tests" (other games' model pulls get 403 from the
+  sandbox proxy).
+- Next: the four missing suite entries (needs menu/settings commands the proof can act on, and a
+  storage the headless restart keeps), milestone 5.

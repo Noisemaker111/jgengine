@@ -82,7 +82,8 @@ the first four rooms.
   answers keeps the lease with 11 of 12 goals (it never pays the deed down).
 - **References.** *The Sims 2* (readable moods), *RimWorld* (each tenant a plan), *Two Point
   Hospital* (comic room-by-room optimising), *Papers, Please* (the interview at the door).
-- **Gap to target.** No from-zero flow yet; tenants do not bark in the world; clicking a room in the
-  world does not open its card (use the Rooms plan); the station outside the house is bare.
+- **Gap to target.** Four suite entries unproven (find-features, save.continue, settings.controls,
+  menu.start-and-credits); the station backdrop (trusses, dock, shuttle, stars, planet) is drawn in
+  code rather than authored in the scene document.
 
-Loop proof: to-first-shift, to-transmission
+Loop proof: from-zero, rooms-tour, to-first-shift, to-transmission
