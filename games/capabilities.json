@@ -3397,6 +3397,16 @@
       "intent": "world-anchored overhead entity frames (nameplate/healthbar), data-first + caller-composed"
     },
     {
+      "id": "entity-glow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "drive an entity's emissive glow at runtime (battery, alert, power) without a new model"
+    },
+    {
       "id": "entity-held-item",
       "packages": [
         "@jgengine/core"

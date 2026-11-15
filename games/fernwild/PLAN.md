@@ -360,9 +360,13 @@ software capture Chrome gets SwiftShader WebGPU. On a container without a GPU, r
 Mowbot) and `wildwire-storm` (a Signal Storm night).
 
 Engine parts added on this branch: the creature driver's terrain modes (`CreatureBody.terrain` land / amphibious /
-water, `waterSurface` config) and `createCarrierField` (`@jgengine/core/movement/carrier`), both tested in core.
+water, `waterSurface` config); `createCarrierField` (`@jgengine/core/movement/carrier`); per-region seeded streams in
+the population director; `SceneEntity.glow` (emissive parts follow a runtime value). All tested in core.
 
-Next: base pieces built on the Hoover's back (attach structures to the carrier: needs base building to accept
-moving pieces); eye pulse tied to real charge (a runtime material hook); puppeted bots turning hostile; stronger
-per-species scale contrast. Note: the seeded spawns several suite proofs rely on shift if a new herd wakes at a
-new game's start; keep new spawn zones beyond 220 m of the first beach or re-check those proofs.
+Proof robustness: herd spawns and director rolls come from each zone's own stream, so adding a zone no longer
+shifts another proof's dice; the taming proofs clear the beach's herds before they start. A zone that genuinely
+changes what stands near the start (a level-6 herd 90 m out) still shows in the danger proof, by design.
+
+Next: base pieces built on the Hoover's back (base building places pieces in the world frame with fixed solids and
+snap sockets; it needs a moving parent before pieces can ride a carrier); puppeted bots turning hostile; a better
+aboard camera (pull the follow camera back while on a carrier).
