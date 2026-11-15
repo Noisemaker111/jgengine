@@ -14,6 +14,8 @@ import { seededRng } from "@jgengine/shell/gameKit";
 
 import { ABILITIES } from "./combat/abilities";
 import { DIRECTOR_SEED, encounterFor } from "./waves/manifest";
+import { endlessEncounter } from "./waves/endless";
+import { isOvertime } from "./waves/mode";
 import { activeMap, MAPS } from "../maps";
 
 export interface CreepRuntime {
@@ -156,7 +158,7 @@ export interface SessionState {
 
 function freshState(): SessionState {
   return {
-    encounter: createEncounter({ definition: encounterFor(MAPS[activeMap()].surge), seed: DIRECTOR_SEED }),
+    encounter: createEncounter({ definition: isOvertime() ? endlessEncounter(DIRECTOR_SEED) : encounterFor(MAPS[activeMap()].surge), seed: DIRECTOR_SEED }),
     pressure: evaluatePressure({ health: 1, progress: 0, elapsed: 0 }),
     countdown: createWaveCountdown({ intermission: 25, earlyBonus: { perSecond: 1.2, max: 40 } }),
     boss: null,

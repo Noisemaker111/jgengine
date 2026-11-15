@@ -7,6 +7,8 @@ import { BASE_CATALOG_ID, BASE_ENTITY_ID } from "../entities/base/catalog";
 import { creepDef, CREEP_CATALOG } from "../entities/enemies/catalog";
 import { campaign, DIFFICULTY_IDS, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
 import { buyUnion, unionRefusal, type TownUpgradeId } from "../union";
+import { bindRunMode, RUN_MODES, type RunMode } from "../waves/mode";
+import { setRunModeChoice } from "../campaign";
 import { registerAbilityCommands } from "../combat/cast";
 import { resetSession, session } from "../session";
 import { exposeKeepReadout, keep, resetKeep, runEnded } from "../keep";
@@ -52,6 +54,8 @@ function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
 /** Retry the run, preserving settings and avoiding duplicate death subscriptions. */
 export function restartDefense(ctx: GameContext): void {
   for (const id of [...session.creeps.keys(), BASE_ENTITY_ID]) ctx.scene.entity.despawn(id);
+  // A day or an Overtime night, as the career chose: the director builds its waves from this.
+  bindRunMode(campaign.read(ctx).mode);
   resetSession();
   resetProjectiles();
   // The engine loop opens the defense and adopts the relic it carries.
@@ -95,6 +99,13 @@ function registerCampaignCommands(ctx: GameContext): void {
     },
     apply: (state, input) => {
       if (buyUnion(state, unionOffer(input)!)) state.game.audio.play("upgrade");
+      return state;
+    },
+  });
+  ctx.game.commands.define<{ mode?: string } | undefined>("campaign.mode", {
+    validate: (_state, input) => (RUN_MODES.includes(input?.mode as RunMode) ? null : { reason: "unknown-mode" }),
+    apply: (state, input) => {
+      setRunModeChoice(state, input!.mode as RunMode);
       return state;
     },
   });

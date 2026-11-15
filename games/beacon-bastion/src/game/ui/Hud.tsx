@@ -22,7 +22,8 @@ import { bountyScale } from "../waves/bounty";
 import { canSendWave, waveOverlapBonus } from "../waves/director";
 import { HELD_PAY_RULE, interestOn } from "../waves/heldWavePay";
 import { carriedRelic, legacy, relicBountyScale } from "../waves/legacy";
-import { TOTAL_WAVES } from "../waves/manifest";
+import { eraOf } from "../waves/endless";
+import { isOvertime, waveTotal } from "../waves/mode";
 import { bossLine, tierLabel, wavePreviewLine, waveStatusLine } from "../waves/status";
 import { FLANK_POINT_KEY } from "../world/path";
 import { AttentionMug, BLOOD, Caption, DIM, FIRE, GOLD, Glyph, INK, Plank, Row, Tag, Text, usePhone } from "./look";
@@ -60,7 +61,7 @@ export function KeepSigns() {
       </RuneView>
     </Row>
     <Caption size={12} color={DIM} tooltip={`Kill pay this wave; a clear street pays ${HELD_PAY_RULE.interestRate * 100}% interest on the till, up to ${HELD_PAY_RULE.interestMax}`}
-      text={bind(() => `×${bountyScale(Math.min(currentWaveNumber(), TOTAL_WAVES), relicBountyScale(legacy.read(ctx))).toFixed(2)} cash per kill · +$${interestOn(num(ctx, "keep.gold"))} interest`)} />
+      text={bind(() => `×${bountyScale(Math.min(currentWaveNumber(), waveTotal()), relicBountyScale(legacy.read(ctx))).toFixed(2)} cash per kill · +$${interestOn(num(ctx, "keep.gold"))} interest`)} />
     <CoffeeBreak />
     {relic === null ? null : <Row gap={4}><Glyph name="star" size={13} color={FIRE} /><Tag color={FIRE}>{relic}</Tag></Row>}
   </RuneView>;
@@ -95,14 +96,14 @@ export function WaveBoard() {
   const status = () => waveStatusLine({
     started: keep.of(ctx).fact("keep.wave_started") === true,
     releasing: keep.of(ctx).fact("keep.wave_ready") !== true && !session.encounter.view().done,
-    wave: Math.min(currentWaveNumber(), TOTAL_WAVES),
+    wave: Math.min(currentWaveNumber(), waveTotal()),
     alive: activeCreepCount(),
   });
   const distracted = () => distractedCount(ctx);
   return <RuneView items="center" gap={4}>
     <RuneView variant="sign" items="center" gap={0} padding={phone ? [4, 14, 6, 14] : [6, 22, 8, 22]}>
-      <Tag size={10}>WAVE</Tag>
-      <Text family="Lilita One" weight={400} size={phone ? 22 : 28} text={bind(() => `${Math.min(currentWaveNumber(), TOTAL_WAVES)}/${TOTAL_WAVES}`)} />
+      <Tag size={10} text={bind(() => (isOvertime() ? `OVERTIME · ${eraOf(Math.max(1, currentWaveNumber())).label.toUpperCase()}` : "WAVE"))} />
+      <Text family="Lilita One" weight={400} size={phone ? 22 : 28} text={bind(() => (isOvertime() ? `Wave ${Math.max(1, currentWaveNumber())}` : `${Math.min(currentWaveNumber(), waveTotal())}/${waveTotal()}`))} />
     </RuneView>
     <Caption align="center" maxWidth={phone ? 150 : 320} text={bind(status)} />
     <Row fill="#3a6aff" radius={10} padding={[2, 10, 2, 10]} gap={5} opacity={bind(() => (distracted() > 0 ? 1 : 0))} label="Distracted workers">

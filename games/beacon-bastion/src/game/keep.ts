@@ -84,6 +84,8 @@ export const keep = defineGameSpec({
           held: false,
           /** Stars the finished defense earned (0 until it ends, and for a fall). */
           stars: 0,
+          /** Where a finished Overtime night landed on the career's board (0: missed it, or not Overtime). */
+          board_place: 0,
           /** Lives lost and not yet mended. */
           breaches: { value: 0, min: 0 },
           /** Lives lost since the last held-wave pay. */

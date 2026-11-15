@@ -6,10 +6,13 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { seededRng } from "@jgengine/shell/gameKit";
 
 import { STARTING_GOLD, STARTING_LIVES } from "../entities/base/catalog";
-import { campaign, councilAdd, difficultyOf, recordStars, starsFor } from "../campaign";
+import { campaign, councilAdd, difficultyOf, recordOvertime, recordStars, starsFor } from "../campaign";
+import { eraOf } from "./endless";
+import { isOvertime, waveTotal } from "./mode";
+import { keepProfile } from "../thumbs";
 import { keep } from "../keep";
 import { currentWaveNumber } from "../session";
-import { DIRECTOR_SEED, TOTAL_WAVES } from "./manifest";
+import { DIRECTOR_SEED } from "./manifest";
 import { recordDistrict } from "../season";
 import { duesFor, earnDues, unionOpening } from "../union";
 import { activeMap } from "../../maps";
@@ -147,10 +150,15 @@ export function finishRun(ctx: GameContext): void {
   const held = world.fact("keep.held") === true;
   const difficulty = campaign.read(ctx).difficulty;
   world.set("keep.stars", recordStars(ctx, starsFor(held, world.num("keep.lives"), world.num("keep.lives_max"), difficulty)));
-  recordDistrict(ctx, activeMap(), world.num("keep.stars"));
-  earnDues(ctx, duesFor(held, Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber())), world.num("keep.stars")));
+  const reached = Math.max(1, Math.min(waveTotal(), currentWaveNumber()));
+  if (isOvertime()) {
+    world.set("keep.board_place", recordOvertime(ctx, { wave: reached, map: activeMap(), era: eraOf(reached).label, manager: keepProfile.commander }));
+  } else {
+    recordDistrict(ctx, activeMap(), world.num("keep.stars"));
+  }
+  earnDues(ctx, duesFor(held, reached, world.num("keep.stars")));
   const loop = relicLoop(ctx);
-  const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
+  const wave = reached;
   loop.carry(world.num("keep.gold"));
   const settlement = loop.settle({ share: BANK_RULE.share });
   const previous = legacy.read(ctx);

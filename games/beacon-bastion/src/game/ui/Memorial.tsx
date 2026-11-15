@@ -9,7 +9,8 @@ import { keep } from "../keep";
 import { currentWaveNumber } from "../session";
 import { bountyReadout } from "../waves/bounty";
 import { boonDef, carriedRelic, legacy, relicBountyScale } from "../waves/legacy";
-import { TOTAL_WAVES } from "../waves/manifest";
+import { eraOf } from "../waves/endless";
+import { isOvertime, waveTotal } from "../waves/mode";
 import { AttentionMug, DIM, FIRE, Glyph, GOLD, Heading, INK, Plank, Row, Sheet, Tag, Text, usePhone } from "./look";
 import { activeMap, MAP_IDS, MAPS, type MapId } from "../../maps";
 import { districtOpen, districtStars, nextDistrict, seasonProgress } from "../season";
@@ -31,9 +32,12 @@ function MemorialStone({ victory }: { victory: boolean }) {
   const ctx = useGameContext(), phone = usePhone();
   const view = useGameStore((c) => {
     const account = legacy.read(c);
-    return { earned: keep.of(c).num("keep.bounty_earned"), stars: keep.of(c).num("keep.stars"), difficulty: campaign.read(c).difficulty, account };
+    const career = campaign.read(c);
+    return { earned: keep.of(c).num("keep.bounty_earned"), stars: keep.of(c).num("keep.stars"), difficulty: career.difficulty, account, nextMode: career.mode,
+      place: keep.of(c).num("keep.board_place"), best: career.overtime[0]?.wave ?? 0 };
   });
-  const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
+  const wave = Math.max(1, Math.min(waveTotal(), currentWaveNumber()));
+  const overtime = isOvertime();
   const readout = bountyReadout(wave, view.earned, relicBountyScale(view.account));
   const relic = carriedRelic(view.account);
   const here = activeMap();
@@ -44,7 +48,8 @@ function MemorialStone({ victory }: { victory: boolean }) {
     if (target !== here) void travelTo(ctx, target);
   };
   const lines: [string, string][] = [
-    ["Waves reached", `${wave} / ${TOTAL_WAVES}`],
+    overtime ? ["Night reached", `wave ${wave} · ${eraOf(wave).label}`] : ["Waves reached", `${wave} / ${waveTotal()}`],
+    ...(overtime ? [["Overtime board", view.place > 0 ? `#${view.place} · best wave ${view.best}` : `missed it · best wave ${view.best}`] as [string, string]] : []),
     ["Kill pay earned", `${readout.earned} cash`],
     ["Kill pay", `${readout.opening} → ${readout.closing} cash (×${readout.scale.toFixed(2)})`],
     ["Cash banked", `${view.account.bankedGold}`],
@@ -54,15 +59,16 @@ function MemorialStone({ victory }: { victory: boolean }) {
   ];
   const [board, setBoard] = useState<"union" | "council">("union");
   const difficulty = DIFFICULTIES[view.difficulty];
-  return <Sheet label={victory ? "The Street Held" : "Total Distraction"} width={720}>
+  const title = overtime ? "Overtime's Over" : victory ? "The Street Held" : "Total Distraction";
+  return <Sheet label={title} width={720}>
     <RuneView items="center" gap={4}>
       <AttentionMug size={phone ? 36 : 40} strength={victory ? 1 : 0} />
-      <Heading size={phone ? 24 : 30} align="center">{victory ? "The Street Held" : "Total Distraction"}</Heading>
-      <Text size={14} color={DIM} align="center">{victory ? "The town stayed present. Nobody even checked their phone." : "The whole town is staring at a screen. Try again tomorrow."}</Text>
-      <Row gap={4} label={`${view.stars} stars on ${difficulty.label}`}>
+      <Heading size={phone ? 24 : 30} align="center">{title}</Heading>
+      <Text size={14} color={DIM} align="center">{overtime ? `The town held out until wave ${wave}, deep into the ${eraOf(wave).label}.` : victory ? "The town stayed present. Nobody even checked their phone." : "The whole town is staring at a screen. Try again tomorrow."}</Text>
+      {overtime ? null : <Row gap={4} label={`${view.stars} stars on ${difficulty.label}`}>
         {Array.from({ length: 3 + difficulty.bonusStar }, (_, index) => <Glyph key={index} name="star" size={24} color={index < view.stars ? "#ffd84a" : "#1b2420"} />)}
         <Tag>{difficulty.label.toUpperCase()}</Tag>
-      </Row>
+      </Row>}
     </RuneView>
     <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={6}>
       {lines.map(([label, value]) => <Row key={label} justify="between" gap={10} padding={[2, 10, 2, 0]}><Tag>{label.toUpperCase()}</Tag><Text size={14}>{value}</Text></Row>)}
@@ -83,7 +89,11 @@ function MemorialStone({ victory }: { victory: boolean }) {
         </Plank>;
       })}
     </RuneView>
-    <Plank tone="enamel" run={() => choose(null)}>{target === here ? "Clock in again" : `Clock in at ${MAPS[target].label}`}</Plank>
+    <Row gap={6} label="Next run">
+      <Plank grow={1} tone={view.nextMode === "day" ? "enamel" : "plank"} minHeight={30} command={{ name: "campaign.mode", input: { mode: "day" } }}>Next: a day (12 waves)</Plank>
+      <Plank grow={1} tone={view.nextMode === "overtime" ? "enamel" : "plank"} minHeight={30} command={{ name: "campaign.mode", input: { mode: "overtime" } }}>Next: Overtime (endless)</Plank>
+    </Row>
+    <Plank tone="enamel" run={() => choose(null)}>{target === here ? (view.nextMode === "overtime" ? "Work Overtime" : "Clock in again") : `Clock in at ${MAPS[target].label}`}</Plank>
   </Sheet>;
 }
 

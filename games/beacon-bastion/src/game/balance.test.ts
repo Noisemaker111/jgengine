@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
-import { setDifficulty, type DifficultyId } from "./campaign";
+import { campaign, setDifficulty, setRunModeChoice, type DifficultyId } from "./campaign";
+import type { RunMode } from "./waves/mode";
 import { castAt } from "./combat/cast";
 import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded, towerOptions } from "./keep";
@@ -46,6 +47,8 @@ interface Outcome {
 }
 
 const DT = 0.1;
+/** The Overtime board the last played run left on its career. */
+let lastBoard: { wave: number }[] = [];
 
 function spend(runner: HeadlessRunner, plan: Plan, built: { next: number }): void {
   const world = keep.of(runner.ctx);
@@ -89,9 +92,10 @@ function useRites(runner: HeadlessRunner): void {
   if (session.boss !== null || session.creeps.size >= 8) runner.ui.tryInvoke("abilityQuiet", {});
 }
 
-function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome {
+function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime", mode: RunMode = "day"): Outcome {
   const runner = beaconRunner("Town balance");
   setDifficulty(runner.ctx, difficulty);
+  setRunModeChoice(runner.ctx, mode);
   restartDefense(runner.ctx);
   const built = { next: 0 };
   runner.ui.invoke("wave.send", {});
@@ -101,7 +105,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome
   let lastWave = 0;
   let distractedSeconds = 0;
   const trace: string[] = [];
-  for (let t = 0; t < 2400 && !runEnded(keep.of(runner.ctx)); t += DT) {
+  for (let t = 0; t < 4800 && !runEnded(keep.of(runner.ctx)); t += DT) {
     const now = session.encounter.view().wave;
     if (now !== lastWave) {
       const w = keep.of(runner.ctx);
@@ -128,6 +132,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime"): Outcome
   }
   const world = keep.of(runner.ctx);
   if (process.env.BEACON_TRACE) console.log(trace.join(" "), `end:t${Math.round(runner.ctx.time.now())}:L${world.num("keep.lives")}:held${world.fact("keep.held") === true}:creeps${session.creeps.size}:G${world.num("keep.gold")}:gate${world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip)}:distracted${Math.round(distractedSeconds)}s`);
+  lastBoard = campaign.read(runner.ctx).overtime;
   return {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
@@ -233,7 +238,16 @@ describe("pacing", () => {
     expect(corners.held).toBe(true);
   }, 120_000);
 
-  test("Overtime is harder than Full-Time for the same crew", () => {
+  test("Overtime (endless): the crew works past the day's twelve waves, falls in a later era, and the night goes on the board", () => {
+    const night = playDefense(MIXED, "fulltime", "overtime");
+    if (process.env.BEACON_TRACE) console.log("overtime", JSON.stringify(night));
+    expect(night.held).toBe(false);
+    expect(night.wave).toBeGreaterThan(12);
+    expect(night.wave).toBeLessThan(40);
+    expect(lastBoard[0]?.wave).toBe(night.wave);
+  }, 180_000);
+
+  test("Double Shift is harder than Full-Time for the same crew", () => {
     const overtime = playDefense(MIXED, "overtime");
     const fulltime = playDefense(MIXED, "fulltime");
     expect(overtime.wave * 100 + overtime.lives).toBeLessThan(fulltime.wave * 100 + fulltime.lives);

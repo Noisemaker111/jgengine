@@ -9,13 +9,14 @@ import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, type DifficultyId } from "../../campaign";
+import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, setRunModeChoice, type DifficultyId } from "../../campaign";
 import { BEACON_CREDITS } from "../../credits";
 import { beginRun, enterRun, resumeRun, withdrawToTitle } from "../../menu";
 import { KEEP_LABEL, beaconSave, beaconSlots, keepCanCheckpoint, keepForNewRun, loadSlot, prepareKeep, refreshBeaconSlots, saveToSlot } from "../../save";
 import { currentWaveNumber, session } from "../../session";
 import { keepProfile } from "../../thumbs";
-import { TOTAL_WAVES } from "../../waves/manifest";
+import { waveTotal } from "../../waves/mode";
+import type { RunMode } from "../../waves/mode";
 import { BLOOD, AttentionMug, DIM, FIRE, GOLD, Glyph, Heading, INK, Plank, Row, Tag, Text, usePhone } from "../look";
 import { StoneSettings } from "./StoneSettings";
 import { activeMap, MAP_IDS, MAPS, type MapId } from "../../../maps";
@@ -98,7 +99,8 @@ function TitleMenu({ run }: { run: Busy }) {
   const ctx = useGameContext(), phone = usePhone(), { height } = useRuneViewport();
   const keeps = useSaveSlots(beaconSlots), recent = beaconSlots.mostRecent(), newKeep = keepForNewRun();
   const [commander, setCommander] = useState(keepProfile.commander ?? ""), [difficulty, setDifficultyChoice] = useState<DifficultyId>("fulltime");
-  const flow = useFlow(["main", "new", "keeps", "settings", "credits"], (f) => { if (menuFocus.id !== null && f.routes[menuFocus.id] !== undefined) f.push(menuFocus.id); });
+  const [mode, setMode] = useState<RunMode>("day");
+  const flow = useFlow(["main", "new", "keeps", "board", "settings", "credits"], (f) => { if (menuFocus.id !== null && f.routes[menuFocus.id] !== undefined) f.push(menuFocus.id); });
   useEffect(() => { void refreshBeaconSlots(ctx); }, [ctx]);
   const back = () => { if (flow.read().length > 1) flow.pop(); };
   const open = (slot: string) => {
@@ -109,11 +111,12 @@ function TitleMenu({ run }: { run: Busy }) {
   };
   const raise = (slot: string) => run("Unlocking the shops", async () => {
     keepProfile.commander = commander.trim() === "" ? null : commander.trim();
-    // A new career opens on the season's first district.
-    if (activeMap() !== MAP_IDS[0] && newCareerOnMap(MAP_IDS[0]!, slot, difficulty, keepProfile.commander)) return;
+    // A new career opens on the season's first district (Overtime too: the town hall is on Main Street).
+    if (activeMap() !== MAP_IDS[0] && newCareerOnMap(MAP_IDS[0]!, slot, difficulty, keepProfile.commander, mode)) return;
     await prepareKeep(ctx, slot);
     // A fresh street's campaign starts Full-Time; the shift picked here sets it before the doors open.
     setDifficulty(ctx, difficulty);
+    setRunModeChoice(ctx, mode);
     beginRun(ctx);
   });
   const held = keeps.filter((slot) => !slot.empty).length;
@@ -131,13 +134,14 @@ function TitleMenu({ run }: { run: Busy }) {
         <Verb label="Continue" hint={recent === null ? "No street kept yet" : `${recent.name ?? KEEP_LABEL[recent.id] ?? recent.id}`} disabled={recent === null} run={() => { if (recent !== null) void open(recent.id); }} />
         <Verb label="New Day" hint={newKeep === null ? "No street free" : `Open ${KEEP_LABEL[newKeep] ?? newKeep}`} disabled={newKeep === null} run={() => flow.push("new")} />
         <Verb label="Streets" hint={`${held} of ${keeps.length} kept`} run={() => { void refreshBeaconSlots(ctx); flow.push("keeps"); }} />
+        <Verb label="Overtime Board" hint={overtimeHint(keeps)} run={() => { void refreshBeaconSlots(ctx); flow.push("board"); }} />
         <Verb label="Settings" run={() => flow.push("settings")} />
         <Verb label="Credits" run={() => flow.push("credits")} />
       </RuneView></RuneView>
       <Tag align="center">ARROWS CHOOSE · ENTER TAKES · ESC BACK</Tag>
     </Screen>;
     if (entry.kind === "new") return <Screen back={back} width={560}>
-      <Commission slot={newKeep} commander={commander} setCommander={setCommander} difficulty={difficulty} setDifficulty={setDifficultyChoice} onBegin={() => { if (newKeep !== null) void raise(newKeep); }} />
+      <Commission slot={newKeep} commander={commander} setCommander={setCommander} difficulty={difficulty} setDifficulty={setDifficultyChoice} mode={mode} setMode={setMode} onBegin={() => { if (newKeep !== null) void raise(newKeep); }} />
       <Plank run={back}>Back</Plank>
     </Screen>;
     if (entry.kind === "keeps") return <Screen back={back} width={900}>
@@ -154,8 +158,31 @@ function TitleMenu({ run }: { run: Busy }) {
       <RuneView variant="stone" scroll maxHeight={height - 170}><StoneSettings /></RuneView>
       <Plank run={back}>Back</Plank>
     </Screen>;
+    if (entry.kind === "board") return <Screen back={back} width={560}><OvertimeBoard keeps={keeps} /><Plank run={back}>Back</Plank></Screen>;
     return <Screen back={back} width={640}><Credits height={height} /><Plank run={back}>Back</Plank></Screen>;
   }}</RuneLayers>;
+}
+
+/** The deepest Overtime night any kept career has worked. */
+function overtimeHint(keeps: readonly SaveSlotMeta[]): string {
+  const best = Math.max(0, ...keeps.map((slot) => slotNumber(slot, "overtime") ?? 0));
+  return best > 0 ? `Deepest night: wave ${best}` : "Endless: dial-up, smartphones, then AI";
+}
+
+/** Every kept career's deepest Overtime night, deepest first. */
+function OvertimeBoard({ keeps }: { keeps: readonly SaveSlotMeta[] }) {
+  const rows = keeps
+    .filter((slot) => !slot.empty && (slotNumber(slot, "overtime") ?? 0) > 0)
+    .map((slot) => ({ id: slot.id, wave: slotNumber(slot, "overtime") ?? 0, who: slotText(slot, "character") ?? KEEP_LABEL[slot.id] ?? slot.id }))
+    .sort((a, b) => b.wave - a.wave);
+  return <RuneView variant="parchment" gap={8} label="Overtime board">
+    <Heading color="#3a2a12" align="center">Overtime Board</Heading>
+    <Text size={13} color="#4a3520" align="center">Overtime never ends: technology marches from dial-up to smartphones to AI until the town looks at its screens. Start one from New Day or from the end-of-day board.</Text>
+    {rows.length === 0 ? <Text size={14} color="#6a4a2a" align="center">No night worked yet</Text> : rows.map((row, index) => <Row key={row.id} justify="between" gap={10} padding={[4, 8, 4, 8]} fill={index === 0 ? "#f6dc8a" : "#fff0c8"} radius={4}>
+      <Text size={15} weight={700} color="#3a2a12">{`${index + 1}. ${row.who}`}</Text>
+      <Text size={15} color="#8a2414">{`Wave ${row.wave}`}</Text>
+    </Row>)}
+  </RuneView>;
 }
 
 /** A red diner button on the title: label in Lilita One and its hint under it. */
@@ -167,8 +194,9 @@ function Verb({ label, hint, disabled, run }: { label: string; hint?: string; di
 }
 
 /** The New Day time card on a sticky note: who manages the shift, the shift itself and which street opens. */
-function Commission({ slot, commander, setCommander, difficulty, setDifficulty: choose, onBegin }: {
-  slot: string | null; commander: string; setCommander: (name: string) => void; difficulty: DifficultyId; setDifficulty: (id: DifficultyId) => void; onBegin: () => void;
+function Commission({ slot, commander, setCommander, difficulty, setDifficulty: choose, mode, setMode, onBegin }: {
+  slot: string | null; commander: string; setCommander: (name: string) => void; difficulty: DifficultyId; setDifficulty: (id: DifficultyId) => void;
+  mode: RunMode; setMode: (mode: RunMode) => void; onBegin: () => void;
 }) {
   const [signing, setSigning] = useState(false);
   const label = slot === null ? "No street available" : (KEEP_LABEL[slot] ?? slot);
@@ -194,6 +222,12 @@ function Commission({ slot, commander, setCommander, difficulty, setDifficulty: 
       {DIFFICULTY_IDS.map((id) => <Plank key={id} tone={difficulty === id ? "enamel" : "plank"} minHeight={36} padding={[4, 8, 4, 8]} run={() => choose(id)}>{DIFFICULTIES[id].label}</Plank>)}
     </RuneView>
     <Text size={13} color="#4a3520">{DIFFICULTIES[difficulty].detail}</Text>
+    <Tag color="#6a4a2a">WORK</Tag>
+    <RuneView layout="grid" columns={2} gap={6} label="Run kind">
+      <Plank tone={mode === "day" ? "enamel" : "plank"} minHeight={36} padding={[4, 8, 4, 8]} run={() => setMode("day")}>A day (12 waves)</Plank>
+      <Plank tone={mode === "overtime" ? "enamel" : "plank"} minHeight={36} padding={[4, 8, 4, 8]} run={() => setMode("overtime")}>Overtime (endless)</Plank>
+    </RuneView>
+    <Text size={13} color="#4a3520">{mode === "day" ? "Hold the street for twelve waves; each held district opens the next" : "No end: the tech marches through dial-up, smartphones and AI. How deep can the town stay present?"}</Text>
     <Row gap={10} justify="center">
       {beaconSlots.list().map((entry) => <Row key={entry.id} gap={4}>
         <RuneView width={10} height={10} radius={5} fill={entry.id === slot ? "#8a2414" : entry.empty ? "#d8c393" : "#6a4a2a"} border={{ width: 1, color: "#5a3a12" }} />
@@ -220,6 +254,7 @@ function KeepNiche({ slot, recent, onTake }: { slot: SaveSlotMeta; recent: boole
       {lives === null ? null : <Row gap={3}><Glyph name="coffee" size={13} color={BLOOD} /><Text size={13}>{String(lives)}</Text></Row>}
     </Row>}
     {slot.empty ? null : <Text size={12} color={DIM}>{`${MAPS[(slotText(slot, "map") as MapId | null) ?? "main-street"]?.label ?? "Main Street"} · season ${slotNumber(slot, "season") ?? 0}/${MAP_IDS.length}`}</Text>}
+    {slot.empty || (slotNumber(slot, "overtime") ?? 0) === 0 ? null : <Text size={12} color={DIM}>{`Overtime best: wave ${slotNumber(slot, "overtime")}`}</Text>}
     {slot.empty || slot.savedAt === undefined ? null : <Text size={12} color={DIM}>{`Kept ${relativeSavedAt(slot.savedAt)}`}</Text>}
     <Plank tone={slot.empty ? "plank" : "enamel"} width={{ fraction: 1 }} label={slot.empty ? `Open ${label}` : `Return to ${label}`} run={onTake}>{slot.empty ? "Open" : "Return"}</Plank>
   </RuneView>;
@@ -245,7 +280,7 @@ function PauseBanner({ ctx, run }: { ctx: GameContext; run: Busy }) {
   const slot = beaconSave(ctx).slot(), keepName = KEEP_LABEL[slot] ?? slot;
   const write = () => { setConfirming(false); void run("Saving the street", async () => { await saveToSlot(ctx, slot); setNotice(`Kept on ${keepName}`); }); };
   const save = () => { if (!keepCanCheckpoint(ctx) && beaconSlots.get(slot)?.empty === false) setConfirming(true); else write(); };
-  const wave = Math.min(currentWaveNumber(), TOTAL_WAVES), standing = session.creeps.size;
+  const wave = Math.min(currentWaveNumber(), waveTotal()), standing = session.creeps.size;
   return <RuneLayers flow={flow}>{(entry) => {
     if (entry.kind === "settings") return <Screen back={back} width={640}><Heading align="center">Settings</Heading><RuneView variant="stone" scroll maxHeight={height - 170}><StoneSettings /></RuneView><Plank run={back}>Back</Plank></Screen>;
     if (entry.kind === "credits") return <Screen back={back} width={640}><Credits height={height} /><Plank run={back}>Back</Plank></Screen>;

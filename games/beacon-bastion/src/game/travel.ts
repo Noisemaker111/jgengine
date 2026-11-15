@@ -1,7 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { activeMap, chooseMap, type MapId } from "../maps";
-import { campaign, setDifficulty, type DifficultyId } from "./campaign";
+import { campaign, setDifficulty, setRunModeChoice, type DifficultyId } from "./campaign";
+import type { RunMode } from "./waves/mode";
 import { beginRun, enterRun } from "./menu";
 import { beaconSave, loadSlot, prepareKeep, refreshBeaconSlots, saveToSlot } from "./save";
 import { districtOpen } from "./season";
@@ -16,7 +17,7 @@ import { keepProfile } from "./thumbs";
 type Arrival =
   | { kind: "fresh"; slot: string }
   | { kind: "resume"; slot: string }
-  | { kind: "new"; slot: string; difficulty: DifficultyId; commander: string | null };
+  | { kind: "new"; slot: string; difficulty: DifficultyId; commander: string | null; mode: RunMode };
 
 let arrival: Arrival | null = null;
 
@@ -51,8 +52,8 @@ export function resumeOnMap(map: MapId, slot: string): boolean {
 }
 
 /** Open a new career, which always starts on the first district. */
-export function newCareerOnMap(map: MapId, slot: string, difficulty: DifficultyId, commander: string | null): boolean {
-  return go(map, { kind: "new", slot, difficulty, commander });
+export function newCareerOnMap(map: MapId, slot: string, difficulty: DifficultyId, commander: string | null, mode: RunMode = "day"): boolean {
+  return go(map, { kind: "new", slot, difficulty, commander, mode });
 }
 
 /** Called once a rebuilt game has booted: finish the trip that rebuilt it. Returns whether there was one. */
@@ -65,6 +66,7 @@ export async function arrive(ctx: GameContext): Promise<boolean> {
     keepProfile.commander = next.commander;
     await prepareKeep(ctx, next.slot);
     setDifficulty(ctx, next.difficulty);
+    setRunModeChoice(ctx, next.mode);
     beginRun(ctx);
     return true;
   }

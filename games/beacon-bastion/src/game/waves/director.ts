@@ -12,7 +12,9 @@ import { councilScale, difficultyOf } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { gameClockMs, session, nextCreepInstanceId, newShield, newSpeedStats, type CreepRuntime } from "../session";
-import { bossProfile, PRESSURE_RULE, TOTAL_WAVES } from "./manifest";
+import { bossProfile, PRESSURE_RULE } from "./manifest";
+import { ENDLESS_BOSS_RAMP } from "./endless";
+import { isOvertime, waveTotal } from "./mode";
 import { BUILD_PLOTS, KEEP_POINT, routeOf, SPAWN_POINT_KEY } from "../world/path";
 import { finishRun, legacy, relicBountyScale } from "./legacy";
 import { keep, runEnded, towerStats } from "../keep";
@@ -59,7 +61,7 @@ export function readPressure(ctx: GameContext): PressurePlan {
   const health = max <= 0 ? 1 : Math.max(0, world.num("keep.lives")) / max;
   const cleared = Math.max(0, session.encounter.view().wave - 1);
   return evaluatePressure(
-    { health, progress: cleared / TOTAL_WAVES, elapsed: ctx.time.now() },
+    { health, progress: cleared / waveTotal(), elapsed: ctx.time.now() },
     PRESSURE_RULE,
   );
 }
@@ -129,7 +131,10 @@ export function spawnRaider(ctx: GameContext, unit: string, route: string, from?
   const position: [number, number, number] = [path.position[0], path.position[1] + lift, path.position[2]];
   ctx.scene.entity.spawn(unit, { id: instanceId, position, role: "npc" });
   // Bosses carry their own authored health; only the ordinary tech ramps.
-  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? 1 : MAPS[activeMap()].toughness * (1 + WAVE_HEALTH_RAMP * Math.max(0, session.encounter.view().wave - 1));
+  const wave = session.encounter.view().wave;
+  // Overtime bosses grow with the night; on a day they keep their authored health.
+  const bossRamp = isOvertime() ? 1 + ENDLESS_BOSS_RAMP * Math.max(0, wave - 12) : 1;
+  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? bossRamp : MAPS[activeMap()].toughness * (1 + WAVE_HEALTH_RAMP * Math.max(0, wave - 1));
   const health = Math.round(def.health * difficulty.health * ramp);
   ctx.scene.entity.stats.set(instanceId, "health", { max: health, current: health });
   const runtime: CreepRuntime = {
@@ -461,7 +466,7 @@ export function tickWaves(ctx: GameContext, dt: number): void {
     for (const order of session.encounter.update(dt)) spawnCreep(ctx, order);
     if (session.encounter.view().ready) {
       world.set("keep.wave_ready", true);
-      if (session.encounter.view().wave >= TOTAL_WAVES) session.encounter.completeWave();
+      if (session.encounter.view().wave >= waveTotal()) session.encounter.completeWave();
     }
   }
   tickBoss(ctx, dt);

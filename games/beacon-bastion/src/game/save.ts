@@ -17,6 +17,7 @@ import { newShield, newSpeedStats, resetSession, session, type BossRuntime } fro
 import { freshLegacy, openingKeep, readLegacy, relicLoop, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { campaign, freshCampaign, readCampaign } from "./campaign";
 import { seasonProgress } from "./season";
+import { bindRunMode } from "./waves/mode";
 import type { AbilityKitState } from "@jgengine/core/combat/abilityKit";
 import type { WaveCountdownState } from "@jgengine/core/waves/waveCountdown";
 import { MINIBOSS_ID } from "./waves/manifest";
@@ -118,6 +119,8 @@ const worldLoaded = perContext(() => ({ restored: false }));
  */
 export function restoreDefense(ctx: GameContext, save: DefenseSave): void {
   ctx.time.hydrate(save.clock);
+  // The campaign section loads first, so the career's mode says which waves this run was on.
+  bindRunMode(campaign.read(ctx).mode);
   for (const id of [...session.creeps.keys(), BASE_ENTITY_ID]) ctx.scene.entity.despawn(id);
   resetSession();
   resetProjectiles();
@@ -445,6 +448,7 @@ export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> 
         wave: defense.encounter.wave + 1,
         map: defense.map ?? "main-street",
         season: seasonProgress(readCampaign(document.systems["campaign"]) ?? freshCampaign()).held,
+        overtime: (readCampaign(document.systems["campaign"]) ?? freshCampaign()).overtime[0]?.wave ?? 0,
         ...(thumbnail === null ? {} : { thumbnail }),
       };
     },

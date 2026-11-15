@@ -2,6 +2,18 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { freshUnion, readUnion, type UnionState } from "./union";
+import type { RunMode } from "./waves/mode";
+
+/** One Overtime night on the career's board. */
+export interface OvertimeEntry {
+  wave: number;
+  map: string;
+  era: string;
+  manager: string | null;
+}
+
+/** How many nights the Overtime board keeps. */
+export const OVERTIME_BOARD_SIZE = 5;
 import { createSkillTree, type SkillNodeDef, type SkillResolution, type SkillTree, type SkillTreeState } from "@jgengine/core/progression/skillTree";
 
 /**
@@ -34,7 +46,7 @@ export interface DifficultyDef {
 export const DIFFICULTIES: Record<DifficultyId, DifficultyDef> = {
   parttime: { id: "parttime", label: "Part-Time", detail: "Flimsier tech, a longer attention span, long breaks", health: 0.8, armor: 0, lives: 25, gold: 30, bounty: 1.1, intermission: 32, bonusStar: 0 },
   fulltime: { id: "fulltime", label: "Full-Time", detail: "An ordinary day on the street", health: 1, armor: 0, lives: 20, gold: 0, bounty: 1, intermission: 25, bonusStar: 0 },
-  overtime: { id: "overtime", label: "Overtime", detail: "Tougher, armored tech; twelve attention; short breaks. A held day earns a fourth star", health: 1.2, armor: 5, lives: 12, gold: -10, bounty: 0.95, intermission: 20, bonusStar: 1 },
+  overtime: { id: "overtime", label: "Double Shift", detail: "Tougher, armored tech; twelve attention; short breaks. A held day earns a fourth star", health: 1.2, armor: 5, lives: 12, gold: -10, bounty: 0.95, intermission: 20, bonusStar: 1 },
 };
 export const DIFFICULTY_IDS: readonly DifficultyId[] = ["parttime", "fulltime", "overtime"];
 
@@ -86,10 +98,14 @@ export interface CampaignState {
   districts: Record<string, number>;
   /** The union hall: dues on hand, trades hired, training and town upgrades. */
   union: UnionState;
+  /** What the next run is: an ordinary day or an Overtime night. */
+  mode: RunMode;
+  /** The career's best Overtime nights, deepest first. */
+  overtime: OvertimeEntry[];
 }
 
 export function freshCampaign(): CampaignState {
-  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} }, districts: {}, union: freshUnion() };
+  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} }, districts: {}, union: freshUnion(), mode: "day", overtime: [] };
 }
 
 export const campaign = defineStore<CampaignState>("beacon:campaign", freshCampaign);
@@ -153,6 +169,19 @@ export function resetCouncil(ctx: GameContext): void {
   campaign.write(ctx, { ...state, council: { points: 0, ranks: {} } });
 }
 
+/** Choose what the next run is: a day on the season's districts or an Overtime night. */
+export function setRunModeChoice(ctx: GameContext, mode: RunMode): void {
+  campaign.write(ctx, { ...campaign.read(ctx), mode });
+}
+
+/** Put a finished Overtime night on the board (deepest first, five kept). Returns its place (1-based), or 0 when it missed the board. */
+export function recordOvertime(ctx: GameContext, entry: OvertimeEntry): number {
+  const state = campaign.read(ctx);
+  const board = [...state.overtime, entry].sort((a, b) => b.wave - a.wave).slice(0, OVERTIME_BOARD_SIZE);
+  campaign.write(ctx, { ...state, overtime: board });
+  return board.indexOf(entry) + 1;
+}
+
 export function setDifficulty(ctx: GameContext, difficulty: DifficultyId): void {
   campaign.write(ctx, { ...campaign.read(ctx), difficulty });
 }
@@ -187,5 +216,13 @@ export function readCampaign(value: unknown): CampaignState | null {
   for (const [id, best] of Object.entries((raw.districts ?? {}) as Record<string, unknown>)) {
     if (typeof best === "number" && Number.isFinite(best) && best > 0) districts[id] = Math.max(0, Math.min(4, Math.round(best)));
   }
-  return { difficulty, stars, council: { points: 0, ranks }, districts, union: readUnion((raw as { union?: unknown }).union) };
+  const overtime = (Array.isArray(raw.overtime) ? raw.overtime : [])
+    .filter((entry): entry is OvertimeEntry => typeof entry === "object" && entry !== null && Number.isSafeInteger(entry.wave) && entry.wave > 0 && typeof entry.map === "string" && typeof entry.era === "string")
+    .map((entry) => ({ wave: entry.wave, map: entry.map, era: entry.era, manager: typeof entry.manager === "string" ? entry.manager : null }))
+    .sort((a, b) => b.wave - a.wave)
+    .slice(0, OVERTIME_BOARD_SIZE);
+  return {
+    difficulty, stars, council: { points: 0, ranks }, districts, union: readUnion((raw as { union?: unknown }).union),
+    mode: raw.mode === "overtime" ? "overtime" : "day", overtime,
+  };
 }
