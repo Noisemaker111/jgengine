@@ -32,11 +32,11 @@ export const SUBURB = {
    * Terrain low/high: shaded lawn in the hollows, sunlit overgrown grass on the rises. Far enough
    * apart in value that the rolling yards still have relief.
    */
-  rockLow: "#3f7a2c",
-  rockHigh: "#9fd35a",
+  rockLow: "#2f6222",
+  rockHigh: "#6fae3c",
   /** Banks and slopes: packed garden soil, darker than the lawn so a slope separates by value. */
   cliff: "#7a5a3a",
-  sand: "#8cc653",
+  sand: "#5f9e38",
   dust: "#f6e7a8",
   hudAmber: "#ffd23f",
   hudRed: "#ff4a5a",

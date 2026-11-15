@@ -14,6 +14,8 @@ import { blackMarketOpenStore, discoveredStationsStore, lastPickupStore, skillsO
 import { vaultOpenStore } from "../src/game/items/vault";
 import { TRAVEL_STATIONS } from "../src/game/world/sites";
 import { npcDialogStore } from "../src/game/quests/givers";
+import { bark } from "../src/game/combat/personalityRuntime";
+import { gunById } from "../src/game/handroll";
 
 export const STATES = ["title", "credits", "hud", "paused", "settings", "talents", "vendor", "npc", "overdrive", "overdrive-run", "dead-air", "downed", "vault", "travel", "market"] as const;
 export type NativeFixture = (typeof STATES)[number];
@@ -65,7 +67,11 @@ async function renderFixture(state: NativeFixture, width: number, height: number
       run("kit.capture", { family: "rifle" });
       const gun = ctx.player.inventory.state("hotbar").slots[0]?.itemId;
       if (gun !== undefined) lastPickupStore.write(ctx, { gunId: gun, atMs: ctx.time.now() * 1000 });
-      speechStore.write(ctx, { speaker: "B0-LT", line: "Copper ring's north of the wreck. Bring the carrier back and we eat tonight.", atMs: ctx.time.now() * 1000 });
+      speechStore.write(ctx, { speaker: "DING", line: "The radio tower's north of the bus. Get it broadcasting and the cul-de-sac can hear us.", atMs: ctx.time.now() * 1000 });
+      if (gun !== undefined) {
+        const held = gunById(gun);
+        if (held !== undefined) bark(ctx, held, "pickup");
+      }
     }
     if (state === "talents") skillsOpenStore.write(ctx, true);
     if (state === "vault") { run("kit.capture", { family: "rifle" }); vaultOpenStore.write(ctx, true); }
@@ -75,7 +81,7 @@ async function renderFixture(state: NativeFixture, width: number, height: number
     for (let i = 0; i < 20; i++) session.tick([]);
     setGamePhase(ctx, "playing");
     // After the ticks: the givers close a dialog the reclaimer is not standing beside.
-    if (state === "npc") { const npc = Object.keys((await import("../src/game/quests/catalog")).NPCS)[0]!; npcDialogStore.write(ctx, { npc, line: "You look like you can hold a rifle.", questId: "q_target_practice" } as never); } // type-escape: the dialog record's npc id union is the catalog's keys
+    if (state === "npc") { const npc = Object.keys((await import("../src/game/quests/catalog")).NPCS)[0]!; npcDialogStore.write(ctx, { npc, line: "You look like you can hold a garden hose.", questId: "q_target_practice" } as never); } // type-escape: the dialog record's npc id union is the catalog's keys
   }
   menuFocus.screen = state === "credits" ? "credits" : "main";
   const settings: SettingsController = {

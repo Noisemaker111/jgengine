@@ -15,7 +15,6 @@ import {
 } from "@jgengine/core/world/features";
 import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
 import { SUBURB } from "./game/palette";
-import { SETTLEMENT_KITS } from "./game/world/buildingKit";
 import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
@@ -26,11 +25,11 @@ const TERRAIN_BASE = {
   bounds: WORLD_BOUNDS,
   seed: FERRALON_SEED,
   material: "rock",
-  height: 36,
+  height: 52,
   frequency: 0.0035,
-  // Lower hills than the old badlands (52 high, six octaves): the same seed and frequency keep every
-  // authored pad and road on its site, and the ridges still herd the player along the streets.
-  octaves: 5,
+  // The authored scene's props sit at heights measured on this ground, so its shape stays as it was
+  // laid out; only its colours, grass and grain moved to the suburb.
+  octaves: 6,
   ridged: true,
   segments: 340,
   colors: { low: SUBURB.rockLow, high: SUBURB.rockHigh },
@@ -81,7 +80,7 @@ const materialRegions: readonly TerrainMaterialRegion[] = [
       shape: "circle",
       center: [zone.center.x, zone.center.z],
       radius: zone.flattenRadius * 0.92,
-      colors: { low: "#5e9c3a", high: "#86c252" },
+      colors: { low: "#3f7f2a", high: "#5f9e38" },
       falloff: zone.flattenRadius * 0.4,
     }),
   ),
@@ -141,7 +140,7 @@ const terrainDescriptor = terrain({
     // Grain, not repaint: `tint` low keeps the biome palette, the macro sweeps, and the slope-rock
     // blend visible and takes only the map's light and shade. At the default 1 the dirt albedo
     // painted over all of it and every region came out the same flat tan.
-    material: { maps: GROUND_MAPS, repeat: 6, strength: 1, tint: 0.18 },
+    material: { maps: GROUND_MAPS, repeat: 8, strength: 1, tint: 0.3 },
   },
   flatten: [
     ...ZONES.map((zone) => ({
@@ -246,7 +245,6 @@ export const world: WorldFeature = environment({
       storyHeight: 3,
       spacing: 5,
       style: settlement.style,
-      kit: SETTLEMENT_KITS[settlement.style],
       ...(settlement.palette !== undefined ? { palette: settlement.palette } : {}),
       seed: `${FERRALON_SEED}-${zone.id}`,
     });

@@ -17,7 +17,7 @@ const MODEL_PACKS = [
 
 const MATERIAL_SOURCES = {
   /** Ground grain under the lawns and dirt paths, so the yards stop reading as flat vertex colour. */
-  ground: "ambientcg-ground031",
+  ground: "ambientcg-grass001",
   /** Rock for the landscaping boulders and retaining walls. */
   cliff: "ambientcg-rock035",
   /** Scratched plate for junk piles and improvised barricades. */

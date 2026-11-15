@@ -127,17 +127,17 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${SCIFI}/Prop_Computer`,
     style: { scale: 2.4, material: { color: "#a0662f", ...PANEL, emissive: "#ffd23f", emissiveIntensity: 0.45 } },
   },
-  // Untrimmed hedges where the landscaping boulders used to be.
+  // Untrimmed yard trees where the landscaping boulders used to be.
   rock_spire: {
-    model: `${NATURE}/Bush_Common`,
-    fallbackModel: `${NATURE}/Bush_Common_Flowers`,
-    style: { scale: 3.2, material: { rim: LEAF_RIM } },
+    model: `${NATURE}/CommonTree_3`,
+    fallbackModel: `${NATURE}/CommonTree_4`,
+    style: { scale: 1.3, material: { color: "#6fbf45" } },
   },
   // The overgrown maples and oaks that took the street back.
   dead_tree: {
     model: `${NATURE}/CommonTree_1`,
     fallbackModel: `${NATURE}/CommonTree_2`,
-    style: { scale: 1.6, material: { rim: LEAF_RIM } },
+    style: { scale: 1.6, material: { color: "#5fae3c" } },
   },
   // A car abandoned in a driveway the day the update went out.
   wreck: {
@@ -183,7 +183,7 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
   bus_wreck: {
     model: `${TOON}/Broken_Car`,
     fallbackModel: `${TOON}/Shipping_Container`,
-    style: { targetHeight: 3.2, scale: 1.6, material: { color: "#ffc20e", rim: YARD_RIM } },
+    style: { targetHeight: 3, material: { color: "#ffc20e", rim: YARD_RIM } },
   },
   water_tower: {
     model: `${TOON}/Water_Tank`,

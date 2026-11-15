@@ -375,7 +375,7 @@ export const game = defineGame({
       toneMapping: "aces",
       // The whole exposure chain rides on this rather than on the key light, so the sun/shade ratio
       // that makes the afternoon dramatic survives while the sun-facing sand stops clipping to paper.
-      exposure: 0.8,
+      exposure: 0.7,
       // Bloom runs on the raw HDR *before* exposure, so a threshold under 1.0 was picking up lit sand
       // and smearing a white veil over the sun side of every frame. Above 1.0 only emissives — optics,
       // hazard trim, element cells, muzzle flash — cross it, which is the glow that was wanted.

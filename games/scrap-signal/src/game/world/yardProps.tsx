@@ -8,15 +8,16 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /**
  * Three suburban landmarks no model pack ships, built from primitives: a giant pink lawn flamingo
- * (where the desert's bone arches stood), a hand-painted yard-sale sign, and a wooden telephone pole
- * with its crossbar and transformer (where the turbines stood). Big, bright and readable at range.
+ * (where the desert's bone arches stood), a hand-painted yard-sale sign, a wooden telephone pole
+ * with its crossbar and transformer (where the turbines stood), and the overturned school bus. Big, bright and readable at range.
  */
-type YardProp = "flamingo" | "yardSale" | "pole";
+type YardProp = "flamingo" | "yardSale" | "pole" | "schoolBus";
 
 const PROP_BY_CATALOG: Readonly<Record<string, YardProp>> = {
   bone_arch: "flamingo",
   banner_pole: "yardSale",
   wind_turbine: "pole",
+  bus_wreck: "schoolBus",
 };
 
 function paint(color: string, roughness = 0.5): MeshStandardMaterial {
@@ -56,6 +57,35 @@ function buildProp(kind: YardProp): { group: Group; dispose(): void } {
     add(new BoxGeometry(1.2, 0.18, 0.02), mat(paint("#2f6fd6")), 0, 2.0, 0.12);
     add(new BoxGeometry(0.8, 0.16, 0.02), mat(paint("#3aa84f")), 0, 1.72, 0.12);
     for (const [x, color] of [[-0.6, "#ffd23f"], [0.6, "#ff5ad1"]] as const) add(new SphereGeometry(0.2, 10, 8), mat(paint(color, 0.3)), x, 2.8, 0.1);
+  } else if (kind === "schoolBus") {
+    // The overturned school bus at the opening, tipped onto its side in the grass.
+    const bus = new Group();
+    bus.rotation.z = Math.PI / 2 - 0.12;
+    bus.position.set(-1.1, 1.25, 0);
+    group.add(bus);
+    const yellow = mat(paint("#ffc20e", 0.45));
+    const black = mat(paint("#1b1b1f", 0.6));
+    const glass = mat(new MeshStandardMaterial({ color: "#2b3e55", roughness: 0.15, metalness: 0.4, emissive: "#7fb8ff", emissiveIntensity: 0.12 }));
+    const put = (geometry: BufferGeometry, material: MeshStandardMaterial, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) => {
+      geometries.push(geometry);
+      const mesh = new Mesh(geometry, material);
+      mesh.position.set(x, y, z);
+      mesh.rotation.set(rx, ry, rz);
+      mesh.castShadow = true;
+      bus.add(mesh);
+    };
+    put(new BoxGeometry(2.5, 2.4, 9), yellow, 0, 1.6, 0);
+    put(new BoxGeometry(2.4, 1.2, 1.6), yellow, 0, 1.0, 5.2);
+    put(new BoxGeometry(2.56, 0.18, 9.02), black, 0, 1.15, 0);
+    for (let index = 0; index < 6; index += 1) {
+      for (const side of [-1, 1]) put(new BoxGeometry(0.04, 0.7, 1.05), glass, side * 1.27, 2.2, -3.4 + index * 1.25);
+    }
+    put(new BoxGeometry(2.1, 0.8, 0.04), glass, 0, 2.2, 4.52);
+    put(new BoxGeometry(1.8, 0.35, 0.05), black, 0, 2.95, 4.53);
+    for (const [z, r] of [[-3, 0.55], [3.6, 0.55]] as const) {
+      for (const side of [-1, 1]) put(new CylinderGeometry(r, r, 0.4, 14), black, side * 1.15, 0.45, z, 0, 0, Math.PI / 2);
+    }
+    put(new BoxGeometry(0.1, 0.6, 0.6), mat(paint("#e23c2e", 0.4)), -1.33, 2.0, 3.0);
   } else {
     const wood = mat(paint("#6b4a2e", 0.9));
     add(new CylinderGeometry(0.18, 0.24, 14, 10), wood, 0, 7, 0);

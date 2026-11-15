@@ -7,7 +7,6 @@ import { readGrassLook } from "@jgengine/core/grass/grassKind";
 import { enemyById } from "../entities/enemies/catalog";
 import { START_ZONE } from "../progression/unlocks";
 import { MAIN_QUEST_IDS, quests, scrapQuests, zoneOpener } from "../quests/catalog";
-import { SETTLEMENT_KITS } from "./buildingKit";
 import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
 import { entityModels, objectModels } from "./models";
 import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
@@ -119,12 +118,13 @@ describe("scrap-signal world", () => {
     expect(summary.counts.buildings).toBe(settled.reduce((sum, zone) => sum + zone.settlement!.count, 0));
   });
 
-  test("every settlement carries the kit its zone style names", () => {
+  test("every settlement builds in the procedural style its zone names, with no sci-fi kit", () => {
     const settled = ZONES.filter((zone) => zone.settlement !== undefined);
     const groups = world.structures ?? [];
     expect(groups.length).toBe(settled.length);
     for (const [index, zone] of settled.entries()) {
-      expect(groups[index]!.kit?.id).toBe(SETTLEMENT_KITS[zone.settlement!.style].id);
+      expect(groups[index]!.style).toBe(zone.settlement!.style);
+      expect(groups[index]!.kit).toBeUndefined();
     }
   });
 
@@ -207,24 +207,10 @@ describe("campaign chain", () => {
   });
 });
 
-describe("settlement building kits", () => {
+describe("served models", () => {
   const publicRoot = join(import.meta.dir, "../../../public");
 
-  assetTest("every bound model is a file the game actually serves", () => {
-    for (const kit of Object.values(SETTLEMENT_KITS)) {
-      const bound = [...Object.values(kit.parts), ...Object.values(kit.slots ?? {})].flat();
-      expect(bound.length).toBeGreaterThan(0);
-      for (const part of bound) expect(part.model.startsWith("/models/")).toBe(true);
-      expect(missingServed(publicRoot, bound.map((part) => part.model))).toEqual([]);
-    }
-  });
-
-  test("clothesline is dropped rather than left to fall back to a block", () => {
-    for (const kit of Object.values(SETTLEMENT_KITS)) expect(kit.omit).toContain("clothesline");
-  });
-
-  // The kit's models were checked here from the start; the object catalog's were not, and that is
-  // where a broken reference would show up as a magenta placeholder in the starting settlement.
+  // A broken reference would show up as a magenta placeholder in the starting cul-de-sac.
   assetTest("every object and entity model the game mounts is a file it actually serves", () => {
     const mounted = [...Object.values(objectModels), ...Object.values(entityModels)];
     expect(mounted.length).toBeGreaterThan(0);

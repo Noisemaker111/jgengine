@@ -1,3 +1,4 @@
+import type { BuildingStyle } from "@jgengine/core/buildings/buildings";
 import {
   findEditorMarker,
   findEditorVolume,
@@ -42,7 +43,8 @@ export interface ZoneDef {
     count: number;
     footprint: number;
     stories: readonly [number, number];
-    style: "desert" | "ruin";
+    /** The engine's procedural building style: pastel village houses, a strip mall's generic storefronts, the Estates' grand ones. */
+    style: BuildingStyle;
     palette?: { wall: string; storefront?: string };
   };
   clusters: readonly ZoneCluster[];
@@ -73,7 +75,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "rustflat_waste",
     name: "Crabgrass Court",
     level: 1,
-    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#8a5c3a", storefront: "#4a3524" } },
+    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "village", palette: { wall: "#f2d7a6", storefront: "#3d7fc4" } },
     clusters: [
       { catalogId: "bruiser", count: 6 },
       { catalogId: "bruiser_brat", count: 10 },
@@ -86,7 +88,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "breakwater_shelf",
     name: "Sprinkler Heights",
     level: 4,
-    settlement: { count: 8, footprint: 7, stories: [1, 2], style: "desert", palette: { wall: "#7d8894", storefront: "#3a4450" } },
+    settlement: { count: 8, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#a8d8e8", storefront: "#c94f2b" } },
     // The landing's camps (husks, marauders) hold only the common stock, so arriving meets the two new
     // enemies the brief names; the local breeds wait in the far camps their side jobs send you to.
     clusters: [
@@ -108,7 +110,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "arid_badlands",
     name: "Maple Court — The Cul-de-Sac",
     level: 8,
-    settlement: { count: 10, footprint: 7, stories: [1, 2], style: "desert", palette: { wall: "#a06a3c", storefront: "#5a3b1e" } },
+    settlement: { count: 10, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#f6c1c9", storefront: "#2f6fd6" } },
     clusters: [
       { catalogId: "ripper_pup", count: 5 },
       { catalogId: "ripper", count: 4 },
@@ -128,7 +130,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "split_ridge",
     name: "Strip Mall Ridge",
     level: 12,
-    settlement: { count: 6, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#7d6b52", storefront: "#43392c" } },
+    settlement: { count: 6, footprint: 6, stories: [1, 1], style: "generic", palette: { wall: "#e8e1d0", storefront: "#d7262e" } },
     clusters: [
       { catalogId: "marauder", count: 5 },
       { catalogId: "nomad", count: 3 },
@@ -147,7 +149,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "glasswind_flats",
     name: "The Fairways",
     level: 17,
-    settlement: { count: 5, footprint: 8, stories: [1, 2], style: "desert", palette: { wall: "#96702a" } },
+    settlement: { count: 5, footprint: 8, stories: [1, 2], style: "village", palette: { wall: "#fff4d6", storefront: "#3aa84f" } },
     clusters: [
       { catalogId: "crawler", count: 4 },
       { catalogId: "crawler_soldier", count: 3 },
@@ -166,7 +168,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "cores_blight",
     name: "Smart Home Estates",
     level: 24,
-    settlement: { count: 7, footprint: 9, stories: [2, 4], style: "ruin" },
+    settlement: { count: 7, footprint: 9, stories: [2, 3], style: "capital", palette: { wall: "#eef1f4", storefront: "#38c8ff" } },
     clusters: [
       { catalogId: "loader", count: 5 },
       { catalogId: "loader_war", count: 3 },

@@ -664,8 +664,11 @@ export function registerCommands(ctx: GameContext): void {
         session.selectSlot(state, 0);
         noteEquipped(gun.id);
         noteGunHeld(state, gun);
-        lastPickupStore.write(state, { gunId: gun.id, atMs: state.time.now() * 1000 });
-        moodPickup(state, gun);
+        // The card and the hello land just before a capture settles (9 s), so a still shows both.
+        state.time.after(5, () => {
+          lastPickupStore.write(state, { gunId: gun.id, atMs: state.time.now() * 1000 });
+          moodPickup(state, gun);
+        });
         const pool = AMMO_STAT_IDS[gun.ammo];
         const ammo = state.scene.entity.stats.get(userId, pool);
         if (ammo !== null) state.scene.entity.stats.set(userId, pool, { current: ammo.max });
