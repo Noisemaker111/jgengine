@@ -15,15 +15,14 @@ export const assets: AssetCatalog = buildCatalog({
 
 /**
  * The ambientCG scan under the habitat floor and the ground beyond it. The shared library names the
- * surface (`ground/gravel`); this id is only what `bun run provision` pulls and what
+ * surface (`metal/plate`, the station deck); this id is only what `bun run provision` pulls and what
  * {@link libraryGroundMaps} resolves.
  */
-const GROUND_MATERIAL_SOURCE = "ambientcg-gravel002";
+const GROUND_MATERIAL_SOURCE = "ambientcg-metalplates001";
 
 /** Every pack this game pulls — the credits screen is generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
   ...MODEL_PACKS.map((pack) => pack.id),
-  "ambientcg-metalplates001",
   "ambientcg-terrazzo005",
   "ambientcg-tiles007",
   "ambientcg-woodfloor009",
@@ -43,7 +42,7 @@ export function libraryGroundMaps(name: string): TerrainMaterialMaps {
   const entry = findLibraryMaterial(name);
   if (entry === null) throw new Error(`odd-orbit: unknown library material "${name}"`);
   if (entry.source !== GROUND_MATERIAL_SOURCE) {
-    throw new Error(`odd-orbit: "${name}" is not the habitat's authored ground scan (${GROUND_MATERIAL_SOURCE})`);
+    throw new Error(`odd-orbit: "${name}" is not the station deck's authored plating scan (${GROUND_MATERIAL_SOURCE})`);
   }
   const maps = libraryMaterialMaps(entry, { basePath: "/materials" });
   const { color, normal, roughness, ao } = maps;

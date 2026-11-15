@@ -145,6 +145,14 @@ export const DECOR: DecorDef[] = [
   { id: "decor_cactus", color: "#9fe0c4", height: 0.9 },
   { id: "decor_stool", color: "#f6a6cf", height: 0.7 },
   { id: "decor_books", color: "#fff0d6", height: 0.4 },
+  // Station hardware round the deck's edge: truss frames, light masts, solar wings, a landing pad
+  // with a moored lander, and stacked cargo.
+  { id: "station_truss", color: "#8a86a8", height: 1.5 },
+  { id: "station_mast", color: "#c9c3e6", height: 4.6, glow: 0.2 },
+  { id: "station_solar", color: "#6f7bd6", height: 2.2, glow: 0.05 },
+  { id: "station_pad", color: "#5f5a7e", height: 0.6 },
+  { id: "station_lander", color: "#f4ead8", height: 4.2 },
+  { id: "station_cargo", color: "#f6a6cf", height: 2.2 },
 ];
 
 export const DECOR_BY_ID: Record<string, DecorDef> = Object.fromEntries(DECOR.map((def) => [def.id, def]));

@@ -9,10 +9,8 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { editorLayers } from "../../editorLayers";
 
 /**
- * What surrounds the boarding house: the station's hull plate ends at a ring of trusses, beacons
- * blink on its corners, a docking arm reaches out past the back row with a little shuttle moored to
- * it, and beyond all of it is black space — a starfield and the pastel limb of the planet the
- * station orbits. Pure set dressing around the authored deck, drawn like a sky.
+ * What surrounds the boarding house: black space — a starfield and the pastel limb of the planet the
+ * station orbits — drawn like a sky, plus the markings painted on the authored deck plate.
  */
 
 const DECK = editorLayers.terrain?.bounds ?? { minX: -32, minZ: -32, maxX: 32, maxZ: 32 };
@@ -59,49 +57,57 @@ function planet(): THREE.Group {
   return g;
 }
 
-function trusses(beacons: THREE.MeshStandardMaterial[]): THREE.Group {
+/**
+ * Deck markings painted onto the authored plate: a yellow-and-black hazard band round its edge, a
+ * cyan light strip just inside it, and the beacons on the authored light masts, which blink in turn.
+ * The hardware itself (trusses, masts, solar wings, the pad and lander) is authored in the scene.
+ */
+function deckMarkings(beacons: THREE.MeshStandardMaterial[]): THREE.Group {
   const g = new THREE.Group();
-  const steel = new THREE.MeshStandardMaterial({ color: "#5a5578", metalness: 0.6, roughness: 0.4 });
+  const { minX, maxX, minZ, maxZ } = DECK;
+  const inset = 1.2;
   const box = new THREE.BoxGeometry(1, 1, 1);
-  const beam = (w: number, h: number, d: number, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(box, steel);
-    m.scale.set(w, h, d);
+  const yellow = new THREE.MeshStandardMaterial({ color: "#ffcf3f", roughness: 0.6 });
+  const black = new THREE.MeshStandardMaterial({ color: "#1d1b26", roughness: 0.7 });
+  const strip = new THREE.MeshStandardMaterial({ color: "#6ff3ff", emissive: "#38e8ff", emissiveIntensity: 1.2 });
+  const tile = (mat: THREE.Material, w: number, d: number, x: number, z: number, y = 0.03) => {
+    const m = new THREE.Mesh(box, mat);
+    m.scale.set(w, 0.04, d);
     m.position.set(x, y, z);
-    m.castShadow = true;
+    m.receiveShadow = true;
     g.add(m);
   };
-  const { minX, maxX, minZ, maxZ } = DECK;
-  // A rail of trusses round the deck's edge, with ribs every few metres.
-  for (const z of [minZ, maxZ]) { beam(maxX - minX, 0.35, 0.35, 0, 0.9, z); beam(maxX - minX, 0.35, 0.35, 0, -0.4, z); }
-  for (const x of [minX, maxX]) { beam(0.35, 0.35, maxZ - minZ, x, 0.9, 0); beam(0.35, 0.35, maxZ - minZ, x, -0.4, 0); }
-  for (let x = minX; x <= maxX; x += 4) for (const z of [minZ, maxZ]) beam(0.2, 1.3, 0.2, x, 0.25, z);
-  for (let z = minZ; z <= maxZ; z += 4) for (const x of [minX, maxX]) beam(0.2, 1.3, 0.2, x, 0.25, z);
-  // Beacons on the corners, blinking in turn.
-  for (const [x, z] of [[minX, minZ], [maxX, minZ], [minX, maxZ], [maxX, maxZ]] as const) {
-    beam(0.4, 4, 0.4, x, 2, z);
+  const dash = 1.2;
+  for (let x = minX + inset; x < maxX - inset; x += dash) {
+    const mat = Math.round((x - minX) / dash) % 2 === 0 ? yellow : black;
+    tile(mat, dash, 0.7, x + dash / 2, minZ + inset);
+    tile(mat, dash, 0.7, x + dash / 2, maxZ - inset);
+  }
+  for (let z = minZ + inset; z < maxZ - inset; z += dash) {
+    const mat = Math.round((z - minZ) / dash) % 2 === 0 ? yellow : black;
+    tile(mat, 0.7, dash, minX + inset, z + dash / 2);
+    tile(mat, 0.7, dash, maxX - inset, z + dash / 2);
+  }
+  // Plate seams every four metres on the open deck (the house and its commons keep their own floors).
+  const seam = new THREE.MeshStandardMaterial({ color: "#232a3c", roughness: 0.8, metalness: 0.4 });
+  const house = (x: number, z: number) => x > -17 && x < 17 && z > -22 && z < 15;
+  for (let x = Math.ceil(minX / 4) * 4; x <= maxX - inset - 1; x += 4) {
+    for (let z = minZ + inset + 0.6; z < maxZ - inset - 0.6; z += 4) if (!house(x, z + 2)) tile(seam, 0.08, 4, x, z + 2, 0.02);
+  }
+  for (let z = Math.ceil(minZ / 4) * 4; z <= maxZ - inset - 1; z += 4) {
+    for (let x = minX + inset + 0.6; x < maxX - inset - 0.6; x += 4) if (!house(x + 2, z)) tile(seam, 4, 0.08, x + 2, z, 0.02);
+  }
+  const s = inset + 1.1;
+  tile(strip, maxX - minX - 2 * s, 0.14, (minX + maxX) / 2, minZ + s, 0.05);
+  tile(strip, maxX - minX - 2 * s, 0.14, (minX + maxX) / 2, maxZ - s, 0.05);
+  tile(strip, 0.14, maxZ - minZ - 2 * s, minX + s, (minZ + maxZ) / 2, 0.05);
+  tile(strip, 0.14, maxZ - minZ - 2 * s, maxX - s, (minZ + maxZ) / 2, 0.05);
+  for (const mast of editorLayers.markers.filter((m) => m.meta?.["object"] === "station_mast")) {
     const lamp = new THREE.MeshStandardMaterial({ color: "#ff5fa8", emissive: "#ff2d7f", emissiveIntensity: 2 });
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), lamp);
-    bulb.position.set(x, 4.3, z);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 12), lamp);
+    bulb.position.set(mast.position.x, 4.9, mast.position.z);
     g.add(bulb);
     beacons.push(lamp);
-  }
-  // A docking arm off the back of the deck with a little shuttle moored at its end.
-  beam(3, 1.2, 26, 0, 1.4, minZ - 13);
-  beam(5, 3, 3, 0, 1.6, minZ - 26.5);
-  const hull = new THREE.MeshStandardMaterial({ color: "#f4ead8", metalness: 0.2, roughness: 0.45 });
-  const shuttle = new THREE.Mesh(new THREE.CapsuleGeometry(2.2, 7, 8, 16), hull);
-  shuttle.rotation.z = Math.PI / 2;
-  shuttle.position.set(6.5, 1.8, minZ - 27);
-  g.add(shuttle);
-  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 1.2, 24), new THREE.MeshStandardMaterial({ color: "#f6a6cf", emissive: "#f6a6cf", emissiveIntensity: 0.25 }));
-  stripe.rotation.z = Math.PI / 2;
-  stripe.position.set(6.5, 1.8, minZ - 27);
-  g.add(stripe);
-  const windowLamp = new THREE.MeshStandardMaterial({ color: "#ffd98a", emissive: "#ffc35c", emissiveIntensity: 1.4 });
-  for (let i = 0; i < 4; i++) {
-    const w = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), windowLamp);
-    w.position.set(4 + i * 1.6, 2.6, minZ - 25);
-    g.add(w);
   }
   return g;
 }
@@ -116,7 +122,7 @@ export function stationBackdropDraw(ctx: GameContext | null): EngineDraw {
   space.renderOrder = -20;
   space.frustumCulled = false;
   stars.add(space);
-  const dressing = trusses(beacons);
+  const dressing = deckMarkings(beacons);
   root.add(stars, planet(), dressing);
   return {
     mount(state: EngineFrameState) { state.scene.add(root); },

@@ -43,6 +43,12 @@ const DECOR_PLAN: Record<string, ModelPick> = {
   decor_cactus: { model: `${FURN}/cactus_small_A`, fallbackModel: `${FURN}/cactus_small_B` },
   decor_stool: { model: `${FURN}/chair_stool`, fallbackModel: `${FURN}/chair_stool_wood` },
   decor_books: { model: `${FURN}/book_set`, fallbackModel: `${FURN}/book_single` },
+  station_truss: { model: `${SPACE}/structure_low`, fallbackModel: `${SPACE}/structure_tall` },
+  station_mast: { model: `${SPACE}/lights`, fallbackModel: `${SPACE}/windturbine_low` },
+  station_solar: { model: `${SPACE}/solarpanel`, fallbackModel: `${SPACE}/roofmodule_solarpanels` },
+  station_pad: { model: `${SPACE}/landingpad_large`, fallbackModel: `${SPACE}/landingpad_small` },
+  station_lander: { model: `${SPACE}/lander_A`, fallbackModel: `${SPACE}/lander_B` },
+  station_cargo: { model: `${SPACE}/cargo_A_stacked`, fallbackModel: `${SPACE}/cargo_B_stacked` },
 };
 
 const STRUCTURE_PLAN: Record<string, ModelPick> = {

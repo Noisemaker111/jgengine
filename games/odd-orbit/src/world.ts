@@ -31,7 +31,8 @@ const terrainDescriptor = terrain({
     sweeps: { dry: [1.04, 1.02, 1], wet: [0.95, 0.96, 1] },
     // Regolith from the shared material library. `tint` well under 1 keeps the habitat's lilac above
     // the scan, so the floor and the ground outside gain grain instead of turning grey.
-    material: { maps: libraryGroundMaps("ground/gravel"), repeat: 1.6, strength: 1, tint: 0.35 },
+    // Steel deck plating from the shared library, in a cool blue-grey so the pastel modules stand out.
+    material: { maps: libraryGroundMaps("metal/plate"), repeat: 0.55, strength: 1, tint: 0.6 },
   },
 });
 
