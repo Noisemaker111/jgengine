@@ -12,7 +12,8 @@ import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "../assets";
-import { campaignOrdinal, markStoresRestored, type CampaignReadout } from "../campaign";
+import { CAMPAIGN, campaignOrdinal, campaignStore, markStoresRestored, type CampaignReadout } from "../campaign";
+import { COLONY_TRAITS, colonyStore, JELLY_PER_WIN, jellyLeft, traitBlocked, type ColonyTrait } from "../colony";
 import { hudStore } from "../hudStore";
 import { preferences, type CommanderPreferences } from "../preferences";
 import { CAMPAIGN_SLOTS, campaignLabel, campaignSlots, commandProfile, loadCampaignRecord, newCampaignRecord, refreshCampaignSlots, saveCampaignRecord } from "../menuSave";
@@ -165,6 +166,56 @@ function SkirmishSheet({ onMarch, width }: { onMarch: (rival: RivalChoice) => vo
         <RuneView gap={0} grow={1} shrink><Text textStyle="verb" text={row.label} /><Small text={row.blurb} /></RuneView>
       </RuneAction>)}
     <PlankButton run={() => onMarch(rival)}>Into the yard</PlankButton>
+  </Sheet>;
+}
+
+/** The campaign map between battles: the route across both lawns, and the colony the jelly breeds. */
+function ColonySheet({ ctx, width }: { ctx: GameContext; width: number }) {
+  // The stores are read fresh each render; a breed bumps `tick` so the sheet redraws at once.
+  const [, setTick] = useState(0);
+  const progress = campaignStore.read(ctx);
+  const traits = colonyStore.read(ctx).traits;
+  const wins = progress.won.length;
+  const jelly = jellyLeft(wins, traits);
+  const nextIndex = CAMPAIGN.findIndex((step) => !progress.won.includes(step.mission.id));
+  const lawns = (Object.keys(MAPS) as MapId[]).map((map) => ({ map, steps: CAMPAIGN.map((step, index) => ({ step, index })).filter((entry) => entry.step.map === map) }));
+  const breed = (trait: ColonyTrait) => { ctx.game.commands.run("colony.buy", { trait: trait.id }); setTick((n) => n + 1); };
+  const traitRow = (trait: ColonyTrait) => {
+    const owned = traits.includes(trait.id);
+    const blocked = traitBlocked(trait.id, wins, traits);
+    return <Row key={trait.id} justify="between" padding={[2, 0, 2, 0]}>
+      <RuneView gap={0} grow={1} shrink><Text textStyle="verb" text={trait.label} /><Small text={trait.blurb} /></RuneView>
+      {owned ? <Small color={WAX} text="Bred" /> : <InkButton label={`Breed ${trait.label}`} disabled={blocked !== null} run={() => breed(trait)}>{`Breed · ${trait.cost}`}</InkButton>}
+    </Row>;
+  };
+  return <Sheet width={width} label="The colony">
+    <Eyebrow text={nextIndex < 0 ? "Every lawn is held" : `Next order · ${campaignOrdinal(nextIndex)} · ${CAMPAIGN[nextIndex]!.mission.title}`} />
+    <Title text="The campaign map" />
+    {lawns.map(({ map, steps }) => <RuneView key={map} gap={4}>
+      <Small text={MAPS[map].label} />
+      <Row gap={0} label={`${MAPS[map].label} route`}>
+        {steps.map(({ step, index }, i) => {
+          const won = progress.won.includes(step.mission.id);
+          const next = index === nextIndex;
+          return <Row key={step.mission.id} gap={0}>
+            {i > 0 ? <RuneView width={18} height={3} fill={won || next ? WAX : "#1f2a1240"} /> : null}
+            <RuneView width={30} height={30} radius={15} items="center" justify="center" label={`${campaignOrdinal(index)} ${step.mission.title}${won ? ", won" : next ? ", next" : ""}`}
+              border={{ width: next ? 3 : 2, color: next ? OCHRE : INK }} {...(won ? { fill: WAX } : next ? { fill: "#e08a1e33" } : {})}>
+              <Text textStyle="verb" color={won ? GILT : INK} text={campaignOrdinal(index)} />
+            </RuneView>
+          </Row>;
+        })}
+      </Row>
+    </RuneView>)}
+    <Row justify="between" padding={[6, 0, 2, 0]}>
+      <Text textStyle="verb" text="Royal jelly" />
+      <Text textStyle="number" text={`${jelly}`} />
+    </Row>
+    <Small text={`Each order won pays ${JELLY_PER_WIN} jelly. Traits last the whole campaign; a free skirmish starts from nothing.`} />
+    <Eyebrow text="Queen traits" />
+    {COLONY_TRAITS.filter((t) => t.kind === "queen").map(traitRow)}
+    <Eyebrow text="Caste research" />
+    {COLONY_TRAITS.filter((t) => t.kind === "caste").map(traitRow)}
   </Sheet>;
 }
 
@@ -358,6 +409,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
     ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The lawn is ours" : "The red nest has fallen" }] : []),
     { id: "continue", label: "Take command", hint: campaign !== null && campaign.phase !== "finished" && campaign.map !== activeMap() ? `March to ${campaign.mapLabel} for ${order.title}` : recent === null ? (campaign === null ? "March into a free skirmish" : `March on ${order.title}`) : `Resume ${recent.name ?? campaignLabel(recent.id)}` },
     { id: "new", label: "New campaign", hint: `Opens ${campaignLabel(newSlot)}` },
+    ...(campaign !== null ? [{ id: "colony", label: "Colony", hint: `Campaign map · ${jellyLeft(campaignStore.read(ctx).won.length, colonyStore.read(ctx).traits)} royal jelly` }] : []),
     { id: "skirmish", label: "Free skirmish", hint: `${MAPS[activeMap()].label}, no orders` },
     { id: "map", label: `Lawn: ${MAPS[activeMap()].label}`, hint: `Switch to ${MAPS[sceneSet.next()].label}` },
     { id: "missions", label: "Campaign records", hint: `${held} of ${slots.length} kept` },
@@ -380,6 +432,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
     : active === "continue" ? <TakeCommandSheet recent={recent} campaign={campaign} onTake={take} width={sheetWidth} />
     : active === "new" ? <CommissionSheet slot={newSlot} name={name} onName={setName} onBegin={() => startNew(newSlot)} width={sheetWidth} />
     : active === "skirmish" ? <SkirmishSheet onMarch={(rival) => commands.run("match.skirmish", { rival })} width={sheetWidth} />
+    : active === "colony" ? <ColonySheet ctx={ctx} width={sheetWidth} />
     : active === "missions" ? <RecordsSheet slots={slots} recentId={recent?.id ?? null} onOpen={(slot) => void openRecord(slot)} onNew={(slot) => startNew(slot)} width={sheetWidth} />
     : active === "settings" ? <FieldSettings ctx={ctx} width={sheetWidth} />
     : active === "credits" ? <CreditsSheet width={sheetWidth} /> : null;

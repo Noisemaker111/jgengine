@@ -17,6 +17,7 @@ import { missionMarkers } from "@jgengine/core/mission/triggers";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createSessionLoop, installSessionProbe } from "@jgengine/core/run/sessionLoop";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { armColony, colonyHas, colonyStore, JELLY_PER_WIN, LARDER_LEAF, LARDER_SUGAR } from "./colony";
 
 import { editorLayers } from "../editorLayers";
 import { combatantDef } from "./catalog";
@@ -720,8 +721,16 @@ export function startCampaignMission(ctx: GameContext): boolean {
     return false;
   }
   stageHostiles(ctx, step.hostiles);
+  // The colony the queen has bred between battles fights this one.
+  armColony(colonyStore.read(ctx).traits);
   // A resumed record already opened with the stores it banked; only a fresh order pays them again.
-  if (!storesRestoredStore.read(ctx)) grantCarriedStores(ctx);
+  if (!storesRestoredStore.read(ctx)) {
+    grantCarriedStores(ctx);
+    if (colonyHas("deep_larder")) {
+      ctx.game.economy.grant(ctx.player.userId, SUGAR, LARDER_SUGAR);
+      ctx.game.economy.grant(ctx.player.userId, LEAF, LARDER_LEAF);
+    }
+  }
   storesRestoredStore.write(ctx, false);
   campaignRuntime(ctx).start(step.mission.id);
   // The mission opens a session that carries the pay its completion will bank.
@@ -780,7 +789,7 @@ function finishCampaignStep(ctx: GameContext, restage?: () => void): void {
   const step = CAMPAIGN.find((entry) => entry.mission.id === state.missionId);
   ctx.game.audio.play("victory");
   ctx.game.notices.push({
-    text: step === undefined ? "Mission complete." : `${step.mission.title} is won. The granary stores go with you.`,
+    text: step === undefined ? "Mission complete." : `${step.mission.title} is won. The granary stores go with you, and the queen has ${JELLY_PER_WIN} more royal jelly to breed with at the Colony.`,
     tone: "success",
     ttlMs: 8000,
   });
@@ -885,6 +894,7 @@ export function resetCampaignProgress(ctx: GameContext): void {
   campaignStore.write(ctx, { won: [], mode: "campaign", stores: { sugar: 0, leaf: 0 } });
   campaignRuntime(ctx).abandon();
   campaignMissionStore.clear(ctx);
+  colonyStore.clear(ctx);
   heroPickStore.clear(ctx);
   storesRestoredStore.write(ctx, false);
   syncCampaignHud(ctx);

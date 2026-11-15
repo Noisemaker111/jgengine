@@ -9,6 +9,7 @@ import { evaluatePressure } from "@jgengine/core/waves/pressure";
 
 import type { EnemyWaveState } from "./ai/director";
 import { RIVAL_WAVES, MARCH_PLAN } from "./ai/waveManifest";
+import { armColony } from "./colony";
 
 import type { BuildSpec } from "./building";
 import { combatantDef, nodeDef, type CombatantKind } from "./catalog";
@@ -190,6 +191,8 @@ export let session: SessionState = fresh();
 
 export function resetSession(): void {
   session = fresh();
+  // A restaged field carries no colony traits until a campaign mission arms them again.
+  armColony([]);
 }
 
 export function matchRunning(): boolean {

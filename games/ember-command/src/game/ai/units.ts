@@ -11,6 +11,7 @@ import { YARD, YARD_NAV } from "../yardInstance";
 import { routeTo } from "../yardNav";
 import { distressNear, FLEE_SECONDS, matchRunning, playerDepot, pushFx, raiseDistress, session, type UnitRuntime } from "../session";
 import { factionDamage, factionSpeed } from "../upgrades";
+import { colonyDamage, colonyWorkerSpeed } from "../colony";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
 import { tacticalDamage } from "../tactics";
@@ -71,7 +72,7 @@ export function forageHoldsAtLane(u: UnitRuntime, from: EntityPosition, x: numbe
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
   const here = ctx.scene.entity.get(u.id)?.position;
   if (here !== undefined && forageHoldsAtLane(u, here, x, z)) return;
-  const base = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
+  const base = combatantDef(u.catalogId)?.worker === true ? speed * (u.faction === "player" ? colonyWorkerSpeed() : 1) : factionSpeed(speed, u.faction);
   const at = ctx.scene.entity.get(u.id)?.position;
   const acid = (session.acid[u.id] ?? 0) > session.elapsed ? ACID_SLOW : 1;
   const pace = (at === undefined ? base : base * yardPace(u.catalogId, u.faction, at[0], at[2])) * acid;
@@ -231,7 +232,7 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
         // The banner and the ward scale the finished hit: research owns the damage, the line buffs scale it.
         // A red ant inside an alarm cloud (a comrade died nearby) bites harder.
         const alarm = u.faction === "player" ? alarmDamageFactor(session.alarms, self.position[0], self.position[2], session.elapsed) : 1;
-        const amount = resolved * lineMultiplier(u.faction, target.faction) * alarm;
+        const amount = colonyDamage(resolved * lineMultiplier(u.faction, target.faction) * alarm, u, target);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
         // Spitter acid gums up whatever it hits.
         if (u.catalogId === "spitter" && target.kind === "unit") {

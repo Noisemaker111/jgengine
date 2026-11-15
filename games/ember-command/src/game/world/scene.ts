@@ -8,6 +8,7 @@ import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
 import { activeCampaignStep, campaignStore, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
 import { createHazardState, skirmishHazardsFor } from "../hazards";
 import { setRivalPersonality } from "../ai/director";
+import { buyTrait, colonyTrait } from "../colony";
 import { isPersonalityId, resolveRival, rivalStore } from "../ai/personality";
 import { YARD } from "../yardInstance";
 import { raiseAlarm } from "../pheromone";
@@ -219,6 +220,14 @@ export function setupSkirmish(ctx: GameContext): void {
     setCampaignMode(state, "skirmish");
     setupSkirmish(state);
     state.game.commands.run("match.start", {});
+    return state;
+  } });
+  // Between battles: spend royal jelly on a colony trait (see `colony.ts`).
+  ctx.game.commands.define<{ trait?: unknown }>("colony.buy", { apply: (state, input) => {
+    const trait = colonyTrait(String(input?.trait ?? ""));
+    if (trait !== undefined && buyTrait(state, trait.id, campaignStore.read(state).won.length)) {
+      state.game.notices.push({ text: `The queen breeds ${trait.label}. ${trait.blurb}`, ttlMs: 4000 });
+    }
     return state;
   } });
   ctx.game.commands.define("campaign.reset", { apply: (state) => {

@@ -125,6 +125,15 @@ function buildGame(id: MapId) {
         "menu": ["menu.record"],
         "menu-missions": ["menu.record", { name: "menu.focus", input: { verb: "missions" } }],
         "menu-new": [],
+        // Dev-only: three orders won, two traits bred, the campaign map open on the title sheet.
+        "menu-colony": [
+          { name: "campaign.skipTo", input: { index: 3 } },
+          { name: "colony.buy", input: { trait: "fertile_queen" } },
+          { name: "colony.buy", input: { trait: "serrated_mandibles" } },
+          { name: "menu.focus", input: { verb: "colony" } },
+        ],
+        // Dev-only: a free skirmish against the Wasp-Friends.
+        "rival-wasps": [{ name: "match.skirmish", input: { rival: "wasp-friends" } }],
         "mission-live": ["match.start"],
         // Dev-only: the first muster played through its world reports, so a flow can reach the
         // mission's own cleared boundary instead of the counter's next tick.

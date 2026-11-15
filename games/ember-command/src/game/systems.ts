@@ -43,6 +43,7 @@ import { YARD } from "./yardInstance";
 import { broodLanes, isMarked, MARK_SECONDS, matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 import { personalityOf } from "./ai/personality";
+import { colonyHatchFactor, colonySightFactor } from "./colony";
 
 /** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
 function researchViews(): Record<UpgradeId, ResearchView> {
@@ -136,7 +137,7 @@ function playerSightSources(ctx: GameContext): SightSource[] {
     // A scout reads the colony's scent: on a trail its antennae ignore the dark.
     const scouting = unit.catalogId === "scout" && scentAt(session.trails, x, z) > 0.3;
     const night = scouting ? 1 : nightSightFactor(session.hazards);
-    eyes.push({ x, z, radius: sightRadiusFor(unit.catalogId, unit.kind) * night * ground });
+    eyes.push({ x, z, radius: sightRadiusFor(unit.catalogId, unit.kind) * night * ground * colonySightFactor() });
   }
   return eyes;
 }
@@ -194,7 +195,7 @@ const productionSystem: SystemDefinition = defineSystem({
     if (!matchRunning()) return;
     // A standing Nursery Chamber warms the brood: every egg hatches faster.
     const warmed = livingUnits("player", "building").some((u) => u.catalogId === "nursery") ? 1 + NURSERY_HATCH_BONUS : 1;
-    const result = tickQueue(session.production, trainingConfigFor(broodLanes()), dt * warmed);
+    const result = tickQueue(session.production, trainingConfigFor(broodLanes()), dt * warmed * colonyHatchFactor());
     session.production = result.state;
     for (const event of result.events) {
       if (event.type === "completed") spawnTrained(ctx, event.output.unitId);
