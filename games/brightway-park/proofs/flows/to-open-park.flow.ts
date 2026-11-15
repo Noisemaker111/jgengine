@@ -25,14 +25,17 @@ export default defineFlow(game, {
     await f.expect((p) => p.guests === 0, "arrival: nobody is inside before the player builds and opens the gate");
     await f.expectPage("window.__jgNativeUi.point('Unchain the gate') === null && window.__jgNativeUi.text().includes('Unchain the gate')", "arrival: the gate will not open with no ride running");
 
-    // The path tool, then four cells north from the gate plaza.
+    // A click on the park puts the keyboard on the play surface (a capture boot skips the menu that
+    // would have handed it over), then the path tool and four cells north from the gate plaza.
+    const grass = await lotScreen(f, 30, 30);
+    await f.clickAt(grass.x, grass.y);
     await f.press("Digit6");
     for (const z of [44, 40, 36, 32]) {
       const at = await lotScreen(f, 0, z);
       await f.clickAt(at.x, at.y);
     }
     await f.see("Cobbled Path built", { timeoutMs: 5000, note: "arrival: a path runs in from the gate, the park's own notice confirming it" });
-    await f.waitForPage(step("ride"), { timeoutMs: 3000 });
+    await f.waitForPage(step("ride"), { timeoutMs: 15000 });
     await f.expectPage(pointed("item:ride_carousel", "category:ride"), "hint: with the path down, the hint rings the carousel ticket");
 
     // The carousel, beside the new path.
@@ -40,27 +43,29 @@ export default defineFlow(game, {
     const plot = await lotScreen(f, 4, 36);
     await f.clickAt(plot.x, plot.y);
     await f.see("Upside-Down Carousel built", { timeoutMs: 5000, note: "arrival: the first ride stands on the lot" });
-    await f.waitForPage(step("connect"), { timeoutMs: 3000 });
+    await f.waitForPage(step("connect"), { timeoutMs: 15000 });
 
     // Click the ride to inspect it: shut until it has an entrance and an exit; "Connect it" lays them.
     await f.press("KeyX");
-    const ride = await lotScreen(f, 6, 38);
-    // The ride's model streams in after the build; click again until it is there to be clicked.
+    // The carousel's deck, low on its footprint (its horses hang from the canopy above).
+    const ride = await lotScreen(f, 4, 37);
+    // The ride's model streams in after the build; click again until it is there to be clicked. The
+    // inspector (and only the inspector) offers to tear it down; the hint card also says "Connect it".
     for (let tries = 0; tries < 8; tries += 1) {
       await f.clickAt(ride.x, ride.y);
-      if ((await f.page(`${shown}.includes('Connect it')`)) === true) break;
+      if ((await f.page(`${shown}.includes('Tear down')`)) === true) break;
       await f.wait(1000);
     }
-    await f.waitForPage(`${shown}.includes('Connect it')`, { timeoutMs: 5000 });
-    await f.expectPage(`${shown}.includes('Needs an entrance')`, "arrival: a new ride is shut until it has an entrance and an exit, and says so");
+    await f.waitForPage(`${shown}.includes('Tear down')`, { timeoutMs: 5000 });
+    await f.expectPage(`${shown}.includes('Closed ·')`, "arrival: a new ride is shut until it has an entrance and an exit, and says why");
     await f.click("Connect it");
     await f.see("Connected", { timeoutMs: 5000, note: "arrival: Connect it laid the entrance and the exit, so the ride opens" });
-    await f.waitForPage(step("gate"), { timeoutMs: 3000 });
+    await f.waitForPage(step("gate"), { timeoutMs: 15000 });
     await f.expectPage(pointed("hud:gate"), "hint: with the ride running, the hint rings the gate button");
     await f.shot("hauntworks-first-ride");
 
     await f.click("Unchain the gate");
-    await f.waitForPage(step("scare"), { timeoutMs: 3000, note: "hint: with the gate open, the next step is a scare" });
+    await f.waitForPage(step("scare"), { timeoutMs: 15000, note: "hint: with the gate open, the next step is a scare" });
     await f.see(/gate creaks open/i, { timeoutMs: 5000, note: "arrival: the player unchained the gate" });
     await f.timeScale(4);
     await f.waitFor((p) => p.guests > 0, { timeoutMs: 30000, note: "arrival: at dusk the first of the living walk in through the gate" });

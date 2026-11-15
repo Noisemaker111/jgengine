@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { actionContextStack } from "@jgengine/core/game/controlGate";
 
 import { CLOSE_FRACTION, DAY_LENGTH, OPEN_FRACTION, guestCap } from "./catalog";
 import { resetPark } from "./parkReset";
@@ -139,6 +140,8 @@ export function parkReadout(ctx: GameContext): Record<string, unknown> {
     rideIds: rides.map((entry) => entry.id),
     crew: w.orders("crew").map((order) => ({ target: order.target, progress: Math.round(order.progress * 100) / 100, active: order.active })),
     selected: session.selectedObject,
+    tool: session.selectedTool,
+    controls: actionContextStack(ctx).ids(),
     // A few live guests with something on their mind, so a drive can pick one the way a click does.
     thinkingGuests: [...session.guests.values()].filter((guest) => (guest.thoughts?.length ?? 0) > 0).slice(0, 12).map((guest) => guest.id),
     structures: w.instances().length,
