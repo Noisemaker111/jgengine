@@ -8177,6 +8177,1072 @@
         "z": 542.5
       },
       "label": "The Foreman's wreck mouth"
+    },
+    {
+      "id": "yard_rustflat_waste_0_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -528.25,
+        "y": 0,
+        "z": 559.95
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_0_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -520.35,
+        "y": 0,
+        "z": 562.65
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_0_fence",
+      "kind": "prop",
+      "position": {
+        "x": -525.5,
+        "y": 0,
+        "z": 570.25
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_1_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -517.25,
+        "y": 0,
+        "z": 559.95
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_1_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -509.35,
+        "y": 0,
+        "z": 562.65
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_1_fence",
+      "kind": "prop",
+      "position": {
+        "x": -514.5,
+        "y": 0,
+        "z": 570.25
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_2_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -522.75,
+        "y": 0,
+        "z": 560.05
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_2_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -530.65,
+        "y": 0,
+        "z": 557.35
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_2_fence",
+      "kind": "prop",
+      "position": {
+        "x": -525.5,
+        "y": 0,
+        "z": 549.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_3_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -511.75,
+        "y": 0,
+        "z": 560.05
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_3_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -519.65,
+        "y": 0,
+        "z": 557.35
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_rustflat_waste_3_fence",
+      "kind": "prop",
+      "position": {
+        "x": -514.5,
+        "y": 0,
+        "z": 549.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_0_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -200.75,
+        "y": 0,
+        "z": 460.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_0_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -192.85,
+        "y": 0,
+        "z": 463.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_0_fence",
+      "kind": "prop",
+      "position": {
+        "x": -198,
+        "y": 0,
+        "z": 470.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_1_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -188.75,
+        "y": 0,
+        "z": 460.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_1_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -180.85,
+        "y": 0,
+        "z": 463.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_1_fence",
+      "kind": "prop",
+      "position": {
+        "x": -186,
+        "y": 0,
+        "z": 470.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_2_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -176.75,
+        "y": 0,
+        "z": 460.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_2_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -168.85,
+        "y": 0,
+        "z": 463.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_2_fence",
+      "kind": "prop",
+      "position": {
+        "x": -174,
+        "y": 0,
+        "z": 470.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_3_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -164.75,
+        "y": 0,
+        "z": 460.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_3_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -156.85,
+        "y": 0,
+        "z": 463.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_3_fence",
+      "kind": "prop",
+      "position": {
+        "x": -162,
+        "y": 0,
+        "z": 470.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_4_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -195.25,
+        "y": 0,
+        "z": 459.55
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_4_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -203.15,
+        "y": 0,
+        "z": 456.85
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_4_fence",
+      "kind": "prop",
+      "position": {
+        "x": -198,
+        "y": 0,
+        "z": 449.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_5_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -183.25,
+        "y": 0,
+        "z": 459.55
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_5_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -191.15,
+        "y": 0,
+        "z": 456.85
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_5_fence",
+      "kind": "prop",
+      "position": {
+        "x": -186,
+        "y": 0,
+        "z": 449.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_6_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -171.25,
+        "y": 0,
+        "z": 459.55
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_6_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -179.15,
+        "y": 0,
+        "z": 456.85
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_6_fence",
+      "kind": "prop",
+      "position": {
+        "x": -174,
+        "y": 0,
+        "z": 449.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_7_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -159.25,
+        "y": 0,
+        "z": 459.55
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_7_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -167.15,
+        "y": 0,
+        "z": 456.85
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_breakwater_shelf_7_fence",
+      "kind": "prop",
+      "position": {
+        "x": -162,
+        "y": 0,
+        "z": 449.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_0_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -26.75,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_0_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -18.85,
+        "y": 0,
+        "z": 3.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_0_fence",
+      "kind": "prop",
+      "position": {
+        "x": -24,
+        "y": 0,
+        "z": 10.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_1_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -14.75,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_1_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -6.85,
+        "y": 0,
+        "z": 3.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_1_fence",
+      "kind": "prop",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": 10.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_2_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -2.75,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_2_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 5.15,
+        "y": 0,
+        "z": 3.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_2_fence",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 10.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_3_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 9.25,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_3_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 17.15,
+        "y": 0,
+        "z": 3.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_3_fence",
+      "kind": "prop",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 10.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_4_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 21.25,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_4_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 29.15,
+        "y": 0,
+        "z": 3.15
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_4_fence",
+      "kind": "prop",
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 10.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_5_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -21.25,
+        "y": 0,
+        "z": -0.45
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_5_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -29.15,
+        "y": 0,
+        "z": -3.15
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_5_fence",
+      "kind": "prop",
+      "position": {
+        "x": -24,
+        "y": 0,
+        "z": -10.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_6_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": -9.25,
+        "y": 0,
+        "z": -0.45
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_6_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -17.15,
+        "y": 0,
+        "z": -3.15
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_6_fence",
+      "kind": "prop",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": -10.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_7_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 2.75,
+        "y": 0,
+        "z": -0.45
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_7_driveway",
+      "kind": "prop",
+      "position": {
+        "x": -5.15,
+        "y": 0,
+        "z": -3.15
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_7_fence",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -10.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_8_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 14.75,
+        "y": 0,
+        "z": -0.45
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_8_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 6.85,
+        "y": 0,
+        "z": -3.15
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_8_fence",
+      "kind": "prop",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": -10.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_9_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 26.75,
+        "y": 0,
+        "z": -0.45
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_9_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 18.85,
+        "y": 0,
+        "z": -3.15
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_arid_badlands_9_fence",
+      "kind": "prop",
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": -10.75
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_0_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 503.25,
+        "y": 0,
+        "z": -260.05
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_0_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 513.15,
+        "y": 0,
+        "z": -257.35
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_0_fence",
+      "kind": "prop",
+      "position": {
+        "x": 507,
+        "y": 0,
+        "z": -247.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_1_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 516.25,
+        "y": 0,
+        "z": -260.05
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_1_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 526.15,
+        "y": 0,
+        "z": -257.35
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_1_fence",
+      "kind": "prop",
+      "position": {
+        "x": 520,
+        "y": 0,
+        "z": -247.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_2_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 529.25,
+        "y": 0,
+        "z": -260.05
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_2_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 539.15,
+        "y": 0,
+        "z": -257.35
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_2_fence",
+      "kind": "prop",
+      "position": {
+        "x": 533,
+        "y": 0,
+        "z": -247.75
+      },
+      "rotationY": 3.142,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_3_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 510.75,
+        "y": 0,
+        "z": -259.95
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_3_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 500.85,
+        "y": 0,
+        "z": -262.65
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_3_fence",
+      "kind": "prop",
+      "position": {
+        "x": 507,
+        "y": 0,
+        "z": -272.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_4_mailbox",
+      "kind": "prop",
+      "position": {
+        "x": 523.75,
+        "y": 0,
+        "z": -259.95
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "mailbox"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_4_driveway",
+      "kind": "prop",
+      "position": {
+        "x": 513.85,
+        "y": 0,
+        "z": -262.65
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "driveway"
+      }
+    },
+    {
+      "id": "yard_glasswind_flats_4_fence",
+      "kind": "prop",
+      "position": {
+        "x": 520,
+        "y": 0,
+        "z": -272.25
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "picket_fence"
+      }
+    },
+    {
+      "id": "culdesac_circle",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "culdesac"
+      }
     }
   ],
   "volumes": [

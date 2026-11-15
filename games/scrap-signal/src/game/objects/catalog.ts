@@ -31,6 +31,10 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "cover_crate", name: "Moving Box", color: "#6b5a44", height: 1.1 },
   { id: "banner_pole", name: "Yard-Sale Sign", color: "#7a2c1e", height: 3.2 },
   { id: "wind_turbine", name: "Cell Tower", color: "#b3bec9", height: 7 },
+  { id: "mailbox", name: "Mailbox", color: "#2f6fd6", height: 1.2 },
+  { id: "driveway", name: "Driveway", color: "#6b6d72", height: 0.04 },
+  { id: "picket_fence", name: "Picket Fence", color: "#f5f2ea", height: 1 },
+  { id: "culdesac", name: "Cul-de-Sac", color: "#5b5d63", height: 0.04 },
 ];
 
 const byId = new Map(worldObjects.map((object) => [object.id, object]));

@@ -4,10 +4,13 @@ import {
   BUILDING_STYLE_PALETTES,
   buildingSurfaceColor,
   createBuildingConfig,
+  GABLE_PITCH,
   generateBuilding,
   resolveBuildingPalette,
   resolveBuildingSurface,
 } from "./buildings";
+import { building } from "../world/features";
+import { resolveStructureBuildings } from "../world/environmentSummary";
 
 describe("building palettes", () => {
   test("resolveBuildingPalette resolves style presets and per-part overrides", () => {
@@ -89,6 +92,36 @@ describe("buildings", () => {
     expect(building.parts.every((part) => part.position.length === 3)).toBe(true);
   });
 
+});
+
+describe("gable roofs", () => {
+  test("a gable roof is two slabs pitched down to the front and back eaves, over closed gable ends", () => {
+    const config = { center: [0, 0] as const, floors: 1, baysWide: 3, baysDeep: 2, bayWidth: 2, floorHeight: 3, probabilities: { roofProp: 1 } };
+    const gable = generateBuilding({ ...config, roof: "gable" });
+    const slabs = gable.parts.filter((part) => part.kind === "roof");
+    expect(slabs.map((part) => part.pitch).sort()).toEqual([-GABLE_PITCH, GABLE_PITCH].sort());
+    // Each slab runs from the ridge to past its eave, so the two together cover the footprint.
+    for (const slab of slabs) expect(Math.abs(slab.position[2])).toBeGreaterThan(0.5);
+    // A pitched roof carries no parapet rail and no rooftop clutter; its gable ends step up under the slope.
+    expect(gable.parts.some((part) => part.kind === "guardrail" || part.kind === "roofProp")).toBe(false);
+    const ends = gable.parts.filter((part) => part.facade === "roof" && part.kind === "wall");
+    expect(ends).toHaveLength(6);
+    expect(Math.max(...ends.map((part) => part.position[1]))).toBeGreaterThan(3);
+  });
+
+  test("a gable building() descriptor pitches every house it places", () => {
+    const houses = resolveStructureBuildings(building({ count: 4, position: [0, 0], footprint: { w: 6, d: 6 }, stories: [1, 1], roof: "gable" }));
+    expect(houses.length).toBe(4);
+    for (const house of houses) expect(house.parts.filter((part) => part.pitch !== undefined)).toHaveLength(2);
+  });
+
+  test("flat stays the default: one level slab, its rail and its clutter", () => {
+    const flat = generateBuilding({ center: [0, 0], floors: 1, baysWide: 3, baysDeep: 2, probabilities: { roofProp: 1 } });
+    const slabs = flat.parts.filter((part) => part.kind === "roof");
+    expect(slabs).toHaveLength(1);
+    expect(slabs[0]!.pitch).toBeUndefined();
+    expect(flat.parts.some((part) => part.kind === "roofProp")).toBe(true);
+  });
 });
 
 describe("open storefronts are backed, not holes", () => {

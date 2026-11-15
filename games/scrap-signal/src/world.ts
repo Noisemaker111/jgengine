@@ -245,6 +245,8 @@ export const world: WorldFeature = environment({
       storyHeight: 3,
       spacing: 5,
       style: settlement.style,
+      // Houses have pitched roofs; the strip mall and the Estates keep flat ones with their clutter.
+      roof: settlement.style === "village" ? "gable" : "flat",
       ...(settlement.palette !== undefined ? { palette: settlement.palette } : {}),
       seed: `${FERRALON_SEED}-${zone.id}`,
     });

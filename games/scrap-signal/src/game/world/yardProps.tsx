@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
+import { BoxGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry } from "three";
 import type { BufferGeometry } from "three";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
@@ -11,13 +11,17 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
  * (where the desert's bone arches stood), a hand-painted yard-sale sign, a wooden telephone pole
  * with its crossbar and transformer (where the turbines stood), and the abandoned school bus. Big, bright and readable at range.
  */
-type YardProp = "flamingo" | "yardSale" | "pole" | "schoolBus";
+type YardProp = "flamingo" | "yardSale" | "pole" | "schoolBus" | "mailbox" | "driveway" | "fence" | "culdesac";
 
 const PROP_BY_CATALOG: Readonly<Record<string, YardProp>> = {
   bone_arch: "flamingo",
   banner_pole: "yardSale",
   wind_turbine: "pole",
   bus_wreck: "schoolBus",
+  mailbox: "mailbox",
+  driveway: "driveway",
+  picket_fence: "fence",
+  culdesac: "culdesac",
 };
 
 function paint(color: string, roughness = 0.5): MeshStandardMaterial {
@@ -57,6 +61,37 @@ function buildProp(kind: YardProp): { group: Group; dispose(): void } {
     add(new BoxGeometry(1.2, 0.18, 0.02), mat(paint("#2f6fd6")), 0, 2.0, 0.12);
     add(new BoxGeometry(0.8, 0.16, 0.02), mat(paint("#3aa84f")), 0, 1.72, 0.12);
     for (const [x, color] of [[-0.6, "#ffd23f"], [0.6, "#ff5ad1"]] as const) add(new SphereGeometry(0.2, 10, 8), mat(paint(color, 0.3)), x, 2.8, 0.1);
+  } else if (kind === "mailbox") {
+    // A curbside mailbox on a post, its red flag up: somebody still has mail.
+    const post = mat(paint("#8a6a44", 0.85));
+    add(new BoxGeometry(0.1, 1.0, 0.1), post, 0, 0.5, 0);
+    add(new BoxGeometry(0.32, 0.3, 0.55), mat(paint("#2f6fd6", 0.4)), 0, 1.12, 0);
+    add(new CylinderGeometry(0.16, 0.16, 0.55, 12, 1, false, 0, Math.PI), mat(paint("#2f6fd6", 0.4)), 0, 1.27, 0, Math.PI / 2, 0, Math.PI / 2);
+    add(new BoxGeometry(0.03, 0.22, 0.05), mat(paint("#e23c2e", 0.4)), 0.18, 1.32, -0.1);
+    add(new BoxGeometry(0.03, 0.08, 0.14), mat(paint("#e23c2e", 0.4)), 0.18, 1.4, -0.03);
+  } else if (kind === "driveway") {
+    // A concrete driveway slab with its expansion joints, running from the street to the garage.
+    const slab = mat(new MeshStandardMaterial({ color: "#a9a7a0", roughness: 0.95, metalness: 0 }));
+    const joint = mat(new MeshStandardMaterial({ color: "#6e6c66", roughness: 1, metalness: 0 }));
+    add(new BoxGeometry(3.2, 0.04, 7), slab, 0, 0.02, 0);
+    for (const z of [-1.75, 0, 1.75]) add(new BoxGeometry(3.2, 0.045, 0.06), joint, 0, 0.022, z);
+  } else if (kind === "fence") {
+    // A white picket fence section across the back yard.
+    const white = mat(paint("#f5f2ea", 0.6));
+    for (const y of [0.3, 0.75]) add(new BoxGeometry(8, 0.08, 0.05), white, 0, y, 0);
+    for (let index = 0; index < 21; index += 1) {
+      add(new BoxGeometry(0.11, 1, 0.04), white, -4 + index * 0.4, 0.5, 0.04);
+      add(new ConeGeometry(0.078, 0.14, 4), white, -4 + index * 0.4, 1.07, 0.04, 0, Math.PI / 4, 0);
+    }
+  } else if (kind === "culdesac") {
+    // The hub's turning circle: an asphalt ring around a planted island with a flagpole.
+    const asphalt = mat(new MeshStandardMaterial({ color: "#55575d", roughness: 0.92, metalness: 0 }));
+    add(new CylinderGeometry(15, 15, 0.04, 48), asphalt, 0, 0.02, 0);
+    add(new TorusGeometry(15, 0.18, 6, 48), mat(paint("#d8d4c8", 0.8)), 0, 0.06, 0, Math.PI / 2, 0, 0);
+    add(new CylinderGeometry(4.5, 4.7, 0.3, 32), mat(paint("#d8d4c8", 0.8)), 0, 0.15, 0);
+    add(new CylinderGeometry(4.3, 4.3, 0.32, 32), mat(paint("#4f9a35", 0.9)), 0, 0.17, 0);
+    add(new CylinderGeometry(0.06, 0.08, 8, 8), mat(new MeshStandardMaterial({ color: "#cfd4da", roughness: 0.3, metalness: 0.8 })), 0, 4.3, 0);
+    add(new BoxGeometry(1.4, 0.8, 0.03), mat(paint("#ffd23f", 0.5)), 0.72, 7.6, 0);
   } else if (kind === "schoolBus") {
     // The school bus at the opening, abandoned with a flat tyre and a lean, its windows out.
     const bus = new Group();

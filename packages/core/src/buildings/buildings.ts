@@ -46,8 +46,13 @@ export interface BuildingVariantCounts {
   roofProp: number;
 }
 
+/** A building's roof: a flat slab with a parapet and roof clutter, or a pitched gable (two sloped slabs over stepped gable ends). */
+export type BuildingRoof = "flat" | "gable";
+
 export interface BuildingConfig {
   id: string;
+  /** Default `"flat"`. */
+  roof: BuildingRoof;
   seed: BuildingSeed;
   center: Vec2;
   floors: number;
@@ -90,6 +95,8 @@ export interface BuildingPartPlacement {
   kit: BuildingKitSlot;
   cell?: BuildingCellRef;
   tags?: readonly BuildingPartTag[];
+  /** Tilt (radians) about the part's own X axis after its `rotationY`: a pitched roof's slope. Absent is level. */
+  pitch?: number;
 }
 
 export interface GeneratedBuilding {
@@ -142,6 +149,7 @@ export const DEFAULT_BUILDING_CONFIG: BuildingConfig = {
   floorHeight: 2.8,
   facadeDepth: 0.18,
   roofOverhang: 0.35,
+  roof: "flat",
   probabilities: DEFAULT_PROBABILITIES,
   variants: DEFAULT_VARIANTS,
 };
@@ -471,6 +479,7 @@ export function createBuildingConfig(input: BuildingConfigInput = {}): BuildingC
       DEFAULT_BUILDING_CONFIG.facadeDepth,
     ),
     roofOverhang: Math.max(0, input.roofOverhang ?? DEFAULT_BUILDING_CONFIG.roofOverhang),
+    roof: input.roof === "gable" ? "gable" : "flat",
     probabilities: {
       window: probability(input.probabilities?.window ?? DEFAULT_PROBABILITIES.window),
       openStore: probability(input.probabilities?.openStore ?? DEFAULT_PROBABILITIES.openStore),
@@ -657,7 +666,58 @@ function pushFacade(
   }
 }
 
+/** Roof pitch of a gable, in radians (about 32 degrees: a suburban house). */
+export const GABLE_PITCH = (32 * Math.PI) / 180;
+
+/**
+ * A pitched gable: two slabs sloping down to the front and back eaves from a ridge along the
+ * building's width, and each gable end closed by stepped wall bands under the slope.
+ */
+function pushGableRoof(parts: BuildingPartPlacement[], config: BuildingConfig, width: number, depth: number): void {
+  const height = config.floors * config.floorHeight;
+  const half = depth / 2 + config.roofOverhang;
+  const rise = (depth / 2) * Math.tan(GABLE_PITCH);
+  const slope = half / Math.cos(GABLE_PITCH);
+  for (const side of [1, -1] as const) {
+    const slab = part(
+      config,
+      "roof",
+      "roof",
+      [config.center[0], height + rise - (half / 2) * Math.tan(GABLE_PITCH) + config.facadeDepth / 2, config.center[1] + side * (half / 2)],
+      [width + config.roofOverhang * 2, config.facadeDepth, slope],
+      `roof:gable:${side > 0 ? "front" : "back"}`,
+      { facade: "roof", level: config.floors, bay: side > 0 ? 0 : 1 },
+      ["structure"],
+    );
+    parts.push({ ...slab, pitch: side * GABLE_PITCH });
+  }
+  const bands = 3;
+  for (const facade of ["left", "right"] as const) {
+    const x = faceDepth(facade, width, depth, config);
+    for (let band = 0; band < bands; band += 1) {
+      const bandHeight = rise / bands;
+      const span = depth * (1 - (band + 0.5) / bands);
+      parts.push(
+        part(
+          config,
+          "wall",
+          "roof",
+          [x, height + bandHeight * (band + 0.5), config.center[1]],
+          [config.facadeDepth, bandHeight, span],
+          `roof:gable:${facade}:${band}`,
+          undefined,
+          ["structure"],
+        ),
+      );
+    }
+  }
+}
+
 function pushRoof(parts: BuildingPartPlacement[], config: BuildingConfig, width: number, depth: number): void {
+  if (config.roof === "gable") {
+    pushGableRoof(parts, config, width, depth);
+    return;
+  }
   const height = config.floors * config.floorHeight;
   parts.push(
     part(

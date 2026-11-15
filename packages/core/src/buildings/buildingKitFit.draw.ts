@@ -120,7 +120,8 @@ export function bucketBuildingParts(
         continue;
       }
       dummy.position.set(px, py, pz);
-      dummy.rotation.set(0, partYaw, 0);
+      // Yaw first, then a pitched part tilts about its own X (a gable's slope).
+      dummy.rotation.set(part.pitch ?? 0, partYaw, 0, "YXZ");
       dummy.scale.set(part.scale[0], part.scale[1], part.scale[2]);
       dummy.updateMatrix();
       bucket.push(dummy.matrix.clone());

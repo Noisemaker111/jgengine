@@ -45,7 +45,7 @@ export interface ZoneDef {
     stories: readonly [number, number];
     /** The engine's procedural building style: pastel village houses, a strip mall's generic storefronts, the Estates' grand ones. */
     style: BuildingStyle;
-    palette?: { wall: string; storefront?: string };
+    palette?: { wall: string; storefront?: string; roof?: string };
   };
   clusters: readonly ZoneCluster[];
   chests: readonly ZoneChest[];
@@ -75,7 +75,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "rustflat_waste",
     name: "Crabgrass Court",
     level: 1,
-    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "village", palette: { wall: "#f2d7a6", storefront: "#3d7fc4" } },
+    settlement: { count: 4, footprint: 6, stories: [1, 1], style: "village", palette: { wall: "#f2d7a6", storefront: "#3d7fc4", roof: "#b5442e" } },
     clusters: [
       { catalogId: "bruiser", count: 6 },
       { catalogId: "bruiser_brat", count: 10 },
@@ -88,7 +88,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "breakwater_shelf",
     name: "Sprinkler Heights",
     level: 4,
-    settlement: { count: 8, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#a8d8e8", storefront: "#c94f2b" } },
+    settlement: { count: 8, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#a8d8e8", storefront: "#c94f2b", roof: "#4a5568" } },
     // The landing's camps (husks, marauders) hold only the common stock, so arriving meets the two new
     // enemies the brief names; the local breeds wait in the far camps their side jobs send you to.
     clusters: [
@@ -110,7 +110,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "arid_badlands",
     name: "Maple Court — The Cul-de-Sac",
     level: 8,
-    settlement: { count: 10, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#f6c1c9", storefront: "#2f6fd6" } },
+    settlement: { count: 10, footprint: 7, stories: [1, 2], style: "village", palette: { wall: "#f6c1c9", storefront: "#2f6fd6", roof: "#2f5e3a" } },
     clusters: [
       { catalogId: "ripper_pup", count: 5 },
       { catalogId: "ripper", count: 4 },
@@ -149,7 +149,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     id: "glasswind_flats",
     name: "The Fairways",
     level: 17,
-    settlement: { count: 5, footprint: 8, stories: [1, 2], style: "village", palette: { wall: "#fff4d6", storefront: "#3aa84f" } },
+    settlement: { count: 5, footprint: 8, stories: [1, 2], style: "village", palette: { wall: "#fff4d6", storefront: "#3aa84f", roof: "#7a3b2e" } },
     clusters: [
       { catalogId: "crawler", count: 4 },
       { catalogId: "crawler_soldier", count: 3 },

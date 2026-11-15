@@ -5,6 +5,7 @@ import {
   resolveBuildingProbabilities,
   type BuildingPalette,
   type BuildingProbabilities,
+  type BuildingRoof,
   type BuildingStyle,
   type BuildingVariantCounts,
   type GeneratedBuilding,
@@ -85,7 +86,11 @@ function resolveFrontageBuildings(
   });
   const [floorsMin, floorsMax] = descriptor.stories;
   const bayWidth = DEFAULT_BUILDING_CONFIG.bayWidth;
-  const variants = { ...kitVariants(descriptor.kit), probabilities: resolveBuildingProbabilities(descriptor.style, descriptor.probabilities) };
+  const variants = {
+    ...kitVariants(descriptor.kit),
+    probabilities: resolveBuildingProbabilities(descriptor.style, descriptor.probabilities),
+    ...(descriptor.roof === undefined ? {} : { roof: descriptor.roof }),
+  };
   return lots.map((lot, index) =>
     buildLot(lot, index, seed, floorsMin, floorsMax, bayWidth, descriptor.storyHeight, variants),
   );
@@ -99,7 +104,7 @@ function buildLot(
   floorsMax: number,
   bayWidth: number,
   storyHeight: number,
-  variants: { variants?: Partial<BuildingVariantCounts>; probabilities?: Partial<BuildingProbabilities> } = {},
+  variants: { variants?: Partial<BuildingVariantCounts>; probabilities?: Partial<BuildingProbabilities>; roof?: BuildingRoof } = {},
 ): GeneratedBuilding {
   const lo = Math.min(floorsMin, floorsMax);
   const hi = Math.max(floorsMin, floorsMax);
