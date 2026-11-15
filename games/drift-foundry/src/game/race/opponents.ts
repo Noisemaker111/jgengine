@@ -90,6 +90,8 @@ export interface RivalDef {
    * lane to cut them off, and contact with it is a tackle (see `onGuardTackle`).
    */
   blocker?: boolean;
+  /** What this shopper shouts when you pass them, and when they pass you. */
+  quips?: { passed: string; passes: string };
 }
 
 export const RIVAL_DEFS: readonly RivalDef[] = [
@@ -105,6 +107,7 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     grid: { x: -3.4, z: 12 },
     // Coupon in one hand: drifts across the aisle shelf to shelf, so she sheds speed in every correction.
     line: [0, -5, -3.4, -4.6, -3, -4.8, -3.2, -4.4, -3, 0],
+    quips: { passed: "GRANDMA JUNE: \"YOUNG MAN, THERE IS A LINE!\"", passes: "GRANDMA JUNE: \"EXCUSE ME, DEAR - DOUBLE COUPONS\"" },
   },
   {
     id: "rival_twins",
@@ -118,6 +121,7 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     grid: { x: 3.4, z: 17 },
     // Two drivers, one cart, no agreement: weaves for the free side of each wall and keeps re-aiming.
     line: [0, 3, -2.4, 2.6, -3, 3.2, -2.4, 2.8, -3, 0],
+    quips: { passed: "THE TWINS: \"YOU STEERED!\" \"NO, YOU STEERED!\"", passes: "THE TWINS: \"WHEEEEEE!\"" },
   },
   {
     id: "rival_brick",
@@ -131,6 +135,7 @@ export const RIVAL_DEFS: readonly RivalDef[] = [
     grid: { x: 0, z: 24 },
     // Leg day every day: holds one wide outside line the whole way, fewest heading changes, brakes least.
     line: [0, 5, 5, 4.6, 5, 4.8, 5, 4.8, 5, 0],
+    quips: { passed: "BRICK: \"THAT WAS MY CARDIO DAY\"", passes: "BRICK: \"NEVER SKIP CART DAY\"" },
   },
 ];
 

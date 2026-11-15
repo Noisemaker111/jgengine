@@ -1053,6 +1053,11 @@ export function createRunSession(
       const place = standings.placeOf(PLAYER_RACER_ID);
       if (place !== announcedPlace) {
         pushRadio(place < announcedPlace ? `P${place} OF ${FIELD_SIZE} — EXCUSE ME, COMING THROUGH` : `P${place} OF ${FIELD_SIZE} — PASSED`);
+        // The shopper you just swapped places with has something to say about it.
+        const order = standings.snapshot().standings;
+        const swapped = order.find((entry) => entry.place === (place < announcedPlace ? place + 1 : place - 1));
+        const quips = RIVAL_DEFS.find((def) => def.id === swapped?.id)?.quips;
+        if (quips !== undefined) pushRadio(place < announcedPlace ? quips.passed : quips.passes);
         announcedPlace = place;
       }
 

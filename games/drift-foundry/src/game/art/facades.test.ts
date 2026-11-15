@@ -13,7 +13,7 @@ test("street-only facade parts are omitted while kiosk walls, signs, awnings and
 });
 
 test("every impact kind that drives a sound has a registered cue", () => {
-  for (const kind of ["plow", "landing", "blocked", "armor"]) {
+  for (const kind of ["plow", "landing", "blocked", "armor", "grab", "power", "trick"]) {
     expect(DRIFT_SOUNDS[kind]?.synth?.voices.length ?? 0).toBeGreaterThan(0);
   }
 });

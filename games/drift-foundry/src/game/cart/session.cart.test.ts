@@ -213,6 +213,21 @@ describe("the field", () => {
   });
 });
 
+describe("rivals with personality", () => {
+  test("overtaking a shopper gets a word from them on the PA", () => {
+    const session = sessionOn("last-call");
+    const heard = new Set<string>();
+    const pilot = createCoursePilot(sessionTrack(session), { sweep: true });
+    for (let t = 0; t < 120 && session.snapshot().phase === "running"; t += DT) {
+      const frame = pilot(session.snapshot());
+      session.tick(DT, frame.axis, frame.input);
+      for (const line of session.snapshot().ticker) heard.add(line.text);
+    }
+    const quips = RIVAL_DEFS.flatMap((def) => (def.quips === undefined ? [] : [def.quips.passed, def.quips.passes]));
+    expect([...heard].some((line) => quips.includes(line))).toBe(true);
+  });
+});
+
 describe("the cart corral", () => {
   test("store credit unlocks a cart, the next run pushes it, and the choice survives a reload", () => {
     const storage = memory((career) => { career.bank.banked = 600; });

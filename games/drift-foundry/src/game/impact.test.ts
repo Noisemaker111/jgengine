@@ -24,3 +24,11 @@ test("pause and rejected gate approach emit no false success; first contact only
   expect(impactBursts(blocked, { ...blocked, runTime: 1.1 })).toEqual([]);
   expect(impactBursts(before, { ...blocked, paused: true })).toEqual([]);
 });
+
+test("a shelf grab, a power-up and a banked trick each pop once, with their own cue", () => {
+  const style = (at: number | null) => ({ points: 0, combo: 1, comboLeft: 0, last: at === null ? null : { label: "DRIFT", at } });
+  const before = { ...frame(), shelvesTaken: new Set<string>(), powersUsed: 0, style: style(null) };
+  const after = { ...frame(1.05), shelvesTaken: new Set(["shelf_a"]), powersUsed: 1, style: style(1.04) };
+  expect(impactBursts(before, after).map((burst) => burst.kind)).toEqual(["grab", "power", "trick"]);
+  expect(impactBursts(after, { ...after, runTime: 1.1 })).toEqual([]);
+});

@@ -2,9 +2,9 @@ import type { EmitterConfig } from "@jgengine/core/vfx/particles";
 import { AISLE_NINE_TRACK, trackById } from "./tracks/catalog";
 import type { SessionSnapshot } from "./run/session";
 
-type ImpactSnapshot = Pick<SessionSnapshot, "phase" | "paused" | "runTime" | "pose" | "clearedGateIds" | "armorSavesUsed"> & Partial<Pick<SessionSnapshot, "track" | "lateral">>;
+type ImpactSnapshot = Pick<SessionSnapshot, "phase" | "paused" | "runTime" | "pose" | "clearedGateIds" | "armorSavesUsed"> & Partial<Pick<SessionSnapshot, "track" | "lateral" | "shelvesTaken" | "powersUsed" | "style" | "lastGrab">>;
 export interface ImpactBurst {
-  kind: "plow" | "landing" | "blocked" | "armor";
+  kind: "plow" | "landing" | "blocked" | "armor" | "grab" | "power" | "trick";
   config: EmitterConfig;
   count: number;
   blending: "additive" | "normal";
@@ -50,5 +50,24 @@ export function impactBursts(before: ImpactSnapshot, after: ImpactSnapshot): Imp
       },
     });
   }
+  // A shelf grab: a pop of packaging confetti off the cart. A power-up: a pink-and-teal ring.
+  if ((after.shelvesTaken?.size ?? 0) > (before.shelvesTaken?.size ?? 0)) bursts.push(sparkle("grab", [x, y + 1.2, z], 0xffd21e, 0xff4fa0, 26, after.runTime));
+  if ((after.powersUsed ?? 0) > (before.powersUsed ?? 0)) bursts.push(sparkle("power", [x, y + 0.8, z], 0x5de0ce, 0xff4fa0, 40, after.runTime));
+  // A style trick banked: a small gold shower so the score pop has a body.
+  if (after.style?.last !== null && after.style?.last !== undefined && after.style.last.at !== before.style?.last?.at) bursts.push(sparkle("trick", [x, y + 1.6, z], 0xfff1a0, 0xffd21e, 18, after.runTime));
   return bursts;
+}
+
+function sparkle(kind: "grab" | "power" | "trick", position: readonly [number, number, number], from: number, to: number, count: number, time: number): ImpactBurst {
+  return {
+    kind,
+    blending: "additive",
+    count,
+    config: {
+      position, spawnJitter: [.4, .3, .4], direction: [0, 1, 0], spread: kind === "power" ? 2.2 : 1.4,
+      speed: { min: 2, max: kind === "power" ? 7 : 5 }, gravity: [0, -7, 0], drag: .4,
+      lifetime: { min: .35, max: .8 }, size: { start: .12, end: .03 },
+      colorStart: from, colorEnd: to, alpha: { start: 1, end: 0 }, seed: `${kind}:${time}`,
+    },
+  };
 }
