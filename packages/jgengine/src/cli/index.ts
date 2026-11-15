@@ -13,6 +13,7 @@ import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
 import { runHarness } from "../harness";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
+import { runPropose } from "../propose/command";
 import { runSkills } from "../skills";
 import { runningCli, staleCliWarnings } from "../staleCli";
 import { runSync } from "../sync";
@@ -64,6 +65,10 @@ usage: jgengine <command> [...args]
                         [--json] [--limit 1..100]; --text <regex> for a plain ripgrep search
   has <feature> ...     does the engine already ship these features? one JSON answer for all
                         (verdict covered|partial|gap, engine folders, capabilities and imports)
+  propose [dir]         engine proposals: a <feature>.engine.ts file next to the game is the shim, the
+                        spec and the issue for an engine part the engine lacks. Prints a ready-to-file
+                        issue per proposal; --list (status: local|partial|upstream), --check,
+                        --migrate <engine-local folder>, --json · propose --help
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
@@ -240,6 +245,9 @@ switch (command) {
     break;
   case "has":
     process.exit(runHas(rest));
+    break;
+  case "propose":
+    process.exit(await runPropose(rest));
     break;
   case "recipe":
     process.exit(runRecipe(rest));
