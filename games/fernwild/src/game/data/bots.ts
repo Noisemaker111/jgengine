@@ -162,7 +162,7 @@ export const BOTS: Readonly<Record<string, BotProfile>> = {
   homer: P("retaliator", ["richest"], "Carrier-pigeon cargo drone. Rigged, it flies and lifts; load it and it flies the cargo home to your nearest storage box.", { courier: true }),
   echo: P("ambush", ["attacker"], "A mimic. Copies the last trick used near it and turns it on you.", { trick: { kind: "mimic", radius: 20 } }),
   choir: P("pack", ["brightest"], "A hovering ring that sings frequencies: every wild bot near a choir hits harder. The conductor shields the rest: shoot it first.", { aura: { damage: 1.25, radius: 18 }, pack: { radius: 10, per: 0.1, max: 4 }, conducted: { radius: 12, shielded: 0.25 } }),
-  lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot. It never leaves the water.", { terrain: "water", swimDepth: 1.5 }),
+  lampjaw: P("ambush", ["brightest"], "Deep-water angler with a lure that glows like loot. It never leaves the water.", { terrain: "water", swimDepth: 0.9 }),
   hoover: P("retaliator", ["attacker"], "A huge passive vacuum leviathan. Leave it be and it leaves you be. Uploaded, its back is a walking base: climb aboard and ride.", { platform: true }),
   scrapper: P("aggressive", ["machines", "biggest"], "Apex hunter that tears other robots apart for parts and grows stronger with every one.", { scraps: { perKill: 0.1, max: 2 } }),
   // The wider machine ecosystem.

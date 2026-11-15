@@ -12,12 +12,16 @@ export default defineFlow(game, {
   async run(f) {
     await f.waitFor((p) => p.phase === 1 && p.health > 0, SLOW);
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
-    // Dusk, so the Lampjaws' lures glow. The deep water off the first beach lies south, out past the surf.
-    await f.command("cheat", { clock: 3600 * 0.76, teleport: [269, 1585, 0] });
-    for (const side of [-4, 0, 4]) await f.command("cheat", { summon: { species: "lampjaw", level: 5, distance: 9, side } });
+    // Dusk, so the Lampjaws' lures glow. Stand on the first beach's waterline, facing south over the shelf to the deep.
+    await f.command("cheat", { clock: 3600 * 0.76, teleport: [269, 1346, Math.PI] });
+    for (const side of [-4, 0, 4]) await f.command("cheat", { summon: { species: "lampjaw", level: 5, distance: 24, side: side * 2 } });
     // Generated robot models build on first sight: give software rendering time to load them.
     await f.wait(45000);
     await f.shot("wildwire-lampjaws");
+    // The same water by day, for the sea's own colour: bright shelf, dark deep, foam at the line.
+    await f.command("cheat", { clock: 3600 * 0.55 });
+    await f.wait(4000);
+    await f.shot("wildwire-sea-day");
     // The central river, an Arcwire pair swimming it.
     await f.command("cheat", { clock: 3600 * 0.5, teleport: [96, 640, Math.PI] });
     for (const side of [-2, 2]) await f.command("cheat", { summon: { species: "arcwire", level: 5, distance: 8, side } });

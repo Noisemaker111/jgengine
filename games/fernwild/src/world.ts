@@ -66,7 +66,7 @@ export const world = environment({
       // Deep water goes properly dark, the shelf stays a narrow bright band, and the shore wears a wide foam line.
       palette: { deep: "#06304f", crest: "#9fe8ef", foam: "#f4fbff", fresnel: 0.8 },
       depthRange: 4.5,
-      shore: { width: 1.1, waves: 0.85 },
+      shore: { width: 0.45, waves: 0.9 },
       waveHeight: 0.35,
       waveScale: 30,
       waveSpeed: 0.45,

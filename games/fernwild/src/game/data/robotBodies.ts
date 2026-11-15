@@ -173,8 +173,25 @@ const rootServer: RobotBody = {
   },
 };
 
+/**
+ * Under this standing height a land bot is lost in the grass at 20 m, so it wears a beacon in its eye
+ * glow and a livery stripe: the small ones read as a coloured light that says what they mean to do.
+ */
+const SMALL_READS_BELOW = 1.2;
+
+function readable(plans: Record<string, RobotBody>): Record<string, RobotBody> {
+  return Object.fromEntries(
+    Object.entries(plans).map(([species, body]) => {
+      const profile = BOTS[species];
+      const onLand = profile === undefined || profile.terrain === undefined || profile.terrain === "land";
+      if (body.height >= SMALL_READS_BELOW || !onLand || body.plan.machine === undefined) return [species, body];
+      return [species, { ...body, plan: { ...body.plan, machine: { ...body.plan.machine, beacon: true, livery: true } } }];
+    }),
+  );
+}
+
 export const ROBOT_BODIES: Readonly<Record<string, RobotBody>> = {
-  ...PLANS,
+  ...readable(PLANS),
   root_server: rootServer,
   hivemind_gamma: hivemind("#1e1626"),
   hivemind_beta: hivemind("#2a1838"),

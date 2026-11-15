@@ -249,7 +249,7 @@ test("Lampjaws spawn and stay in deep water off the beaches; Arcwires spawn in t
     const [x, y, z] = angler.position;
     expect(g.ctx.world.groundHeightAt(x, z)).toBeLessThan(-0.3);
     // A big body: it swims low enough that its back breaks the surface.
-    expect(y).toBeCloseTo(-1.5, 1);
+    expect(y).toBeCloseTo(-0.9, 1);
   }
   const river = zone("river_");
   g.ui.tryInvoke("cheat", { teleport: [river.position.x + 50, river.position.z + 50, 0] });
