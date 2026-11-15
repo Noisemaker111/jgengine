@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { NIGHTS, nightOf, planRoom, ROOT, depthOf, parentOf, threatChance, type RunSeed } from "./runGen";
+import { NIGHTS, nightOf, OMENS, omensOf, planRoom, ROOT, depthOf, parentOf, threatChance, twistOf, type RunSeed } from "./runGen";
 import { ROOM_TEMPLATES, walkable } from "../world";
 import { ITEMS } from "./loot";
 
@@ -74,6 +74,36 @@ describe("the procedural house", () => {
     expect(kinds.size).toBe(Object.keys(NIGHTS).length);
     const away = Array.from({ length: 400 }, (_, i) => `night-${i + 2}-${i}`).find(seed => nightOf(seed) === "away")!;
     for (const path of ["0-0-0", "0-1-0-0", "0-0-1-1", "0-1-1-0-0"]) expect(planRoom(night(away, ALL), path).threats.some(t => t.kind === "kid")).toBe(false);
+  });
+  test("omens twist a night: none on the first, one early, two later, every kind turns up, each changes the run", () => {
+    expect(omensOf("night-1-0")).toEqual([]);
+    expect(omensOf("night-3-2").length).toBe(1);
+    expect(omensOf("night-7-6").length).toBe(2);
+    expect(omensOf("night-7-6")).toEqual(omensOf("night-7-6"));
+    const seeds = Array.from({ length: 600 }, (_, i) => `night-${i + 2}-${i}`);
+    expect(new Set(seeds.flatMap(omensOf)).size).toBe(Object.keys(OMENS).length);
+    const find = (id: keyof typeof OMENS) => seeds.find(seed => omensOf(seed).includes(id))!;
+    const plain = seeds.find(seed => omensOf(seed).every(o => OMENS[o].level === undefined))!;
+    expect(twistOf(find("lucky-penny")).level).toBeGreaterThanOrEqual(1);
+    expect(twistOf(plain).level).toBe(0);
+    expect(twistOf(find("open-windows")).exitChance).toBeGreaterThan(0.6);
+    const creaky = find("creaky");
+    expect(twistOf(creaky).noise).toBeGreaterThan(NIGHTS[nightOf(creaky)].noise);
+    const long = find("long-night");
+    expect(twistOf(long).seconds).toBeGreaterThanOrEqual(NIGHTS[nightOf(long)].seconds + 60);
+    expect(twistOf(find("slow-roomba")).threats("roomba")).toBe(0);
+    // Lucky penny raises what lies on the floor, room for room.
+    const lucky = find("lucky-penny");
+    const levels = (seed: string) => planRoom(night(seed, ALL), "0-0").loot.map(l => l.level);
+    expect(Math.min(...levels(lucky))).toBeGreaterThanOrEqual(2 + 1);
+  });
+  test("a power cut keeps every light off, a heatwave is short and quiet, a sleepover keeps the kids waking", () => {
+    const of = (kind: string) => Array.from({ length: 600 }, (_, i) => `night-${i + 2}-${i}`).find(seed => nightOf(seed) === kind)!;
+    expect(twistOf(of("power-cut")).threats("lights")).toBe(0);
+    expect(twistOf(of("power-cut")).light).toBeLessThan(1);
+    expect(NIGHTS.heatwave.seconds).toBeLessThan(0);
+    expect(NIGHTS.heatwave.noise).toBeLessThan(1);
+    expect(twistOf(of("sleepover")).restless).toBeGreaterThan(0);
   });
   test("a burrow's first night opens safe under the kitchen cabinets with the larder's cost on the floor", () => {
     const first = planRoom(night("night-1-1"), ROOT);

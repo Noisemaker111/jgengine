@@ -35,8 +35,8 @@ export interface RoomPlan {
  * What kind of night it is. Every seed rolls one, so two runs feel different before the first door:
  * a storm masks your footsteps, a party left food everywhere, the family is away, the cat is restless.
  */
-export type NightKind = "quiet" | "storm" | "party" | "away" | "restless" | "spring-clean" | "full-moon";
-export interface NightDef { name: string; line: string; noise: number; seconds: number; finds: Partial<Record<Category, number>>; threats: Partial<Record<ThreatKind, number>>; light: number }
+export type NightKind = "quiet" | "storm" | "party" | "away" | "restless" | "spring-clean" | "full-moon" | "power-cut" | "sleepover" | "heatwave";
+export interface NightDef { name: string; line: string; noise: number; seconds: number; finds: Partial<Record<Category, number>>; threats: Partial<Record<ThreatKind, number>>; light: number; restless?: number }
 export const NIGHTS: Record<NightKind, NightDef> = {
   quiet: { name: "A quiet night", line: "Nothing unusual. The house ticks and hums.", noise: 1, seconds: 0, finds: {}, threats: {}, light: 1 },
   storm: { name: "Thunderstorm", line: "Rain on the windows covers your footsteps: hunters hear you half as far.", noise: 0.5, seconds: 0, finds: {}, threats: { lights: 0.5 }, light: 0.9 },
@@ -45,12 +45,62 @@ export const NIGHTS: Record<NightKind, NightDef> = {
   restless: { name: "Restless cat", line: "The cat can't sleep. It prowls in far more rooms tonight.", noise: 1, seconds: 0, finds: { curio: 1.2 }, threats: { cat: 1.9 }, light: 1 },
   "spring-clean": { name: "Spring clean", line: "Someone set traps and the Roomba is on a mission. Parts left out everywhere.", noise: 1, seconds: 0, finds: { part: 1.8 }, threats: { trap: 1.7, roomba: 1.8 }, light: 1 },
   "full-moon": { name: "Full moon", line: "Moonlight floods the rooms: you see further, and so does everything else.", noise: 1, seconds: 0, finds: { curio: 1.5 }, threats: {}, light: 1.35 },
+  "power-cut": { name: "Power cut", line: "The fuse blew: no lights anywhere, and hunters see half as far in the dark. The fridge is thawing.", noise: 1, seconds: 0, finds: { food: 1.3 }, threats: { lights: 0 }, light: 0.6 },
+  sleepover: { name: "Sleepover", line: "A friend stayed over: toys and sweets on every floor, and two restless kids who keep waking.", noise: 1, seconds: 0, finds: { curio: 1.4, food: 1.3 }, threats: { kid: 1, lights: 1.6 }, light: 1, restless: 0.3 },
+  heatwave: { name: "Heatwave", line: "Fans whir in every room and drown your steps, but the hot night is short.", noise: 0.7, seconds: -45, finds: {}, threats: { cat: 0.8 }, light: 1 },
 };
 const NIGHT_KINDS = Object.keys(NIGHTS) as NightKind[];
 /** The night a seed rolls; the very first run of a burrow is always quiet. */
 export function nightOf(seed: string): NightKind {
   if (seed.startsWith("night-1-")) return "quiet";
   return NIGHT_KINDS[Math.floor(hashUnit(`${seed}|night`) * NIGHT_KINDS.length)] ?? "quiet";
+}
+
+/**
+ * Omens: one or two small twists rolled on top of the night, so two storms still play differently.
+ * Each changes one number the run already has; none adds a rule of its own.
+ */
+export type OmenId = "lucky-penny" | "creaky" | "open-windows" | "dropped-shopping" | "light-sleepers" | "long-night" | "strong-tea" | "slow-roomba";
+export interface OmenDef {
+  name: string; line: string;
+  noise?: number; level?: number; exitChance?: number; threats?: Partial<Record<ThreatKind, number>> & { all?: number };
+  seconds?: number; carry?: number; finds?: Partial<Record<Category, number>>;
+}
+export const OMENS: Record<OmenId, OmenDef> = {
+  "lucky-penny": { name: "Lucky penny", line: "Every find is a rarity step finer.", level: 1 },
+  creaky: { name: "Creaky floors", line: "The boards are dry: your footsteps carry a third further.", noise: 1.35 },
+  "open-windows": { name: "Windows open", line: "Draughts everywhere: more ways out are open tonight.", exitChance: 0.85 },
+  "dropped-shopping": { name: "Dropped shopping", line: "A bag split on the way in: food in every corner.", finds: { food: 1.7 } },
+  "light-sleepers": { name: "Light sleepers", line: "More hunters are up, and what they guard is finer.", threats: { all: 1.25 }, level: 1 },
+  "long-night": { name: "Clocks went back", line: "An extra hour tonight.", seconds: 60 },
+  "strong-tea": { name: "Strong tea", line: "You slept well: you can carry two more.", carry: 2 },
+  "slow-roomba": { name: "Flat battery", line: "The Roomba is charging all night, and the traps are fewer.", threats: { roomba: 0, trap: 0.6 } },
+};
+const OMEN_IDS = Object.keys(OMENS) as OmenId[];
+/** The omens a seed rolls: none on a burrow's first night, one at first, two from the fifth night on. */
+export function omensOf(seed: string): OmenId[] {
+  if (seed.startsWith("night-1-")) return [];
+  const night = Number(seed.split("-")[1] ?? 0);
+  const count = night >= 5 ? 2 : 1;
+  const out: OmenId[] = [];
+  for (let i = 0; out.length < count && i < 8; i++) {
+    const id = OMEN_IDS[Math.floor(hashUnit(`${seed}|omen|${i}`) * OMEN_IDS.length)]!;
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+/** The night and its omens folded into the numbers the run reads. */
+export interface Twist { restless: number; noise: number; light: number; seconds: number; level: number; exitChance: number; carry: number; finds: (c: Category) => number; threats: (k: ThreatKind) => number }
+export function twistOf(seed: string): Twist {
+  const night = NIGHTS[nightOf(seed)], omens = omensOf(seed).map(id => OMENS[id]);
+  const product = (pick: (o: OmenDef) => number | undefined) => omens.reduce((m, o) => m * (pick(o) ?? 1), 1);
+  const sum = (pick: (o: OmenDef) => number | undefined) => omens.reduce((m, o) => m + (pick(o) ?? 0), 0);
+  return {
+    restless: night.restless ?? 0, noise: night.noise * product(o => o.noise), light: night.light, seconds: night.seconds + sum(o => o.seconds),
+    level: sum(o => o.level), exitChance: Math.max(0.6, ...omens.map(o => o.exitChance ?? 0)), carry: sum(o => o.carry),
+    finds: c => (night.finds[c] ?? 1) * product(o => o.finds?.[c]),
+    threats: k => (night.threats[k] ?? 1) * product(o => o.threats?.[k]) * product(o => o.threats?.all),
+  };
 }
 
 export const ROOT = "0";
@@ -95,7 +145,7 @@ const BASE_CATEGORY: Record<Category, number> = { food: 3, part: 2.2, curio: 2, 
 const SPOT_CHANCE = { open: 0.5, tucked: 0.68, cache: 0.9 } as const;
 
 function lootFor(run: RunSeed, path: string, depth: number, template: RoomTemplate): PlannedLoot[] {
-  const little = LITTLES[run.little];
+  const little = LITTLES[run.little], twist = twistOf(run.seed);
   const zone = template.zone as Zone;
   const out: PlannedLoot[] = [];
   let foodBonus = little.foodSense ? 1 : 0;
@@ -114,7 +164,7 @@ function lootFor(run: RunSeed, path: string, depth: number, template: RoomTempla
       foodBonus -= 1; forced = "food";
     }
     const categories = (Object.keys(BASE_CATEGORY) as Category[]).map(c => {
-      let w = BASE_CATEGORY[c] * (little.finds[c] ?? 1) * (NIGHTS[nightOf(run.seed)].finds[c] ?? 1);
+      let w = BASE_CATEGORY[c] * (little.finds[c] ?? 1) * twist.finds(c);
       if (c === "gear") w += depth * 0.08;
       if (spot.bias === c) w *= 2.5;
       if (spot.tier === "cache" && (c === "curio" || c === "gear")) w *= 1.6;
@@ -125,7 +175,7 @@ function lootFor(run: RunSeed, path: string, depth: number, template: RoomTempla
       .map(k => [k, (ITEMS[k].weight ?? 1) * (ITEMS[k].zones === undefined || ITEMS[k].zones!.includes(zone) ? 1 : 0.25)] as const);
     const kind = weighted(kinds, roll(run, key, "kind"));
     if (kind === null) continue;
-    const level = depth + 1 + (spot.tier === "cache" ? 1 : 0) + (little.shinySense && category === "curio" ? 1 : 0);
+    const level = depth + 1 + twist.level + (spot.tier === "cache" ? 1 : 0) + (little.shinySense && category === "curio" ? 1 : 0);
     out.push({ key, spot, kind, level });
   }
   return out;
@@ -142,15 +192,15 @@ export function threatChance(kind: ThreatKind, depth: number, minDepth: number):
 
 function threatsFor(run: RunSeed, path: string, depth: number, template: RoomTemplate): PlannedThreat[] {
   if (firstNight(run) && path === ROOT) return [];
-  const night = NIGHTS[nightOf(run.seed)];
-  return template.threats.filter(slot => roll(run, `${path}:${slot.id}`, "home") < Math.min(0.97, threatChance(slot.kind, depth, slot.minDepth) * (night.threats[slot.kind] ?? 1)))
+  const twist = twistOf(run.seed);
+  return template.threats.filter(slot => roll(run, `${path}:${slot.id}`, "home") < Math.min(0.97, threatChance(slot.kind, depth, slot.minDepth) * twist.threats(slot.kind)))
     .map(slot => ({ key: `${path}:${slot.id}`, slot, kind: slot.kind }));
 }
 
 function exitsFor(run: RunSeed, path: string, depth: number, template: RoomTemplate, entry: DoorSlot): PlannedExit[] {
   const out: PlannedExit[] = [];
   if (path === ROOT) out.push({ key: `${path}:crack`, kind: "crack", at: entry.at, label: "the crack home", slot: null });
-  if (depth >= 1) for (const slot of template.exits) if (roll(run, `${path}:${slot.id}`, "open") < 0.6) out.push({ key: `${path}:${slot.id}`, kind: slot.kind, at: slot.at, label: slot.label, slot });
+  if (depth >= 1) for (const slot of template.exits) if (roll(run, `${path}:${slot.id}`, "open") < twistOf(run.seed).exitChance) out.push({ key: `${path}:${slot.id}`, kind: slot.kind, at: slot.at, label: slot.label, slot });
   return out;
 }
 

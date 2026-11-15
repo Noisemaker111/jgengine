@@ -5,7 +5,7 @@ import { completeSets, defOf, ITEMS, itemValue, kindOf, rollItem, SETS, type Ite
 import { LITTLES, type LittleId } from "./littles";
 import { bankHaul, canCarry, loseHaul } from "./haul";
 import { packOf, STARTING_ZONES, unlockedLittles, UPGRADE_IDS, wellFed, type Milestones, type UpgradeId } from "./burrow";
-import { NIGHTS, ROOT, depthOf, nightOf, planRoom, seedFor, type PlannedLoot, type RoomPlan, type RunSeed } from "./runGen";
+import { ROOT, depthOf, planRoom, seedFor, twistOf, type PlannedLoot, type RoomPlan, type RunSeed } from "./runGen";
 import type { ThreatState } from "./threats";
 
 export { ITEMS, type Item, type ItemKind } from "./loot";
@@ -119,12 +119,12 @@ export function newRun(id: number, home: Home, before: Home = home): Run {
   const maxHealth = 100 + fed;
   let packed: PackedItem[] = [];
   for (const item of brought) { const slot = fitInto(packed, item, pack.w, pack.h); if (slot !== null) packed = [...packed, slot]; }
-  const seed = seedFor(id, home.revision);
+  const seed = seedFor(id, home.revision), twist = twistOf(seed);
   return {
     id, seed, little: home.little, zones: [...home.zones],
-    elapsed: 0, nightSeconds: NIGHT_SECONDS + little.extraNight + NIGHTS[nightOf(seed)].seconds,
+    elapsed: 0, nightSeconds: NIGHT_SECONDS + little.extraNight + twist.seconds,
     health: maxHealth, maxHealth,
-    pack: packed, packW: pack.w, packH: pack.h, capacity: Math.round(pack.weight * little.carry * 10) / 10,
+    pack: packed, packW: pack.w, packH: pack.h, capacity: Math.round((pack.weight * little.carry + twist.carry) * 10) / 10,
     room: ROOT, visited: [ROOT], deepest: 0,
     taken: [], sprung: [], dead: [], dropped: [], kidTook: [],
     channel: null, hurt: 0, flash: 0, shield: true, threats: [], sling: 0, cause: "",

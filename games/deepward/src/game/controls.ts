@@ -15,7 +15,7 @@ import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, typ
 import { LITTLES, isLittle, type LittleId } from "./littles";
 import { CHARTS, goalStep, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
 import { canCarry, loadOf } from "./haul";
-import { NIGHTS, nightOf, planRoom, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
+import { NIGHTS, nightOf, OMENS, omensOf, planRoom, twistOf, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
 import { jab, spawnThreat, tickThreats, webDrag, type ThreatEvent, type ThreatState } from "./threats";
 import { openRecord, recordProfile, type RecordSession, type RunSnapshot, type StoragePort } from "./save";
 
@@ -243,7 +243,8 @@ function begin(ctx: GameContext): Promise<void> | void {
   const arrival = arrivalOf(plan, null);
   const fed = run.maxHealth > 100 ? ` Well fed: ${run.maxHealth} health.` : "";
   const night = NIGHTS[nightOf(run.seed)];
-  const hint = `${clockText(run)}. ${night.name}: ${night.line}${fed}`;
+  const omens = omensOf(run.seed).map(id => ` ${OMENS[id].name}: ${OMENS[id].line}`).join("");
+  const hint = `${clockText(run)}. ${night.name}: ${night.line}${omens}${fed}`;
   ctx.game.notices.push({ text: `Tonight: ${night.name}`, tone: "info" });
   state.writing = true;
   return persist(ctx, home, runOf(ctx, { mode: "run", run, hint, pending: null, player: arrival.at, facing: arrival.facing }), () => {
@@ -878,12 +879,12 @@ export function tickControls(ctx: GameContext, dt: number): void {
   // A cat's bell in the pack jingles with every step.
   if (noise > 0) for (const item of v.run.pack) noise *= defOf(item).noisy ?? 1;
   if (v.run.channel !== null) noise = Math.max(noise, v.run.channel.kind === "disarm" && !little.trapSense ? 12 : v.run.channel.kind === "search" || v.run.channel.kind === "toybox" ? 6 : 2);
-  noise *= little.noise * NIGHTS[nightOf(v.run.seed)].noise;
+  noise *= little.noise * twistOf(v.run.seed).noise;
   const lit = lightsOn(v.run, plan), torch = hasGear(v.run, "torch");
-  const visibility = (lit ? 1.8 : template.dark ? (torch ? 1.1 : 0.6) : 1) * NIGHTS[nightOf(v.run.seed)].light * (torch ? 1.5 : 1) * (sneaking ? 0.6 : 1) * (isDawn(v.run) ? 1.3 : 1) / little.stillness;
+  const visibility = (lit ? 1.8 : template.dark ? (torch ? 1.1 : 0.6) : 1) * twistOf(v.run.seed).light * (torch ? 1.5 : 1) * (sneaking ? 0.6 : 1) * (isDawn(v.run) ? 1.3 : 1) / little.stillness;
   const covered = inCover(template, at);
   // A restless kid sits up and looks around now and then; at dawn every kid is awake.
-  const restless = isDawn(v.run) || hashUnit(`${v.run.seed}|${v.run.room}|restless`) < 0.45 + plan.depth * 0.08;
+  const restless = isDawn(v.run) || hashUnit(`${v.run.seed}|${v.run.room}|restless`) < 0.45 + plan.depth * 0.08 + twistOf(v.run.seed).restless;
   const pebble = state.pebble; state.pebble = null;
   const ticked = tickThreats(template, v.run.threats, { at, noise, visibility, covered, torch, clock: v.run.elapsed, restless, pebble }, dt);
   let run: Run = age({ ...v.run, threats: ticked.states }, dt);

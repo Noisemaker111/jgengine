@@ -20,7 +20,7 @@ import { clockText, footprint, hasGear, isDawn, lightsOn, littlesOf, roomOf, two
 import { loadOf } from "../haul";
 import { completeSets, defOf, displayName, ITEMS, kindOf, SETS, SET_IDS, tradeValue, type Item, type ItemKind } from "../loot";
 import { LITTLES, LITTLE_IDS } from "../littles";
-import { NIGHTS, nightOf } from "../runGen";
+import { NIGHTS, nightOf, OMENS, omensOf } from "../runGen";
 import { CHARTS, missing, nextGoal, packOf, RECIPES, UPGRADES, UPGRADE_IDS, wellFed, type Cost } from "../burrow";
 import { ItemMark } from "./ItemMark";
 import { CrumbMenu, RecordSettings } from "./menu/CrumbMenu";
@@ -83,7 +83,7 @@ function RunHud() {
         <Row justify="between"><Tag text={bind(() => { const r = run(); return r === null ? "" : `${LITTLES[r.little].name.toUpperCase()} ${LITTLES[r.little].title.toUpperCase()}`; })} />
           <RuneLabel value={bind(() => { const r = run(); return r === null ? "" : clockText(r); })} family="Fredoka" size={phone ? 20 : 26} color={bind(() => { const r = run(); return r !== null && r.elapsed > r.nightSeconds - 60 ? RED : GOLD; })} /></Row>
         <Meter value={bind(() => { const r = run(); return { fraction: r === null ? 0 : Math.min(1, r.elapsed / r.nightSeconds) }; })} color={bind(() => { const r = run(); return r !== null && isDawn(r) ? RED : SKY; })} height={4} />
-        <Tag color={SKY} text={bind(() => { const r = run(); return r === null ? "" : NIGHTS[nightOf(r.seed)].name.toUpperCase(); })} />
+        <Tag color={SKY} text={bind(() => { const r = run(); return r === null ? "" : [NIGHTS[nightOf(r.seed)].name, ...omensOf(r.seed).map(id => OMENS[id].name)].join(" · ").toUpperCase(); })} />
         <Row justify="between"><Tag>HEALTH</Tag><RuneLabel value={bind(() => Math.ceil(run()?.health ?? 0))} format={n => `${Math.ceil(n)}`} family="Fredoka" size={20} color={bind(() => (run()?.health ?? 100) < 35 ? RED : GREEN)} /></Row>
         <Meter value={bind(() => { const r = run(); return { fraction: r === null ? 0 : Math.max(0, r.health / r.maxHealth) }; })} color={bind(() => (run()?.health ?? 100) < 35 ? RED : GREEN)} />
         <Row justify="between"><Tag>NOTICED</Tag><Tag color={bind(() => view().sneaking ? GREEN : MUTED)} text={bind(() => view().sneaking ? "SNEAKING" : view().noise > 12 ? "LOUD" : view().noise > 0 ? "FOOTSTEPS" : "STILL")} /></Row>
