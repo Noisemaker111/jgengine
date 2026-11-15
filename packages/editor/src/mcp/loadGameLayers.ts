@@ -4,6 +4,8 @@ import {
   type EditorDocument,
   type EditorDocumentDiagnostic,
 } from "@jgengine/core/editor/index";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { importOptionalGameModule } from "./importOptionalGameModule";
 
 /** Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it. */
