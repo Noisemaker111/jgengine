@@ -65,9 +65,9 @@ describe("the yard campaign is engine mission data", () => {
     expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
   });
 
-  test("six missions, each with a named fail state, a reward and a field-journal brief, five on the backyard and the last on the front yard", () => {
-    expect(CAMPAIGN).toHaveLength(6);
-    expect(CAMPAIGN.map((step) => step.map)).toEqual(["backyard", "backyard", "backyard", "backyard", "backyard", "front-yard"]);
+  test("eight missions, each with a named fail state, a reward and a field-journal brief, six on the backyard and two on the front yard", () => {
+    expect(CAMPAIGN).toHaveLength(8);
+    expect(CAMPAIGN.map((step) => step.map)).toEqual(["backyard", "backyard", "backyard", "backyard", "backyard", "backyard", "front-yard", "front-yard"]);
     for (const step of CAMPAIGN) {
       expect(step.brief.length).toBeGreaterThan(20);
       expect(step.mission.fail?.length ?? 0).toBeGreaterThan(0);
@@ -91,21 +91,26 @@ describe("the yard campaign is engine mission data", () => {
     }
   });
 
-  test("the teaching order claims the popsicle, crosses the hose, survives the mower, raids the queen and ends on the beam", () => {
+  test("the teaching order claims the popsicle, crosses the hose, survives the mower and the storm, raids the queen and meets the beam", () => {
     const kinds = CAMPAIGN.map((step) => step.mission.objectives.map((objective) => objective.kind));
     expect(kinds[0]).toContain("collect");
     expect(kinds[1]).toEqual(["reach"]);
     expect(kinds[2]).toEqual(["survive"]);
-    expect(kinds[3]).toEqual(["reach", "kill"]);
-    expect(kinds[4]).toEqual(["survive", "kill"]);
+    expect(kinds[3]).toEqual(["collect", "survive"]);
+    expect(kinds[4]).toEqual(["reach", "kill"]);
+    expect(kinds[5]).toEqual(["survive", "kill"]);
+    expect(kinds[7]).toEqual(["survive", "kill"]);
     expect(mission(CAMPAIGN[2]!.mission.id).objectives[0]!.duration).toBe(150);
   });
 
   test("each mission turns on the yard hazard it is about", () => {
     expect(CAMPAIGN[0]!.hazards.sprinkler).toBe(true);
     expect(CAMPAIGN[2]!.hazards.mower).toBe(true);
-    expect(CAMPAIGN[3]!.hazards.night).toBe(true);
-    expect(CAMPAIGN[4]!.hazards.beam).toBe(true);
+    expect(CAMPAIGN[3]!.hazards.storm).toBe(true);
+    expect(CAMPAIGN[4]!.hazards.night).toBe(true);
+    expect(CAMPAIGN[5]!.hazards.beam).toBe(true);
+    // Noon on the front yard: the driveway bakes and no night comes to cool it.
+    expect(CAMPAIGN[7]!.hazards).toMatchObject({ heat: true, night: false });
     // Only the finale brings the kid with the magnifying glass.
     expect(CAMPAIGN.filter((step) => step.hazards.beam)).toHaveLength(1);
   });
@@ -177,7 +182,7 @@ describe("the missions run on the machine", () => {
 
   test("the Black Queen raid reaches the brood mound, then needs it dug out", () => {
     const runtime = machine();
-    const def = mission(CAMPAIGN[3]!.mission.id);
+    const def = mission(CAMPAIGN[4]!.mission.id);
     const raid = markers["campaign_brood_raid"]!;
     const heroAt = { alive: true, position: { x: raid.x, y: 0, z: raid.z } };
     runtime.start(def.id);
@@ -198,7 +203,7 @@ describe("the missions run on the machine", () => {
 
   test("the finale chains outlasting the beam into digging out the black nest", () => {
     const runtime = machine();
-    const def = mission(CAMPAIGN[4]!.mission.id);
+    const def = mission(CAMPAIGN[5]!.mission.id);
     runtime.start(def.id);
     runtime.tick(61, { actors: { [HERO_ID]: { alive: true } }, survivors: 5 });
     expect(runtime.state()?.objective).toBe(objectiveId(def, 1));
@@ -246,7 +251,7 @@ describe("the field desk reads the machine", () => {
     expect(card?.phase).toBe("ready");
     expect(card?.title).toBe(CAMPAIGN[0]!.mission.title);
     expect(card?.index).toBe(1);
-    expect(card?.total).toBe(6);
+    expect(card?.total).toBe(8);
     expect(card?.objective).toBe(CAMPAIGN[0]!.mission.objectives[0]!.label ?? "");
     expect(card?.remaining).toBeNull();
   });

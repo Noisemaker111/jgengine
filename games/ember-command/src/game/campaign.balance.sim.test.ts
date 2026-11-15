@@ -26,7 +26,7 @@ function onLawn(id: MapId): void {
 
 const markers = missionMarkers(editorLayers);
 const markers6 = () => missionMarkers(liveLayers.editorLayers);
-const STORES = [{ sugar: 0, leaf: 0 }, { sugar: 120, leaf: 40 }, { sugar: 320, leaf: 120 }, { sugar: 480, leaf: 180 }, { sugar: 720, leaf: 280 }, { sugar: 1120, leaf: 430 }];
+const STORES = [{ sugar: 0, leaf: 0 }, { sugar: 120, leaf: 40 }, { sugar: 320, leaf: 120 }, { sugar: 480, leaf: 180 }, { sugar: 680, leaf: 260 }, { sugar: 920, leaf: 360 }, { sugar: 1320, leaf: 510 }, { sugar: 1770, leaf: 690 }];
 type Ctx = ReturnType<typeof createHeadlessRunner>["ctx"];
 
 /** A mid-skill player: keeps foragers busy on both resources, digs two barracks and gardens as the brood fills, hatches steadily, defends the nest. */
@@ -92,10 +92,10 @@ function run(index: number, plan: (ctx: Ctx, tick: number) => void, seconds: num
 
 /**
  * Campaign balance, played headless: a mid-skill script (two barracks, gardens as the brood fills, a
- * steady hatch, foragers on both resources, the obvious plan per mission) must win all six missions,
+ * steady hatch, foragers on both resources, the obvious plan per mission) must win all eight missions,
  * and the finale must still cost it real losses.
  */
-test("a mid-skill colony wins all six missions", () => {
+test("a mid-skill colony wins all eight missions", () => {
   const out: string[] = [];
   out.push(run(0, (ctx, tick) => {
     if (tick % 50 === 0 && campaignRuntime(ctx).view()?.objectiveId === "march_muster") {
@@ -107,25 +107,39 @@ test("a mid-skill colony wins all six missions", () => {
     if (tick > 600 && tick % 50 === 0) attack(ctx, markers["campaign_far_bank"]!.x, markers["campaign_far_bank"]!.z);
   }, 300));
   out.push(run(2, (ctx, tick) => { if (tick % 100 === 0) attack(ctx, 0, 27); }, 260));
+  // The storm: dig a granary at once, then hold the nest in the rain.
   out.push(run(3, (ctx, tick) => {
+    if (tick === 20) {
+      ctx.game.commands.run("build.arm", { type: "granary" });
+      ctx.game.commands.run("unit.order", { selection: [], point: [-24, 0, 40] });
+      ctx.game.commands.run("unit.cancel", {});
+    }
+    if (tick % 100 === 0) attack(ctx, 0, 27);
+  }, 420));
+  out.push(run(4, (ctx, tick) => {
     if (tick < 700 && tick % 100 === 0) attack(ctx, 0, 27);
     if (tick >= 700 && tick % 50 === 0) attack(ctx, markers["campaign_brood_raid"]!.x, markers["campaign_brood_raid"]!.z);
     if (tick >= 900 && tick % 50 === 0) attack(ctx, -16, -27);
   }, 480));
-  out.push(run(4, (ctx, tick) => {
+  out.push(run(5, (ctx, tick) => {
     if (tick < 650 && tick % 50 === 0) ctx.game.commands.run("unit.order", { selection: fighters(), point: [3, 0, 29] });
     if (tick >= 650 && tick < 1300 && tick % 100 === 0) attack(ctx, 0, 27);
     if (tick >= 1300 && tick % 50 === 0) attack(ctx, 0, -36);
   }, 600));
   // The front yard: cross the driveway on the cracks, dig the wasps out of the mailbox, then the nest.
-  out.push(run(5, (ctx, tick) => {
+  out.push(run(6, (ctx, tick) => {
     if (tick >= 500 && tick < 900 && tick % 50 === 0) attack(ctx, markers6()["campaign_far_bank"]!.x, markers6()["campaign_far_bank"]!.z);
     if (tick >= 900 && campaignRuntime(ctx).view()?.objectiveId === "clear_mailbox" && tick % 50 === 0) attack(ctx, 32, 33);
     if (tick >= 900 && campaignRuntime(ctx).view()?.objectiveId === "raze_far_nest" && tick % 50 === 0) attack(ctx, 28, -34);
   }, 700));
+  // Noon: hold the nest while the raids cook crossing the driveway, then go for the mailbox.
+  out.push(run(7, (ctx, tick) => {
+    if (campaignRuntime(ctx).view()?.objectiveId === "hold_noon" && tick % 100 === 0) attack(ctx, -24, 26);
+    if (campaignRuntime(ctx).view()?.objectiveId === "clear_mailbox" && tick % 50 === 0) attack(ctx, 32, 33);
+  }, 600));
   onLawn("backyard");
   // Every mission falls to a mid-skill script, and none of them for free.
   console.log(out.join("\n"));
   for (const line of out) expect(line).toContain(": completed");
-  expect(out.join("\n")).toMatch(/M5 [^\n]*red lost (1\d|[2-9]\d)/);
+  expect(out.join("\n")).toMatch(/M6 [^\n]*red lost (1\d|[2-9]\d)/);
 }, 600_000);

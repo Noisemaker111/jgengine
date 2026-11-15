@@ -166,6 +166,12 @@ describe("the yard's hazards", () => {
   test("rain and night run on their own clocks", () => {
     expect(rainingAt(RAIN_FIRST - 1)).toBe(false);
     expect(rainingAt(RAIN_FIRST + 1)).toBe(true);
+    // A storm (The Downpour) rains within the first half-minute and pours for most of every minute after.
+    expect(rainingAt(30)).toBe(false);
+    expect(rainingAt(30, true)).toBe(true);
+    let wet = 0;
+    for (let t = 20; t < 140; t += 1) if (rainingAt(t, true)) wet += 1;
+    expect(wet / 120).toBeGreaterThan(0.75);
     expect(darknessAt(30)).toBe(0);
     expect(darknessAt(200)).toBe(1);
   });

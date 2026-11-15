@@ -47,10 +47,10 @@ export const COLONY_TRAITS: readonly ColonyTrait[] = [
   { id: "deep_larder", kind: "queen", label: "Deep Larder", blurb: `Every battle opens with +${LARDER_SUGAR} sugar, +${LARDER_LEAF} leaf.`, cost: 2 },
   { id: "keen_antennae", kind: "queen", label: "Keen Antennae", blurb: "The colony sees 15% farther.", cost: 2 },
   { id: "packed_earth", kind: "queen", label: "Packed Earth", blurb: "Nest and chambers take 30% less damage.", cost: 2 },
-  { id: "serrated_mandibles", kind: "caste", label: "Serrated Mandibles", blurb: "Soldiers bite 20% harder.", cost: 2 },
-  { id: "acid_glands", kind: "caste", label: "Acid Glands", blurb: "Spitters spit 25% harder.", cost: 2 },
-  { id: "beetle_plating", kind: "caste", label: "Beetle Plating", blurb: "Tank beetles take 25% less damage.", cost: 2 },
-  { id: "swift_foragers", kind: "caste", label: "Swift Foragers", blurb: "Workers haul 15% faster.", cost: 2 },
+  { id: "serrated_mandibles", kind: "caste", label: "Serrated Mandibles", blurb: "Soldiers bite 20% harder.", cost: 3 },
+  { id: "acid_glands", kind: "caste", label: "Acid Glands", blurb: "Spitters spit 25% harder.", cost: 3 },
+  { id: "beetle_plating", kind: "caste", label: "Beetle Plating", blurb: "Tank beetles take 25% less damage.", cost: 3 },
+  { id: "swift_foragers", kind: "caste", label: "Swift Foragers", blurb: "Workers haul 15% faster.", cost: 3 },
 ];
 
 const traitById = new Map<string, ColonyTrait>(COLONY_TRAITS.map((trait) => [trait.id, trait]));

@@ -118,8 +118,11 @@ function YardStrip({ width }: { width: number }) {
 /** Nightfall dims the lawn: a deep-blue wash whose strength follows the darkness clock. */
 function NightWash() {
   const dark = useHudSlice((h) => h.hazards.dark);
-  if (dark <= 0) return null;
-  return <RuneView anchor="fill" fill={`#0a1430${Math.round(dark * 0.55 * 255).toString(16).padStart(2, "0")}`} label="night" />;
+  const rain = useHudSlice((h) => h.hazards.rain);
+  // Night darkens the lawn blue; a rain storm greys it under the cloud, on top of whatever hour it is.
+  const night = dark > 0 ? <RuneView anchor="fill" fill={`#0a1430${Math.round(dark * 0.55 * 255).toString(16).padStart(2, "0")}`} label="night" /> : null;
+  const cloud = rain ? <RuneView anchor="fill" fill="#3a465a3a" label="rain cloud" /> : null;
+  return night === null && cloud === null ? null : <>{cloud}{night}</>;
 }
 
 type Tone = "ready" | "active" | "locked";

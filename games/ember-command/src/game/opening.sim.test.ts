@@ -60,7 +60,7 @@ describe("the opening raid", () => {
     resetSession();
     const definition = defineGameDefinition({ name: "LawnOrderBoss", multiplayer: "off", world, physics, systems, loop: { onInit, onNewPlayer() {} } });
     const runner = createHeadlessRunner({ definition, content, loop: definition.loop! });
-    campaignStore.write(runner.ctx, { won: CAMPAIGN.slice(0, 4).map((step) => step.mission.id), mode: "campaign", stores: { sugar: 0, leaf: 0 } });
+    campaignStore.write(runner.ctx, { won: CAMPAIGN.slice(0, 5).map((step) => step.mission.id), mode: "campaign", stores: { sugar: 0, leaf: 0 } });
     runner.ctx.game.commands.run("match.start", {});
     expect(session.hazards.toggles.beam).toBe(true);
     const shade = YARD.shade.find((spot) => spot.radius >= 7.5)!;

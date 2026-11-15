@@ -127,7 +127,7 @@ function buildGame(id: MapId) {
         "menu-new": [],
         // Dev-only: three orders won, two traits bred, the campaign map open on the title sheet.
         "menu-colony": [
-          { name: "campaign.skipTo", input: { index: 3 } },
+          { name: "campaign.skipTo", input: { index: 4 } },
           { name: "colony.buy", input: { trait: "fertile_queen" } },
           { name: "colony.buy", input: { trait: "serrated_mandibles" } },
           { name: "menu.focus", input: { verb: "colony" } },
@@ -142,9 +142,13 @@ function buildGame(id: MapId) {
         research: ["match.start", "research.capture"],
         doctrine: ["match.start", { name: "research.capture", input: { doctrine: "bulwark" } }],
         // Dev-only: the finale as the player receives it, with the kid's beam over the lawn.
-        boss: [{ name: "campaign.skipTo", input: { index: 4 } }, "match.start"],
+        boss: [{ name: "campaign.skipTo", input: { index: 5 } }, "match.start"],
         // Dev-only (pair with `?map=front-yard`): mission VI with the column marching onto the driveway.
-        driveway: [{ name: "campaign.skipTo", input: { index: 5 } }, "match.start", "driveway.capture"],
+        driveway: [{ name: "campaign.skipTo", input: { index: 6 } }, "match.start", "driveway.capture"],
+        // Dev-only (pair with `?map=front-yard`): mission VIII, noon on the driveway.
+        noon: [{ name: "campaign.skipTo", input: { index: 7 } }, "match.start"],
+        // Dev-only: the backyard storm (mission IV) as it opens.
+        storm: [{ name: "campaign.skipTo", input: { index: 3 } }, "match.start"],
       },
       views: {
         "keep-player": {

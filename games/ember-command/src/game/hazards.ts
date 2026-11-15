@@ -24,6 +24,8 @@ export interface HazardToggles {
   rain: boolean;
   night: boolean;
   beam: boolean;
+  /** A summer storm: the rain comes early, stays long and keeps coming back (see {@link rainingAt}). */
+  storm?: boolean;
 }
 
 export const NO_HAZARDS: HazardToggles = { heat: false, sprinkler: false, mower: false, rain: false, night: false, beam: false };
@@ -72,6 +74,10 @@ export const RAIN_FIRST = 130;
 export const RAIN_INTERVAL = 210;
 export const RAIN_DURATION = 38;
 export const RAIN_SLOW = 0.8;
+/** A storm's rain: it starts within the first minute and pours for most of every next one. */
+export const STORM_FIRST = 20;
+export const STORM_INTERVAL = 60;
+export const STORM_DURATION = 50;
 
 /** Night: one day is this long; darkness ramps in and out around the night window. */
 export const DAY_LENGTH = 240;
@@ -145,9 +151,10 @@ export function darknessAt(t: number): number {
 }
 
 /** Whether a storm is pouring at battle second `t`. */
-export function rainingAt(t: number): boolean {
-  if (t < RAIN_FIRST) return false;
-  return (t - RAIN_FIRST) % RAIN_INTERVAL < RAIN_DURATION;
+export function rainingAt(t: number, storm = false): boolean {
+  const first = storm ? STORM_FIRST : RAIN_FIRST;
+  if (t < first) return false;
+  return (t - first) % (storm ? STORM_INTERVAL : RAIN_INTERVAL) < (storm ? STORM_DURATION : RAIN_DURATION);
 }
 
 /** The sprinkler's jet heading at battle second `t` (and whether it sprays), across its authored arc. */
@@ -214,7 +221,7 @@ export function advanceHazards(state: HazardState, layout: YardLayout, dt: numbe
   }
 
   if (toggles.rain) {
-    const on = rainingAt(t);
+    const on = rainingAt(t, toggles.storm === true);
     if (on !== state.rain.on) events.push({ kind: "rain", on });
     state.rain.on = on;
   }

@@ -30,7 +30,7 @@ import { NO_HAZARDS, type HazardToggles } from "./hazards";
 import { activeMap, MAPS, type MapId } from "../maps";
 
 /**
- * The yard campaign: five missions that teach the skirmish in order, run by the engine's mission
+ * The yard campaign: eight missions across two lawns that teach the skirmish in order, run by the engine's mission
  * machine (`@jgengine/core/mission`). This module is adoption, not a runtime —
  *
  * - the objective graphs, fail states and rewards are {@link MissionDef} data;
@@ -60,6 +60,8 @@ export const HOSE_CROSSING_ID = "m2_crossing_the_hose";
 export const MOWER_DAY_ID = "m3_mower_day";
 export const BLACK_QUEEN_RAID_ID = "m4_raid_the_black_queen";
 export const MAGNIFYING_GLASS_ID = "m5_magnifying_glass";
+export const DOWNPOUR_ID = "m4_the_downpour";
+export const NOON_HEAT_ID = "m8_noon_heat";
 
 /** The named fail states every mission that can lose the yard shares. */
 const MANDIBLE_FELL = { id: "mandible_fell", message: "Marshal Mandible fell, and the column scattered into the grass." } as const;
@@ -202,7 +204,7 @@ export const HOSE_CROSSING: MissionDef = relabel(
 );
 
 /**
- * Mission IV — the raid. March on the black colony's brood mound under cover of night, then dig it
+ * Mission V — the raid. March on the black colony's brood mound under cover of night, then dig it
  * out: the black queen lays her eggs there, and without it the black waves thin.
  */
 export const BLACK_QUEEN_RAID: MissionDef = {
@@ -245,7 +247,7 @@ export const BLACK_QUEEN_RAID: MissionDef = {
 };
 
 /**
- * Mission V — the boss. The Kid with the Magnifying Glass has found the lawn. Outlast the first minute
+ * Mission VI — the boss. The Kid with the Magnifying Glass has found the lawn. Outlast the first minute
  * under the beam (shade is safety), then dig out the Black Ant Nest while the spot hunts the colony.
  */
 export const MAGNIFYING_GLASS: MissionDef = {
@@ -284,7 +286,7 @@ export const MAGNIFYING_GLASS: MissionDef = {
 };
 
 /**
- * Mission VI — the Front Yard. The driveway is a baking plain crossed only by cool sidewalk cracks
+ * Mission VII — the Front Yard. The driveway is a baking plain crossed only by cool sidewalk cracks
  * and a car's shade that moves with the sun: clear the mailbox wasps, then dig out the black nest.
  */
 export const LONG_DRIVEWAY_ID = "m6_long_driveway";
@@ -333,6 +335,90 @@ export const LONG_DRIVEWAY: MissionDef = {
     { id: "driveway_stalled", message: "The column never made it across the baking driveway." },
   ],
   rewards: { economy: { [SUGAR]: 450, [LEAF]: 180 } },
+};
+
+/**
+ * Mission IV, The Downpour — the backyard's storm. Dig a Granary Chamber before the rain, then hold the nest while a
+ * summer storm pours for most of every minute: everyone wades slower, every pheromone line washes out six
+ * times as fast, the sprinkler is still on, and night comes early.
+ */
+export const DOWNPOUR: MissionDef = {
+  id: DOWNPOUR_ID,
+  title: "The Downpour",
+  description: "Thunder over the fence. Dig a Granary Chamber to keep the stores dry, then hold the nest through the storm.",
+  start: "dig_granary",
+  objectives: [
+    {
+      id: "dig_granary",
+      kind: "collect",
+      count: 1,
+      counter: "granary",
+      match: { kind: "collect", target: "granary" },
+      label: "Dig a Granary Chamber (Y) before the storm",
+      timeout: 240,
+      onTimeout: "stores_soaked",
+      failOn: keepFails(),
+      next: "weather_storm",
+    },
+    {
+      id: "weather_storm",
+      kind: "survive",
+      duration: 120,
+      minSurvivors: 1,
+      minSurvivorsFail: "storm_overrun",
+      label: "Weather the storm: hold the nest while the rain pours",
+      failOn: keepFails(),
+      next: "done",
+    },
+  ],
+  fail: [
+    KEEP_FELL,
+    { id: "stores_soaked", message: "The rain reached the stores before a granary was dug, and the sugar washed into the soil." },
+    { id: "storm_overrun", message: "The last red ant was swept away, and the black ants came in out of the rain." },
+  ],
+  rewards: { economy: { [SUGAR]: 200, [LEAF]: 80 } },
+};
+
+/**
+ * Mission VIII, Noon Heat — the front yard at midday. No night comes to cool the driveway: hold the nest while the
+ * black raids cross the baking asphalt (it cooks them too), then cross it yourself, by the cracks or in
+ * the car's shade, to dig the wasps out of the mailbox.
+ */
+export const NOON_HEAT: MissionDef = {
+  id: NOON_HEAT_ID,
+  title: "Noon Heat",
+  description: "High noon on the front lawn: the driveway never cools. Hold the nest through the raids, then cross the asphalt to the mailbox wasps.",
+  start: "hold_noon",
+  objectives: [
+    {
+      id: "hold_noon",
+      kind: "survive",
+      duration: 120,
+      minSurvivors: 1,
+      minSurvivorsFail: "noon_overrun",
+      label: "Hold the nest while the raids cook on the driveway",
+      failOn: keepFails(),
+      next: "clear_mailbox",
+    },
+    {
+      id: "clear_mailbox",
+      kind: "kill",
+      count: 1,
+      counter: "wasp_nest",
+      match: { kind: "kill", target: "wasp_nest" },
+      label: "Cross the driveway and dig the wasps out of the mailbox",
+      timeout: 240,
+      onTimeout: "noon_stalled",
+      failOn: keepFails(),
+      next: "done",
+    },
+  ],
+  fail: [
+    KEEP_FELL,
+    { id: "noon_overrun", message: "The red line wilted in the noon sun, and the black ants walked over it." },
+    { id: "noon_stalled", message: "The sun went down before anyone reached the mailbox." },
+  ],
+  rewards: { economy: { [SUGAR]: 500, [LEAF]: 200 } },
 };
 
 /** One campaign step: the mission plus the field-journal brief and the yard it is fought in. */
@@ -390,6 +476,15 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     map: "backyard",
   },
   {
+    mission: DOWNPOUR,
+    brief: "Thunder over the fence and the sky going green. Dig a Granary Chamber to keep the stores dry, then hold the nest through the storm. Rain washes every pheromone line away; the sprinkler does not care.",
+    hostiles: [...STANDING_RAID],
+    waves: true,
+    wasps: false,
+    hazards: { ...NO_HAZARDS, rain: true, storm: true, sprinkler: true, night: true },
+    map: "backyard",
+  },
+  {
     mission: BLACK_QUEEN_RAID,
     brief: "The black queen's eggs lie in the brood mound past the patio, and her majors guard it. Night is falling and the antennae grow short. March the Marshal there and dig it out.",
     hostiles: [...STANDING_RAID, ...BROOD_GUARD, ...QUEEN_GUARD],
@@ -414,6 +509,15 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: true,
     wasps: true,
     hazards: { ...NO_HAZARDS, heat: true, night: true },
+    map: "front-yard",
+  },
+  {
+    mission: NOON_HEAT,
+    brief: "High noon on the front lawn, and no night is coming to cool the driveway. The black ants must cross the asphalt to reach us, and it cooks them as it cooks us. Hold, then go for the mailbox: by the cracks, or under the car.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    waves: true,
+    wasps: true,
+    hazards: { ...NO_HAZARDS, heat: true },
     map: "front-yard",
   },
 ];
@@ -636,7 +740,7 @@ function grantCarriedStores(ctx: GameContext): void {
   if (stores.leaf > 0) ctx.game.economy.grant(ctx.player.userId, LEAF, stores.leaf);
 }
 
-const ROMAN = ["I", "II", "III", "IV", "V", "VI"] as const;
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] as const;
 
 export function campaignOrdinal(index: number): string {
   return ROMAN[index] ?? String(index + 1);
