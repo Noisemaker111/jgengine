@@ -1,4 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useGameStore } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
@@ -10,6 +11,9 @@ import { bountyReadout } from "../waves/bounty";
 import { boonDef, carriedRelic, legacy, relicBountyScale } from "../waves/legacy";
 import { TOTAL_WAVES } from "../waves/manifest";
 import { AttentionMug, DIM, FIRE, Glyph, GOLD, Heading, INK, Plank, Row, Sheet, Tag, Text, usePhone } from "./look";
+import { activeMap, MAP_IDS, MAPS, type MapId } from "../../maps";
+import { districtOpen, districtStars, nextDistrict, seasonProgress } from "../season";
+import { travelTo } from "../travel";
 
 /**
  * The end-of-day chalkboard: what the day paid, what it banked, the town council between days and
@@ -30,7 +34,13 @@ function MemorialStone({ victory }: { victory: boolean }) {
   const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
   const readout = bountyReadout(wave, view.earned, relicBountyScale(view.account));
   const relic = carriedRelic(view.account);
-  const choose = (boon: string | null) => ctx.game.commands.run("legacy.choose", { boon });
+  const here = activeMap();
+  // The season map's pick: the district the next day opens on. A held day points at the next one.
+  const [target, setTarget] = useState<MapId>(() => (victory ? nextDistrict(campaign.read(ctx), here) ?? here : here));
+  const choose = (boon: string | null) => {
+    ctx.game.commands.run("legacy.choose", { boon });
+    if (target !== here) void travelTo(ctx, target);
+  };
   const lines: [string, string][] = [
     ["Waves reached", `${wave} / ${TOTAL_WAVES}`],
     ["Kill pay earned", `${readout.earned} cash`],
@@ -53,6 +63,7 @@ function MemorialStone({ victory }: { victory: boolean }) {
     <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={6}>
       {lines.map(([label, value]) => <Row key={label} justify="between" gap={10} padding={[2, 10, 2, 0]}><Tag>{label.toUpperCase()}</Tag><Text size={14}>{value}</Text></Row>)}
     </RuneView>
+    <SeasonMap target={target} setTarget={setTarget} />
     <WarCouncil />
     <Tag color={FIRE}>TAKE ONE PERK INTO TOMORROW</Tag>
     <RuneView layout="grid" columns={3} responsive={{ phone: { columns: 1 } }} gap={8}>
@@ -64,8 +75,39 @@ function MemorialStone({ victory }: { victory: boolean }) {
         </Plank>;
       })}
     </RuneView>
-    <Plank tone="enamel" run={() => choose(null)}>Clock in again</Plank>
+    <Plank tone="enamel" run={() => choose(null)}>{target === here ? "Clock in again" : `Clock in at ${MAPS[target].label}`}</Plank>
   </Sheet>;
+}
+
+/**
+ * The season map: the town's districts in order, each with its best stars, locked until the one
+ * before it is held. Picking an open district sends the next day there.
+ */
+function SeasonMap({ target, setTarget }: { target: MapId; setTarget: (id: MapId) => void }) {
+  const state = useGameStore((c) => campaign.read(c));
+  const here = activeMap(), progress = seasonProgress(state);
+  return <RuneView gap={6} label="Season map">
+    <Row justify="between" gap={8}>
+      <Tag color={FIRE}>{progress.held === progress.total ? "SEASON KEPT: EVERY DISTRICT HELD" : `THE SEASON · ${progress.held} OF ${progress.total} DISTRICTS HELD`}</Tag>
+      <Text size={12} color={DIM}>Next day opens on the district you pick</Text>
+    </Row>
+    <RuneView layout="grid" columns={MAP_IDS.length} responsive={{ phone: { columns: 1 } }} gap={8}>
+      {MAP_IDS.map((id, index) => {
+        const open = districtOpen(state, id), stars = districtStars(state, id), picked = target === id;
+        return <Plank key={id} variant="parchment" layout="stack" items="start" gap={2} disabled={!open} opacity={open ? 1 : 0.55}
+          border={{ width: picked ? 3 : 1, color: picked ? "#c8245a" : "#9c7f4c" }} label={`${MAPS[id].label}${open ? "" : ", locked"}`}
+          tooltip={open ? MAPS[id].detail : `Hold ${MAPS[MAP_IDS[index - 1]!].label} to open it`} run={() => { if (open) setTarget(id); }}>
+          <Row gap={4} justify="between" width={{ fraction: 1 }}>
+            <Text size={14} weight={700} color="#3a2a12">{`${index + 1}. ${MAPS[id].label}`}</Text>
+            {id === here ? <Tag color="#8a2414">HERE</Tag> : null}
+          </Row>
+          {open
+            ? <Row gap={2}>{Array.from({ length: 3 }, (_, star) => <Glyph key={star} name="star" size={13} color={star < stars ? "#d9a514" : "#cbb98f"} />)}</Row>
+            : <Text size={12} color="#6a4a2a">{`Locked: hold ${MAPS[MAP_IDS[index - 1]!].label}`}</Text>}
+        </Plank>;
+      })}
+    </RuneView>
+  </RuneView>;
 }
 
 /**

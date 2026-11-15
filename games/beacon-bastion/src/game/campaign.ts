@@ -81,10 +81,12 @@ export interface CampaignState {
   stars: Record<DifficultyId, number>;
   /** The council's spent ranks; its points are the stars, so they are not stored. */
   council: SkillTreeState;
+  /** The season: best stars each district (map) has been held for. A district is open once the one before it is held. */
+  districts: Record<string, number>;
 }
 
 export function freshCampaign(): CampaignState {
-  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} } };
+  return { difficulty: "fulltime", stars: { parttime: 0, fulltime: 0, overtime: 0 }, council: { points: 0, ranks: {} }, districts: {} };
 }
 
 export const campaign = defineStore<CampaignState>("beacon:campaign", freshCampaign);
@@ -178,5 +180,9 @@ export function readCampaign(value: unknown): CampaignState | null {
   for (const [id, rank] of Object.entries(raw.council?.ranks ?? {})) {
     if (COUNCIL_NODES.some((node) => node.id === id) && typeof rank === "number" && rank > 0) ranks[id] = Math.round(rank);
   }
-  return { difficulty, stars, council: { points: 0, ranks } };
+  const districts: Record<string, number> = {};
+  for (const [id, best] of Object.entries((raw.districts ?? {}) as Record<string, unknown>)) {
+    if (typeof best === "number" && Number.isFinite(best) && best > 0) districts[id] = Math.max(0, Math.min(4, Math.round(best)));
+  }
+  return { difficulty, stars, council: { points: 0, ranks }, districts };
 }

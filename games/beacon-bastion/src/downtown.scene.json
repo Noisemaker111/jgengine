@@ -753,6 +753,32 @@
         "model": "lamp",
         "clearance": 1.2
       }
+    },
+    {
+      "id": "plot-12",
+      "kind": "prop",
+      "position": {
+        "x": 7,
+        "y": 0,
+        "z": 29
+      },
+      "label": "Sidewalk plot 12",
+      "meta": {
+        "clearance": 3
+      }
+    },
+    {
+      "id": "plot-13",
+      "kind": "prop",
+      "position": {
+        "x": 17,
+        "y": 0,
+        "z": 11
+      },
+      "label": "Sidewalk plot 13",
+      "meta": {
+        "clearance": 3
+      }
     }
   ],
   "volumes": [

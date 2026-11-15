@@ -418,6 +418,40 @@ function tickCountdown(ctx: GameContext, dt: number): void {
   if (session.countdown.tick(dt)) sendWave(ctx, false);
 }
 
+/**
+ * A district's recess bell: while tech is on the road the bell rings every `every` seconds and the
+ * kids crowd the schoolyard for `seconds`. Ground tech within the yard's reach crawls meanwhile.
+ */
+export function tickRecess(ctx: GameContext, dt: number): void {
+  const recess = MAPS[activeMap()].recess;
+  if (recess === undefined) return;
+  const state = session.recess;
+  if (state.left > 0) {
+    state.left = Math.max(0, state.left - dt);
+    const nowMs = gameClockMs(ctx);
+    for (const creep of session.creeps.values()) {
+      if (creepDef(creep.catalogId).flying === true) continue;
+      const at = creep.path.position;
+      if (Math.hypot(at[0] - recess.center[0], at[2] - recess.center[1]) > recess.radius) continue;
+      creep.speedStats.removeSource("recess");
+      creep.speedStats.addSource("recess", { speed: { multiply: recess.slow } }, { expiresAtMs: nowMs + 300 });
+    }
+    return;
+  }
+  if (session.creeps.size === 0) return;
+  state.clock += dt;
+  if (state.clock < recess.every) return;
+  state.clock = 0;
+  state.left = recess.seconds;
+  ctx.game.notices.push({ text: "Recess bell! The kids crowd the schoolyard and the tech near it crawls", ttlMs: 4000 });
+  ctx.game.audio.play("ping");
+}
+
+/** Whether the schoolyard is full right now (the overlay draws the crowd while it is). */
+export function recessActive(): boolean {
+  return session.recess.left > 0;
+}
+
 export function tickWaves(ctx: GameContext, dt: number): void {
   const world = keep.of(ctx);
   if (world.fact("keep.fallen") === true) return;
@@ -435,6 +469,7 @@ export function tickWaves(ctx: GameContext, dt: number): void {
   tickConditions(ctx, dt);
   tickAbilities(ctx, dt);
   tickUpdates(ctx, dt);
+  tickRecess(ctx, dt);
 
   const nowMs = gameClockMs(ctx);
   for (const creep of Array.from(session.creeps.values())) {

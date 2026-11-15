@@ -2,11 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import downtown from "../../downtown.scene.json";
 import mainStreet from "../../editor.scene.json";
+import school from "../../school.scene.json";
 import { MAP_IDS, MAPS } from "../../maps";
 import { TOWER_CATALOG } from "../entities/towers/catalog";
 
 type Doc = { markers: { id: string; kind: string; position: { x: number; z: number }; meta?: Record<string, unknown> }[]; paths: { id: string; points: { x: number; z: number }[]; width?: number }[] };
-const DOCS: Record<string, Doc> = { "main-street": mainStreet as unknown as Doc, downtown: downtown as unknown as Doc };
+const DOCS: Record<string, Doc> = { "main-street": mainStreet as unknown as Doc, downtown: downtown as unknown as Doc, school: school as unknown as Doc };
 
 function road(doc: Doc, id: string): [number, number][] {
   return (doc.paths.find((path) => path.id === id)?.points ?? []).map((point) => [point.x, point.z]);
@@ -31,12 +32,12 @@ const SHORTEST_REACH = Math.min(...Object.values(TOWER_CATALOG).filter((def) => 
 describe("every map is a complete, playable street", () => {
   for (const id of MAP_IDS) {
     const doc = DOCS[id]!;
-    test(`${MAPS[id].label}: two roads that both end at the town hall, eleven plots, a spawn for each road`, () => {
+    test(`${MAPS[id].label}: two roads that both end at the town hall, at least eleven plots, a spawn for each road`, () => {
       const hall = doc.markers.find((marker) => marker.id === "keep")!.position;
       const main = road(doc, "creep-path"), flank = road(doc, "creep-path-flank");
       expect(main.at(-1)).toEqual([hall.x, hall.z]);
       expect(flank.length).toBeGreaterThanOrEqual(2);
-      expect(doc.markers.filter((marker) => marker.id.startsWith("plot-"))).toHaveLength(11);
+      expect(doc.markers.filter((marker) => marker.id.startsWith("plot-")).length).toBeGreaterThanOrEqual(11);
       expect(doc.markers.some((marker) => marker.id === "creep-spawn")).toBe(true);
     });
 

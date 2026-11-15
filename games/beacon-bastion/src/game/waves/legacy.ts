@@ -10,6 +10,8 @@ import { campaign, councilAdd, difficultyOf, recordStars, starsFor } from "../ca
 import { keep } from "../keep";
 import { currentWaveNumber } from "../session";
 import { DIRECTOR_SEED, TOTAL_WAVES } from "./manifest";
+import { recordDistrict } from "../season";
+import { activeMap } from "../../maps";
 
 export interface BoonEffect {
   /** Extra cash in the next day's opening till. */
@@ -144,6 +146,7 @@ export function finishRun(ctx: GameContext): void {
   const held = world.fact("keep.held") === true;
   const difficulty = campaign.read(ctx).difficulty;
   world.set("keep.stars", recordStars(ctx, starsFor(held, world.num("keep.lives"), world.num("keep.lives_max"), difficulty)));
+  recordDistrict(ctx, activeMap(), world.num("keep.stars"));
   const loop = relicLoop(ctx);
   const wave = Math.max(1, Math.min(TOTAL_WAVES, currentWaveNumber()));
   loop.carry(world.num("keep.gold"));

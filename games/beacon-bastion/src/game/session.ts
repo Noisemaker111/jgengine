@@ -13,7 +13,8 @@ import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/waves/wa
 import { seededRng } from "@jgengine/shell/gameKit";
 
 import { ABILITIES } from "./combat/abilities";
-import { DIRECTOR_SEED, ENCOUNTER } from "./waves/manifest";
+import { DIRECTOR_SEED, encounterFor } from "./waves/manifest";
+import { activeMap, MAPS } from "../maps";
 
 export interface CreepRuntime {
   instanceId: string;
@@ -149,11 +150,13 @@ export interface SessionState {
   /** The placed tower whose sell/upgrade panel is open; set by clicking its plot. */
   inspectedTowerId: string | null;
   creepSeq: number;
+  /** The School Campus's recess bell: seconds since the last bell and seconds the yard stays full. */
+  recess: { clock: number; left: number };
 }
 
 function freshState(): SessionState {
   return {
-    encounter: createEncounter({ definition: ENCOUNTER, seed: DIRECTOR_SEED }),
+    encounter: createEncounter({ definition: encounterFor(MAPS[activeMap()].surge), seed: DIRECTOR_SEED }),
     pressure: evaluatePressure({ health: 1, progress: 0, elapsed: 0 }),
     countdown: createWaveCountdown({ intermission: 25, earlyBonus: { perSecond: 1.2, max: 40 } }),
     boss: null,
@@ -176,6 +179,7 @@ function freshState(): SessionState {
     selectedTowerId: null,
     inspectedTowerId: null,
     creepSeq: 0,
+    recess: { clock: 0, left: 0 },
   };
 }
 

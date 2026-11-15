@@ -5,7 +5,7 @@ import { clearanceZonesFrom } from "@jgengine/core/scatter/scatterRegion";
 
 import { editorCatalogs } from "./editorCatalogs";
 import sceneJson from "./editor.scene.json";
-import { sceneSet, type MapId } from "./maps";
+import { bindMap, sceneSet, type MapId } from "./maps";
 
 type Vec2 = readonly [number, number];
 type BuildingMarker = { id: string; xz: Vec2; rotationY: number; model: string; sign: string | null };
@@ -54,8 +54,21 @@ function derive(layers: EditorDocument): void {
 }
 derive(editorLayers);
 
+/**
+ * Every plot id any map authors, in number order. The keep declares one slot per id so a worker can
+ * stand on any map's plots; a map with fewer plots simply never offers the rest.
+ */
+export const ALL_PLOT_IDS: readonly string[] = [
+  ...new Set(
+    sceneSet.ids.flatMap((id) =>
+      ((sceneSet.entry(id).document as { markers?: { id: string }[] }).markers ?? []).map((marker) => marker.id).filter((marker) => marker.startsWith("plot-")),
+    ),
+  ),
+].sort((a, b) => Number(a.slice(5)) - Number(b.slice(5)));
+
 /** Rebind everything above to another map's document (the scene set switched). */
 export function bindScene(id: MapId): void {
+  bindMap(id);
   editorLayers = layersFor(id);
   TERRAIN_SCULPT = editorLayers.terrain;
   CLEARINGS = clearanceZonesFrom(editorLayers);

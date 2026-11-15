@@ -7,7 +7,7 @@ import type { WorldActionDecl, WorldKindDecl, WorldModel, WorldTotalDecl } from 
 import { upgradeOptions, upgradePathActions, upgradePathFacts, type UpgradeOption } from "@jgengine/core/worldModel/upgradePaths";
 import type { AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 
-import { editorLayers } from "../editorLayers";
+import { ALL_PLOT_IDS, editorLayers } from "../editorLayers";
 import { STARTING_GOLD, STARTING_LIVES } from "./entities/base/catalog";
 import { TOWER_IDS, towerDef, type TowerDef } from "./entities/towers/catalog";
 import { baseTowerFacts, TOWER_FACTS, TOWER_LADDERS, type TowerFact } from "./entities/towers/ladders";
@@ -95,7 +95,11 @@ export const keep = defineGameSpec({
         },
       },
     },
-    slots: { plot: Object.fromEntries(BUILD_PLOTS.map((plot) => [plot.id, { position: [plot.position[0], plot.position[2]] as const }])) },
+    // One slot per plot id across every map; the live map's plots are where workers actually stand.
+    slots: { plot: Object.fromEntries(ALL_PLOT_IDS.map((id) => {
+      const plot = BUILD_PLOTS.find((candidate) => candidate.id === id);
+      return [id, { position: plot === undefined ? [0, 0] as const : [plot.position[0], plot.position[2]] as const }];
+    })) },
     kinds: Object.fromEntries(defs.map((def) => [def.id, towerKind(def)])),
     actions: Object.assign(
       // The kind's refund (SELL_SHARE) is a share of everything the tower cost, upgrades included.
@@ -112,7 +116,7 @@ export const keep = defineGameSpec({
       aimActions(),
       ...defs.map((def) => upgradePathActions(TOWER_LADDERS[def.id]!)),
     ),
-    queues: { build: { lanes: BUILD_PLOTS.length } },
+    queues: { build: { lanes: ALL_PLOT_IDS.length } },
     ripples: {
       bounty: { world: { "keep.gold": 1, "keep.bounty_earned": 1 } },
       overlap_bonus: { world: { "keep.gold": 1 }, note: "An early release paid the keep." },

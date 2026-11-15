@@ -4,6 +4,7 @@ import { openKeepTitle } from "./game/menu";
 import { beaconSave, saveToSlot } from "./game/save";
 import { focusMenu } from "./game/ui/menu/BeaconMenu";
 import { keepProfile } from "./game/thumbs";
+import { arrive } from "./game/travel";
 import { setupWorld } from "./game/world/setup";
 
 export const loop: GameLoop<GameContext> = {
@@ -11,6 +12,8 @@ export const loop: GameLoop<GameContext> = {
     setupWorld(ctx);
     // Boot to the keep's title: the world stands behind it, the clock does not run.
     openKeepTitle(ctx);
+    // A district trip rebuilt the game: pick the career back up on the new map.
+    void arrive(ctx);
     // The menu states a capture host reaches: hold the keep, then stand in front of it.
     ctx.game.commands.define("menu.commander", {
       apply: (state, input) => {

@@ -16,6 +16,7 @@ import { keep, keepBooks, resetKeep, spawnStandingTowers } from "./keep";
 import { newShield, newSpeedStats, resetSession, session, type BossRuntime } from "./session";
 import { freshLegacy, openingKeep, readLegacy, relicLoop, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { campaign, freshCampaign, readCampaign } from "./campaign";
+import { seasonProgress } from "./season";
 import type { AbilityKitState } from "@jgengine/core/combat/abilityKit";
 import type { WaveCountdownState } from "@jgengine/core/waves/waveCountdown";
 import { MINIBOSS_ID } from "./waves/manifest";
@@ -443,6 +444,7 @@ export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> 
         lives: Number(facts["keep.lives"] ?? 0),
         wave: defense.encounter.wave + 1,
         map: defense.map ?? "main-street",
+        season: seasonProgress(readCampaign(document.systems["campaign"]) ?? freshCampaign()).held,
         ...(thumbnail === null ? {} : { thumbnail }),
       };
     },

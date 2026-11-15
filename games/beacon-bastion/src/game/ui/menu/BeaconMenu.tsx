@@ -18,7 +18,8 @@ import { keepProfile } from "../../thumbs";
 import { TOTAL_WAVES } from "../../waves/manifest";
 import { BLOOD, AttentionMug, DIM, FIRE, GOLD, Glyph, Heading, INK, Plank, Row, Tag, Text, usePhone } from "../look";
 import { StoneSettings } from "./StoneSettings";
-import { activeMap, chooseMap, MAP_IDS, MAPS, type MapId } from "../../../maps";
+import { activeMap, MAP_IDS, MAPS, type MapId } from "../../../maps";
+import { newCareerOnMap, resumeOnMap } from "../../travel";
 
 /** Capture-only focus request: a shot or a menu command names the screen it wants open. */
 export const menuFocus: { id: string | null } = { id: null };
@@ -101,20 +102,21 @@ function TitleMenu({ run }: { run: Busy }) {
   useEffect(() => { void refreshBeaconSlots(ctx); }, [ctx]);
   const back = () => { if (flow.read().length > 1) flow.pop(); };
   const open = (slot: string) => {
-    // A kept day only fits the map it was played on: switch maps first (the page reloads onto it).
+    // A kept day only fits the map it was played on: the trip switches maps and resumes it there.
     const kept = slotText(beaconSlots.get(slot) ?? ({} as SaveSlotMeta), "map");
-    if (kept !== null && kept !== activeMap() && MAP_IDS.includes(kept as MapId) && chooseMap(kept as MapId)) return;
+    if (kept !== null && kept !== activeMap() && MAP_IDS.includes(kept as MapId) && resumeOnMap(kept as MapId, slot)) return;
     void run("Opening the street", async () => { await loadSlot(ctx, slot); enterRun(ctx); });
   };
   const raise = (slot: string) => run("Unlocking the shops", async () => {
     keepProfile.commander = commander.trim() === "" ? null : commander.trim();
+    // A new career opens on the season's first district.
+    if (activeMap() !== MAP_IDS[0] && newCareerOnMap(MAP_IDS[0]!, slot, difficulty, keepProfile.commander)) return;
     await prepareKeep(ctx, slot);
     // A fresh street's campaign starts Full-Time; the shift picked here sets it before the doors open.
     setDifficulty(ctx, difficulty);
     beginRun(ctx);
   });
   const held = keeps.filter((slot) => !slot.empty).length;
-  const current = activeMap(), nextMap = MAP_IDS[(MAP_IDS.indexOf(current) + 1) % MAP_IDS.length]!;
   return <RuneLayers flow={flow}>{(entry) => {
     if (entry.kind === "main") return <Screen>
       <RuneView items="center" gap={6}>
@@ -128,7 +130,6 @@ function TitleMenu({ run }: { run: Busy }) {
       <RuneView items="center" width={{ fraction: 1 }}><RuneView gap={8} width={phone ? { fraction: 1 } : 380} maxHeight={height - (phone ? 300 : 360)} scroll>
         <Verb label="Continue" hint={recent === null ? "No street kept yet" : `${recent.name ?? KEEP_LABEL[recent.id] ?? recent.id}`} disabled={recent === null} run={() => { if (recent !== null) void open(recent.id); }} />
         <Verb label="New Day" hint={newKeep === null ? "No street free" : `Open ${KEEP_LABEL[newKeep] ?? newKeep}`} disabled={newKeep === null} run={() => flow.push("new")} />
-        <Verb label={`Map: ${MAPS[current].label}`} hint={`${MAPS[current].detail} · press for ${MAPS[nextMap].label}`} run={() => { chooseMap(nextMap); }} />
         <Verb label="Streets" hint={`${held} of ${keeps.length} kept`} run={() => { void refreshBeaconSlots(ctx); flow.push("keeps"); }} />
         <Verb label="Settings" run={() => flow.push("settings")} />
         <Verb label="Credits" run={() => flow.push("credits")} />
@@ -218,7 +219,7 @@ function KeepNiche({ slot, recent, onTake }: { slot: SaveSlotMeta; recent: boole
       {gold === null ? null : <Row gap={3}><Text size={13} color={GOLD}>{`$${gold}`}</Text></Row>}
       {lives === null ? null : <Row gap={3}><Glyph name="coffee" size={13} color={BLOOD} /><Text size={13}>{String(lives)}</Text></Row>}
     </Row>}
-    {slot.empty ? null : <Text size={12} color={DIM}>{MAPS[(slotText(slot, "map") as MapId | null) ?? "main-street"]?.label ?? "Main Street"}</Text>}
+    {slot.empty ? null : <Text size={12} color={DIM}>{`${MAPS[(slotText(slot, "map") as MapId | null) ?? "main-street"]?.label ?? "Main Street"} · season ${slotNumber(slot, "season") ?? 0}/${MAP_IDS.length}`}</Text>}
     {slot.empty || slot.savedAt === undefined ? null : <Text size={12} color={DIM}>{`Kept ${relativeSavedAt(slot.savedAt)}`}</Text>}
     <Plank tone={slot.empty ? "plank" : "enamel"} width={{ fraction: 1 }} label={slot.empty ? `Open ${label}` : `Return to ${label}`} run={onTake}>{slot.empty ? "Open" : "Return"}</Plank>
   </RuneView>;

@@ -170,7 +170,12 @@ const MIXED: Plan = {
 };
 
 /** Downtown's corners: the inside bends of the west road, the S-bend where both roads meet, then the north road. */
-const DOWNTOWN_PLOTS = ["plot-3", "plot-7", "plot-2", "plot-6", "plot-11", "plot-9", "plot-8", "plot-4", "plot-5", "plot-1", "plot-10"];
+const DOWNTOWN_PLOTS = ["plot-3", "plot-7", "plot-2", "plot-6", "plot-11", "plot-9", "plot-8", "plot-4", "plot-13", "plot-1", "plot-10", "plot-12", "plot-5"];
+/** Downtown's two extra north-road plots take a farmer for the surge's flyers and an electrician. */
+const DOWNTOWN_CREW: Plan = { ...MIXED, builds: [...MIXED.builds, "worker_farmer", "worker_electrician"], plots: DOWNTOWN_PLOTS };
+
+/** The School Campus's corners: where the school run meets the bus lane, then round the schoolyard. */
+const SCHOOL_PLOTS = ["plot-5", "plot-7", "plot-8", "plot-6", "plot-3", "plot-4", "plot-2", "plot-11", "plot-9", "plot-10", "plot-1"];
 
 /** Play `run` with the town switched to `map`, then switch back to Main Street. */
 async function onMap<T>(map: MapId, run: () => T): Promise<T> {
@@ -211,12 +216,21 @@ describe("pacing", () => {
     expect(ignored.wave * 100 + ignored.lives).toBeLessThan(answered.wave * 100 + answered.lives);
   }, 60_000);
 
-  test("Downtown: the same crew holds its tougher tech only when set on the corners", async () => {
-    const corners = await onMap("downtown", () => playDefense({ ...MIXED, plots: DOWNTOWN_PLOTS }));
-    const inOrder = await onMap("downtown", () => playDefense({ ...MIXED, plots: undefined }));
+  test("Downtown is clearly harder: the eleven workers that hold Main Street fall to its north-road surge; thirteen on its corners hold", async () => {
+    const eleven = await onMap("downtown", () => playDefense({ ...MIXED, plots: DOWNTOWN_PLOTS }));
+    const corners = await onMap("downtown", () => playDefense(DOWNTOWN_CREW));
+    const inOrder = await onMap("downtown", () => playDefense({ ...DOWNTOWN_CREW, plots: undefined }));
+    if (process.env.BEACON_TRACE) console.log("eleven", JSON.stringify(eleven), "thirteen", JSON.stringify(corners), "in order", JSON.stringify(inOrder));
+    expect(playDefense(MIXED).held).toBe(true);
+    expect(eleven.held).toBe(false);
     expect(corners.held).toBe(true);
-    expect(corners.lives).toBeLessThan(10);
     expect(inOrder.held).toBe(false);
+  }, 240_000);
+
+  test("School Campus: the same crew on its corners holds the toughest tech, with the recess bell's help", async () => {
+    const corners = await onMap("school", () => playDefense({ ...MIXED, plots: SCHOOL_PLOTS }));
+    if (process.env.BEACON_TRACE) console.log("school", JSON.stringify(corners));
+    expect(corners.held).toBe(true);
   }, 120_000);
 
   test("Overtime is harder than Full-Time for the same crew", () => {

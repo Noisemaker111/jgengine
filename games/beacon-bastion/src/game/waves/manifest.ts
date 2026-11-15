@@ -3,6 +3,7 @@ import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/en
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
+import type { SurgeDef } from "../../maps";
 import { COMPOSE_FROM_WAVE, COMPOSE_TO_WAVE, composeWaves } from "./composer";
 
 export { COMPOSE_FROM_WAVE, COMPOSE_TO_WAVE } from "./composer";
@@ -112,6 +113,33 @@ export const ENCOUNTER: EncounterDefinition = {
   id: "beacon-bastion",
   waves: [...AUTHORED_WAVES, ...composeWaves(DIRECTOR_SEED, COMPOSE_TO_WAVE), FINALE],
 };
+
+/**
+ * The day's waves on a district: the shared march, plus that district's surge down its second road
+ * when it has one. Pure, and cached per surge, so the same district always runs the same waves.
+ */
+export function encounterFor(surge: SurgeDef | undefined): EncounterDefinition {
+  if (surge === undefined) return ENCOUNTER;
+  const cached = surged.get(surge);
+  if (cached !== undefined) return cached;
+  const waves = ENCOUNTER.waves.map((wave, index) => {
+    const number = index + 1;
+    // The finale is the Data Center's own: the surge leaves it alone.
+    if (number < surge.fromWave || number === ENCOUNTER.waves.length) return wave;
+    const scale = 1 + surge.growth * (number - surge.fromWave);
+    return {
+      ...wave,
+      groups: [
+        ...wave.groups,
+        ...surge.groups.map((group) => ({ unit: group.unit, entry: FLANK_POINT_KEY, count: Math.max(1, Math.round(group.count * scale)), at: group.at, jitterSeconds: 1 })),
+      ],
+    };
+  });
+  const definition = { ...ENCOUNTER, id: `${ENCOUNTER.id}:surge`, waves };
+  surged.set(surge, definition);
+  return definition;
+}
+const surged = new Map<SurgeDef, EncounterDefinition>();
 
 /** The server rack's id in the tech catalog: the authored act's miniboss. */
 export const MINIBOSS_ID = "tech_server";
