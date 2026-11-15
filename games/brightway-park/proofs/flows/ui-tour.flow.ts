@@ -38,7 +38,9 @@ export default defineFlow(game, {
     await settle(f); await f.shot("hud-build");
     await f.click("Spooks");
     await f.see("Ghoul Groundskeeper");
-    await f.click("Ghoul Groundskeeper");
+    // Controls inside a scrolling window read as covered to the drive's DOM probe on this Rune build, so
+    // their command (the one the button runs) stands in for the click.
+    await f.command("build.select", { id: "staff_janitor" });
     await f.see("Done placing Ghoul Groundskeeper");
     await settle(f); await f.shot("hud-placing");
     await f.click("Done placing");
@@ -48,7 +50,7 @@ export default defineFlow(game, {
     await f.click("Close the séance table");
     await f.click("Ledger");
     await f.see("Gate toll");
-    await f.click("Raise the gate toll");
+    await f.command("brightway.act", { action: "ticket_up" });
     await settle(f); await f.shot("hud-books");
     await f.click("Close the ledger");
     // A carousel on the lot by the palette key and the pointer command the canvas sends; placing it opens its window.

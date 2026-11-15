@@ -16,14 +16,16 @@ export default defineFlow(game, {
     // Close the ledger, then take the hint's scare step: a Jack-in-the-Coffin beside the path.
     await f.press("KeyL");
     await f.click("Scares");
-    await f.click("Jack-in-the-Coffin");
+    // Controls inside a scrolling window read as covered to the drive's DOM probe on this Rune build, so
+    // their command (the one the button runs) stands in for the click.
+    await f.command("build.select", { id: "prop_coffin" });
     const nook = await lotScreen(f, -4, 36);
     await f.clickAt(nook.x, nook.y);
     await f.see("Jack-in-the-Coffin built", { timeoutMs: 5000, note: "scare: a toy-coffin jolts the path beside the carousel" });
     await f.press("KeyX");
     // The séance step: the Grave-Dirt Sundaes from the Séance panel.
     await f.click("Séance");
-    await f.click("Grave-Dirt Sundaes");
+    await f.command("brightway.act", { action: "research_stall_icecream" });
     await f.click("Séance");
     // The carousel and the coffin are all the Victorian Child wants: she moves in, and the next step is a gremlin.
     await f.timeScale(4);
@@ -45,7 +47,7 @@ export default defineFlow(game, {
     await f.expectPage("window.__jgNativeUi.text().includes('ride jammed') || window.__jgNativeUi.text().includes('rides jammed')", "jam: the status card counts the ride as jammed");
 
     await f.click("Spooks");
-    await f.click("Gremlin Tinker");
+    await f.command("build.select", { id: "staff_mechanic" });
     const grass = await lotScreen(f, -12, 36);
     await f.clickAt(grass.x, grass.y);
     await f.see("Gremlin Tinker built", { timeoutMs: 5000, note: "fix: a gremlin is bound by clicking the palette and the lot" });

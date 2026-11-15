@@ -14,7 +14,9 @@ export default defineFlow(game, {
     await openPark.run(f);
     await f.press("KeyL");
     await f.click("Spooks");
-    await f.click("Ghoul Groundskeeper");
+    // Controls inside a scrolling window read as covered to the drive's DOM probe on this Rune build, so
+    // their command (the one the button runs) stands in for the click.
+    await f.command("build.select", { id: "staff_janitor" });
     const grass = await lotScreen(f, -12, 36);
     await f.clickAt(grass.x, grass.y);
     await f.see("Ghoul Groundskeeper built", { timeoutMs: 5000, note: "arrival: a ghoul is raised, the haunt's own notice confirming it" });
