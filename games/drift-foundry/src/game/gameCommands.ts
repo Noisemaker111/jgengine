@@ -8,7 +8,7 @@ import { createCoursePilot, sessionTrack } from "./testing/courseDriver";
 import { raceHud } from "./ui/hudModel";
 
 /** A pane of the customer-service menu a command (or a choice) put up, mirrored into the menu. */
-export const MENU_PANES = ["continue", "new", "calendar", "corral", "garage", "records", "settings", "credits"] as const;
+export const MENU_PANES = ["continue", "new", "calendar", "corral", "garage", "records", "settings", "credits", "cup"] as const;
 export type MenuPaneId = (typeof MENU_PANES)[number];
 export const menuPaneStore = defineStore<MenuPaneId | null>("aisleMenuPane", null);
 

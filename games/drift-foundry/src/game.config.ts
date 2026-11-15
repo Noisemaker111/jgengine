@@ -85,6 +85,8 @@ export const game = defineGame({
     // the gauntlet actually gives, so the receipt carries a real line, not a number.
     states: {
       title: [],
+      // The pit with a cup season open on its board.
+      cup: [{ name: "cup.start", input: {} }, { name: "menu.pane", input: { pane: "cup" } }],
       // A live race with nobody else at the handle: what a proof or a flow plays from.
       race: ["startRun"],
       // The other departments, driven by the course autopilot with every tier open.
