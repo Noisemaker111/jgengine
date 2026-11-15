@@ -440,6 +440,12 @@ export interface SkyEnvironmentConfig {
   /** Drive sun/sky from the world clock's `calendar().dayFraction` instead of the fixed `preset`. */
   timeOfDay?: boolean;
   /**
+   * Under `timeOfDay`, a fraction of a day added to the clock before the sky reads it, for a game
+   * whose clock does not start at midnight: 0.5 makes the clock's 0 read as noon (a game whose day
+   * closes at noon, with its night in the middle of the clock day). Default 0.
+   */
+  dayOffset?: number;
+  /**
    * Horizon tint at noon. Under `timeOfDay` this only sets the noon keyframe; dawn, dusk, and night
    * still crossfade through the engine presets, so an authored tint is visible for part of the day.
    */
@@ -1085,6 +1091,7 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.horizonColor === undefined ? {} : { horizonColor: config.horizonColor }),
       ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
       ...(config.dayHold === undefined ? {} : { dayHold: config.dayHold }),
+      ...(config.dayOffset === undefined ? {} : { dayOffset: config.dayOffset }),
       ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
       ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
       ...(config.sunColor === undefined ? {} : { sunColor: config.sunColor }),

@@ -5,9 +5,11 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { AdditiveBlending, Box3, BoxGeometry, CanvasTexture, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, Sprite, SpriteMaterial, TextureLoader, Vector2, Vector3 } from "three";
+import { AdditiveBlending, Color, DirectionalLight, HemisphereLight, Box3, BoxGeometry, CanvasTexture, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, Sprite, SpriteMaterial, TextureLoader, Vector2, Vector3 } from "three";
 import { GHOSTS } from "../ghostCatalog";
 import { ghostBodyId } from "../ghosts";
+import { visitorKind } from "../entities/guests/catalog";
+import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
 import type { Texture } from "three";
 import motionJson from "../../../public/art/models/motion.json";
 import { objectModels } from "../models";
@@ -16,7 +18,7 @@ import { cellCentres, cellFor, park, parkObject, parkObjects, patrolRadius, type
 import { BUILDABLES } from "../objects/catalog";
 import { coasterCircuit, rideView } from "../rides";
 import { placementAt } from "../build/placement";
-import { GRID, snapToTile } from "../catalog";
+import { GRID, hourLight, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -657,43 +659,232 @@ function softDot(): CanvasTexture | null {
 /** Each ghost's glow colour, matched to its body. */
 const GHOST_GLOW: Readonly<Record<string, string>> = { child: "#c8f5ff", sailor: "#5fd4b8", poltergeist: "#b48cff", banshee: "#9ff5d8", bride: "#f3f0ff", keeper: "#ffd27a" };
 
+/** Sprites in a ghost's trail, and how often its trail drops a new one. */
+const TRAIL = 10;
+const TRAIL_STEP = 0.11;
+
 /**
- * A halo round every ghost in residence: a soft additive glow at its chest and a pool of its light
- * on the ground below, following the body each frame, so a ghost reads from the build camera.
+ * A ghost in residence as a spectacle: a soft additive glow at its chest, a pool of its light on the
+ * ground, a trail of fading wisps behind it as it swoops, and a burst when it haunts the living
+ * (`session.ghostFlares`), so a resident reads from the build camera over the crowd.
  */
 function ghostHalosDraw(ctx: GameContext): EngineDraw {
   const group = new Group();
   const map = softDot();
   const halos = GHOSTS.map((ghost) => {
-    const glow = new Sprite(new SpriteMaterial({ map, color: GHOST_GLOW[ghost.id] ?? "#9ff5d8", transparent: true, opacity: 0.75, depthWrite: false, blending: AdditiveBlending }));
-    glow.scale.set(3.2, 3.2, 1);
-    const pool = new Mesh(new PlaneGeometry(5, 5), new MeshBasicMaterial({ map, color: GHOST_GLOW[ghost.id] ?? "#9ff5d8", transparent: true, opacity: 0.35, depthWrite: false, blending: AdditiveBlending }));
+    const color = GHOST_GLOW[ghost.id] ?? "#9ff5d8";
+    const glow = new Sprite(new SpriteMaterial({ map, color, transparent: true, opacity: 0.75, depthWrite: false, blending: AdditiveBlending }));
+    const pool = new Mesh(new PlaneGeometry(7, 7), new MeshBasicMaterial({ map, color, transparent: true, opacity: 0.35, depthWrite: false, blending: AdditiveBlending }));
     pool.rotation.x = -Math.PI / 2;
+    const trailMaterial = new SpriteMaterial({ map, color, transparent: true, opacity: 0.5, depthWrite: false, blending: AdditiveBlending });
+    const trail = Array.from({ length: TRAIL }, () => { const wisp = new Sprite(trailMaterial.clone()); wisp.visible = false; wisp.raycast = () => {}; group.add(wisp); return wisp; });
     glow.raycast = () => {};
     pool.raycast = () => {};
     group.add(glow, pool);
-    return { id: ghostBodyId(ghost.id), glow, pool };
+    return { ghostId: ghost.id, id: ghostBodyId(ghost.id), glow, pool, trail, trailMaterial, points: [] as [number, number, number][], since: 0 };
   });
   let t = 0;
   return {
     mount(state: EngineFrameState) { state.scene.add(group); },
     frame(_state: EngineFrameState, dt: number) {
       t += dt;
+      const now = ctx.time.now();
       for (const halo of halos) {
         const at = ctx.scene.entity.get(halo.id)?.position;
-        halo.glow.visible = halo.pool.visible = at != null;
-        if (at == null) continue;
-        halo.glow.position.set(at[0], at[1] + 1.1, at[2]);
-        (halo.glow.material as SpriteMaterial).opacity = 0.6 + Math.sin(t * 2.3) * 0.15;
+        const live = at != null;
+        halo.glow.visible = halo.pool.visible = live;
+        if (!live) { halo.points.length = 0; for (const wisp of halo.trail) wisp.visible = false; continue; }
+        const flare = Math.max(0, 1 - (now - (session.ghostFlares.get(halo.ghostId) ?? -99)) / 1.4);
+        const size = 4.2 + flare * 7;
+        halo.glow.scale.set(size, size, 1);
+        halo.glow.position.set(at[0], at[1] + 1.6, at[2]);
+        (halo.glow.material as SpriteMaterial).opacity = 0.6 + Math.sin(t * 2.3) * 0.15 + flare * 0.4;
         halo.pool.position.set(at[0], groundAt(park.of(ctx), at[0], at[2]) + 0.08, at[2]);
+        halo.pool.scale.setScalar(1 + flare * 1.5);
+        halo.since += dt;
+        if (halo.since >= TRAIL_STEP) {
+          halo.since = 0;
+          halo.points.unshift([at[0], at[1] + 1.4, at[2]]);
+          if (halo.points.length > TRAIL) halo.points.length = TRAIL;
+        }
+        halo.trail.forEach((wisp, i) => {
+          const point = halo.points[i];
+          wisp.visible = point !== undefined;
+          if (point === undefined) return;
+          const fade = 1 - i / TRAIL;
+          wisp.position.set(point[0], point[1], point[2]);
+          wisp.scale.setScalar(2.4 * fade + 0.4);
+          (wisp.material as SpriteMaterial).opacity = 0.42 * fade;
+        });
       }
     },
     dispose(state: EngineFrameState) {
       state.scene.remove(group);
-      for (const halo of halos) { halo.glow.material.dispose(); halo.pool.geometry.dispose(); (halo.pool.material as MeshBasicMaterial).dispose(); }
+      for (const halo of halos) {
+        halo.glow.material.dispose(); halo.pool.geometry.dispose(); (halo.pool.material as MeshBasicMaterial).dispose();
+        halo.trailMaterial.dispose(); for (const wisp of halo.trail) wisp.material.dispose();
+      }
       group.clear();
     },
   };
+}
+
+/** Ghost hunters carry a flashlight; a TV crew a camera with a red tally light and a boom of light. */
+function hunterGearDraw(ctx: GameContext): EngineDraw {
+  const group = new Group();
+  const coneGeometry = new ConeGeometry(1.6, 7, 16, 1, true);
+  coneGeometry.translate(0, -3.5, 0);
+  coneGeometry.rotateX(-Math.PI / 2);
+  const beamMaterial = new MeshBasicMaterial({ color: "#fff2c4", transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: 2 });
+  const camGeometry = new BoxGeometry(0.35, 0.3, 0.55);
+  const camMaterial = new MeshStandardMaterial({ color: "#1c1c22" });
+  const tally = new MeshBasicMaterial({ color: "#ff3b3b" });
+  const tallyGeometry = new CircleGeometry(0.06, 8);
+  const pool: { beam: Mesh; cam: Group }[] = [];
+  const kit = (): { beam: Mesh; cam: Group } => {
+    const beam = new Mesh(coneGeometry, beamMaterial);
+    const cam = new Group();
+    const body = new Mesh(camGeometry, camMaterial);
+    const light = new Mesh(tallyGeometry, tally);
+    light.position.set(0.1, 0.16, -0.28);
+    cam.add(body, light);
+    beam.raycast = () => {}; body.raycast = () => {}; light.raycast = () => {};
+    group.add(beam, cam);
+    return { beam, cam };
+  };
+  return {
+    mount(state: EngineFrameState) { state.scene.add(group); },
+    frame() {
+      let used = 0;
+      for (const guest of session.guests.values()) {
+        const films = visitorKind(guest.kind).films;
+        if (films === undefined) continue;
+        const entity = ctx.scene.entity.get(guest.id);
+        if (entity == null) continue;
+        const gear = pool[used] ?? (pool[used] = kit());
+        used += 1;
+        const yaw = entity.rotationY ?? 0;
+        gear.beam.visible = gear.cam.visible = true;
+        gear.beam.position.set(entity.position[0], entity.position[1] + 1.4, entity.position[2]);
+        gear.beam.rotation.set(0.25, yaw, 0);
+        gear.cam.visible = films > 1;
+        gear.cam.position.set(entity.position[0] + Math.cos(yaw) * 0.35, entity.position[1] + 1.65, entity.position[2] - Math.sin(yaw) * 0.35);
+        gear.cam.rotation.set(0, yaw, 0);
+      }
+      for (let i = used; i < pool.length; i += 1) { pool[i]!.beam.visible = false; pool[i]!.cam.visible = false; }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group); group.clear();
+      coneGeometry.dispose(); beamMaterial.dispose(); camGeometry.dispose(); camMaterial.dispose(); tally.dispose(); tallyGeometry.dispose();
+    },
+  };
+}
+
+function HunterGear() {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => hunterGearDraw(ctx)} deps={[ctx]} />;
+}
+
+const VAN_URL = new URL("../../../public/art/models/tv_van.glb", import.meta.url).href;
+
+/** The paranormal TV crew's van, parked outside the gate while a crew is in the park. */
+function TvVan() {
+  const crew = useGameStore(() => [...session.guests.values()].some((guest) => guest.kind === "visitor_tvcrew"));
+  if (!crew) return null;
+  return <EngineDrawMount create={() => loadDraw({
+    key: `gltf:${VAN_URL}`,
+    load: () => new GLTFLoader().loadAsync(VAN_URL),
+    build: (gltf, parent) => {
+      const van = gltf.scene.clone(true);
+      van.position.set(14, 0, 64);
+      van.rotation.y = Math.PI / 2;
+      van.traverse((node) => { node.castShadow = true; });
+      parent.add(van);
+    },
+  })} deps={[]} />;
+}
+
+/**
+ * Sea fog pooling on the boardwalk: soft low wisps over about one path cell in four, drifting and
+ * breathing, so the paths read as a pier in the mist rather than flat planks.
+ */
+function fogPoolsDraw(cells: readonly (readonly [number, number, number])[], reduced: boolean): EngineDraw {
+  const group = new Group();
+  const geometry = new PlaneGeometry(6.5, 6.5);
+  const material = new MeshBasicMaterial({ color: "#a9c8d8", map: softDot(), transparent: true, opacity: 0.09, depthWrite: false });
+  const pools = cells.map(([x, y, z], i) => {
+    const mesh = new Mesh(geometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, y + 0.35, z);
+    mesh.raycast = () => {};
+    group.add(mesh);
+    return { mesh, x, z, phase: i * 1.37 };
+  });
+  let t = 0;
+  return {
+    mount(state: EngineFrameState) { state.scene.add(group); },
+    frame(_state: EngineFrameState, dt: number) {
+      if (reduced) return;
+      t += dt;
+      for (const pool of pools) {
+        pool.mesh.position.x = pool.x + Math.sin(t * 0.11 + pool.phase) * 1.4;
+        pool.mesh.position.z = pool.z + Math.cos(t * 0.09 + pool.phase) * 1.4;
+        pool.mesh.scale.setScalar(1 + Math.sin(t * 0.3 + pool.phase) * 0.18);
+      }
+    },
+    dispose(state: EngineFrameState) { state.scene.remove(group); group.clear(); geometry.dispose(); material.dispose(); },
+  };
+}
+
+function FogPools({ objects }: { objects: readonly ParkObject[] }) {
+  const ctx = useGameContext();
+  const reduced = useGameStore(c => Boolean(c.game.store.get("park.reduced-motion")));
+  const cells = useMemo(() => objects.filter((o) => o.kind === "path_walk" && (Math.round(o.x) * 7 + Math.round(o.z) * 13) % 16 === 0)
+    .map((o) => [o.x, groundAt(park.of(ctx), o.x, o.z), o.z] as const), [objects, ctx]);
+  return <EngineDrawMount create={() => fogPoolsDraw(cells, reduced)} deps={[cells, reduced]} />;
+}
+
+/**
+ * The hour over the haunt. The mood is moonlight; over it this adds the light of the hour from the
+ * haunt's clock: a low amber sunset while the living gather at dusk, nothing but the moon in the deep
+ * night, and a pale grey-pink dawn as they stream home. The haze leans the same way.
+ */
+function timeOfDayDraw(ctx: GameContext): EngineDraw {
+  const group = new Group();
+  const sun = new DirectionalLight("#ff9a5a", 0);
+  // Kept behind the build camera (which looks from +x,+z), so the low sun never flares a light shaft across the view.
+  sun.position.set(90, 30, 30);
+  const sky = new HemisphereLight("#ffb98a", "#2a2440", 0);
+  group.add(sun, sky);
+  const duskHaze = new Color("#7a4a5e"), dawnHaze = new Color("#9aa6c4");
+  let night: Color | null = null;
+  return {
+    mount(state: EngineFrameState) { state.scene.add(group); },
+    frame(state: EngineFrameState) {
+      const { dusk, dawn } = hourLight(ctx.time.calendar().dayFraction);
+      sun.color.set(dawn > 0 ? "#e8d4dc" : "#ff9a5a");
+      sky.color.set(dawn > 0 ? "#c8d4f0" : "#ffb98a");
+      sun.position.set(dawn > 0 ? 30 : 90, dawn > 0 ? 40 : 30, dawn > 0 ? 90 : 30);
+      sun.intensity = dusk * 1.8 + dawn * 1.1;
+      sky.intensity = dusk * 0.7 + dawn * 0.8;
+      const fog = state.scene.fog as { color?: Color } | null;
+      if (fog?.color !== undefined) {
+        night ??= fog.color.clone();
+        fog.color.copy(night).lerp(dawn > 0 ? dawnHaze : duskHaze, Math.max(dusk, dawn) * 0.55);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      const fog = state.scene.fog as { color?: Color } | null;
+      if (night !== null && fog?.color !== undefined) fog.color.copy(night);
+      state.scene.remove(group);
+      sun.dispose(); sky.dispose();
+    },
+  };
+}
+
+function TimeOfDayLight() {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => timeOfDayDraw(ctx)} deps={[ctx]} />;
 }
 
 function GhostHalos() {
@@ -722,6 +913,10 @@ function OverlayBodies() {
     {objects.filter(o => o.kind === "ride_coaster").map(o => <CoasterTrain key={o.id} object={o} circuit={circuit} />)}
     {objects.filter(o => o.def.scare !== undefined).map(o => <ScareAura key={o.id} object={o} />)}
     <GhostHalos />
+    <TimeOfDayLight />
+    <HunterGear />
+    <TvVan />
+    <FogPools objects={objects} />
     {obj?.def.staff && <PatrolRing x={obj.x} z={obj.z} radius={patrolRadius(park.of(ctx), obj.id)} />}
     {obj && <EngineDrawMount create={() => selectionRingDraw(obj.x, obj.z, Math.max(2, obj.def.footprint * 0.65))} deps={[obj.x, obj.z, obj.def.footprint]} />}
   </>;

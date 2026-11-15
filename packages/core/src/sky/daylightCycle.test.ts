@@ -9,6 +9,7 @@ import {
   DEFAULT_DAY_SUN_INTENSITY,
   daylightStateAt,
   overcastDaylight,
+  skyDayFraction,
 } from "./daylightCycle";
 
 describe("daylightStateAt", () => {
@@ -264,5 +265,20 @@ describe("night between twilights", () => {
     }
     expect(daylightStateAt(0.78).skyBottom).not.toBe(midnight.skyBottom);
     expect(daylightStateAt(0.22).skyBottom).not.toBe(midnight.skyBottom);
+  });
+});
+
+describe("skyDayFraction", () => {
+  test("a sky dayOffset shifts the clock it reads and wraps into a day", () => {
+    expect(skyDayFraction(0.25)).toBe(0.25);
+    expect(skyDayFraction(0, 0.5)).toBe(0.5);
+    expect(skyDayFraction(0.75, 0.5)).toBeCloseTo(0.25);
+    expect(skyDayFraction(0.1, -0.2)).toBeCloseTo(0.9);
+  });
+
+  test("a clock that starts at noon reads as midnight half a day later", () => {
+    const noonStart = daylightStateAt(skyDayFraction(0, 0.5));
+    const midnight = daylightStateAt(skyDayFraction(0.5, 0.5));
+    expect(noonStart.sunIntensity).toBeGreaterThan(midnight.sunIntensity);
   });
 });

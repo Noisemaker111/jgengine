@@ -1,3 +1,4 @@
+import { boardwalk } from './haunt.mjs';
 // Shops, facilities, scenery, path pieces and staff figures (4 m cells unless noted).
 import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, stripedCone, stairs, tube, lampPost, shrub, wheel, humanoid } from './core.mjs';
 const PI = Math.PI;
@@ -162,8 +163,7 @@ export function flagpole() {
 
 // ---- paths ----
 export function pathQueue() {
-  const g = new T.Group(); box(g, [3.96, .12, 3.96], P.wood, [0, .06, 0]);
-  for (let i = 0; i < 6; i++) box(g, [3.8, .05, .58], i % 2 ? P.grey : P.stone, [0, .15, -1.65 + i * .66]);
+  const g = boardwalk(true);
   for (const x of [-1.72, 1.72]) {
     for (const z of [-1.9, -.65, .65, 1.9]) { cyl(g, .05, 1.0, P.chrome, [x, .66, z], .05, 8, { metal: .6 }); cyl(g, .1, .05, P.chrome, [x, .18, z], .1, 8, { metal: .6 }); }
     for (const y of [.65, 1.12]) beam(g, [x, y, -1.95], [x, y, 1.95], .035, P.chrome, 6, { metal: .6 });

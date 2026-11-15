@@ -12,7 +12,7 @@ import { currentHint } from "./onboarding";
 import { session } from "./session";
 import { syncAmbience } from "./audio";
 import { tickRating } from "./sim/economy";
-import { spawnGuests, tickGuests, tickRidePark } from "./sim/guests";
+import { seedGroup, spawnGuests, tickGuests, tickRidePark } from "./sim/guests";
 import { tickStaff } from "./staff";
 import { BLUE_RIBBON } from "./milestones";
 import { park, parkMetrics } from "./park";
@@ -24,7 +24,10 @@ import { residentCount, tickGhosts } from "./ghosts";
 import { tickExorcist } from "./threats";
 
 /** What a staged park should look like when the capture takes it. */
-export type StageMode = "full";
+export type StageMode = "full" | "dusk" | "dawn";
+
+/** Where in the clock day each staged night stands: just after dusk, deep night, the grey before dawn. */
+const STAGE_TIME: Record<StageMode, number> = { dusk: 0.28, full: 0.5, dawn: 0.76 };
 
 const STEP = 1 / 20;
 
@@ -77,14 +80,21 @@ export function stepPark(ctx: GameContext, dt: number): void {
  * opening the gate and waiting into the night; `shoot --state full-park` jumps here instead.
  */
 export function stagePark(ctx: GameContext, mode: StageMode): void {
-  void mode;
   resetPark(ctx, { layout: "starter", guests: guestCap(park.of(ctx).num("park.rating")) });
   // Deep in the night, so the gate, the spawner and the HUD all read "night", not "the living are home" over a full park.
-  ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_LENGTH * 0.42 });
+  // The clock only ever moves forward (a renderer that keeps time-based state draws garbage when it
+  // jumps back), so it is set to just before the asked hour and the crowd settles in while it runs on.
+  const settle = mode === "dusk" ? 5 : 30;
+  ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_LENGTH * STAGE_TIME[mode] - settle });
   armMidnight(ctx);
   session.started = true;
+  // The night the hunters came: a ghost hunter pair and a TV crew (their van outside) in the crowd.
+  if (mode === "full") {
+    seedGroup(ctx, "visitor_hunter", 2, [6, 24]);
+    seedGroup(ctx, "visitor_tvcrew", 3, [-6, 30]);
+  }
   // Let the seeded crowd spread out, board and line up; queues only exist once guests reach a ride.
-  advance(ctx, 30);
+  advance(ctx, settle);
 }
 
 function advance(ctx: GameContext, seconds: number): void {

@@ -16,6 +16,8 @@ export const P = {
   darkwood: '#7a5240', glass: '#5fa3b8', glow: '#ffd977', orange: '#e8913a', yellow: '#f2d04b',
   // The haunt's own: the second glow, and bone, iron and moss for the new pieces.
   spirit: '#9ff5d8', bone: '#d8cfba', iron: '#2b2838', moss: '#3d5a46',
+  // Sea-weathered boardwalk: silvered planks, a darker alternate and the tarred joists beneath.
+  plank: '#958d82', plankDark: '#7a7268', joist: '#3b332d',
 };
 
 /** The daylight palette, recut for the haunt at night: rotted wood, tarnished brass, rose, violet, teal. */
@@ -27,6 +29,7 @@ const NIGHT = {
   '#3d93bd': '#16424f', '#9fd8e6': '#3f8c8a', '#eef8f8': '#9fd0c8', '#8a8378': '#4f4b48', '#3d7550': '#25352c', '#e6d3a6': '#6b6050',
   '#7a5240': '#3a2a24', '#5fa3b8': '#2f6f7a', '#e8913a': '#a85a22', '#f2d04b': '#b89a3a',
   '#ffd977': '#ffb347', '#9ff5d8': '#9ff5d8', '#d8cfba': '#d8cfba', '#2b2838': '#2b2838', '#3d5a46': '#3d5a46',
+  '#958d82': '#8e8a8c', '#7a7268': '#716c72', '#3b332d': '#2e2830',
 };
 /** Colours that light themselves: lantern amber and spectral teal. */
 const GLOWS = new Set(['#ffb347', '#9ff5d8']);

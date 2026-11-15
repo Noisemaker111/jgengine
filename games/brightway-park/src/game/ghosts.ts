@@ -7,6 +7,7 @@ import { BUILDABLES, BUILD_IDS } from "./objects/catalog";
 import { countOf, park, parkObjects, researched } from "./park";
 import { groundAt } from "./build/terrain";
 import { session } from "./session";
+import { landScare, moonHarvest } from "./scares";
 
 /**
  * Ghost residents. A ghost comes looking once the park's rumor reaches it; if every one of its wants
@@ -107,9 +108,43 @@ export function banish(ctx: GameContext, w: WorldModel, ghost: GhostDef): void {
 
 let checkAcc = 0;
 
+/** Seconds between a resident's haunts, its reach, and the fright it gives (a ghost is never a cheap trick). */
+export const HAUNT = { every: 14, reach: 8, fright: 4 } as const;
+
+/**
+ * A resident haunts: every `HAUNT.every` seconds it flares and frightens every living visitor in
+ * reach of it, skeptics included, wringing ectoplasm into the vault and adding a link to their chain.
+ * The overlay reads the flare (`session.ghostFlares`) to burst its halo.
+ */
+function hauntTheLiving(ctx: GameContext): void {
+  const now = ctx.time.now();
+  for (const ghost of GHOSTS) {
+    const body = ctx.scene.entity.get(ghostBodyId(ghost.id))?.position;
+    if (body == null) continue;
+    if (now < (session.ghostNextHaunt.get(ghost.id) ?? 0)) continue;
+    let frightened = 0;
+    for (const guest of session.guests.values()) {
+      if (guest.phase !== "seeking" && guest.phase !== "busy" && guest.phase !== "queued") continue;
+      const at = ctx.scene.entity.get(guest.id)?.position;
+      if (at == null || Math.hypot(at[0] - body[0], at[2] - body[2]) > HAUNT.reach) continue;
+      const spent = Math.min(guest.courage, HAUNT.fright);
+      guest.courage -= spent;
+      const multiplier = landScare(ctx, guest, HAUNT.fright, `The ${ghost.label} just floated through me!`);
+      const harvest = Math.round(spent * multiplier * moonHarvest(park.of(ctx)) * 10) / 10;
+      if (harvest > 0) park.emit(ctx, { kind: "pay_scare", scale: harvest });
+      frightened += 1;
+    }
+    if (frightened === 0) continue;
+    session.ghostNextHaunt.set(ghost.id, now + HAUNT.every);
+    session.ghostFlares.set(ghost.id, now);
+    ctx.game.audio.play("scare", [body[0], body[1], body[2]]);
+  }
+}
+
 /** Once a second: who is drifting closer, who moves in, who is restless, who leaves. */
 export function tickGhosts(ctx: GameContext, dt: number): void {
   floatGhosts(ctx);
+  if (session.guests.size > 0) hauntTheLiving(ctx);
   checkAcc += dt;
   if (checkAcc < CHECK_SECONDS) return;
   const step = checkAcc;
@@ -181,7 +216,8 @@ function floatGhosts(ctx: GameContext): void {
     const id = ghostBodyId(ghost.id);
     if (ctx.scene.entity.get(id) == null) continue;
     const angle = t * 0.18 + index * 1.7;
-    const radius = 5 + (index % 3);
+    // The ring breathes in and out, so a ghost swoops close over the thing it loves, then drifts wide.
+    const radius = 4 + (index % 3) + Math.sin(t * 0.37 + index) * 2.2;
     const x = at[0] + Math.cos(angle) * radius;
     const z = at[1] + Math.sin(angle) * radius;
     const y = groundAt(w, x, z) + 0.7 + Math.sin(t * 1.3 + index) * 0.25;
@@ -198,6 +234,8 @@ export function resetGhosts(ctx: GameContext): void {
   session.ghostPending.clear();
   session.ghostRestless.clear();
   session.ghostHaunts.clear();
+  session.ghostNextHaunt.clear();
+  session.ghostFlares.clear();
   // An exorcist mid-walk leaves with the old park.
   if (ctx.scene.entity.get("exorcist") != null) ctx.scene.entity.despawn("exorcist");
   session.exorcist = null;

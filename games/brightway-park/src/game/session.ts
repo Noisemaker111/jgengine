@@ -77,6 +77,9 @@ export interface Session {
   ghostRestless: Map<string, number>;
   /** Where each resident haunts (x, z). */
   ghostHaunts: Map<string, [number, number]>;
+  /** When each resident may haunt again, and when it last flared (for the overlay's burst). */
+  ghostNextHaunt: Map<string, number>;
+  ghostFlares: Map<string, number>;
   /** The exorcist's walk, while one is in the park. */
   exorcist: { to: [number, number, number]; phase: "in" | "bless" | "out"; until: number } | null;
   started: boolean;
@@ -103,6 +106,8 @@ function freshSession(): Session {
     ghostRestless: new Map(),
     ghostHaunts: new Map(),
     exorcist: null,
+    ghostNextHaunt: new Map(),
+    ghostFlares: new Map(),
     started: false,
     hasSave: false,
     saveStatus: "Saved on builds, toll changes, pause and each noon",

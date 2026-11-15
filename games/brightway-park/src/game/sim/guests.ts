@@ -149,6 +149,14 @@ function spawnGroup(ctx: GameContext, room: number): number {
   return size;
 }
 
+/** A group of one visitor kind already inside the park (a capture's staged crowd). */
+export function seedGroup(ctx: GameContext, kindId: string, count: number, at: readonly [number, number]): void {
+  const card = visitorKind(kindId);
+  const group = nextGroupId();
+  for (let i = 0; i < count; i += 1) makeGuest(ctx, nextGuestId(), [at[0] + i * 1.2, 0, at[1]], card, group);
+  park.of(ctx).change({ "park.guests": count });
+}
+
 export function seedGuests(ctx: GameContext, count: number): void {
   for (let i = 0; i < count; i += 1) {
     const id = nextGuestId();

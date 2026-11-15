@@ -195,6 +195,15 @@ function segmentAt(
  * `config` overrides the noon (peak-day) colors and intensities only.
  * @internal
  */
+/**
+ * The day fraction a sky reads from a clock's: the clock's own, shifted by the sky's `dayOffset`
+ * (a fraction of a day) and wrapped into [0, 1).
+ */
+export function skyDayFraction(clockFraction: number, dayOffset = 0): number {
+  const shifted = (clockFraction + dayOffset) % 1;
+  return shifted < 0 ? shifted + 1 : shifted;
+}
+
 export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState {
   const wrapped = wrapFraction(dayFraction);
   const keyframes = buildKeyframes(config);

@@ -100,9 +100,6 @@ export function janitor() {
   const g = new T.Group(); box(g, [2.9, 2.8, 2.7], P.teal, [0, 1.4, 0]); cyl(g, 1.95, .75, P.cream, [0, 3.1, 0], .05, 4); box(g, [1.1, 2, .08], P.wood, [0, 1, 1.4]); box(g, [.7, .7, .1], P.blue, [0, 1.5, 1.47]);
   for (const x of [-1.4, 1.4]) { cyl(g, .4, .85, P.coral, [x, .5, 1.1]); cyl(g, .45, .08, P.gold, [x, .95, 1.1]); } beam(g, [1.4, .1, -1.3], [1.7, 2.3, -1.3], .045, P.wood); box(g, [.75, .25, .25], P.gold, [1.4, .2, -1.3]); return g;
 }
-export function path() {
-  const g = new T.Group(); box(g, [3.96, .12, 3.96], P.darkwood, [0, .06, 0]); for (let i = 0; i < 6; i++) box(g, [3.8, .05, .58], i % 2 ? P.grey : P.stone, [0, .15, -1.65 + i * .66]); return g;
-}
 export function topiary() {
   const g = new T.Group(); cyl(g, .6, .6, P.coral, [0, .3, 0], .8); box(g, [1.7, .08, 1.7], P.gold, [0, .64, 0], [0, Math.PI / 4, 0]); cyl(g, .15, 1.3, P.wood, [0, 1, 0]); ball(g, 1.1, P.leaf, [0, 2, 0]); ball(g, .7, P.mint, [0, 3, 0]); ball(g, .3, P.leaf, [0, 3.75, 0]); return g;
 }

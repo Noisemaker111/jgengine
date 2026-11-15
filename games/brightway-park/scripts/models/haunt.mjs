@@ -111,3 +111,43 @@ export function flickerLamp() {
   mesh(g, new T.ConeGeometry(.36, .3, 6), P.iron, [.85, 3.98, .1]);
   return g;
 }
+
+/**
+ * A cell of sea-weathered boardwalk: tarred joists, then silvered planks laid across with gaps,
+ * each a little warped, one in a few split short or missing a corner. Tiles end to end into a pier.
+ */
+export function boardwalk(queue = false) {
+  const g = new T.Group();
+  for (const x of [-1.5, 0, 1.5]) box(g, [.22, .1, 3.96], P.joist, [x, .05, 0]);
+  box(g, [3.96, .04, 3.96], P.joist, [0, .02, 0]);
+  const n = 8, pitch = 3.96 / n;
+  for (let i = 0; i < n; i++) {
+    const z = -1.98 + pitch * (i + .5);
+    const warp = Math.sin(i * 2.7) * .025, tilt = Math.sin(i * 5.1) * .02;
+    const color = (i * 7) % 3 === 0 ? P.plankDark : P.plank;
+    if (!queue && i % 5 === 3) {
+      // A split plank: two short boards with a gap where one rotted through.
+      box(g, [2.1, .06, pitch - .07], color, [-.9, .13 + warp, z], [tilt, 0, 0]);
+      box(g, [1.3, .06, pitch - .07], color, [1.3, .12, z], [0, .03, tilt]);
+    } else box(g, [3.92, .06, pitch - .07], color, [0, .13 + warp, z], [tilt, 0, 0]);
+    // Nail heads at the joists.
+    for (const x of [-1.5, 0, 1.5]) box(g, [.05, .015, .05], P.iron, [x, .165 + warp, z]);
+  }
+  return g;
+}
+
+/** The paranormal TV crew's van: a boxy white van with a roof dish, a light bar and a crooked logo stripe. */
+export function tvVan() {
+  const g = new T.Group();
+  box(g, [5.2, 2.2, 2.2], P.white, [0, 1.5, 0]);
+  box(g, [1.4, 1.5, 2.2], P.white, [2.9, 1.15, 0]);
+  box(g, [.9, .8, 2.1], P.glass, [3.2, 1.6, 0]);
+  box(g, [5.2, .35, 2.24], P.purple, [0, 1.5, 0]);
+  box(g, [2.4, .3, 2.26], P.spirit, [-.6, 2.1, 0]);
+  for (const x of [-1.8, 2.6]) for (const z of [-1.05, 1.05]) cyl(g, .42, .3, P.tyre, [x, .42, z], .42, 12).rotation.x = PI / 2;
+  cyl(g, .08, .5, P.grey, [-1.2, 2.85, 0], .08, 6);
+  const dish = mesh(g, new T.SphereGeometry(.7, 12, 6, 0, PI * 2, 0, PI / 2.6), P.chrome, [-1.2, 3.2, 0], [-.9, 0, 0], { double: true });
+  dish.scale.set(1, .45, 1);
+  for (const z of [-.6, 0, .6]) ball(g, .12, z === 0 ? P.spirit : P.red, [1.2, 2.72, z], 0);
+  return g;
+}

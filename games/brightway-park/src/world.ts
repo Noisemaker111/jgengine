@@ -24,7 +24,8 @@ export const world: WorldFeature = environment({
       material: libraryTerrainMaterial("foliage/grass-macro"),
     },
   }),
-  // Colours, moon and haze come from the game's night `mood`.
+  // Colours, moon and haze come from the game's night `mood`; dusk and dawn are layered over it by the
+  // world overlay's `TimeOfDayLight`, which follows the haunt's clock.
   sky: sky({ preset: "night" }),
 });
 

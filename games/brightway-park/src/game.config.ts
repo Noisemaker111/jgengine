@@ -80,6 +80,8 @@ export const game = defineGame({
       "menu-new": ["menu.new"],
       paused: ["park.start", "pauseToggle"],
       "full-park": ["park.start", { name: "park.stage", input: { mode: "full" } }],
+      "dusk-park": ["park.start", { name: "park.stage", input: { mode: "dusk" } }],
+      "dawn-park": ["park.start", { name: "park.stage", input: { mode: "dawn" } }],
     },
     views: {
       menu: { description: "Gate board over the haunt, Continue highlighted", state: "menu", settleMs: 1800 },

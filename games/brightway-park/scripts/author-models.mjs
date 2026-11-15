@@ -57,12 +57,14 @@ add('deco_gate', Gate.gate(), 16); add('deco_statue', S.statue(), 4); add('deco_
 // scare props (the cauldron, shelf, vase and candelabra come from the asset library)
 add('prop_portrait', Haunt.portrait(), 4); add('prop_coldspot', Haunt.coldSpot(), 4); add('prop_coffin', Haunt.jackCoffin(), 4); add('prop_flicker', Haunt.flickerLamp(), 4);
 // paths
-add('path_walk', L.path(), 4); add('path_queue', S.pathQueue(), 4); add('ride_entrance', S.rideEntrance(), 4); add('ride_exit', S.rideExit(), 4);
+add('path_walk', Haunt.boardwalk(), 4); add('path_queue', S.pathQueue(), 4); add('ride_entrance', S.rideEntrance(), 4); add('ride_exit', S.rideExit(), 4);
 // people
 add('staff_janitor', L.janitor(), 4); add('staff_handyman', S.staffHandyman(), 2); add('staff_mechanic', S.staffMechanic(), 2);
 add('staff_entertainer', S.staffEntertainer(), 2); add('staff_security', S.staffSecurity(), 2);
 // The coaster train is its own model: the ride's own cycle drives it around the authored circuit.
 models.coaster_train = L.coasterTrain();
+// The TV crew's van parks outside the gate while a crew is filming.
+models.tv_van = Haunt.tvVan();
 
 // ---- export ----
 const exporter = new GLTFExporter(); let bytes = 0; const sizes = {}, baked = {};

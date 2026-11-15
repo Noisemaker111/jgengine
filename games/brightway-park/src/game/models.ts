@@ -93,12 +93,13 @@ const VISITOR_LOOKS: Record<string, ModelConfig> = {
 
 /** The ghosts in residence: each a translucent shade in its own glow. */
 const GHOST_LOOKS: Record<string, ModelConfig> = {
-  ghost_child: ghost("OldClassy_Female", 1.25, "#c8f5ff"),
-  ghost_sailor: ghost("Pirate_Male", 1.95, "#5fd4b8"),
-  ghost_poltergeist: ghost("Goblin_Male", 1.5, "#b48cff"),
-  ghost_banshee: ghost("Witch", 2.0, "#9ff5d8"),
-  ghost_bride: ghost("Kimono_Female", 1.85, "#f3f0ff"),
-  ghost_keeper: ghost("OldClassy_Male", 1.95, "#ffd27a"),
+  // Larger than life, so a resident reads from the build camera over the crowd.
+  ghost_child: ghost("OldClassy_Female", 2.0, "#c8f5ff"),
+  ghost_sailor: ghost("Pirate_Male", 2.8, "#5fd4b8"),
+  ghost_poltergeist: ghost("Goblin_Male", 2.3, "#b48cff"),
+  ghost_banshee: ghost("Witch", 3.0, "#9ff5d8"),
+  ghost_bride: ghost("Kimono_Female", 2.7, "#f3f0ff"),
+  ghost_keeper: ghost("OldClassy_Male", 2.8, "#ffd27a"),
 };
 
 export const entityModels = {

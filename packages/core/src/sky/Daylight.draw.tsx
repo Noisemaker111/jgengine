@@ -13,6 +13,7 @@ import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.d
 import {
   bandFogColor,
   daylightStateAt,
+  skyDayFraction,
   type DaylightState,
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_DAY_SUN_INTENSITY,
@@ -632,7 +633,7 @@ function deriveSky(props: SkyProps, refs: {
   const sky = props.sky;
   const clock = props.clock;
   const timeOfDay = sky.timeOfDay === true && clock !== undefined;
-  const baseFraction = sky.timeOfDay === true && clock !== undefined ? clock.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
+  const baseFraction = sky.timeOfDay === true && clock !== undefined ? skyDayFraction(clock.calendar().dayFraction, sky.dayOffset) : SKY_PRESET_DAY_FRACTION[sky.preset];
   const initial = daylightStateAt(baseFraction, sky);
   const range = skyFogRange(sky, props.fogRange, { near: 70, far: 260 });
   const noonSun = sky.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY;
@@ -784,7 +785,7 @@ export function skyDraw(getProps: () => SkyProps): EngineDraw {
         return;
       }
       const frameClock = props.clock;
-      const cycle = d.timeOfDay && frameClock !== undefined ? daylightStateAt(frameClock.calendar().dayFraction, props.sky) : d.initial;
+      const cycle = d.timeOfDay && frameClock !== undefined ? daylightStateAt(skyDayFraction(frameClock.calendar().dayFraction, props.sky.dayOffset), props.sky) : d.initial;
       const here = props.weather?.sample(state.camera.position.x, state.camera.position.z);
       const cover = here === undefined ? 0 : (here.cloudCover ?? here.precipitation);
       const base = cover > 0 ? overcastDaylight(cycle, cover) : cycle;

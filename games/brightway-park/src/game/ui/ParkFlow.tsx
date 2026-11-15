@@ -12,7 +12,7 @@ import { scenarioDef } from "../scenarios";
 import { session } from "../session";
 import { parkFlags } from "./parkFlags";
 import { money } from "./ParkDashboard";
-import { BAD, Button, CORAL, CREAM, DISPLAY, GOLD, GOOD, Heading, INK, Row, SHADE, Tag, Text } from "./look";
+import { BAD, Button, CORAL, CREAM, DEEP, DISPLAY, GOLD, GOOD, Heading, INK, Row, SHADE, Tag, Text } from "./look";
 
 /** A result screen is up: the scenario ended, the haunt faded, or the ghost paradise landed. */
 export function resultOpen(ctx: GameContext): boolean {
@@ -58,7 +58,7 @@ export function ParkFlow() {
   const subtitle = !v.gate ? "Build a ride, then unchain the gate" : !v.open ? `${v.screamsToday} fled screaming · ${money(v.takings)} harvested` : v.title ?? (v.day > 1 ? `Last night ${money(v.yesterday)} net` : "The living are coming");
   return <>
     {banner === null ? null : <RuneView anchor="top" safe inset={0} padding={[150, 0, 0, 0]} responsive={{ phone: { padding: [300, 0, 0, 0] } }}>
-      <RuneView fill={INK} radius={4} padding={[10, 26, 10, 26]} gap={2} items="center" border={{ width: 3, color: GOLD }} label="Gate banner">
+      <RuneView fill={DEEP} radius={4} padding={[10, 26, 10, 26]} gap={2} items="center" border={{ width: 3, color: GOLD }} label="Gate banner">
         <Text family={DISPLAY} size={26} color={CREAM} align="center">{`${parkDateLabel(openDay.current)} · ${v.open ? "Dusk falls" : "Dawn breaks"}`}</Text>
         <Text color={GOLD} weight={700} align="center">{v.open && isFullMoon(openDay.current) ? "Full moon tonight: the living come in droves and every scare is worth more" : subtitle}</Text>
       </RuneView>
