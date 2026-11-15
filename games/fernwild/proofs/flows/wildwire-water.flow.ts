@@ -13,7 +13,7 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.phase === 1 && p.health > 0, SLOW);
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
     // Dusk, so the Lampjaws' lures glow. Stand on the first beach's waterline, facing south over the shelf to the deep.
-    await f.command("cheat", { clock: 3600 * 0.76, teleport: [269, 1346, Math.PI] });
+    await f.command("cheat", { clock: 3600 * 0.76, teleport: [269, 1346, 0] });
     for (const side of [-4, 0, 4]) await f.command("cheat", { summon: { species: "lampjaw", level: 5, distance: 24, side: side * 2 } });
     // Generated robot models build on first sight: give software rendering time to load them.
     await f.wait(45000);
