@@ -54,6 +54,15 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   is lost; if they walk out calmly it goes on the record. At 100 evidence an exorcist comes at noon: the
   newest ghost is blessed out for two nights (the exorcist walks in from the gate to its haunt), the rumor takes a knock and the fee is paid in ectoplasm.
   A Gargoyle Sentry watching makes their cameras fail. Evidence fades by 12 a noon.
+- **A rich haunt's spending.** Residents can be empowered three times (3,000 / 8,000 / 20,000: each
+  level seeps 60% more and haunts 2 fright harder). Three bonds (12,000-18,000) bind pairs of residents
+  to haunt together, seeping half of both again and adding 30 rumor each. The Hollow Manor (25,000)
+  and the Crypt Beneath (60,000) hold 40 and 60 more of the living and add rumor. Rituals: Silence
+  (4,000, wipes 60 evidence), Blood Moon (9,000, scares yield 1.5x tonight), the Summoning (7,000,
+  calls every ghost that has all it wants). Three legendary attractions (the Drowned Cathedral, the
+  Carnival of Souls, the Moon Gate) only answer the séance from moons 4, 8 and 12, and cost 30,000 to
+  90,000 to raise. In the Full Moon Festival's last moon the Skeptic Society lays siege: skeptics and
+  camera crews come four times as often.
 - **Full moons.** Night 5 of every moon is a full moon: 1.6x the living head for the gate and every
   scare yields 1.25x. The HUD and the dusk banner say so.
 - **Everything else from the tycoon machinery**: four spooks with patrol areas (Ghoul Groundskeeper,
@@ -79,9 +88,8 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
 - **Curve.** `bun scripts/scenarioBot.ts all` plays the three scenarios headless with a mid-skill
   haunter (a boardwalk spine, rides and a scare gauntlet off it, stalls, spooks, the séance table toward
   the next ghost, the Ferryman when dry). It wins The First Chill at moon 2.1 of 3, Talk of the Coast at
-  5.7 of 8 and the Full Moon Festival at 12.3 of 16, with the exorcist calling a few times a season.
-- **Gap to target.** The late economy runs rich (tens of thousands of ectoplasm by the festival with
-  little left to buy); the sky dome stays a night sky (the hour's light and haze follow the clock). See `PLAN.md`.
+  5.7 of 8 and the Full Moon Festival at 13 of 16 with about 4,000 ectoplasm in the vault and 20,000 still owed, with the exorcist calling a few times a season.
+- **Gap to target.** The sky dome stays a night sky (the hour's light and haze follow the clock). See `PLAN.md`.
 
 Loop proof: to-open-park
 

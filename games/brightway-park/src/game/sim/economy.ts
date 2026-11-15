@@ -9,6 +9,8 @@ import { milestonesCrossed } from "../milestones";
 import { ratingTarget } from "./rating";
 import { noonExorcism } from "../threats";
 import { ecto } from "../ecto";
+import { lateRumor } from "../lateGame";
+import { festivalSiege } from "./guests";
 
 /**
  * The haunt's night and moon, on the world. Ectoplasm moves continuously (the `upkeep_*` and
@@ -45,11 +47,17 @@ export function closeDay(ctx: GameContext): void {
     "park.guests_today": -w.num("park.guests_today"),
     "park.screams_today": -w.num("park.screams_today"),
     "park.best_chain": -w.num("park.best_chain"),
+    // The blood moon sets with the night.
+    "park.blood_moon": -w.num("park.blood_moon"),
   });
 
   // The day's boundary is the session loop's: closing it republishes the day number.
   closeParkDay(ctx);
   const day = w.num("park.day");
+  // The first night of festival week: the skeptic society arrives in force.
+  if (festivalSiege(w) && !festivalSiege({ fact: (k) => w.fact(k), num: (k) => (k === "park.day" ? day - 1 : w.num(k)) })) {
+    ctx.game.notices.push({ text: "Festival week: the Skeptic Society has come to debunk the Full Moon Festival. Skeptics and camera crews pack the gate.", tone: "warn" });
+  }
   if ((day - 1) % MONTH_DAYS === 0) closeMonth(ctx, parkDate(day - 1).monthIndex);
   else if (w.num("park.cash") < 0) {
     const left = MONTH_DAYS - parkDate(day).dayOfMonth + 1;
@@ -113,7 +121,7 @@ export function tickRating(ctx: GameContext, dt: number, metrics: ParkMetrics): 
   const w = park.of(ctx);
   // The crowd the rating judges: today's visitors, or the guests still inside across midnight.
   const crowd = Math.max(w.num("park.guests_today"), w.num("park.guests"));
-  const target = ratingTarget(metrics, w.num("park.mood"), crowd, w.num("park.litter"), w.num("park.complaints"), w.num("park.screams_today"), w.num("park.ghosts"));
+  const target = ratingTarget(metrics, w.num("park.mood"), crowd, w.num("park.litter"), w.num("park.complaints"), w.num("park.screams_today"), w.num("park.ghosts")) + lateRumor(w);
   const before = w.num("park.rating");
   const rating = before + (target - before) * (1 - Math.exp(-dt * RATING_EASE));
   w.set("park.rating", rating);

@@ -17,7 +17,13 @@ function library(id: string, height: number | undefined, material?: ModelMateria
 }
 
 /** Kinds that share another kind's authored mesh. */
-const AUTHORED_AS: Record<string, string> = { staff_mechanic: "staff_janitor", staff_entertainer: "staff_janitor", staff_security: "staff_janitor" };
+const AUTHORED_AS: Record<string, string> = {
+  staff_mechanic: "staff_janitor", staff_entertainer: "staff_janitor", staff_security: "staff_janitor",
+  // The legendary attractions are the old fair's grandest rides, raised again in ghost-light.
+  ride_cathedral: "ride_haunted", ride_carnival: "ride_enterprise", ride_moongate: "ride_obs",
+};
+/** The ghost-light a legendary attraction glows with. */
+const LEGEND_GLOW: Readonly<Record<string, string>> = { ride_cathedral: "#5fd4b8", ride_carnival: "#b48cff", ride_moongate: "#ffd27a" };
 
 /** Library pieces recoloured for the night: dead wood, cold stone, and props with a faint spectral glow. */
 const NIGHT_TINT: Readonly<Record<string, ModelMaterialOverride>> = {
@@ -39,6 +45,8 @@ function objectModel(id: string): ModelConfig {
   const def = BUILDABLES[id]!;
   if (def.libraryModel !== undefined) return library(def.libraryModel.id, def.libraryModel.height, NIGHT_TINT[id]);
   const shared = AUTHORED_AS[id];
+  const glow = LEGEND_GLOW[id];
+  if (shared !== undefined && glow !== undefined) return { ...original(shared), scale: 1, material: { emissive: glow, emissiveIntensity: 0.45, rim: { color: glow, strength: 1.1 } } };
   if (shared !== undefined) return { ...original(shared), material: { color: def.color } };
   return original(id);
 }

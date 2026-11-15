@@ -16,7 +16,8 @@ import { connectPark } from "../src/game/build/links";
 import { recordScenarioWin, SCENARIOS, scenarioDef, scenarioSeconds } from "../src/game/scenarios";
 import { session } from "../src/game/session";
 import { GHOSTS, ghostFact } from "../src/game/ghostCatalog";
-import { MONTH_DAYS } from "../src/game/books";
+import { isFullMoon, MONTH_DAYS } from "../src/game/books";
+import { BONDS, EMPOWER_COSTS, EXPANSIONS, ghostLevelFact } from "../src/game/lateGame";
 import { DAY_LENGTH } from "../src/game/catalog";
 
 const records = new Map<string, string>();
@@ -63,10 +64,13 @@ const PLAN: readonly Want[] = [
   { kind: "ride_rapids", count: 1 },
   { kind: "ride_mouse", count: 1 },
   { kind: "ride_looping", count: 1 },
+  { kind: "ride_cathedral", count: 1 },
+  { kind: "ride_carnival", count: 1 },
+  { kind: "ride_moongate", count: 1 },
 ];
 /** Séances in the order the plan needs them. */
 const SEANCES = ["stall_icecream", "ride_teacups", "prop_flicker", "ride_bumper", "ride_maze", "ride_vintage", "ride_ferris", "ride_obs", "prop_vase", "ride_swings",
-  "ride_logflume", "prop_candles", "ride_pirate", "ride_junior", "ride_train", "ride_chairlift", "ride_monorail", "ride_gokarts", "ride_rapids", "ride_mouse", "ride_looping"];
+  "ride_logflume", "prop_candles", "ride_pirate", "ride_junior", "ride_train", "ride_chairlift", "ride_monorail", "ride_gokarts", "ride_rapids", "ride_mouse", "ride_looping", "ride_cathedral", "ride_carnival", "ride_moongate"];
 
 function play(id: string, quiet: boolean): { won: boolean; line: string } {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
@@ -129,6 +133,17 @@ function play(id: string, quiet: boolean): { won: boolean; line: string } {
       if (w.num("park.cash") > 9000 && w.canAct("repay_loan") === null) run("brightway.act", { action: "repay_loan" });
       // A rumor on the full moon when there is ectoplasm to spare.
       if (w.num("park.cash") > 4000 && w.canAct("ad_posters") === null) run("brightway.act", { action: "ad_posters" });
+      // A rich haunt spends: silence the cameras, the grounds, empowered residents, bonds, a blood moon.
+      const cash = w.num("park.cash");
+      if (w.num("park.evidence") > 60 && cash > 6000 && w.canAct("ritual_silence") === null) run("brightway.act", { action: "ritual_silence" });
+      for (const e of EXPANSIONS) if (w.num("park.cash") > e.cost + 8000 && w.canAct(`buy_${e.id}`) === null) run("brightway.act", { action: `buy_${e.id}` });
+      for (const b of BONDS) if (w.num("park.cash") > b.cost + 6000 && w.canAct(`bind_${b.id}`) === null) run("brightway.act", { action: `bind_${b.id}` });
+      for (const g of GHOSTS) {
+        const level = w.num(ghostLevelFact(g.id));
+        const action = `empower_${g.id}_${level + 1}`;
+        if (level < EMPOWER_COSTS.length && w.num("park.cash") > EMPOWER_COSTS[level]! + 6000 && w.canAct(action) === null) run("brightway.act", { action });
+      }
+      if (isFullMoon(w.num("park.day")) && w.num("park.cash") > 25000 && w.canAct("ritual_bloodmoon") === null) run("brightway.act", { action: "ritual_bloodmoon" });
     }
     runner.step(1);
     if ((t + 1) % (MONTH_DAYS * DAY_LENGTH) === 0) {
@@ -140,6 +155,8 @@ function play(id: string, quiet: boolean): { won: boolean; line: string } {
   const result = String(w.fact("scenario.result") || "running");
   const at = Math.round(runner.ctx.time.now() / (MONTH_DAYS * DAY_LENGTH) * 10) / 10;
   const ghosts = GHOSTS.filter((g) => w.num(ghostFact(g.id)) >= 1).map((g) => g.id).join(",");
+  const spent = w.num("report.rituals") + w.num("month.rituals");
+  void spent;
   const summary = `${id}: ${result} at moon ${at} of ${def.months} · screams ${w.num("park.screams")} · rumor ${Math.round(w.num("park.rating"))} (peak ${Math.round(w.num("park.peak"))}) · ghosts ${ghosts || "none"} · ecto ${Math.round(w.num("park.cash"))} · ${w.fact("scenario.reason") || ""}`;
   return { won: result === "won", line: summary };
 }

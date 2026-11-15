@@ -192,8 +192,6 @@ Genres: tycoon. 18/18 proven.
 - Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
   for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
   worldModel/` wants over kind counts). One adopter so far.
-- The late economy runs rich: by the Full Moon Festival a mid-skill haunter sits on tens of thousands
-  of ectoplasm with little left to buy (`bun scripts/scenarioBot.ts all`).
 - Day-night: the hour's light and haze follow the clock (overlay `TimeOfDayLight`), but the sky dome
   stays the mood's night sky. `sky({ timeOfDay, dayOffset })` exists now; combined with a `mood` it
   washed the frame out, so the shell's mood-plus-time-of-day path needs work before the game can use it.
@@ -214,4 +212,5 @@ Genres: tycoon. 18/18 proven.
 7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
 8. [x] A curve: a mid-skill bot wins The First Chill at 70% of its deadline, Talk of the Coast at 71% and the Full Moon Festival at 77%.
 9. [x] Full-moon nights (more of the living, richer scares), the exorcist walks in at noon to the ghost it banishes, ghost halos, a darker graded night, the Full Moon Festival ending.
+11. [x] Late-game spending: empowered residents, bonds, the manor and the crypt, rituals, legendary attractions by moon, the Skeptic Society's festival siege; the bot ends the festival with ectoplasm still tight.
 10. [x] Suite 18/18: the save written through the host's save backend when there is no browser storage, the shared start / menu.pane / settings.rebind verbs, and proofs for Continue, the credits, rebinding and following the hints.

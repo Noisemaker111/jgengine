@@ -48,13 +48,18 @@ export function visitorKind(id: string): VisitorKind {
   return BY_ID.get(id) ?? VISITORS[0]!;
 }
 
+/** How much likelier skeptics and filming crews are while the skeptic society lays siege. */
+export const SIEGE_WEIGHT = 4;
+
 /** The kind of the next group through the gate, weighted, from the kinds the park's rumor has drawn. */
-export function pickVisitorKind(rumor: number, roll: number): VisitorKind {
+export function pickVisitorKind(rumor: number, roll: number, siege = false): VisitorKind {
   const open = VISITORS.filter((kind) => rumor >= kind.rumor);
-  const total = open.reduce((sum, kind) => sum + kind.weight, 0);
+  // Under siege the skeptic society packs the gate, cameras in hand.
+  const weight = (kind: VisitorKind) => kind.weight * (siege && (kind.skeptic === true || kind.films !== undefined) ? SIEGE_WEIGHT : 1);
+  const total = open.reduce((sum, kind) => sum + weight(kind), 0);
   let left = roll * total;
   for (const kind of open) {
-    left -= kind.weight;
+    left -= weight(kind);
     if (left < 0) return kind;
   }
   return open[open.length - 1]!;

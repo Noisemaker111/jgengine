@@ -10,7 +10,7 @@
 export type BuildCategory = "ride" | "stall" | "prop" | "track" | "path" | "land" | "scenery" | "staff";
 
 /** The ride families of the build palette and the séance table. */
-export type RideGroup = "eerie" | "frenzy" | "tide" | "drift" | "coaster";
+export type RideGroup = "eerie" | "frenzy" | "tide" | "drift" | "coaster" | "legend";
 
 /** A visitor need a stall fills: every one is a fullness meter on the visitor (100 is fine). */
 export type StallNeed = "hunger" | "thirst" | "souvenir" | "toilet" | "info" | "nausea";
@@ -73,6 +73,8 @@ export interface ResearchData {
   cost: number;
   seconds: number;
   after?: string;
+  /** The moon of the season (1 is the first) before which the séance will not answer: legendary attractions. */
+  moon?: number;
 }
 
 export interface BuildableDef {
@@ -118,6 +120,7 @@ const COLORS: Record<RideGroup, [string, string]> = {
   tide: ["#2f7f8a", "#c9fff0"],
   drift: ["#46607a", "#ffc46b"],
   coaster: ["#4a3a78", "#ff7a5c"],
+  legend: ["#1f6f6a", "#ffd27a"],
 };
 
 /** Eerie 8, frenzy 8, tide 4, drift 3, coasters 5: twenty-eight rides. */
@@ -149,6 +152,10 @@ const RIDES: readonly RideRow[] = [
   ["ride_junior", "Little Terrors", "🐛", "coaster", 4500, 110, 16, 5.0, 4.0, 2.2, 12, 30, 4, { cost: 1500, seconds: 110 }, "A coaster for the small and brave: low hills, gentle turns, one thing waiting at the bottom."],
   ["ride_mouse", "Wild Rat", "🐀", "coaster", 6200, 140, 16, 6.4, 6.4, 4.4, 8, 32, 5, { cost: 2100, seconds: 150, after: "ride_junior" }, "Single cars whipped through switchbacks the way rats run the walls."],
   ["ride_looping", "Banshee Loop", "➰", "coaster", 9800, 220, 16, 7.6, 8.2, 6.0, 20, 36, 6, { cost: 3200, seconds: 200, after: "ride_mouse" }, "Steel track, a lift hill and a vertical loop timed to her scream."],
+  // Legendary attractions: the séance only answers once the season is old enough, and they cost a fortune.
+  ["ride_cathedral", "The Drowned Cathedral", "⛪", "legend", 30000, 600, 12, 8.4, 4.0, 5.0, 24, 30, 9, { cost: 15000, seconds: 120, moon: 4 }, "A whole church raised from the seabed, still dripping, its bells still ringing under the water."],
+  ["ride_carnival", "Carnival of Souls", "🎪", "legend", 60000, 1100, 12, 9.0, 6.5, 6.0, 32, 30, 11, { cost: 30000, seconds: 160, moon: 8, after: "ride_cathedral" }, "The fair that came to town in 1889 and never left: every ride at once, ridden by everyone it ever took."],
+  ["ride_moongate", "The Moon Gate", "🌕", "legend", 90000, 1600, 8, 9.6, 7.5, 7.0, 40, 32, 13, { cost: 50000, seconds: 200, moon: 12, after: "ride_carnival" }, "A tower that climbs to the full moon. Riders come back down. Mostly."],
   ["ride_inverted", "Night Gaunt", "🦇", "coaster", 12000, 260, 20, 8.0, 8.6, 6.4, 24, 40, 7, { cost: 4000, seconds: 240, after: "ride_looping" }, "Feet dangling under the track through a loop and a corkscrew, like being carried off."],
 ];
 
@@ -347,7 +354,7 @@ export function buildableDef(id: string): BuildableDef {
   return def;
 }
 
-export const RIDE_GROUPS: readonly RideGroup[] = ["eerie", "frenzy", "tide", "drift", "coaster"];
+export const RIDE_GROUPS: readonly RideGroup[] = ["eerie", "frenzy", "tide", "drift", "coaster", "legend"];
 
 export const RIDE_GROUP_LABEL: Record<RideGroup, string> = {
   eerie: "Eerie",
@@ -355,6 +362,7 @@ export const RIDE_GROUP_LABEL: Record<RideGroup, string> = {
   tide: "Pier & Tide",
   drift: "Drifting",
   coaster: "Screamers",
+  legend: "Legendary",
 };
 
 export const CATEGORY_ORDER: readonly BuildCategory[] = ["ride", "track", "prop", "stall", "scenery", "path", "land", "staff"];

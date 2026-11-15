@@ -8,6 +8,7 @@ import { countOf, park, parkObjects, researched } from "./park";
 import { groundAt } from "./build/terrain";
 import { session } from "./session";
 import { landScare, moonHarvest } from "./scares";
+import { BONDS, bondActiveFact, bondFact, EMPOWER_FRIGHT, ghostLevelFact, ghostPowerFact } from "./lateGame";
 
 /**
  * Ghost residents. A ghost comes looking once the park's rumor reaches it; if every one of its wants
@@ -108,6 +109,44 @@ export function banish(ctx: GameContext, w: WorldModel, ghost: GhostDef): void {
 
 let checkAcc = 0;
 
+/** Keep each resident's live power (its level while it is home) and each bond's live state on the world. */
+function syncPowers(w: WorldModel): void {
+  for (const ghost of GHOSTS) {
+    const power = isResident(w, ghost.id) ? w.num(ghostLevelFact(ghost.id)) : 0;
+    if (w.num(ghostPowerFact(ghost.id)) !== power) w.set(ghostPowerFact(ghost.id), power);
+  }
+  for (const bond of BONDS) {
+    const active = w.num(bondFact(bond.id)) >= 1 && isResident(w, bond.a) && isResident(w, bond.b) ? 1 : 0;
+    if (w.num(bondActiveFact(bond.id)) !== active) w.set(bondActiveFact(bond.id), active);
+  }
+}
+
+/** The resident a ghost is bound to haunt with, when the bond is live. */
+function bondPartner(w: WorldModel, id: string): string | null {
+  const bond = BONDS.find((entry) => (entry.a === id || entry.b === id) && w.num(bondActiveFact(entry.id)) >= 1);
+  return bond === undefined ? null : bond.a === id ? bond.b : bond.a;
+}
+
+/**
+ * The Summoning: every ghost that has heard the rumor, is not banished and has everything it wants
+ * moves in at once. Returns how many came.
+ */
+export function summonGhosts(ctx: GameContext): number {
+  const w = park.of(ctx);
+  const census = parkCensus(w, session.guests.size);
+  let came = 0;
+  for (const ghost of GHOSTS) {
+    if (isResident(w, ghost.id) || w.num("park.rating") < ghost.rumor || ctx.time.now() < w.num(`${ghostFact(ghost.id)}.banished_until`)) continue;
+    if (!ghostWantsMet(ghost, census).met) continue;
+    moveIn(ctx, w, ghost);
+    came += 1;
+  }
+  if (came === 0) ctx.game.notices.push({ text: "The Summoning echoed out over the sea. No ghost had all it wanted.", tone: "warn" });
+  syncPowers(w);
+  syncGhostBodies(ctx);
+  return came;
+}
+
 /** Seconds between a resident's haunts, its reach, and the fright it gives (a ghost is never a cheap trick). */
 export const HAUNT = { every: 14, reach: 8, fright: 4 } as const;
 
@@ -123,13 +162,14 @@ function hauntTheLiving(ctx: GameContext): void {
     if (body == null) continue;
     if (now < (session.ghostNextHaunt.get(ghost.id) ?? 0)) continue;
     let frightened = 0;
+    const fright = HAUNT.fright + EMPOWER_FRIGHT * park.of(ctx).num(ghostPowerFact(ghost.id));
     for (const guest of session.guests.values()) {
       if (guest.phase !== "seeking" && guest.phase !== "busy" && guest.phase !== "queued") continue;
       const at = ctx.scene.entity.get(guest.id)?.position;
       if (at == null || Math.hypot(at[0] - body[0], at[2] - body[2]) > HAUNT.reach) continue;
-      const spent = Math.min(guest.courage, HAUNT.fright);
+      const spent = Math.min(guest.courage, fright);
       guest.courage -= spent;
-      const multiplier = landScare(ctx, guest, HAUNT.fright, `The ${ghost.label} just floated through me!`);
+      const multiplier = landScare(ctx, guest, fright, `The ${ghost.label} just floated through me!`);
       const harvest = Math.round(spent * multiplier * moonHarvest(park.of(ctx)) * 10) / 10;
       if (harvest > 0) park.emit(ctx, { kind: "pay_scare", scale: harvest });
       frightened += 1;
@@ -137,6 +177,9 @@ function hauntTheLiving(ctx: GameContext): void {
     if (frightened === 0) continue;
     session.ghostNextHaunt.set(ghost.id, now + HAUNT.every);
     session.ghostFlares.set(ghost.id, now);
+    // A bound partner haunts with it: it flares too and is ready to haunt its own corner now.
+    const partner = bondPartner(park.of(ctx), ghost.id);
+    if (partner !== null) { session.ghostFlares.set(partner, now); session.ghostNextHaunt.set(partner, now); }
     ctx.game.audio.play("scare", [body[0], body[1], body[2]]);
   }
 }
@@ -150,6 +193,7 @@ export function tickGhosts(ctx: GameContext, dt: number): void {
   const step = checkAcc;
   checkAcc = 0;
   const w = park.of(ctx);
+  syncPowers(w);
   const census = parkCensus(w, session.guests.size);
   const rumor = w.num("park.rating");
   const now = ctx.time.now();

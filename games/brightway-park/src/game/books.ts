@@ -86,6 +86,7 @@ export const BOOK_LINES: readonly BookLine[] = [
   { id: "marketing", label: "Rumor-mongering", income: false },
   { id: "interest", label: "Ferryman's interest", income: false },
   { id: "exorcism", label: "Exorcisms", income: false },
+  { id: "rituals", label: "Rituals, bonds and grounds", income: false },
 ];
 
 export interface Campaign {

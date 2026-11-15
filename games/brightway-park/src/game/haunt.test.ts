@@ -14,6 +14,7 @@ import { chainMultiplier, CHAIN_SECONDS, ECTO_PER_NERVE, liveChain, shrugsOff, t
 import { seedGuests } from "./sim/guests";
 import { session } from "./session";
 import { EXORCIST_EVIDENCE, FOOTAGE_ON_RECORD, leaveWithFootage, noonExorcism } from "./threats";
+import { bondActiveFact, EMPOWER_COSTS, expansionCrowd, ghostPowerFact, lateRumor } from "./lateGame";
 
 function haunt() {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
@@ -190,4 +191,51 @@ describe("hauntworks threats", () => {
     expect(noonExorcism(ctx)).toBe(false);
     expect(w.num("park.evidence")).toBeLessThan(40);
   }, 30_000);
+});
+
+describe("hauntworks late game", () => {
+  test("a rich haunt can empower residents, bind pairs, buy grounds and run rituals, and each costs", () => {
+    const { runner, w } = haunt();
+    const run = (action: string) => runner.ctx.game.commands.run("brightway.act", { action }).status;
+    w.change({ "park.cash": 200_000 });
+    // Nobody to empower or bind yet.
+    expect(run("empower_child_1")).not.toBe("applied");
+    expect(run("bind_wedding")).not.toBe("applied");
+    w.set(ghostFact("child"), 1);
+    w.set(ghostFact("bride"), 1);
+    const cash = w.num("park.cash");
+    expect(run("empower_child_1")).toBe("applied");
+    expect(w.num("park.cash")).toBe(cash - EMPOWER_COSTS[0]!);
+    expect(run("empower_child_3")).not.toBe("applied");
+    expect(run("bind_wedding")).toBe("applied");
+    runner.step(2);
+    expect(w.num(ghostPowerFact("child"))).toBe(1);
+    expect(w.num(bondActiveFact("wedding"))).toBe(1);
+    expect(lateRumor(w)).toBeGreaterThan(0);
+    // The grounds: the manor before the crypt, each holding more of the living.
+    expect(run("buy_crypt")).not.toBe("applied");
+    expect(run("buy_manor")).toBe("applied");
+    expect(expansionCrowd(w)).toBe(40);
+    expect(run("buy_crypt")).toBe("applied");
+    expect(expansionCrowd(w)).toBe(100);
+    // Rituals: silence wipes evidence; the blood moon sets with the night.
+    w.change({ "park.evidence": 80 });
+    expect(run("ritual_silence")).toBe("applied");
+    expect(w.num("park.evidence")).toBe(20);
+    expect(run("ritual_bloodmoon")).toBe("applied");
+    expect(run("ritual_bloodmoon")).not.toBe("applied");
+  }, 30_000);
+
+  test("legendary attractions wait for their moon", () => {
+    const { runner, w } = haunt();
+    w.change({ "park.cash": 200_000 });
+    expect(runner.ctx.game.commands.run("brightway.act", { action: "research_ride_cathedral" }).status).not.toBe("applied");
+    w.change({ "park.day": 3 * 8 });
+    expect(runner.ctx.game.commands.run("brightway.act", { action: "research_ride_cathedral" }).status).toBe("applied");
+  }, 30_000);
+
+  test("festival week packs the gate with skeptics and cameras", () => {
+    const count = (siege: boolean) => Array.from({ length: 400 }, (_, i) => pickVisitorKind(1000, i / 400, siege)).filter((k) => k.skeptic === true || k.films !== undefined).length;
+    expect(count(true)).toBeGreaterThan(count(false) * 1.8);
+  });
 });

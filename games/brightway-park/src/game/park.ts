@@ -18,7 +18,8 @@ import { BUILDABLES, BUILD_IDS, buildableDef, THEME_CAP, type BuildableDef } fro
 import { SCENARIOS } from "./scenarios";
 import { BOOK_LINES, CAMPAIGNS } from "./books";
 import { ecto } from "./ecto";
-import { GHOSTS, ghostFact } from "./ghostCatalog";
+import { GHOSTS, ghostDef, ghostFact } from "./ghostCatalog";
+import { BONDS, BOND_YIELD, bondActiveFact, bondFact, EMPOWER_COSTS, EMPOWER_YIELD, EXPANSIONS, expansionFact, ghostLevelFact, ghostPowerFact, RITUALS } from "./lateGame";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
 import { retuneRideUpkeep, rideRunActions, rideRunFacts } from "./rideRefits";
 
@@ -226,8 +227,14 @@ function researchAction(def: BuildableDef): WorldActionDecl {
   const after = research.after;
   return {
     label: researchLabel(def.label),
-    when: { [researched(def.id)]: false, ...(after === undefined || BUILDABLES[after]?.research === undefined ? {} : { [researched(after)]: true }) },
-    refuse: after === undefined ? `The ${def.label} is already channelled` : `Channel the ${BUILDABLES[after]!.label} first`,
+    when: {
+      [researched(def.id)]: false,
+      ...(after === undefined || BUILDABLES[after]?.research === undefined ? {} : { [researched(after)]: true }),
+      // A legendary séance only answers from the first night of its moon.
+      ...(research.moon === undefined ? {} : { "park.day": { atLeast: (research.moon - 1) * 8 + 1 } }),
+    },
+    refuse: research.moon !== undefined ? `The ${def.label} only answers from moon ${research.moon} of the season${after === undefined ? "" : `, after the ${BUILDABLES[after]!.label}`}`
+      : after === undefined ? `The ${def.label} is already channelled` : `Channel the ${BUILDABLES[after]!.label} first`,
     cost: { "park.cash": -research.cost, [monthLine("research")]: research.cost },
     takes: research.seconds * RESEARCH_PACE,
     queue: "lab",
@@ -300,14 +307,70 @@ const flows: Record<string, WorldFlowDecl> = {
   bill_rides_delta: { to: "park.spent_today", from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
   book_rides_delta: { to: monthLine("upkeep"), from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
 };
-// Every ghost in residence seeps its ectoplasm through the night.
+// Every ghost in residence seeps its ectoplasm through the night, more for each level it is empowered.
 for (const ghost of GHOSTS) {
   flows[`seep_${ghost.id}`] = { to: "park.cash", from: ghostFact(ghost.id), rate: ghost.yield / DAY_LENGTH };
   flows[`seep_book_${ghost.id}`] = { to: monthLine("ghosts"), from: ghostFact(ghost.id), rate: ghost.yield / DAY_LENGTH };
+  flows[`seep_power_${ghost.id}`] = { to: "park.cash", from: ghostPowerFact(ghost.id), rate: (ghost.yield * EMPOWER_YIELD) / DAY_LENGTH };
+  flows[`seep_power_book_${ghost.id}`] = { to: monthLine("ghosts"), from: ghostPowerFact(ghost.id), rate: (ghost.yield * EMPOWER_YIELD) / DAY_LENGTH };
+}
+// A bond, while both of its residents are home, seeps a share of both.
+for (const bond of BONDS) {
+  const rate = ((ghostDef(bond.a)!.yield + ghostDef(bond.b)!.yield) * BOND_YIELD) / DAY_LENGTH;
+  flows[`seep_bond_${bond.id}`] = { to: "park.cash", from: bondActiveFact(bond.id), rate };
+  flows[`seep_bond_book_${bond.id}`] = { to: monthLine("ghosts"), from: bondActiveFact(bond.id), rate };
 }
 // The ground's height levels, a digit a cell; and which version of the path rules the park was laid under.
 const prices: Record<string, WorldFactsDecl[string]> = { [LAND_FACT]: FLAT_LAND, "park.netv": 0 };
 // Each ghost: whether it haunts the park (0 or 1), when it moved in, and until when an exorcist's blessing keeps it out.
+// Rich-haunt spending: each resident's level and its live power, the bonds, the grounds, the blood moon.
+for (const ghost of GHOSTS) {
+  prices[ghostLevelFact(ghost.id)] = { value: 0, min: 0, max: EMPOWER_COSTS.length };
+  prices[ghostPowerFact(ghost.id)] = { value: 0, min: 0, max: EMPOWER_COSTS.length };
+  EMPOWER_COSTS.forEach((cost, index) => {
+    actions[`empower_${ghost.id}_${index + 1}`] = {
+      label: `Empower the ${ghost.label} to level ${index + 1}`,
+      when: { [ghostFact(ghost.id)]: { atLeast: 1 }, [ghostLevelFact(ghost.id)]: { atLeast: index, atMost: index } },
+      refuse: `The ${ghost.label} must be at home, at level ${index}`,
+      cost: { "park.cash": -cost, [monthLine("rituals")]: cost },
+      world: { [ghostLevelFact(ghost.id)]: 1, "park.spent_today": cost },
+      note: `The ${ghost.label} drinks the ectoplasm and grows stronger: level ${index + 1}`,
+    };
+  });
+}
+for (const bond of BONDS) {
+  prices[bondFact(bond.id)] = { value: 0, min: 0, max: 1 };
+  prices[bondActiveFact(bond.id)] = { value: 0, min: 0, max: 1 };
+  actions[`bind_${bond.id}`] = {
+    label: `Bind ${bond.label}`,
+    when: { [bondFact(bond.id)]: { atMost: 0 }, [ghostFact(bond.a)]: { atLeast: 1 }, [ghostFact(bond.b)]: { atLeast: 1 } },
+    refuse: `Both the ${ghostDef(bond.a)!.label} and the ${ghostDef(bond.b)!.label} must be at home, and the bond not yet made`,
+    cost: { "park.cash": -bond.cost, [monthLine("rituals")]: bond.cost },
+    world: { [bondFact(bond.id)]: 1, "park.spent_today": bond.cost },
+    note: `${bond.label}: bound. ${bond.blurb}`,
+  };
+}
+for (const expansion of EXPANSIONS) {
+  prices[expansionFact(expansion.id)] = { value: 0, min: 0, max: 1 };
+  actions[`buy_${expansion.id}`] = {
+    label: `Buy ${expansion.label}`,
+    when: { [expansionFact(expansion.id)]: { atMost: 0 }, ...(expansion.after === undefined ? {} : { [expansionFact(expansion.after)]: { atLeast: 1 } }) },
+    refuse: expansion.after === undefined ? `${expansion.label} is already the haunt's` : `Buy ${EXPANSIONS.find((e) => e.id === expansion.after)!.label} first`,
+    cost: { "park.cash": -expansion.cost, [monthLine("rituals")]: expansion.cost },
+    world: { [expansionFact(expansion.id)]: 1, "park.spent_today": expansion.cost },
+    note: `${expansion.label} is the haunt's: ${expansion.blurb}`,
+  };
+}
+prices["park.blood_moon"] = { value: 0, min: 0, max: 1 };
+for (const ritual of RITUALS) {
+  actions[ritual.id] = {
+    label: ritual.label,
+    ...(ritual.id === "ritual_bloodmoon" ? { when: { "park.blood_moon": { atMost: 0 } }, refuse: "The moon is already blood-red tonight" } : {}),
+    cost: { "park.cash": -ritual.cost, [monthLine("rituals")]: ritual.cost },
+    world: { "park.spent_today": ritual.cost, ...(ritual.id === "ritual_silence" ? { "park.evidence": -60 } : {}), ...(ritual.id === "ritual_bloodmoon" ? { "park.blood_moon": 1 } : {}) },
+    note: `${ritual.label}: ${ritual.blurb}`,
+  };
+}
 for (const ghost of GHOSTS) {
   prices[ghostFact(ghost.id)] = { value: 0, min: 0, max: 1 };
   prices[`${ghostFact(ghost.id)}.since`] = 0;

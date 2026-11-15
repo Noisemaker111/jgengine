@@ -10,6 +10,7 @@ import { clockLabel, guestCap } from "../catalog";
 import { ecto } from "../ecto";
 import { residentCount } from "../ghosts";
 import { EXORCIST_EVIDENCE } from "../threats";
+import { expansionCrowd, expansionFact, EXPANSIONS, RITUALS } from "../lateGame";
 import { BOOK_LINES, CAMPAIGNS, isFullMoon, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, parkDuration, type BookLine } from "../books";
 import { LOAN, linesNet, monthLine, park, parkMetrics, reportLine } from "../park";
 import { scenarioView } from "../parkReset";
@@ -51,7 +52,7 @@ export function ParkStatus() {
       <RuneLabel value={bind(() => world().num("park.cash"))} format={money} family={DISPLAY} size={phone ? 22 : 28} color={bind(() => world().num("park.cash") < 0 ? BAD : TEAL)} />
       <Text family={DISPLAY} size={phone ? 16 : 20} color={INK}>{`Rumor ${rating}`}</Text>
     </Row>
-    <Row justify="between"><Text>{`${guests} / ${guestCap(rating)} living`}</Text>{down > 0 ? <Text weight={800} color={BAD}>{`${down} ${down === 1 ? "ride" : "rides"} jammed`}</Text> : refurbishing > 0 ? <Text weight={800}>{`${refurbishing} resting`}</Text> : null}</Row>
+    <Row justify="between"><Text>{`${guests} / ${guestCap(rating) + expansionCrowd(world())} living`}</Text>{down > 0 ? <Text weight={800} color={BAD}>{`${down} ${down === 1 ? "ride" : "rides"} jammed`}</Text> : refurbishing > 0 ? <Text weight={800}>{`${refurbishing} resting`}</Text> : null}</Row>
     <Row justify="between"><Text size={13} color={GOOD}>{`${screams} screamed out tonight`}</Text><Text size={13} weight={800} color={chain >= 3 ? GOLD : PENCIL}>{chain > 1 ? `best chain ×${chain}` : ""}</Text></Row>
     <Row justify="between"><Text size={13}>{ghosts === 0 ? "No ghosts in residence" : `${ghosts} ${ghosts === 1 ? "ghost" : "ghosts"} in residence`}</Text></Row>
     <Row gap={12} items="start">
@@ -130,6 +131,10 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
     <Rows rows={v.monthRows} />
     <Heading size={16}>Spread a rumor</Heading>
     {v.campaigns.map((c) => <Button key={c.id} disabled={c.disabled} tooltip={c.blurb} onPress={() => act(c.id)}>{c.text}</Button>)}
+    <Heading size={16}>Grounds beyond the fence</Heading>
+    {v.grounds.map((g) => <Button key={g.id} disabled={g.disabled} tooltip={g.blurb} onPress={() => act(`buy_${g.id}`)}>{g.text}</Button>)}
+    <Heading size={16}>Rituals</Heading>
+    {v.rituals.map((r) => <Button key={r.id} disabled={r.disabled} tooltip={r.blurb} onPress={() => act(r.id)}>{r.text}</Button>)}
   </Window>;
 }
 
@@ -154,7 +159,13 @@ function booksView(ctx: GameContext) {
     const running = ads.find((order) => order.label === c.label);
     return { id: c.id, blurb: c.blurb, disabled: running !== undefined || w.canAct(c.id) !== null, text: running !== undefined ? `${c.label} · ${parkDuration(running.remaining)} left` : `${c.label} · ${money(c.cost)}` };
   });
+  const grounds = EXPANSIONS.map((e) => {
+    const owned = w.num(expansionFact(e.id)) >= 1;
+    return { id: e.id, blurb: `${e.blurb} (+${e.crowd} living, +${e.rumor} rumor)`, disabled: owned || w.canAct(`buy_${e.id}`) !== null, text: owned ? `${e.label} · the haunt's` : `${e.label} · ${money(e.cost)}` };
+  });
+  const rituals = RITUALS.map((r) => ({ id: r.id, blurb: r.blurb, disabled: w.canAct(r.id) !== null, text: `${r.label} · ${money(r.cost)}` }));
   return {
+    grounds, rituals,
     owed, ticket: w.num("park.ticket"), today, peak, next: next === null ? null : { label: next.label, prize: next.prize, rating: next.rating },
     month: date.month, dayOfMonth: date.dayOfMonth, lastMonth: hasReport ? monthLabel(lastMonth) : null, monthRows, campaigns,
   };

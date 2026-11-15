@@ -6,7 +6,16 @@ import type { BuildableDef, StaffRole } from "../objects/catalog";
 import { GUEST_KINDS, GUEST_WALK_SPEED, groupSize, pickVisitorKind, startingCourage, visitorKind, type VisitorKind } from "../entities/guests/catalog";
 import { nextGroupId, nextGuestId, session, type GuestState } from "../session";
 import { chainMultiplier, landScare, liveChain, moonHarvest } from "../scares";
-import { FULL_MOON, isFullMoon } from "../books";
+import { FULL_MOON, isFullMoon, MONTH_DAYS } from "../books";
+import { expansionCrowd } from "../lateGame";
+import { scenarioDef } from "../scenarios";
+
+/** Festival week: the last moon of the Full Moon Festival, when the skeptic society lays siege. */
+export function festivalSiege(w: { fact(id: string): unknown; num(id: string): number }): boolean {
+  const id = w.fact("scenario.id");
+  const def = typeof id === "string" ? scenarioDef(id) : null;
+  return def !== null && def.id === "full_moon_festival" && w.num("park.day") > (def.months - 1) * MONTH_DAYS;
+}
 import { leaveWithFootage } from "../threats";
 import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
@@ -135,7 +144,7 @@ function makeGuest(ctx: GameContext, id: string, start: readonly [number, number
 /** One group through the gate together: same kind, side by side. Returns how many came. */
 function spawnGroup(ctx: GameContext, room: number): number {
   const w = park.of(ctx);
-  const card = pickVisitorKind(w.num("park.rating"), ctx.rng());
+  const card = pickVisitorKind(w.num("park.rating"), ctx.rng(), festivalSiege(w));
   const size = Math.max(1, Math.min(room, groupSize(card, ctx.rng())));
   const group = nextGroupId();
   const centre = (ctx.rng() - 0.5) * 10;
@@ -170,7 +179,7 @@ export function seedGuests(ctx: GameContext, count: number): void {
 export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): void {
   const w = park.of(ctx);
   const rating = w.num("park.rating");
-  const cap = guestCap(rating);
+  const cap = guestCap(rating) + expansionCrowd(w);
   if (session.guests.size >= cap) return;
   const moon = isFullMoon(w.num("park.day")) ? FULL_MOON.arrivals : 1;
   const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true, marketingBoost(w) * moon);

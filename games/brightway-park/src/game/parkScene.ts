@@ -11,7 +11,7 @@ import { savePark } from "./persistence";
 import { connectPark, relinkPark } from "./build/links";
 import { groundAt } from "./build/terrain";
 import { recordScenarioWin } from "./scenarios";
-import { syncGhostBodies } from "./ghosts";
+import { summonGhosts, syncGhostBodies } from "./ghosts";
 import { ecto } from "./ecto";
 
 /**
@@ -93,6 +93,7 @@ export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): v
 export function landed(ctx: GameContext, action: string, target: string | null): void {
   const w = park.of(ctx);
   const decl = w.def.actions?.[action];
+  if (action === "ritual_summon") summonGhosts(ctx);
   if (target !== null && action.startsWith("repair_")) fixRide(target);
   if (target !== null && action.startsWith("service_")) serviceRide(target);
   // A refit, closure or reopening changes the ride's appeal, upkeep and whether guests may use it.
