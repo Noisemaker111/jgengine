@@ -221,7 +221,12 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
   --state <name>`. The pink "MISSING" boxes are shared library models this sandbox cannot download.
   They led to: the port swap dock moved out of a brick block, teal flood water with a kerb lip, a
   floodlit blimp, neon gunwales on the jet-ski, and beacon pillars that clear the roofline.
-- Visual gaps: a flood sheet is an ellipse, so at a district's edge it can end mid-street as a hard
-  curve instead of at a kerb; the port's warehouses have no lit windows at night.
+- Second visual round: close chase camera on the scooter and jet-ski, lit-window panels on every
+  building (street face and back), squircle flood sheets whose edges follow the street grid, ripple
+  rings at walls and posts, wake rings behind boats, the catering job moved to its own stall, and a
+  `jetski-delivery` capture state.
+- Visual gaps: the rider is not drawn on the scooter or jet-ski (the engine hides the driver); the water
+  reflects the sky, not the lit windows (no planar reflection); a few window panels can show where a
+  low building sits under the king tide.
 - Not done: flood ripples on the water surface (engine gap in Gaps), the long-play browser flow was not
   re-run, and the sim's travel speeds are estimates: check them against a real recorded shift.
