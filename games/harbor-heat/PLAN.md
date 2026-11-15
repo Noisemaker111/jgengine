@@ -225,8 +225,12 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
   building (street face and back), squircle flood sheets whose edges follow the street grid, ripple
   rings at walls and posts, wake rings behind boats, the catering job moved to its own stall, and a
   `jetski-delivery` capture state.
-- Visual gaps: the rider is not drawn on the scooter or jet-ski (the engine hides the driver); the water
-  reflects the sky, not the lit windows (no planar reflection); a few window panels can show where a
-  low building sits under the king tide.
+- Third visual round: open rides draw the rider (engine `boardVehicle(..., { rider: "seated" })` with
+  `poseSeatedRiders`), standing on the scooter's floorboard, the jet-ski's deck and the gondola's stern;
+  closed cars and the blimp still hide them. Moving hulls trail a V wake; `jetski-wake` circles the
+  jet-ski in the bay at planing speed.
+- Visual gaps: the rider stands (the cast has no sitting clip); the water reflects the sky, not the lit
+  windows (no planar reflection); the wake trails behind the chase camera, so the jet-ski-wake still
+  shows planing and the rider but little of the V; dark buildings at night show only their lit panes.
 - Not done: flood ripples on the water surface (engine gap in Gaps), the long-play browser flow was not
   re-run, and the sim's travel speeds are estimates: check them against a real recorded shift.
