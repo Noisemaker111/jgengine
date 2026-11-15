@@ -21,6 +21,7 @@ import { breakRide, syncRidePark } from "./rides";
 import { tickScares } from "./scares";
 import { armMidnight } from "./midnight";
 import { residentCount, tickGhosts } from "./ghosts";
+import { tickExorcist } from "./threats";
 
 /** What a staged park should look like when the capture takes it. */
 export type StageMode = "full";
@@ -55,6 +56,7 @@ export function stepPark(ctx: GameContext, dt: number): void {
   // The props jolt whoever walks into reach; the ghosts look the park over and move in or out.
   tickScares(ctx);
   tickGhosts(ctx, dt);
+  tickExorcist(ctx, dt);
   tickRating(ctx, dt, metrics);
   // A ghost paradise is free play's own goal; a scenario is a world job with its own win and fail.
   if (w.fact("scenario.id") === "" && w.fact("park.won") !== true && metrics.rides >= BLUE_RIBBON.rides && w.num("park.rating") >= BLUE_RIBBON.rating && residentCount(w) >= BLUE_RIBBON.ghosts &&

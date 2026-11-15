@@ -5,7 +5,9 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Box3, BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, TextureLoader, Vector2, Vector3 } from "three";
+import { AdditiveBlending, Box3, BoxGeometry, CanvasTexture, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, Sprite, SpriteMaterial, TextureLoader, Vector2, Vector3 } from "three";
+import { GHOSTS } from "../ghostCatalog";
+import { ghostBodyId } from "../ghosts";
 import type { Texture } from "three";
 import motionJson from "../../../public/art/models/motion.json";
 import { objectModels } from "../models";
@@ -598,8 +600,8 @@ function scareAuraDraw(object: ParkObject, groundY: number, ready: () => boolean
   ring.raycast = () => {};
   group.add(ring);
   const wisps: Mesh[] = [];
-  const wispGeometry = new CircleGeometry(1.4, 18);
-  const wispMaterial = new MeshBasicMaterial({ color: "#b8f0e4", transparent: true, opacity: 0.16, depthWrite: false });
+  const wispGeometry = new PlaneGeometry(2.4, 2.4);
+  const wispMaterial = new MeshBasicMaterial({ color: "#b8f0e4", map: softDot(), transparent: true, opacity: 0.22, depthWrite: false });
   if (scare.fog === true) {
     for (let i = 0; i < 7; i += 1) {
       const wisp = new Mesh(wispGeometry, wispMaterial);
@@ -620,7 +622,7 @@ function scareAuraDraw(object: ParkObject, groundY: number, ready: () => boolean
         const a = i / wisps.length * Math.PI * 2 + t * 0.15;
         const r = (scare.radius * 0.7) * (0.4 + ((i * 37) % 10) / 14);
         wisp.position.set(Math.cos(a) * r, 0.4 + ((t * 0.3 + i * 0.4) % 2.2), Math.sin(a) * r);
-        wisp.scale.setScalar(1 + ((t * 0.3 + i * 0.4) % 2.2) * 0.6);
+        wisp.scale.setScalar(0.8 + ((t * 0.3 + i * 0.4) % 2.2) * 0.5);
       });
     },
     dispose(state: EngineFrameState) {
@@ -632,6 +634,71 @@ function scareAuraDraw(object: ParkObject, groundY: number, ready: () => boolean
       wispMaterial.dispose();
     },
   };
+}
+
+let dot: CanvasTexture | null = null;
+/** A soft round falloff, white in the middle and clear at the rim: fog wisps and ghost halos. */
+function softDot(): CanvasTexture | null {
+  if (dot !== null || typeof document === "undefined") return dot;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 64;
+  const g = canvas.getContext("2d");
+  if (g === null) return null;
+  const gradient = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.45, "rgba(255,255,255,0.45)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, 64, 64);
+  dot = new CanvasTexture(canvas);
+  return dot;
+}
+
+/** Each ghost's glow colour, matched to its body. */
+const GHOST_GLOW: Readonly<Record<string, string>> = { child: "#c8f5ff", sailor: "#5fd4b8", poltergeist: "#b48cff", banshee: "#9ff5d8", bride: "#f3f0ff", keeper: "#ffd27a" };
+
+/**
+ * A halo round every ghost in residence: a soft additive glow at its chest and a pool of its light
+ * on the ground below, following the body each frame, so a ghost reads from the build camera.
+ */
+function ghostHalosDraw(ctx: GameContext): EngineDraw {
+  const group = new Group();
+  const map = softDot();
+  const halos = GHOSTS.map((ghost) => {
+    const glow = new Sprite(new SpriteMaterial({ map, color: GHOST_GLOW[ghost.id] ?? "#9ff5d8", transparent: true, opacity: 0.75, depthWrite: false, blending: AdditiveBlending }));
+    glow.scale.set(3.2, 3.2, 1);
+    const pool = new Mesh(new PlaneGeometry(5, 5), new MeshBasicMaterial({ map, color: GHOST_GLOW[ghost.id] ?? "#9ff5d8", transparent: true, opacity: 0.35, depthWrite: false, blending: AdditiveBlending }));
+    pool.rotation.x = -Math.PI / 2;
+    glow.raycast = () => {};
+    pool.raycast = () => {};
+    group.add(glow, pool);
+    return { id: ghostBodyId(ghost.id), glow, pool };
+  });
+  let t = 0;
+  return {
+    mount(state: EngineFrameState) { state.scene.add(group); },
+    frame(_state: EngineFrameState, dt: number) {
+      t += dt;
+      for (const halo of halos) {
+        const at = ctx.scene.entity.get(halo.id)?.position;
+        halo.glow.visible = halo.pool.visible = at != null;
+        if (at == null) continue;
+        halo.glow.position.set(at[0], at[1] + 1.1, at[2]);
+        (halo.glow.material as SpriteMaterial).opacity = 0.6 + Math.sin(t * 2.3) * 0.15;
+        halo.pool.position.set(at[0], groundAt(park.of(ctx), at[0], at[2]) + 0.08, at[2]);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      for (const halo of halos) { halo.glow.material.dispose(); halo.pool.geometry.dispose(); (halo.pool.material as MeshBasicMaterial).dispose(); }
+      group.clear();
+    },
+  };
+}
+
+function GhostHalos() {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => ghostHalosDraw(ctx)} deps={[ctx]} />;
 }
 
 function ScareAura({ object }: { object: ParkObject }) {
@@ -654,6 +721,7 @@ function OverlayBodies() {
     {objects.filter(o => o.kind.startsWith("stall_")).map(o => <StallWares key={o.id} object={o} />)}
     {objects.filter(o => o.kind === "ride_coaster").map(o => <CoasterTrain key={o.id} object={o} circuit={circuit} />)}
     {objects.filter(o => o.def.scare !== undefined).map(o => <ScareAura key={o.id} object={o} />)}
+    <GhostHalos />
     {obj?.def.staff && <PatrolRing x={obj.x} z={obj.z} radius={patrolRadius(park.of(ctx), obj.id)} />}
     {obj && <EngineDrawMount create={() => selectionRingDraw(obj.x, obj.z, Math.max(2, obj.def.footprint * 0.65))} deps={[obj.x, obj.z, obj.def.footprint]} />}
   </>;

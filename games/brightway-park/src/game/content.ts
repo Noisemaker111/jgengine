@@ -8,8 +8,11 @@ import { BUILDABLES } from "./objects/catalog";
 import { GUEST_KINDS, GUEST_SCALE, GUEST_WALK_SPEED } from "./entities/guests/catalog";
 import { GHOST_BODIES } from "./ghostCatalog";
 
+/** The exorcist's entity kind (kept here as a literal so content does not load the runtime threats module). */
+const EXORCIST_BODY = "visitor_exorcist";
+
 function entityById(catalogId: string): GameContextEntityEntry | null {
-  if (GUEST_KINDS.includes(catalogId) || GHOST_BODIES.includes(catalogId) || catalogId.startsWith("crew_")) {
+  if (GUEST_KINDS.includes(catalogId) || GHOST_BODIES.includes(catalogId) || catalogId === EXORCIST_BODY || catalogId.startsWith("crew_")) {
     return {
       role: "npc",
       scale: GUEST_SCALE,

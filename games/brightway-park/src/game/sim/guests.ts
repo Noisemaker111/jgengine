@@ -5,7 +5,8 @@ import { guestCap } from "../catalog";
 import type { BuildableDef, StaffRole } from "../objects/catalog";
 import { GUEST_KINDS, GUEST_WALK_SPEED, groupSize, pickVisitorKind, startingCourage, visitorKind, type VisitorKind } from "../entities/guests/catalog";
 import { nextGroupId, nextGuestId, session, type GuestState } from "../session";
-import { chainMultiplier, landScare, liveChain } from "../scares";
+import { chainMultiplier, landScare, liveChain, moonHarvest } from "../scares";
+import { FULL_MOON, isFullMoon } from "../books";
 import { leaveWithFootage } from "../threats";
 import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
@@ -163,7 +164,8 @@ export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): 
   const rating = w.num("park.rating");
   const cap = guestCap(rating);
   if (session.guests.size >= cap) return;
-  const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true, marketingBoost(w));
+  const moon = isFullMoon(w.num("park.day")) ? FULL_MOON.arrivals : 1;
+  const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true, marketingBoost(w) * moon);
   session.spawnAcc += rate * dt;
   let budget = 4;
   while (session.spawnAcc >= 1 && session.guests.size < cap && budget > 0) {
@@ -300,7 +302,7 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       // The ride's Fright is what it costs the rider's nerve; its yield, more in a chain, is what the haunt wrings out.
       guest.courage = Math.max(0, guest.courage - (rideView(rideId)?.ratings.excitement ?? 0) * NERVE_PER_FRIGHT);
       if (price > 0) {
-        const harvest = Math.round(price * chainMultiplier(liveChain(guest, ctx.time.now())) * 10) / 10;
+        const harvest = Math.round(price * chainMultiplier(liveChain(guest, ctx.time.now())) * moonHarvest(park.of(ctx)) * 10) / 10;
         park.emit(ctx, { kind: "pay_ride", scale: harvest });
       }
       guest.phase = "riding";

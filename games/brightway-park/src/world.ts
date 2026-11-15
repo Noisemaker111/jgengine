@@ -15,7 +15,7 @@ export const world: WorldFeature = environment({
     height: 0,
     material: "grass",
     // Moonlit turf: blue-green low ground, a paler crest, black-teal water at the line.
-    colors: { low: "#2f4440", high: "#4a5a54", waterline: "#1f4a58" },
+    colors: { low: "#22332f", high: "#34433d", waterline: "#1f4a58" },
     segments: 80,
     detail: {
       strength: 1,

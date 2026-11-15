@@ -45,6 +45,14 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
+      ],
+      "ok": false,
+      "failure": "step 15 (expect Continue brings back the same haunt: the carousel and every path): expected Continue brings back the same haunt: the carousel and every path: (r) => r.rides === 1 && r.structures === built.structures was false"
+    },
+    {
       "file": "proofs/sim/staff-upkeep.proof.ts",
       "proves": [
         "tycoon.staff-upkeep"

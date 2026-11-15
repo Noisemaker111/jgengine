@@ -4,7 +4,39 @@ import { ecto } from "./ecto";
 import { GHOSTS, ghostFact } from "./ghostCatalog";
 import { banish, isResident } from "./ghosts";
 import { park } from "./park";
-import type { GuestState } from "./session";
+import { session, type GuestState } from "./session";
+import { groundAt } from "./build/terrain";
+
+/** The exorcist's body: walks in from the gate to the ghost's haunt, blesses it, and walks out. */
+export const EXORCIST_BODY = "visitor_exorcist";
+const EXORCIST_ID = "exorcist";
+const EXORCIST_SPEED = 3.2;
+const GATE: [number, number, number] = [0, 0, 56];
+/** Seconds the exorcist stands at the haunt with the bell and the book. */
+const BLESS_SECONDS = 6;
+
+/** Send the exorcist's body walking to where it banishes (x, z). */
+function sendExorcist(ctx: GameContext, at: readonly [number, number]): void {
+  if (ctx.scene.entity.get(EXORCIST_ID) == null) ctx.scene.entity.spawn(EXORCIST_BODY, { id: EXORCIST_ID, position: GATE, role: "npc" });
+  session.exorcist = { to: [at[0], 0, at[1] + 2], phase: "in", until: 0 };
+}
+
+/** The exorcist walks in, blesses, walks out and is gone. */
+export function tickExorcist(ctx: GameContext, dt: number): void {
+  const walk = session.exorcist;
+  if (walk === null) return;
+  const goal = walk.phase === "out" ? GATE : walk.to;
+  const next = ctx.scene.entity.moveToward(EXORCIST_ID, goal, { speed: EXORCIST_SPEED, dt, stopDistance: 0 });
+  if (next === null) { session.exorcist = null; return; }
+  ctx.scene.entity.setPose(EXORCIST_ID, { position: [next[0], groundAt(park.of(ctx), next[0], next[2]), next[2]] });
+  const there = Math.hypot(next[0] - goal[0], next[2] - goal[2]) < 1;
+  if (walk.phase === "in" && there) { walk.phase = "bless"; walk.until = ctx.time.now() + BLESS_SECONDS; }
+  else if (walk.phase === "bless" && ctx.time.now() >= walk.until) walk.phase = "out";
+  else if (walk.phase === "out" && there) {
+    ctx.scene.entity.despawn(EXORCIST_ID);
+    session.exorcist = null;
+  }
+}
 
 /**
  * The haunt's enemies. Ghost hunters and paranormal TV crews film every scare they witness. A crew
@@ -51,7 +83,10 @@ export function noonExorcism(ctx: GameContext): boolean {
   const fee = newest === undefined ? EXORCISM_FEE.bless : EXORCISM_FEE.banish;
   w.emit({ kind: "exorcism", scale: fee });
   w.change({ "park.evidence": -evidence, "park.exorcisms": 1, "park.buzz": newest === undefined ? -30 : -20 });
-  if (newest !== undefined) banish(ctx, w, newest);
+  if (newest !== undefined) {
+    sendExorcist(ctx, session.ghostHaunts.get(newest.id) ?? [0, 10]);
+    banish(ctx, w, newest);
+  } else sendExorcist(ctx, [0, 10]);
   ctx.game.notices.push({
     text: newest === undefined
       ? `An exorcist blessed the whole park at noon: ${ecto(fee)} of ectoplasm boiled away`

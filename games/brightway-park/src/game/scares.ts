@@ -7,6 +7,13 @@ import { agentOf } from "./agents";
 import { session, type GuestState } from "./session";
 import { staffCover } from "./staff";
 import { think } from "./sim/thoughts";
+import { FULL_MOON, isFullMoon } from "./books";
+import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
+
+/** What a scare's harvest is multiplied by tonight: more under a full moon. */
+export function moonHarvest(w: WorldModel): number {
+  return isFullMoon(w.num("park.day")) ? FULL_MOON.harvest : 1;
+}
 
 /**
  * Scares and chains. A scare spends a visitor's nerve and wrings ectoplasm out of it. Scares that
@@ -103,7 +110,7 @@ export function tickScares(ctx: GameContext): void {
       const spent = Math.min(guest.courage, scare.fright);
       guest.courage -= spent;
       const multiplier = landScare(ctx, guest, scare.fright, LINES[prop.kind] ?? "What was that?!");
-      const harvest = Math.round(spent * multiplier * 10) / 10;
+      const harvest = Math.round(spent * multiplier * moonHarvest(park.of(ctx)) * 10) / 10;
       if (harvest > 0) park.emit(ctx, { kind: "pay_scare", scale: harvest });
     }
     if (jolted) {

@@ -3,6 +3,7 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
 import { DAY_LENGTH, clockLabel, CLOSE_FRACTION, OPEN_FRACTION } from "./catalog";
+import { FULL_MOON_NIGHT, isFullMoon, MONTH_DAYS } from "./books";
 import { pickVisitorKind, VISITORS } from "./entities/guests/catalog";
 import { GHOSTS, ghostDef, ghostFact } from "./ghostCatalog";
 import { ghostStatuses, MOVE_IN_SECONDS, RESTLESS_SECONDS } from "./ghosts";
@@ -38,6 +39,12 @@ afterEach(() => {
 });
 
 describe("hauntworks nights", () => {
+  test("one night of each moon is a full moon", () => {
+    expect(isFullMoon(FULL_MOON_NIGHT)).toBe(true);
+    expect(isFullMoon(FULL_MOON_NIGHT + 1)).toBe(false);
+    expect(isFullMoon(FULL_MOON_NIGHT + MONTH_DAYS)).toBe(true);
+  });
+
   test("the living come at dusk and go home at dawn, on a noon-to-noon clock", () => {
     expect(clockLabel(OPEN_FRACTION)).toBe("17:45");
     expect(clockLabel(CLOSE_FRACTION)).toBe("07:12");
@@ -165,6 +172,10 @@ describe("hauntworks threats", () => {
     expect(w.num("park.evidence")).toBe(0);
     expect(w.num("park.cash")).toBeLessThan(cash);
     expect(w.num(`${ghostFact("child")}.banished_until`)).toBeGreaterThan(ctx.time.now());
+    // The exorcist walks in from the gate, blesses the spot and walks out again.
+    expect(ctx.scene.entity.get("exorcist")).not.toBeNull();
+    for (let t = 0; t < 90 && ctx.scene.entity.get("exorcist") != null; t += 1) runner.step(1);
+    expect(ctx.scene.entity.get("exorcist")).toBeNull();
     // Below the line, noon only lets the evidence fade.
     w.change({ "park.evidence": 40 });
     expect(noonExorcism(ctx)).toBe(false);

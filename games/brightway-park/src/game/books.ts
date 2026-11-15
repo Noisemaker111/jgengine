@@ -21,6 +21,16 @@ export interface ParkDate {
   dayOfMonth: number;
 }
 
+/** The night of each moon the moon is full: the living come in droves and every scare is worth more. */
+export const FULL_MOON_NIGHT = 5;
+/** How much more of the living head for the gate on a full-moon night, and how much more each scare yields. */
+export const FULL_MOON = { arrivals: 1.6, harvest: 1.25 } as const;
+
+/** Whether this park night is a full moon. */
+export function isFullMoon(day: number): boolean {
+  return parkDate(day).dayOfMonth === FULL_MOON_NIGHT;
+}
+
 /** The calendar date of a park night (night 1 is the first night of the Harvest Moon, season 1). */
 export function parkDate(day: number): ParkDate {
   const d = Math.max(0, day - 1);

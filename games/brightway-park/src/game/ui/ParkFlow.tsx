@@ -5,7 +5,7 @@ import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 
-import { parkDateLabel } from "../books";
+import { isFullMoon, parkDateLabel } from "../books";
 import { park } from "../park";
 import { scenarioView } from "../parkReset";
 import { scenarioDef } from "../scenarios";
@@ -54,16 +54,19 @@ export function ParkFlow() {
   }, [cue]);
   const tally: [string, string][] = [["Ectoplasm", money(v.cash)], ["Rumor", String(v.rating)], ["Screamed out", String(v.screams)], ["Ghosts at home", String(v.ghosts)]];
   const won = v.result === "won";
+  const festival = v.title === "Full Moon Festival";
   const subtitle = !v.gate ? "Build a ride, then unchain the gate" : !v.open ? `${v.screamsToday} fled screaming · ${money(v.takings)} harvested` : v.title ?? (v.day > 1 ? `Last night ${money(v.yesterday)} net` : "The living are coming");
   return <>
     {banner === null ? null : <RuneView anchor="top" safe inset={0} padding={[150, 0, 0, 0]} responsive={{ phone: { padding: [300, 0, 0, 0] } }}>
       <RuneView fill={INK} radius={4} padding={[10, 26, 10, 26]} gap={2} items="center" border={{ width: 3, color: GOLD }} label="Gate banner">
         <Text family={DISPLAY} size={26} color={CREAM} align="center">{`${parkDateLabel(openDay.current)} · ${v.open ? "Dusk falls" : "Dawn breaks"}`}</Text>
-        <Text color={GOLD} weight={700} align="center">{subtitle}</Text>
+        <Text color={GOLD} weight={700} align="center">{v.open && isFullMoon(openDay.current) ? "Full moon tonight: the living come in droves and every scare is worth more" : subtitle}</Text>
       </RuneView>
     </RuneView>}
-    {!v.started ? null : v.result != null ? <Result tone={won ? "good" : "bad"} eyebrow={v.title ?? ""} title={won ? "The night is yours" : "The haunt falls quiet"}
-      summary={won ? `You hit every target with the haunt still standing${v.reward > 0 ? `: ${money(v.reward)} is in the vault` : ""}.` : v.reason ?? "The target slipped away."}
+    {!v.started ? null : v.result != null ? <Result tone={won ? "good" : "bad"} eyebrow={v.title ?? ""} title={won ? festival ? "The Full Moon Festival" : "The night is yours" : "The haunt falls quiet"}
+      summary={won ? festival
+        ? `Under the last full moon of the season every ghost on the coast came home to your pier: the carousel turns for the Victorian Child, the Banshee has her crowd, the Keeper's lanterns burn along every path. The living will be telling this story for a hundred years${v.reward > 0 ? `, and ${money(v.reward)} is in the vault` : ""}.`
+        : `You hit every target with the haunt still standing${v.reward > 0 ? `: ${money(v.reward)} is in the vault` : ""}.` : v.reason ?? "The target slipped away."}
       stats={[["Harvested", money(v.revenue)], ["The living", String(v.visitors)], ...tally.slice(2, 4)]}
       actions={[["Haunt it again", () => commands.run("park.replay", {}), true], ["Keep this haunt", () => commands.run("park.freeplay", {}), false]]} />
       : v.gameOver ? <Result tone="bad" eyebrow="The lanterns gutter out" title="The haunt has faded"

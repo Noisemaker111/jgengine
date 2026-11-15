@@ -77,6 +77,8 @@ export interface Session {
   ghostRestless: Map<string, number>;
   /** Where each resident haunts (x, z). */
   ghostHaunts: Map<string, [number, number]>;
+  /** The exorcist's walk, while one is in the park. */
+  exorcist: { to: [number, number, number]; phase: "in" | "bless" | "out"; until: number } | null;
   started: boolean;
   hasSave: boolean;
   saveStatus: string;
@@ -100,6 +102,7 @@ function freshSession(): Session {
     ghostPending: new Map(),
     ghostRestless: new Map(),
     ghostHaunts: new Map(),
+    exorcist: null,
     started: false,
     hasSave: false,
     saveStatus: "Saved on builds, toll changes, pause and each noon",

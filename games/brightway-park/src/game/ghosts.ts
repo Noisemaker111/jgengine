@@ -198,5 +198,8 @@ export function resetGhosts(ctx: GameContext): void {
   session.ghostPending.clear();
   session.ghostRestless.clear();
   session.ghostHaunts.clear();
+  // An exorcist mid-walk leaves with the old park.
+  if (ctx.scene.entity.get("exorcist") != null) ctx.scene.entity.despawn("exorcist");
+  session.exorcist = null;
   checkAcc = 0;
 }

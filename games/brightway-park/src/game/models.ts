@@ -104,6 +104,8 @@ const GHOST_LOOKS: Record<string, ModelConfig> = {
 export const entityModels = {
   ...VISITOR_LOOKS,
   ...GHOST_LOOKS,
+  // The exorcist: an old man in black with a white collar's worth of rim light.
+  visitor_exorcist: person("Doctor_Male_Old", 1.9, {}, { color: "#3a3446", rim: { color: "#ffffff", strength: 1.1, power: 2 } }),
   // The haunt's spooks: a ghoul, a gremlin, a phantom barker and a stone sentry, each with one lantern-amber shape so they read in a crowd.
   crew_handyman: person("Zombie_Male", 1.85, {}, { color: "#8aa878", rim: { color: "#ffc46b", strength: 0.6 } }),
   crew_mechanic: person("Goblin_Female", 1.3, {}, { rim: { color: "#ffc46b", strength: 0.7 } }),

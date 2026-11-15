@@ -10,7 +10,7 @@ import { clockLabel, guestCap } from "../catalog";
 import { ecto } from "../ecto";
 import { residentCount } from "../ghosts";
 import { EXORCIST_EVIDENCE } from "../threats";
-import { BOOK_LINES, CAMPAIGNS, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, parkDuration, type BookLine } from "../books";
+import { BOOK_LINES, CAMPAIGNS, isFullMoon, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, parkDuration, type BookLine } from "../books";
 import { LOAN, linesNet, monthLine, park, parkMetrics, reportLine } from "../park";
 import { scenarioView } from "../parkReset";
 import { rideBoard } from "../rides";
@@ -46,7 +46,7 @@ export function ParkStatus() {
   const said = useGameStore(() => session.thoughts.top.slice(0, phone ? 1 : 3).map((t) => ({ label: t.label, count: t.count, complaint: t.complaint })));
   const clock = () => clockLabel(ctx.time.calendar().dayFraction);
   return <Card {...(phone ? {} : { width: 300 })} grow={phone ? 1 : 0} shrink padding={phone ? 10 : 14} gap={phone ? 5 : 8} label="Haunt status">
-    <Tag text={bind(() => `${parkDateLabel(v.day)} · ${clock()} · ${!gate ? "Gate chained" : v.open ? "The living are here" : "Daylight"}`.toUpperCase())} />
+    <Tag text={bind(() => `${parkDateLabel(v.day)}${isFullMoon(v.day) ? " · FULL MOON" : ""} · ${clock()} · ${!gate ? "Gate chained" : v.open ? "The living are here" : "Daylight"}`.toUpperCase())} />
     <Row justify="between">
       <RuneLabel value={bind(() => world().num("park.cash"))} format={money} family={DISPLAY} size={phone ? 22 : 28} color={bind(() => world().num("park.cash") < 0 ? BAD : TEAL)} />
       <Text family={DISPLAY} size={phone ? 16 : 20} color={INK}>{`Rumor ${rating}`}</Text>
