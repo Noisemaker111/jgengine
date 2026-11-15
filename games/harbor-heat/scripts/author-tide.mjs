@@ -98,7 +98,8 @@ function buildJetSki() {
   batch.add(white, new THREE.SphereGeometry(1, 22, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), [0, 0.05, -0.1], [0, 0, 0], [0.62, 0.4, 1.45]);
   batch.add(paint, rounded(1.22, 0.36, 2.4, 0.16), [0, 0.2, -0.1]);
   batch.add(paint, new THREE.ConeGeometry(0.6, 0.9, 16, 1, false, 0, Math.PI), [0, 0.2, 1.45], [Math.PI / 2, 0, Math.PI / 2], [1, 1, 0.6]);
-  batch.add(pink, new THREE.BoxGeometry(1.24, 0.05, 2.2), [0, 0.06, -0.1]);
+  // Neon rails along both gunwales, above the waterline so the hull reads at night from the chase camera.
+  for (const s of [-1, 1]) batch.add(pink, new THREE.BoxGeometry(0.04, 0.07, 2.2), [s * 0.625, 0.3, -0.1]);
   // Deck, saddle, steering pod and bars.
   batch.add(dark, rounded(0.42, 0.26, 1.2, 0.1), [0, 0.5, -0.35]);
   batch.add(paint, rounded(0.6, 0.38, 0.5, 0.14), [0, 0.52, 0.55], [-0.35, 0, 0]);
@@ -157,8 +158,9 @@ await exportModel('motor-gondola', buildGondola());
 /** The pizza blimp: a 13 m cream envelope with the shop's red bands and a slice on each flank, gondola car on y = -1. */
 function buildBlimp() {
   const batch = new Batch();
-  const skin = named('blimp paint', '#fff0d2', { roughness: 0.55 });
-  const red = named('blimp red', '#d93a2f', { roughness: 0.5 });
+  // The envelope is floodlit from its own gondola, so it glows warm against the night sky.
+  const skin = named('blimp paint', '#fff0d2', { roughness: 0.55, emissive: '#ffd9a0', emissiveIntensity: 0.22 });
+  const red = named('blimp red', '#d93a2f', { roughness: 0.5, emissive: '#d93a2f', emissiveIntensity: 0.35 });
   const crust = named('blimp crust', '#e0a24a', { roughness: 0.6 });
   const cheese = glow('blimp slice', '#ffcf4a', 0.6, { roughness: 0.5 });
   const pep = named('blimp pepperoni', '#b3261e', { roughness: 0.5 });
@@ -251,10 +253,12 @@ for (const [index, color] of ['#f37f63', '#38b6ac', '#f8b64b'].entries()) {
 /** The order beacon: a glowing box over a light pillar, lifted to the floor the customer leans out of. */
 function buildOrderBeacon() {
   const batch = new Batch();
-  const pillar = named('beacon pillar', '#ffcf4a', { emissive: '#ffb020', emissiveIntensity: 1.2, transparent: true, opacity: 0.35, depthWrite: false });
+  const pillar = named('beacon pillar', '#ffcf4a', { emissive: '#ffb020', emissiveIntensity: 1.6, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide });
   const box = glow('beacon box', '#fff1d6', 0.9);
   const red = glow('beacon stripe', '#ff3b2f', 1.4);
-  batch.add(pillar, new THREE.CylinderGeometry(0.35, 0.35, 12, 12, 1, true), [0, 6, 0]);
+  // The pillar runs from well below the drop (a rooftop beacon still shows down at the water) to far
+  // above it, so it clears the roofline and can be spotted across the flooded blocks.
+  batch.add(pillar, new THREE.CylinderGeometry(0.45, 0.45, 48, 12, 1, true), [0, 12, 0]);
   batch.add(box, new THREE.BoxGeometry(0.9, 0.16, 0.9), [0, 2.2, 0]);
   batch.add(red, new THREE.BoxGeometry(0.92, 0.05, 0.3), [0, 2.29, 0]);
   batch.add(red, new THREE.TorusGeometry(0.8, 0.05, 6, 24), [0, 2.2, 0], [Math.PI / 2, 0, 0]);
