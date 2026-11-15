@@ -65,20 +65,21 @@ is what the build does now.
   - Downtown Grid (`downtown.scene.json`): square blocks, thirteen plots, and from wave 6 a surge of scooters, phones and vacuums down the long north road (20% thicker each wave, not in the finale).
   - School Campus (`school.scene.json`): the school run winds round the schoolyard and a bus lane cuts in; tech is 1.3× tougher, and every 40 s of a wave the recess bell fills the yard for 8 s and ground tech within 15 m of it crawls at 45%.
 - **The union hall** (`src/game/union.ts`). A career starts with four trades (Barista, Farmer, Plumber, Teacher). Each finished day pays dues: 2 a wave, 5 a star, 10 for a held street. Between days dues hire the other ten trades (10–30), train a trade (+10% damage a rank, three ranks), or build town upgrades: Landlines (distractions 25% shorter), Library Card Program (Librarians +1.5 m and +25%), Block Party (+3 attention a rank), Bike Couriers (+20 opening cash a rank).
+- **In-day cash sinks** (`src/game/sinks.ts`). Gear on the worker card (one item per trade: Espresso Shot doubles a barista's pace for 20 s, Pressure Hose gives a plumber +80% and 2 m, ...); the town hall's buttons: Power Outage (one road's tech stops dead and quiet for 10 s) and Free Wi-Fi Off (routers stop boosting and patching for 25 s); spare lots, two per map, bought open mid-day for 200 and half again each. Gear and actions cost 15% more each wave.
 - **Overtime** (`src/game/waves/endless.ts`). Endless: the Dial-Up Era (earbuds, watches, phones, speakers, vacuums, fridges), the Smartphone Era from wave 9 (phones, drones, scooters, cameras, routers, cars) and the AI Era from wave 17 (chatbots, graphics cards, rigs, drones, cars). Squads thicken 6% a wave; every eighth wave brings the era's boss, 5% tougher a wave past 12. A finished night goes on the career's Overtime board (five deepest) and the title's board across careers.
 - **Pacing, checked headless** (`src/game/balance.test.ts`):
   - A town that hires nobody loses by wave 3.
   - Baristas alone can't reach the drones or The Cloud.
-  - A mixed, promoted crew holds Full-Time with about 6 of 20 attention and never banks more than 300 unspent.
+  - A mixed, promoted crew that saves for promotions and then spends on sinks holds Full-Time with about 7 of 20 attention (asserted 3–10), never banking 300 unspent. A boss that gets through costs its share still standing.
   - The same crew with its Teacher and Librarian swapped for Baristas loses: answering distraction matters.
   - The same crew loses on Double Shift.
   - Downtown: the eleven workers that hold Main Street fall to its surge; thirteen on its corners hold. School Campus: the crew on its corners holds.
   - Overtime: the crew works into the AI era (about wave 20) and falls.
-  - A career from zero: the starter crew falls on day one; with dues spent between days the season is kept in about five days.
+  - A career from zero: districts open on a two-star hold; with dues spent between days the season is kept in about eight days with a loss on the way.
 - **Failure states.** Losing all attention ends the day with "Total Distraction"; victory is twelve waves with the street clear.
 - **Gap to target.** A worker "looking at the phone" animation (today a floating phone); a fourth district (the Mall with an escalator split).
 
-Loop proofs: to-first-defense, from-zero (a headless career from nothing to day two)
+Loop proofs: to-first-defense, from-zero (a headless career from nothing to day two), district-trip (browser: hold Main Street, travel to Downtown, reload and Continue there)
 
 The roads, plots, buildings and worker base numbers are read from `src/editor.scene.json`, so moving a
 road or retuning a worker is an editor edit. Run `bun run check-types` and `bun run test` here after changes.

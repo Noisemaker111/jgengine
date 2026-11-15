@@ -2,6 +2,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { unlockAllTrades } from "./union";
 import { setRunModeChoice } from "./campaign";
 import { restartDefense } from "./world/setup";
+import { finishRun } from "./waves/legacy";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";
@@ -10,7 +12,7 @@ import { sendWave, tickWaves } from "./waves/director";
 import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
 
 /** What a staged defense should look like when the capture takes it. */
-export type StageMode = "midwave" | "boss" | "finale" | "result" | "breached" | "overtime" | "recess";
+export type StageMode = "midwave" | "boss" | "finale" | "result" | "breached" | "overtime" | "recess" | "held";
 
 /** One simulation step for a staged run - 30 Hz, the same cadence the frame loop asks for. */
 const STEP = 1 / 30;
@@ -107,6 +109,13 @@ function stageOvertime(ctx: GameContext): void {
   advance(ctx, 14);
 }
 
+/** A day called held at full attention: the end-of-day board with this district's three stars banked. */
+function stageHeld(ctx: GameContext): void {
+  keep.of(ctx).set("keep.held", true);
+  finishRun(ctx);
+  setGamePhase(ctx, "ended");
+}
+
 /** Mid-wave with the recess bell ringing (on a district that has one): the kids are in the yard. */
 function stageRecess(ctx: GameContext): void {
   stageMidwave(ctx);
@@ -160,6 +169,10 @@ export function stageRun(ctx: GameContext, mode: StageMode): void {
     stageRecess(ctx);
     return;
   }
+  if (mode === "held") {
+    stageHeld(ctx);
+    return;
+  }
   stageMidwave(ctx);
 }
 
@@ -170,6 +183,14 @@ export function stageRun(ctx: GameContext, mode: StageMode): void {
  */
 export function registerCaptureCommands(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
+  // A browser flow on software rendering draws about a frame a second, so the street's clock barely
+  // moves; this rolls the street's own sim forward the way a capture stages it.
+  ctx.game.commands.define<{ seconds?: number }>("dev.advance", {
+    apply(state, input) {
+      advance(state, Math.max(0, Math.min(600, input.seconds ?? 10)));
+      return state;
+    },
+  });
   ctx.game.commands.define<{ mode?: StageMode }>("run.stage", {
     apply(state, input) {
       stageRun(state, input.mode ?? "midwave");

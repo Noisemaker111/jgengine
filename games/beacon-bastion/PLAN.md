@@ -137,7 +137,12 @@ Genres: tower-defense. 0/17 proven · 17 missing.
   map identity (`activeMap()`), so a headless `game.scenes.build(id)` runs that district's rules.
 - Lawn Order (ember-command) can adopt the same scene set for its maps: declare the set, wrap
   `defineGame` in `withSceneSet`, author each map with `--scene`.
-- Known: cash piles up late in a day once every plot is staffed and promoted (the scripted crews end
-  with hundreds unspent, Overtime with thousands); a sink (a second-tier career, or rehiring) is open.
-  The older browser flows (`ui-play`, `ui-menus`, `to-first-defense`) still name the pre-reskin text.
+- Sinks (`sinks.ts`): gear, Power Outage, Free Wi-Fi Off, spare lots; Overtime ends with its lots
+  staffed and cash under 1500. Balance tests assert ranges, not exact values.
+- Browser flows (`ui-menus`, `ui-play`, `to-first-defense`, `reload-mid-run`, `district-trip`) pass with
+  a warm daemon and `--timeout 440`. Software Rune draws about a frame a second here, so the street's
+  clock crawls: flows roll it on with the dev-only `dev.advance` command, and press keys or run the
+  button's command where a HUD control never settles while tech is moving.
+- Fixed by the flows: the title's Streets and Overtime Board buttons refreshed the save index before
+  opening their screen, and the refresh's re-render swallowed the push; they now open first.
 - Shots: see the latest round's report.

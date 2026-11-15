@@ -2,8 +2,10 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
 /**
- * The native Rune play UI: raise a defense, the HUD, build and inspect a tower, release a wave,
- * pause, save, withdraw, load the kept defense back, and the memorial. Run at desktop and phone sizes; each shot carries the viewport width in its name.
+ * The native Rune play UI: open a day from the time card, the HUD, hire and inspect a worker, buy
+ * their gear, open the street, the town hall's buttons, pause, save, clock out, return to the kept
+ * street, and the end-of-day board with its season map and union hall. Run at desktop and phone
+ * sizes; each shot carries the viewport width in its name.
  */
 export default defineFlow(game, {
   browser: true,
@@ -12,76 +14,65 @@ export default defineFlow(game, {
     const width = await f.page("innerWidth");
     const size = typeof width === "number" && width < 600 ? "phone" : "desktop";
     const shot = (name: string) => f.shot(`${name}-${size}`);
-    // Software Rune on a loaded host can take seconds to present a changed screen: let it land before a press or a shot.
-    const settle = () => f.wait(7000);
+    const settle = () => f.wait(5000);
     await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
-    await f.see(/new defense/i, { timeoutMs: 40000 });
+    await f.see(/new day/i, { timeoutMs: 40000 });
     await settle();
-    await f.click("New Defense");
-    await f.see(/commission/i);
+    await f.click("New Day");
+    await f.see(/time card/i);
     await settle();
-    await f.click("Raise The Keep");
-    await f.see(/begin first assault/i, { timeoutMs: 20000 });
+    await f.click("Open Maple Street");
+    await f.see(/open for business/i, { timeoutMs: 30000 });
     await settle();
     await shot("hud");
 
-    // A plaque, then a ring on the field: the native rack hands the click through to the world.
-    await f.click("Archer Post");
-    await f.see(/click a foundation ring/i);
-    if (size === "desktop") await f.clickAt(632, 326);
-    else await f.command("tower.build", { point: [-12, 0, -3.2] });
-    await f.waitFor((p) => p.towers >= 1, { timeoutMs: 20000, note: "the archer post rises on its ring" });
-    // The hand stays on the archer: a second post on a known plot. Pressing the plaque again puts the
-    // hand down, so the next click on that plot opens its tablet.
+    // The hiring board's first tile (key 1), then a plot on the street.
+    await f.command("buildTower1");
     await f.command("tower.build", { point: [0, 0, 4] });
-    await f.waitFor((p) => p.towers >= 2, { timeoutMs: 20000, note: "the second post rises" });
-    await settle();
-    await f.click("Archer Post");
-    await f.see(/pick a tower to build|raising/i);
-    await f.wait(6000);
+    await f.waitFor((p) => p.towers >= 1, { timeoutMs: 20000, note: "the barista clocks in on the bend" });
     await f.command("tower.build", { point: [0, 0, 4] });
-    await f.see(/aim:/i, { timeoutMs: 20000, note: "the mason's tablet shows the inspected tower" });
-    await f.click("Aim");
-    await f.see(/aim: last/i, { note: "the aim plank cycles the tower's target choice" });
+    await f.see(/aim:/i, { timeoutMs: 20000, note: "clicking her plot opens the worker card" });
     await settle();
-    await shot("tower");
+    // The aim plank's command (T): software Rune keeps the freshly opened card moving, so the drive
+    // presses its key rather than waiting for the plank to settle.
+    await f.command("cycleAim");
+    await f.see(/aim: last/i, { note: "the aim plank cycles the worker's target choice" });
+    await f.see(/espresso shot/i, { note: "the card offers her gear" });
+    await settle();
+    await shot("worker");
 
-    await f.click("Begin first assault");
-    await f.see(/\d+ raiders? left/i, { timeoutMs: 20000 });
+    await f.click("Open for business");
+    await f.see(/\d+ gadgets? left/i, { timeoutMs: 20000 });
+    await f.see(/town hall/i, { note: "the town hall's buttons stand at the corner" });
     await settle();
     await shot("wave");
 
     await f.press("Escape");
-    await f.see(/hold the line/i, { timeoutMs: 10000, note: "Escape opens the war banner" });
+    await f.see(/do not disturb/i, { timeoutMs: 10000, note: "Escape opens the door hanger" });
     await settle();
     await shot("pause");
-    await f.click("Save The Keep");
-    await f.see(/kept in the keep/i, { timeoutMs: 20000, note: "the pause banner writes the keep" });
-    await f.click("Settings");
-    await f.see(/prepare the keep/i);
-    await settle();
-    await f.click("Back");
-    await f.see(/hold the line/i);
-    await settle();
-    await f.click("Hold the line");
-    await f.see(/raiders? left|field clear|raiders incoming/i, { timeoutMs: 10000 });
-    await f.click("Pause the defense");
-    await f.see(/withdraw/i, { timeoutMs: 10000, note: "the HUD's pause sigil opens the banner too" });
-    await f.click("Withdraw");
+    await f.click("Save Maple Street");
+    await f.see(/kept on maple street/i, { timeoutMs: 90000, note: "the door hanger writes the street (its thumbnail render is slow on software GL)" });
+    await f.click("Back to work");
+    await f.see(/gadgets? left|street clear|tech incoming/i, { timeoutMs: 10000 });
+    // With tech moving on the street the HUD never settles under software Rune, so pause by key again.
+    await f.press("Escape");
+    await f.see(/clock out/i, { timeoutMs: 10000, note: "Escape opens the door hanger again" });
+    await f.click("Clock out to title");
     await f.see(/continue/i, { timeoutMs: 30000 });
-    await f.click("Keeps");
-    await f.see(/hold the keep|wave \d/i, { timeoutMs: 10000 });
+    await f.click("Streets");
+    await f.see(/wave \d/i, { timeoutMs: 10000 });
     await settle();
-    await shot("keeps-saved");
-    await f.click("Hold The Keep");
-    await f.waitFor((p) => p.towers >= 1, { timeoutMs: 30000, note: "the loaded keep stands its archer post again" });
-    await f.see(/raiders? left|field clear|raiders incoming|send wave/i, { timeoutMs: 20000 });
+    await shot("streets-saved");
+    await f.click("Return to Maple Street");
+    await f.waitFor((p) => p.towers >= 1, { timeoutMs: 30000, note: "the kept street stands its barista again" });
 
     await f.command("run.stage", { mode: "result" });
-    await f.see(/war council/i, { timeoutMs: 60000, note: "the defense played to its end raises the memorial" });
+    await f.see(/union hall/i, { timeoutMs: 90000, note: "the day played to its end raises the end-of-day board" });
+    await f.see(/the season/i, { note: "the board carries the season map" });
     await settle();
-    await shot("memorial");
-    await f.click("Defend again");
-    await f.see(/begin first assault/i, { timeoutMs: 20000, note: "Defend again opens a fresh defense" });
+    await shot("end-of-day");
+    await f.click("Clock in again");
+    await f.see(/open for business/i, { timeoutMs: 20000, note: "Clock in again opens a fresh day" });
   },
 });

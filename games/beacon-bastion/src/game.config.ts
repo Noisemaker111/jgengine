@@ -4,7 +4,7 @@ import { defineGame } from "@jgengine/shell/gameKit";
 import { withSceneSet } from "@jgengine/core/editor/sceneSet";
 
 import { bindScene, editorLayers } from "./editorLayers";
-import { sceneSet, type MapId } from "./maps";
+import { activeMap, MAP_IDS, sceneSet, type MapId } from "./maps";
 import { rebindPath } from "./game/world/path";
 import { assets } from "./game/assets";
 import { BEACON_SOUNDS } from "./game/audio";
@@ -137,6 +137,7 @@ function createGame() {
       districts: seasonProgress(campaign.read(ctx)).held,
       ended: runEnded(keep.of(ctx)) ? 1 : 0,
       held: keep.of(ctx).fact("keep.held") === true ? 1 : 0,
+      map: MAP_IDS.indexOf(activeMap()),
     }),
   },
   rendering: {

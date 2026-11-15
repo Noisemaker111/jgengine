@@ -133,8 +133,8 @@ function TitleMenu({ run }: { run: Busy }) {
       <RuneView items="center" width={{ fraction: 1 }}><RuneView gap={8} width={phone ? { fraction: 1 } : 380} maxHeight={height - (phone ? 300 : 360)} scroll>
         <Verb label="Continue" hint={recent === null ? "No street kept yet" : `${recent.name ?? KEEP_LABEL[recent.id] ?? recent.id}`} disabled={recent === null} run={() => { if (recent !== null) void open(recent.id); }} />
         <Verb label="New Day" hint={newKeep === null ? "No street free" : `Open ${KEEP_LABEL[newKeep] ?? newKeep}`} disabled={newKeep === null} run={() => flow.push("new")} />
-        <Verb label="Streets" hint={`${held} of ${keeps.length} kept`} run={() => { void refreshBeaconSlots(ctx); flow.push("keeps"); }} />
-        <Verb label="Overtime Board" hint={overtimeHint(keeps)} run={() => { void refreshBeaconSlots(ctx); flow.push("board"); }} />
+        <Verb label="Streets" hint={`${held} of ${keeps.length} kept`} run={() => { flow.push("keeps"); void refreshBeaconSlots(ctx); }} />
+        <Verb label="Overtime Board" hint={overtimeHint(keeps)} run={() => { flow.push("board"); void refreshBeaconSlots(ctx); }} />
         <Verb label="Settings" run={() => flow.push("settings")} />
         <Verb label="Credits" run={() => flow.push("credits")} />
       </RuneView></RuneView>
