@@ -72,6 +72,56 @@ export const SFX_PATCHES: Record<string, SynthPatch> = {
       { kind: "tone", freq: 210, duration: 0.1, gain: 0.16, wave: "square", slideTo: 90 },
     ],
   },
+  // The vacuum: a suck, not a bang. A band of air rising in pitch as it drags, and a motor whine.
+  gun_vacuum: {
+    gain: 0.5,
+    voices: [
+      { kind: "noise", duration: 0.13, filterFreq: 900, gain: 0.32, decay: 1, filterType: "bandpass", sustain: 0.06 },
+      { kind: "tone", freq: 140, duration: 0.12, gain: 0.16, wave: "sawtooth", slideTo: 420 },
+      { kind: "tone", freq: 1180, duration: 0.11, gain: 0.05, wave: "sine" },
+    ],
+  },
+  // The extinguisher: a cold hiss of foam with a soft valve thump under it.
+  gun_extinguisher: {
+    gain: 0.48,
+    voices: [
+      { kind: "noise", duration: 0.14, filterFreq: 3600, gain: 0.38, decay: 1, filterType: "highpass", sustain: 0.08 },
+      { kind: "noise", duration: 0.08, filterFreq: 240, gain: 0.18, decay: 0.7 },
+    ],
+  },
+  // ── Suburban life ──────────────────────────────────────────────────────────
+  // A songbird: two quick rising chirps.
+  amb_bird: {
+    gain: 0.28,
+    voices: [
+      { kind: "tone", freq: 2600, duration: 0.09, gain: 0.5, wave: "sine", slideTo: 3900, attack: 0.005 },
+      { kind: "tone", freq: 2900, duration: 0.11, gain: 0.45, wave: "sine", slideTo: 4300, delay: 0.14, attack: 0.005 },
+      { kind: "tone", freq: 3400, duration: 0.07, gain: 0.3, wave: "sine", slideTo: 2700, delay: 0.3, attack: 0.005 },
+    ],
+  },
+  // A dog two yards over: a gruff double bark.
+  amb_dog: {
+    gain: 0.5,
+    voices: [
+      { kind: "tone", freq: 420, duration: 0.14, gain: 0.5, wave: "sawtooth", slideTo: 260, attack: 0.008 },
+      { kind: "noise", duration: 0.12, filterFreq: 900, gain: 0.25, decay: 0.8, filterType: "bandpass" },
+      { kind: "tone", freq: 460, duration: 0.16, gain: 0.5, wave: "sawtooth", slideTo: 250, delay: 0.24, attack: 0.008 },
+      { kind: "noise", duration: 0.12, filterFreq: 900, gain: 0.25, decay: 0.8, filterType: "bandpass", delay: 0.24 },
+    ],
+  },
+  // An impact sprinkler ticking round: a run of dry clicks with spray under them.
+  amb_sprinkler: {
+    gain: 0.36,
+    voices: [
+      { kind: "noise", duration: 1.4, filterFreq: 5200, gain: 0.08, decay: 1, filterType: "highpass", sustain: 1.2 },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass" },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass", delay: 0.18 },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass", delay: 0.36 },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass", delay: 0.54 },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass", delay: 0.72 },
+      { kind: "noise", duration: 0.03, filterFreq: 2400, gain: 0.5, filterType: "bandpass", delay: 0.9 },
+    ],
+  },
   gun_smg: {
     gain: 0.55,
     voices: [
@@ -238,6 +288,8 @@ export const LOOP_SOUND_IDS = [
 
 /** Ids that play from a world position and attenuate with listener distance. */
 export const POSITIONAL_SOUND_IDS = new Set<string>([
+  "amb_dog",
+  "amb_sprinkler",
   "mach_hum",
   "lamp_buzz",
   "elec_crackle",

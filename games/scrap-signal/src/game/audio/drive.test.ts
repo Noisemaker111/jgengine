@@ -52,6 +52,18 @@ describe("scrap-signal ambience", () => {
     for (const id of [...heard.play, ...heard.loopStart]) expect(audio.sounds[id]).toBeDefined();
   });
 
+  test("a quiet yard has life: birds, sprinklers and a dog, every few seconds, all in the catalog", () => {
+    const { ctx, heard } = boot();
+    spawnPlayer(ctx, HUB.center.x, HUB.center.z);
+    startAmbience(ctx);
+    for (let step = 0; step < 1200; step += 1) tickAudio(ctx, step * 100);
+    const life = heard.play.filter((id) => id === "amb_bird" || id === "amb_dog" || id === "amb_sprinkler");
+    // Two minutes of game time: a cue every 5-12 s, and more than one kind of them.
+    expect(life.length).toBeGreaterThanOrEqual(10);
+    expect(new Set(life).size).toBeGreaterThanOrEqual(2);
+    for (const id of life) expect(audio.sounds[id]).toBeDefined();
+  });
+
   test("the wind bed starts once and is driven live", () => {
     const { ctx, heard } = boot();
     spawnPlayer(ctx, HUB.center.x, HUB.center.z);

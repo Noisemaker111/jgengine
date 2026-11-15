@@ -29,6 +29,9 @@ const stateOf = perContext(() => ({
   music: createMusicState(),
   lastPosition: null as EntityPosition | null,
   nextBarkAtMs: 0,
+  nextLifeAtMs: 4000,
+  lifeSeq: 0,
+  life: 0,
   lastHealth: null as number | null,
   lastShield: null as number | null,
   cues: 0,
@@ -55,6 +58,7 @@ export function audioProbe(ctx: GameContext) {
     audioLoops: state.loops,
     footsteps: state.steps,
     barks: state.barks,
+    lifeCues: state.life,
     musicChanges: state.musicChanges,
   };
 }
@@ -114,6 +118,47 @@ function tickBarks(ctx: GameContext, playerPosition: EntityPosition, nowMs: numb
   cue(ctx, "bark_idle", speaker.position);
 }
 
+/** Life in the yards between fights: which sound, how often (relative), and how far off it plays. */
+const LIFE: readonly { sound: string; weight: number; near: number; far: number }[] = [
+  { sound: "amb_bird", weight: 5, near: 0, far: 0 },
+  { sound: "amb_sprinkler", weight: 3, near: 10, far: 24 },
+  { sound: "amb_dog", weight: 2, near: 30, far: 60 },
+];
+const LIFE_TOTAL = LIFE.reduce((sum, entry) => sum + entry.weight, 0);
+
+/** A deterministic 0..1 from a counter, so the same run hears the same yard. */
+function lifeRoll(seq: number, salt: number): number {
+  const x = Math.sin(seq * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * Every 5-12 seconds outside a fight, the suburb makes a sound: a bird overhead, a sprinkler ticking
+ * a yard away, a dog barking a few houses down. The dogs and sprinklers are positional, so they sit
+ * somewhere in the world; the birds are everywhere.
+ */
+function tickSuburbLife(ctx: GameContext, state: ReturnType<typeof stateOf>, nowMs: number, position: EntityPosition): void {
+  if (nowMs < state.nextLifeAtMs) return;
+  state.lifeSeq += 1;
+  const seq = state.lifeSeq;
+  state.nextLifeAtMs = nowMs + 5000 + lifeRoll(seq, 1) * 7000;
+  if (hostileNear(ctx, position, THREAT_RADIUS)) return;
+  let pick = lifeRoll(seq, 2) * LIFE_TOTAL;
+  const entry = LIFE.find((candidate) => (pick -= candidate.weight) < 0) ?? LIFE[0]!;
+  state.life += 1;
+  if (entry.far <= 0) {
+    cue(ctx, entry.sound);
+    return;
+  }
+  const angle = lifeRoll(seq, 3) * Math.PI * 2;
+  const distance = entry.near + lifeRoll(seq, 4) * (entry.far - entry.near);
+  cue(ctx, entry.sound, [position[0] + Math.cos(angle) * distance, position[1], position[2] + Math.sin(angle) * distance]);
+}
+
+function hostileNear(ctx: GameContext, at: EntityPosition, radius: number): boolean {
+  return ctx.scene.entity.list().some((entity) => enemyById(entity.name) !== undefined && (ctx.scene.entity.stats.get(entity.id, "health")?.current ?? 0) > 0 && Math.hypot(entity.position[0] - at[0], entity.position[2] - at[2]) < radius);
+}
+
 export function tickAudio(ctx: GameContext, nowMs: number): void {
   const state = stateOf(ctx);
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
@@ -123,6 +168,7 @@ export function tickAudio(ctx: GameContext, nowMs: number): void {
   const zone = zoneAt(position[0], position[2]);
   const air = airAt(zone?.id ?? null);
   ctx.game.audio.setLoop(WIND_LOOP, { gain: air.wind * gust(nowMs), rate: air.rate });
+  tickSuburbLife(ctx, state, nowMs, position);
 
   if (state.lastPosition !== null) {
     const travelled = Math.hypot(position[0] - state.lastPosition[0], position[2] - state.lastPosition[2]);
@@ -172,8 +218,8 @@ export function playShot(ctx: GameContext, family: string): void {
     shotgun: "gun_shotgun",
     sniper: "gun_sniper",
     launcher: "gun_launcher",
-    vacuum: "gun_smg",
-    extinguisher: "gun_smg",
+    vacuum: "gun_vacuum",
+    extinguisher: "gun_extinguisher",
   };
   cue(ctx, byFamily[family] ?? "gun_pistol");
 }

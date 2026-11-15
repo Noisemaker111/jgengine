@@ -21,6 +21,8 @@ const FALLOFF: Record<string, SoundDef["falloff"]> = {
   bark_idle: { minDistance: 2, maxDistance: 26, curve: "linear" },
   enemy_die: { minDistance: 3, maxDistance: 60, curve: "linear" },
   explosion: { minDistance: 6, maxDistance: 140, curve: "inverse" },
+  amb_dog: { minDistance: 6, maxDistance: 80, curve: "inverse" },
+  amb_sprinkler: { minDistance: 2, maxDistance: 30, curve: "inverse" },
 };
 
 /**
