@@ -384,7 +384,10 @@ function buildTideWater() {
   const water = named('tide water', '#10505f', { roughness: 0.1, metalness: 0.12, transparent: true, opacity: 0.9, emissive: '#0b3d4a', emissiveIntensity: 0.45 });
   const foam = named('tide foam', '#7fd1c4', { roughness: 0.4, transparent: true, opacity: 0.35, depthWrite: false });
   batch.add(water, new THREE.CircleGeometry(1, 64), [0, 0, 0], [-Math.PI / 2, 0, 0]);
-  batch.add(foam, new THREE.RingGeometry(0.985, 1, 64), [0, 0.002, 0], [-Math.PI / 2, 0, 0]);
+  // Where the flood laps against the dry kerb: a soft wide wash and a bright waterline on top of it.
+  const lip = named('tide lip', '#c9f3ec', { roughness: 0.3, transparent: true, opacity: 0.55, depthWrite: false, emissive: '#7fd1c4', emissiveIntensity: 0.4 });
+  batch.add(foam, new THREE.RingGeometry(0.96, 1, 96), [0, 0.002, 0], [-Math.PI / 2, 0, 0]);
+  batch.add(lip, new THREE.RingGeometry(0.994, 1, 96), [0, 0.004, 0], [-Math.PI / 2, 0, 0]);
   return batch.group('tide water');
 }
 await exportModel('tide-water', buildTideWater());

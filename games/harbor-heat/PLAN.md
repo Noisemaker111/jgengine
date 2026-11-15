@@ -215,8 +215,13 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 - Proof: `bun run test games/harbor-heat` (225 tests; suite 20/21 proven, 1 not simulatable, 5 cut);
   `bun run drive harbor-heat --flow from-zero` passes headless. check-types and gen clean. verify:fast
   passes everything it can run here; asset provisioning fails on the sandbox proxy (403).
-- Screens: Rune UI PNGs in `proofs/high-tide/` (from before the depth rounds). No 3D screenshot: this
-  sandbox has no GPU for headless Chrome. Capture `--state flood` and `--state king-tide` on a machine
-  with one.
+- Screens: in-game captures in `proofs/high-tide/3d/` (dusk, flood, beacon, king-tide,
+  king-tide-blimp), taken on software GL with `CHROME_PATH=/opt/pw-browsers/chromium
+  JG_CAPTURE_GL=swiftshader JG_BROKER=0 JG_RENDER_SLOTS=2 bun run shoot harbor-heat --mode play --cold
+  --state <name>`. The pink "MISSING" boxes are shared library models this sandbox cannot download.
+  They led to: the port swap dock moved out of a brick block, teal flood water with a kerb lip, a
+  floodlit blimp, neon gunwales on the jet-ski, and beacon pillars that clear the roofline.
+- Visual gaps: a flood sheet is an ellipse, so at a district's edge it can end mid-street as a hard
+  curve instead of at a kerb; the port's warehouses have no lit windows at night.
 - Not done: flood ripples on the water surface (engine gap in Gaps), the long-play browser flow was not
   re-run, and the sim's travel speeds are estimates: check them against a real recorded shift.
