@@ -246,7 +246,7 @@ export const game = defineGame({
       menu: { description: "Boot menu over the suburb, Continue highlighted", state: "menu", settleMs: 1800 },
       menuNew: { description: "New run pane with the tinkerer roster", state: "menu-new", settleMs: 1200 },
       convoy: {
-        description: "The overturned school bus that gives the opening view its midground.",
+        description: "The abandoned school bus that gives the opening view its midground.",
         look: "@marker:rustflat_convoy_hauler",
         lookFrom: "24,9,0.6",
         settleMs: 20000,

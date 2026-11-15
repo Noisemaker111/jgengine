@@ -179,7 +179,7 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${TOON}/Tires`,
     style: { targetHeight: 0.9, material: { rim: YARD_RIM } },
   },
-  // The overturned school bus at the opening: painted school-bus yellow.
+  // The abandoned school bus at the opening: painted school-bus yellow.
   bus_wreck: {
     model: `${TOON}/Broken_Car`,
     fallbackModel: `${TOON}/Shipping_Container`,

@@ -71,7 +71,7 @@ Genres: shooter, looter. 20/20 proven.
 - Core loop: clear a yard of rogue appliances, read the junk they drop (body, mod, condition, personality), keep the one you like, and listen to it complain
 - Session loop: take one errand from a neighbour, finish it in its neighbourhood, turn it in, level up, spend the skill point, and salvage or merge the spare junk at Hank's bench
 - Long loop: three acts across six neighbourhoods from Crabgrass Court (level 1) to the Smart Home Estates (level 24), each opened by the story and ended by a boss (Big Mulch, the Leaf Blower King, the Compactor, Mother Router), with better condition junk and a fuller skill tree on the way, then the Block Party
-- Second 0: stranded and empty-handed by the overturned school bus with DING in sight, so the first verbs are walking and talking, and the first weapon is earned from a toy chest
+- Second 0: stranded and empty-handed by the abandoned school bus with DING in sight, so the first verbs are walking and talking, and the first weapon is earned from a toy chest
 - Onboarding: DING says what each thing is the first time it matters, the notes sit on the fridge-magnet board, and every weapon explains itself on its card and in its own voice; nothing is taught from a menu
 - Pace: something new every 2 minutes
 - Longest cycle: 60 minutes, one act from its first errand to its boss

@@ -24,7 +24,7 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "signpost", name: "Signpost", color: "#8a6a3c", height: 2.4 },
   { id: "street_lamp", name: "Street Lamp", color: "#3a4450", height: 3.4 },
   { id: "road_marker", name: "Road Marker", color: "#a06a3c", height: 1 },
-  { id: "bus_wreck", name: "Overturned School Bus", color: "#c9a23a", height: 2.6 },
+  { id: "bus_wreck", name: "Abandoned School Bus", color: "#c9a23a", height: 2.6 },
   { id: "water_tower", name: "Maple Hollow Water Tower", color: "#a06a3c", height: 7 },
   { id: "bone_arch", name: "Giant Lawn Flamingo", color: "#e0d6c2", height: 2.6 },
   { id: "reactor_gate", name: "Estates Gate", color: "#3a2c4a", height: 8 },

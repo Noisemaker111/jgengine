@@ -9,7 +9,7 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 /**
  * Three suburban landmarks no model pack ships, built from primitives: a giant pink lawn flamingo
  * (where the desert's bone arches stood), a hand-painted yard-sale sign, a wooden telephone pole
- * with its crossbar and transformer (where the turbines stood), and the overturned school bus. Big, bright and readable at range.
+ * with its crossbar and transformer (where the turbines stood), and the abandoned school bus. Big, bright and readable at range.
  */
 type YardProp = "flamingo" | "yardSale" | "pole" | "schoolBus";
 
@@ -58,10 +58,10 @@ function buildProp(kind: YardProp): { group: Group; dispose(): void } {
     add(new BoxGeometry(0.8, 0.16, 0.02), mat(paint("#3aa84f")), 0, 1.72, 0.12);
     for (const [x, color] of [[-0.6, "#ffd23f"], [0.6, "#ff5ad1"]] as const) add(new SphereGeometry(0.2, 10, 8), mat(paint(color, 0.3)), x, 2.8, 0.1);
   } else if (kind === "schoolBus") {
-    // The overturned school bus at the opening, tipped onto its side in the grass.
+    // The school bus at the opening, abandoned with a flat tyre and a lean, its windows out.
     const bus = new Group();
-    bus.rotation.z = Math.PI / 2 - 0.12;
-    bus.position.set(-0.8, 0.9, 0);
+    bus.rotation.z = 0.07;
+    bus.position.set(0, 0.05, 0);
     bus.scale.setScalar(0.72);
     group.add(bus);
     const yellow = mat(paint("#ffc20e", 0.45));
