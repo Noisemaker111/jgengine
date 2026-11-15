@@ -335,13 +335,19 @@ export interface ClearanceOptions {
   feather?: number;
   /** Include a corridor along non-scatter paths (roads/routes) in {@link clearanceMasksFrom}. Default true. */
   includePaths?: boolean;
+  /**
+   * The discs are for levelling ground, not clearing foliage: leave out objects tagged `meta.flatten: false`
+   * (a glade cleared of trees on a hillside that keeps its slope). Default false.
+   */
+  forGround?: boolean;
 }
 
 /**
  * Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns,
  * plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance`
  * or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see
- * {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
+ * {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it; with `forGround`,
+ * an object tagged `meta.flatten: false` clears foliage only and leaves the ground as it is.
  */
 export function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] {
   const kinds = options.ids !== undefined ? [] : options.kinds ?? DEFAULT_CLEARANCE_KINDS;
@@ -352,6 +358,7 @@ export function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOpt
 
   const consider = (id: string, kind: string, x: number, z: number, meta: Record<string, unknown> | undefined, extra: number) => {
     if (idSet !== null && !idSet.has(id)) return;
+    if (options.forGround === true && meta?.["flatten"] === false) return;
     const clearance = idSet !== null ? defaultClearance : clearanceOf(kind, meta, kinds, defaultClearance);
     if (clearance <= 0) return;
     zones.push({ x, z, radius: clearance + extra, feather });

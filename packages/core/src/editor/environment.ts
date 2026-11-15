@@ -394,6 +394,7 @@ export function environmentContentFromDocument(
   options: EnvironmentContentOptions = {},
 ): EnvironmentContent {
   const clearanceOptions: ClearanceOptions = {
+    forGround: true,
     kinds: options.kinds ?? DEFAULT_CLEARANCE_KINDS,
     ...(options.ids === undefined ? {} : { ids: options.ids }),
     ...(options.defaultClearance === undefined ? {} : { defaultClearance: options.defaultClearance }),

@@ -362,7 +362,20 @@ Mowbot) and `wildwire-storm` (a Signal Storm night).
 Engine parts added on this branch: the creature driver's terrain modes (`CreatureBody.terrain` land / amphibious /
 water, `waterSurface` config); `createCarrierField` (`@jgengine/core/movement/carrier`); per-region seeded streams in
 the population director; `SceneEntity.glow` (emissive parts follow a runtime value); `ocean()` `depthRange` and
-`shore { width, waves }` passed to the shell Ocean. All tested in core.
+`shore { width, waves }` passed to the shell Ocean; the orbit camera re-seats its boom when a rig override changes
+its framing (`orbitReframe`); scatter clearance tagged `meta.flatten: false` clears foliage without levelling ground.
+All tested in core.
+
+Building on carriers: base building (`engine-local/basebuilding`) has moving frames. `setFrame(id, pose, deck)` poses
+a carrier each tick; its deck is ground, and pieces planned there (or snapped/floored onto pieces that are) are stored
+in the frame, so list/get/solids/raycast/snaps follow it; `removeFrame` drops what it carried. `base.ts` poses every
+uploaded platform bot (`carrierFrames`), so a foundation and walls on a Hoover's back walk and turn with it and fall
+when it dies. A rider standing on a foundation rides; one up on a ceiling (above the deck's stand tolerance) does not.
+
+Forest glades: the 98 jungle, eastern forest, redwood and swamp spawn markers carry `clearance: 18, flatten: false`
+(set through the editor CLI), so a glade opens round each herd without changing the terrain.
+
+Hivemind frenzy: her last phase (`turn: true`) turns puppeted bots on the technician until the signal lets go.
 
 Water and readability: Lampjaws are 2.6 m bodies swimming 0.9 m under (per-profile `swimDepth`), so head and lure
 stand clear; `world/WaterLife.tsx` lights each lure with a violet point light and spreading ripple rings, and draws
@@ -374,8 +387,6 @@ Proof robustness: herd spawns and director rolls come from each zone's own strea
 shifts another proof's dice; the taming proofs clear the beach's herds before they start. A zone that genuinely
 changes what stands near the start (a level-6 herd 90 m out) still shows in the danger proof, by design.
 
-Next: base pieces built on the Hoover's back. Not built: base building places pieces in the world frame with fixed
-solids and snap sockets, so riding pieces need a moving-parent seam in core build (pieces stored in a carrier's local
-frame, their solids and sockets re-posed each tick from `createCarrierField`); that is a core build change, not a
-game patch. Also: puppeted bots turning hostile; foliage clearance round spawn zones (editor content) so mid-size
-bots are not hidden in the bush; a rim-light option in the entity model draw for silhouettes at dusk.
+Next: base building is still game-local (`engine-local/basebuilding`, one adopter); a second adopter moves it and its
+moving frames to core. Riders on upper floors of a deck hut; a rim-light option in the entity model draw for
+silhouettes at dusk; an in-game shot of a deck hut walking.

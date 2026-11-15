@@ -230,6 +230,20 @@ describe("clearance zones — scatter avoid", () => {
     // Kind filter excluding spawns: only the tagged prop remains.
     expect(clearanceZonesFrom(doc, { kinds: [] }).length).toBe(1);
   });
+
+  test("a glade tagged flatten: false clears foliage but is left out of the ground-levelling discs", () => {
+    const doc = {
+      version: 1 as const,
+      markers: [{ id: "glade", kind: "creature_spawn", position: { x: 0, y: 0, z: 0 }, meta: { clearance: 6, flatten: false } }],
+      volumes: [],
+      paths: [fullRegion({ density: 1, minSpacing: 1 })],
+      annotations: [],
+    };
+    expect(clearanceZonesFrom(doc).length).toBe(1);
+    expect(clearanceZonesFrom(doc, { forGround: true })).toEqual([]);
+    const instances = resolveScatter(doc, flatField());
+    expect(instances.every((i) => Math.hypot(i.x, i.z) > 4)).toBe(true);
+  });
 });
 
 describe("path corridor clearance", () => {

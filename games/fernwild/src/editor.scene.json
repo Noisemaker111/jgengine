@@ -3381,7 +3381,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -3989,7 +3991,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -4041,7 +4045,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -4221,7 +4227,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -4281,7 +4289,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -4925,7 +4935,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -4977,7 +4989,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5029,7 +5043,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5081,7 +5097,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5133,7 +5151,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5193,7 +5213,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5441,7 +5463,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5509,7 +5533,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5697,7 +5723,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5869,7 +5897,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5921,7 +5951,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -5973,7 +6005,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6025,7 +6059,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6077,7 +6113,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6129,7 +6167,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6265,7 +6305,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6333,7 +6375,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6521,7 +6565,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6589,7 +6635,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6657,7 +6705,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6725,7 +6775,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6777,7 +6829,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6829,7 +6883,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6889,7 +6945,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -6941,7 +6999,9 @@
             "species": "coilcobra",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7077,7 +7137,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7145,7 +7207,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7253,7 +7317,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7321,7 +7387,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7389,7 +7457,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7457,7 +7527,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7525,7 +7597,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7593,7 +7667,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7661,7 +7737,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7789,7 +7867,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7849,7 +7929,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7909,7 +7991,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -7969,7 +8053,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8037,7 +8123,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8105,7 +8193,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8173,7 +8263,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8229,7 +8321,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8285,7 +8379,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8341,7 +8437,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8409,7 +8507,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8477,7 +8577,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8545,7 +8647,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8613,7 +8717,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8681,7 +8787,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8809,7 +8917,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8869,7 +8979,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8929,7 +9041,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -8989,7 +9103,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9249,7 +9365,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9305,7 +9423,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9361,7 +9481,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9429,7 +9551,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9497,7 +9621,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9565,7 +9691,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9633,7 +9761,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9701,7 +9831,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9769,7 +9901,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9837,7 +9971,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9897,7 +10033,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -9957,7 +10095,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10025,7 +10165,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10093,7 +10235,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10161,7 +10305,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10217,7 +10363,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10273,7 +10421,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10329,7 +10479,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10397,7 +10549,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10465,7 +10619,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10533,7 +10689,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10601,7 +10759,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10669,7 +10829,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10737,7 +10899,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10805,7 +10969,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10865,7 +11031,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -10925,7 +11093,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11049,7 +11219,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11117,7 +11289,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11173,7 +11347,9 @@
             "species": "riptide",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11377,7 +11553,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11445,7 +11623,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11513,7 +11693,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11581,7 +11763,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11649,7 +11833,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11709,7 +11895,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11769,7 +11957,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -11829,7 +12019,9 @@
             "species": "craneback",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -12009,7 +12201,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -12553,7 +12747,9 @@
             "species": "mowbot",
             "weight": 1
           }
-        ]
+        ],
+        "clearance": 18,
+        "flatten": false
       }
     },
     {
@@ -15344,7 +15540,7 @@
       "position": {
         "x": 211.5,
         "y": 0,
-        "z": 1265.0
+        "z": 1265
       },
       "label": "Rusted Fabricator",
       "meta": {
@@ -15398,7 +15594,7 @@
       "id": "fabricator_spawn_east_2",
       "kind": "fabricator",
       "position": {
-        "x": 1234.0,
+        "x": 1234,
         "y": 0,
         "z": 2.8
       },
@@ -15482,9 +15678,9 @@
       "id": "deep_water_player_spawn",
       "kind": "creature_spawn",
       "position": {
-        "x": 269.0,
+        "x": 269,
         "y": -5,
-        "z": 1610.0
+        "z": 1610
       },
       "label": "Deep water",
       "meta": {
@@ -15526,7 +15722,7 @@
       "position": {
         "x": 778.9,
         "y": -5,
-        "z": 1042.0
+        "z": 1042
       },
       "label": "Deep water",
       "meta": {
@@ -15547,7 +15743,7 @@
       "position": {
         "x": 1343.4,
         "y": -5,
-        "z": 386.0
+        "z": 386
       },
       "label": "Deep water",
       "meta": {
@@ -15566,7 +15762,7 @@
       "id": "deep_water_spawn_east_2",
       "kind": "creature_spawn",
       "position": {
-        "x": 1404.0,
+        "x": 1404,
         "y": -5,
         "z": 3.1
       },
@@ -16172,7 +16368,7 @@
         "motion": "school",
         "count": 24,
         "window": "day",
-        "bandMin": 1.0,
+        "bandMin": 1,
         "bandMax": 4,
         "speed": 1.8,
         "seed": "reef-start"
