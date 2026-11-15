@@ -128,7 +128,8 @@ function dog(): Group {
  * a spray wand hanging at knee height and the torch beam that is the thing you watch.
  */
 function exterminator(): Group {
-  const g = new Group(), body = new Group(); body.name = "body"; g.add(body);
+  // Built at 1.6 m and shown at 0.6: a grown-up's hips about a metre up, boots the height of a Little's house.
+  const g = new Group(), body = new Group(); body.name = "body"; body.scale.setScalar(0.6); g.add(body);
   for (const s of [-1, 1]) {
     const leg = new Group(); leg.name = s < 0 ? "leg-l" : "leg-r"; leg.position.set(s * 7, 16, 0); body.add(leg);
     add(leg, new Mesh(new BoxGeometry(10, 16, 22), mat("#e0b42a", { rough: 0.6 })), "boot", [0, -8, 3]);
@@ -142,11 +143,11 @@ function exterminator(): Group {
   add(body, new Mesh(new SphereGeometry(1.8, 10, 8), mat("#ff4a2a", { glow: 0.2 })), "nozzle", [6, 32, 20]);
   // The torch: a cone of light from his hand down to the floor, and the pool where it lands.
   const torch = new Group(); torch.name = "torch"; torch.position.set(10, 70, 8); body.add(torch);
-  const beam = new Mesh(new ConeGeometry(8, 64, 24, 1, true), new MeshBasicMaterial({ color: "#fff2b0", transparent: true, opacity: 0.06, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
-  beam.name = "beam"; beam.position.set(0, 0, 32); beam.rotation.x = -Math.PI / 2 - 0.0; torch.add(beam);
-  torch.rotation.x = 0.95;
+  const beam = new Mesh(new ConeGeometry(12, 88, 24, 1, true), new MeshBasicMaterial({ color: "#fff2b0", transparent: true, opacity: 0.09, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
+  beam.name = "beam"; beam.position.set(0, 0, 44); beam.rotation.x = -Math.PI / 2 - 0.0; torch.add(beam);
+  torch.rotation.x = 1.15;
   const pool = new Mesh(new CircleGeometry(1, 32), new MeshBasicMaterial({ color: "#fff2b0", transparent: true, opacity: 0.22, depthWrite: false, blending: AdditiveBlending }));
-  pool.name = "pool"; pool.rotation.x = -Math.PI / 2; pool.position.set(10, 0.08, 34); pool.scale.set(7, 11, 1); g.add(pool);
+  pool.name = "pool"; pool.rotation.x = -Math.PI / 2; pool.position.set(6, 0.08, 24); pool.scale.set(6, 9, 1); g.add(pool);
   // The spray: a hanging green-grey cloud, placed in the world where he aimed.
   const cloud = new Group(); cloud.name = "cloud"; cloud.visible = false; g.add(cloud);
   for (let i = 0; i < 7; i++) {
@@ -260,8 +261,8 @@ export function poseThreat(object: Group, s: ThreatState, time: number, ceiling:
       const walking = s.mode === "patrol";
       for (const [name, sign] of [["leg-l", 1], ["leg-r", -1]] as const) { const leg = object.getObjectByName(name); if (leg) leg.rotation.x = walking ? Math.sin(time * 4) * 0.22 * sign : 0; }
       const torch = object.getObjectByName("torch"), pool = object.getObjectByName("pool"), nozzle = object.getObjectByName("nozzle") as Mesh | undefined;
-      if (torch) torch.rotation.x = s.mode === "aim" ? 1.05 : 0.95;
-      if (pool) pool.position.z = s.mode === "aim" ? 28 : 34;
+      if (torch) torch.rotation.x = s.mode === "aim" ? 1.25 : 1.15;
+      if (pool) pool.position.z = s.mode === "aim" ? 20 : 24;
       if (nozzle) (nozzle.material as MeshStandardMaterial).emissiveIntensity = s.mode === "aim" ? 2.5 + Math.sin(time * 30) : 0.2;
       // The cloud hangs in the world where he aimed, so undo his own turn and step to place it.
       const cloud = object.getObjectByName("cloud");

@@ -9,7 +9,7 @@ import { rebindAction } from "@jgengine/core/game/controlGate";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import { BURROW, DEPART, ZONES, eyeLevel, groundDistance, HOME_SPAWN, inCover, inside, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
+import { BURROW, DEPART, ZONES, eyeLevel, groundDistance, lineOfSight, HOME_SPAWN, inCover, inside, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
 import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
@@ -573,11 +573,26 @@ export function registerControls(ctx: GameContext): void {
     } });
     ctx.game.commands.define("deepward.dev.exterminator", { apply(state) {
       void (async () => {
-        await stageMidRun(state, 0);
-        const v = viewStore.read(state), run = v.run, at = playerAt(state);
-        if (run === null || at === null) return;
-        const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw + 0.3) * 40, 0, at[2] + Math.cos(yaw + 0.3) * 40];
-        const man = { ...spawnThreat({ key: `${run.room}:dev-exterminator`, kind: "exterminator", slot: { id: "dev-exterminator", kind: "exterminator", at: spot, minDepth: 0, label: "the Exterminator" } }), mode: "aim" as const, timer: 60, target: at, facing: Math.atan2(at[0] - spot[0], at[2] - spot[2]) };
+        // In his own room, side-on across it, his torch sweeping the floor: the Little at one end of the
+        // longest clear sight line in the room, the Exterminator at the other.
+        await stageRoom(state, "pest-bench");
+        const v = viewStore.read(state), run = v.run;
+        if (run === null) return;
+        const t = roomOf(run).template, a = t.area, points: Point[] = [], sight = eyeLevel(t);
+        const open = (x: number, z: number, r: number) => walkable(t, x, z, r) && !sight.some(b => inside(x, z, b, r));
+        const clearLine = (p: Point, q: Point) => { const n = Math.ceil(groundDistance(p, q)); for (let k = 1; k < n; k++) { const x = p[0] + (q[0] - p[0]) * k / n, z = p[2] + (q[2] - p[2]) * k / n; if (!open(x, z, 0.5)) return false; } return true; };
+        for (let i = 0; i <= 10; i++) for (let j = 0; j <= 8; j++) {
+          const p: Point = [a.x - a.w / 2 + 3 + (a.w - 6) * i / 10, 0, a.z - a.d / 2 + 3 + (a.d - 6) * j / 8];
+          if (open(p[0], p[2], 2)) points.push(p);
+        }
+        let at: Point = points[0] ?? [a.x, 0, a.z], spot: Point = at, far = 0;
+        for (const p of points) for (const q of points) {
+          const d = groundDistance(p, q);
+          if (d > far && open(q[0], q[2], 4) && clearLine(p, q)) { far = d; at = p; spot = q; }
+        }
+        teleport(state, at, Math.atan2(spot[0] - at[0], spot[2] - at[2]));
+        const across = Math.atan2(at[0] - spot[0], at[2] - spot[2]) - Math.PI / 2.6;
+        const man = { ...spawnThreat({ key: `${run.room}:dev-exterminator`, kind: "exterminator", slot: { id: "dev-exterminator", kind: "exterminator", at: spot, minDepth: 0, label: "the Exterminator" } }), mode: "sweep" as const, timer: 600, hits: across, facing: across };
         viewStore.write(state, { ...v, run: { ...run, threats: [...run.threats.filter(s => s.kind !== "exterminator"), man] }, danger: 0.9 });
       })();
       return state;
@@ -803,7 +818,7 @@ function standForOverview(ctx: GameContext): void {
   const t = roomOf(run).template, a = t.area;
   // Frame the room, not the nearest giant prop: stand in the open and look along the spot and
   // heading whose fan of sight lines runs furthest before it meets a solid.
-  const sight = [...eyeLevel(t), ...t.models.filter(m => m.at[1] < 3).map(m => ({ x: m.at[0], z: m.at[2], w: m.size * 0.7, d: m.size * 0.7 }))], hunters = run.threats.filter(s => s.kind === "cat" || s.kind === "dog" || s.kind === "kid").map(s => ({ at: s.at, room: s.kind === "dog" ? 40 : s.kind === "cat" ? 28 : 20 }));
+  const sight = [...eyeLevel(t), ...t.models.filter(m => m.at[1] < 3).map(m => ({ x: m.at[0], z: m.at[2], w: m.size * 0.7, d: m.size * 0.7 }))], hunters = run.threats.filter(s => s.kind === "cat" || s.kind === "dog" || s.kind === "kid" || s.kind === "exterminator").map(s => ({ at: s.at, room: s.kind === "dog" ? 40 : s.kind === "exterminator" ? 34 : s.kind === "cat" ? 28 : 20 }));
   const clear = (x: number, z: number) => walkable(t, x, z, 0.4) && !sight.some(r => inside(x, z, r, 0.4)) && hunters.every(h => Math.hypot(h.at[0] - x, h.at[2] - z) > h.room / 3);
   const open = (x: number, z: number, yaw: number) => {
     let n = 0;
@@ -862,6 +877,9 @@ export async function stageRoom(ctx: GameContext, template: string): Promise<voi
       const v2 = viewStore.read(ctx);
       if (v2.run !== null) viewStore.write(ctx, { ...v2, run: { ...v2.run, threats: v2.run.threats.map(s => s.kind === "cat" ? { ...s, mode: "groom" as const, timer: 30, cooldown: 30 } : { ...s, cooldown: 30 }) } });
       standForOverview(ctx);
+      // The Exterminator holds his place, sweeping his torch with his back to the camera.
+      const v3 = viewStore.read(ctx), at = playerAt(ctx);
+      if (v3.run !== null && at !== null) viewStore.write(ctx, { ...v3, run: { ...v3.run, threats: v3.run.threats.map(s => s.kind !== "exterminator" ? s : (() => { const away = Math.atan2(s.at[0] - at[0], s.at[2] - at[2]); return { ...s, mode: "sweep" as const, timer: 600, hits: away, facing: away }; })()) } });
       return;
     }
     queue.push(...plan.forwards.map(f => f.to));

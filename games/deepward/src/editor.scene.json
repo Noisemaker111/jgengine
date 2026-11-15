@@ -4842,10 +4842,655 @@
       }
     },
     {
+      "id": "wine-cellar-model-barrel-23",
+      "kind": "crumb-model",
+      "position": {
+        "x": -145,
+        "y": 0,
+        "z": 379
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-fantasy-props/Barrel",
+      "meta": {
+        "template": "wine-cellar",
+        "model": "quaternius-fantasy-props/Barrel",
+        "size": 18
+      }
+    },
+    {
+      "id": "wine-cellar-model-crate_wooden-25",
+      "kind": "crumb-model",
+      "position": {
+        "x": -185,
+        "y": 0,
+        "z": 381
+      },
+      "rotationY": 0.4,
+      "label": "quaternius-fantasy-props/Crate_Wooden",
+      "meta": {
+        "template": "wine-cellar",
+        "model": "quaternius-fantasy-props/Crate_Wooden",
+        "size": 14
+      }
+    },
+    {
+      "id": "wine-cellar-lamp-bulb",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -165,
+        "y": 50,
+        "z": 391
+      },
+      "label": "a dusty bulb on a cord",
+      "meta": {
+        "template": "wine-cellar",
+        "color": "#ffc27a",
+        "intensity": 5,
+        "distance": 70
+      }
+    },
+    {
+      "id": "wine-cellar-lamp-glint",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -153,
+        "y": 4,
+        "z": 391
+      },
+      "label": "light caught in green glass",
+      "meta": {
+        "template": "wine-cellar",
+        "color": "#9fd37a",
+        "intensity": 2,
+        "distance": 16
+      }
+    },
+    {
+      "id": "wine-cellar-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -185,
+        "y": 0,
+        "z": 397
+      },
+      "label": "between two racks",
+      "meta": {
+        "template": "wine-cellar",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "wine-cellar-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": -145,
+        "y": 0,
+        "z": 397
+      },
+      "label": "up the rack ladder",
+      "meta": {
+        "template": "wine-cellar",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "wine-cellar-exit-grate",
+      "kind": "crumb-exit",
+      "position": {
+        "x": -163,
+        "y": 0,
+        "z": 373
+      },
+      "label": "the drain grate behind the racks",
+      "meta": {
+        "template": "wine-cellar",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "wine-cellar-spot-straw",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -181,
+        "y": 0,
+        "z": 396
+      },
+      "label": "in the packing straw",
+      "meta": {
+        "template": "wine-cellar",
+        "tier": "tucked",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "wine-cellar-spot-stain",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -169,
+        "y": 0,
+        "z": 389
+      },
+      "label": "on the sticky stain",
+      "meta": {
+        "template": "wine-cellar",
+        "tier": "open",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "wine-cellar-spot-bottle",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -157,
+        "y": 0,
+        "z": 395
+      },
+      "label": "by the fallen bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "wine-cellar-spot-rack",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -173,
+        "y": 0,
+        "z": 378
+      },
+      "label": "under the bottom rack",
+      "meta": {
+        "template": "wine-cellar",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "wine-cellar-spot-barrel",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -152.5,
+        "y": 0,
+        "z": 379
+      },
+      "label": "behind the barrel",
+      "meta": {
+        "template": "wine-cellar",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "wine-cellar-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -165,
+        "y": 0,
+        "z": 389
+      },
+      "label": "the Exterminator counting bottles",
+      "meta": {
+        "template": "wine-cellar",
+        "threat": "exterminator",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "wine-cellar-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -183.9,
+        "y": 0,
+        "z": 373.9
+      },
+      "label": "a cellar spider in the racks",
+      "meta": {
+        "template": "wine-cellar",
+        "threat": "spider",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "wine-cellar-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -159,
+        "y": 0,
+        "z": 385
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "wine-cellar",
+        "threat": "trap",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "coal-store-model-bucket_metal-13",
+      "kind": "crumb-model",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": 379
+      },
+      "rotationY": 0.3,
+      "label": "quaternius-fantasy-props/Bucket_Metal",
+      "meta": {
+        "template": "coal-store",
+        "model": "quaternius-fantasy-props/Bucket_Metal",
+        "size": 12
+      }
+    },
+    {
+      "id": "coal-store-lamp-moon",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -41,
+        "y": 40,
+        "z": 375
+      },
+      "label": "moonlight down the coal chute",
+      "meta": {
+        "template": "coal-store",
+        "color": "#a8c4ff",
+        "intensity": 7,
+        "distance": 80
+      }
+    },
+    {
+      "id": "coal-store-lamp-ember",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -67,
+        "y": 3,
+        "z": 381
+      },
+      "label": "one coal that still glows",
+      "meta": {
+        "template": "coal-store",
+        "color": "#ff7a3a",
+        "intensity": 2,
+        "distance": 14
+      }
+    },
+    {
+      "id": "coal-store-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -74,
+        "y": 0,
+        "z": 397
+      },
+      "label": "over the coal heap",
+      "meta": {
+        "template": "coal-store",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "coal-store-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": -36,
+        "y": 0,
+        "z": 397
+      },
+      "label": "along the old gas pipe",
+      "meta": {
+        "template": "coal-store",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "coal-store-exit-chute",
+      "kind": "crumb-exit",
+      "position": {
+        "x": -43.4,
+        "y": 0,
+        "z": 377.6
+      },
+      "label": "up the coal chute to the garden",
+      "meta": {
+        "template": "coal-store",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "coal-store-spot-coal",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -63,
+        "y": 0,
+        "z": 387
+      },
+      "label": "in the coal dust",
+      "meta": {
+        "template": "coal-store",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "coal-store-spot-tarp",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 386
+      },
+      "label": "under the tarp",
+      "meta": {
+        "template": "coal-store",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "coal-store-spot-sack",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -47,
+        "y": 0,
+        "z": 395
+      },
+      "label": "by the sack",
+      "meta": {
+        "template": "coal-store",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "coal-store-spot-chute",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -47,
+        "y": 0,
+        "z": 379
+      },
+      "label": "where the chute drops",
+      "meta": {
+        "template": "coal-store",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "coal-store-spot-bucket",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -38.5,
+        "y": 0,
+        "z": 387
+      },
+      "label": "behind the bucket",
+      "meta": {
+        "template": "coal-store",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "coal-store-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -54,
+        "y": 0,
+        "z": 391.3
+      },
+      "label": "the Exterminator by the chute",
+      "meta": {
+        "template": "coal-store",
+        "threat": "exterminator",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "coal-store-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -57,
+        "y": 0,
+        "z": 393
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "coal-store",
+        "threat": "trap",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "freezer-corner-model-popsicle_multiple-12",
+      "kind": "crumb-model",
+      "position": {
+        "x": 51,
+        "y": 0,
+        "z": 391
+      },
+      "rotationY": 0.8,
+      "label": "quaternius-low-poly-food-pack/Popsicle_Multiple",
+      "meta": {
+        "template": "freezer-corner",
+        "model": "quaternius-low-poly-food-pack/Popsicle_Multiple",
+        "size": 10
+      }
+    },
+    {
+      "id": "freezer-corner-model-crate_metal-13",
+      "kind": "crumb-model",
+      "position": {
+        "x": 75,
+        "y": 0,
+        "z": 382
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-fantasy-props/Crate_Metal",
+      "meta": {
+        "template": "freezer-corner",
+        "model": "quaternius-fantasy-props/Crate_Metal",
+        "size": 12
+      }
+    },
+    {
+      "id": "freezer-corner-lamp-freezer",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 71,
+        "y": 4,
+        "z": 382
+      },
+      "label": "the freezer light leaking from the lid",
+      "meta": {
+        "template": "freezer-corner",
+        "color": "#9fdcff",
+        "intensity": 4,
+        "distance": 34
+      }
+    },
+    {
+      "id": "freezer-corner-lamp-warm",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 55,
+        "y": 6,
+        "z": 381
+      },
+      "label": "warm air from the grille",
+      "meta": {
+        "template": "freezer-corner",
+        "color": "#ffb07a",
+        "intensity": 3,
+        "distance": 22
+      }
+    },
+    {
+      "id": "freezer-corner-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 397
+      },
+      "label": "down off the freezer lid",
+      "meta": {
+        "template": "freezer-corner",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "drop"
+        ]
+      }
+    },
+    {
+      "id": "freezer-corner-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": 75,
+        "y": 0,
+        "z": 397
+      },
+      "label": "along the freezer cable",
+      "meta": {
+        "template": "freezer-corner",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "freezer-corner-spot-grille",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 51,
+        "y": 0,
+        "z": 383
+      },
+      "label": "blown under the grille",
+      "meta": {
+        "template": "freezer-corner",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "freezer-corner-spot-box",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 39,
+        "y": 0,
+        "z": 398
+      },
+      "label": "under the cardboard",
+      "meta": {
+        "template": "freezer-corner",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "freezer-corner-spot-puddle",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 61,
+        "y": 0,
+        "z": 384.5
+      },
+      "label": "in a frost puddle",
+      "meta": {
+        "template": "freezer-corner",
+        "tier": "open",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "freezer-corner-spot-tray",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 65,
+        "y": 0,
+        "z": 397
+      },
+      "label": "by the paint tray",
+      "meta": {
+        "template": "freezer-corner",
+        "tier": "open",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "freezer-corner-spot-crate",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 68.5,
+        "y": 0,
+        "z": 383.1
+      },
+      "label": "behind the crate",
+      "meta": {
+        "template": "freezer-corner",
+        "tier": "tucked",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "freezer-corner-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 53,
+        "y": 0,
+        "z": 391
+      },
+      "label": "the Exterminator fetching ice",
+      "meta": {
+        "template": "freezer-corner",
+        "threat": "exterminator",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "freezer-corner-threat-cat",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 59.4,
+        "y": 0,
+        "z": 383.2
+      },
+      "label": "the cat, shut in the cellar",
+      "meta": {
+        "template": "freezer-corner",
+        "threat": "cat",
+        "minDepth": 5
+      }
+    },
+    {
       "id": "attic-christmas-model-candlestick-27",
       "kind": "crumb-model",
       "position": {
-        "x": -181,
+        "x": 149,
         "y": 0,
         "z": 381
       },
@@ -4861,7 +5506,7 @@
       "id": "attic-christmas-model-lantern_wall-29",
       "kind": "crumb-model",
       "position": {
-        "x": -143,
+        "x": 187,
         "y": 0,
         "z": 371
       },
@@ -4877,7 +5522,7 @@
       "id": "attic-christmas-model-candlestick_triple-30",
       "kind": "crumb-model",
       "position": {
-        "x": -167,
+        "x": 163,
         "y": 0,
         "z": 375
       },
@@ -4893,7 +5538,7 @@
       "id": "attic-christmas-lamp-fairy",
       "kind": "crumb-lamp",
       "position": {
-        "x": -167,
+        "x": 163,
         "y": 3,
         "z": 397
       },
@@ -4909,7 +5554,7 @@
       "id": "attic-christmas-lamp-moon",
       "kind": "crumb-lamp",
       "position": {
-        "x": -147,
+        "x": 183,
         "y": 30,
         "z": 373
       },
@@ -4925,7 +5570,7 @@
       "id": "attic-christmas-door-entry",
       "kind": "crumb-door",
       "position": {
-        "x": -184,
+        "x": 146,
         "y": 0,
         "z": 398
       },
@@ -4943,7 +5588,7 @@
       "id": "attic-christmas-door-on",
       "kind": "crumb-door",
       "position": {
-        "x": -146,
+        "x": 184,
         "y": 0,
         "z": 398
       },
@@ -4962,7 +5607,7 @@
       "id": "attic-christmas-exit-vent",
       "kind": "crumb-exit",
       "position": {
-        "x": -185,
+        "x": 145,
         "y": 0,
         "z": 387
       },
@@ -4976,7 +5621,7 @@
       "id": "attic-christmas-spot-box",
       "kind": "crumb-spot",
       "position": {
-        "x": -175,
+        "x": 155,
         "y": 0,
         "z": 383
       },
@@ -4991,7 +5636,7 @@
       "id": "attic-christmas-spot-tinsel",
       "kind": "crumb-spot",
       "position": {
-        "x": -153,
+        "x": 177,
         "y": 0,
         "z": 394
       },
@@ -5005,7 +5650,7 @@
       "id": "attic-christmas-spot-album",
       "kind": "crumb-spot",
       "position": {
-        "x": -155,
+        "x": 175,
         "y": 0,
         "z": 379
       },
@@ -5020,7 +5665,7 @@
       "id": "attic-christmas-spot-lights",
       "kind": "crumb-spot",
       "position": {
-        "x": -173,
+        "x": 157,
         "y": 0,
         "z": 395
       },
@@ -5034,7 +5679,7 @@
       "id": "attic-christmas-spot-bauble",
       "kind": "crumb-spot",
       "position": {
-        "x": -161,
+        "x": 169,
         "y": 0,
         "z": 383
       },
@@ -5049,7 +5694,7 @@
       "id": "attic-christmas-threat-spider",
       "kind": "crumb-threat",
       "position": {
-        "x": -147,
+        "x": 183,
         "y": 0,
         "z": 395
       },
@@ -5064,7 +5709,7 @@
       "id": "attic-christmas-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": -165,
+        "x": 165,
         "y": 0,
         "z": 387
       },
@@ -5079,9 +5724,9 @@
       "id": "garage-bikes-model-shovel-23",
       "kind": "crumb-model",
       "position": {
-        "x": -89,
+        "x": -199,
         "y": 0,
-        "z": 365
+        "z": 475
       },
       "rotationY": 0.3,
       "label": "quaternius-toon-shooter/Shovel",
@@ -5095,9 +5740,9 @@
       "id": "garage-bikes-model-pallet-24",
       "kind": "crumb-model",
       "position": {
-        "x": -25,
+        "x": -135,
         "y": 0,
-        "z": 411
+        "z": 521
       },
       "rotationY": 0.1,
       "label": "quaternius-toon-shooter/Pallet",
@@ -5111,9 +5756,9 @@
       "id": "garage-bikes-lamp-window",
       "kind": "crumb-lamp",
       "position": {
-        "x": -55,
+        "x": -165,
         "y": 60,
-        "z": 403
+        "z": 513
       },
       "label": "moonlight through the garage window",
       "meta": {
@@ -5127,9 +5772,9 @@
       "id": "garage-bikes-lamp-freezer",
       "kind": "crumb-lamp",
       "position": {
-        "x": -75,
+        "x": -185,
         "y": 6,
-        "z": 373
+        "z": 483
       },
       "label": "a chest freezer’s light",
       "meta": {
@@ -5143,9 +5788,9 @@
       "id": "garage-bikes-door-entry",
       "kind": "crumb-door",
       "position": {
-        "x": -75,
+        "x": -185,
         "y": 0,
-        "z": 398
+        "z": 508
       },
       "label": "the garage door gap",
       "meta": {
@@ -5161,9 +5806,9 @@
       "id": "garage-bikes-door-on",
       "kind": "crumb-door",
       "position": {
-        "x": -49,
+        "x": -159,
         "y": 0,
-        "z": 372
+        "z": 482
       },
       "label": "up the pump hose",
       "meta": {
@@ -5179,9 +5824,9 @@
       "id": "garage-bikes-exit-dogdoor",
       "kind": "crumb-exit",
       "position": {
-        "x": -34,
+        "x": -144,
         "y": 0,
-        "z": 389
+        "z": 499
       },
       "label": "the cat flap to the garden",
       "meta": {
@@ -5193,9 +5838,9 @@
       "id": "garage-bikes-spot-card",
       "kind": "crumb-spot",
       "position": {
-        "x": -53,
+        "x": -163,
         "y": 0,
-        "z": 397
+        "z": 507
       },
       "label": "under the flattened box",
       "meta": {
@@ -5207,9 +5852,9 @@
       "id": "garage-bikes-spot-ball",
       "kind": "crumb-spot",
       "position": {
-        "x": -51,
+        "x": -161,
         "y": 0,
-        "z": 383
+        "z": 493
       },
       "label": "behind the football",
       "meta": {
@@ -5222,9 +5867,9 @@
       "id": "garage-bikes-spot-oil",
       "kind": "crumb-spot",
       "position": {
-        "x": -69,
+        "x": -179,
         "y": 0,
-        "z": 387
+        "z": 497
       },
       "label": "by the oil can",
       "meta": {
@@ -5237,9 +5882,9 @@
       "id": "garage-bikes-spot-wheel",
       "kind": "crumb-spot",
       "position": {
-        "x": -57,
+        "x": -167,
         "y": 0,
-        "z": 373
+        "z": 483
       },
       "label": "in the spokes",
       "meta": {
@@ -5252,9 +5897,9 @@
       "id": "garage-bikes-spot-pump",
       "kind": "crumb-spot",
       "position": {
-        "x": -41,
+        "x": -151,
         "y": 0,
-        "z": 379
+        "z": 489
       },
       "label": "at the pump foot",
       "meta": {
@@ -5267,9 +5912,9 @@
       "id": "garage-bikes-threat-dog",
       "kind": "crumb-threat",
       "position": {
-        "x": -47,
+        "x": -157,
         "y": 0,
-        "z": 395
+        "z": 505
       },
       "label": "the dog, let in to the garage",
       "meta": {
@@ -5282,9 +5927,9 @@
       "id": "garage-bikes-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": -61,
+        "x": -171,
         "y": 0,
-        "z": 391
+        "z": 501
       },
       "label": "a mousetrap",
       "meta": {
@@ -5297,9 +5942,9 @@
       "id": "garage-bikes-threat-spider",
       "kind": "crumb-threat",
       "position": {
-        "x": -75,
+        "x": -185,
         "y": 0,
-        "z": 375
+        "z": 485
       },
       "label": "a spider on the wheel",
       "meta": {
@@ -15294,11 +15939,1264 @@
       }
     },
     {
-      "id": "room-attic-christmas",
+      "id": "room-wine-cellar",
       "kind": "crumb-room",
       "shape": "box",
       "center": {
         "x": -165,
+        "y": 0.5,
+        "z": 385
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "The wine racks",
+      "meta": {
+        "template": "wine-cellar",
+        "zone": "basement",
+        "minDepth": 5,
+        "floor": "concrete",
+        "floorColor": "#5e5852",
+        "flavor": "Racks of dusty bottles like a cathedral organ. One dripped years ago and the floor is still sticky.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "wine-cellar-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": 60,
+        "z": 368
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#6a5e52",
+      "label": "wall-north",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": 2.8,
+        "z": 368.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#4e443a",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": 5.75,
+        "z": 368.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#4e443a",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-rack-post-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -186,
+        "y": 34,
+        "z": 373
+      },
+      "halfExtents": {
+        "x": 1,
+        "y": 34,
+        "z": 3
+      },
+      "color": "#5a3e28",
+      "label": "rack-post",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "wood",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-5",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -182,
+        "y": 10,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2f4a2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -182,
+        "y": 28,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#4a1f2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -182,
+        "y": 46,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2a3a4a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-rack-post-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -172,
+        "y": 34,
+        "z": 373
+      },
+      "halfExtents": {
+        "x": 1,
+        "y": 34,
+        "z": 3
+      },
+      "color": "#5a3e28",
+      "label": "rack-post",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "wood",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -168,
+        "y": 10,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#4a1f2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-10",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -168,
+        "y": 28,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2a3a4a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-11",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -168,
+        "y": 46,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2f4a2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-rack-post-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -158,
+        "y": 34,
+        "z": 373
+      },
+      "halfExtents": {
+        "x": 1,
+        "y": 34,
+        "z": 3
+      },
+      "color": "#5a3e28",
+      "label": "rack-post",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "wood",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-13",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -154,
+        "y": 10,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2a3a4a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-14",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -154,
+        "y": 28,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2f4a2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-15",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -154,
+        "y": 46,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#4a1f2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-rack-post-16",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -144,
+        "y": 34,
+        "z": 373
+      },
+      "halfExtents": {
+        "x": 1,
+        "y": 34,
+        "z": 3
+      },
+      "color": "#5a3e28",
+      "label": "rack-post",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "wood",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-17",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -140,
+        "y": 10,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2f4a2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-18",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -140,
+        "y": 28,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#4a1f2a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-bottle-19",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -140,
+        "y": 46,
+        "z": 373
+      },
+      "radius": 3.2,
+      "height": 16,
+      "color": "#2a3a4a",
+      "label": "wine-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": false,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-wine-stain-20",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -169,
+        "y": 0.05,
+        "z": 387
+      },
+      "halfExtents": {
+        "x": 8,
+        "y": 0.05,
+        "z": 5
+      },
+      "color": "#4a1f2a",
+      "label": "wine-stain",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-fallen-bottle-21",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -154.92,
+        "y": 3.4,
+        "z": 389.56
+      },
+      "radius": 3.4,
+      "height": 22,
+      "color": "#2f4a2a",
+      "label": "fallen-bottle",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "glass",
+        "solid": true,
+        "turn": 0.6,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "wine-cellar-straw-22",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -174.3933982822018,
+        "y": 1.2,
+        "z": 386.3933982822018
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 1.2,
+        "z": 4.5
+      },
+      "color": "#c8a65a",
+      "label": "straw",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "dust",
+        "solid": false,
+        "cover": true,
+        "turn": -0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "wine-cellar-model-solid-24",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -145,
+        "y": 2,
+        "z": 379
+      },
+      "halfExtents": {
+        "x": 6.5,
+        "y": 2,
+        "z": 6.5
+      },
+      "label": "quaternius-fantasy-props/Barrel footprint",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.2
+      }
+    },
+    {
+      "id": "wine-cellar-model-solid-26",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -185,
+        "y": 2,
+        "z": 382
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 2,
+        "z": 6
+      },
+      "label": "quaternius-fantasy-props/Crate_Wooden footprint",
+      "meta": {
+        "template": "wine-cellar",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.4
+      }
+    },
+    {
+      "id": "room-coal-store",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 0.5,
+        "z": 385
+      },
+      "halfExtents": {
+        "x": 23,
+        "y": 0.5,
+        "z": 15
+      },
+      "label": "The old coal store",
+      "meta": {
+        "template": "coal-store",
+        "zone": "basement",
+        "minDepth": 6,
+        "floor": "concrete",
+        "floorColor": "#3e3a36",
+        "flavor": "Black dust and a slope of old coal under the chute. Moonlight falls straight down it from the garden.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 0.9,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "coal-store-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 60,
+        "z": 369
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#4a4640",
+      "label": "wall-north",
+      "meta": {
+        "template": "coal-store",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 2.8,
+        "z": 369.8
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#3a3632",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "coal-store",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 5.75,
+        "z": 369.8
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#3a3632",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "coal-store",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-coal-heap-4",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -69,
+        "y": 3.5,
+        "z": 377
+      },
+      "radius": 7,
+      "color": "#1e1c1a",
+      "label": "coal-heap",
+      "meta": {
+        "template": "coal-store",
+        "material": "stone",
+        "solid": true
+      }
+    },
+    {
+      "id": "coal-store-coal-heap-5",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -61,
+        "y": 2.5,
+        "z": 375
+      },
+      "radius": 5,
+      "color": "#1e1c1a",
+      "label": "coal-heap",
+      "meta": {
+        "template": "coal-store",
+        "material": "stone",
+        "solid": true
+      }
+    },
+    {
+      "id": "coal-store-coal-heap-6",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -72.92040876190138,
+        "y": 2,
+        "z": 384.04490514281656
+      },
+      "radius": 4,
+      "color": "#1e1c1a",
+      "label": "coal-heap",
+      "meta": {
+        "template": "coal-store",
+        "material": "stone",
+        "solid": true
+      }
+    },
+    {
+      "id": "coal-store-coal-heap-7",
+      "kind": "crumb-prop",
+      "shape": "sphere",
+      "center": {
+        "x": -65,
+        "y": 1.5,
+        "z": 383
+      },
+      "radius": 3,
+      "color": "#1e1c1a",
+      "label": "coal-heap",
+      "meta": {
+        "template": "coal-store",
+        "material": "stone",
+        "solid": true
+      }
+    },
+    {
+      "id": "coal-store-chute-8",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -41,
+        "y": 30,
+        "z": 373
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 30,
+        "z": 2
+      },
+      "color": "#3a3a38",
+      "label": "chute",
+      "meta": {
+        "template": "coal-store",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0.5,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-shovel-blade-9",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -49,
+        "y": 0.6,
+        "z": 391
+      },
+      "halfExtents": {
+        "x": 4,
+        "y": 0.6,
+        "z": 5
+      },
+      "color": "#5a5a58",
+      "label": "shovel-blade",
+      "meta": {
+        "template": "coal-store",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0.5,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-shovel-handle-10",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -57,
+        "y": 1,
+        "z": 397
+      },
+      "radius": 1,
+      "height": 30,
+      "color": "#7a5a3a",
+      "label": "shovel-handle",
+      "meta": {
+        "template": "coal-store",
+        "material": "wood",
+        "solid": false,
+        "turn": 1.1,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "coal-store-sack-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -45.6027659949672,
+        "y": 4,
+        "z": 385.4766808060394
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 4,
+        "z": 4.5
+      },
+      "color": "#8a7a5a",
+      "label": "sack",
+      "meta": {
+        "template": "coal-store",
+        "material": "fabric",
+        "solid": true,
+        "cover": false,
+        "turn": -0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-tarp-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 0.6,
+        "z": 383
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 0.6,
+        "z": 4.5
+      },
+      "color": "#3a4a3a",
+      "label": "tarp",
+      "meta": {
+        "template": "coal-store",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "coal-store-model-solid-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -37,
+        "y": 2,
+        "z": 379
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 2,
+        "z": 5
+      },
+      "label": "quaternius-fantasy-props/Bucket_Metal footprint",
+      "meta": {
+        "template": "coal-store",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.3
+      }
+    },
+    {
+      "id": "room-freezer-corner",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 0.5,
+        "z": 385
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "Behind the chest freezer",
+      "meta": {
+        "template": "freezer-corner",
+        "zone": "basement",
+        "minDepth": 5,
+        "floor": "concrete",
+        "floorColor": "#6a6864",
+        "flavor": "The freezer hums like a whale. Its back grille breathes warm air, and frost has dripped into puddles.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "freezer-corner-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 60,
+        "z": 368
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#7a7670",
+      "label": "wall-north",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 2.8,
+        "z": 368.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#5e5a54",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 5.75,
+        "z": 368.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#5e5a54",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-freezer-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 26,
+        "z": 375
+      },
+      "halfExtents": {
+        "x": 22,
+        "y": 26,
+        "z": 5
+      },
+      "color": "#e8e6e0",
+      "label": "freezer",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "paint",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-freezer-grille-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 6,
+        "z": 380.2
+      },
+      "halfExtents": {
+        "x": 15,
+        "y": 4,
+        "z": 0.3
+      },
+      "color": "#5a5a5a",
+      "label": "freezer-grille",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-freezer-glow-6",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 71,
+        "y": 2,
+        "z": 380.4
+      },
+      "halfExtents": {
+        "x": 1.5,
+        "y": 0.75,
+        "z": 0.2
+      },
+      "color": "#7ad8ff",
+      "label": "freezer-glow",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "emissive",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0,
+        "glow": 3
+      }
+    },
+    {
+      "id": "freezer-corner-frost-puddle-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 44.192388155425114,
+        "y": 0.05,
+        "z": 387.80761184457486
+      },
+      "radius": 4,
+      "height": 0.1,
+      "color": "#bfe8ff",
+      "label": "frost-puddle",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-frost-puddle-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 61,
+        "y": 0.05,
+        "z": 393
+      },
+      "radius": 3,
+      "height": 0.1,
+      "color": "#bfe8ff",
+      "label": "frost-puddle",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-frost-puddle-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 69,
+        "y": 0.05,
+        "z": 387
+      },
+      "radius": 2.5,
+      "height": 0.1,
+      "color": "#bfe8ff",
+      "label": "frost-puddle",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "glass",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-cardboard-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 49.31083505599865,
+        "y": 0.5,
+        "z": 389.8445824720007
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 0.5,
+        "z": 5
+      },
+      "color": "#b9925c",
+      "label": "cardboard",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "cardboard",
+        "solid": false,
+        "cover": true,
+        "turn": 0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-paint-tray-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 61.58359213500126,
+        "y": 1,
+        "z": 390.2917960675006
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 1,
+        "z": 4.5
+      },
+      "color": "#5a7aa0",
+      "label": "paint-tray",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": -0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "freezer-corner-model-solid-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 75,
+        "y": 2,
+        "z": 382.5
+      },
+      "halfExtents": {
+        "x": 5.5,
+        "y": 2,
+        "z": 5.5
+      },
+      "label": "quaternius-fantasy-props/Crate_Metal footprint",
+      "meta": {
+        "template": "freezer-corner",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.2
+      }
+    },
+    {
+      "id": "room-attic-christmas",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 165,
         "y": 0.5,
         "z": 385
       },
@@ -15328,7 +17226,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -185,
+        "x": 145,
         "y": 0.6,
         "z": 385
       },
@@ -15354,7 +17252,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -177,
+        "x": 153,
         "y": 0.6,
         "z": 385
       },
@@ -15380,7 +17278,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -169,
+        "x": 161,
         "y": 0.6,
         "z": 385
       },
@@ -15406,7 +17304,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -161,
+        "x": 169,
         "y": 0.6,
         "z": 385
       },
@@ -15432,7 +17330,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -153,
+        "x": 177,
         "y": 0.6,
         "z": 385
       },
@@ -15458,7 +17356,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -145,
+        "x": 185,
         "y": 0.6,
         "z": 385
       },
@@ -15484,7 +17382,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -177,
+        "x": 153,
         "y": 9,
         "z": 376
       },
@@ -15510,7 +17408,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -177,
+        "x": 153,
         "y": 18.6,
         "z": 377
       },
@@ -15536,7 +17434,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -161,
+        "x": 169,
         "y": 4.5,
         "z": 377
       },
@@ -15554,7 +17452,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -153,
+        "x": 177,
         "y": 3.5,
         "z": 375
       },
@@ -15572,7 +17470,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -167,
+        "x": 163,
         "y": 3,
         "z": 393
       },
@@ -15590,7 +17488,7 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -161,
+        "x": 169,
         "y": 9.3,
         "z": 377
       },
@@ -15612,7 +17510,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -183,
+        "x": 147,
         "y": 0.7,
         "z": 397
       },
@@ -15631,7 +17529,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -179.4,
+        "x": 150.6,
         "y": 0.7,
         "z": 395.3170580303842
       },
@@ -15650,7 +17548,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -175.8,
+        "x": 154.2,
         "y": 0.7,
         "z": 395.18140514634865
       },
@@ -15669,7 +17567,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -172.2,
+        "x": 157.8,
         "y": 0.7,
         "z": 396.7177599838803
       },
@@ -15688,7 +17586,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -168.6,
+        "x": 161.4,
         "y": 0.7,
         "z": 398.5136049906159
       },
@@ -15707,7 +17605,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -165,
+        "x": 165,
         "y": 0.7,
         "z": 398.91784854932627
       },
@@ -15726,7 +17624,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -161.4,
+        "x": 168.6,
         "y": 0.7,
         "z": 397.55883099639783
       },
@@ -15745,7 +17643,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -157.8,
+        "x": 172.2,
         "y": 0.7,
         "z": 395.6860268025624
       },
@@ -15764,7 +17662,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -154.2,
+        "x": 175.8,
         "y": 0.7,
         "z": 395.02128350675326
       },
@@ -15783,7 +17681,7 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -150.6,
+        "x": 179.4,
         "y": 0.7,
         "z": 396.1757630295165
       },
@@ -15802,7 +17700,7 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -167,
+        "x": 163,
         "y": 0.3,
         "z": 397
       },
@@ -15824,7 +17722,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -151,
+        "x": 179,
         "y": 1.2,
         "z": 391
       },
@@ -15850,7 +17748,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -149,
+        "x": 181,
         "y": 2,
         "z": 383
       },
@@ -15876,7 +17774,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -165,
+        "x": 165,
         "y": 50,
         "z": 366
       },
@@ -15902,7 +17800,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -181,
+        "x": 149,
         "y": 2,
         "z": 381
       },
@@ -15925,7 +17823,7 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -167,
+        "x": 163,
         "y": 2,
         "z": 375
       },
@@ -15948,9 +17846,9 @@
       "kind": "crumb-room",
       "shape": "box",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 0.5,
-        "z": 385
+        "z": 495
       },
       "halfExtents": {
         "x": 24,
@@ -15978,9 +17876,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 60,
-        "z": 368
+        "z": 478
       },
       "halfExtents": {
         "x": 26,
@@ -16004,9 +17902,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 2.8,
-        "z": 368.8
+        "z": 478.8
       },
       "halfExtents": {
         "x": 26,
@@ -16030,9 +17928,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 5.75,
-        "z": 368.8
+        "z": 478.8
       },
       "halfExtents": {
         "x": 26,
@@ -16056,9 +17954,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 26,
       "height": 3,
@@ -16078,9 +17976,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 22,
       "height": 3.4,
@@ -16100,9 +17998,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16122,9 +18020,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16144,9 +18042,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16166,9 +18064,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16188,9 +18086,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16210,9 +18108,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16232,9 +18130,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16254,9 +18152,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 26,
-        "z": 375
+        "z": 485
       },
       "radius": 0.2,
       "height": 44,
@@ -16276,9 +18174,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -65,
+        "x": -175,
         "y": 0.6,
-        "z": 375
+        "z": 485
       },
       "halfExtents": {
         "x": 1.5,
@@ -16302,9 +18200,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -43,
+        "x": -153,
         "y": 7,
-        "z": 387
+        "z": 497
       },
       "radius": 7,
       "color": "#e8e2d0",
@@ -16320,9 +18218,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -37,
+        "x": -147,
         "y": 14,
-        "z": 375
+        "z": 485
       },
       "radius": 1.6,
       "height": 28,
@@ -16342,9 +18240,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -37,
+        "x": -147,
         "y": 28.5,
-        "z": 375
+        "z": 485
       },
       "halfExtents": {
         "x": 4,
@@ -16368,9 +18266,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -73,
+        "x": -183,
         "y": 5,
-        "z": 393
+        "z": 503
       },
       "radius": 3.5,
       "height": 10,
@@ -16390,9 +18288,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -70,
+        "x": -180,
         "y": 11,
-        "z": 393
+        "z": 503
       },
       "radius": 0.4,
       "height": 8,
@@ -16412,9 +18310,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -67,
+        "x": -177,
         "y": 0.05,
-        "z": 395
+        "z": 505
       },
       "halfExtents": {
         "x": 4,
@@ -16438,9 +18336,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -53,
+        "x": -163,
         "y": 0.4,
-        "z": 395
+        "z": 505
       },
       "halfExtents": {
         "x": 8,
@@ -16464,9 +18362,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -31.4,
+        "x": -141.4,
         "y": 9,
-        "z": 389
+        "z": 499
       },
       "halfExtents": {
         "x": 0.3,
@@ -16496,12 +18394,507 @@
       "minX": -220,
       "minZ": -220,
       "maxX": 220,
-      "maxZ": 440
+      "maxZ": 550
     },
     "cellSize": 10,
     "cols": 44,
-    "rows": 66,
+    "rows": 77,
     "offsets": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -19519,6 +21912,490 @@
       0
     ],
     "surfaces": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,

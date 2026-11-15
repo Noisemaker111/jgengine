@@ -105,6 +105,10 @@ describe("the procedural house", () => {
     expect(NIGHTS.heatwave.noise).toBeLessThan(1);
     expect(twistOf(of("sleepover")).restless).toBeGreaterThan(0);
   });
+  test("only basement rooms hold the Exterminator, so no other room can roll him", () => {
+    for (const t of ROOM_TEMPLATES) if (t.zone !== "basement") expect(t.threats.some(s => s.kind === "exterminator"), t.id).toBe(false);
+    expect(ROOM_TEMPLATES.filter(t => t.zone === "basement").length).toBeGreaterThanOrEqual(5);
+  });
   test("the basement opens only once charted and only deep in a night, and the cellar hoard rolls nowhere else", () => {
     const deep = ["0-0-0-0-0-0", "0-1-0-1-0-0-1", "0-0-1-0-1-0-0", "0-1-1-0-0-1-0-0"];
     const charted = { zones: [...ALL.zones, "basement"] as const };

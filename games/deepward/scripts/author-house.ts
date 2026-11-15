@@ -13,7 +13,7 @@ import { createEditorHost } from '@jgengine/editor/session';
 import { writeFileSync } from 'node:fs';
 
 const path = new URL('../src/editor.scene.json', import.meta.url);
-const SPACING = 110, COLS = 4, ROWS = 6;
+const SPACING = 110, COLS = 4, ROWS = 7;
 const half = (SPACING * COLS) / 2;
 const CELL = 10;
 const cols = (SPACING * COLS) / CELL, rows = (SPACING * ROWS) / CELL;
@@ -735,6 +735,82 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
   threat(t, 'exterminator', 'exterminator', 0, 2, 6, 'the Exterminator at his bench');
   threat(t, 'trap', 'trap', -8, 4, 6, 'a mousetrap');
   threat(t, 'trap-b', 'trap', 8, 8, 6, 'a second mousetrap');
+}
+
+{
+  const w = 48, d = 32;
+  const t = template('wine-cellar', { name: 'The wine racks', zone: 'basement', minDepth: 5, w, d, floor: 'concrete', floorColor: '#5e5852', flavor: 'Racks of dusty bottles like a cathedral organ. One dripped years ago and the floor is still sticky.', dark: true });
+  wall(t, 'north', w, d, '#6a5e52', '#4e443a');
+  for (let i = 0; i < 4; i++) {
+    box(t, 'rack-post', [-21 + i * 14, 34, -12], [2, 68, 6], 'wood', '#5a3e28', { solid: true });
+    for (let k = 0; k < 3; k++) cyl(t, 'wine-bottle', [-14 + i * 14 - 3 + k * 0, 10 + k * 18, -12], 3.2, 16, 'glass', ['#2f4a2a', '#4a1f2a', '#2a3a4a'][(i + k) % 3]!, { roll: Math.PI / 2, turn: Math.PI / 2 });
+  }
+  box(t, 'wine-stain', [-4, 0.05, 2], [16, 0.1, 10], 'paint', '#4a1f2a', { turn: 0.3 });
+  cyl(t, 'fallen-bottle', [12, 3.4, 6], 3.4, 22, 'glass', '#2f4a2a', { roll: Math.PI / 2, turn: 0.6, solid: true });
+  box(t, 'straw', [-16, 1.2, 8], [12, 2.4, 9], 'dust', '#c8a65a', { cover: true, turn: -0.4 });
+  model(t, `${PROPS}/Barrel`, [20, 0, -4], 18, 0.2, [13, 13]);
+  model(t, `${PROPS}/Crate_Wooden`, [-20, 0, -2], 14, 0.4, [12, 12]);
+  lamp(t, 'bulb', [0, 50, 6], '#ffc27a', 5, 70, 'a dusty bulb on a cord');
+  lamp(t, 'glint', [12, 4, 6], '#9fd37a', 2, 16, 'light caught in green glass');
+  door(t, 'entry', 'entry', -20, 12, ['crack', 'vent', 'cable'], 'between two racks');
+  door(t, 'on', 'forward', 20, 12, ['crack', 'vent', 'climb'], 'up the rack ladder');
+  exit(t, 'grate', 'vent', 2, -12, 'the drain grate behind the racks');
+  spot(t, 'straw', -16, 11, 'tucked', 'in the packing straw', { bias: 'curio' });
+  spot(t, 'stain', -4, 4, 'open', 'on the sticky stain', { bias: 'food' });
+  spot(t, 'bottle', 8, 10, 'open', 'by the fallen bottle', { bias: 'curio' });
+  spot(t, 'rack', -8, -7, 'cache', 'under the bottom rack', { bias: 'curio' });
+  spot(t, 'barrel', 14, -6, 'tucked', 'behind the barrel', { bias: 'part' });
+  threat(t, 'exterminator', 'exterminator', 0, 4, 6, 'the Exterminator counting bottles');
+  threat(t, 'spider', 'spider', -20, -10, 5, 'a cellar spider in the racks');
+  threat(t, 'trap', 'trap', 6, 0, 5, 'a mousetrap');
+}
+{
+  const w = 46, d = 30;
+  const t = template('coal-store', { name: 'The old coal store', zone: 'basement', minDepth: 6, w, d, floor: 'concrete', floorColor: '#3e3a36', flavor: 'Black dust and a slope of old coal under the chute. Moonlight falls straight down it from the garden.', dark: true, weight: 0.9 });
+  wall(t, 'north', w, d, '#4a4640', '#3a3632');
+  for (const [x, z, r] of [[-14, -8, 7], [-6, -10, 5], [-18, 0, 4], [-10, -2, 3]] as const) ball(t, 'coal-heap', [x, r * 0.5, z], r, 'stone', '#1e1c1a', { solid: true });
+  box(t, 'chute', [14, 30, -12], [12, 60, 4], 'metal', '#3a3a38', { tilt: 0.5 });
+  box(t, 'shovel-blade', [6, 0.6, 6], [8, 1.2, 10], 'metal', '#5a5a58', { turn: 0.5 });
+  cyl(t, 'shovel-handle', [-2, 1, 12], 1, 30, 'wood', '#7a5a3a', { roll: Math.PI / 2, turn: 1.1 });
+  box(t, 'sack', [14, 4, 6], [12, 8, 9], 'fabric', '#8a7a5a', { solid: true, turn: -0.3 });
+  box(t, 'tarp', [0, 0.6, -2], [12, 1.2, 9], 'fabric', '#3a4a3a', { cover: true, turn: 0.2 });
+  model(t, `${PROPS}/Bucket_Metal`, [18, 0, -6], 12, 0.3, [10, 10]);
+  lamp(t, 'moon', [14, 40, -10], '#a8c4ff', 7, 80, 'moonlight down the coal chute');
+  lamp(t, 'ember', [-12, 3, -4], '#ff7a3a', 2, 14, 'one coal that still glows');
+  door(t, 'entry', 'entry', -19, 12, ['crack', 'vent', 'climb'], 'over the coal heap');
+  door(t, 'on', 'forward', 19, 12, ['crack', 'cable'], 'along the old gas pipe');
+  exit(t, 'chute', 'vent', 14, -8, 'up the coal chute to the garden');
+  spot(t, 'coal', -8, 2, 'cache', 'in the coal dust', { bias: 'curio' });
+  spot(t, 'tarp', 0, 1, 'tucked', 'under the tarp');
+  spot(t, 'sack', 8, 10, 'open', 'by the sack', { bias: 'part' });
+  spot(t, 'chute', 8, -6, 'open', 'where the chute drops', { bias: 'curio' });
+  spot(t, 'bucket', 16, 2, 'tucked', 'behind the bucket', { bias: 'part' });
+  threat(t, 'exterminator', 'exterminator', 2, 6, 6, 'the Exterminator by the chute');
+  threat(t, 'trap', 'trap', -2, 8, 6, 'a mousetrap');
+}
+{
+  const w = 48, d = 32;
+  const t = template('freezer-corner', { name: 'Behind the chest freezer', zone: 'basement', minDepth: 5, w, d, floor: 'concrete', floorColor: '#6a6864', flavor: 'The freezer hums like a whale. Its back grille breathes warm air, and frost has dripped into puddles.', dark: true });
+  wall(t, 'north', w, d, '#7a7670', '#5e5a54');
+  box(t, 'freezer', [0, 26, -10], [44, 52, 10], 'paint', '#e8e6e0', { solid: true });
+  box(t, 'freezer-grille', [0, 6, -4.8], [30, 8, 0.6], 'metal', '#5a5a5a');
+  box(t, 'freezer-glow', [16, 2, -4.6], [3, 1.5, 0.4], 'emissive', '#7ad8ff', { glow: 3 });
+  for (const [x, z, r] of [[-12, 4, 4], [6, 8, 3], [14, 2, 2.5]] as const) cyl(t, 'frost-puddle', [x, 0.05, z], r, 0.1, 'glass', '#bfe8ff');
+  box(t, 'cardboard', [-16, 0.5, 10], [14, 1, 10], 'cardboard', '#b9925c', { cover: true, turn: 0.3 });
+  box(t, 'paint-tray', [16, 1, 10], [12, 2, 9], 'plastic', '#5a7aa0', { solid: true, turn: -0.2 });
+  model(t, `${FOOD}/Popsicle_Multiple`, [-4, 0, 6], 10, 0.8);
+  model(t, `${PROPS}/Crate_Metal`, [20, 0, -2], 12, 0.2, [11, 11]);
+  lamp(t, 'freezer', [16, 4, -3], '#9fdcff', 4, 34, 'the freezer light leaking from the lid');
+  lamp(t, 'warm', [0, 6, -4], '#ffb07a', 3, 22, 'warm air from the grille');
+  door(t, 'entry', 'entry', -20, 12, ['crack', 'vent', 'drop'], 'down off the freezer lid');
+  door(t, 'on', 'forward', 20, 12, ['crack', 'vent', 'cable'], 'along the freezer cable');
+  spot(t, 'grille', -4, -2, 'cache', 'blown under the grille', { bias: 'curio' });
+  spot(t, 'box', -16, 13, 'tucked', 'under the cardboard');
+  spot(t, 'puddle', 6, 5, 'open', 'in a frost puddle', { bias: 'food' });
+  spot(t, 'tray', 10, 12, 'open', 'by the paint tray', { bias: 'part' });
+  spot(t, 'crate', 14, -2, 'tucked', 'behind the crate', { bias: 'curio' });
+  threat(t, 'exterminator', 'exterminator', -2, 6, 6, 'the Exterminator fetching ice');
+  threat(t, 'cat', 'cat', 6, 4, 5, 'the cat, shut in the cellar');
 }
 
 const DOOR_CLEAR = 9;
