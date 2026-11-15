@@ -117,17 +117,18 @@ export const game = defineGame({
       preset: "bright",
       sun: { azimuth: 200, elevation: 62, color: "#fff6e6" },
       horizonColor: "#f6f2ea",
-      fog: { near: 60, far: 320 },
+      fog: { near: 70, far: 340 },
+      exposure: 0.85,
     },
-    environmentSource: hdriEnvironment("interior-industrial", { intensity: 1.0 }),
+    environmentSource: hdriEnvironment("interior-industrial", { intensity: 0.55 }),
     lighting: {
       // Indoor fill: shadows stay soft and neutral under the strip lights, never blue.
-      ambient: { color: "#e8e4dc", intensity: 0.5 },
-      hemisphere: { skyColor: "#fbf8f2", groundColor: "#c9c2b4", intensity: 0.9 },
+      ambient: { color: "#e8e4dc", intensity: 0.22 },
+      hemisphere: { skyColor: "#f4f1ea", groundColor: "#8f8878", intensity: 0.55 },
       directional: [
         {
           color: "#fff6e6",
-          intensity: 2.2,
+          intensity: 1.35,
           // High and nearly overhead: the strip lights' key, kept here so the cascades below tune its shadow.
           position: [-30, 140, 40],
           castShadow: true,

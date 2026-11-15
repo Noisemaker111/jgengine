@@ -51,8 +51,8 @@ export const PRODUCE: TrackDef = {
     { id: "produce-cooler", label: "COOLER RUN", radioName: "THE COOLER", start: 580, end: 690, wallColor: "#5fd0ff", surface: { id: "plate", label: "COOLER FLOOR", grip: 0.98 } },
   ],
   bandZ: 1030,
-  ground: { low: "#cfd8c4", high: "#e9efe0", waterline: "#ff9a1e" },
-  fog: { color: "#eef4e6", near: 55, far: 300 },
+  ground: { low: "#aebaa3", high: "#c3ccb6", waterline: "#ff9a1e" },
+  fog: { color: "#d8e0cf", near: 60, far: 320 },
   sky: { horizonColor: "#f6fbef", zenithColor: "#d9e6d2", sunIntensity: 1.7, ambientIntensity: 1.35 },
   baseLevel: -3.2,
   // Fresh-pressed, not sea: a pulpy orange flood with bright crests and a foamy edge.

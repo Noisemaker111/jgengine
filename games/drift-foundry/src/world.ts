@@ -64,7 +64,7 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
     road({
       path: routePath(route.points),
       width: 2 * (route.id === "main" ? track.def.pavedHalfWidth : Math.min(track.def.pavedHalfWidth, track.def.branches.find((branch) => branch.id === route.id)!.halfWidth)),
-      color: "#e9e5dc",
+      color: "#d9d4ca",
       materials: { road: RACING_LINE_SCAN },
       markings: route.id === "main",
       markingColor: "#2f6fd6",
@@ -170,7 +170,7 @@ export const world: WorldFeature = environment({
     // The store floor with every department's grade laid in: the same field the headless runs drive on.
     heightField: YARD_GROUND,
     cellSize: YARD_CELL,
-    colors: { low: "#d8d2c4", high: "#ebe6da", waterline: "#d8d2c4" },
+    colors: { low: "#b9b2a3", high: "#c9c2b2", waterline: "#b9b2a3" },
     biomeBands: [...ZONES.map(zoneBand), ...LAID_TRACKS.map(trackBand)].sort((a, b) => a.z - b.z),
     materialRegions: [
       ...LAID_TRACKS.flatMap(trackShoulders),
@@ -182,7 +182,7 @@ export const world: WorldFeature = environment({
         ],
         width: CORRIDOR_HALF_WIDTH * 2 + 14,
         falloff: 16,
-        colors: { low: "#e2ddd2", high: "#efebe2", waterline: "#e2ddd2" },
+        colors: { low: "#c4bdae", high: "#d2cbbb", waterline: "#c4bdae" },
       },
     ],
     detail: {
@@ -207,7 +207,7 @@ export const world: WorldFeature = environment({
       // Narrower than the drivable aisle on purpose: a tiled walkway with terrazzo either side, rather
       // than one slab filling the near frame.
       width: HAUL_ROAD_HALF_WIDTH * 2,
-      color: "#f2eee6",
+      color: "#d9d4ca",
       materials: { road: RACING_LINE_SCAN },
       markings: true,
       markingColor: "#2f6fd6",
@@ -220,12 +220,12 @@ export const world: WorldFeature = environment({
   sky: sky({
     preset: "day",
     // The ceiling haze of a big-box store: warm white at eye level, a cooler grey up where the roof is.
-    horizonColor: "#f7f3ea",
-    zenithColor: "#cfd5de",
+    horizonColor: "#e6e1d6",
+    zenithColor: "#aeb6c2",
     sun: { azimuth: 200, elevation: 62 },
     sunColor: "#fff6e6",
-    sunIntensity: 2.2,
-    ambientIntensity: 1.25,
+    sunIntensity: 1.5,
+    ambientIntensity: 0.9,
     // The dome tracks the camera in xz, so this only has to clear the visible terrain (±500m along
     // the run) and stay inside the camera's far plane — past it the dome is depth-clipped to black.
     radius: 520,
@@ -234,7 +234,7 @@ export const world: WorldFeature = environment({
     // Above 1 keeps the bright haze high on the dome, so the far end of an aisle fades to white, not grey.
     gradientExponent: 1.6,
     cloudiness: 0,
-    fog: { color: "#f1ece2", near: 60, far: 320 },
+    fog: { color: "#ddd7cb", near: 70, far: 340 },
   }),
   structures: ZONES.flatMap((zone) => [nearWall(zone), farWall(zone)]),
 });

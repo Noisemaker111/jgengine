@@ -154,7 +154,7 @@ function SalvageTag({ tag, now, phone }: { tag: NonNullable<RaceHudModel["tag"]>
   const { offered, replacing, armed } = tag;
   const speedDelta = (claimedChange(offered, "topSpeed") - claimedChange(replacing, "topSpeed")) * 3.6;
   return <RuneView width={phone ? 300 : 280} fill="#fff6c9" color={PEN} border={{ width: 2, color: "#1f2430" }} padding={[10, 14, 10, 14]} gap={4} label="Mod decision" radius={6}>
-    <Row gap={6}><Text family={STENCIL} size={16} color={ORANGE} text={bind(() => `${now().tag?.metres ?? tag.metres}m`)} /><Label color={PEN}>{offered.slot.toUpperCase()}</Label></Row>
+    <Row gap={6}><Text family={STENCIL} size={16} color={ORANGE} text={bind(() => `${now().tag?.metres ?? tag.metres}m`)} /><Label color={PEN}>{offered.slotLabel}</Label></Row>
     <Text family={STENCIL} size={17} color={PEN}>{`${offered.label} or keep ${replacing.label}?`}</Text>
     {phone ? null : <Text size={15} color={PEN}>{offered.blurb}</Text>}
     <Text size={15} color={PEN}>{`Speed ${speedDelta > 0 ? "+" : ""}${speedDelta.toFixed(0)} km/h · steering ${(claimedChange(offered, "turnRate") - claimedChange(replacing, "turnRate")).toFixed(1)}`}</Text>

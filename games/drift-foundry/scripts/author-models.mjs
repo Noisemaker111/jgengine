@@ -516,8 +516,8 @@ author('aisle-sign', ({ box, cylinder }) => {
   box([5.4, 2.6, .25], [0, 10, 0], '#2f6fd6');
   box([5.6, .2, .3], [0, 11.35, 0], YELLOW);
   box([5.6, .2, .3], [0, 8.65, 0], YELLOW);
-  const px = (x, y) => box([.32, .32, .3], [x * .34, 10 + y * .34, 0], '*#fff6c9');
-  // A pixel "9".
+  const px = (x, y) => box([.32, .32, .3], [-x * .34, 10 + y * .34, 0], "*#fff6c9");
+  // A pixel "9", read from down the aisle (the -z side, where carts come from).
   for (const [x, y] of [[-1, 2], [0, 2], [1, 2], [-1, 1], [1, 1], [-1, 0], [0, 0], [1, 0], [1, -1], [-1, -2], [0, -2], [1, -2]]) px(x, y);
 });
 author('dept-sign', ({ box, cylinder }) => {
