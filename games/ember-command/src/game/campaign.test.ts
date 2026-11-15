@@ -65,8 +65,9 @@ describe("the yard campaign is engine mission data", () => {
     expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
   });
 
-  test("five missions, each with a named fail state, a reward and a field-desk brief", () => {
-    expect(CAMPAIGN).toHaveLength(5);
+  test("six missions, each with a named fail state, a reward and a field-journal brief, five on the backyard and the last on the front yard", () => {
+    expect(CAMPAIGN).toHaveLength(6);
+    expect(CAMPAIGN.map((step) => step.map)).toEqual(["backyard", "backyard", "backyard", "backyard", "backyard", "front-yard"]);
     for (const step of CAMPAIGN) {
       expect(step.brief.length).toBeGreaterThan(20);
       expect(step.mission.fail?.length ?? 0).toBeGreaterThan(0);
@@ -245,7 +246,7 @@ describe("the field desk reads the machine", () => {
     expect(card?.phase).toBe("ready");
     expect(card?.title).toBe(CAMPAIGN[0]!.mission.title);
     expect(card?.index).toBe(1);
-    expect(card?.total).toBe(5);
+    expect(card?.total).toBe(6);
     expect(card?.objective).toBe(CAMPAIGN[0]!.mission.objectives[0]!.label ?? "");
     expect(card?.remaining).toBeNull();
   });

@@ -154,7 +154,7 @@ export const COMBATANTS = {
 
 /** Decorative props spawned from the scene — no health, not selectable. Grass forests are instanced
  * scatter; these are the placed hero props around the two nests. */
-export const DECOR = new Set(["petal_red", "petal_black", "dewdrop", "seed"]);
+export const DECOR = new Set(["petal_red", "petal_black", "dewdrop", "seed", "gnome", "mailbox", "tire"]);
 
 /** Harvestable food: sugar from crumbs and the dropped popsicle, leaf pulp from leaf piles. Placed in
  * the scene, they spawn as inert prop entities the pointer can target and workers can haul from. */

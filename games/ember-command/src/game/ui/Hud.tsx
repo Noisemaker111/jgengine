@@ -103,6 +103,7 @@ function YardStrip({ width }: { width: number }) {
   if (hz.mower !== "none") items.push({ text: hz.mower === "crossing" ? "MOWER CROSSING" : hz.mower === "warning" ? `Mower in ${hz.mowerIn ?? 0}s — clear the lane!` : `Mower in ${hz.mowerIn ?? 0}s`, warn: hz.mower !== "idle" });
   if (hz.rain) items.push({ text: "Rain: slow going, scent washing", warn: true });
   if (hz.night) items.push({ text: "Night: antennae short", warn: false });
+  if (hz.heat !== "none") items.push({ text: hz.heat === "baking" ? "Driveway baking: keep to the cracks and the car's shade" : "Night: the pavement has cooled", warn: hz.heat === "baking" });
   if (hz.beam !== "none") items.push({ text: hz.beam === "focused" ? "BEAM FOCUSED — find shade" : "Beam blurred", warn: hz.beam === "focused" });
   if (items.length === 0) return null;
   return <RuneView variant="note" width={width} gap={2} label="Yard">

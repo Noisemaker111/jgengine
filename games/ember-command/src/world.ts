@@ -4,7 +4,9 @@ import { editorLayers } from "./editorLayers";
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environment, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
-export const world: EnvironmentWorldFeature = environment({
+/** The live lawn's ground: the base terrain, that lawn's authored sculpt and its gameplay clearings. */
+function buildWorld(): EnvironmentWorldFeature {
+  return environment({
   sculpt: editorLayers.terrain,
   clearings: clearanceZonesFrom(editorLayers),
   terrain: terrain({
@@ -38,6 +40,14 @@ export const world: EnvironmentWorldFeature = environment({
   }),
   // Colours, sun and haze come from the game's `mood`.
   sky: sky({ preset: "day", hazeStrength: 0.3, sunGlowStrength: 0.7 }),
-});
+  });
+}
+
+/** A live binding: `rebindWorld` rebuilds it when the scene set switches lawns. */
+export let world: EnvironmentWorldFeature = buildWorld();
+
+export function rebindWorld(): void {
+  world = buildWorld();
+}
 
 export const physics: PhysicsConfig = { gravity: -24 };

@@ -30,6 +30,8 @@ import {
   nightSightFactor,
   SPRINKLER_DPS,
   sprinklerWarming,
+  sunBaked,
+  HEAT_DPS,
   underBeam,
   underMower,
   type HazardEvent,
@@ -320,6 +322,7 @@ function applyHazardHarm(ctx: GameContext, dt: number): void {
     if (underMower(hz, YARD, x, z)) amount += unit.kind === "building" ? MOWER_BUILDING_DAMAGE * dt : MOWER_UNIT_DAMAGE;
     if (unit.kind === "unit" && unit.catalogId !== "wasp" && inSprinklerJet(hz, YARD, x, z)) amount += SPRINKLER_DPS * dt;
     if (underBeam(hz, YARD, x, z)) amount += (unit.kind === "building" ? BEAM_BUILDING_DPS : BEAM_UNIT_DPS) * dt;
+    if (unit.kind === "unit" && unit.catalogId !== "wasp" && sunBaked(hz, YARD, x, z)) amount += HEAT_DPS * dt;
     if (amount > 0) ctx.scene.entity.effect({ from: "yard", to: unit.id, effect: "damage", via: { amount } });
   }
 }
@@ -490,6 +493,7 @@ const hudSystem: SystemDefinition = defineSystem({
         night: session.hazards.dark >= 0.5,
         dark: Math.round(session.hazards.dark * 20) / 20,
         beam: session.hazards.toggles.beam ? (session.hazards.beam.focused ? "focused" : "blurred") : "none",
+        heat: !session.hazards.toggles.heat ? "none" : session.hazards.dark >= 0.5 ? "cool" : "baking",
       },
       buildArmed: session.buildArmed,
       building: activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length,

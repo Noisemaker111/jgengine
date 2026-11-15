@@ -2,16 +2,31 @@ import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { missionMarkers } from "@jgengine/core/mission/triggers";
-import { physics, world } from "../world";
+import { physics } from "../world";
 import { editorLayers } from "../editorLayers";
+import * as liveLayers from "../editorLayers";
 import { content } from "./content";
 import { onInit } from "../loop";
 import { CAMPAIGN, campaignRuntime, campaignStore } from "./campaign";
 import { livingUnits, reservedSupply, resetSession, session, usedSupply } from "./session";
 import { systems } from "./systems";
+import { bindScene } from "../editorLayers";
+import { rebindWorld } from "../world";
+import * as worldModule from "../world";
+import { sceneSet, type MapId } from "../maps";
+import { rebindYard } from "./yardInstance";
+
+/** Put the headless game on a lawn, as the shell does when the scene set switches. */
+function onLawn(id: MapId): void {
+  sceneSet.select(id);
+  bindScene(id);
+  rebindWorld();
+  rebindYard();
+}
 
 const markers = missionMarkers(editorLayers);
-const STORES = [{ sugar: 0, leaf: 0 }, { sugar: 120, leaf: 40 }, { sugar: 320, leaf: 120 }, { sugar: 480, leaf: 180 }, { sugar: 720, leaf: 280 }];
+const markers6 = () => missionMarkers(liveLayers.editorLayers);
+const STORES = [{ sugar: 0, leaf: 0 }, { sugar: 120, leaf: 40 }, { sugar: 320, leaf: 120 }, { sugar: 480, leaf: 180 }, { sugar: 720, leaf: 280 }, { sugar: 1120, leaf: 430 }];
 type Ctx = ReturnType<typeof createHeadlessRunner>["ctx"];
 
 /** A mid-skill player: keeps foragers busy on both resources, digs two barracks and gardens as the brood fills, hatches steadily, defends the nest. */
@@ -50,7 +65,8 @@ function attack(ctx: Ctx, x: number, z: number): void {
 
 function run(index: number, plan: (ctx: Ctx, tick: number) => void, seconds: number): string {
   resetSession();
-  const definition = defineGameDefinition({ name: "bal", multiplayer: "off", world, physics, systems, loop: { onInit, onNewPlayer() {} } });
+  onLawn(CAMPAIGN[index]!.map);
+  const definition = defineGameDefinition({ name: "bal", multiplayer: "off", world: worldModule.world, physics, systems, loop: { onInit, onNewPlayer() {} } });
   const runner = createHeadlessRunner({ definition, content, loop: definition.loop! });
   const ctx = runner.ctx;
   campaignStore.write(ctx, { won: CAMPAIGN.slice(0, index).map((s) => s.mission.id), mode: "campaign", stores: STORES[index]! });
@@ -76,10 +92,10 @@ function run(index: number, plan: (ctx: Ctx, tick: number) => void, seconds: num
 
 /**
  * Campaign balance, played headless: a mid-skill script (two barracks, gardens as the brood fills, a
- * steady hatch, foragers on both resources, the obvious plan per mission) must win all five missions,
+ * steady hatch, foragers on both resources, the obvious plan per mission) must win all six missions,
  * and the finale must still cost it real losses.
  */
-test("a mid-skill colony wins all five missions", () => {
+test("a mid-skill colony wins all six missions", () => {
   const out: string[] = [];
   out.push(run(0, (ctx, tick) => {
     if (tick % 50 === 0 && campaignRuntime(ctx).view()?.objectiveId === "march_muster") {
@@ -101,7 +117,15 @@ test("a mid-skill colony wins all five missions", () => {
     if (tick >= 650 && tick < 1300 && tick % 100 === 0) attack(ctx, 0, 27);
     if (tick >= 1300 && tick % 50 === 0) attack(ctx, 0, -36);
   }, 600));
+  // The front yard: cross the driveway on the cracks, dig the wasps out of the mailbox, then the nest.
+  out.push(run(5, (ctx, tick) => {
+    if (tick >= 500 && tick < 900 && tick % 50 === 0) attack(ctx, markers6()["campaign_far_bank"]!.x, markers6()["campaign_far_bank"]!.z);
+    if (tick >= 900 && campaignRuntime(ctx).view()?.objectiveId === "clear_mailbox" && tick % 50 === 0) attack(ctx, 32, 33);
+    if (tick >= 900 && campaignRuntime(ctx).view()?.objectiveId === "raze_far_nest" && tick % 50 === 0) attack(ctx, 28, -34);
+  }, 700));
+  onLawn("backyard");
   // Every mission falls to a mid-skill script, and none of them for free.
+  console.log(out.join("\n"));
   for (const line of out) expect(line).toContain(": completed");
   expect(out.join("\n")).toMatch(/M5 [^\n]*red lost (1\d|[2-9]\d)/);
 }, 600_000);

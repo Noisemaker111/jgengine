@@ -26,6 +26,7 @@ import { hudStore } from "./hudStore";
 import { session } from "./session";
 import { SUGAR, LEAF } from "./tuning";
 import { NO_HAZARDS, type HazardToggles } from "./hazards";
+import { activeMap, MAPS, type MapId } from "../maps";
 
 /**
  * The yard campaign: five missions that teach the skirmish in order, run by the engine's mission
@@ -45,7 +46,8 @@ import { NO_HAZARDS, type HazardToggles } from "./hazards";
 /** The authored waypoints the campaign reads out of the scene document. */
 export const MUSTER_MARKER = "campaign_popsicle";
 export const CROSSROADS_MARKER = "campaign_brood_raid";
-/** The far bank of the garden hose, where the crossing escort runs to. */
+/** The far bank of the garden hose, where the crossing escort runs to (on the Front Yard, the lawn
+ * across the driveway). */
 export const ENTREPOT_MARKER = "campaign_far_bank";
 
 /** Tracked actors the objectives name. */
@@ -280,6 +282,58 @@ export const MAGNIFYING_GLASS: MissionDef = {
   rewards: VERDICT_REWARD,
 };
 
+/**
+ * Mission VI — the Front Yard. The driveway is a baking plain crossed only by cool sidewalk cracks
+ * and a car's shade that moves with the sun: clear the mailbox wasps, then dig out the black nest.
+ */
+export const LONG_DRIVEWAY_ID = "m6_long_driveway";
+export const LONG_DRIVEWAY: MissionDef = {
+  id: LONG_DRIVEWAY_ID,
+  title: "The Long Driveway",
+  description: "Across a driveway that cooks an ant by day: clear the wasps out of the mailbox, then dig out the black nest on the far lawn.",
+  start: "cross_driveway",
+  objectives: [
+    {
+      id: "cross_driveway",
+      kind: "reach",
+      actor: HERO_ID,
+      marker: ENTREPOT_MARKER,
+      radius: 9,
+      label: "Lead the Marshal across the driveway to the far lawn",
+      timeout: 240,
+      onTimeout: "driveway_stalled",
+      failOn: yardFails(),
+      next: "clear_mailbox",
+    },
+    {
+      id: "clear_mailbox",
+      kind: "kill",
+      count: 1,
+      counter: "wasp_nest",
+      match: { kind: "kill", target: "wasp_nest" },
+      label: "Dig the wasps out of the mailbox",
+      failOn: keepFails(),
+      next: "raze_far_nest",
+    },
+    {
+      id: "raze_far_nest",
+      kind: "kill",
+      count: 1,
+      counter: "keep_enemy",
+      match: { kind: "kill", target: "keep_enemy" },
+      label: "Cross the driveway and dig out the black nest",
+      failOn: keepFails(),
+      next: "done",
+    },
+  ],
+  fail: [
+    MANDIBLE_FELL,
+    KEEP_FELL,
+    { id: "driveway_stalled", message: "The column never made it across the baking driveway." },
+  ],
+  rewards: { economy: { [SUGAR]: 450, [LEAF]: 180 } },
+};
+
 /** One campaign step: the mission plus the field-journal brief and the yard it is fought in. */
 export interface CampaignStep {
   mission: MissionDef;
@@ -293,6 +347,8 @@ export interface CampaignStep {
   wasps: boolean;
   /** Which of the yard's clocks run during this mission. */
   hazards: HazardToggles;
+  /** The lawn the mission is fought on. */
+  map: MapId;
 }
 
 /** The opening raiding party authored in the scene (stance: assault). */
@@ -312,6 +368,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: false,
     wasps: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
+    map: "backyard",
   },
   {
     mission: HOSE_CROSSING,
@@ -320,6 +377,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: false,
     wasps: false,
     hazards: { ...NO_HAZARDS, sprinkler: true },
+    map: "backyard",
   },
   {
     mission: MOWER_DAY,
@@ -328,6 +386,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: true,
     wasps: false,
     hazards: { ...NO_HAZARDS, mower: true, rain: true },
+    map: "backyard",
   },
   {
     mission: BLACK_QUEEN_RAID,
@@ -336,6 +395,7 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: false,
     wasps: true,
     hazards: { ...NO_HAZARDS, night: true, sprinkler: true },
+    map: "backyard",
   },
   {
     mission: MAGNIFYING_GLASS,
@@ -344,6 +404,16 @@ export const CAMPAIGN: readonly CampaignStep[] = [
     waves: true,
     wasps: true,
     hazards: { ...NO_HAZARDS, beam: true },
+    map: "backyard",
+  },
+  {
+    mission: LONG_DRIVEWAY,
+    brief: "The colony has moved to the front lawn. Between us and the black ants lies the driveway: open asphalt that cooks an ant by day. Walk the sidewalk cracks, use the car's shade, clear the wasps out of the mailbox, then dig out the black nest.",
+    hostiles: [...STANDING_RAID, ...BROOD_GUARD],
+    waves: true,
+    wasps: true,
+    hazards: { ...NO_HAZARDS, heat: true, night: true },
+    map: "front-yard",
   },
 ];
 
@@ -407,6 +477,9 @@ export interface CampaignReadout {
   outcome: string | null;
   reason: string | null;
   stores: { sugar: number; leaf: number };
+  /** The lawn the shown mission is fought on, and its label. */
+  map: MapId;
+  mapLabel: string;
 }
 
 /* -------------------------------------------------------------------------------------------- */
@@ -562,7 +635,7 @@ function grantCarriedStores(ctx: GameContext): void {
   if (stores.leaf > 0) ctx.game.economy.grant(ctx.player.userId, LEAF, stores.leaf);
 }
 
-const ROMAN = ["I", "II", "III", "IV", "V"] as const;
+const ROMAN = ["I", "II", "III", "IV", "V", "VI"] as const;
 
 export function campaignOrdinal(index: number): string {
   return ROMAN[index] ?? String(index + 1);
@@ -622,6 +695,8 @@ export function campaignReadout(ctx: GameContext): CampaignReadout | null {
     // Authored wording for the named fail state, not the machine's generated reason.
     reason: live ? null : (shown.mission.fail?.find((entry) => entry.id === view?.outcome)?.message ?? view?.reason ?? null),
     stores,
+    map: shown.map,
+    mapLabel: MAPS[shown.map].label,
   };
 }
 
@@ -636,6 +711,11 @@ export function startCampaignMission(ctx: GameContext): boolean {
   if (progress.mode !== "campaign") return false;
   const step = nextCampaignStep(progress);
   if (step === null) {
+    syncCampaignHud(ctx);
+    return false;
+  }
+  // A mission is fought on its own lawn: the field journal travels there first (see the title menu).
+  if (step.map !== activeMap()) {
     syncCampaignHud(ctx);
     return false;
   }

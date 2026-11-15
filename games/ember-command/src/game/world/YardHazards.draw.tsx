@@ -12,6 +12,7 @@ import { cellCentre } from "../pheromone";
 import { activeJobs, jobProgress, queuedJobs } from "@jgengine/core/gameplay";
 import { session } from "../session";
 import { YARD } from "../yardInstance";
+import { carShadeAt } from "../yard";
 
 /**
  * Everything the yard's hazards and the colony's scent look like, drawn from `session` each frame:
@@ -223,6 +224,20 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
   const rings = new THREE.InstancedMesh(ringGeometry, ringMaterial, ALARM_RINGS);
   rings.frustumCulled = false;
   rings.count = 0;
+  // The parked car's moving shadow: a soft dark pool that slides across the driveway with the sun.
+  const carShadowMaterial = new THREE.MeshBasicMaterial({ color: "#0b1020", transparent: true, opacity: 0.38, depthWrite: false });
+  const carShadow = new THREE.Mesh(new THREE.CircleGeometry(1, 40), carShadowMaterial);
+  carShadow.rotation.x = -Math.PI / 2;
+  carShadow.visible = YARD.carShade !== null;
+  // Heat shimmer: a faint orange wash over the baking pavement by day.
+  const heatMaterial = new THREE.MeshBasicMaterial({ color: "#ff9a3c", transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const heatShimmer = new THREE.Group();
+  for (const slab of YARD.hot) {
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(slab.halfX * 2, slab.halfZ * 2), heatMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.set(slab.x, 0.35, slab.z);
+    heatShimmer.add(plane);
+  }
   // Puffs: a dust burst where a body falls, a green splash where acid lands, a soil cloud for a chamber.
   const puffGeometry = new THREE.IcosahedronGeometry(1, 1);
   const puffMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
@@ -265,7 +280,7 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         warn.position.set(mx, ground(mx, mz) + 0.12, mz);
         root.add(mower, warn);
       }
-      root.add(rings, puffs, siteRings, siteFills, beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
+      root.add(carShadow, heatShimmer, rings, puffs, siteRings, siteFills, beamGroup, trails, ...shadeCanopies(ground), ...crossingBridges(ground));
       state.scene.add(root);
     },
     frame(state: EngineFrameState, delta: number) {
@@ -334,6 +349,14 @@ function yardHazardsDraw(ctx: GameContext | null): EngineDraw {
         if (!focused && tighten > 0) spotMaterial.opacity = 0.18 + 0.5 * tighten * (0.6 + 0.4 * Math.sin(t * 30));
         coreSpot.visible = focused;
       }
+
+      // The car's shade follows the sun; the pavement shimmers while it bakes.
+      const car = carShadeAt(YARD, hz.t);
+      if (car !== null) {
+        carShadow.position.set(car.x, ground(car.x, car.z) + 0.22, car.z);
+        carShadow.scale.set(car.radius, car.radius * 0.78, 1);
+      }
+      heatMaterial.opacity = hz.toggles.heat && hz.dark < 0.5 ? 0.05 + 0.03 * Math.sin(t * 3) : 0;
 
       // Alarm rings swell over the cloud's life.
       const now = session.elapsed;

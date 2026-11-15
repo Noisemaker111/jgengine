@@ -18,6 +18,7 @@ import { preferences, type CommanderPreferences } from "../preferences";
 import { CAMPAIGN_SLOTS, campaignLabel, campaignSlots, commandProfile, loadCampaignRecord, newCampaignRecord, refreshCampaignSlots, saveCampaignRecord } from "../menuSave";
 import { Eyebrow, Glyph, InkButton, PlankButton, Row, SealButton, Sheet, Small, Text, Title, WaxSeal, useHudSlice } from "./kit";
 import { GILT, INK, OCHRE, WAX } from "./theme";
+import { activeMap, chooseMap, MAPS, sceneSet, type MapId } from "../../maps";
 
 /** Capture-only focus request: a shot declares which order it wants highlighted. */
 export const menuFocus: { id: string | null } = { id: null };
@@ -341,17 +342,24 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
   const held = slots.filter((slot) => !slot.empty).length;
   const verbs: Verb[] = [
     ...(ended ? [{ id: "report", label: "Field report", hint: phase === "won" ? "The lawn is ours" : "The red nest has fallen" }] : []),
-    { id: "continue", label: "Take command", hint: recent === null ? (campaign === null ? "March into a free skirmish" : `March on ${order.title}`) : `Resume ${recent.name ?? campaignLabel(recent.id)}` },
+    { id: "continue", label: "Take command", hint: campaign !== null && campaign.phase !== "finished" && campaign.map !== activeMap() ? `March to ${campaign.mapLabel} for ${order.title}` : recent === null ? (campaign === null ? "March into a free skirmish" : `March on ${order.title}`) : `Resume ${recent.name ?? campaignLabel(recent.id)}` },
     { id: "new", label: "New campaign", hint: `Opens ${campaignLabel(newSlot)}` },
-    { id: "skirmish", label: "Free skirmish", hint: "The whole lawn, no orders" },
+    { id: "skirmish", label: "Free skirmish", hint: `${MAPS[activeMap()].label}, no orders` },
+    { id: "map", label: `Lawn: ${MAPS[activeMap()].label}`, hint: `Switch to ${MAPS[sceneSet.next()].label}` },
     { id: "missions", label: "Campaign records", hint: `${held} of ${slots.length} kept` },
     { id: "settings", label: "Settings", hint: "Field preferences, sound, controls" },
     { id: "credits", label: "Credits" },
   ];
-  const take = () => { if (recent !== null) void openRecord(recent.id); else run("match.start"); };
+  // The offered mission is fought on its own lawn: travel there first (the record carries the track).
+  const travel = (map: MapId) => whileLoading(`Marching to ${MAPS[map].label}`, async () => { await saveCampaignRecord(ctx); chooseMap(map); });
+  const take = () => {
+    if (campaign !== null && campaign.phase !== "finished" && campaign.map !== activeMap()) { void travel(campaign.map); return; }
+    if (recent !== null) void openRecord(recent.id); else run("match.start");
+  };
   const pick = (id: string) => {
     if (id === "continue") take();
     else if (id === "skirmish") run("match.skirmish");
+    else if (id === "map") chooseMap(sceneSet.next());
     else if (id === "missions") refreshCampaignSlots();
   };
   const detail = active === "report" ? <ReportSheet width={sheetWidth} />

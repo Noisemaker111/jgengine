@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { createNoticeFeed } from "@jgengine/core/notifications/notices";
 
-import { missingChamber } from "./catalog";
+import { combatantDef, DECOR, isNode, missingChamber } from "./catalog";
 import { paintTrail } from "./commands";
 import {
   advanceHazards,
@@ -26,14 +26,16 @@ import {
   type HazardEvent,
 } from "./hazards";
 import { dueTips } from "./coach";
-import { laneEscape, sprinklerWarming, SPRINKLER_WARMUP } from "./hazards";
+import { laneEscape, skirmishHazardsFor, sprinklerWarming, SPRINKLER_WARMUP, sunBaked } from "./hazards";
+import { normalizeEditorLayers, type EditorDocument } from "@jgengine/core/editor/index";
+import frontYardJson from "../frontyard.scene.json";
 import {
   alarmDamageFactor, createTrailField, decayTrails, deposit, paintLine, pruneAlarms, raiseAlarm, scentAt, trailSpeedFactor, washTrails,
   type AlarmPulse,
 } from "./pheromone";
 import { resetSession, session } from "./session";
 import { TRAIL_PAINT_COST } from "./tuning";
-import { inShade, onHose, onPatio, readYardLayout, type YardLayout } from "./yard";
+import { carShadeAt, inShade, onHose, onHotPavement, onPatio, readYardLayout, type YardLayout } from "./yard";
 import { YARD } from "./yardInstance";
 import { editorLayers } from "../editorLayers";
 
@@ -185,8 +187,44 @@ describe("the yard's hazards", () => {
     expect(knot === null ? null : Math.hypot(knot.x, knot.z)).toBeLessThan(3);
   });
 
-  test("the free skirmish runs every clock but the boss", () => {
-    expect(SKIRMISH_HAZARDS).toEqual({ sprinkler: true, mower: true, rain: true, night: true, beam: false });
+  test("the front yard is a full lawn: both nests, a roster, food, the mailbox wasps and its landmarks", () => {
+    const doc = normalizeEditorLayers(frontYardJson as unknown as EditorDocument);
+    const ids = (catalogId: string) => doc.markers.filter((m) => m.catalogId === catalogId).length;
+    for (const id of ["keep_player", "keep_enemy", "hero", "wasp_nest", "gnome", "mailbox", "popsicle"]) expect(ids(id)).toBeGreaterThanOrEqual(1);
+    expect(ids("worker")).toBeGreaterThanOrEqual(3);
+    for (const marker of doc.markers) {
+      if (marker.kind === "poi") continue;
+      const id = marker.catalogId ?? "";
+      expect(combatantDef(id) !== null || isNode(id) || DECOR.has(id)).toBe(true);
+    }
+    const front = readYardLayout(doc);
+    expect(front.hot.length).toBe(1);
+    expect(front.cracks.length).toBeGreaterThanOrEqual(3);
+    expect(front.obstacles.length).toBeGreaterThanOrEqual(3);
+    expect(front.hose).toBeNull();
+  });
+
+  test("the front yard's driveway bakes ants by day, except on a crack, in the car's moving shade or at night", () => {
+    const front = readYardLayout(normalizeEditorLayers(frontYardJson as unknown as EditorDocument));
+    const state = createHazardState({ ...NO_HAZARDS, heat: true });
+    const crack = front.cracks[0]!.points[1]!;
+    expect(onHotPavement(front, 0, 40)).toBe(true);
+    expect(sunBaked(state, front, 12, 40)).toBe(true);
+    expect(sunBaked(state, front, crack.x, crack.z)).toBe(false);
+    expect(sunBaked(state, front, -30, 30)).toBe(false);
+    const shade = carShadeAt(front, state.t)!;
+    expect(sunBaked(state, front, shade.x, shade.z)).toBe(false);
+    // The car's shade moves with the sun.
+    expect(carShadeAt(front, 35)!.x).not.toBeCloseTo(carShadeAt(front, 0)!.x, 1);
+    state.dark = 1;
+    expect(sunBaked(state, front, 12, 40)).toBe(false);
+  });
+
+  test("a skirmish runs every clock its lawn has the landmark for, never the boss", () => {
+    expect(SKIRMISH_HAZARDS.beam).toBe(false);
+    expect(skirmishHazardsFor(YARD)).toEqual({ heat: false, sprinkler: true, mower: true, rain: true, night: true, beam: false });
+    const front = readYardLayout(normalizeEditorLayers(frontYardJson as unknown as EditorDocument));
+    expect(skirmishHazardsFor(front)).toEqual({ heat: true, sprinkler: false, mower: false, rain: true, night: true, beam: false });
   });
 });
 

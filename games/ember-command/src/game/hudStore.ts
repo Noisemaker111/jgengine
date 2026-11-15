@@ -20,6 +20,8 @@ export interface HazardView {
   /** 0 daylight .. 1 full dark, in 0.05 steps so the HUD tint never re-renders per frame. */
   dark: number;
   beam: "none" | "blurred" | "focused";
+  /** "none" without a hot pavement; "baking" by day, "cool" at night. */
+  heat: "none" | "baking" | "cool";
 }
 
 /** One live entry in the army row: a player combat unit with its current health. */
@@ -116,7 +118,7 @@ const initial: HudSnapshot = {
   hasBarracks: false,
   hasNursery: false,
   trailArmed: false,
-  hazards: { sprinkler: "none", mower: "none", mowerIn: null, rain: false, night: false, dark: 0, beam: "none" },
+  hazards: { sprinkler: "none", mower: "none", mowerIn: null, rain: false, night: false, dark: 0, beam: "none", heat: "none" },
   buildArmed: null,
   building: 0,
   research: {
@@ -214,7 +216,7 @@ function offerChanged(a: HeroOffer | null, b: HeroOffer | null): boolean {
 /** The weather strip redraws on a beat, never on the per-second mower countdown alone. */
 function hazardsChanged(a: HazardView, b: HazardView): boolean {
   return a.sprinkler !== b.sprinkler || a.mower !== b.mower || a.mowerIn !== b.mowerIn || a.rain !== b.rain
-    || a.night !== b.night || a.dark !== b.dark || a.beam !== b.beam;
+    || a.night !== b.night || a.dark !== b.dark || a.beam !== b.beam || a.heat !== b.heat;
 }
 
 let snapshot: HudSnapshot = initial;

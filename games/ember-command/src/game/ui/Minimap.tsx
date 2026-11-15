@@ -60,7 +60,8 @@ const round = (v: number) => Math.round(v * 10) / 10;
 
 interface Dot { id: string; kind: string }
 
-/** The authored yard, projected once: hose beads, patio slabs and the mower's lane band. */
+/** The live lawn's landmarks, projected for the map: hose beads, patio slabs, the mower's lane band. */
+function yardOverlay() {
 const HOSE_DOTS = (() => {
   const out: { key: string; x: number; y: number }[] = [];
   const pts = YARD.hose?.points ?? [];
@@ -87,6 +88,24 @@ const LANE = (() => {
   const bottom = projectToMinimap([0, lane.from.z + lane.halfWidth], VIEW);
   return { y: round(Math.min(top.y, bottom.y)), h: round(Math.abs(bottom.y - top.y)) };
 })();
+const HOT_RECTS = YARD.hot.map((slab, i) => {
+  const a = projectToMinimap([slab.x - slab.halfX, slab.z - slab.halfZ], VIEW);
+  const b = projectToMinimap([slab.x + slab.halfX, slab.z + slab.halfZ], VIEW);
+  return { key: `hot${i}`, x: round(Math.min(a.x, b.x)), y: round(Math.min(a.y, b.y)), w: round(Math.abs(b.x - a.x)), h: round(Math.abs(b.y - a.y)) };
+});
+const CRACK_DOTS: { key: string; x: number; y: number }[] = [];
+YARD.cracks.forEach((crack, c) => {
+  for (let i = 1; i < crack.points.length; i += 1) {
+    const a = crack.points[i - 1]!, b = crack.points[i]!;
+    const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 2);
+    for (let k = 0; k < steps; k += 1) {
+      const at = projectToMinimap([a.x + ((b.x - a.x) * k) / steps, a.z + ((b.z - a.z) * k) / steps], VIEW);
+      CRACK_DOTS.push({ key: `c${c}:${i}:${k}`, x: round(at.x), y: round(at.y) });
+    }
+  }
+});
+return { HOSE_DOTS, PATIO_RECTS, LANE, HOT_RECTS, CRACK_DOTS };
+}
 
 /** Every blip the map may show now: friendly and sighted enemy units, buildings and surveyed seams. */
 function tacticalDots(ctx: GameContext): Dot[] {
@@ -137,8 +156,11 @@ export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
     (runs) => runs.map((r) => `${r.key}${r.kind[0]}${r.w}`).join(","), 200), []);
   const dots = useMemo(() => polledSource(() => tacticalDots(ctx), (list) => list.map((d) => d.id + d.kind).join(","), 150), [ctx]);
   const grid = Array.from({ length: 5 }, (_, i) => (i + 1) * (MAP_SIZE / 6));
+  const { HOSE_DOTS, PATIO_RECTS, LANE, HOT_RECTS, CRACK_DOTS } = useMemo(yardOverlay, []);
   return <RuneView width={MAP_SIZE} height={MAP_SIZE} fill="#6fb83a" clip label="Battlefield minimap">
     <RuneView pin={[0, 0, null, null]} width={MAP_SIZE} height={MAP_SIZE / 2} fill="#4b3a6622" />
+    {HOT_RECTS.map((r) => <RuneView key={r.key} pin={[r.x, r.y, null, null]} width={r.w} height={r.h} fill="#8d8a86" />)}
+    {CRACK_DOTS.map((d) => <RuneView key={d.key} pin={[d.x - 1.4, d.y - 1.4, null, null]} width={2.8} height={2.8} radius={1.4} fill="#3fa0c8" />)}
     {PATIO_RECTS.map((r) => <RuneView key={r.key} pin={[r.x, r.y, null, null]} width={r.w} height={r.h} fill="#d8d2c4" radius={2} />)}
     {LANE === null ? null : <RuneView pin={[0, LANE.y, null, null]} width={MAP_SIZE} height={LANE.h} fill="#ff3b2f"
       opacity={bind(() => { const m = hudStore.get().hazards.mower; return m === "warning" ? 0.55 : m === "crossing" ? 0.7 : m === "idle" ? 0.16 : 0; })} />}

@@ -514,7 +514,7 @@ export function foodGeometry(kind: FoodKind): THREE.BufferGeometry {
   }
 }
 
-export type DecorKind = "petal_red" | "petal_black" | "dewdrop" | "seed";
+export type DecorKind = "petal_red" | "petal_black" | "dewdrop" | "seed" | "gnome" | "mailbox" | "tire";
 
 export function decorGeometry(kind: DecorKind): THREE.BufferGeometry {
   switch (kind) {
@@ -524,6 +524,47 @@ export function decorGeometry(kind: DecorKind): THREE.BufferGeometry {
       return merge(petalFlag("#4b2a6b", 0, 0, 2.6));
     case "dewdrop":
       return merge([blob("#bfe9ff", [0.7, 0.62, 0.7], [0, 0.6, 0], 18), blob("#ffffff", [0.18, 0.14, 0.18], [0.22, 0.95, 0.22], 8)]);
+    case "gnome": {
+      // The garden gnome, seen from an ant: a painted concrete giant with a tall red hat and white beard.
+      const pieces: Piece[] = [];
+      const boots = new THREE.CylinderGeometry(3.2, 3.6, 2, 18);
+      boots.translate(0, 1, 0);
+      pieces.push(tint(boots, "#4a2f1c"));
+      const coat = new THREE.CylinderGeometry(2.6, 3.4, 6, 20);
+      coat.translate(0, 5, 0);
+      pieces.push(tint(coat, "#2f6fc0"));
+      pieces.push(blob("#3a2414", [3.5, 0.6, 3.5], [0, 4.2, 0], 18));
+      pieces.push(blob("#f2c9a0", [2.2, 2.1, 2.1], [0, 9.4, 0], 18));
+      pieces.push(blob("#ffffff", [2.1, 2.4, 1.6], [0, 7.6, 1.1], 16));
+      pieces.push(blob("#e8a07a", [0.55, 0.5, 0.55], [0, 9.3, 2.1], 10));
+      pieces.push(cone("#d42a1c", 2.4, 6.5, [0, 13.4, -0.3], [-0.12, 0, 0], 20));
+      pieces.push(blob("#111111", [0.25, 0.25, 0.2], [0.8, 9.9, 1.95], 8));
+      pieces.push(blob("#111111", [0.25, 0.25, 0.2], [-0.8, 9.9, 1.95], 8));
+      return merge(pieces);
+    }
+    case "mailbox": {
+      // The mailbox post with its door ajar: wasps have built inside.
+      const post = new THREE.BoxGeometry(1.6, 16, 1.6);
+      post.translate(0, 8, 0);
+      const box = new THREE.BoxGeometry(5, 4, 9);
+      box.translate(0, 18, 0);
+      const roof = new THREE.CylinderGeometry(2.5, 2.5, 9, 18, 1, false, 0, Math.PI);
+      roof.rotateX(Math.PI / 2);
+      roof.rotateZ(Math.PI / 2);
+      roof.translate(0, 20, 0);
+      const flag = new THREE.BoxGeometry(0.3, 3, 1);
+      flag.translate(2.7, 20.5, -2);
+      return merge([tint(post, "#d8d0c0"), tint(box, "#3a3f47"), tint(roof, "#3a3f47"), tint(flag, "#d42a1c")]);
+    }
+    case "tire": {
+      // A parked car's tyre: a black rubber wall the colony walks round, tread and a grey hub.
+      const tire = new THREE.TorusGeometry(6, 2.6, 14, 32);
+      tire.translate(0, 8.4, 0);
+      const hub = new THREE.CylinderGeometry(3.2, 3.2, 2.2, 20);
+      hub.rotateX(Math.PI / 2);
+      hub.translate(0, 8.4, 0);
+      return merge([tint(tire, "#1b1b1d"), tint(hub, "#a9adb3")]);
+    }
     case "seed": {
       const seed = new THREE.SphereGeometry(1, 14, 10);
       seed.scale(0.45, 0.32, 0.95);
@@ -565,7 +606,7 @@ export function bugBodyFor(kind: string): BugBody | null {
 
 const CHAMBERS = new Set<string>(["keep_player", "keep_enemy", "barracks", "fungus_garden", "nursery", "granary", "acid_mound", "brood_mound", "wasp_nest"]);
 const FOOD = new Set<string>(["crumbs", "popsicle", "leaves"]);
-const DECOR_KINDS = new Set<string>(["petal_red", "petal_black", "dewdrop", "seed"]);
+const DECOR_KINDS = new Set<string>(["petal_red", "petal_black", "dewdrop", "seed", "gnome", "mailbox", "tire"]);
 
 /** The static geometry for a chamber, food pile or dressing prop, or null when the kind is animated. */
 export function staticBodyFor(kind: string): THREE.BufferGeometry | null {

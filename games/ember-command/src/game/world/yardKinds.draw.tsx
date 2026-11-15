@@ -7,7 +7,7 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
-import { HOSE_KIND, MOWER_LANE_KIND, PATIO_KIND } from "../yard";
+import { CAR_SHADE_KIND, CRACK_KIND, HOSE_KIND, HOT_KIND, MOWER_LANE_KIND, PATIO_KIND } from "../yard";
 
 /**
  * The backyard's three authored studios, registered through the engine's scene-kind seam so they are
@@ -37,6 +37,9 @@ const PATIO_SCHEMA = {
 
 registerSceneKind({ kind: HOSE_KIND, target: "path", pathShape: "line", label: "Garden hose", addCategory: "Backyard", accent: "#2f9e3a", schema: HOSE_SCHEMA });
 registerSceneKind({ kind: MOWER_LANE_KIND, target: "path", pathShape: "line", label: "Mower lane", addCategory: "Backyard", accent: "#ff5a3c", schema: LANE_SCHEMA });
+registerSceneKind({ kind: HOT_KIND, target: "volume", label: "Hot pavement", addCategory: "Backyard", accent: "#8d8a86", schema: { fields: [{ type: "color" as const, key: "color", label: "asphalt", default: "#5f5d5a" }] } });
+registerSceneKind({ kind: CRACK_KIND, target: "path", pathShape: "line", label: "Sidewalk crack", addCategory: "Backyard", accent: "#3fa0c8", schema: { fields: [{ type: "number" as const, key: "width", label: "width", min: 0.5, step: 0.1, default: 2.4 }] } });
+registerSceneKind({ kind: CAR_SHADE_KIND, target: "path", pathShape: "line", label: "Car shade track", addCategory: "Backyard", accent: "#334", schema: { fields: [{ type: "number" as const, key: "radius", label: "radius", min: 1, step: 0.5, default: 9 }, { type: "number" as const, key: "period", label: "period (s)", min: 10, step: 5, default: 120 }] } });
 registerSceneKind({ kind: PATIO_KIND, target: "volume", label: "Patio stone", addCategory: "Backyard", accent: "#c9c2b4", schema: PATIO_SCHEMA });
 
 function str(meta: Record<string, unknown> | undefined, key: string, fallback: string): string {
@@ -203,6 +206,97 @@ function patioDraw(object: SceneKindObject, context: SceneKindRenderContext): En
   };
 }
 
+/** Sun-baked asphalt: a dark, slightly glossy slab with oil stains, hugging the ground. */
+function pavementDraw(object: SceneKindObject, context: SceneKindRenderContext): EngineDraw {
+  const group = new THREE.Group();
+  const disposables: { dispose(): void }[] = [];
+  return {
+    mount(state: EngineFrameState) {
+      const center = object.center ?? { x: 0, y: 0, z: 0 };
+      const half = object.halfExtents ?? { x: 8, y: 0.5, z: 8 };
+      const plane = new THREE.PlaneGeometry(half.x * 2, half.z * 2, Math.max(4, Math.round(half.x)), Math.max(4, Math.round(half.z)));
+      plane.rotateX(-Math.PI / 2);
+      const pos = plane.getAttribute("position");
+      for (let i = 0; i < pos.count; i += 1) pos.setY(i, context.field.sampleHeight(center.x + pos.getX(i), center.z + pos.getZ(i)) + 0.1);
+      plane.computeVertexNormals();
+      const asphalt = new THREE.MeshStandardMaterial({ color: str(object.meta, "color", "#5f5d5a"), roughness: 0.7, metalness: 0.05 });
+      const mesh = new THREE.Mesh(plane, asphalt);
+      mesh.position.set(center.x, 0, center.z);
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      const stain = new THREE.MeshStandardMaterial({ color: "#2a2826", roughness: 0.25, transparent: true, opacity: 0.6, depthWrite: false });
+      const disc = new THREE.CircleGeometry(1, 20);
+      disc.rotateX(-Math.PI / 2);
+      for (let i = 0; i < 4; i += 1) {
+        const m = new THREE.Mesh(disc, stain);
+        const x = center.x + Math.sin(i * 2.3) * half.x * 0.5;
+        const z = center.z + Math.cos(i * 1.7) * half.z * 0.6;
+        m.position.set(x, context.field.sampleHeight(x, z) + 0.13, z);
+        m.scale.set(2.5 + i, 1, 1.6 + i * 0.7);
+        group.add(m);
+      }
+      disposables.push(plane, asphalt, stain, disc);
+      state.scene.add(group);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      for (const d of disposables) d.dispose();
+    },
+  };
+}
+
+/** A sidewalk crack: a dark, damp seam across the pavement with moss along its lips — a cool lane. */
+function crackDraw(object: SceneKindObject, context: SceneKindRenderContext, width: number): EngineDraw {
+  const group = new THREE.Group();
+  const disposables: { dispose(): void }[] = [];
+  return {
+    mount(state: EngineFrameState) {
+      const points = object.points ?? [];
+      const seam = new THREE.MeshStandardMaterial({ color: "#1d2a2c", roughness: 0.9 });
+      const moss = new THREE.MeshStandardMaterial({ color: "#4f9a2c", roughness: 1 });
+      const tuft = new THREE.SphereGeometry(0.4, 6, 4);
+      tuft.scale(1, 0.5, 1);
+      for (let i = 1; i < points.length; i += 1) {
+        const a = points[i - 1]!;
+        const b = points[i]!;
+        const length = Math.hypot(b.x - a.x, b.z - a.z);
+        const strip = new THREE.PlaneGeometry(width, length, 1, Math.max(2, Math.round(length)));
+        strip.rotateX(-Math.PI / 2);
+        strip.rotateY(-Math.atan2(b.z - a.z, b.x - a.x) + Math.PI / 2);
+        const cx = (a.x + b.x) / 2;
+        const cz = (a.z + b.z) / 2;
+        const pos = strip.getAttribute("position");
+        for (let k = 0; k < pos.count; k += 1) pos.setY(k, context.field.sampleHeight(cx + pos.getX(k), cz + pos.getZ(k)) + 0.16);
+        strip.computeVertexNormals();
+        const mesh = new THREE.Mesh(strip, seam);
+        mesh.position.set(cx, 0, cz);
+        group.add(mesh);
+        disposables.push(strip);
+        const steps = Math.floor(length / 2.5);
+        for (let k = 0; k < steps; k += 1) {
+          const t = (k + 0.5) / steps;
+          const side = k % 2 === 0 ? 1 : -1;
+          const nx = -(b.z - a.z) / length;
+          const nz = (b.x - a.x) / length;
+          const x = a.x + (b.x - a.x) * t + nx * side * width * 0.55;
+          const z = a.z + (b.z - a.z) * t + nz * side * width * 0.55;
+          const m = new THREE.Mesh(tuft, moss);
+          m.position.set(x, context.field.sampleHeight(x, z) + 0.2, z);
+          group.add(m);
+        }
+      }
+      disposables.push(seam, moss, tuft);
+      state.scene.add(group);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      for (const d of disposables) d.dispose();
+    },
+  };
+}
+
 type DrawFactory = (object: SceneKindObject, context: SceneKindRenderContext) => EngineDraw;
 
 function KindObject({ object, context, factory }: { object: SceneKindObject; context: SceneKindRenderContext; factory: DrawFactory }) {
@@ -227,3 +321,5 @@ function registerRenderer(kind: string, factory: DrawFactory): void {
 registerRenderer(HOSE_KIND, (object, context) => hoseDraw(object, context, widthOf(object, 2.6)));
 registerRenderer(MOWER_LANE_KIND, (object, context) => laneDraw(object, context, widthOf(object, 8)));
 registerRenderer(PATIO_KIND, patioDraw);
+registerRenderer(HOT_KIND, pavementDraw);
+registerRenderer(CRACK_KIND, (object, context) => crackDraw(object, context, widthOf(object, 2.4)));

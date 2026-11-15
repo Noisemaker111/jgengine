@@ -6,7 +6,8 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { editorLayers } from "../../editorLayers";
 import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
 import { activeCampaignStep, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
-import { createHazardState, SKIRMISH_HAZARDS } from "../hazards";
+import { createHazardState, skirmishHazardsFor } from "../hazards";
+import { YARD } from "../yardInstance";
 import { raiseAlarm } from "../pheromone";
 import { grantHeroXp, heroXpFor } from "../hero";
 import { loadHeroPicks } from "../heroActs";
@@ -178,7 +179,7 @@ export function setupSkirmish(ctx: GameContext): void {
       startCampaignMission(state);
       // The yard's clocks start with the battle: the mission picks which run, a free skirmish runs all
       // but the magnifying glass. The beam warms up over the middle of the lawn.
-      session.hazards = createHazardState(activeCampaignStep(state)?.hazards ?? SKIRMISH_HAZARDS, { x: 0, z: 0 });
+      session.hazards = createHazardState(activeCampaignStep(state)?.hazards ?? skirmishHazardsFor(YARD), { x: 0, z: 0 });
     }
     return state;
   } });

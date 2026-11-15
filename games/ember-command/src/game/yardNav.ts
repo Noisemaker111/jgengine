@@ -1,14 +1,16 @@
 import { createNavGrid, findPath, type NavGrid, type NavPoint } from "@jgengine/core/nav/navGrid";
 
 import { FOG_BOUNDS } from "./fog";
-import { onHose, onPatio, type YardLayout } from "./yard";
+import { onCrack, onHose, onHotPavement, onPatio, type YardLayout } from "./yard";
 
 /**
  * Ant routes across the authored yard, on the engine's walkable grid (`@jgengine/core/nav/navGrid`):
  *
  * - the garden hose is a wall except at its two crossings, so a march over it funnels to a bridge;
  * - a patio stone is a plateau: climbing it costs four times the walk, so a column goes around one
- *   unless it is ordered onto it (where the high-ground sight bonus is).
+ *   unless it is ordered onto it (where the high-ground sight bonus is);
+ * - open pavement costs two and a half times the walk, so a march across the driveway threads the
+ *   sidewalk cracks.
  *
  * The grid is built once from the yard layout; `routeTo` returns the next waypoint a walker should head
  * for and caches its path until the destination moves. Flying wasps never ask.
@@ -16,6 +18,8 @@ import { onHose, onPatio, type YardLayout } from "./yard";
 
 export const NAV_CELL = 1.5;
 const PATIO_CLIMB_COST = 4;
+/** Ants would rather walk the cool cracks than the baking pavement: open asphalt costs this much more. */
+const HOT_COST = 2.5;
 const ARRIVE_WAYPOINT = 0.9;
 const REPATH_DISTANCE = 1.5;
 
@@ -30,6 +34,7 @@ export function buildYardNav(layout: YardLayout): YardNav {
     for (let col = 0; col < grid.cols; col += 1) {
       const [x, z] = grid.center(col, row);
       if (onHose(layout, x, z)) grid.setWalkable(col, row, false);
+      if (layout.obstacles.some((o) => Math.hypot(o.x - x, o.z - z) <= o.radius)) grid.setWalkable(col, row, false);
     }
   }
   return { grid, layout };
@@ -39,7 +44,7 @@ export function buildYardNav(layout: YardLayout): YardNav {
 export function yardRoute(nav: YardNav, from: NavPoint, to: NavPoint): NavPoint[] | null {
   return findPath(nav.grid, from, to, {
     smooth: true,
-    stepCost: (_a, b) => (onPatio(nav.layout, b[0], b[1]) ? PATIO_CLIMB_COST : 1),
+    stepCost: (_a, b) => (onPatio(nav.layout, b[0], b[1]) ? PATIO_CLIMB_COST : onHotPavement(nav.layout, b[0], b[1]) && !onCrack(nav.layout, b[0], b[1]) ? HOT_COST : 1),
     // Smoothing never shortcuts across a plateau the route deliberately went around.
     canTraverse: (a, b) => !crossesPatio(nav, a, b),
     maxNodes: 6000,
@@ -63,7 +68,7 @@ export function routeTo(nav: YardNav, cache: Map<string, RouteCache>, id: string
   let route = cache.get(id);
   if (route === undefined || Math.hypot(route.tx - tx, route.tz - tz) > REPATH_DISTANCE) {
     // Straight line when nothing is in the way: most steps never pay for a search.
-    if (nav.grid.lineOfSight(from, [tx, tz]) && !crossesPatio(nav, from, [tx, tz])) {
+    if (nav.grid.lineOfSight(from, [tx, tz]) && !crossesPatio(nav, from, [tx, tz]) && !crossesHot(nav, from, [tx, tz])) {
       cache.set(id, { tx, tz, points: [[tx, tz]], index: 0 });
       return [tx, tz];
     }
@@ -77,6 +82,18 @@ export function routeTo(nav: YardNav, cache: Map<string, RouteCache>, id: string
     route.index += 1;
   }
   return route.points[route.index] ?? [tx, tz];
+}
+
+function crossesHot(nav: YardNav, a: NavPoint, b: NavPoint): boolean {
+  if (nav.layout.hot.length === 0) return false;
+  const steps = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / NAV_CELL);
+  for (let i = 1; i < steps; i += 1) {
+    const t = i / steps;
+    const x = a[0] + (b[0] - a[0]) * t;
+    const z = a[1] + (b[1] - a[1]) * t;
+    if (onHotPavement(nav.layout, x, z) && !onCrack(nav.layout, x, z)) return true;
+  }
+  return false;
 }
 
 function crossesPatio(nav: YardNav, a: NavPoint, b: NavPoint): boolean {

@@ -1,4 +1,4 @@
-import { distanceToSegment, inShade, type YardLayout, type YardPoint } from "./yard";
+import { coolAt, distanceToSegment, inShade, onCrack, onHotPavement, type YardLayout, type YardPoint } from "./yard";
 
 /**
  * The backyard is not neutral ground. Four clocks run over every battle and one boss walks the last:
@@ -17,6 +17,8 @@ import { distanceToSegment, inShade, type YardLayout, type YardPoint } from "./y
  */
 
 export interface HazardToggles {
+  /** Sun-baked pavement burns ants standing on it by day. */
+  heat: boolean;
   sprinkler: boolean;
   mower: boolean;
   rain: boolean;
@@ -24,9 +26,25 @@ export interface HazardToggles {
   beam: boolean;
 }
 
-export const NO_HAZARDS: HazardToggles = { sprinkler: false, mower: false, rain: false, night: false, beam: false };
+export const NO_HAZARDS: HazardToggles = { heat: false, sprinkler: false, mower: false, rain: false, night: false, beam: false };
 /** The free skirmish runs every clock but the boss. */
-export const SKIRMISH_HAZARDS: HazardToggles = { sprinkler: true, mower: true, rain: true, night: true, beam: false };
+export const SKIRMISH_HAZARDS: HazardToggles = { heat: false, sprinkler: true, mower: true, rain: true, night: true, beam: false };
+
+/** A skirmish runs every clock its lawn has the landmark for (no sprinkler, no sprinkler clock). */
+export function skirmishHazardsFor(layout: YardLayout): HazardToggles {
+  return {
+    heat: layout.hot.length > 0,
+    sprinkler: layout.sprinkler !== null,
+    mower: layout.mowerLane !== null,
+    rain: true,
+    night: true,
+    beam: false,
+  };
+}
+
+/** Heat on the pavement by day, and how much faster an ant runs along a cool crack. */
+export const HEAT_DPS = 4;
+export const CRACK_SPEED = 1.25;
 
 /** Sprinkler: a cycle of rest then spray, with the jet swinging across its arc while it sprays. */
 export const SPRINKLER_CYCLE = 46;
@@ -312,9 +330,16 @@ export function underBeam(state: HazardState, layout: YardLayout, x: number, z: 
   return !inShade(layout, x, z);
 }
 
+/** True when the pavement is burning an ant at a point: hot, by day, and not in any cool spot. */
+export function sunBaked(state: HazardState, layout: YardLayout, x: number, z: number): boolean {
+  if (!state.toggles.heat || state.dark >= 0.5) return false;
+  return onHotPavement(layout, x, z) && !coolAt(layout, x, z, state.t);
+}
+
 /** How fast an ant moves through the weather and the water at a point (1 = unhindered). */
 export function hazardSpeedFactor(state: HazardState, layout: YardLayout, x: number, z: number): number {
   let factor = 1;
+  if (onCrack(layout, x, z)) factor *= CRACK_SPEED;
   if (state.rain.on) factor *= RAIN_SLOW;
   if (inSprinklerJet(state, layout, x, z)) factor *= SPRINKLER_SLOW;
   return factor;
