@@ -24,9 +24,10 @@ export const world: WorldFeature = environment({
       material: libraryTerrainMaterial("foliage/grass-macro"),
     },
   }),
-  // Colours, moon and haze come from the game's night `mood`; dusk and dawn are layered over it by the
-  // world overlay's `TimeOfDayLight`, which follows the haunt's clock.
-  sky: sky({ preset: "night" }),
+  // Colours, moon and haze come from the game's night `mood`, and the sky follows the haunt's clock: it
+  // starts at noon (`dayOffset` 0.5), so the living arrive under a sunset and leave in a pale dawn, and
+  // the mood's moonlight is the floor the small hours keep (`nightLight`).
+  sky: sky({ preset: "night", timeOfDay: true, dayOffset: 0.5, nightLight: 0.85 }),
 });
 
 export const physics: PhysicsConfig = { gravity: -20 };

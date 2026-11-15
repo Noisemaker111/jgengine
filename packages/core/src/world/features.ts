@@ -469,6 +469,11 @@ export interface SkyEnvironmentConfig {
   /** Moonlight colour. Default cool moonlight blue. */
   moonColor?: string;
   /**
+   * Under `timeOfDay`, the light the night keeps as a fraction of noon's (0-1), so a game whose mood is
+   * itself a night stays readable in the small hours. Unset keeps the engine's night.
+   */
+  nightLight?: number;
+  /**
    * Sun placement for the dome glow and the sky-owned sun light. With a fixed `preset` this is the
    * sun's exact direction; under `timeOfDay` it is where the sun stands at noon and the day arc
    * swings around that bearing. Unset with an authored `lighting.directional` light, the shell takes
@@ -1092,6 +1097,7 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
       ...(config.dayHold === undefined ? {} : { dayHold: config.dayHold }),
       ...(config.dayOffset === undefined ? {} : { dayOffset: config.dayOffset }),
+      ...(config.nightLight === undefined ? {} : { nightLight: config.nightLight }),
       ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
       ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
       ...(config.sunColor === undefined ? {} : { sunColor: config.sunColor }),

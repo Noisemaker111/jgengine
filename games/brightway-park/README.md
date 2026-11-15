@@ -89,7 +89,8 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   haunter (a boardwalk spine, rides and a scare gauntlet off it, stalls, spooks, the séance table toward
   the next ghost, the Ferryman when dry). It wins The First Chill at moon 2.1 of 3, Talk of the Coast at
   5.7 of 8 and the Full Moon Festival at 13 of 16 with about 4,000 ectoplasm in the vault and 20,000 still owed, with the exorcist calling a few times a season.
-- **Gap to target.** The sky dome stays a night sky (the hour's light and haze follow the clock). See `PLAN.md`.
+- **Sky.** The sky follows the haunt's clock: a sunset when the gates open, moonlight through the
+  small hours, a pale dawn as the last of the living flee. See `PLAN.md`.
 
 Loop proof: to-open-park
 

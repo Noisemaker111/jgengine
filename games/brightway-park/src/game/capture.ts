@@ -28,7 +28,7 @@ import { tickExorcist } from "./threats";
 export type StageMode = "full" | "dusk" | "dawn";
 
 /** Where in the clock day each staged night stands: just after dusk, deep night, the grey before dawn. */
-const STAGE_TIME: Record<StageMode, number> = { dusk: 0.28, full: 0.5, dawn: 0.76 };
+const STAGE_TIME: Record<StageMode, number> = { dusk: 0.255, full: 0.5, dawn: 0.76 };
 
 const STEP = 1 / 20;
 

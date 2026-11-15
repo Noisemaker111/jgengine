@@ -192,9 +192,9 @@ Genres: tycoon. 18/18 proven.
 - Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
   for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
   worldModel/` wants over kind counts). One adopter so far.
-- Day-night: the hour's light and haze follow the clock (overlay `TimeOfDayLight`), but the sky dome
-  stays the mood's night sky. `sky({ timeOfDay, dayOffset })` exists now; combined with a `mood` it
-  washed the frame out, so the shell's mood-plus-time-of-day path needs work before the game can use it.
+- Day-night: the sky follows the haunt's clock through `sky({ timeOfDay, dayOffset: 0.5, nightLight })`.
+  The engine's `nightLight` keeps the small hours at a share of the mood's light, so a game whose
+  authored look is already a night does not drop into the engine's own dark.
 - Engine: jumping the clock backwards left a stale screen-aligned rectangle in the next frames (seen in
   captures); staging now only moves the clock forward.
 - `packages/core/src/onboarding/`: steps are checked only on a game-time tick, so a game built with the

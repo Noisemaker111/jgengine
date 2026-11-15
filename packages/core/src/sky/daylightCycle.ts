@@ -30,6 +30,13 @@ export interface DaylightCycleConfig {
   moonIntensity?: number;
   /** Moonlight colour. Default `MOONLIGHT_COLOR`. */
   moonColor?: string;
+  /**
+   * The light the night keeps, as a fraction of noon's sun and ambient (0-1): twilight and night never
+   * fall below it. For a game whose authored look is itself a night (its mood is the "noon" keyframe),
+   * so the small hours stay readable instead of dropping to the engine's own dark. Unset keeps the
+   * engine's night.
+   */
+  nightLight?: number;
 }
 
 export interface DaylightState {
@@ -157,6 +164,13 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     skyBottom: DUSK_SKY_BOTTOM,
     fog: DUSK_SKY_BOTTOM,
   };
+  const floor = config.nightLight === undefined ? null : Math.max(0, Math.min(1, config.nightLight));
+  if (floor !== null) {
+    for (const frame of [night, dawn, dusk]) {
+      frame.sunIntensity = Math.max(frame.sunIntensity, day.sunIntensity * floor);
+      frame.ambientIntensity = Math.max(frame.ambientIntensity, day.ambientIntensity * floor);
+    }
+  }
   const midnight: DaylightKeyframe = { ...night, t: 1 };
   // Night holds from the end of evening twilight to the start of morning twilight, so dusk's reds do
   // not linger into the small hours.

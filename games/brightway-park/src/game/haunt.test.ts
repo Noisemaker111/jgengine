@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
-import { DAY_LENGTH, clockLabel, CLOSE_FRACTION, hourLight, OPEN_FRACTION } from "./catalog";
+import { DAY_LENGTH, clockLabel, CLOSE_FRACTION, OPEN_FRACTION } from "./catalog";
 import { FULL_MOON_NIGHT, isFullMoon, MONTH_DAYS } from "./books";
 import { pickVisitorKind, VISITORS } from "./entities/guests/catalog";
 import { GHOSTS, ghostDef, ghostFact } from "./ghostCatalog";
@@ -40,14 +40,6 @@ afterEach(() => {
 });
 
 describe("hauntworks nights", () => {
-  test("the light of the hour: amber at dusk, nothing in the deep night, pale at dawn", () => {
-    expect(hourLight(OPEN_FRACTION)).toEqual({ dusk: 1, dawn: 0 });
-    expect(hourLight(0.5)).toEqual({ dusk: 0, dawn: 0 });
-    expect(hourLight(CLOSE_FRACTION).dawn).toBe(1);
-    expect(hourLight(0.75).dawn).toBeGreaterThan(0);
-    expect(hourLight(0.75).dawn).toBeLessThan(1);
-  });
-
   test("one night of each moon is a full moon", () => {
     expect(isFullMoon(FULL_MOON_NIGHT)).toBe(true);
     expect(isFullMoon(FULL_MOON_NIGHT + 1)).toBe(false);

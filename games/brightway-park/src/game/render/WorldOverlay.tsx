@@ -5,7 +5,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { AdditiveBlending, Color, DirectionalLight, HemisphereLight, Box3, BoxGeometry, CanvasTexture, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, Sprite, SpriteMaterial, TextureLoader, Vector2, Vector3 } from "three";
+import { AdditiveBlending, Box3, BoxGeometry, CanvasTexture, CircleGeometry, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Plane, PlaneGeometry, Raycaster, RingGeometry, Sprite, SpriteMaterial, TextureLoader, Vector2, Vector3 } from "three";
 import { GHOSTS } from "../ghostCatalog";
 import { ghostBodyId } from "../ghosts";
 import { visitorKind } from "../entities/guests/catalog";
@@ -18,7 +18,7 @@ import { cellCentres, cellFor, park, parkObject, parkObjects, patrolRadius, type
 import { BUILDABLES } from "../objects/catalog";
 import { coasterCircuit, rideView } from "../rides";
 import { placementAt } from "../build/placement";
-import { GRID, hourLight, snapToTile } from "../catalog";
+import { GRID, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -844,49 +844,6 @@ function FogPools({ objects }: { objects: readonly ParkObject[] }) {
   return <EngineDrawMount create={() => fogPoolsDraw(cells, reduced)} deps={[cells, reduced]} />;
 }
 
-/**
- * The hour over the haunt. The mood is moonlight; over it this adds the light of the hour from the
- * haunt's clock: a low amber sunset while the living gather at dusk, nothing but the moon in the deep
- * night, and a pale grey-pink dawn as they stream home. The haze leans the same way.
- */
-function timeOfDayDraw(ctx: GameContext): EngineDraw {
-  const group = new Group();
-  const sun = new DirectionalLight("#ff9a5a", 0);
-  // Kept behind the build camera (which looks from +x,+z), so the low sun never flares a light shaft across the view.
-  sun.position.set(90, 30, 30);
-  const sky = new HemisphereLight("#ffb98a", "#2a2440", 0);
-  group.add(sun, sky);
-  const duskHaze = new Color("#7a4a5e"), dawnHaze = new Color("#9aa6c4");
-  let night: Color | null = null;
-  return {
-    mount(state: EngineFrameState) { state.scene.add(group); },
-    frame(state: EngineFrameState) {
-      const { dusk, dawn } = hourLight(ctx.time.calendar().dayFraction);
-      sun.color.set(dawn > 0 ? "#e8d4dc" : "#ff9a5a");
-      sky.color.set(dawn > 0 ? "#c8d4f0" : "#ffb98a");
-      sun.position.set(dawn > 0 ? 30 : 90, dawn > 0 ? 40 : 30, dawn > 0 ? 90 : 30);
-      sun.intensity = dusk * 1.8 + dawn * 1.1;
-      sky.intensity = dusk * 0.7 + dawn * 0.8;
-      const fog = state.scene.fog as { color?: Color } | null;
-      if (fog?.color !== undefined) {
-        night ??= fog.color.clone();
-        fog.color.copy(night).lerp(dawn > 0 ? dawnHaze : duskHaze, Math.max(dusk, dawn) * 0.55);
-      }
-    },
-    dispose(state: EngineFrameState) {
-      const fog = state.scene.fog as { color?: Color } | null;
-      if (night !== null && fog?.color !== undefined) fog.color.copy(night);
-      state.scene.remove(group);
-      sun.dispose(); sky.dispose();
-    },
-  };
-}
-
-function TimeOfDayLight() {
-  const ctx = useGameContext();
-  return <EngineDrawMount create={() => timeOfDayDraw(ctx)} deps={[ctx]} />;
-}
-
 function GhostHalos() {
   const ctx = useGameContext();
   return <EngineDrawMount create={() => ghostHalosDraw(ctx)} deps={[ctx]} />;
@@ -913,7 +870,6 @@ function OverlayBodies() {
     {objects.filter(o => o.kind === "ride_coaster").map(o => <CoasterTrain key={o.id} object={o} circuit={circuit} />)}
     {objects.filter(o => o.def.scare !== undefined).map(o => <ScareAura key={o.id} object={o} />)}
     <GhostHalos />
-    <TimeOfDayLight />
     <HunterGear />
     <TvVan />
     <FogPools objects={objects} />

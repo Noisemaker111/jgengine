@@ -45,15 +45,3 @@ export function snapToTile(value: number): number {
 }
 
 
-/**
- * The light of the hour on the haunt's clock, 0-1 each: the low amber of late afternoon and dusk
- * while the living gather, and the pale grey of dawn and day as they go home. Both 0 in the deep night.
- */
-export function hourLight(dayFraction: number): { dusk: number; dawn: number } {
-  const f = ((dayFraction % 1) + 1) % 1;
-  // Late afternoon into dusk: full until 18:15 (0.26), gone by 20:40 (0.36), so the living arrive in it.
-  const dusk = f < 0.26 ? 1 : f < 0.36 ? 1 - (f - 0.26) / 0.1 : 0;
-  // Dawn: rises from 05:00 (0.71) to full at 07:10 (0.8), then it is day until the next dusk.
-  const dawn = f >= 0.71 && f < 0.8 ? (f - 0.71) / 0.09 : f >= 0.8 ? 1 : 0;
-  return { dusk, dawn };
-}

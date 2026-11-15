@@ -268,6 +268,18 @@ describe("night between twilights", () => {
   });
 });
 
+describe("nightLight", () => {
+  test("the night keeps the asked share of noon's light, and only then", () => {
+    const noon = { sunIntensity: 1, ambientIntensity: 0.5 };
+    const plain = daylightStateAt(0, noon);
+    const kept = daylightStateAt(0, { ...noon, nightLight: 0.7 });
+    expect(kept.sunIntensity).toBeCloseTo(0.7);
+    expect(kept.ambientIntensity).toBeCloseTo(0.35);
+    expect(plain.sunIntensity).toBeLessThan(kept.sunIntensity);
+    expect(daylightStateAt(0.5, { ...noon, nightLight: 0.7 }).sunIntensity).toBeCloseTo(1);
+  });
+});
+
 describe("skyDayFraction", () => {
   test("a sky dayOffset shifts the clock it reads and wraps into a day", () => {
     expect(skyDayFraction(0.25)).toBe(0.25);
