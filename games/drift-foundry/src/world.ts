@@ -74,6 +74,24 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
   );
 }
 
+/**
+ * An outdoor department's own land: its ground palette painted over the store floor around the whole
+ * course, so the garden is lawn and mulch out to its edges instead of pale terrazzo that, wet, mirrored
+ * the sky.
+ */
+function outdoorLand(track: Track): TerrainMaterialRegion[] {
+  if (track.def.dressing?.indoor !== false) return [];
+  const b = track.course.bounds;
+  const margin = 90;
+  return [{
+    shape: "rect" as const,
+    center: [(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2],
+    halfExtents: [(b.maxX - b.minX) / 2 + margin, (b.maxZ - b.minZ) / 2 + margin],
+    falloff: 30,
+    colors: track.def.ground,
+  }];
+}
+
 /** The dark shoulder painted under each route, wider than the paving, so the road reads from the air. */
 function trackShoulders(track: Track): TerrainMaterialRegion[] {
   const shoulder = track.def.ground.low;
@@ -86,12 +104,25 @@ function trackShoulders(track: Track): TerrainMaterialRegion[] {
   }));
 }
 
+/** The box a route's centreline spans. */
+function routeBounds(track: Track, routeId: string): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const points = track.course.routes.find((route) => route.id === routeId)?.points ?? [];
+  if (points.length === 0) throw new Error(`${track.def.id}: liquid names no route "${routeId}"`);
+  return {
+    minX: Math.min(...points.map((p) => p[0])),
+    maxX: Math.max(...points.map((p) => p[0])),
+    minZ: Math.min(...points.map((p) => p[1])),
+    maxZ: Math.max(...points.map((p) => p[1])),
+  };
+}
+
 /** The juice flood and the koi pond: a liquid sheet over the department's lowland, its level its own. */
 function trackLiquid(track: Track): OceanEnvironmentDescriptor | null {
   const liquid = track.def.liquid;
   if (liquid === undefined) return null;
-  const b = track.course.bounds;
-  const margin = 70;
+  // A pond fills only around the route it names; a flood fills the whole department.
+  const b = liquid.around === undefined ? track.course.bounds : routeBounds(track, liquid.around);
+  const margin = liquid.around === undefined ? 70 : 24;
   return ocean({
     bounds: { w: b.maxX - b.minX + margin * 2, d: b.maxZ - b.minZ + margin * 2 },
     position: [(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2],
@@ -173,6 +204,7 @@ export const world: WorldFeature = environment({
     colors: { low: "#a39c8f", high: "#b1aa9c", waterline: "#a39c8f" },
     biomeBands: [...ZONES.map(zoneBand), ...LAID_TRACKS.map(trackBand)].sort((a, b) => a.z - b.z),
     materialRegions: [
+      ...LAID_TRACKS.flatMap(outdoorLand),
       ...LAID_TRACKS.flatMap(trackShoulders),
       {
         shape: "polyline",

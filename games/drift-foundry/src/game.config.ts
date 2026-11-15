@@ -92,7 +92,10 @@ export const game = defineGame({
       toys: ["startRun", { name: "run.autopilot", input: { event: "empty-cart", openAll: true } }],
       garden: ["startRun", { name: "run.autopilot", input: { event: "cart-stuffer", openAll: true } }],
       electronics: ["startRun", { name: "run.autopilot", input: { event: "lights-out", openAll: true } }],
-      frozen: ["startRun", { name: "run.autopilot", input: { event: "last-call", openAll: true } }],
+      // Driven 18 s down Aisle 9 by the course driver: past the cereal wall and the soda ramp, into
+      // the iced-over Frozen Foods, and left to coast there (an autopilot would race on to the tills
+      // before a slow capture settles).
+      frozen: ["startRun", { name: "run.stage", input: { mode: "midrun", seconds: 18 } }],
       dock: ["startRun", { name: "run.autopilot", input: { event: "grudge-brick", openAll: true } }],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],

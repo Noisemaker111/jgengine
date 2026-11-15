@@ -10,7 +10,8 @@ const output = fileURLToPath(new URL('../src/game/art/', import.meta.url));
 mkdirSync(output, { recursive: true });
 for (const file of readdirSync(output)) if (file.endsWith('.glb')) unlinkSync(`${output}${file}`);
 
-// Colours are hex strings. A leading '*' makes the material emissive, '~' makes it chrome.
+// Colours are hex strings. A leading '*' makes the material emissive, '~' makes it chrome, and '^'
+// makes it a house light: emissive, in the `house` light group a lighting zone can switch off.
 const CHROME = '~#c9d1d9';
 const RED = '#e8303a';
 const YELLOW = '#ffd21e';
@@ -74,13 +75,15 @@ function author(name, build) {
     return accessors.push(accessor) - 1;
   }
   for (const [key, g] of groups) {
-    const emissive = key.startsWith('*');
+    const house = key.startsWith('^');
+    const emissive = house || key.startsWith('*');
     const chrome = key.startsWith('~');
-    const c = new Color(key.replace(/^[*~]/, ''));
+    const c = new Color(key.replace(/^[*~^]/, ''));
     const material = materials.push({
       name: key,
       pbrMetallicRoughness: { baseColorFactor: [c.r, c.g, c.b, 1], metallicFactor: chrome ? .85 : .05, roughnessFactor: chrome ? .28 : .62 },
       ...(emissive ? { emissiveFactor: [c.r, c.g, c.b] } : {}),
+      ...(house ? { extras: { lightGroup: 'house' } } : {}),
     }) - 1;
     primitives.push({ attributes: { POSITION: attribute(g.positions, true), NORMAL: attribute(g.normals) }, material });
   }
@@ -551,7 +554,7 @@ author('ceiling-light', ({ box, tube }) => {
   // One fixture row across a department aisle, hung at 9.5 m: three tube lamps in a white tray.
   for (const x of [-6, 0, 6]) {
     box([4.6, .14, .7], [x, 9.5, 0], WHITE);
-    box([4.4, .06, .5], [x, 9.42, 0], '*#fffbe8');
+    box([4.4, .06, .5], [x, 9.42, 0], '^#fffbe8');
     tube([x - 2, 9.6, 0], [x - 2, 13, 0], .02, '#8d99a6');
     tube([x + 2, 9.6, 0], [x + 2, 13, 0], .02, '#8d99a6');
   }
@@ -560,7 +563,7 @@ author('ceiling-light-wide', ({ box, tube }) => {
   // Aisle 9's main-aisle fixture: five lamps spanning the full 40 m between the shelving.
   for (const x of [-16, -8, 0, 8, 16]) {
     box([5.4, .16, .8], [x, 11, 0], WHITE);
-    box([5.2, .06, .6], [x, 10.9, 0], '*#fffbe8');
+    box([5.2, .06, .6], [x, 10.9, 0], '^#fffbe8');
     tube([x, 11.1, 0], [x, 15, 0], .025, '#8d99a6');
   }
 });
@@ -579,7 +582,7 @@ author('ceiling-bay', ({ box, cylinder, tube }) => {
     for (let x = -W / 2; x < W / 2; x += 4) tube([x, 13.7, z], [x + 2, 15.0, z], .07, '#c3c8ce'), tube([x + 2, 15.0, z], [x + 4, 13.7, z], .07, '#c3c8ce');
     for (let x = -W / 2 + 4; x < W / 2; x += 8) {
       box([.5, .1, 3.2], [x, 13.5, z], '#e8eaec');
-      box([.3, .05, 3.0], [x, 13.43, z], '*#fffbe8');
+      box([.3, .05, 3.0], [x, 13.43, z], '^#fffbe8');
     }
   }
   for (const x of [-18, 18]) cylinder(.7, D, [x, 14.2, 0], '~#b8c0c8', [Math.PI / 2, 0, 0]);
@@ -595,7 +598,7 @@ author('store-wall', ({ box }) => {
   box([.62, 1.2, 12.2], [0, 6.2, 0], '#2f6fd6');
   box([.64, .5, 12.2], [0, .25, 0], '#6b6f76');
   box([.64, .12, 12.2], [0, 6.9, 0], '#ffd21e');
-  for (const z of [-4, 0, 4]) box([.66, .5, 1.8], [0, 11, z], '*#fffbe8');
+  for (const z of [-4, 0, 4]) box([.66, .5, 1.8], [0, 11, z], '^#fffbe8');
 });
 author('aisle-sign', ({ box, cylinder }) => {
   // The giant hanging aisle marker, read from far down the aisle: a blue board with a fat "9" in blocks.

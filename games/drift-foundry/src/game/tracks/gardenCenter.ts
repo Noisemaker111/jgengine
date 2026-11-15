@@ -61,8 +61,10 @@ export const GARDEN_CENTER: TrackDef = {
   // Out under a grey sky: the rain falls over this department only.
   // Heavy enough to read as rain against the pale sky at speed: wide streaks a shade darker than the sky, slanted by a breeze.
   weather: { kind: "rain", density: 1, width: 0.042, opacity: 0.85, dropLength: 1.4, speed: 24, color: "#8e9cb0", wind: [1.5, -0.5] },
-  light: { key: { intensity: 0.75, color: "#e6ecf2" }, fill: { intensity: 1.12, color: "#d2dce2", groundColor: "#4c5a3e" }, environment: 1.4 },
-  liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
+  // Overcast: a weak key (its highlight is what glared off the wet pavers) and a broad grey fill.
+  light: { key: { intensity: 0.4, color: "#dfe6ee" }, fill: { intensity: 1.3, color: "#c8d2da", groundColor: "#3f4c34" }, environment: 0.5, exposure: 0.92 },
+  // The koi pond pools around its own wade, not across the whole garden, where it mirrored the sky.
+  liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" }, around: "koi-pond" },
   rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,
   stock: {

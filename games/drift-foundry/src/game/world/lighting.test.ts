@@ -18,6 +18,8 @@ describe("store lighting zones", () => {
       const showroom = lightOnCourse("electronics", run);
       expect(showroom.key).toBeLessThan(0.2);
       expect(showroom.fill).toBeLessThan(0.3);
+      // The showroom's house lights are off: the ceiling tubes and clerestory lamps barely glow.
+      expect(showroom.emissive.house!).toBeLessThan(0.1);
       const dock = lightOnCourse("loading-bay", run);
       expect(dock.keyColor).toBe("#ffa14a");
       const garden = lightOnCourse("garden-center", run);
@@ -27,10 +29,11 @@ describe("store lighting zones", () => {
 
   test("Aisle 9 keeps the strip lights except across Frozen Foods, which goes cold blue", () => {
     const snacks = lightOnCourse("aisle-nine", 60);
+    expect(snacks.emissive).toEqual({});
     expect(snacks).toMatchObject({ key: 1, fill: 1, keyColor: BASE.keyColor });
     const frozen = lightOnCourse("aisle-nine", 225);
-    expect(frozen.keyColor).toBe("#b4d0ff");
-    expect(frozen.groundColor).toBe("#4a6c99");
+    expect(frozen.keyColor).toBe("#a2c2ff");
+    expect(frozen.groundColor).toBe("#3f6596");
     const bulk = lightOnCourse("aisle-nine", 400);
     expect(bulk.keyColor).toBe(BASE.keyColor);
   });

@@ -98,6 +98,12 @@ export function stageRun(ctx: GameContext, mode: StageMode, course: StageCourse 
     driveIntoWall(ctx);
     return;
   }
+  // A timed stage hands the wheel to the course driver, which takes the mod displays the walls need,
+  // so it gets as far down the aisle as a shopper would.
+  if (course.seconds !== undefined) {
+    driveCourse(session, { limit: course.seconds, take: course.take ?? [] });
+    return;
+  }
   // Partway down the corridor the mid-run shot frames the compactor closing; the result shot keeps
   // driving to whatever ending the gauntlet hands the kart.
   drive(ctx, mode === "midrun" ? 14 : 180);

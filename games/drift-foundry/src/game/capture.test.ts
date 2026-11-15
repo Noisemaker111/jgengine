@@ -17,6 +17,16 @@ describe("staged race capture", () => {
     expect(read.speedKmh).toBeGreaterThan(0);
   });
 
+  test("the frozen state's drive ends inside Frozen Foods, still racing", () => {
+    const live = runner();
+    stageRun(live.ctx, "midrun", { seconds: 18 });
+    const read = stageReadout(live.ctx);
+    console.log("drift frozen readout", read);
+    expect(read.phase).toBe("running");
+    expect(read.z).toBeGreaterThan(160);
+    expect(read.z).toBeLessThan(260);
+  });
+
   test("result drives to a real ending", () => {
     const live = runner();
     stageRun(live.ctx, "result");

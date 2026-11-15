@@ -89,7 +89,7 @@ export const ZONES: readonly ZoneDef[] = [
     id: "frozen",
     label: "FROZEN FOODS",
     // The freezer cases throw a cold blue light across the iced floor.
-    light: { key: { intensity: 0.85, color: "#b4d0ff" }, fill: { intensity: 1.05, color: "#98bcff", groundColor: "#4a6c99" }, environment: 0.8, exposure: 0.92 },
+    light: { key: { intensity: 0.8, color: "#a2c2ff" }, fill: { intensity: 1.05, color: "#80a8fa", groundColor: "#3f6596" }, environment: 0.7, exposure: 0.88 },
     radioName: "FROZEN",
     start: ZONE_A_END,
     end: ZONE_B_END,
@@ -113,7 +113,7 @@ export const ZONES: readonly ZoneDef[] = [
     },
     ground: { low: "#93a7b2", high: "#a7b9c2", waterline: "#93a7b2" },
     surface: { id: "frost", label: "FROSTED FLOOR - ICY", grip: 0.86 },
-    fog: { color: "#d2e0e6", near: 65, far: 320 },
+    fog: { color: "#b8d0e8", near: 55, far: 300 },
     sky: { ...CEILING, horizonColor: "#eef8fd" },
   },
   {
