@@ -13,6 +13,7 @@ import { handlingView } from "../handling";
 import { ELEMENT_COLORS } from "../palette";
 import { SalvageRelay } from "./Relay";
 import { QuestMarker } from "./QuestMarker";
+import { SuburbLife } from "./ambientLife";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
@@ -117,6 +118,7 @@ export function SuburbWorldOverlay() {
       <SceneCaptureBinding />
       <SuburbAir />
       <SalvageRelay />
+      <SuburbLife />
       <JunkViewmodel />
       <QuestMarker />
     </>

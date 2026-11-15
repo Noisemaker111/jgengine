@@ -207,6 +207,19 @@ describe("campaign chain", () => {
   });
 });
 
+describe("yard life", () => {
+  test("every other house's lawn has a sprinkler, a few metres in from its mailbox", async () => {
+    const { SPRINKLER_SITES } = await import("./ambientLife");
+    const mailboxes = authoredScene.markers.filter((marker) => (marker.meta as { catalogId?: string } | undefined)?.catalogId === "mailbox");
+    expect(mailboxes.length).toBeGreaterThanOrEqual(20);
+    expect(SPRINKLER_SITES.length).toBe(Math.ceil(mailboxes.length / 2));
+    for (const [index, site] of SPRINKLER_SITES.entries()) {
+      const box = mailboxes[index * 2]!;
+      expect(Math.hypot(site.x - box.position.x, site.z - box.position.z)).toBeLessThan(4);
+    }
+  });
+});
+
 describe("served models", () => {
   const publicRoot = join(import.meta.dir, "../../../public");
 

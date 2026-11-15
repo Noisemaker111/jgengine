@@ -94,6 +94,32 @@ describe("buildings", () => {
 
 });
 
+describe("house ground floors", () => {
+  test("a house has a front door on a porch step, a garage door on a wide front and windows in every other bay", () => {
+    const house = generateBuilding({ center: [0, 0], floors: 2, baysWide: 3, baysDeep: 2, ground: "house", probabilities: { window: 0, openStore: 1 } });
+    const ground = house.parts.filter((part) => part.cell?.level === 0);
+    const front = ground.filter((part) => part.facade === "front");
+    expect(front.filter((part) => part.id.endsWith(":door:shutter"))).toHaveLength(1);
+    expect(front.filter((part) => part.id.endsWith(":garage:shutter"))).toHaveLength(1);
+    const step = front.find((part) => part.id.endsWith(":step:corner"));
+    expect(step?.position[1]).toBeLessThan(0.2);
+    expect(step!.position[2]).toBeGreaterThan(front.find((part) => part.id.endsWith(":door:shutter"))!.position[2]);
+    // No shopfronts, whatever the shop probabilities say; windows round the sides and upstairs.
+    expect(house.parts.some((part) => part.kind === "storefront" || part.kind === "storeSign")).toBe(false);
+    expect(ground.filter((part) => part.kind === "window").length).toBe(1 + 3 + 2 + 2);
+    expect(house.parts.filter((part) => part.cell?.level === 1 && part.kind === "window")).toHaveLength(3 + 3 + 2 + 2);
+    // Every ground bay is still backed by a full wall panel.
+    expect(ground.filter((part) => part.kind === "wall")).toHaveLength(10);
+  });
+
+  test("a narrow house skips the garage, and shop stays the default ground floor", () => {
+    const narrow = generateBuilding({ center: [0, 0], floors: 1, baysWide: 2, baysDeep: 2, ground: "house" });
+    expect(narrow.parts.some((part) => part.id.endsWith(":garage:shutter"))).toBe(false);
+    const shop = generateBuilding({ center: [0, 0], floors: 1, baysWide: 3, baysDeep: 2 });
+    expect(shop.parts.some((part) => part.id.endsWith(":door:shutter"))).toBe(false);
+  });
+});
+
 describe("gable roofs", () => {
   test("a gable roof is two slabs pitched down to the front and back eaves, over closed gable ends", () => {
     const config = { center: [0, 0] as const, floors: 1, baysWide: 3, baysDeep: 2, bayWidth: 2, floorHeight: 3, probabilities: { roofProp: 1 } };

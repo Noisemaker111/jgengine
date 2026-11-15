@@ -1,4 +1,4 @@
-import type { BuildingPaletteOverrides, BuildingProbabilities, BuildingRoof, BuildingStyle } from "../buildings/buildings";
+import type { BuildingGround, BuildingPaletteOverrides, BuildingProbabilities, BuildingRoof, BuildingStyle } from "../buildings/buildings";
 import type { BuildingKit } from "../buildings/buildingKit";
 import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "../terrain/pathTerrain";
@@ -532,6 +532,8 @@ export interface BuildingEnvironmentConfig {
   probabilities?: Partial<BuildingProbabilities>;
   /** `"gable"` pitches the roof (houses); default `"flat"` (a slab with a parapet and roof clutter). */
   roof?: BuildingRoof;
+  /** `"house"` gives every building a front door on a porch step, a garage door on a wide front and windows all round; default `"shop"`. */
+  ground?: BuildingGround;
   seed?: string;
   /**
    * Street-aware placement: derive lots along the given roads' frontage (facing each street, set
@@ -635,7 +637,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "probabilities" | "roof" | "along" | "kit" | "solid">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "probabilities" | "roof" | "ground" | "along" | "kit" | "solid">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -1258,6 +1260,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.palette === undefined ? {} : { palette: config.palette }),
       ...(config.probabilities === undefined ? {} : { probabilities: config.probabilities }),
       ...(config.roof === undefined ? {} : { roof: config.roof }),
+      ...(config.ground === undefined ? {} : { ground: config.ground }),
       ...(config.along === undefined ? {} : { along: config.along }),
       ...(config.kit === undefined ? {} : { kit: config.kit }),
       ...(config.solid === undefined ? {} : { solid: config.solid }),

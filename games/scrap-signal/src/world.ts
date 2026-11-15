@@ -247,7 +247,12 @@ export const world: WorldFeature = environment({
       style: settlement.style,
       // Houses have pitched roofs; the strip mall and the Estates keep flat ones with their clutter.
       roof: settlement.style === "village" ? "gable" : "flat",
-      ...(settlement.palette !== undefined ? { palette: settlement.palette } : {}),
+      // Houses: a front door on a porch step, a garage door, windows all round.
+      ...(settlement.style === "village" ? { ground: "house" as const } : {}),
+      // A house's door and garage take the zone's accent; windows are sky glass; trim and steps cream.
+      ...(settlement.palette !== undefined
+        ? { palette: { ...settlement.palette, ...(settlement.style === "village" ? { shutter: settlement.palette.storefront ?? "#3d7fc4", window: "#9ad4ff", corner: "#f2efe6" } : {}) } }
+        : {}),
       seed: `${FERRALON_SEED}-${zone.id}`,
     });
   }),

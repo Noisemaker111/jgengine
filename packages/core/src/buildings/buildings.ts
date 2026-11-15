@@ -49,10 +49,19 @@ export interface BuildingVariantCounts {
 /** A building's roof: a flat slab with a parapet and roof clutter, or a pitched gable (two sloped slabs over stepped gable ends). */
 export type BuildingRoof = "flat" | "gable";
 
+/**
+ * What the ground floor is: `"shop"` (shopfronts and shutters on the front, blank walls round the
+ * sides) or `"house"` (a front door on a porch step, a garage door on a wide front, and windows in every
+ * other bay, upper floors included).
+ */
+export type BuildingGround = "shop" | "house";
+
 export interface BuildingConfig {
   id: string;
   /** Default `"flat"`. */
   roof: BuildingRoof;
+  /** Default `"shop"`. */
+  ground: BuildingGround;
   seed: BuildingSeed;
   center: Vec2;
   floors: number;
@@ -150,6 +159,7 @@ export const DEFAULT_BUILDING_CONFIG: BuildingConfig = {
   facadeDepth: 0.18,
   roofOverhang: 0.35,
   roof: "flat",
+  ground: "shop",
   probabilities: DEFAULT_PROBABILITIES,
   variants: DEFAULT_VARIANTS,
 };
@@ -480,6 +490,7 @@ export function createBuildingConfig(input: BuildingConfigInput = {}): BuildingC
     ),
     roofOverhang: Math.max(0, input.roofOverhang ?? DEFAULT_BUILDING_CONFIG.roofOverhang),
     roof: input.roof === "gable" ? "gable" : "flat",
+    ground: input.ground === "house" ? "house" : "shop",
     probabilities: {
       window: probability(input.probabilities?.window ?? DEFAULT_PROBABILITIES.window),
       openStore: probability(input.probabilities?.openStore ?? DEFAULT_PROBABILITIES.openStore),
@@ -606,8 +617,11 @@ function pushUpperFloorParts(
   const key = `${facade}:${level}:${bay}`;
   const position = panelPosition(config, facade, bay, level, width, depth);
   parts.push(part(config, "wall", facade, position, panelScale(config, facade, 1, 1), `${key}:wall`, cell, ["structure", "upper"]));
-  if (!chance(config.seed, `${key}:window`, config.probabilities.window)) return;
+  const house = config.ground === "house";
+  // A house has a window in every upper bay, and none of a tenement's air conditioners or washing lines.
+  if (!house && !chance(config.seed, `${key}:window`, config.probabilities.window)) return;
   parts.push(part(config, "window", facade, position, panelScale(config, facade, 0.46, 0.58), `${key}:window`, cell, ["upper"]));
+  if (house) return;
   if (chance(config.seed, `${key}:awning`, config.probabilities.awning)) {
     const awningPosition: Vec3 = [position[0], position[1] + config.floorHeight * 0.29, position[2]];
     parts.push(part(config, "awning", facade, awningPosition, panelScale(config, facade, 0.1, 0.72), `${key}:awning`, cell, ["decor", "upper"]));
@@ -650,6 +664,55 @@ function pushGroundFloorParts(
   parts.push(part(config, kind, facade, position, panelScale(config, facade, 1, 1), `${key}:${kind}`, cell, ["ground", "closed"]));
 }
 
+/** The bay a house's front door takes: the middle one, or the right of the middle two. */
+export function houseDoorBay(baysWide: number): number {
+  return Math.floor(baysWide / 2);
+}
+
+/** Outward unit normal of a facade, in the building's own frame. */
+function facadeNormal(facade: Exclude<BuildingFacade, "roof">): readonly [number, number] {
+  if (facade === "front") return [0, 1];
+  if (facade === "back") return [0, -1];
+  if (facade === "left") return [-1, 0];
+  return [1, 0];
+}
+
+/**
+ * A house's ground-floor bay. Every bay is backed by a full wall panel (the shell has no core); on the
+ * front the door bay gets a door and a porch step, a front three or more bays wide gets a garage door
+ * in its first bay, and every other bay on every side gets a window.
+ */
+function pushHouseGroundParts(
+  parts: BuildingPartPlacement[],
+  config: BuildingConfig,
+  facade: Exclude<BuildingFacade, "roof">,
+  bay: number,
+  width: number,
+  depth: number,
+): void {
+  const cell: BuildingCellRef = { facade, level: 0, bay };
+  const key = `${facade}:0:${bay}`;
+  const position = panelPosition(config, facade, bay, 0, width, depth);
+  parts.push(part(config, "wall", facade, position, panelScale(config, facade, 1, 1), `${key}:wall`, cell, ["structure", "ground"]));
+  const front = facade === "front";
+  if (front && bay === houseDoorBay(config.baysWide)) {
+    const doorHigh = Math.min(2.1, config.floorHeight * 0.78);
+    const doorPosition: Vec3 = [position[0], doorHigh / 2 + 0.18, position[2]];
+    parts.push(part(config, "shutter", facade, doorPosition, [Math.min(1, config.bayWidth * 0.48), doorHigh, config.facadeDepth], `${key}:door`, cell, ["ground", "closed"]));
+    const [nx, nz] = facadeNormal(facade);
+    const stepOut = 0.45;
+    const stepPosition: Vec3 = [position[0] + nx * stepOut, 0.09, position[2] + nz * stepOut];
+    parts.push(part(config, "corner", facade, stepPosition, [Math.min(1.6, config.bayWidth * 0.8), 0.18, 0.9], `${key}:step`, cell, ["decor", "ground"]));
+    return;
+  }
+  if (front && bay === 0 && config.baysWide >= 3) {
+    const garageHigh = Math.min(2.3, config.floorHeight * 0.82);
+    parts.push(part(config, "shutter", facade, [position[0], garageHigh / 2, position[2]], [config.bayWidth * 0.9, garageHigh, config.facadeDepth], `${key}:garage`, cell, ["ground", "closed"]));
+    return;
+  }
+  parts.push(part(config, "window", facade, [position[0], position[1] + config.floorHeight * 0.05, position[2]], panelScale(config, facade, 0.42, 0.56), `${key}:window`, cell, ["ground"]));
+}
+
 function pushFacade(
   parts: BuildingPartPlacement[],
   config: BuildingConfig,
@@ -659,7 +722,8 @@ function pushFacade(
 ): void {
   const bays = facade === "front" || facade === "back" ? config.baysWide : config.baysDeep;
   for (let bay = 0; bay < bays; bay += 1) {
-    pushGroundFloorParts(parts, config, facade, bay, width, depth);
+    if (config.ground === "house") pushHouseGroundParts(parts, config, facade, bay, width, depth);
+    else pushGroundFloorParts(parts, config, facade, bay, width, depth);
     for (let level = 1; level < config.floors; level += 1) {
       pushUpperFloorParts(parts, config, facade, bay, level, width, depth);
     }
