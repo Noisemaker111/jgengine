@@ -55,6 +55,7 @@ export const LOADING_BAY: TrackDef = {
   fog: { color: "#b9c2ca", near: 60, far: 320 },
   sky: { horizonColor: "#d2dae0", zenithColor: "#7d8b98", sunIntensity: 1.9, ambientIntensity: 1.15 },
   baseLevel: 0,
+  floor: "#8f8f8a",
   rivalTake: { rival_brick: ["trailer-cut"], rival_twins: ["trailer-cut"] },
   par: 64,
   stock: {

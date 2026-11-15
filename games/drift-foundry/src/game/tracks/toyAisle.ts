@@ -54,6 +54,7 @@ export const TOY_AISLE: TrackDef = {
   fog: { color: "#e8d2de", near: 55, far: 280 },
   sky: { horizonColor: "#fff3f8", zenithColor: "#e6d2ff", sunIntensity: 1.6, ambientIntensity: 1.35 },
   baseLevel: 0,
+  floor: "#c9a9bc",
   rivalTake: { rival_brick: ["ball-pit"] },
   par: 63,
   stock: {

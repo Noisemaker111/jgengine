@@ -23,7 +23,7 @@ import { AISLE_NINE_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
 
 /** The aisles everywhere are glossy ceramic tile, laid over the store's terrazzo floor. */
-const RACING_LINE_SCAN = librarySurfaceScan("tile/ceramic", { repeat: 1.2 });
+const RACING_LINE_SCAN = librarySurfaceScan("tile/ceramic", { repeat: 1.2, tint: 0.45 });
 
 /** Every department but Aisle 9, each laid in its own stretch of the store along z. */
 const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
@@ -64,7 +64,7 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
     road({
       path: routePath(route.points),
       width: 2 * (route.id === "main" ? track.def.pavedHalfWidth : Math.min(track.def.pavedHalfWidth, track.def.branches.find((branch) => branch.id === route.id)!.halfWidth)),
-      color: "#bab4a8",
+      color: track.def.floor ?? "#bab4a8",
       materials: { road: RACING_LINE_SCAN },
       markings: route.id === "main",
       markingColor: "#2f6fd6",

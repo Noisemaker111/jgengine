@@ -57,6 +57,7 @@ export const GARDEN_CENTER: TrackDef = {
   fog: { color: "#71807d", near: 40, far: 230 },
   sky: { horizonColor: "#8a9692", zenithColor: "#3a4448", sunIntensity: 1.0, ambientIntensity: 1.1 },
   baseLevel: 0,
+  floor: "#9c8f78",
   liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
   rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,

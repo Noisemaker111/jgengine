@@ -118,13 +118,10 @@ export const game = defineGame({
     shadows: true,
     look: "cinematic",
     // Fluorescent big-box light: a high, near-white key straight down the aisles, bright cool fill.
-    mood: {
-      preset: "bright",
-      sun: { azimuth: 200, elevation: 62, color: "#fff6e6" },
-      horizonColor: "#f6f2ea",
-      fog: { near: 70, far: 340 },
-      exposure: 0.85,
-    },
+    // Fog and haze are left to the world's sky and its per-department bands (no mood backdrop), so
+    // Electronics fades to its dark lights-out haze and the produce cooler to its own; only the
+    // exposure and the strip-light key are set here.
+    mood: { exposure: 0.85, fog: false },
     environmentSource: hdriEnvironment("interior-industrial", { intensity: 0.55 }),
     lighting: {
       // Indoor fill: shadows stay soft and neutral under the strip lights, never blue.

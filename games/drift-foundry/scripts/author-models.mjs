@@ -569,6 +569,17 @@ author('ceiling-bay', ({ box, cylinder, tube }) => {
   cylinder(.45, D, [0, 14.4, 0], '~#b8c0c8', [Math.PI / 2, 0, 0]);
   tube([-W / 2, 14.8, 0], [W / 2, 14.8, 0], .06, '#d63a3a');
 });
+/**
+ * A 12 m run of the store's back wall, up to the roof: painted block with a department-colour band,
+ * a kick rail and a row of high clerestory lamps, so an aisle reads as a room and not a yard.
+ */
+author('store-wall', ({ box }) => {
+  box([.6, 15.6, 12.2], [0, 7.8, 0], '#c9c4b8');
+  box([.62, 1.2, 12.2], [0, 6.2, 0], '#2f6fd6');
+  box([.64, .5, 12.2], [0, .25, 0], '#6b6f76');
+  box([.64, .12, 12.2], [0, 6.9, 0], '#ffd21e');
+  for (const z of [-4, 0, 4]) box([.66, .5, 1.8], [0, 11, z], '*#fffbe8');
+});
 author('aisle-sign', ({ box, cylinder }) => {
   // The giant hanging aisle marker, read from far down the aisle: a blue board with a fat "9" in blocks.
   for (const x of [-2.2, 2.2]) cylinder(.03, 4, [x, 13, 0], '#8d99a6');

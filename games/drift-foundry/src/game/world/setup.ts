@@ -12,6 +12,7 @@ import {
   JUMP_CUE,
   PROP_AISLE_SIGN,
   PROP_CEILING_BAY,
+  PROP_STORE_WALL,
   PROP_CEILING_LIGHT,
   TRACK_OBJECT,
   shelfItemObject,
@@ -56,6 +57,9 @@ function placeIdempotent(
 export function placeAisleRoof(ctx: GameContext): number {
   let bay = 0;
   for (let z = -72; z <= EXIT_Z + 72; z += 24, bay += 1) placeIdempotent(ctx, PROP_CEILING_BAY, 0, ctx.world.groundHeightAt(0, z), z, `aisle-roof-${bay}`);
+  // The store's side walls, just inside the roof's edge, behind the kiosks.
+  let wall = 0;
+  for (let z = -72; z <= EXIT_Z + 72; z += 12) for (const x of [-47, 47]) placeIdempotent(ctx, PROP_STORE_WALL, x, ctx.world.groundHeightAt(x, z), z, `aisle-wall-${wall++}`);
   return bay;
 }
 
@@ -139,6 +143,15 @@ export function placeTrackScenery(ctx: GameContext): number {
       for (let s = 0; s < main.length; s += 22, bay += 1) {
         const at = track.course.pointAt(MAIN_ROUTE, s, 0);
         put(PROP_CEILING_BAY, at.x, at.z, `${id}-roof-${bay}`, at.heading, at.elevation - ctx.world.groundHeightAt(at.x, at.z));
+      }
+      // The back walls behind the shelving close the room, except where a shortcut leaves the aisle.
+      let wall = 0;
+      for (let s = 0; s < main.length; s += 12) {
+        for (const side of [1, -1]) {
+          const at = track.course.pointAt(MAIN_ROUTE, s, side * (track.def.halfWidth + 7));
+          if (track.course.contains(at.x, at.z)) continue;
+          put(PROP_STORE_WALL, at.x, at.z, `${id}-wall-${wall++}`, at.heading, at.elevation - ctx.world.groundHeightAt(at.x, at.z));
+        }
       }
     }
 

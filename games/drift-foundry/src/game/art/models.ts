@@ -77,6 +77,7 @@ const GLB: Record<string, string> = {
   "ceiling-light-wide": new URL("./ceiling-light-wide.glb", import.meta.url).href,
   "aisle-sign": new URL("./aisle-sign.glb", import.meta.url).href,
   "ceiling-bay": new URL("./ceiling-bay.glb", import.meta.url).href,
+  "store-wall": new URL("./store-wall.glb", import.meta.url).href,
   "dept-sign": new URL("./dept-sign.glb", import.meta.url).href,
   "checkout-arch": new URL("./checkout-arch.glb", import.meta.url).href,
   endcap: new URL("./endcap.glb", import.meta.url).href,

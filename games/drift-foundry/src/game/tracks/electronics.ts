@@ -65,6 +65,8 @@ export const ELECTRONICS: TrackDef = {
   fog: { color: "#141a36", near: 30, far: 170 },
   sky: { horizonColor: "#232a52", zenithColor: "#080a16", sunIntensity: 0.45, ambientIntensity: 0.55 },
   baseLevel: 0,
+  // Lights out: dark demo-floor carpet, so the TV walls are the light in the room.
+  floor: "#2c3048",
   rivalTake: { rival_brick: ["stockroom"] },
   par: 63,
   stock: {

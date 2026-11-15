@@ -129,6 +129,8 @@ export interface TrackDef {
   rivalTake: Readonly<Record<string, readonly string[]>>;
   /** Escape time the line multiplier is judged against, seconds. */
   par: number;
+  /** Tint of the aisle floor tile; default the store's warm grey. Electronics is dark carpet. */
+  floor?: string;
   /** The department's shelf stock: what the grab spots along the main line hold. */
   stock?: TrackStock;
   /** Generic course dressing. Row Six omits it: the corridor keeps its own zone scatter, lamps and towers. */

@@ -19,6 +19,8 @@ export const PROP_CEILING_LIGHT = "prop_ceiling_light";
 export const PROP_AISLE_SIGN = "prop_aisle_sign";
 /** One 96 m x 24 m bay of the warehouse roof: deck, trusses, ducts and strip lights. */
 export const PROP_CEILING_BAY = "prop_ceiling_bay";
+/** A 12 m run of the store's back wall, roof-high, standing behind the shelving. */
+export const PROP_STORE_WALL = "prop_store_wall";
 
 export const GATE_BARRICADE_PLOW = "gate_box_wall";
 export const GATE_BARRICADE_JUMP = "gate_pallet_ramp";
@@ -92,6 +94,7 @@ export const OBJECT_CATALOG: Record<string, GameContextObjectEntry> = {
   [PROP_CEILING_LIGHT]: {},
   [PROP_AISLE_SIGN]: {},
   [PROP_CEILING_BAY]: {},
+  [PROP_STORE_WALL]: {},
   [GATE_BARRICADE_PLOW]: {},
   [GATE_BARRICADE_JUMP]: {},
   [PICKUP_MARKER]: {},
