@@ -59,4 +59,15 @@ Read from `src/game/{cart,run,parts,route,compactor,vehicle,race}`.
 
 Aisle 9's static store (shelving runs, end-caps, section crowns, freezer fog, scrubber suds,
 pigeons) is authored in `src/editor.scene.json` by `scripts/author-{corridor,yard,ambience}.ts`.
+- **Onboarding**: the hanging sign names the next wall and when to hop; the shopping tip under it
+  points at the mod display that wall needs, then the next shelf grab and which way to steer, then
+  the power-up F fires. Grabs, power-ups and banked tricks each pop particles and a sound cue;
+  rivals shout a line when you pass them or they pass you.
+- **Saves**: career, records, the parked cart (with its basket) and best receipts go to
+  `localStorage`, or into the engine's world save where a host has none.
+
+Proofs: `proofs/sim/*.proof.ts` prove all 17 game-suite entries headless (`src/suite.test.ts`,
+content sheet in `proofs/content.ts`); `proofs/flows/from-zero.flow.ts` drives a new shopper from
+the title to a first grab in the browser. `capture.states` has `race`, `produce`, `toys`, `garden`
+and `electronics` for shots of each department.
 Run `bun run check-types` and `bun run test` here after changes.

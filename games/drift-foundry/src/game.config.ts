@@ -86,6 +86,11 @@ export const game = defineGame({
       title: [],
       // A live race with nobody else at the handle: what a proof or a flow plays from.
       race: ["startRun"],
+      // The other departments, driven by the course autopilot with every tier open.
+      produce: ["startRun", { name: "run.autopilot", input: { event: "price-check", openAll: true } }],
+      toys: ["startRun", { name: "run.autopilot", input: { event: "empty-cart", openAll: true } }],
+      garden: ["startRun", { name: "run.autopilot", input: { event: "cart-stuffer", openAll: true } }],
+      electronics: ["startRun", { name: "run.autopilot", input: { event: "lights-out", openAll: true } }],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
       // The plow display dodged and the first box wall in the cart's face: the sign says where the plow is.
