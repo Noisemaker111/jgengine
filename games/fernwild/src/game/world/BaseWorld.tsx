@@ -10,6 +10,7 @@ import { HiveLair } from "./HiveLair";
 import { Caves } from "./Caves";
 import { Eggs } from "./Eggs";
 import { KleptoNests } from "./KleptoNests";
+import { WaterLife } from "./WaterLife";
 import { MachineRuins } from "./MachineRuins";
 import { Obelisks } from "./Obelisks";
 import { StormSky } from "./StormSky";
@@ -24,6 +25,7 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
       <Obelisks ctx={ctx} />
       <MachineRuins ctx={ctx} />
       <KleptoNests ctx={ctx} />
+      <WaterLife ctx={ctx} />
       <StormSky ctx={ctx} />
       <Caves ctx={ctx} />
       <Bodies ctx={ctx} />

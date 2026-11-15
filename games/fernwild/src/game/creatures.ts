@@ -179,6 +179,10 @@ interface World {
   carriers: CarrierField;
   /** Each spawn zone's own random stream for the creatures it spawns (sex, levels, facing). */
   streams: Map<string, RandomSeed>;
+  /** The camera is pulled back for a ride on a platform's back. */
+  aboardCamera: boolean;
+  /** Recent Arcwire lightning: from the eel to each body it arced into, and when, for the world to flash. */
+  arcs: { from: readonly [number, number, number]; to: (readonly [number, number, number])[]; at: number }[];
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -286,6 +290,8 @@ const worldOf = perContext((ctx: GameContext): World => {
     puppeted: new Map(),
     carriers: createCarrierField({ solidsLayer: "fernwild:carriers" }),
     streams: new Map(),
+    aboardCamera: false,
+    arcs: [],
   };
 });
 
@@ -350,7 +356,7 @@ function body(ctx: GameContext, world: World, creature: Creature): CreatureBody 
     wander: { radius: botProfile(creature.species)?.temperament === "ambush" ? 0.5 : (world.regions.get(creature.region)?.radius ?? 16) },
     // Swimmers keep to their element: tamed ones too, except when ridden (riding has its own swim).
     terrain: botProfile(creature.species)?.terrain ?? "land",
-    swimDepth: SWIM_UNDER,
+    swimDepth: botProfile(creature.species)?.swimDepth ?? SWIM_UNDER,
   };
 }
 
@@ -465,7 +471,7 @@ function rollLevel(dice: () => number, max: number): number {
 }
 
 /** The nearest open ground to `at` a body of `radius` fits on: never inside a trunk or a boulder, never in the sea. */
-function openGround(ctx: GameContext, at: readonly [number, number], radius: number, terrain: CreatureTerrain = "land"): [number, number, number] | null {
+function openGround(ctx: GameContext, at: readonly [number, number], radius: number, terrain: CreatureTerrain = "land", swimUnder = SWIM_UNDER): [number, number, number] | null {
   // A water-only bot needs water deep enough to swim under; it searches wider, rivers being narrow.
   const rings = terrain === "water" ? 8 : 4;
   const spacing = terrain === "water" ? 2 : 1;
@@ -477,12 +483,12 @@ function openGround(ctx: GameContext, at: readonly [number, number], radius: num
       const y = ctx.world.groundHeightAt(x, z);
       if (terrain === "water") {
         const surface = waterSurface(ctx, x, z);
-        if (surface !== null && y < surface - 1.2) return [x, surface - SWIM_UNDER, z];
+        if (surface !== null && y < surface - 1.2) return [x, Math.max(y, surface - swimUnder), z];
         continue;
       }
       if ((terrain === "amphibious" || y >= SHORE) && solidObstaclesNear(ctx, [x, y, z], radius, radius).length === 0) {
         const surface = terrain === "amphibious" ? waterSurface(ctx, x, z) : null;
-        return [x, surface === null ? y : Math.max(y, surface - SWIM_UNDER), z];
+        return [x, surface === null ? y : Math.max(y, surface - swimUnder), z];
       }
     }
   }
@@ -541,7 +547,7 @@ export function spawnCreature(
   options: { region?: string; level?: number; sex?: "female" | "male"; genes?: CreatureGenes; size?: number; traits?: readonly string[] } = {},
 ): string | null {
   const def = speciesDef(species);
-  const position = def === null ? null : openGround(ctx, at, def.radius, botProfile(species)?.terrain ?? "land");
+  const position = def === null ? null : openGround(ctx, at, def.radius, botProfile(species)?.terrain ?? "land", botProfile(species)?.swimDepth ?? SWIM_UNDER);
   if (def === null || position === null) return null;
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
@@ -1291,6 +1297,13 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   }
 
   events.push(...tickStorm(ctx, world));
+  // Riding a walking platform, the camera pulls back so the whole hull and its rider stay in view.
+  const onDeck = aboard(ctx) !== null;
+  if (onDeck !== world.aboardCamera) {
+    world.aboardCamera = onDeck;
+    ctx.camera.setRig(onDeck ? "orbit" : null, onDeck ? { orbit: { initialDistance: 22, minDistance: 14, maxDistance: 40, targetHeight: 2.5, initialPitch: 0.35 } } : undefined);
+  }
+  world.arcs = world.arcs.filter((arc) => ctx.time.now() - arc.at < ARC_FLASH_SECONDS);
   tickSentries(ctx, world, dt);
   tickHarvesters(ctx, world, dt);
   const mine = [ctx.player.userId, ...world.roster.list(ctx.player.userId).map((record) => record.id)];
@@ -1536,13 +1549,18 @@ function applyTrick(ctx: GameContext, world: World, creature: Creature, trick: S
       const wet = climateAt(ctx, target.position).wet;
       const amount = attack.damage * trick.share * (wet ? 2 : 1);
       let arcs = 0;
+      const struck: (readonly [number, number, number])[] = [target.position];
       for (const id of ctx.scene.entity.inRadius(targetId, trick.radius, (candidate) => candidate !== creature.id && candidate !== targetId)) {
         const other = world.creatures.get(id);
         if (other !== undefined && (other.dead || (!other.tamed && other.species === creature.species))) continue;
         if (other === undefined && ctx.scene.entity.get(id)?.role !== "player") continue;
         ctx.scene.entity.effect({ from: creature.id, to: id, effect: "damage", via: { amount } });
+        const hit = ctx.scene.entity.get(id)?.position;
+        if (hit !== undefined) struck.push(hit);
         arcs += 1;
       }
+      const from = ctx.scene.entity.get(creature.id)?.position;
+      if (from !== undefined) world.arcs.push({ from, to: struck, at: ctx.time.now() });
       ctx.scene.entity.effect({ from: creature.id, to: targetId, effect: "damage", via: { amount: wet ? amount : 0 } });
       return arcs === 0 && !wet ? null : `lightning arced${wet ? " through the water" : ""}${arcs > 0 ? ` to ${arcs} more` : ""}`;
     }
@@ -1723,6 +1741,26 @@ export function puppetTames(ctx: GameContext, at: readonly [number, number, numb
 /** Whether a tame stands frozen under the Hivemind's signal right now. */
 export function isPuppeted(ctx: GameContext, id: string): boolean {
   return (worldOf(ctx).puppeted.get(id) ?? -Infinity) > ctx.time.now();
+}
+
+/** How long an Arcwire's lightning stays on screen, seconds. */
+const ARC_FLASH_SECONDS = 0.35;
+
+/** Arcwire lightning still flashing, for the world to draw. */
+export function arcFlashes(ctx: GameContext): readonly { from: readonly [number, number, number]; to: readonly (readonly [number, number, number])[]; age: number }[] {
+  const now = ctx.time.now();
+  return worldOf(ctx).arcs.map((arc) => ({ from: arc.from, to: arc.to, age: now - arc.at }));
+}
+
+/** Where each wild Lampjaw's lure hangs, for the world to light. */
+export function lampjawLures(ctx: GameContext, near: readonly [number, number, number], within: number): (readonly [number, number, number])[] {
+  const out: (readonly [number, number, number])[] = [];
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.species !== "lampjaw" || creature.dead) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - near[0], at[2] - near[2]) <= within) out.push(at);
+  }
+  return out;
 }
 
 /** Seconds between a Harvest chip's swings, metres it ranges from its post. */
