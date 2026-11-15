@@ -72,7 +72,7 @@ export const GHOSTS: readonly GhostDef[] = [
     id: "banshee", label: "Banshee", icon: "🗣️", body: "ghost_banshee", rumor: 220, yield: 140, unlocks: "ride_swings",
     blurb: "Her wail is wasted on an empty park. She needs a crowd, and somewhere high to wail from.",
     wants: [
-      { id: "audience", label: "An audience: 45 of the living in the park at once", need: 45, have: (c) => c.living },
+      { id: "audience", label: "An audience: 30 of the living in the park at once", need: 30, have: (c) => c.living },
       { id: "perch", label: "A high perch: the Bell Tower Slide or the Lighthouse of the Lost", need: 1, have: kinds("ride_helter", "ride_obs") },
     ],
   },

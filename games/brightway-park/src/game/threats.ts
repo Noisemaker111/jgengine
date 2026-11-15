@@ -50,7 +50,9 @@ export function tickExorcist(ctx: GameContext, dt: number): void {
 /** Evidence that brings the exorcist. */
 export const EXORCIST_EVIDENCE = 100;
 /** Evidence that fades every noon. */
-export const EVIDENCE_FADE = 12;
+export const EVIDENCE_FADE = 15;
+/** How much of a crew's footage survives the edit and goes on the record. */
+export const FOOTAGE_ON_RECORD = 0.3;
 /** What the exorcist costs the vault: with a ghost to throw out, and when there is none. */
 export const EXORCISM_FEE = { banish: 250, bless: 450 } as const;
 
@@ -59,7 +61,7 @@ export function leaveWithFootage(ctx: GameContext, guest: GuestState, fled: bool
   const footage = guest.footage ?? 0;
   guest.footage = 0;
   if (footage <= 0 || fled) return;
-  park.emit(ctx, { kind: "footage", scale: Math.round(footage * 10) / 10 });
+  park.emit(ctx, { kind: "footage", scale: Math.round(footage * FOOTAGE_ON_RECORD * 10) / 10 });
   const w = park.of(ctx);
   if (w.num("park.evidence") >= EXORCIST_EVIDENCE * 0.7) {
     ctx.game.notices.push({ text: `A crew left with footage: evidence ${Math.round(w.num("park.evidence"))} of ${EXORCIST_EVIDENCE}. Scare them out before they leave!`, tone: "warn" });

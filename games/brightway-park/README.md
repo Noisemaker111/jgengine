@@ -47,9 +47,10 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   Lighthouse Keeper) come looking once the rumor reaches them. Each wants specific things at once (the
   Sailor wants fog and the pier; the Child a carousel and a toy; the Poltergeist breakables; the Banshee
   an audience and a perch). Hold them for 12 seconds and the ghost moves in: it seeps 60 to 200
-  ectoplasm a night, adds 35 to the rumor, and whispers one séance for free. Take its things away for 40
+  ectoplasm a night, adds 35 to the rumor, whispers one séance for free, and haunts the living who
+  come near it (fright 4 every 14 s, skeptics included), trailing glowing wisps. Take its things away for 40
   seconds and it drifts off. The Ghost register (G) shows every want, ticked.
-- **Threats.** Hunters and TV crews film every scare they witness. If they flee screaming the footage
+- **Threats.** Hunters (with flashlights) and TV crews (with a camera and a van outside the gate) film every scare they witness; 30% of the footage survives the edit. If they flee screaming the footage
   is lost; if they walk out calmly it goes on the record. At 100 evidence an exorcist comes at noon: the
   newest ghost is blessed out for two nights (the exorcist walks in from the gate to its haunt), the rumor takes a knock and the fee is paid in ectoplasm.
   A Gargoyle Sentry watching makes their cameras fail. Evidence fades by 12 a noon.
@@ -66,17 +67,21 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
 
     | Scenario | Targets | Deadline | At 1x | Prize |
     | --- | --- | --- | --- | --- |
-    | The First Chill | 60 screaming exits, 300 rumor, 1 ghost | end of the Frost Moon (3 moons) | 1 h | 5,000 |
-    | Talk of the Coast | 450 screaming exits, 600 rumor, 3 ghosts | end of the Pink Moon (8 moons) | 2 h 40 | 10,000 |
-    | Full Moon Festival | 1,500 screaming exits, 850 rumor, 6 ghosts | season 2 (16 moons) | 5 h 20 | 20,000 |
+    | The First Chill | 280 screaming exits, 420 rumor, 2 ghosts | end of the Frost Moon (3 moons) | 1 h | 5,000 |
+    | Talk of the Coast | 1,800 screaming exits, 760 rumor, 4 ghosts | end of the Pink Moon (8 moons) | 2 h 40 | 10,000 |
+    | Full Moon Festival | 6,000 screaming exits, 950 rumor, all 6 ghosts | season 2 (16 moons) | 5 h 20 | 20,000 |
 
   Free play's own goal is a ghost paradise: 8 rides, 600 rumor, 4 ghosts, a night in the black and a
   thrilled, tidy crowd.
 - **References it is chasing.** *Ghost Master* (2003) for haunting the living as the goal; *Luigi's
   Mansion* for readable stylized ghosts with personalities; *Theme Hospital*'s dry humour over a
   management sim. The tycoon bones are the engine's shared world model and ride sim.
-- **Gap to target.** The ectoplasm economy is unbalanced (chained scares are new and untuned); the
-  three scenarios have not been played through end to end; the sky does not follow the clock. See `PLAN.md`.
+- **Curve.** `bun scripts/scenarioBot.ts all` plays the three scenarios headless with a mid-skill
+  haunter (a boardwalk spine, rides and a scare gauntlet off it, stalls, spooks, the séance table toward
+  the next ghost, the Ferryman when dry). It wins The First Chill at moon 2.1 of 3, Talk of the Coast at
+  5.7 of 8 and the Full Moon Festival at 12.3 of 16, with the exorcist calling a few times a season.
+- **Gap to target.** The late economy runs rich (tens of thousands of ectoplasm by the festival with
+  little left to buy); the sky dome stays a night sky (the hour's light and haze follow the clock). See `PLAN.md`.
 
 Loop proof: to-open-park
 

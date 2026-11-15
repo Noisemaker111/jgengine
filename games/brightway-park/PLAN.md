@@ -192,10 +192,13 @@ Genres: tycoon. 18/18 proven.
 - Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
   for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
   worldModel/` wants over kind counts). One adopter so far.
-- The economy is untuned: chained scares are new, and the balance bot (`bun scripts/balance.ts 60`)
-  still plays the old tycoon strategy. It should lay a gauntlet and house a ghost.
-- Day-night lighting: the look is a fixed moonlit mood; the sky does not follow the clock (the engine's
-  `sky/dayNightCycle` could drive the mood's key light from `park.open`).
+- The late economy runs rich: by the Full Moon Festival a mid-skill haunter sits on tens of thousands
+  of ectoplasm with little left to buy (`bun scripts/scenarioBot.ts all`).
+- Day-night: the hour's light and haze follow the clock (overlay `TimeOfDayLight`), but the sky dome
+  stays the mood's night sky. `sky({ timeOfDay, dayOffset })` exists now; combined with a `mood` it
+  washed the frame out, so the shell's mood-plus-time-of-day path needs work before the game can use it.
+- Engine: jumping the clock backwards left a stale screen-aligned rectangle in the next frames (seen in
+  captures); staging now only moves the clock forward.
 - `packages/core/src/onboarding/`: steps are checked only on a game-time tick, so a game built with the
   clock paused checks them itself (`parkHintsWhilePaused` in `src/game/onboarding.ts`). The engine should
   check steps on world changes while paused.
@@ -209,6 +212,6 @@ Genres: tycoon. 18/18 proven.
 5. [x] Moons and seasons, long scenarios with an unlock chain, 8x speed.
 6. [x] Onboarding hints that point at the gate, the ride, the gate button and the spooks.
 7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
-8. [ ] An ectoplasm economy a steady haunter can grow: the balance bot lays a gauntlet, houses a ghost and wins The First Chill.
+8. [x] A curve: a mid-skill bot wins The First Chill at 70% of its deadline, Talk of the Coast at 71% and the Full Moon Festival at 77%.
 9. [x] Full-moon nights (more of the living, richer scares), the exorcist walks in at noon to the ghost it banishes, ghost halos, a darker graded night, the Full Moon Festival ending.
 10. [x] Suite 18/18: the save written through the host's save backend when there is no browser storage, the shared start / menu.pane / settings.rebind verbs, and proofs for Continue, the credits, rebinding and following the hints.

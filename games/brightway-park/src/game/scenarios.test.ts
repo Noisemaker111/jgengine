@@ -41,16 +41,16 @@ describe("hauntworks scenarios on the shared mission runtime", () => {
     expect(SCENARIOS.map((scenario) => scenario.months)).toEqual([3, 8, 16]);
     expect(SCENARIOS.at(-1)?.title).toBe("Full Moon Festival");
     expect(scenarioSeconds(3)).toBe(3 * MONTH_DAYS * DAY_LENGTH);
-    expect(scenarioDef(FIRST_SCENARIO)?.goal).toBe("60 of the living driven out screaming, 300 rumor, 1 ghost in residence by the end of the Frost Moon, season 1");
+    expect(scenarioDef(FIRST_SCENARIO)?.goal).toBe("280 of the living driven out screaming, 420 rumor, 2 ghosts in residence by the end of the Frost Moon, season 1");
   });
 
   test("The First Chill is won the moment every target holds, not before", () => {
     const park = runtime();
     park.start(FIRST_SCENARIO);
-    expect(kinds(park.tick(60, { facts: facts({ screams: 90, rating: 400, ghosts: 0 }) }))).not.toContain("completed");
-    expect(kinds(park.tick(60, { facts: facts({ screams: 59, rating: 450, ghosts: 2 }) }))).not.toContain("completed");
-    expect(kinds(park.tick(60, { facts: facts({ screams: 80, rating: 299, ghosts: 1 }) }))).not.toContain("completed");
-    const won = park.tick(60, { facts: facts({ screams: 60, rating: 300, ghosts: 1 }) });
+    expect(kinds(park.tick(60, { facts: facts({ screams: 400, rating: 500, ghosts: 1 }) }))).not.toContain("completed");
+    expect(kinds(park.tick(60, { facts: facts({ screams: 279, rating: 500, ghosts: 3 }) }))).not.toContain("completed");
+    expect(kinds(park.tick(60, { facts: facts({ screams: 400, rating: 419, ghosts: 2 }) }))).not.toContain("completed");
+    const won = park.tick(60, { facts: facts({ screams: 280, rating: 420, ghosts: 2 }) });
     expect(kinds(won)).toContain("completed");
     const reward = won.find((event) => event.kind === "reward");
     if (reward?.kind === "reward") expect(reward.rewards.economy).toEqual({ cash: 5000 });
@@ -60,8 +60,8 @@ describe("hauntworks scenarios on the shared mission runtime", () => {
   test("the end of the third moon closes a short haunt in its own fail state", () => {
     const park = runtime();
     park.start(FIRST_SCENARIO);
-    expect(kinds(park.tick(scenarioSeconds(3) - 10, { facts: facts({ screams: 40, rating: 300, ghosts: 1 }) }))).not.toContain("failed");
-    const failed = park.tick(20, { facts: facts({ screams: 40, rating: 300, ghosts: 1 }) }).find((event) => event.kind === "failed");
+    expect(kinds(park.tick(scenarioSeconds(3) - 10, { facts: facts({ screams: 100, rating: 420, ghosts: 2 }) }))).not.toContain("failed");
+    const failed = park.tick(20, { facts: facts({ screams: 100, rating: 420, ghosts: 2 }) }).find((event) => event.kind === "failed");
     expect(failed?.kind === "failed" ? failed.state : "").toBe("short");
   });
 

@@ -13,7 +13,7 @@ import { resetPark } from "./parkReset";
 import { chainMultiplier, CHAIN_SECONDS, ECTO_PER_NERVE, liveChain, shrugsOff, tickScares } from "./scares";
 import { seedGuests } from "./sim/guests";
 import { session } from "./session";
-import { EXORCIST_EVIDENCE, leaveWithFootage, noonExorcism } from "./threats";
+import { EXORCIST_EVIDENCE, FOOTAGE_ON_RECORD, leaveWithFootage, noonExorcism } from "./threats";
 
 function haunt() {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
@@ -168,7 +168,8 @@ describe("hauntworks threats", () => {
     expect(w.num("park.evidence")).toBe(0);
     crew.footage = 30;
     leaveWithFootage(ctx, crew, false);
-    expect(w.num("park.evidence")).toBe(30);
+    // What survives the edit goes on the record.
+    expect(w.num("park.evidence")).toBeCloseTo(30 * FOOTAGE_ON_RECORD);
 
     // A ghost at home, the record full: noon throws it out, empties the record and charges the fee.
     w.set(ghostFact("child"), 1);
