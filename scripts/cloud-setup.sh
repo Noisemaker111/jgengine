@@ -34,3 +34,6 @@ bun run jgengine assets pull kaykit-medieval-hexagon
 bun run jgengine assets pull kaykit-forest
 bun run jgengine assets pull quaternius-modular-men
 bun run jgengine assets pull quaternius-modular-women
+
+# Crumb Run's (deepward) animated Cat and dog, pulled into the shared asset store on a fresh session.
+bun run jgengine assets pull quaternius-animated-animales-low-poly
