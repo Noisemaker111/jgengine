@@ -85,8 +85,10 @@ describe("exportedNames", () => {
         "export default one;",
       ].join("\n"),
       "more.ts": "export enum Eight { A }\nexport default 1;\n",
+      "named-default.ts": "export default function hidden() {}\n",
     });
     expect([...exportedNames(join(root, "index.ts"))].sort()).toEqual(["Eight", "Five", "Four", "Three", "default", "one", "seven", "six", "space", "two"].sort());
+    expect([...exportedNames(join(root, "named-default.ts"))]).toEqual(["default"]);
   });
 });
 

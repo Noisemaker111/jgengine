@@ -116,7 +116,7 @@ export function isFile(path: string): boolean {
   }
 }
 
-const DECLARED = /\bexport\s+(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\s*\*?|class|const\s+enum|const|let|var|type|interface|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g;
+const DECLARED = /\bexport\s+(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\s*\*?|class|const\s+enum|const|let|var|type|interface|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g;
 const LIST = /\bexport\s+(?:type\s+)?\{([^}]*)\}(\s*from\s*(["'])([^"']+)\3)?/g;
 const STAR = /\bexport\s+(?:type\s+)?\*\s*(?:as\s+([A-Za-z_$][\w$]*)\s*)?from\s*(["'])([^"']+)\2/g;
 const DEFAULT = /\bexport\s+default\b/;

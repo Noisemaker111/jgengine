@@ -38,7 +38,7 @@ export interface ProposalReport {
   file: string;
   /** `file` relative to the scan root, with `/` separators. */
   path: string;
-  /** The game carrying it: the nearest folder with a package.json, relative to the scan root (`.` for the root). */
+  /** The game carrying it: the nearest folder with a package.json, relative to the scan root (its own name when it is the root). */
   game: string;
   /** The parsed metadata as written (null when it could not be read). */
   raw: unknown;
@@ -193,7 +193,7 @@ function importIndex(dir: string): Map<string, string[]> {
 /** Judge one proposal entry file. */
 export function analyzeProposal(file: string, root: string, rules: ProposalRules, gameImports: Map<string, string[]>, gameDir: string): ProposalReport {
   const path = posix(relative(root, file));
-  const game = posix(relative(root, gameDir)) || ".";
+  const game = posix(relative(root, gameDir)) || basename(gameDir);
   const errors: string[] = [];
   const literal = readProposalLiteral(readFileSync(file, "utf8"));
   const raw = literal.ok ? literal.value : null;

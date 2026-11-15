@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import { engineProposalProblems } from "@jgengine/core/meta/proposal";
 
@@ -169,7 +169,7 @@ describe("upstream detection", () => {
     write(root, "node_modules/@jgengine/core/dist/meta/proposal.d.ts", "export {};\n");
     write(root, "src/terrain.engine.ts", proposal(TERRAIN, "export const creatureTerrainHeight = 0; export type CreatureTerrainMode = 'flat';"));
     const [report] = scanProposals(root, engineProposalProblems).proposals;
-    expect(report).toMatchObject({ game: ".", status: "upstream", errors: [] });
+    expect(report).toMatchObject({ game: basename(root), status: "upstream", errors: [] });
   });
 });
 
