@@ -143,36 +143,26 @@ Genres: strategy. 0/17 proven · 17 missing.
   second adopter appears.
 - Tube and paver studios — a generic `tube` path studio and `slab` volume studio in
   `packages/core/src/scene/` would replace `yardKinds.draw.tsx`.
-- A second lawn map: `defineGame` takes one `editorLayers` document and mounts it statically
-  (`packages/shell/src/defineGame.tsx` `authoredSceneOverlay`, and the world's terrain sculpt reads the
-  same document), so a game cannot switch scene documents between battles. The seam is a
-  `scenes: Record<id, EditorDocument>` on `defineGame` plus a runtime selector that remounts the
-  authored scene and re-sculpts the terrain; LAWN ORDER would be the first adopter (a front-yard
-  skirmish map). Not built here.
-
-## Milestones
-
+- A second lawn map: resolved by the engine scene set (`@jgengine/core/editor/sceneSet`); LAWN ORDER is
+  its second adopter.
 - [x] 1. Re-theme: castes, chambers, sugar/leaf, popsicle, procedural bodies, backyard scene.
 - [x] 2. Pheromone trails: hauling scent, the Pheromone Line verb, speed and harvest bonuses.
 - [x] 3. Yard hazards: sprinkler, mower, rain, night, magnifying-glass beam; HUD yard strip and night wash.
 - [x] 4. Campaign: The Popsicle Claim, Crossing the Hose, Mower Day, Raid the Black Queen, The Kid with
   the Magnifying Glass.
 - [x] 5. Paper wasp nest on the far fence sends sorties at foragers (skirmish, missions IV-V); scouts mark enemies.
-- [ ] 6. A second lawn (front yard with a sidewalk crack river and a sprinkler grid) — blocked on the
-  multi-scene seam named under Gaps.
+- [x] 6. A second lawn: the Front Yard on the engine scene set, with skirmish and mission VI.
 
 ## Handoff
 
-- Done (committed): the LAWN ORDER redesign plus the depth rounds (see README). Latest round:
-  readable ants (castes ~35% larger, team rings, closer camera, see-through shade canopies); real
-  routes on the engine nav grid (hose crossed only at its crossings, patio stones gone round); the
-  paper wasp nest; Return to title no longer hangs (thumbnail wait capped) and the to-skirmish flow
-  passes; the campaign balanced against a committed mid-skill sim (all five missions won, the finale
-  costing ~20 ants); the Marshal leads formations at the clicked point.
-- Not built: a second lawn map — blocked on the multi-scene seam named under Gaps.
-- Evidence: 213 game tests incl. headless sims; `bun run drive ember-command --flow to-skirmish`
-  passes; `verify:fast` fails only on provisioning other games' models (network 403).
-- Shots (draft software renders): `shots/ember-command-play-half-low-draft.png`,
-  `shots/ember-command-state-boss-half-low-draft.png`,
-  `shots/ember-command-view-keep-enemy-half-low-draft.png`, `shots/ember-command-readable-18s-half-low-draft.png`.
-- Next: the multi-scene seam and a front-yard map; real-GPU screenshots.
+- Done (committed): the LAWN ORDER redesign, the depth rounds, readable ants, nav-grid routes, the
+  wasp nest, and now the Front Yard: a second lawn on the cherry-picked engine scene set (driveway
+  heat, cool cracks, the car's moving shade, gnome and tyre obstacles, mailbox wasps), its skirmish,
+  mission VI (The Long Driveway) and a title Lawn picker. Mission VI marches the colony to the front
+  yard through a saved record and an in-place lawn switch.
+- Engine: cherry-picked scene sets (11deb82) and the JSX host discard fix (2eb6d84), restoring an fs
+  import the merge dropped in `packages/editor/src/mcp/loadGameLayers.ts`.
+- Evidence: 215 game tests incl. the mid-skill balance sim (all six missions won; VI in 119 s, ~16
+  ants lost) and front-yard heat/shade/layout tests. Shots: `shots/backyard-play.png`,
+  `shots/frontyard-play.png`, `shots/frontyard-keep-enemy.png` (draft software renders).
+- Next: a front-yard shot mid-mission (heat pressure, the car shade over a column), real-GPU shots.

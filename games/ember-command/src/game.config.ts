@@ -21,6 +21,12 @@ import "./game/world/yardKinds.draw";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, rebindWorld, world } from "./world";
 
+/** Where the camera opens: just in front of the red nest authored on the live lawn. */
+function openingView(): { x: number; z: number } {
+  const nest = editorLayers.markers.find((marker) => marker.catalogId === "keep_player");
+  return nest === undefined ? { x: 0, z: 26 } : { x: nest.position.x * 0.8, z: nest.position.z - 10 };
+}
+
 /** Build the game for one lawn: the scene document, its ground and the yard read from it are rebound first. */
 function buildGame(id: MapId) {
   bindScene(id);
@@ -187,7 +193,8 @@ function buildGame(id: MapId) {
           edgeScroll: true,
           rotateSpeed: 1.2,
           zoom: { min: 0.5, max: 2 },
-          start: { x: 0, z: 26 },
+          // Open over the red colony's nest on whichever lawn is live.
+          start: openingView(),
           bounds: { minX: -46, maxX: 46, minZ: -46, maxZ: 46 },
         },
       },

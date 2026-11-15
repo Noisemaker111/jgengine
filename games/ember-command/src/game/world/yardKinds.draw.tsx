@@ -37,7 +37,7 @@ const PATIO_SCHEMA = {
 
 registerSceneKind({ kind: HOSE_KIND, target: "path", pathShape: "line", label: "Garden hose", addCategory: "Backyard", accent: "#2f9e3a", schema: HOSE_SCHEMA });
 registerSceneKind({ kind: MOWER_LANE_KIND, target: "path", pathShape: "line", label: "Mower lane", addCategory: "Backyard", accent: "#ff5a3c", schema: LANE_SCHEMA });
-registerSceneKind({ kind: HOT_KIND, target: "volume", label: "Hot pavement", addCategory: "Backyard", accent: "#8d8a86", schema: { fields: [{ type: "color" as const, key: "color", label: "asphalt", default: "#5f5d5a" }] } });
+registerSceneKind({ kind: HOT_KIND, target: "volume", label: "Hot pavement", addCategory: "Backyard", accent: "#8d8a86", schema: { fields: [{ type: "color" as const, key: "color", label: "asphalt", default: "#3e3c3a" }] } });
 registerSceneKind({ kind: CRACK_KIND, target: "path", pathShape: "line", label: "Sidewalk crack", addCategory: "Backyard", accent: "#3fa0c8", schema: { fields: [{ type: "number" as const, key: "width", label: "width", min: 0.5, step: 0.1, default: 2.4 }] } });
 registerSceneKind({ kind: CAR_SHADE_KIND, target: "path", pathShape: "line", label: "Car shade track", addCategory: "Backyard", accent: "#334", schema: { fields: [{ type: "number" as const, key: "radius", label: "radius", min: 1, step: 0.5, default: 9 }, { type: "number" as const, key: "period", label: "period (s)", min: 10, step: 5, default: 120 }] } });
 registerSceneKind({ kind: PATIO_KIND, target: "volume", label: "Patio stone", addCategory: "Backyard", accent: "#c9c2b4", schema: PATIO_SCHEMA });
@@ -219,7 +219,7 @@ function pavementDraw(object: SceneKindObject, context: SceneKindRenderContext):
       const pos = plane.getAttribute("position");
       for (let i = 0; i < pos.count; i += 1) pos.setY(i, context.field.sampleHeight(center.x + pos.getX(i), center.z + pos.getZ(i)) + 0.1);
       plane.computeVertexNormals();
-      const asphalt = new THREE.MeshStandardMaterial({ color: str(object.meta, "color", "#5f5d5a"), roughness: 0.7, metalness: 0.05 });
+      const asphalt = new THREE.MeshStandardMaterial({ color: str(object.meta, "color", "#3e3c3a"), roughness: 0.7, metalness: 0.05 });
       const mesh = new THREE.Mesh(plane, asphalt);
       mesh.position.set(center.x, 0, center.z);
       mesh.receiveShadow = true;

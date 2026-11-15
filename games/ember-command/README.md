@@ -28,7 +28,15 @@ are what the build does now.
      `raid_stalled`, `mandible_fell`.
   5. **The Kid with the Magnifying Glass** (boss; the beam). Outlast 60 s in the shade, then dig out
      the black nest while the burning spot hunts the densest knot of red ants; `verdict_lost`.
+  6. **The Long Driveway** (the Front Yard; heat, night). Lead the Marshal across the baking driveway to
+     the far lawn, dig the wasps out of the mailbox, then dig out the black nest; `driveway_stalled`.
   Each mission banks sugar and leaf into the granary stores that open the next one.
+- **Two lawns** (the engine scene set, `src/maps.ts`): **The Backyard** (`editor.scene.json`) and **The
+  Front Yard** (`frontyard.scene.json`): a driveway of asphalt that burns ants 4/s by day, crossed by
+  cool sidewalk cracks (no heat, 25% faster, and routes prefer them), a parked car whose shade slides
+  across the driveway with the sun, the garden gnome and two car tyres as giant obstacles, and wasps
+  nesting in the mailbox. The title's Lawn verb switches lawns in place (`?map=front-yard` pins one);
+  a skirmish runs whichever clocks its lawn has the landmarks for.
 - **Core loop.** 250 sugar, 120 leaf, brood room 30. Workers forage crumbs (12 a trip, 600 per pile),
   the popsicle (18 a trip, 2400) or leaf piles (8 a trip, 500) and haul to the nest, a Barracks or a
   Granary. Castes: Worker (50 sugar, 7 s), Scout (40 + 10, 8 s, sight 22), Soldier (80 + 10, 14 s),

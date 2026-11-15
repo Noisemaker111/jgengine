@@ -7,6 +7,7 @@ import { foldStatContributions } from "@jgengine/core/progression/statGraph";
 
 import { hudStore, type ArmyUnit, type HudSnapshot } from "../hudStore";
 import { campaignOrdinal } from "../campaign";
+import { activeMap } from "../../maps";
 import { BUILDINGS, COMBATANTS, missingChamber, TRAINABLE, type BuildingId, type TrainableId } from "../catalog";
 import { TRAIL_PAINT_COST } from "../tuning";
 import { FORMATIONS } from "../formations";
@@ -68,7 +69,7 @@ function Ledger({ phone }: { phone: boolean }) {
 function OrdersNote({ width }: { width: number }) {
   const shape = useHudSlice((h) => {
     const c = h.campaign;
-    return c === null ? null : { phase: c.phase, index: c.index, title: c.title, objective: c.objective, step: c.step, steps: c.steps, timer: c.remaining !== null, timed: c.duration !== null && c.duration > 0, count: c.count };
+    return c === null ? null : { phase: c.phase, index: c.index, title: c.title, objective: c.objective, step: c.step, steps: c.steps, timer: c.remaining !== null, timed: c.duration !== null && c.duration > 0, count: c.count, away: c.map !== activeMap() ? c.mapLabel : null };
   });
   const live = shape !== null && shape.phase === "live";
   return <RuneView variant="note" width={width} gap={4}>
@@ -89,7 +90,7 @@ function OrdersNote({ width }: { width: number }) {
         <InkBar value={() => hud().campaign?.counted ?? 0} max={() => hud().campaign?.count ?? 1} color={RED_INK} width={width - 90} label="order progress" />
       </Row> : null}
     </> : <>
-      <Eyebrow text={shape === null ? "Free skirmish" : `Next order · ${campaignOrdinal(shape.index - 1)}`} />
+      <Eyebrow text={shape === null ? "Free skirmish" : shape.away !== null ? `Next order · ${campaignOrdinal(shape.index - 1)} · on ${shape.away}` : `Next order · ${campaignOrdinal(shape.index - 1)}`} />
       <Text textStyle="verb" text={shape === null ? "Dig out the Black Ant Nest" : shape.title} />
     </>}
   </RuneView>;
