@@ -73,6 +73,13 @@ Numbers are what the build does now.
   customers: Theo the DJ and Ida at the lighthouse at 1, the bridge club and the rooftop wedding at 2,
   Captain Brine's submarine at 3. Vehicles from the lot: scooter 600, cargo trike 1,500, jet-ski 3,200,
   motor gondola 5,000, night bus 7,000, pizza blimp 7,500. The note starts at 7,000.
+- **Regulars.** Three good drops to one customer make them a Regular (+10% on every tip), seven a
+  Favourite (+20%), and a Favourite orders Nonna's secret pie for them first (40 to 58 a pie, dearer
+  than anything on the board). `src/game/pizza/regulars.ts`.
+- **Weekend rush.** Nights six and seven of every week: calls 30% faster, tips +15%, quota +20%.
+- **Catering events.** Weekend nights and every fourth night book one: three doors, one box each, on
+  the board at opening and never hanging up; every box inside the window from the first load pays the
+  booking's bonus (110 to 160) on the last door. The tide card tracks the doors left and the minutes.
 - **MegaSlice.** Pressure starts at 20%. A shift that meets the quota (140 + 25 a shift worked, up to
   190 + 120 per oven past the first) takes 12 off; a short one adds 18. At 100% MegaSlice calls the note in: +1,500 debt and the
   pressure resets to 55. Every 250 paid off eases it by 1. Paying the note off saves the shop for good.

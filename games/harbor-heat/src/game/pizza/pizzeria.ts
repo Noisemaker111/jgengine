@@ -6,6 +6,7 @@
  * the shift brings in the night's quota; pay the note off and the shop is saved.
  */
 import type { Kitchen } from "./orders";
+import { WEEKEND, weekendRush } from "./regulars";
 
 export type UpgradeKind = "oven" | "toppings" | "bag";
 
@@ -93,6 +94,8 @@ export interface PizzeriaState {
   upstairsDrops?: number;
   /** Cash paid toward the note, ever. */
   paid?: number;
+  /** Good deliveries to each customer, by id: how far each has come toward Regular and Favourite. */
+  loyalty?: Record<string, number>;
 }
 
 export const STARTING_DEBT = 7000;
@@ -143,7 +146,9 @@ export function payDebt(state: PizzeriaState, amount: number): PizzeriaState {
  * ceiling rises with the kitchen: the bigger the shop, the more the chain expects it to make.
  */
 export function nightlyQuota(state: PizzeriaState): number {
-  return Math.min(QUOTA_CEILING_BASE + QUOTA_CEILING_PER_OVEN * (state.oven - 1), QUOTA_START + state.shifts * QUOTA_STEP);
+  const base = Math.min(QUOTA_CEILING_BASE + QUOTA_CEILING_PER_OVEN * (state.oven - 1), QUOTA_START + state.shifts * QUOTA_STEP);
+  // The weekend rush: a busier night, and MegaSlice expects the till to show it.
+  return weekendRush(state.shifts) ? Math.round(base * WEEKEND.quotaScale) : base;
 }
 
 /** The first night's quota, its nightly climb, and the ceiling for each oven tier past the first. */

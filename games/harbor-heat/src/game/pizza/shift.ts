@@ -14,6 +14,7 @@ import { nightRules, scoreNight } from "./nights";
 import { dropFloor, DUSK_HOUR, FLOOR_HEIGHT, hoursUntilDusk, shiftOpen, waterEffect, type DropFloor } from "../tide/tide";
 import { tideStore, waterAt } from "../tide/tideRuntime";
 import { customerById, LIGHTHOUSE_KEEPER, PIZZAS, pizzaById } from "./menu";
+import { CATERING_EVENTS, cateringDrop, cateringTonight, loyaltyStep, loyaltyTier, orderFor, SECRET_PIZZAS, WEEKEND, weekendRush, type CateringRun } from "./regulars";
 import { ageOrder, coldLimitOf, hottest, nextCaller, ORDER_MODS, parSeconds, repStars, rollMod, settleOrder, type Order, type OrderMod, type TipLine } from "./orders";
 import {
   buyUpgrade,
@@ -83,6 +84,8 @@ export interface Call {
   calledAt: number;
   /** The caller's extra request, if any; every box of the call carries it. */
   mod?: OrderMod;
+  /** Part of tonight's catering booking: it waits on the board without hanging up. */
+  catering?: string;
 }
 
 export interface DeliveryReceipt {
@@ -134,6 +137,8 @@ export interface ShiftState {
   streak?: number;
   /** Tonight's special: every box of it pays a bonus on top of the tip. */
   special?: string;
+  /** Tonight's catering booking and how far it has got, if the night has one. */
+  catering?: CateringRun;
 }
 
 export function freshShift(): ShiftState {
@@ -193,7 +198,7 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   let state = input;
   // A call left too long on the board walks to a rival pizzeria.
   const now = ctx.time.now();
-  const stale = state.board.filter((call) => now - call.calledAt > CALL_PATIENCE);
+  const stale = state.board.filter((call) => call.catering === undefined && now - call.calledAt > CALL_PATIENCE);
   if (stale.length > 0) {
     for (const call of stale) ctx.game.notices.push({ text: `${customerById(call.customerId)?.name ?? "A customer"} gave up waiting and called Carmine's Crust.`, tone: "warn" });
     state = { ...state, board: state.board.filter((call) => !stale.includes(call)), lost: state.lost + stale.reduce((sum, call) => sum + call.pizzas.length, 0) };
@@ -205,11 +210,14 @@ function tickCalls(ctx: GameContext, input: ShiftState, dt: number): ShiftState 
   // A new rider's very first call is the night market across the boardwalk: a short walk that teaches the loop.
   const firstEver = pizzeriaStore.read(ctx).deliveries === 0 && state.serial === 0 && !busy.has(FIRST_CALLER);
   const caller = firstEver ? (customerById(FIRST_CALLER) ?? null) : nextCaller({ rep: shopRep(ctx), hour: hourOf(ctx), busy, roll: roll(state.serial + 1), idaDue: state.idaDue });
-  const interval = callInterval(pizzeriaStore.read(ctx)) * (nightRules(ctx)?.callScale ?? 1);
+  const shop = pizzeriaStore.read(ctx);
+  const interval = callInterval(shop) * (nightRules(ctx)?.callScale ?? 1) * (weekendRush(shop.shifts) ? WEEKEND.callScale : 1);
   if (caller === null) return { ...state, nextCallIn: interval / 2 };
   const serial = state.serial + 1;
   const mod = firstEver ? undefined : rollMod(roll(serial * 3 + 11), shopRep(ctx));
-  const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas: caller.pizzas, calledAt: ctx.time.now(), ...(mod === undefined ? {} : { mod }) };
+  // A favourite orders Nonna's secret pie for them first.
+  const pizzas = orderFor(caller.id, caller.pizzas, shop.loyalty?.[caller.id] ?? 0);
+  const call: Call = { id: `c${serial}`, customerId: caller.id, pizzas, calledAt: ctx.time.now(), ...(mod === undefined ? {} : { mod }) };
   ctx.game.notices.push({ text: `New order${mod === undefined ? "" : ` · ${ORDER_MODS[mod].label.toUpperCase()}`} · ${caller.name}: "${caller.call}"`, tone: "info" });
   ctx.game.audio.play("oven_bell");
   return { ...state, serial, board: [...state.board, call], nextCallIn: interval, idaDue: caller.id === LIGHTHOUSE_KEEPER ? false : state.idaDue };
@@ -327,6 +335,22 @@ function closeTheShift(ctx: GameContext, state: ShiftState): ShiftState {
   return { ...freshShift(), serial: state.serial, summary };
 }
 
+/**
+ * Tonight's catering booking, if the night has one: one call per door on the board at opening, which
+ * wait without hanging up; the bonus pays when the last door has its box inside the window.
+ */
+function bookCatering(ctx: GameContext, state: ShiftState, shiftsWorked: number): ShiftState {
+  const event = cateringTonight(shiftsWorked);
+  if (event === null) return state;
+  let serial = state.serial;
+  const calls: Call[] = event.drops.map((customerId) => {
+    serial += 1;
+    return { id: `c${serial}`, customerId, pizzas: [event.pizza], calledAt: ctx.time.now(), catering: event.id };
+  });
+  ctx.game.notices.push({ text: `Catering booked: ${event.label}. ${event.drops.length} doors, one box each; all in ${Math.round(event.window / 60)} minutes from the first load pays $${event.bonus}.`, tone: "info" });
+  return { ...state, serial, board: [...calls, ...state.board], catering: { id: event.id, remaining: [...event.drops], startedAt: null, done: false } };
+}
+
 /** First-time lessons, each said once per career: what the water just did and what to do about it. */
 const HINTS: Record<string, string> = {
   drowned: "Your engine drowned: wheels can't run a canal. Push for a pink swap dock on the chart, or press H for the tow ($40).",
@@ -363,7 +387,10 @@ export function tickShift(ctx: GameContext, dt: number): void {
   if (open && state.openDay === null) {
     const special = PIZZAS[Math.floor(roll(dayOf(ctx) * 7 + 3) * PIZZAS.length)]?.id;
     state = { ...state, openDay: dayOf(ctx), summary: null, takings: 0, delivered: 0, best: 0, lost: 0, nextCallIn: 3, idaDue: true, streak: 0, ...(special === undefined ? {} : { special }) };
-    ctx.game.notices.push({ text: `Vell's is open! Tonight's special: ${pizzaById(special ?? "")?.label ?? "the house pie"}. The tide is coming in.`, tone: "success" });
+    const shop = pizzeriaStore.read(ctx);
+    const weekend = weekendRush(shop.shifts) ? " Weekend rush: calls come faster and the crowd tips more." : "";
+    ctx.game.notices.push({ text: `Vell's is open! Tonight's special: ${pizzaById(special ?? "")?.label ?? "the house pie"}.${weekend} The tide is coming in.`, tone: "success" });
+    state = bookCatering(ctx, state, shop.shifts);
   } else if (!open && state.openDay !== null) {
     shiftStore.write(ctx, closeTheShift(ctx, state));
     return;
@@ -455,12 +482,18 @@ function takeOrders(ctx: GameContext): void {
   let serial = state.serial;
   const taken = call.pizzas.slice(0, room).map((pizzaId): Order => {
     serial += 1;
-    return { id: `o${serial}`, customerId: call.customerId, pizzaId, heat: kitchen.ovenHeat, soak: 0, age: 0, par: call.mod === "rush" ? Math.round(par * 0.6) : par, ...(call.mod === undefined ? {} : { mod: call.mod }) };
+    return {
+      id: `o${serial}`, customerId: call.customerId, pizzaId, heat: kitchen.ovenHeat, soak: 0, age: 0, par: call.mod === "rush" ? Math.round(par * 0.6) : par,
+      ...(call.mod === undefined ? {} : { mod: call.mod }),
+      ...(call.catering === undefined ? {} : { catering: call.catering }),
+    };
   });
+  // The booking's clock starts when its first box leaves the oven.
+  const catering = call.catering !== undefined && state.catering !== undefined && state.catering.startedAt === null ? { ...state.catering, startedAt: ctx.time.now() } : state.catering;
   const left = call.pizzas.slice(room);
   const board = left.length === 0 ? state.board.slice(1) : [{ ...call, pizzas: left }, ...state.board.slice(1)];
   const customer = customerById(call.customerId);
-  shiftStore.write(ctx, { ...state, serial, board, bag: [...state.bag, ...taken], lastReceipt: null });
+  shiftStore.write(ctx, { ...state, serial, board, bag: [...state.bag, ...taken], lastReceipt: null, ...(catering === undefined ? {} : { catering }) });
   ctx.game.feedback.cue("pickup", `${taken.length} hot ${taken.length === 1 ? "box" : "boxes"} for ${customer?.name ?? "a customer"}${left.length > 0 ? ` (${left.length} still in the oven)` : ""}.`);
 }
 
@@ -541,6 +574,34 @@ function deliverHere(ctx: GameContext): void {
       total += extra;
     }
   }
+  // Regulars and favourites tip more; the weekend crowd tips more again.
+  const shopNow = pizzeriaStore.read(ctx);
+  const loyal = loyaltyTier(shopNow.loyalty?.[customerId] ?? 0);
+  if (loyal !== null) {
+    const extra = Math.round((total - price) * loyal.tip);
+    if (extra > 0) {
+      lines.push({ label: loyal.label, amount: extra });
+      total += extra;
+    }
+  }
+  if (weekendRush(shopNow.shifts)) {
+    const extra = Math.round((total - price) * (WEEKEND.tipScale - 1));
+    if (extra > 0) {
+      lines.push({ label: WEEKEND.label, amount: extra });
+      total += extra;
+    }
+  }
+  // A catering booking pays its bonus on the last door, if every box landed inside its window.
+  let catering = state.catering;
+  const booking = catering === undefined ? undefined : CATERING_EVENTS.find((event) => event.id === catering!.id);
+  if (catering !== undefined && booking !== undefined && handed.some((order) => order.catering === booking.id)) {
+    const step = cateringDrop(booking, catering, customerId, ctx.time.now());
+    catering = step.run;
+    if (step.bonus > 0) {
+      lines.push({ label: `Catering: ${booking.label}`, amount: step.bonus });
+      total += step.bonus;
+    } else if (step.run.done) ctx.game.notices.push({ text: `${booking.label}: every box landed, but too late for the bonus.`, tone: "warn" });
+  }
   // A hot streak of great drops lifts the tips; a bad one ends it.
   const streak = state.streak ?? 0;
   const lift = Math.round((total - price) * STREAK_STEP * Math.min(STREAK_CAP, streak));
@@ -555,8 +616,11 @@ function deliverHere(ctx: GameContext): void {
   const shop = pizzeriaStore.read(ctx);
   const driving = streetPlayOf(ctx).drivingVehicleId();
   const hull = driving !== null && vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.medium === "water";
+  const loyaltyBefore = shop.loyalty?.[customerId] ?? 0;
+  const loyaltyAfter = loyaltyBefore + good;
   pizzeriaStore.write(ctx, {
     ...shop,
+    loyalty: { ...(shop.loyalty ?? {}), [customerId]: loyaltyAfter },
     deliveries: shop.deliveries + handed.length,
     goodDeliveries: shop.goodDeliveries + good,
     hullDrops: (shop.hullDrops ?? 0) + (hull ? handed.length : 0),
@@ -564,6 +628,17 @@ function deliverHere(ctx: GameContext): void {
     upstairsDrops: (shop.upstairsDrops ?? 0) + (floor === "door" ? 0 : 1),
   });
   scoreNight(ctx, handed.length);
+  const promoted = loyaltyStep(loyaltyBefore, loyaltyAfter);
+  if (promoted !== null) {
+    const secret = SECRET_PIZZAS[customerId];
+    const name = customer?.name ?? "A customer";
+    ctx.game.notices.push({
+      text: promoted.id === "favourite" && secret !== undefined
+        ? `${name} is a Favourite: +${Math.round(promoted.tip * 100)}% tips, and Nonna will make them her secret ${secret.label.replace(" (secret)", "")}.`
+        : `${name} is a Regular now: +${Math.round(promoted.tip * 100)}% on every tip.`,
+      tone: "success",
+    });
+  }
   const thanks = customer?.thanks[worst] ?? "Thanks.";
   shiftStore.write(ctx, {
     ...state,
@@ -574,6 +649,7 @@ function deliverHere(ctx: GameContext): void {
     idaDue: customerId === LIGHTHOUSE_KEEPER ? true : state.idaDue,
     lastReceipt: { customerId, lines, total, thanks, floor, at: ctx.time.now() },
     streak: nextStreak,
+    ...(catering === undefined ? {} : { catering }),
   });
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${total}`, kind: "loot" });
   ctx.game.audio.play("till_ring");

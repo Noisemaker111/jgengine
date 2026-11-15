@@ -1,4 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
+import { CATERING_EVENTS, weekendRush } from "../pizza/regulars";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/ui/hooks";
@@ -36,6 +37,10 @@ interface ShiftView {
   quota: number;
   streak: number;
   special: string | null;
+  /** Tonight's catering booking and the doors it still owes, while it runs. */
+  catering: string | null;
+  /** The weekend rush is on tonight. */
+  weekend: boolean;
   /** Tonight's set piece and its progress, when one is running. */
   night: string | null;
   water: string;
@@ -68,6 +73,15 @@ function shiftView(ctx: GameContext): ShiftView | null {
       return `${rules.label.toUpperCase()} · ${nightStore.read(ctx).score}/${count}`;
     })(),
     special: shift.special === undefined || !tide.open ? null : (pizzaById(shift.special)?.label ?? null),
+    catering: (() => {
+      const run = shift.catering;
+      const event = run === undefined ? undefined : CATERING_EVENTS.find((e) => e.id === run.id);
+      if (run === undefined || event === undefined || run.done || !tide.open) return null;
+      const left = run.remaining.length;
+      const clock = run.startedAt === null ? "" : ` · ${Math.max(0, Math.ceil((event.window - (ctx.time.now() - run.startedAt)) / 60))} min`;
+      return `Catering · ${event.label} · ${left} ${left === 1 ? "door" : "doors"} left${clock}`;
+    })(),
+    weekend: tide.open && weekendRush(shop.shifts),
     quota: nightlyQuota(shop),
     water: streetPlayOf(ctx).telemetry().water,
     next: tide.next === null ? null : `${tide.next.label} in ${tide.next.minutes} min`,
@@ -150,6 +164,8 @@ export function ShiftPanel() {
       {view.next === null ? null : <Text size={12} color="#9fd8ea" text={`Next · ${view.next}`} />}
       {view.night === null ? null : <RuneView padding={[2, 6, 2, 6]} radius={3} fill="#5b1e18"><Text family={DISPLAY} size={14} color={HH.amber} text={view.night} /></RuneView>}
       {view.special === null ? null : <Text size={12} color={HH.amber} text={`Special · ${view.special}`} />}
+      {view.weekend ? <Text size={12} color={HH.amber} text="Weekend rush · faster calls, bigger tips" /> : null}
+      {view.catering === null ? null : <Text size={12} color="#ffb6d0" text={view.catering} />}
       {view.water === "" ? null : (
         // Planing is the hull at its best (teal); every other water state is a warning (siren red).
         <RuneView padding={[2, 6, 2, 6]} radius={3} fill={view.water === "PLANING" ? "#1f8f8a" : HH.siren}><Text mono size={12} weight={700} color={HH.cream} text={view.water} /></RuneView>

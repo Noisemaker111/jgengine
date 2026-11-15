@@ -21,6 +21,8 @@ export interface Order {
   par: number;
   /** What the caller asked for on top: it bends the rules of this one box. */
   mod?: OrderMod;
+  /** The catering booking this box belongs to (`regulars.ts`), if any. */
+  catering?: string;
 }
 
 /**

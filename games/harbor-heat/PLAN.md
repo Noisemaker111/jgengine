@@ -167,6 +167,12 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
 
 ## Gaps
 
+- Far-cell proxies (`packages/core/src/instancing/staticDrawPool.draw.ts`): a static model with a
+  scanned material override (Harbor Heat's buildings) does not appear in a streamed-out cell's proxy,
+  while plain models in the same cell do, so a parked block can show its props without its buildings.
+  Seen in a noon capture over the port from Vell's. The lit panes now live inside the building model,
+  so they go with it. Separately, another branch fixed `structureSolids` placing building solids without
+  the world's roads (`packages/core/src/world/worldSolids.ts`); not duplicated here.
 - Water surface feature: a rising, district-clipped flood plane with ripples and wakes belongs in
   `packages/core/src/water/` (beside `seaState`) as a "tidal sheet" adopters can raise; High Tide Pizza is
   the first adopter (the flood sheets are game-local authored discs for now). Second adopter moves it up.
@@ -207,6 +213,10 @@ circuits, 3 upgrade tracks (4/4/3 tiers), 5 fleet vehicles plus the rival scoote
   the Tide Rush ladder, the King-tide blimp line (rooftops take boxes only from the air or a boat), and
   the jet-ski and gondola on the engine's boat model (planing, wake, bounce off walls). The crime layer
   and all combat code are deleted; HHPD is the Canal Wardens.
+- Depth round: regulars and secret pies, the weekend rush and catering events (`regulars.ts`, wired
+  in `shift.ts`, on the tide card). The career sim now counts regulars and the weekend: a steady rider
+  saves the shop on night 16, a 70%-pace rider on night 26 with no foreclosure (catering bonuses are
+  not counted, so both are conservative). Riders sit astride (engine Ride pose).
 - Balance: `src/game/pizza/career.ts` plays a whole career on paper with the game's own numbers (call
   timeline, board, patience, tide, tips, chapter cash, quota, note). A steady rider saves the shop on
   night 19 (about two hours) with all eight chapters and no foreclosure; a rider at 70% pace on night 31

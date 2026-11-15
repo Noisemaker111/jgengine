@@ -7,6 +7,7 @@ import { secondsAtHour, DAY_SECONDS } from "../clock";
 import { streetPlayOf } from "../streetPlay";
 import { tickTide, waterAt, FLOOD_SHEETS } from "../tide/tideRuntime";
 import { buyUpgrade, STARTING_DEBT, UPGRADES } from "./pizzeria";
+import { CATERING_EVENTS, orderFor, SECRET_PIZZAS } from "./regulars";
 import { CALL_PATIENCE, customerSpot, OVEN, SHOP_BLIMP, pizzeriaStore, RIVAL_ID, SHOP_SCOOTER, shiftStore, SWAP_DOCKS, tickShift } from "./shift";
 
 function boot() {
@@ -179,6 +180,58 @@ describe("a night at Vell's", () => {
     run(ctx, 2);
     expect(ctx.game.notices.list().filter((n) => n.text.startsWith("Two boxes in the bag")).length).toBe(notices);
   });
+  test("a catering night books three doors that wait on the board, and the last hot drop pays the bonus", () => {
+    const ctx = boot();
+    pizzeriaStore.write(ctx, { ...pizzeriaStore.read(ctx), shifts: 2, deliveries: 9 });
+    at(ctx, 18.05);
+    moveTo(ctx, OVEN);
+    run(ctx, 1);
+    const event = CATERING_EVENTS.find((e) => e.id === shiftStore.read(ctx).catering?.id)!;
+    expect(event).toBeDefined();
+    const booked = shiftStore.read(ctx).board.filter((call) => call.catering === event.id);
+    expect(booked.map((call) => call.customerId)).toEqual([...event.drops]);
+    // Catering calls never hang up.
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), board: booked.map((call) => ({ ...call, calledAt: ctx.time.now() - CALL_PATIENCE - 50 })), nextCallIn: 999 });
+    run(ctx, 0.5);
+    expect(shiftStore.read(ctx).board.filter((call) => call.catering === event.id).length).toBe(3);
+    // Hand each door its box in time; only the last pays the bonus line.
+    const now = ctx.time.now();
+    shiftStore.write(ctx, {
+      ...shiftStore.read(ctx),
+      board: [],
+      catering: { ...shiftStore.read(ctx).catering!, startedAt: now },
+      bag: event.drops.map((customerId, i) => ({ id: `k${i}`, customerId, pizzaId: event.pizza, heat: 95, soak: 0, age: 5, par: 90, catering: event.id })),
+      rivalIn: 999,
+    });
+    for (const [i, door] of event.drops.entries()) {
+      moveTo(ctx, customerSpot(door)!);
+      if (streetPlayOf(ctx).drivingVehicleId() !== null) streetPlayOf(ctx).exitVehicle(ctx, true);
+      moveTo(ctx, customerSpot(door)!);
+      expect(ctx.game.commands.run("pizza.deliver", {}).status).not.toBe("rejected");
+      const lines = shiftStore.read(ctx).lastReceipt!.lines.map((line) => line.label);
+      expect(lines.includes(`Catering: ${event.label}`)).toBe(i === event.drops.length - 1);
+    }
+    expect(shiftStore.read(ctx).catering?.done).toBe(true);
+  });
+
+  test("a customer's third good drop makes them a regular who tips more, and a favourite orders the secret pie", () => {
+    const ctx = boot();
+    at(ctx, 18.2);
+    run(ctx, 1);
+    const spot = customerSpot("gus")!;
+    moveTo(ctx, spot);
+    pizzeriaStore.write(ctx, { ...pizzeriaStore.read(ctx), loyalty: { gus: 2 } });
+    const box = { id: "g1", customerId: "gus", pizzaId: "margherita", heat: 95, soak: 0, age: 10, par: 60 };
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [box], board: [], nextCallIn: 999, rivalIn: 999 });
+    ctx.game.commands.run("pizza.deliver", {});
+    expect(pizzeriaStore.read(ctx).loyalty?.gus).toBe(3);
+    expect(ctx.game.notices.list().some((n) => n.text.startsWith("Gus Okoro is a Regular"))).toBe(true);
+    shiftStore.write(ctx, { ...shiftStore.read(ctx), bag: [{ ...box, id: "g2" }] });
+    ctx.game.commands.run("pizza.deliver", {});
+    expect(shiftStore.read(ctx).lastReceipt!.lines.some((line) => line.label === "Regular")).toBe(true);
+    expect(orderFor("gus", ["margherita"], 7)[0]).toBe(SECRET_PIZZAS.gus!.id);
+  });
+
   test("great drops in a row build a hot streak on the tips; a cold box ends it", () => {
     const ctx = boot();
     at(ctx, 18.2);

@@ -1,7 +1,7 @@
 /**
  * A whole career played on paper: a competent rider working shift after shift with the game's own
- * numbers (callers, menu, ovens, bags, toppings, tips, the tide, the quota, the story's chapter cash and
- * the note) until the shop is saved. No scene: travel is distance over a vehicle's working speed, a box
+ * numbers (callers, menu, ovens, bags, toppings, tips, regulars, the weekend rush, the tide, the quota,
+ * the story's chapter cash and the note) until the shop is saved. No scene: travel is distance over a vehicle's working speed, a box
  * cools while it rides, and each night closes against MegaSlice's quota. `career.test.ts` asserts the
  * pacing; the numbers it prints are the balance sheet the plan quotes.
  */
@@ -15,6 +15,7 @@ import { customerById } from "./menu";
 import { ageOrder, nextCaller, parSeconds, repStars, settleOrder, type Order } from "./orders";
 import { buyUpgrade, callInterval, closeShift, freshPizzeria, kitchenOf, nextTier, ovenCapacity, payDebt, type PizzeriaState, type UpgradeKind } from "./pizzeria";
 import { BOARD_SIZE, CALL_PATIENCE } from "./shift";
+import { loyaltyTier, WEEKEND, weekendRush } from "./regulars";
 
 const OVEN = (() => {
   const marker = findEditorMarker(editorLayers, "pizzeria_oven")!;
@@ -110,7 +111,8 @@ export function playCareer(maxNights = 60, pace = 1): CareerResult {
   for (let night = 1; night <= maxNights && !shop.saved; night += 1) {
     const kitchen = kitchenOf(shop);
     const capacity = ovenCapacity(shop);
-    const interval = callInterval(shop);
+    const weekend = weekendRush(shop.shifts);
+    const interval = callInterval(shop) * (weekend ? WEEKEND.callScale : 1);
     let t = 0;
     let takings = 0;
     let delivered = 0;
@@ -174,9 +176,13 @@ export function playCareer(maxNights = 60, pace = 1): CareerResult {
           const fresh: Order = { id: `c${serial}`, customerId, pizzaId: box.pizzaId, heat: kitchen.ovenHeat, soak: 0, age: 0, par };
           const order = ageOrder(fresh, age, { kitchen, soakPerSecond: depth > 0 && depth < CANAL_DEPTH ? 0.15 : 0, altitude: false });
           const settled = settleOrder(order, { kitchen, floor, stack });
-          takings += settled.total;
+          // Regulars tip more, and the weekend crowd more again (as `shift.ts` pays them).
+          const tip = settled.total - settled.price;
+          const loyal = loyaltyTier(shop.loyalty?.[customerId] ?? 0)?.tip ?? 0;
+          takings += settled.total + Math.round(tip * loyal) + (weekend ? Math.round(tip * (1 + loyal) * (WEEKEND.tipScale - 1)) : 0);
           delivered += 1;
-          shop = { ...shop, deliveries: shop.deliveries + 1, goodDeliveries: shop.goodDeliveries + (settled.verdict === "bad" ? 0 : 1) };
+          const good = settled.verdict === "bad" ? 0 : 1;
+          shop = { ...shop, deliveries: shop.deliveries + 1, goodDeliveries: shop.goodDeliveries + good, loyalty: { ...(shop.loyalty ?? {}), [customerId]: (shop.loyalty?.[customerId] ?? 0) + good } };
         }
         from = spot;
       }

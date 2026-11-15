@@ -3,6 +3,8 @@
  * scene marker they take the box at, so moving a balcony is dragging a marker in the editor.
  */
 
+import { secretPizzaById } from "./regulars";
+
 export interface Pizza {
   id: string;
   label: string;
@@ -21,7 +23,8 @@ export const PIZZAS: readonly Pizza[] = [
   { id: "nonna_special", label: "Nonna's Sunday Special", price: 34 },
 ];
 
-export const pizzaById = (id: string): Pizza | undefined => PIZZAS.find((pizza) => pizza.id === id);
+/** A pie on the board, or a favourite's secret one (`regulars.ts`). */
+export const pizzaById = (id: string): Pizza | undefined => PIZZAS.find((pizza) => pizza.id === id) ?? secretPizzaById(id);
 
 /** How a customer behaves: who they are, where, how much they order and what they care about. */
 export interface Customer {
