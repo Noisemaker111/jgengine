@@ -30,12 +30,18 @@ export const BUILDING_SPECS: readonly BuildingSpec[] = [
 export const buildingsForZone = (zone: CityZone): readonly BuildingSpec[] =>
   BUILDING_SPECS.filter((spec) => spec.zones.includes(zone));
 
-/** Storey counts the lit-window panels are authored for (`scripts/author-tide.mjs`). */
+/** Storey counts the lit blocks are authored for (`scripts/author-city-block.mjs`). */
 export const WINDOW_ROWS = [2, 3, 4, 5, 6, 8, 10, 14, 20] as const;
 
-/** The lit-window panel whose pane rows best match a building's storeys. */
-export function windowLightsFor(floors: number): string {
+/** The pane rows that best match a building's storeys. */
+export function windowRowsFor(floors: number): number {
   let best: number = WINDOW_ROWS[0];
   for (const rows of WINDOW_ROWS) if (Math.abs(rows - floors) < Math.abs(best - floors)) best = rows;
-  return `obj_window_lights_${best}`;
+  return best;
 }
+
+/**
+ * The catalog id of one cast at one storey count: the block with that many rows of lit panes built
+ * into its street and back walls, so the windows stand, scale and stream with the building.
+ */
+export const buildingCastId = (spec: BuildingSpec, rows: number): string => `${spec.id}_${rows}`;

@@ -8,16 +8,16 @@ export interface ObjectDef {
   fixture?: boolean;
 }
 
-import { BUILDING_SPECS, WINDOW_ROWS } from "../world/buildings";
+import { BUILDING_SPECS, buildingCastId, WINDOW_ROWS } from "../world/buildings";
 
-const BUILDING_OBJECTS: readonly ObjectDef[] = BUILDING_SPECS.map((b) => ({
-  id: b.id,
+const BUILDING_OBJECTS: readonly ObjectDef[] = BUILDING_SPECS.flatMap((b) => WINDOW_ROWS.map((rows) => ({
+  id: buildingCastId(b, rows),
   label: "Building",
   color: "#8a8f99",
   // The unit block; each placement scales it to its lot (see `world/setup.ts`).
   footprint: { w: 1, h: 1, d: 1 },
   solid: true,
-}));
+})));
 
 export const OBJECTS: readonly ObjectDef[] = [
   { id: "obj_dispatch", label: "Vell's Pizzeria", color: "#d93a2f", footprint: { w: 3, h: 3.5, d: 2.4 }, solid: true },
@@ -26,7 +26,6 @@ export const OBJECTS: readonly ObjectDef[] = [
   // tide at runtime; the lighthouse, the submarine, the festoon lights, the swap docks and the shop sign
   // are `prop` markers in the scene document.
   { id: "obj_order_beacon", label: "Order drop", color: "#ffcf4a", footprint: { w: 1, h: 3, d: 1 }, solid: false, fixture: true },
-  ...WINDOW_ROWS.map((rows) => ({ id: `obj_window_lights_${rows}`, label: "Lit windows", color: "#ffd59a", footprint: { w: 1, h: 1, d: 0.05 }, solid: false, fixture: true })),
   { id: "obj_wake", label: "Wake", color: "#e9fbf8", footprint: { w: 1, h: 0.05, d: 1 }, solid: false, fixture: true },
   { id: "obj_tide_water", label: "Flood water", color: "#0d3442", footprint: { w: 2, h: 0.05, d: 2 }, solid: false, fixture: true },
   { id: "obj_lighthouse", label: "Gull Point lighthouse", color: "#f4efe6", footprint: { w: 6, h: 19, d: 6 }, solid: true },

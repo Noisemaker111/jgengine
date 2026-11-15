@@ -3,7 +3,7 @@ import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 
-import { BUILDING_SPECS, WINDOW_ROWS } from "./buildings";
+import { BUILDING_SPECS, buildingCastId, WINDOW_ROWS } from "./buildings";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "../assets";
@@ -149,14 +149,14 @@ const AUTHORED_OBJECTS: Record<string, ModelConfig> = {
  * Native size (no `targetHeight`): every placement scales it to its lot through `visual.scale`.
  */
 const BUILDING_MODELS: Record<string, ModelConfig> = Object.fromEntries(
-  BUILDING_SPECS.map((b) => [
-    b.id,
+  BUILDING_SPECS.flatMap((b) => WINDOW_ROWS.map((rows) => [
+    buildingCastId(b, rows),
     {
-      url: CITY_BLOCK_URL,
+      url: art(`city-block-lit-${rows}`),
       anchor: "origin",
       material: { color: b.paint, scan: librarySurfaceScan(b.facade, { tint: b.scanTint }), materials: ["facade"] },
     } satisfies ModelConfig,
-  ]),
+  ])),
 );
 
 export const objectModels: Record<string, ModelConfig> = (() => {
@@ -188,7 +188,6 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_order_beacon: { url: art("order-beacon"), anchor: "origin" },
     obj_tide_water: { url: art("tide-water"), anchor: "origin" },
     obj_wake: { url: art("wake"), anchor: "origin" },
-    ...Object.fromEntries(WINDOW_ROWS.map((rows) => [`obj_window_lights_${rows}`, { url: art(`window-lights-${rows}`), anchor: "origin" } satisfies ModelConfig])),
     obj_lighthouse: { url: art("lighthouse"), anchor: "origin" },
     obj_submarine: { url: art("submarine"), anchor: "origin" },
     obj_string_lights: { url: art("string-lights"), anchor: "origin" },

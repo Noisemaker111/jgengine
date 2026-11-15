@@ -445,35 +445,6 @@ function buildMast() {
 await exportModel('blimp-mast', buildMast());
 
 /**
- * Lit windows for a building's street face at night: a unit panel (x -0.5..0.5, y 0..1) of glowing
- * window panes, scaled to the face's width and height where it is placed. One file per storey count,
- * so a pane row lines up with a storey; about half the flats have a lamp on, a few the blue of a TV,
- * and the ground floor stays dark (shopfronts and awnings, and the king tide reaches it).
- */
-export const WINDOW_ROWS = [2, 3, 4, 5, 6, 8, 10, 14, 20];
-function buildWindowLights(rows) {
-  const batch = new Batch();
-  const warm = glow('window warm', '#ffd59a', 1.3, { roughness: 0.6 });
-  const amber = glow('window amber', '#ffae5c', 1.2, { roughness: 0.6 });
-  const tv = glow('window tv', '#8fe0ff', 1.0, { roughness: 0.6 });
-  const cols = 6;
-  let n = rows * 7919;
-  const rand = () => { n = (n * 16807) % 2147483647; return n / 2147483647; };
-  // The ground floor stays dark: shopfronts and awnings there, and the king tide reaches it.
-  for (let r = 1; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const pick = rand();
-      if (pick > 0.55) continue;
-      const material = pick < 0.06 ? tv : pick < 0.2 ? amber : warm;
-      const w = 0.5 / cols, h = 0.48 / rows;
-      batch.add(material, new THREE.PlaneGeometry(w, h), [-0.5 + (c + 0.5) / cols, (r + 0.55) / rows, 0]);
-    }
-  }
-  return batch.group('window lights');
-}
-for (const rows of WINDOW_ROWS) await exportModel(`window-lights-${rows}`, buildWindowLights(rows));
-
-/**
  * A hull's wake: two white arms spreading back from the stern in a V, a churned band down the middle,
  * on a unit footprint (z 0 at the stern to -1 behind, x -0.5..0.5 at the far end) the boat scales by
  * its speed every tick.
