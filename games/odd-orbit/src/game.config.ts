@@ -18,6 +18,11 @@ import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
 import { householdStore } from "./game/session/store";
 import { orbitSession } from "./game/session/lifecycle";
+import { menuPane } from "@jgengine/core/game/gameFlow";
+import { dayGuide, GUIDE_KINDS } from "./game/sim/goal";
+
+/** The menu page as a number for the probe: none, controls, settings, credits. */
+const MENU_PANE_CODE: Record<string, number> = { none: 0, controls: 1, settings: 2, credits: 3 };
 import { pairKey } from "./game/session/types";
 import { metricValue } from "./game/sim/charter";
 import { FURNITURE_BY_ID } from "./game/objects/catalog";
@@ -101,6 +106,13 @@ export const game = defineGame({
         furnishings: ctx.scene.object.list().filter((object) => FURNITURE_BY_ID[object.catalogId] !== undefined).length,
         pantry: state.pantry, debt: Math.round(state.debt),
         screen: orbitSession.read(ctx).screen === null ? 0 : orbitSession.read(ctx).screen === "paused" ? 2 : 1,
+        menuPane: MENU_PANE_CODE[menuPane(ctx) ?? "none"] ?? 0,
+        clockPaused: ctx.time.snapshot().paused ? 1 : 0,
+        // The next-step note as numbers, so a proof can follow only the game's own guidance.
+        guide: GUIDE_KINDS.indexOf(dayGuide(state, ctx.scene.object.list()).kind),
+        guideSlot: dayGuide(state, ctx.scene.object.list()).slot,
+        sealed: boarding?.rooms.filter((room) => room.sealed).length ?? 0,
+        reviews: boarding?.reviews.length ?? 0,
       };
     },
   },

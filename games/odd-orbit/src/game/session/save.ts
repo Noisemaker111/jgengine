@@ -298,7 +298,30 @@ export function restoreOrbitSave(ctx: GameContext, save: OrbitSave): void {
   ctx.hydrate({ objects: detached.objects, entities: detached.entities, stats: detached.stats });
   householdStore.write(ctx, detached.household);
 }
-export function readOrbitSave(storage: KeyValueStorage | null = defaultKeyValueStorage(), slot: string = ORBIT_SLOTS[0]): { save: OrbitSave | null; damaged: boolean; unavailable: boolean } {
+/**
+ * Where houses are written: the browser's storage, or, where there is none (a headless run), one
+ * in-memory store per host save backend, so a restarted session on the same host finds the house it
+ * left and a new host starts empty. `bindOrbitStorage` points it at the live context's host.
+ */
+const memoryStores = new WeakMap<object, Map<string, string>>();
+const loose = new Map<string, string>();
+let bound: KeyValueStorage | null = null;
+function memoryStorage(map: Map<string, string>): KeyValueStorage {
+  return { getItem: (key) => map.get(key) ?? null, setItem: (key, value) => { map.set(key, value); }, removeItem: (key) => { map.delete(key); } };
+}
+export function bindOrbitStorage(ctx: GameContext): void {
+  const browser = defaultKeyValueStorage();
+  if (browser !== null) { bound = browser; return; }
+  const host = ctx.game.save?.backend;
+  let store = host === undefined ? loose : memoryStores.get(host);
+  if (store === undefined && host !== undefined) { store = new Map(); memoryStores.set(host, store); }
+  bound = memoryStorage(store ?? loose);
+}
+export function orbitStorage(): KeyValueStorage | null {
+  return bound ?? defaultKeyValueStorage();
+}
+
+export function readOrbitSave(storage: KeyValueStorage | null = orbitStorage(), slot: string = ORBIT_SLOTS[0]): { save: OrbitSave | null; damaged: boolean; unavailable: boolean } {
   if (storage === null) return { save: null, damaged: false, unavailable: true };
   let damaged = false;
   let unavailable = false;
@@ -314,7 +337,7 @@ export function readOrbitSave(storage: KeyValueStorage | null = defaultKeyValueS
   });
   return { save: cell.get(), damaged, unavailable };
 }
-export function writeOrbitSave(ctx: GameContext, storage: KeyValueStorage | null = defaultKeyValueStorage(), slot: string = ORBIT_SLOTS[0]): boolean {
+export function writeOrbitSave(ctx: GameContext, storage: KeyValueStorage | null = orbitStorage(), slot: string = ORBIT_SLOTS[0]): boolean {
   if (storage === null) return false;
   let save: OrbitSave;
   try { save = captureOrbitSave(ctx); } catch { return false; }

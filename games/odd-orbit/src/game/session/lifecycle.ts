@@ -1,4 +1,7 @@
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { rebindAction } from "@jgengine/core/game/controlGate";
+import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { ClockSnapshot } from "@jgengine/core/time/simClock";
@@ -6,7 +9,7 @@ import type { ClockSnapshot } from "@jgengine/core/time/simClock";
 import { WORLD_SEED } from "../../world";
 import { setupWorld } from "../sim/setup";
 import { resetAgents, resetBook } from "../agents";
-import { ORBIT_SLOTS, orbitProfile, readOrbitSave, restoreOrbitSave, writeOrbitSave } from "./save";
+import { bindOrbitStorage, ORBIT_SLOTS, orbitProfile, readOrbitSave, restoreOrbitSave, writeOrbitSave } from "./save";
 import { probeShift } from "./shiftSessions";
 import { householdStore } from "./store";
 import { createHousehold } from "./types";
@@ -49,6 +52,7 @@ export function checkpointOrbit(ctx: GameContext): void {
 }
 
 export function prepareOrbit(ctx: GameContext): void {
+  bindOrbitStorage(ctx);
   const initialClock = ctx.time.snapshot();
   const found = ctx.player.userId === "ui-preview" ? { slot: null, damaged: false, unavailable: false } : newestOrbitSave();
   const loaded = found.slot === null
@@ -126,4 +130,8 @@ export function registerOrbitLifecycle(ctx: GameContext): void {
   define<Record<string, never>>("orbit.pause", state => pauseOrbit(state));
   define<Record<string, never>>("orbit.title", state => withdrawOrbit(state));
   define<Record<string, never>>("orbit.checkpoint", state => checkpointOrbit(state));
+  // The shared menu verbs, so a pad, a test or a proof runs what the menus run.
+  define<Record<string, never>>("start", state => { showMenuPane(state, null); startOrbit(state, undefined, ""); });
+  define<{ pane: MenuPane | null }>("menu.pane", (state, input) => showMenuPane(state, input.pane));
+  define<{ action: string; codes: ActionCodes | null }>("settings.rebind", (state, input) => rebindAction(state, input.action, input.codes));
 }

@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGame, useGameCalendar } from "@jgengine/ui/hooks";
+import { useGame, useGameCalendar, useGameStore } from "@jgengine/ui/hooks";
+import { menuPane, showMenuPane } from "@jgengine/core/game/gameFlow";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
@@ -228,7 +229,10 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
   ];
   const openCareer = (slot: string) => whileLoading("Opening the front door", async () => { if (!openOrbitSlot(ctx, slot)) setNotice(`${orbitSlotLabel(slot)} is empty.`); else setName(orbitProfile.name); });
   const startCareer = () => void whileLoading("Switching on the sign", async () => { newOrbitSlot(ctx, emptySlot, name); });
-  const choose = (id: string) => { setActive(id); if (id === "careers") refreshOrbitSlots(); if (phone) setSheet(true); };
+  const choose = (id: string) => { setActive(id); showMenuPane(ctx, id === "credits" || id === "settings" ? id : null); if (id === "careers") refreshOrbitSlots(); if (phone) setSheet(true); };
+  // A pane opened by the shared `menu.pane` verb (a pad, a test) shows here too.
+  const sharedPane = useGameStore((c) => menuPane(c));
+  useEffect(() => { if (sharedPane !== null) setActive(sharedPane === "controls" ? "settings" : sharedPane); }, [sharedPane]);
 
   const note = (() => {
     if (active === "continue") {
@@ -306,6 +310,8 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const { width, height } = useRuneViewport(), phone = width < 600;
   const [notice, setNotice] = useState<string | null>(null);
   const [active, setActive] = useState(menuFocus.id ?? "resume");
+  const sharedPane = useGameStore((c) => menuPane(c));
+  useEffect(() => { if (sharedPane !== null) setActive(sharedPane === "controls" ? "settings" : sharedPane); }, [sharedPane]);
   const [leaf, setLeaf] = useState(menuFocus.id !== null && phone);
   const slotLabel = orbitSlotLabel(session.slot);
   const chapters: Chapter[] = [
@@ -319,6 +325,7 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const close = () => commands.run("orbit.resume", {});
   const confirm = (id: string) => {
     setActive(id);
+    showMenuPane(ctx, id === "credits" || id === "settings" ? id : null);
     if (id === "resume") close();
     else if (id === "save") void whileLoading("Writing up the ledger", async () => { const written = await saveOrbitSlot(ctx); setNotice(written ? `Written into ${slotLabel}` : "This browser could not keep the house"); });
     else if (id === "title") void whileLoading("Writing up the ledger", async () => { await saveOrbitSlot(ctx); commands.run("orbit.title", {}); });
