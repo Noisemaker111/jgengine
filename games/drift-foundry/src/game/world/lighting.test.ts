@@ -17,7 +17,7 @@ describe("store lighting zones", () => {
     for (const run of [0, 200, 400]) {
       const showroom = lightOnCourse("electronics", run);
       expect(showroom.key).toBeLessThan(0.2);
-      expect(showroom.fill).toBeLessThan(0.4);
+      expect(showroom.fill).toBeLessThan(0.3);
       const dock = lightOnCourse("loading-bay", run);
       expect(dock.keyColor).toBe("#ffa14a");
       const garden = lightOnCourse("garden-center", run);

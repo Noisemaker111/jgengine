@@ -1,4 +1,4 @@
-import type { BiomeFog, BiomeSky, OceanPalette, TerrainColors } from "@jgengine/core/world/features";
+import type { BiomeBandWeather, BiomeFog, BiomeSky, OceanPalette, TerrainColors } from "@jgengine/core/world/features";
 import type { LightingZone } from "@jgengine/core/lighting/lightingZones";
 import type { CoursePiece, CourseSpanCycle, CourseVec2 } from "@jgengine/core/roads/routeCourse";
 
@@ -124,7 +124,7 @@ export interface TrackDef {
   ground: TerrainColors;
   fog: BiomeFog;
   sky: BiomeSky;
-  weather?: "rain" | "snow";
+  weather?: "rain" | "snow" | BiomeBandWeather;
   /** The department's own light over the store rig: a dark showroom, a sodium-lit dock. Unset keeps the strip lights. */
   light?: DepartmentLight;
   /** Ground level around the course, metres; the course rides its own elevation and banks down to this. */

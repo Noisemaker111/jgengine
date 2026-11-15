@@ -92,6 +92,7 @@ export const game = defineGame({
       toys: ["startRun", { name: "run.autopilot", input: { event: "empty-cart", openAll: true } }],
       garden: ["startRun", { name: "run.autopilot", input: { event: "cart-stuffer", openAll: true } }],
       electronics: ["startRun", { name: "run.autopilot", input: { event: "lights-out", openAll: true } }],
+      dock: ["startRun", { name: "run.autopilot", input: { event: "grudge-brick", openAll: true } }],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
       // The plow display dodged and the first box wall in the cart's face: the sign says where the plow is.

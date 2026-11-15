@@ -50,18 +50,18 @@ Genres: racing. 17/17 proven.
 ## State
 
 - Built: carts with weight-driven handling, shelf grabs, five power-ups, style meter, self-checkout
-  receipt, six departments (five under a warehouse roof with back walls, the Garden Centre outdoors),
+  receipt, six departments (five under a warehouse roof with back walls, the Garden Centre outdoors in
+  bounded rain), per-department lighting zones (dark showroom, sodium dock, cold frozen aisle),
   late-shopper rivals with lines, pennants and Officer Dale, shutters + floor scrubber, cart corral,
   12 mods, onboarding tips folded into one banner, juice, world-save fallback, original procedural art.
-- Proven: 223 unit tests, 17/17 game-suite proofs, boot capability probe, screenshots of every
-  department (swiftshader, medium tier).
+- Proven: 227 unit tests, 17/17 game-suite proofs (save.continue brings back the basket, its
+  value, power-ups and cleared shelves), boot capability probe, screenshots of every department.
 
 ## Next
 
-1. Per-department lighting: the key, fill and exposure are one rig for the whole store. The engine
-   has per-band sky and fog samplers, but an explicit `rendering.lighting`/`mood` overrides them, so
-   Electronics cannot be dimmer than Aisle 9. An engine option for band-scaled explicit lights would
-   let Electronics go properly dark.
-2. Band weather follows the camera everywhere, so the Garden Centre has no rain (it would fall
-   indoors). An engine option to gate band weather to its band's z range would bring it back.
-3. A mid-run reload flow for the basket (`proofs/flows/mid-run-reload.flow.ts` checks mods only).
+1. Lighting zones are rectangles; the Toy Aisle and Produce could take their own (pastel spill, a
+   misted green cooler) once the art asks for it.
+2. The ceiling tube rows stay emissive in the dark showroom; an emissive scale per zone would let
+   Electronics' house lights read as properly off.
+3. `proofs/flows/mid-run-reload.flow.ts` (browser) checks the basket across a real reload; it has
+   not been run in this environment.

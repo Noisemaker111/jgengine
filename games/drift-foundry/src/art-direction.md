@@ -18,8 +18,13 @@ behind a yellow floor scrubber. Exaggerated, toy-proportioned and readable at sp
   cardboard and cones, Quaternius animals as pigeons. Never Kenney.
 
 ## Light
-- Mood `bright` with a high near-white key (elevation 62), indoor HDRI `interior-industrial`, warm
-  white fog; per-department sky bands (Electronics dark blue, Toy Aisle pastel, Garden Centre rain).
+- One strip-light rig for the store: a high near-white key, warm-white fill, indoor HDRI
+  `interior-industrial`, exposure 0.85; per-department sky and fog bands behind it.
+- Engine lighting zones (`rendering.lighting.zones`, built in `src/game/world/lighting.ts`) re-light
+  that rig per department: Electronics a dark showroom (key 0.12, fill 0.22, blue spill) lit by its TV walls,
+  the Loading Bay sodium orange, Frozen Foods cold blue, the Garden Centre an overcast sky.
+- The Garden Centre is the one outdoor department and the only one with weather: its rain is bounded
+  to its own band, so it never falls indoors.
 - Grade: `vivid-pop` LUT reined in to 0.88 saturation, light bloom on tubes and screens.
 
 ## UI

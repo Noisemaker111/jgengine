@@ -170,7 +170,7 @@ export const world: WorldFeature = environment({
     // The store floor with every department's grade laid in: the same field the headless runs drive on.
     heightField: YARD_GROUND,
     cellSize: YARD_CELL,
-    colors: { low: "#b9b2a3", high: "#c9c2b2", waterline: "#b9b2a3" },
+    colors: { low: "#a39c8f", high: "#b1aa9c", waterline: "#a39c8f" },
     biomeBands: [...ZONES.map(zoneBand), ...LAID_TRACKS.map(trackBand)].sort((a, b) => a.z - b.z),
     materialRegions: [
       ...LAID_TRACKS.flatMap(trackShoulders),
@@ -182,7 +182,7 @@ export const world: WorldFeature = environment({
         ],
         width: CORRIDOR_HALF_WIDTH * 2 + 14,
         falloff: 16,
-        colors: { low: "#c4bdae", high: "#d2cbbb", waterline: "#c4bdae" },
+        colors: { low: "#aaa396", high: "#b8b1a3", waterline: "#aaa396" },
       },
     ],
     detail: {

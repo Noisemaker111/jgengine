@@ -40,6 +40,8 @@ export const AISLE_NINE: TrackDef = {
   fog: ZONES[1]!.fog,
   sky: ZONES[1]!.sky,
   baseLevel: 0,
+  // A shade under the default tile, so the brightest stretch of the store does not burn out white.
+  floor: "#a39d91",
   rivalTake: {},
   par: 36,
   stock: {
