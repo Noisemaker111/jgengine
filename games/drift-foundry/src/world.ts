@@ -195,7 +195,7 @@ export const world: WorldFeature = environment({
       strength: 1,
       // `tint` under 1 keeps each department's authored floor colour reading through the terrazzo
       // chips instead of every band flattening to the scan's own grey.
-      material: librarySurfaceScan("stone/terrazzo", { repeat: 1.4, strength: 0.6, tint: 0.45 }),
+      material: librarySurfaceScan("stone/terrazzo", { repeat: 1.4, strength: 0.6, tint: 0.3 }),
     },
   }),
   roads: [

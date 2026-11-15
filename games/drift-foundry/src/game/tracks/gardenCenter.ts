@@ -71,8 +71,8 @@ export const GARDEN_CENTER: TrackDef = {
     edgeSpacing: 3.6,
     lamp: O.lampGarden,
     lampSpacing: 46,
-    scatter: [O.tree, O.bush, O.flowers, O.palletStack, O.gnome],
-    scatterCount: 40,
+    scatter: [O.tree, O.tree, O.bush, O.bush, O.flowers, O.palletStack, O.gnome],
+    scatterCount: 110,
     landmarks: [
       { object: O.sprinkler, at: 330, side: -14 },
       { object: O.sprinkler, at: 430, side: 14 },
