@@ -198,6 +198,8 @@ export const game = defineGame({
       // `flood` (dev-only `shift.stage`): high water at the port swap dock, on the jet-ski, two boxes in the bag.
       flood: ["game.start", { name: "shift.stage", input: { hour: 21.6 } }],
       "king-tide": ["game.start", { name: "shift.stage", input: { hour: 23.6 } }],
+      // The jet-ski at speed down the flooded port street, throttle held open, so its wake shows in a still.
+      "jetski-wake": ["game.start", { name: "shift.stage", input: { hour: 21.6, heading: 1.2, cruise: 0.7 } }],
       // A jet-ski delivery: high water, the rider idling off Gus's block with his rooftop beacon ahead.
       "jetski-delivery": ["game.start", { name: "shift.stage", input: { hour: 21.6, toward: "gus", back: 18 } }],
       // Dusk at low tide: the family scooter outside Vell's as the shift opens, streets still dry.

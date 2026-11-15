@@ -18,7 +18,7 @@ import {
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
-import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
+import { boardVehicle, createVehicleSeats, leaveVehicle, poseSeatedRiders, SEATED_RIDER_KEY, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { streets } from "../../world";
 import { vehicleById, type VehicleDef } from "../entities/vehicles/catalog";
@@ -90,6 +90,9 @@ const BODY_CAMERA: Record<string, ChaseCameraTuning> = {
   car_compact: { ...DRIVE_CAMERA_TUNING, distance: 5.4, height: 2.1, lookHeight: 1.0 },
   car_sport: { ...DRIVE_CAMERA_TUNING, distance: 5.6, height: 1.9, lookHeight: 0.8 },
 };
+
+/** Blackboard key on a hull: a throttle (0..1) held open with no input, for the `jetski-wake` capture state. */
+export const CRUISE_KEY = "capture.cruise";
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
 const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
@@ -468,7 +471,10 @@ export function createDriving(): Driving {
   function tickBoat(ctx: GameContext, vehicleId: string, dt: number): void {
     const boat = boatFor(ctx, vehicleId);
     const before = boat.pose();
-    const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
+    const axis = { ...ctx.input.axis(DRIVE_AXIS_BINDINGS) };
+    // A capture state can hold the throttle open so a still shows the hull at speed with its wake.
+    const cruise = ctx.scene.entity.blackboard.get<number>(vehicleId, CRUISE_KEY);
+    if (cruise !== undefined) axis.throttle = Math.max(axis.throttle ?? 0, cruise);
     const step = boat.tick(dt, axis);
     const [x, , z] = step.motion.position;
     const radius = vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "")?.collisionRadius ?? 1.2;
@@ -545,10 +551,16 @@ export function createDriving(): Driving {
       const definition = vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "");
       if (definition === undefined) return;
       if (!vehicleSeats.mounts.isRegistered(vehicleId)) {
-        vehicleSeats.register({ id: vehicleId, kit: { kind: definition.dynamics.type === "aircraft" ? "flying" : "ground" } });
+        vehicleSeats.register({
+          id: vehicleId,
+          kit: { kind: definition.dynamics.type === "aircraft" ? "flying" : "ground" },
+          ...(definition.seat === undefined ? {} : { seats: [{ id: "rider", offset: definition.seat, control: true }] }),
+        });
       }
+      // An open ride (scooter, trike, jet-ski, gondola) keeps the rider drawn on it; a closed body hides them.
       const result = boardVehicle(ctx, vehicleSeats, ctx.player.userId, vehicleId, {
         chase: BODY_CAMERA[definition.id] ?? DRIVE_CAMERA_TUNING,
+        rider: definition.seat === undefined ? "hidden" : "seated",
       });
       if (!result.ok) return;
       driving = vehicleId;
@@ -680,6 +692,10 @@ export function createDriving(): Driving {
           }
           const driven = ctx.scene.entity.get(driving);
           if (driven === null) return;
+          if (ctx.scene.entity.blackboard.get<boolean>(ctx.player.userId, SEATED_RIDER_KEY) === true) {
+            poseSeatedRiders(ctx, vehicleSeats);
+            return;
+          }
           ctx.scene.entity.setPose(ctx.player.userId, {
             position: [driven.position[0], driven.position[1] + 0.4, driven.position[2]],
             rotationX: driven.rotationX,

@@ -148,8 +148,22 @@ export function createVehicleSeats(controller?: MountController): VehicleSeats {
   return new VehicleSeats(controller);
 }
 
+/**
+ * Blackboard flag on a rider who stays drawn on its seat (`rider: "seated"`): {@link poseSeatedRiders}
+ * keeps it on the seat, and the model animation driver reads its locomotion speed as 0, so it holds its
+ * idle pose instead of running in place while the vehicle moves.
+ */
+export const SEATED_RIDER_KEY = "vehicle.seatedRider";
+
 /** Seat selection and optional local camera policy for an explicit rider transition. */
 export interface BoardVehicleOptions extends EnterVehicleOptions {
+  /**
+   * What happens to the rider's own model: `"hidden"` (default) hides it, for a closed car whose body
+   * hides the driver; `"seated"` keeps it drawn on the seat's offset, for an open ride (a scooter, a
+   * jet-ski, a boat, a horse) where the player should see who is riding. Call {@link poseSeatedRiders}
+   * each tick after the vehicles move.
+   */
+  rider?: "hidden" | "seated";
   /** Presentation policy; `false` applies only rider/occupancy patches for authoritative remote riders. */
   camera?: boolean;
   /** Omit to keep the current rig. `null` restores the configured rig. */
@@ -184,9 +198,14 @@ export function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: str
   if (options.camera !== false && options.chase !== undefined) validateChaseCameraTuning(options.chase);
   const result = seats.enter(riderId, vehicleId, options);
   if (!result.ok) return result;
-  ctx.scene.entity.update(riderId, { hidden: true, movement: { ...rider.movement, ...result.riderMovementPatch } });
+  const seated = options.rider === "seated";
+  ctx.scene.entity.update(riderId, { hidden: !seated, movement: { ...rider.movement, ...result.riderMovementPatch } });
   ctx.scene.entity.setVelocity(riderId, [0, 0, 0]);
   forgetRiderMovement(ctx, riderId);
+  if (seated) {
+    ctx.scene.entity.blackboard.set(riderId, SEATED_RIDER_KEY, true);
+    poseRider(ctx, seats, riderId);
+  } else ctx.scene.entity.blackboard.delete(riderId, SEATED_RIDER_KEY);
   if (options.camera !== false) {
     ctx.camera.follow(result.cameraTarget);
     if (options.rig !== undefined) ctx.camera.setRig(options.rig, options.config);
@@ -208,6 +227,7 @@ export function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: str
   if (pose === undefined) return { ok: false, reason: "unknown_vehicle" };
   const result = seats.exit(riderId, pose, options);
   if (!result.ok) return result;
+  ctx.scene.entity.blackboard.delete(riderId, SEATED_RIDER_KEY);
   ctx.scene.entity.setPose(riderId, result.placement);
   ctx.scene.entity.update(riderId, { hidden: false, movement: { ...rider.movement, ...result.riderMovementPatch } });
   ctx.scene.entity.setVelocity(riderId, [0, 0, 0]);
@@ -218,4 +238,36 @@ export function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: str
     ctx.camera.setChaseTuning(null);
   }
   return result;
+}
+
+/** Where a seated rider sits on its vehicle now: the seat offset turned by the vehicle's heading. */
+export function seatedRiderPose(vehiclePose: VehiclePose, offset: readonly [number, number, number]): VehiclePose {
+  const [ox, oy, oz] = offset;
+  const sin = Math.sin(vehiclePose.rotationY);
+  const cos = Math.cos(vehiclePose.rotationY);
+  return {
+    position: [vehiclePose.position[0] + ox * cos + oz * sin, vehiclePose.position[1] + oy, vehiclePose.position[2] - ox * sin + oz * cos],
+    rotationY: vehiclePose.rotationY,
+  };
+}
+
+function poseRider(ctx: GameContext, seats: VehicleSeats, riderId: string): void {
+  const ref = seats.mounts.seatOf(riderId);
+  if (ref === null) return;
+  const vehicle = ctx.scene.entity.get(ref.mountId);
+  if (vehicle === null) return;
+  const pose = seatedRiderPose({ position: vehicle.position, rotationY: vehicle.rotationY ?? 0 }, seats.mounts.seatOffset(riderId) ?? [0, 0, 0]);
+  ctx.scene.entity.setPose(riderId, { position: pose.position, rotationY: pose.rotationY });
+}
+
+/**
+ * Keep every seated rider (boarded with `rider: "seated"`) on its seat: call once a tick after the
+ * vehicles have moved. Hidden riders are left alone.
+ * @capability seated-riders draw the rider on an open vehicle's seat (scooter, jet-ski, boat, mount) instead of hiding it
+ */
+export function poseSeatedRiders(ctx: GameContext, seats: VehicleSeats): void {
+  for (const mounted of seats.snapshot()) {
+    if (ctx.scene.entity.blackboard.get<boolean>(mounted.riderId, SEATED_RIDER_KEY) !== true) continue;
+    poseRider(ctx, seats, mounted.riderId);
+  }
 }

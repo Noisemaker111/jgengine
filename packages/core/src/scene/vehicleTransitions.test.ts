@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createAssetCatalog } from "./assetCatalog";
 import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
-import { boardVehicle, createVehicleSeats, leaveVehicle } from "./vehicleSeat";
+import { boardVehicle, createVehicleSeats, leaveVehicle, poseSeatedRiders, SEATED_RIDER_KEY, seatedRiderPose } from "./vehicleSeat";
 import { createVehicleDynamics } from "../physics/vehicleDynamics";
 import { vehicleTuning } from "../physics/vehicleSpec";
 import { createBoatDynamics } from "../physics/boatDynamics";
@@ -211,4 +211,35 @@ test("a same-id original rider entity must not erase its user's current differen
  expect(leaveVehicle(ctx,seats,"account",{camera:false}).ok).toBe(true);
  const afterLeave=snapshotPlayerMovement(ctx,"account");
  expect(afterBoard).toEqual(retained);expect(afterLeave).toEqual(retained);
+});
+
+test("a seated rider stays drawn on its seat as the vehicle moves and turns, and walks off visible", () => {
+  const { ctx, seats } = fixture("boat");
+  seats.register({ id: "ski", kit: { kind: "boat" }, seats: [{ id: "saddle", offset: [0, 0.4, -0.3], control: true }] });
+  ctx.scene.entity.spawn("jet-ski", { id: "ski", position: [10, 0, 0] });
+  expect(boardVehicle(ctx, seats, "local", "ski", { camera: false, rider: "seated" }).ok).toBe(true);
+  expect(ctx.scene.entity.get("local")!.hidden).not.toBe(true);
+  expect(ctx.scene.entity.blackboard.get("local", SEATED_RIDER_KEY)).toBe(true);
+  expect(ctx.scene.entity.get("local")!.position).toEqual([10, 0.4, -0.3]);
+  ctx.scene.entity.setPose("ski", { position: [20, 1, 5], rotationY: Math.PI / 2 });
+  poseSeatedRiders(ctx, seats);
+  const rider = ctx.scene.entity.get("local")!;
+  // Turned a quarter: the saddle 0.3 m behind the bow now sits 0.3 m along -x.
+  expect(rider.position[0]).toBeCloseTo(19.7, 5);
+  expect(rider.position[1]).toBeCloseTo(1.4, 5);
+  expect(rider.position[2]).toBeCloseTo(5, 5);
+  expect(rider.rotationY).toBeCloseTo(Math.PI / 2, 5);
+  // A hidden passenger is left where it is.
+  expect(boardVehicle(ctx, seats, "alice", "v", { camera: false }).ok).toBe(true);
+  expect(ctx.scene.entity.get("alice")!.hidden).toBe(true);
+  expect(leaveVehicle(ctx, seats, "local", { camera: false }).ok).toBe(true);
+  expect(ctx.scene.entity.blackboard.get("local", SEATED_RIDER_KEY)).toBeUndefined();
+  expect(ctx.scene.entity.get("local")!.hidden).toBe(false);
+});
+
+test("seatedRiderPose turns the seat offset by the vehicle's heading", () => {
+  const pose = seatedRiderPose({ position: [0, 0, 0], rotationY: Math.PI }, [1, 0.5, 2]);
+  expect(pose.position[0]).toBeCloseTo(-1, 5);
+  expect(pose.position[1]).toBeCloseTo(0.5, 5);
+  expect(pose.position[2]).toBeCloseTo(-2, 5);
 });

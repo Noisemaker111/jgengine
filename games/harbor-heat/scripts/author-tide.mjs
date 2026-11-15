@@ -448,7 +448,7 @@ await exportModel('blimp-mast', buildMast());
  * Lit windows for a building's street face at night: a unit panel (x -0.5..0.5, y 0..1) of glowing
  * window panes, scaled to the face's width and height where it is placed. One file per storey count,
  * so a pane row lines up with a storey; about half the flats have a lamp on, a few the blue of a TV,
- * and the ground floor stays dark for the shopfronts and awnings.
+ * and the ground floor stays dark (shopfronts and awnings, and the king tide reaches it).
  */
 export const WINDOW_ROWS = [2, 3, 4, 5, 6, 8, 10, 14, 20];
 function buildWindowLights(rows) {
@@ -459,7 +459,8 @@ function buildWindowLights(rows) {
   const cols = 6;
   let n = rows * 7919;
   const rand = () => { n = (n * 16807) % 2147483647; return n / 2147483647; };
-  for (let r = rows >= 3 ? 1 : 0; r < rows; r++) {
+  // The ground floor stays dark: shopfronts and awnings there, and the king tide reaches it.
+  for (let r = 1; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const pick = rand();
       if (pick > 0.55) continue;

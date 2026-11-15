@@ -2009,6 +2009,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `searchBeatStep` (function) · `import { searchBeatStep } from "@jgengine/core/ai/searchBeat"`
 
+## seated-riders — draw the rider on an open vehicle's seat (scooter, jet-ski, boat, mount) instead of hiding it
+
+- `poseSeatedRiders` (function) · `import { poseSeatedRiders } from "@jgengine/core/scene/vehicleSeat"`
+
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`

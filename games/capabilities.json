@@ -10033,6 +10033,16 @@
       "intent": "walk waypoints around a search circle so searchers sweep it instead of standing on its centre"
     },
     {
+      "id": "seated-riders",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/vehicleSeat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw the rider on an open vehicle's seat (scooter, jet-ski, boat, mount) instead of hiding it"
+    },
+    {
       "id": "seed-sweep",
       "packages": [
         "@jgengine/core"

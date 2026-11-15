@@ -25,7 +25,7 @@ describe("streetPlay drivable-vehicle adoption", () => {
   test("entering a vehicle freezes+hides the rider, follows it, and overlays the drive camera; exiting reverses all (#1299)", () => {
     const ctx = boot();
     const streetPlay = createStreetPlay();
-    ctx.scene.entity.spawn("car_compact", { id: "car_1", position: [10, 0, 10], role: "prop" });
+    ctx.scene.entity.spawn("car_sedan", { id: "car_1", position: [10, 0, 10], role: "prop" });
 
     streetPlay.enterVehicle(ctx, "car_1");
     expect(streetPlay.drivingVehicleId()).toBe("car_1");
@@ -45,6 +45,24 @@ describe("streetPlay drivable-vehicle adoption", () => {
     expect(ctx.scene.entity.get(HERO)?.movement.frozen).toBe(false);
     expect(ctx.scene.entity.get(HERO)?.hidden).toBe(false);
     expect(ctx.camera.chaseTuning()).toBeNull();
+  });
+
+  test("an open ride keeps its rider drawn on the seat and carries them along", () => {
+    const ctx = boot();
+    const streetPlay = createStreetPlay();
+    ctx.scene.entity.spawn("car_compact", { id: "scooter", position: [10, 0, 10], rotationY: 0, role: "prop" });
+    streetPlay.enterVehicle(ctx, "scooter");
+    const hero = ctx.scene.entity.get(HERO)!;
+    expect(hero.hidden).not.toBe(true);
+    expect(hero.movement.frozen).toBe(true);
+    ctx.scene.entity.setPose("scooter", { position: [30, 0, 10], rotationY: 0 });
+    streetPlay.tick(ctx, 1 / 60);
+    const scooter = ctx.scene.entity.get("scooter")!;
+    const after = ctx.scene.entity.get(HERO)!;
+    expect(Math.hypot(after.position[0] - scooter.position[0], after.position[2] - scooter.position[2])).toBeLessThan(0.5);
+    expect(after.position[1]).toBeGreaterThan(scooter.position[1]);
+    streetPlay.exitVehicle(ctx);
+    expect(ctx.scene.entity.get(HERO)!.hidden).toBe(false);
   });
 
   test("the static on-foot chase config carries no speed-reactive lens or roll (#1299)", () => {

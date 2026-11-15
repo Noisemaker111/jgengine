@@ -10,6 +10,7 @@ import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";
 import { streetPlayOf } from "./streetPlay";
+import { CRUISE_KEY } from "./driving/driving";
 import { RACE_ROUTES } from "./world/districts";
 import { courierSettlement, courierStore, DELIVERY_ROUTES } from "./jobs/courier";
 
@@ -93,7 +94,7 @@ export function registerCaptureCommands(ctx: GameContext): void {
   });
   // High water at the port swap dock: the clock at `hour`, the rider on the dock's jet-ski with two
   // hot boxes in the bag, so a capture sees the flood, the tide card and the order cards at once.
-  ctx.game.commands.define<{ hour?: number; toward?: string; back?: number }>("shift.stage", {
+  ctx.game.commands.define<{ hour?: number; toward?: string; back?: number; heading?: number; cruise?: number }>("shift.stage", {
     apply(state, input) {
       const clock = state.time.snapshot();
       const hour = typeof input?.hour === "number" ? input.hour : 21.6;
@@ -127,6 +128,12 @@ export function registerCaptureCommands(ctx: GameContext): void {
         const surface = waterAt(state, px, pz)?.surface ?? state.world.groundHeightAt(px, pz);
         streetPlayOf(state).placeVehicle(state, hull, [px, surface, pz], Math.atan2(dx, dz));
       }
+      // Optionally point the hull down the street and hold its throttle open, so the still shows a wake.
+      if (hull !== null && input?.heading !== undefined) {
+        const at = state.scene.entity.get(hull);
+        if (at !== null) streetPlayOf(state).placeVehicle(state, hull, at.position, input.heading);
+      }
+      if (hull !== null && input?.cruise !== undefined) state.scene.entity.blackboard.set(hull, CRUISE_KEY, input.cruise);
       return state;
     },
   });

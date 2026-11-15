@@ -1,4 +1,5 @@
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
+import { SEATED_RIDER_KEY } from "@jgengine/core/scene/vehicleSeat";
 import * as THREE from "three";
 
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
@@ -185,8 +186,10 @@ export function readModelAnimationParams(
     out[LOCOMOTION_AIRBORNE_PARAM] = !motion.grounded;
     out[LOCOMOTION_SWIMMING_PARAM] = motion.swimming;
   }
-  out[LOCOMOTION_SPEED_PARAM] = speed;
-  if (step !== undefined) {
+  // A rider drawn on its seat moves with the vehicle, not on its feet: it holds its idle pose.
+  const seated = ctx.scene.entity.blackboard.get<boolean>(instanceId, SEATED_RIDER_KEY) === true;
+  out[LOCOMOTION_SPEED_PARAM] = seated ? 0 : speed;
+  if (step !== undefined && !seated) {
     const yaw = ctx.scene.entity.get(instanceId)?.rotationY ?? 0;
     const planar = Math.hypot(step.dx, step.dz);
     if (planar > 1e-4) {

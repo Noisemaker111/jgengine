@@ -36,7 +36,23 @@ export interface VehicleDef {
   medium: VehicleMedium;
   /** A hull's own physics on the water (the engine's boat model); its car tuning only drives it aground. */
   boat?: BoatTuning;
+  /**
+   * An open ride draws its rider here (the feet, in the vehicle's frame: x right, y up, z forward)
+   * instead of hiding them inside a closed body. Absent: the rider is hidden.
+   */
+  seat?: readonly [number, number, number];
 }
+
+/**
+ * Where the rider stands on each open ride: on the scooter's floorboard and the trike's pedals, up on
+ * the jet-ski's deck behind the bars, and at the gondola's stern like a gondolier.
+ */
+const OPEN_SEATS: Readonly<Record<string, readonly [number, number, number]>> = {
+  car_compact: [0, 0.25, -0.15],
+  car_muscle: [0, 0.35, -0.45],
+  car_sport: [0, 0.4, -0.3],
+  car_suv: [0, 0.3, -2.3],
+};
 
 /**
  * The family's hulls on the engine's boat model (`@jgengine/core/physics/boatDynamics`). The jet-ski is a
@@ -377,6 +393,7 @@ export const VEHICLES: readonly VehicleDef[] = [
       collisionRadius: spec.collisionRadius,
       medium: spec.hull === true ? "water" : "road",
       ...(BOATS[spec.id] === undefined ? {} : { boat: BOATS[spec.id] }),
+      ...(OPEN_SEATS[spec.id] === undefined ? {} : { seat: OPEN_SEATS[spec.id] }),
       dynamics: { type: "ground", tuning: car(spec) },
     }),
   ),
