@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { aboard, burrowed, craneNear, creatureCard, kleptoNests, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
+import { aboard, arcFlashes, burrowed, craneNear, creatureCard, kleptoNests, creatureStep, creaturesView, destroyWild, hitCreature, slayCreature, disturbForest, isPuppeted, onShoulder, puppetTames, sentryPings, setStorm, stormView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
@@ -257,6 +257,21 @@ test("Lampjaws spawn and stay in deep water off the beaches; Arcwires spawn in t
   const eels = g.ctx.scene.entity.list().filter((entity) => entity.name === "arcwire" && Math.hypot(entity.position[0] - river.position.x, entity.position[2] - river.position.z) < 30);
   expect(eels.length).toBeGreaterThan(0);
   expect(eels.some((eel) => g.ctx.world.groundHeightAt(eel.position[0], eel.position[2]) < -0.3)).toBe(true);
+});
+
+test("an Arcwire's bite throws lightning from the eel to everything it arced into, and the flash fades", () => {
+  const g = quiet();
+  summon(g, "arcwire", { distance: 1.5 });
+  g.ui.tryInvoke("cheat", { summon: { species: "mowbot", level: 1, distance: 2, side: 1.5 } });
+  let flash: ReturnType<typeof arcFlashes>[number] | undefined;
+  for (let i = 0; i < 400 && flash === undefined; i += 1) {
+    tick(g, 0.05);
+    flash = arcFlashes(g.ctx)[0];
+  }
+  expect(flash).toBeDefined();
+  expect(flash!.to.length).toBeGreaterThan(0);
+  tick(g, 0.5);
+  expect(arcFlashes(g.ctx).every((arc) => arc.age < 0.36)).toBe(true);
 });
 
 test("an uploaded Hoover is a walking base: climb aboard and it carries you as it moves and turns", () => {

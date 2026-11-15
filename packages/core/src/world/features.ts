@@ -407,6 +407,10 @@ export interface OceanEnvironmentConfig {
   horizon?: boolean;
   /** Metres of water you see through before it takes its colour: clear shallows want 3 or more. Default 1.2. */
   clarity?: number;
+  /** Metres of water depth over which the colour falls from `color` to the palette's `deep`: larger keeps a wide bright shelf. Default 2.6. */
+  depthRange?: number;
+  /** The foam at the waterline: how many metres of water depth the shore lick covers, and how strong the lines rolling in over the shallows are (0 for none). */
+  shore?: { width?: number; waves?: number };
   /** Bed-map texels per side for shallows and shore foam; more gives a finer shoreline. Default about one per two metres, at most 256. */
   bedResolution?: number;
 }
@@ -628,7 +632,7 @@ export interface GrassEnvironmentDescriptor {
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
 > &
-  Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette" | "horizon" | "clarity" | "bedResolution">;
+  Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette" | "horizon" | "clarity" | "depthRange" | "shore" | "bedResolution">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
@@ -1189,6 +1193,8 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     ...(config.palette === undefined ? {} : { palette: { ...config.palette } }),
     ...(config.horizon === undefined ? {} : { horizon: config.horizon }),
     ...(config.clarity === undefined ? {} : { clarity: config.clarity }),
+    ...(config.depthRange === undefined ? {} : { depthRange: config.depthRange }),
+    ...(config.shore === undefined ? {} : { shore: { ...config.shore } }),
     ...(config.bedResolution === undefined ? {} : { bedResolution: config.bedResolution }),
   };
 }

@@ -180,6 +180,14 @@ function oceanConfig(ocean: OceanEnvironmentDescriptor) {
     ...(ocean.bedResolution === undefined ? {} : { bedResolution: ocean.bedResolution }),
     waves: waterSurfaceConfigFromDescriptor(ocean),
     color: oceanColor(ocean),
+    ...(ocean.shore === undefined
+      ? {}
+      : {
+          foam: {
+            ...(ocean.shore.width === undefined ? {} : { shoreWidth: ocean.shore.width }),
+            ...(ocean.shore.waves === undefined ? {} : { shoreWaves: ocean.shore.waves }),
+          },
+        }),
   };
 }
 
@@ -187,7 +195,7 @@ function useOceanConfig(ocean: OceanEnvironmentDescriptor) {
   return useMemo(
     () => oceanConfig(ocean),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.waveScale, ocean.color, ocean.palette?.deep, ocean.palette?.crest, ocean.palette?.foam, ocean.palette?.fresnel, ocean.horizon, ocean.clarity, ocean.bedResolution],
+    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.waveScale, ocean.color, ocean.palette?.deep, ocean.palette?.crest, ocean.palette?.foam, ocean.palette?.fresnel, ocean.horizon, ocean.clarity, ocean.depthRange, ocean.shore?.width, ocean.shore?.waves, ocean.bedResolution],
   );
 }
 

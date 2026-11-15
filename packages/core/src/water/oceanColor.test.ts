@@ -26,4 +26,11 @@ describe("ocean palette", () => {
     expect(sludge.color.deep).toBe("#13240a");
     expect(sludge.color.foam).toBe(sea.color.foam);
   });
+
+  test("depth range reaches the ocean colour and shore settings ride on the descriptor", () => {
+    const sea = ocean({ depthRange: 4.5, shore: { width: 1.1, waves: 0.85 } });
+    expect(sea.shore).toEqual({ width: 1.1, waves: 0.85 });
+    expect(createOceanConfig({ color: oceanColor(sea) }).color.depthRange).toBe(4.5);
+    expect(createOceanConfig({ color: oceanColor(ocean({})) }).color.depthRange).toBe(createOceanConfig({}).color.depthRange);
+  });
 });
