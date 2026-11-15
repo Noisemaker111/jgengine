@@ -9,7 +9,7 @@ import { rebindAction } from "@jgengine/core/game/controlGate";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import { BURROW, DEPART, eyeLevel, groundDistance, HOME_SPAWN, inCover, inside, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
+import { BURROW, DEPART, ZONES, eyeLevel, groundDistance, HOME_SPAWN, inCover, inside, NOOK, STASH, WORKBENCH, walkable, ZONE_NAME, type ConnectorKind, type Point, type RoomTemplate, type Zone } from "../world";
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
 import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
@@ -519,11 +519,12 @@ function registerBurrow(ctx: GameContext): void {
     }, `Made a ${ITEMS[input.kind].name.toLowerCase()}.`);
   } });
   ctx.game.commands.define<{ zone: Zone }>("deepward.chart", { apply(state, input) {
-    const chart = (CHARTS as Record<string, { cost: { items: Partial<Record<ItemKind, number>>; caps: number } }>)[input.zone];
+    const chart = (CHARTS as Record<string, { cost: { items: Partial<Record<ItemKind, number>>; caps: number }; after?: Zone }>)[input.zone];
     if (chart === undefined) return;
     updateHome(state, home => {
       if (home.upgrades.mapRoom < 1) throw new Error("Build the map room first.");
       if (home.zones.includes(input.zone)) throw new Error("Already charted.");
+      if (chart.after !== undefined && !home.zones.includes(chart.after)) throw new Error(`Chart the ${ZONE_NAME[chart.after].toLowerCase()} first.`);
       return { ...home, ...pay(home.stash, home.caps, chart.cost), zones: [...home.zones, input.zone] };
     }, `${ZONE_NAME[input.zone]} charted. Doors will open onto it now.`);
   } });
@@ -565,6 +566,17 @@ export function registerControls(ctx: GameContext): void {
         const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw + 0.3) * 34, 0, at[2] + Math.cos(yaw + 0.3) * 34];
         const cat = { ...spawnThreat({ key: `${run.room}:dev-cat`, kind: "cat", slot: { id: "dev-cat", kind: "cat", at: spot, minDepth: 0, label: "the cat" } }), mode: "crouch" as const, timer: 60, target: at, facing: yaw + Math.PI };
         viewStore.write(state, { ...v, run: { ...run, threats: [...run.threats, cat] }, danger: 0.9 });
+      })();
+      return state;
+    } });
+    ctx.game.commands.define("deepward.dev.exterminator", { apply(state) {
+      void (async () => {
+        await stageMidRun(state, 0);
+        const v = viewStore.read(state), run = v.run, at = playerAt(state);
+        if (run === null || at === null) return;
+        const yaw = facingOf(state), spot: Point = [at[0] + Math.sin(yaw + 0.3) * 40, 0, at[2] + Math.cos(yaw + 0.3) * 40];
+        const man = { ...spawnThreat({ key: `${run.room}:dev-exterminator`, kind: "exterminator", slot: { id: "dev-exterminator", kind: "exterminator", at: spot, minDepth: 0, label: "the Exterminator" } }), mode: "aim" as const, timer: 60, target: at, facing: Math.atan2(at[0] - spot[0], at[2] - spot[2]) };
+        viewStore.write(state, { ...v, run: { ...run, threats: [...run.threats.filter(s => s.kind !== "exterminator"), man] }, danger: 0.9 });
       })();
       return state;
     } });
@@ -831,7 +843,7 @@ export async function stageRoom(ctx: GameContext, template: string): Promise<voi
   await runtime(ctx).boot;
   const v = viewStore.read(ctx);
   if (v.mode === "home") {
-    viewStore.write(ctx, { ...v, home: { ...v.home, zones: ["kitchen", "living", "kidroom", "garage", "attic"] } });
+    viewStore.write(ctx, { ...v, home: { ...v.home, zones: [...ZONES] } });
     teleport(ctx, DEPART.at); resume(ctx);
     await begin(ctx);
   }

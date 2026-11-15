@@ -107,6 +107,8 @@ function RunHud() {
 /** The loudest tell in the room right now, so a hunter's intent is readable at a glance. */
 function tellOf(run: Run): string {
   const t = run.threats;
+  if (t.some(s => s.kind === "exterminator" && s.mode === "aim")) return "The canister hisses: the Exterminator is aiming at you. MOVE!";
+  if (t.some(s => s.kind === "exterminator" && s.mode === "spray")) return "Spray hangs in the air. Keep out of the cloud.";
   if (t.some(s => s.kind === "cat" && s.mode === "crouch")) return "The Cat is crouching, tail swishing. MOVE or HIDE!";
   if (t.some(s => s.kind === "cat" && s.mode === "pounce")) return "POUNCE!";
   if (t.some(s => s.kind === "kid" && s.mode === "looking")) return (t.find(x => x.kind === "kid")?.seen ?? 0) > 0.4 ? "The kid has seen you! Get out of sight!" : "The kid is sitting up, looking around. Hide!";
@@ -114,6 +116,7 @@ function tellOf(run: Run): string {
   if (t.some(s => s.kind === "spider" && s.mode === "bite")) return "The spider rears up to bite!";
   if (t.some(s => s.kind === "cat" && (s.mode === "stalk" || s.mode === "listen"))) return "The Cat heard something. Keep still, or sneak (C).";
   if (t.some(s => s.kind === "roomba" && s.mode === "sweep")) return "The Roomba is sweeping. Stay out of its lane.";
+  if (t.some(s => s.kind === "exterminator" && s.mode === "sweep")) return "The Exterminator's torch is sweeping. Stay out of the beam, or get under cover.";
   return "";
 }
 function HomeHud() {
@@ -187,7 +190,8 @@ function WorkbenchSheet({ command, close }: { command: Command; close: () => voi
     {(Object.keys(CHARTS) as (keyof typeof CHARTS)[]).map(zone => { const chart = CHARTS[zone], have = home.zones.includes(zone as Zone), need = missing(home.stash, home.caps, chart.cost);
       return <Section key={zone}><Row justify="between"><Heading size={19}>{ZONE_NAME[zone as Zone]}</Heading><Tag color={have ? GREEN : MUTED}>{have ? "CHARTED" : costText(chart.cost)}</Tag></Row>
         <Text color={MUTED}>{chart.flavor}</Text>
-        {have ? null : <Button disabled={home.upgrades.mapRoom < 1 || need.length > 0} onPress={() => command("chart", { zone })}>{home.upgrades.mapRoom < 1 ? "Build the map room first" : need.length > 0 ? `Need ${need.join(", ")}` : "Chart it"}</Button>}</Section>; })}
+        {have ? null : (() => { const before = chart.after !== undefined && !home.zones.includes(chart.after) ? chart.after : null;
+          return <Button disabled={home.upgrades.mapRoom < 1 || before !== null || need.length > 0} onPress={() => command("chart", { zone })}>{home.upgrades.mapRoom < 1 ? "Build the map room first" : before !== null ? `Chart the ${ZONE_NAME[before].toLowerCase()} first` : need.length > 0 ? `Need ${need.join(", ")}` : "Chart it"}</Button>; })()}</Section>; })}
     <Text role="status" color={error ? RED : MUTED}>{error || hint}</Text>
   </Sheet>;
 }

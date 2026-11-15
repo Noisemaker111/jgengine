@@ -105,6 +105,24 @@ describe("the procedural house", () => {
     expect(NIGHTS.heatwave.noise).toBeLessThan(1);
     expect(twistOf(of("sleepover")).restless).toBeGreaterThan(0);
   });
+  test("the basement opens only once charted and only deep in a night, and the cellar hoard rolls nowhere else", () => {
+    const deep = ["0-0-0-0-0-0", "0-1-0-1-0-0-1", "0-0-1-0-1-0-0", "0-1-1-0-0-1-0-0"];
+    const charted = { zones: [...ALL.zones, "basement"] as const };
+    let basement = 0, man = 0;
+    for (let i = 0; i < 160; i++) {
+      const seed = `cellar-${i}`;
+      for (const path of deep) {
+        const plain = planRoom(night(seed, ALL), path);
+        expect(plain.template.zone).not.toBe("basement");
+        const plan = planRoom(night(seed, { zones: [...charted.zones] }), path);
+        if (plan.template.zone === "basement") { basement++; expect(plan.depth).toBeGreaterThanOrEqual(5); if (plan.threats.some(t => t.kind === "exterminator")) man++; }
+        else for (const l of plan.loot) expect(["fuse", "wine-cork", "lost-ring", "pocket-watch"]).not.toContain(l.kind);
+      }
+      for (const path of ["0", "0-0", "0-1-0"]) expect(planRoom(night(seed, { zones: [...charted.zones] }), path).template.zone).not.toBe("basement");
+    }
+    expect(basement).toBeGreaterThan(20);
+    expect(man / basement).toBeGreaterThan(0.6);
+  });
   test("a burrow's first night opens safe under the kitchen cabinets with the larder's cost on the floor", () => {
     const first = planRoom(night("night-1-1"), ROOT);
     expect(first.template.id).toBe("kitchen-cabinets");

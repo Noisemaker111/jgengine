@@ -2,7 +2,7 @@ import { AnimationMixer, Color, type AnimationAction } from "three";
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { houseAssets } from "./assets";
-import { BoxGeometry, CircleGeometry, ConeGeometry, MeshBasicMaterial, CylinderGeometry, Group, LineBasicMaterial, LineSegments, BufferGeometry, Float32BufferAttribute, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, type Object3D } from "three";
+import { AdditiveBlending, DoubleSide, BoxGeometry, CircleGeometry, ConeGeometry, MeshBasicMaterial, CylinderGeometry, Group, LineBasicMaterial, LineSegments, BufferGeometry, Float32BufferAttribute, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, type Object3D } from "three";
 import { hashUnit } from "@jgengine/core/random/rng";
 import type { ThreatState } from "./threats";
 import { SPIDER } from "./threats";
@@ -123,6 +123,40 @@ function dog(): Group {
 }
 
 /** A soft dark pool on the floor under a big hunter: from a Little's eye line, the shadow is what you see coming. */
+/**
+ * The Exterminator from a Little's floor: rubber boots like buildings, coverall legs into the dark,
+ * a spray wand hanging at knee height and the torch beam that is the thing you watch.
+ */
+function exterminator(): Group {
+  const g = new Group(), body = new Group(); body.name = "body"; g.add(body);
+  for (const s of [-1, 1]) {
+    const leg = new Group(); leg.name = s < 0 ? "leg-l" : "leg-r"; leg.position.set(s * 7, 16, 0); body.add(leg);
+    add(leg, new Mesh(new BoxGeometry(10, 16, 22), mat("#e0b42a", { rough: 0.6 })), "boot", [0, -8, 3]);
+    add(leg, new Mesh(new BoxGeometry(10.6, 3, 23), mat("#151a14", { rough: 1 })), "sole", [0, -15, 3]);
+    add(leg, new Mesh(new CylinderGeometry(5, 5.5, 84, 12), mat("#33456a", { rough: 1 })), "coverall", [0, 42, 0]);
+  }
+  add(body, new Mesh(new BoxGeometry(26, 20, 16), mat("#33456a", { rough: 1 })), "hips", [0, 108, 0]);
+  // The canister on its hose, the wand hanging in front, its nozzle reddening while he aims.
+  add(body, new Mesh(new CylinderGeometry(6, 6, 26, 14), mat("#b8bcc0", { metal: 0.5, rough: 0.4 })), "canister", [-16, 70, -4]);
+  add(body, new Mesh(new CylinderGeometry(0.7, 0.7, 34, 6), mat("#222222")), "wand", [6, 46, 12], [0.5, 0, 0]);
+  add(body, new Mesh(new SphereGeometry(1.8, 10, 8), mat("#ff4a2a", { glow: 0.2 })), "nozzle", [6, 32, 20]);
+  // The torch: a cone of light from his hand down to the floor, and the pool where it lands.
+  const torch = new Group(); torch.name = "torch"; torch.position.set(10, 70, 8); body.add(torch);
+  const beam = new Mesh(new ConeGeometry(8, 64, 24, 1, true), new MeshBasicMaterial({ color: "#fff2b0", transparent: true, opacity: 0.06, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
+  beam.name = "beam"; beam.position.set(0, 0, 32); beam.rotation.x = -Math.PI / 2 - 0.0; torch.add(beam);
+  torch.rotation.x = 0.95;
+  const pool = new Mesh(new CircleGeometry(1, 32), new MeshBasicMaterial({ color: "#fff2b0", transparent: true, opacity: 0.22, depthWrite: false, blending: AdditiveBlending }));
+  pool.name = "pool"; pool.rotation.x = -Math.PI / 2; pool.position.set(10, 0.08, 34); pool.scale.set(7, 11, 1); g.add(pool);
+  // The spray: a hanging green-grey cloud, placed in the world where he aimed.
+  const cloud = new Group(); cloud.name = "cloud"; cloud.visible = false; g.add(cloud);
+  for (let i = 0; i < 7; i++) {
+    const puff = new Mesh(new SphereGeometry(1, 12, 8), mat("#b9c79a", { opacity: 0.32 }));
+    puff.position.set(Math.cos(i * 0.9) * 2.6, 1.6 + (i % 3) * 1.1, Math.sin(i * 0.9) * 2.6); puff.scale.setScalar(2.6 + (i % 2)); puff.castShadow = false;
+    cloud.add(puff);
+  }
+  floorShadow(g, 22, 26);
+  return g;
+}
 function floorShadow(g: Group, w: number, d: number): void {
   const pool = new Mesh(new CircleGeometry(1, 32), new MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.45, depthWrite: false }));
   pool.rotation.x = -Math.PI / 2; pool.position.y = 0.04; pool.scale.set(w, d, 1); pool.name = "shadow";
@@ -194,6 +228,7 @@ export function threatMesh(kind: ThreatKind, key: string): Group {
     case "spider": return spider();
     case "trap": return trap();
     case "kid": return kid();
+    case "exterminator": return exterminator();
     default: return new Group();
   }
 }
@@ -219,6 +254,25 @@ export function poseThreat(object: Group, s: ThreatState, time: number, ceiling:
       const looking = s.mode === "looking";
       if (ceiling > 0) { object.position.y = looking ? ceiling + 2 : ceiling + 40; object.rotation.x = 0; if (head) head.rotation.x = looking ? -0.9 : 0; }
       else { object.position.y = looking ? 60 : 50; if (head) head.rotation.x = looking ? 0.15 : -1.3; }
+      break;
+    }
+    case "exterminator": {
+      const walking = s.mode === "patrol";
+      for (const [name, sign] of [["leg-l", 1], ["leg-r", -1]] as const) { const leg = object.getObjectByName(name); if (leg) leg.rotation.x = walking ? Math.sin(time * 4) * 0.22 * sign : 0; }
+      const torch = object.getObjectByName("torch"), pool = object.getObjectByName("pool"), nozzle = object.getObjectByName("nozzle") as Mesh | undefined;
+      if (torch) torch.rotation.x = s.mode === "aim" ? 1.05 : 0.95;
+      if (pool) pool.position.z = s.mode === "aim" ? 28 : 34;
+      if (nozzle) (nozzle.material as MeshStandardMaterial).emissiveIntensity = s.mode === "aim" ? 2.5 + Math.sin(time * 30) : 0.2;
+      // The cloud hangs in the world where he aimed, so undo his own turn and step to place it.
+      const cloud = object.getObjectByName("cloud");
+      if (cloud) {
+        cloud.visible = s.mode === "spray" && s.target !== null;
+        if (s.target !== null) {
+          const dx = s.target[0] - s.at[0], dz = s.target[2] - s.at[2], c = Math.cos(-s.facing), n = Math.sin(-s.facing);
+          cloud.position.set(dx * c + dz * n, 0, -dx * n + dz * c);
+          cloud.rotation.y = time * 0.3; cloud.scale.setScalar(1 + Math.sin(time * 2) * 0.05);
+        }
+      }
       break;
     }
     case "dog": {

@@ -9,16 +9,16 @@ import authored from "./editor.scene.json";
  * spots authored here. Coordinates are world units, about 1.5 cm each.
  */
 export type Point = readonly [number, number, number];
-export type Zone = "kitchen" | "living" | "kidroom" | "garage" | "attic";
-export const ZONES: readonly Zone[] = ["kitchen", "living", "kidroom", "garage", "attic"];
-export const ZONE_NAME: Record<Zone, string> = { kitchen: "Kitchen", living: "Living room", kidroom: "Upstairs", garage: "Garage", attic: "Attic" };
+export type Zone = "kitchen" | "living" | "kidroom" | "garage" | "attic" | "basement";
+export const ZONES: readonly Zone[] = ["kitchen", "living", "kidroom", "garage", "attic", "basement"];
+export const ZONE_NAME: Record<Zone, string> = { kitchen: "Kitchen", living: "Living room", kidroom: "Upstairs", garage: "Garage", attic: "Attic", basement: "Basement" };
 export function isZone(value: unknown): value is Zone { return typeof value === "string" && (ZONES as readonly string[]).includes(value); }
 
 export type ConnectorKind = "crack" | "climb" | "drop" | "cable" | "train" | "vent";
 const CONNECTORS: readonly ConnectorKind[] = ["crack", "climb", "drop", "cable", "train", "vent"];
 export type ExitKind = "crack" | "mail" | "vent" | "dogdoor";
-export type ThreatKind = "cat" | "roomba" | "spider" | "trap" | "kid" | "dog" | "lights";
-const THREATS: readonly ThreatKind[] = ["cat", "roomba", "spider", "trap", "kid", "dog", "lights"];
+export type ThreatKind = "cat" | "roomba" | "spider" | "trap" | "kid" | "dog" | "lights" | "exterminator";
+const THREATS: readonly ThreatKind[] = ["cat", "roomba", "spider", "trap", "kid", "dog", "lights", "exterminator"];
 export type SpotTier = "open" | "tucked" | "cache";
 export type LootBias = "food" | "part" | "curio";
 

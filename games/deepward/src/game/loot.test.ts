@@ -25,8 +25,8 @@ describe("the Littles' finds", () => {
   test("every item can be found or made: room spots, a disarmed trap's spring, a spider's silk, the workbench", () => {
     const found = new Set<string>(["spring", "spider-silk", ...RECIPES.map(r => r.makes)]);
     for (let i = 0; i < 400; i++) {
-      const run = { seed: `obtain-${i}`, little: (["pip", "bolt", "dot", "fennel"] as const)[i % 4], zones: ["kitchen", "living", "kidroom", "garage", "attic"] as const };
-      for (const path of ["0", "0-0", "0-1", "0-0-0", "0-1-1", "0-0-0-0", "0-1-0-0-1"]) for (const l of planRoom({ ...run, zones: [...run.zones] }, path).loot) if (l.kind !== "toybox") found.add(l.kind);
+      const run = { seed: `obtain-${i}`, little: (["pip", "bolt", "dot", "fennel"] as const)[i % 4], zones: ["kitchen", "living", "kidroom", "garage", "attic", "basement"] as const };
+      for (const path of ["0", "0-0", "0-1", "0-0-0", "0-1-1", "0-0-0-0", "0-1-0-0-1", "0-0-1-0-1-0", "0-1-0-1-0-0-1", "0-0-0-1-1-0-0"]) for (const l of planRoom({ ...run, zones: [...run.zones] }, path).loot) if (l.kind !== "toybox") found.add(l.kind);
     }
     expect(ITEM_KINDS.filter(kind => !found.has(kind))).toEqual([]);
   });

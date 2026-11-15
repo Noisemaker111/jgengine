@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { TEMPLATES, type Point } from "../world";
-import { CAT, jab, kidLooking, roombaActive, spawnThreat, tickThreats, webDrag, type Senses, type ThreatState } from "./threats";
+import { CAT, EXTERMINATOR, jab, kidLooking, roombaActive, spawnThreat, tickThreats, webDrag, type Senses, type ThreatState } from "./threats";
 import type { PlannedThreat } from "./runGen";
 
 const room = TEMPLATES["living-rug"]!;
@@ -16,6 +16,31 @@ function run(states: ThreatState[], s: Senses, seconds: number, dt = 0.05) {
 }
 
 describe("the house's hunters", () => {
+  test("the Exterminator's torch finds you, the canister hisses, and the spray hangs where you stood", () => {
+    const man = { ...threat("exterminator", 0, 10), facing: Math.PI, mode: "sweep" as const, timer: EXTERMINATOR.sweep, hits: Math.PI };
+    const { events, states } = run([man], senses(at(0, 1)), 3.6);
+    expect(events.some(e => e.type === "cue" && e.sound === "hiss")).toBe(true);
+    expect(events.some(e => e.type === "hurt" && e.by === "exterminator" && e.damage === EXTERMINATOR.damage)).toBe(true);
+    expect(states[0]!.mode).toBe("spray");
+  });
+  test("stepping away during the hiss leaves the cloud on nothing; cover keeps the torch off you", () => {
+    const man = { ...threat("exterminator", 0, 10), facing: Math.PI, mode: "sweep" as const, timer: EXTERMINATOR.sweep, hits: Math.PI };
+    let aimed = { states: [man] as ThreatState[], events: [] as ReturnType<typeof tickThreats>["events"] };
+    for (let i = 0; i < 60 && aimed.states[0]!.mode !== "aim"; i++) aimed = run(aimed.states, senses(at(0, 1), { clock: i * 0.05 }), 0.05);
+    expect(aimed.states[0]!.mode).toBe("aim");
+    const after = run(aimed.states, senses(at(14, 1)), 4);
+    expect(after.events.some(e => e.type === "hurt")).toBe(false);
+    const hidden = run([man], senses(at(0, 1), { covered: true }), 3);
+    expect(hidden.events.some(e => e.type === "hurt")).toBe(false);
+    expect(hidden.states[0]!.mode).not.toBe("aim");
+  });
+  test("a noise turns his torch toward it, and the needle can't get through his boots", () => {
+    const man = { ...threat("exterminator", 0, 10), facing: 0, mode: "patrol" as const };
+    const turned = run([man], senses(at(0, 1), { noise: 20 }), 0.1);
+    expect(turned.states[0]!.mode).toBe("sweep");
+    expect(Math.abs(Math.cos(turned.states[0]!.facing - Math.PI))).toBeGreaterThan(0.9);
+    expect(jab([man], at(0, 9)).text).toBeNull();
+  });
   test("the Cat stalks what it sees, crouches with a wiggle, and pounces where you stood", () => {
     const cat = { ...threat("cat", 0, 10), facing: Math.PI };
     const you = at(0, 1);

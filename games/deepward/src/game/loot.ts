@@ -15,11 +15,12 @@ export type ItemKind =
   | "watch-battery" | "spring" | "paperclip" | "rubber-band" | "screw" | "toy-gear" | "safety-pin" | "thread-spool" | "tissue"
   | "button" | "marble" | "coin" | "bead" | "earring" | "tiny-key" | "dice" | "brick" | "crayon" | "stamp" | "sequin" | "spider-silk"
   | "cat-bell" | "pearl" | "toy-soldier" | "ornament" | "old-photo" | "tinsel"
+  | "fuse" | "wine-cork" | "lost-ring" | "pocket-watch"
   | "thimble" | "needle" | "napkin" | "grapple" | "button-shield" | "candle" | "slingshot"
   | "bottle-cap";
 export type Category = "food" | "part" | "curio" | "gear" | "cap";
 export type GearEffect = "helmet" | "spear" | "parachute" | "grapple" | "shield" | "torch" | "slingshot";
-export type SetId = "sewing-basket" | "junk-drawer" | "midnight-feast" | "treasure-hoard" | "toy-box" | "attic-keepsakes";
+export type SetId = "sewing-basket" | "junk-drawer" | "midnight-feast" | "treasure-hoard" | "toy-box" | "attic-keepsakes" | "cellar-hoard";
 
 export interface ItemKindDef {
   name: string; category: Category; w: number; h: number; mass: number; value: number; color: string;
@@ -76,6 +77,10 @@ export const ITEMS: Record<ItemKind, ItemKindDef> = {
   "toy-soldier": { name: "Toy soldier", category: "curio", w: 1, h: 2, mass: 1.2, value: 22, color: "#3f6b45", flavor: "A plastic guard frozen mid-salute. The Littles stand him at the burrow door.", set: "attic-keepsakes", zones: ["kidroom", "attic"], minDepth: 2, weight: 1.2 },
   ornament: { name: "Glass bauble", category: "curio", w: 2, h: 2, mass: 2.4, value: 44, color: "#d23b30", flavor: "A tree ornament as big as a hot-air balloon. Mind it doesn't roll.", bulky: true, set: "attic-keepsakes", zones: ["attic"], minDepth: 4, weight: 1 },
   "old-photo": { name: "Old photograph", category: "curio", w: 2, h: 1, mass: 0.2, value: 36, color: "#c8b48a", flavor: "The family, years ago, at the seaside. The Littles like to guess the names.", set: "attic-keepsakes", zones: ["attic", "living"], minDepth: 3, weight: 0.9 },
+  fuse: { name: "Old fuse", category: "part", w: 1, h: 2, mass: 0.8, value: 30, color: "#d9c27a", flavor: "Porcelain and copper from the cellar fuse box. Hums if you hold it close.", set: "cellar-hoard", zones: ["basement"], minDepth: 5, weight: 1 },
+  "wine-cork": { name: "Wine cork", category: "curio", w: 1, h: 2, mass: 0.4, value: 26, color: "#b07a4a", flavor: "Stained purple at one end, stamped with a castle. Floats like a boat.", set: "cellar-hoard", zones: ["basement"], minDepth: 5, weight: 1.2 },
+  "lost-ring": { name: "Wedding ring", category: "curio", w: 1, h: 1, mass: 0.6, value: 110, color: "#f0c64a", flavor: "Gold, worn thin on one side. Lost down the cellar steps a lifetime ago.", set: "cellar-hoard", zones: ["basement"], minDepth: 6, weight: 0.4 },
+  "pocket-watch": { name: "Pocket watch", category: "curio", w: 2, h: 2, mass: 2.6, value: 95, color: "#c9a24b", flavor: "Still ticking, somehow. A clockface as wide as a pond.", bulky: true, set: "cellar-hoard", zones: ["basement"], minDepth: 6, weight: 0.5 },
   "spider-silk": { name: "Spider silk", category: "curio", w: 1, h: 1, mass: 0.1, value: 34, color: "#eef2f5", flavor: "Stronger than thread. Taken from a spider that won’t need it.", weight: 0 },
 
   thimble: { name: "Thimble helmet", category: "gear", w: 1, h: 1, mass: 1.1, value: 30, color: "#c0c4c6", flavor: "Wear it on your head. Halves every bump and bite.", set: "sewing-basket", gear: "helmet", minDepth: 1, weight: 1 },
@@ -107,6 +112,7 @@ export const SETS: Record<SetId, { name: string; pieces: readonly ItemKind[]; bo
   "treasure-hoard": { name: "Treasure Hoard", pieces: ["coin", "marble", "earring", "bead", "stamp"], bonus: 120, flavor: "Shiny things, all in one heap. Dragons would be jealous." },
   "toy-box": { name: "Toy Box", pieces: ["brick", "dice", "crayon", "toy-gear"], bonus: 70, flavor: "The kid's best things, in a Little's best hiding place." },
   "attic-keepsakes": { name: "Attic Keepsakes", pieces: ["pearl", "old-photo", "toy-soldier", "ornament"], bonus: 110, flavor: "The family's forgotten past, remembered in the walls." },
+  "cellar-hoard": { name: "Cellar Hoard", pieces: ["fuse", "wine-cork", "lost-ring", "pocket-watch"], bonus: 200, flavor: "Brought up past the Exterminator's torch. The burrow will tell this one for years." },
 };
 export const SET_IDS = Object.keys(SETS) as SetId[];
 

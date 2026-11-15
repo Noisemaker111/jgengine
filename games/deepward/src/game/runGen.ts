@@ -172,7 +172,8 @@ function lootFor(run: RunSeed, path: string, depth: number, template: RoomTempla
     });
     const category = forced ?? weighted(categories, roll(run, key, "category")) ?? "food";
     const kinds = ITEM_KINDS.filter(k => ITEMS[k].category === category && (ITEMS[k].minDepth ?? 0) <= depth && (ITEMS[k].weight ?? 1) > 0)
-      .map(k => [k, (ITEMS[k].weight ?? 1) * (ITEMS[k].zones === undefined || ITEMS[k].zones!.includes(zone) ? 1 : 0.25)] as const);
+      // The cellar hoard turns up only in the basement; other zoned finds are just rarer elsewhere.
+      .map(k => [k, (ITEMS[k].weight ?? 1) * (ITEMS[k].zones === undefined || ITEMS[k].zones!.includes(zone) ? 1 : ITEMS[k].zones!.includes("basement") ? 0 : 0.25)] as const);
     const kind = weighted(kinds, roll(run, key, "kind"));
     if (kind === null) continue;
     const level = depth + 1 + twist.level + (spot.tier === "cache" ? 1 : 0) + (little.shinySense && category === "curio" ? 1 : 0);
@@ -185,6 +186,8 @@ function lootFor(run: RunSeed, path: string, depth: number, template: RoomTempla
 export function threatChance(kind: ThreatKind, depth: number, minDepth: number): number {
   if (depth < minDepth) return 0;
   if (kind === "kid") return 1;
+  // The Exterminator is nearly always on his beat once a night reaches the basement.
+  if (kind === "exterminator") return Math.min(0.95, 0.7 + (depth - minDepth) * 0.12);
   const base = kind === "trap" ? 0.55 : kind === "lights" ? 0.35 : 0.32;
   const chance = base + (depth - minDepth) * 0.16;
   return Math.min(depth === 0 ? 0.22 : 0.92, chance);

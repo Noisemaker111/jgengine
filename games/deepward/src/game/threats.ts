@@ -15,10 +15,14 @@ import type { PlannedThreat } from "./runGen";
  * - The Kid sleeps, but a restless kid sits up and looks; held in their sight, they pick you up and
  *   keep your pack.
  * - The Dog sleeps until it hears you, then barks (waking every cat in the room) and lumbers after you.
+ * - The Exterminator works the basement: boots, a torch and a canister. He walks a beat and stops to
+ *   sweep his torch; a noise turns the beam to it. Held in the beam, you hear the canister hiss as he
+ *   aims, then a cloud of spray hangs where you stood. Cover hides you from the beam but not the gas,
+ *   the needle can't get through his boots, and a pebble draws the torch away.
  */
 export interface ThreatState {
   key: string; kind: ThreatKind; at: Point; home: Point;
-  mode: "idle" | "prowl" | "listen" | "stalk" | "crouch" | "pounce" | "groom" | "sweep" | "dock" | "lurk" | "bite" | "armed" | "sprung" | "asleep" | "looking" | "awake" | "fled" | "dead";
+  mode: "idle" | "prowl" | "listen" | "stalk" | "crouch" | "pounce" | "groom" | "sweep" | "dock" | "lurk" | "bite" | "armed" | "sprung" | "asleep" | "looking" | "awake" | "fled" | "dead" | "patrol" | "aim" | "spray";
   timer: number; facing: number; target: Point | null; cooldown: number; stunned: number;
   /** Spider wounds, kid sight build-up, roomba lane index. */
   hits: number; seen: number; lane: number;
@@ -35,10 +39,12 @@ export const SPIDER = { web: 5.5, reach: 1.6, speed: 2.6, leash: 9, windup: 0.6,
 export const TRAP = { trigger: 1.15, damage: 50 } as const;
 export const KID = { sight: 34, cycle: 16, look: 6, grab: 1.1 } as const;
 export const DOG = { speed: 3.4, hear: 0.8, sight: 13, reach: 5.5, damage: 14, bark: 2.2, calm: 10 } as const;
+/** The Exterminator: a slow beat, a narrow torch that lights what it finds, a hiss before the spray. */
+export const EXTERMINATOR = { walk: 2.6, sight: 30, cone: 44, notice: 0.55, aim: 1.2, cloud: 5.5, linger: 3.6, damage: 15, tick: 0.6, sweep: 3.2, hear: 1.2, swing: 0.5 } as const;
 
 export function spawnThreat(planned: PlannedThreat): ThreatState {
   const at: Point = [planned.slot.at[0], 0, planned.slot.at[2]];
-  const mode: ThreatState["mode"] = planned.kind === "cat" ? "prowl" : planned.kind === "roomba" ? "dock" : planned.kind === "spider" ? "lurk" : planned.kind === "trap" ? "armed" : planned.kind === "kid" || planned.kind === "dog" ? "asleep" : "idle";
+  const mode: ThreatState["mode"] = planned.kind === "cat" ? "prowl" : planned.kind === "roomba" ? "dock" : planned.kind === "spider" ? "lurk" : planned.kind === "trap" ? "armed" : planned.kind === "kid" || planned.kind === "dog" ? "asleep" : planned.kind === "exterminator" ? "patrol" : "idle";
   return { key: planned.key, kind: planned.kind, at, home: at, mode, timer: hashUnit(planned.key) * 4, facing: hashUnit(`${planned.key}:f`) * Math.PI * 2, target: null, cooldown: 0, stunned: 0, hits: 0, seen: 0, lane: 0 };
 }
 
@@ -131,6 +137,7 @@ export function tickThreats(template: RoomTemplate, states: readonly ThreatState
       case "trap": return tickTrap(s, senses, events);
       case "kid": return tickKid(template, s, senses, dt, events);
       case "dog": return tickDog(template, s, senses, dt, events, barks);
+      case "exterminator": return tickExterminator(template, s, senses, dt, events);
       default: return s;
     }
   });
@@ -282,6 +289,45 @@ function tickDog(template: RoomTemplate, s: ThreatState, senses: Senses, dt: num
     events.push({ type: "hurt", damage: DOG.damage, by: "dog", text: "The dog's nose knocked you flat." });
     s.cooldown = 5; s.stunned = 1.5; // clumsy: it bowls you over, then blunders off before it comes again
   }
+  return s;
+}
+
+function tickExterminator(template: RoomTemplate, s: ThreatState, senses: Senses, dt: number, events: ThreatEvent[]): ThreatState {
+  const E = EXTERMINATOR;
+  if (s.mode === "spray") {
+    // The cloud hangs where you stood. Cover keeps off a torch, not gas: get out of it.
+    if (s.target !== null && groundDistance(senses.at, s.target) < E.cloud && s.cooldown <= 0) {
+      events.push({ type: "hurt", damage: E.damage, by: "exterminator", text: "The spray stings your eyes and lungs. Get out of the cloud!" });
+      s.cooldown = E.tick;
+    }
+    if (s.timer <= 0) { s.mode = "sweep"; s.timer = E.sweep; s.hits = s.facing; s.target = null; s.seen = 0; }
+    return s;
+  }
+  if (s.mode === "aim") {
+    if (s.timer <= 0) { s.mode = "spray"; s.timer = E.linger; s.cooldown = 0; if (s.target !== null) events.push({ type: "cue", sound: "hiss", at: s.target }); }
+    return s;
+  }
+  // His torch lights whatever it lands on, dark room or not.
+  const lit = sees(template, s, { ...senses, visibility: Math.max(1, senses.visibility) }, E.sight, E.cone);
+  // Each pass of the sweeping beam adds up: it forgets you slowly.
+  s.seen = lit ? s.seen + dt : Math.max(0, s.seen - dt * 0.4);
+  if (lit && s.seen >= E.notice) {
+    s.mode = "aim"; s.timer = E.aim; s.target = senses.at; s.facing = toward(s.at, senses.at);
+    events.push({ type: "cue", sound: "hiss", at: s.at });
+    return s;
+  }
+  const lure = senses.pebble !== null && groundDistance(s.at, senses.pebble) < 34 ? senses.pebble : hears(s, senses, E.hear) ? senses.at : null;
+  if (lure !== null) { s.mode = "sweep"; s.timer = E.sweep; s.hits = toward(s.at, lure); s.facing = s.hits; return s; }
+  if (s.mode === "sweep") {
+    s.facing = s.hits + Math.sin((E.sweep - s.timer) * 2.1) * E.swing;
+    if (s.timer <= 0) { s.mode = "patrol"; s.target = null; }
+    return s;
+  }
+  if (s.target === null || s.timer <= 0) { s.lane += 1; s.target = wanderPoint(template, s, s.lane, 44); s.timer = 10; }
+  s.facing = toward(s.at, s.target);
+  s.at = stepToward(template, s.at, s.target, E.walk, dt, 3);
+  s.mode = "patrol";
+  if (groundDistance(s.at, s.target) < 1.5) { s.mode = "sweep"; s.timer = E.sweep; s.hits = s.facing; s.target = null; }
   return s;
 }
 

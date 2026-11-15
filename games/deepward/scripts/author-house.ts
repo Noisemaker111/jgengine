@@ -13,7 +13,7 @@ import { createEditorHost } from '@jgengine/editor/session';
 import { writeFileSync } from 'node:fs';
 
 const path = new URL('../src/editor.scene.json', import.meta.url);
-const SPACING = 110, COLS = 4, ROWS = 5;
+const SPACING = 110, COLS = 4, ROWS = 6;
 const half = (SPACING * COLS) / 2;
 const CELL = 10;
 const cols = (SPACING * COLS) / CELL, rows = (SPACING * ROWS) / CELL;
@@ -656,6 +656,87 @@ function chairLeg(t: Ctx, x: number, z: number, color = OAK, h = 62, r = 1.3) { 
 
 // Doorways stay clear: any free-standing prop or model that crowds a door (within a Little's few
 // paces of it, at floor level) is slid away from the door, so you arrive looking into the room.
+// ---------------------------------------------------------------- basement (the endgame)
+{
+  const w = 48, d = 32;
+  const t = template('cellar-stairs', { name: 'The cellar steps', zone: 'basement', minDepth: 5, w, d, floor: 'concrete', floorColor: '#6e6a64', flavor: 'Wooden steps climb into the dark like cliffs. Cold air, old paint, and a torch beam somewhere below.', dark: true });
+  wall(t, 'north', w, d, '#7a746a', '#5e584e');
+  for (let i = 0; i < 3; i++) box(t, 'cellar-step', [0, 6 + i * 12, -12 - i * 2], [50, 12 + i * 24, 8], 'wood', i % 2 === 0 ? '#7a5a3a' : '#6e5034');
+  cyl(t, 'paint-tin', [-16, 9, -2], 6, 18, 'metal', '#c9c3b8', { solid: true });
+  cyl(t, 'paint-drip', [-16, 18.2, -2], 6.2, 0.6, 'paint', '#3a6fb0');
+  cyl(t, 'paint-tin-b', [-6, 7, -4], 5, 14, 'metal', '#b8b2a6', { solid: true });
+  box(t, 'broom-bristles', [16, 3, 6], [18, 6, 6], 'fabric', '#c8a65a', { solid: true, turn: 0.4 });
+  cyl(t, 'broom-handle', [6, 2, 12], 1.2, 40, 'wood', '#8a6a44', { roll: Math.PI / 2, turn: 1.0 });
+  box(t, 'newspaper', [2, 0.3, 4], [16, 0.6, 12], 'paper', '#d8d0bc', { cover: true, turn: -0.3 });
+  model(t, `${PROPS}/Crate_Wooden`, [18, 0, -6], 18, 0.3, [16, 16]);
+  model(t, `${PROPS}/Chain_Coil`, [-2, 0, 10], 8, 0.6);
+  lamp(t, 'bulb', [0, 60, -14], '#ffc27a', 6, 90, 'a bare bulb at the top of the steps');
+  lamp(t, 'airbrick', [-20, 10, -8], '#9fb9ff', 3, 26, 'moonlight through the air brick');
+  door(t, 'entry', 'entry', -20, 12, ['crack', 'vent', 'climb', 'drop'], 'down the cellar wall');
+  door(t, 'on', 'forward', 20, 12, ['crack', 'vent', 'cable'], 'along the skirting into the dark');
+  exit(t, 'airbrick', 'vent', -20, -8, 'the air brick to the garden');
+  spot(t, 'tin', -10, 2, 'tucked', 'behind the paint tins', { bias: 'part' });
+  spot(t, 'paper', 2, 7, 'tucked', 'under the newspaper');
+  spot(t, 'step', -4, -6, 'cache', 'under the bottom step', { bias: 'curio' });
+  spot(t, 'crate', 12, 2, 'open', 'by the crate', { bias: 'curio' });
+  spot(t, 'broom', 18, 12, 'open', 'in the broom bristles');
+  threat(t, 'exterminator', 'exterminator', 4, 4, 6, 'the Exterminator on his rounds');
+  threat(t, 'spider', 'spider', 20, -10, 5, 'a cellar spider');
+  threat(t, 'trap', 'trap', -6, 9, 5, 'a mousetrap');
+}
+{
+  const w = 48, d = 32;
+  const t = template('boiler-room', { name: 'The boiler room', zone: 'basement', minDepth: 5, w, d, floor: 'concrete', floorColor: '#75706a', flavor: 'The boiler roars and glows like a furnace in a mountain. Pipes everywhere, and the fuse box hums.', dark: true, weight: 1.1 });
+  wall(t, 'north', w, d, '#8a8478', '#6a6458');
+  box(t, 'boiler', [-14, 30, -11], [20, 60, 12], 'metal', '#c8c4ba', { solid: true });
+  box(t, 'boiler-window', [-14, 10, -4.8], [6, 4, 0.4], 'emissive', '#ff7a2a', { glow: 3 });
+  for (let i = 0; i < 4; i++) cyl(t, 'boiler-pipe', [-6 + i * 4, 30, -14], 1.2, 60, 'metal', i % 2 === 0 ? '#b07a4a' : '#8a8a86');
+  cyl(t, 'floor-pipe', [6, 1.6, -8], 1.6, 40, 'metal', '#b07a4a', { roll: Math.PI / 2, turn: Math.PI / 2, solid: true });
+  box(t, 'fuse-box', [16, 40, -15], [12, 16, 2], 'metal', '#5a6a5a');
+  box(t, 'fuse-light', [16, 34, -13.8], [1, 1, 0.4], 'emissive', '#ff3a2a', { glow: 4 });
+  box(t, 'rag-pile', [12, 1.5, 6], [12, 3, 9], 'fabric', '#7a6a5a', { cover: true, turn: 0.5 });
+  model(t, `${PROPS}/Bucket_Metal`, [-4, 0, 8], 14, 0.2, [12, 12]);
+  model(t, `${PROPS}/Barrel`, [20, 0, -4], 20, 0, [14, 14]);
+  lamp(t, 'boiler', [-14, 10, -2], '#ff8a3a', 6, 50, 'the boiler flame through its little window');
+  lamp(t, 'fuse', [16, 34, -12], '#ff4a3a', 2, 18, 'the fuse box warning light');
+  door(t, 'entry', 'entry', -20, 12, ['crack', 'vent', 'cable'], 'through a gap in the lagging');
+  door(t, 'on', 'forward', 20, 12, ['crack', 'vent', 'climb'], 'along the floor pipe');
+  exit(t, 'flue', 'vent', 2, -12, 'up the boiler flue vent');
+  spot(t, 'pipe', 2, -4, 'cache', 'under the floor pipe', { bias: 'part' });
+  spot(t, 'rags', 12, 10, 'tucked', 'in the rag pile');
+  spot(t, 'bucket', -10, 6, 'open', 'by the mop bucket', { bias: 'curio' });
+  spot(t, 'warm', -18, 4, 'open', 'in the boiler warmth', { bias: 'food' });
+  spot(t, 'barrel', 16, 4, 'tucked', 'behind the barrel', { bias: 'curio' });
+  threat(t, 'exterminator', 'exterminator', 2, 6, 5, 'the Exterminator checking the boiler');
+  threat(t, 'roomba', 'roomba', 0, 2, 6, 'an old Roomba exiled down here');
+}
+{
+  const w = 50, d = 34;
+  const t = template('pest-bench', { name: "The Exterminator's bench", zone: 'basement', minDepth: 6, w, d, floor: 'concrete', floorColor: '#6a6660', flavor: 'His kit is laid out on the cellar floor: canisters, glue boards, bait boxes. And behind it all, the cellar hoard.', dark: true, weight: 0.9 });
+  wall(t, 'north', w, d, '#6e6a60', '#545048');
+  box(t, 'kit-case', [-12, 8, -10], [22, 16, 12], 'plastic', '#3a3f3a', { solid: true });
+  box(t, 'kit-case-lid', [-12, 16.6, -10], [22.4, 1.2, 12.4], 'plastic', '#2a2f2a');
+  for (const [x, z] of [[6, -10], [12, -11]] as const) { cyl(t, 'canister', [x, 12, z], 4, 24, 'metal', '#b8bcc0', { solid: true }); cyl(t, 'canister-cap', [x, 24.6, z], 2, 2, 'plastic', '#c0392b'); }
+  box(t, 'bait-box', [18, 3, 4], [9, 6, 7], 'plastic', '#2a2a2a', { solid: true, turn: 0.3 });
+  box(t, 'glue-board', [-4, 0.2, 6], [10, 0.4, 7], 'paper', '#e8d878', { turn: -0.2 });
+  box(t, 'drop-cloth', [-18, 0.6, 8], [12, 1.2, 10], 'fabric', '#8a8070', { cover: true, turn: 0.4 });
+  model(t, `${PROPS}/Chest_Wood`, [20, 0, -10], 16, -0.4, [15, 10]);
+  model(t, `${CLUTTER}/Sack_Trench_Small`, [-22, 0, -4], 14, 0.8);
+  lamp(t, 'work', [-6, 50, 2], '#e8f0ff', 6, 80, 'his work lamp, left on');
+  lamp(t, 'chest', [20, 6, -6], '#ffd27a', 3, 20, 'gold glinting from the old chest');
+  door(t, 'entry', 'entry', -22, 13, ['crack', 'vent', 'cable', 'climb'], 'behind the drop cloth');
+  door(t, 'on', 'forward', 22, 13, ['crack', 'vent'], 'past the bait box');
+  exit(t, 'airbrick', 'vent', 0, -14, 'the air brick behind the kit');
+  spot(t, 'chest', 14, -6, 'cache', 'spilled from the old chest', { bias: 'curio' });
+  spot(t, 'case', -4, -6, 'cache', 'behind the kit case', { bias: 'curio' });
+  spot(t, 'cloth', -18, 11, 'tucked', 'under the drop cloth', { bias: 'part' });
+  spot(t, 'bait', 14, 9, 'open', 'by the bait box', { bias: 'food' });
+  spot(t, 'glue', 2, 10, 'open', 'beside the glue board');
+  threat(t, 'exterminator', 'exterminator', 0, 2, 6, 'the Exterminator at his bench');
+  threat(t, 'trap', 'trap', -8, 4, 6, 'a mousetrap');
+  threat(t, 'trap-b', 'trap', 8, 8, 6, 'a second mousetrap');
+}
+
 const DOOR_CLEAR = 9;
 {
   const doors = (markers as Record<string, any>[]).filter(m => m.kind === 'crumb-door');
@@ -718,7 +799,7 @@ function clear(template: string, x: number, z: number, radius: number): boolean 
 for (const m of markers as Record<string, any>[]) {
   const template = String(m.meta.template);
   if (!rooms.has(template) || m.kind === 'crumb-lamp' || m.kind === 'crumb-model') continue;
-  const big = m.kind === 'crumb-threat' && ['cat', 'dog', 'roomba'].includes(String(m.meta.threat));
+  const big = m.kind === 'crumb-threat' && ['cat', 'dog', 'roomba', 'exterminator'].includes(String(m.meta.threat));
   const radius = big ? 2.2 : 0.9;
   if (m.kind === 'crumb-threat' && ['kid', 'lights'].includes(String(m.meta.threat))) continue;
   if (clear(template, m.x, m.z, radius)) continue;

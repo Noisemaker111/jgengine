@@ -112,7 +112,10 @@ function Guide() {
   return null;
 }
 function RunLayers() {
-  const run = useStore(viewStore, v => v.mode === "run" || v.mode === "saving" ? v.run : null);
+  // The run changes every tick (its clock); the layers only redraw when the room or what lies in it does.
+  const ctx = useGameContext();
+  const key = useStore(viewStore, v => { const r = v.mode === "run" || v.mode === "saving" ? v.run : null; return r === null ? "" : [r.seed, r.little, r.zones.join(","), r.room, r.taken.join(","), r.dropped.map(d => `${d.room}:${d.id}`).join(",")].join("|"); });
+  const run = useMemo(() => key === "" ? null : viewStore.read(ctx).run, [key]);
   return run === null ? null : <><LootLayer run={run} /><WayMarks run={run} /><Clockwork run={run} /></>;
 }
 function WorldOverlay() {
@@ -198,6 +201,7 @@ export const game = defineGame({
       burrow: ["deepward.enter"],
       "first-room": ["deepward.enter", "deepward.dev.out"],
       "cat-tell": ["deepward.enter", "deepward.dev.cat"],
+      exterminator: ["deepward.enter", "deepward.dev.exterminator"],
       "mid-run": ["deepward.enter", "deepward.stage"],
       report: ["deepward.enter", "deepward.dev.extract"],
       "room-counter": ["deepward.enter", { name: "deepward.dev.room", input: { template: "counter-top" } }],

@@ -4152,12 +4152,702 @@
       }
     },
     {
+      "id": "cellar-stairs-model-crate_wooden-13",
+      "kind": "crumb-model",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": 269
+      },
+      "rotationY": 0.3,
+      "label": "quaternius-fantasy-props/Crate_Wooden",
+      "meta": {
+        "template": "cellar-stairs",
+        "model": "quaternius-fantasy-props/Crate_Wooden",
+        "size": 18
+      }
+    },
+    {
+      "id": "cellar-stairs-model-chain_coil-15",
+      "kind": "crumb-model",
+      "position": {
+        "x": -57,
+        "y": 0,
+        "z": 285
+      },
+      "rotationY": 0.6,
+      "label": "quaternius-fantasy-props/Chain_Coil",
+      "meta": {
+        "template": "cellar-stairs",
+        "model": "quaternius-fantasy-props/Chain_Coil",
+        "size": 8
+      }
+    },
+    {
+      "id": "cellar-stairs-lamp-bulb",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -55,
+        "y": 60,
+        "z": 261
+      },
+      "label": "a bare bulb at the top of the steps",
+      "meta": {
+        "template": "cellar-stairs",
+        "color": "#ffc27a",
+        "intensity": 6,
+        "distance": 90
+      }
+    },
+    {
+      "id": "cellar-stairs-lamp-airbrick",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": -75,
+        "y": 10,
+        "z": 267
+      },
+      "label": "moonlight through the air brick",
+      "meta": {
+        "template": "cellar-stairs",
+        "color": "#9fb9ff",
+        "intensity": 3,
+        "distance": 26
+      }
+    },
+    {
+      "id": "cellar-stairs-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": -75,
+        "y": 0,
+        "z": 287
+      },
+      "label": "down the cellar wall",
+      "meta": {
+        "template": "cellar-stairs",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "climb",
+          "drop"
+        ]
+      }
+    },
+    {
+      "id": "cellar-stairs-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": -35,
+        "y": 0,
+        "z": 287
+      },
+      "label": "along the skirting into the dark",
+      "meta": {
+        "template": "cellar-stairs",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "cellar-stairs-exit-airbrick",
+      "kind": "crumb-exit",
+      "position": {
+        "x": -75.4,
+        "y": 0,
+        "z": 265.6
+      },
+      "label": "the air brick to the garden",
+      "meta": {
+        "template": "cellar-stairs",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "cellar-stairs-spot-tin",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -63.5,
+        "y": 0,
+        "z": 277
+      },
+      "label": "behind the paint tins",
+      "meta": {
+        "template": "cellar-stairs",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "cellar-stairs-spot-paper",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -53,
+        "y": 0,
+        "z": 282
+      },
+      "label": "under the newspaper",
+      "meta": {
+        "template": "cellar-stairs",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "cellar-stairs-spot-step",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -55,
+        "y": 0,
+        "z": 269
+      },
+      "label": "under the bottom step",
+      "meta": {
+        "template": "cellar-stairs",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "cellar-stairs-spot-crate",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -42,
+        "y": 0,
+        "z": 278.7
+      },
+      "label": "by the crate",
+      "meta": {
+        "template": "cellar-stairs",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "cellar-stairs-spot-broom",
+      "kind": "crumb-spot",
+      "position": {
+        "x": -37,
+        "y": 0,
+        "z": 287
+      },
+      "label": "in the broom bristles",
+      "meta": {
+        "template": "cellar-stairs",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "cellar-stairs-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -50.3,
+        "y": 0,
+        "z": 279.7
+      },
+      "label": "the Exterminator on his rounds",
+      "meta": {
+        "template": "cellar-stairs",
+        "threat": "exterminator",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "cellar-stairs-threat-spider",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -47,
+        "y": 0,
+        "z": 265
+      },
+      "label": "a cellar spider",
+      "meta": {
+        "template": "cellar-stairs",
+        "threat": "spider",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "cellar-stairs-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": -61,
+        "y": 0,
+        "z": 284
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "cellar-stairs",
+        "threat": "trap",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "boiler-room-model-bucket_metal-14",
+      "kind": "crumb-model",
+      "position": {
+        "x": 51,
+        "y": 0,
+        "z": 283
+      },
+      "rotationY": 0.2,
+      "label": "quaternius-fantasy-props/Bucket_Metal",
+      "meta": {
+        "template": "boiler-room",
+        "model": "quaternius-fantasy-props/Bucket_Metal",
+        "size": 14
+      }
+    },
+    {
+      "id": "boiler-room-model-barrel-16",
+      "kind": "crumb-model",
+      "position": {
+        "x": 75,
+        "y": 0,
+        "z": 268
+      },
+      "rotationY": 0,
+      "label": "quaternius-fantasy-props/Barrel",
+      "meta": {
+        "template": "boiler-room",
+        "model": "quaternius-fantasy-props/Barrel",
+        "size": 20
+      }
+    },
+    {
+      "id": "boiler-room-lamp-boiler",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 41,
+        "y": 10,
+        "z": 273
+      },
+      "label": "the boiler flame through its little window",
+      "meta": {
+        "template": "boiler-room",
+        "color": "#ff8a3a",
+        "intensity": 6,
+        "distance": 50
+      }
+    },
+    {
+      "id": "boiler-room-lamp-fuse",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 71,
+        "y": 34,
+        "z": 263
+      },
+      "label": "the fuse box warning light",
+      "meta": {
+        "template": "boiler-room",
+        "color": "#ff4a3a",
+        "intensity": 2,
+        "distance": 18
+      }
+    },
+    {
+      "id": "boiler-room-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 287
+      },
+      "label": "through a gap in the lagging",
+      "meta": {
+        "template": "boiler-room",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable"
+        ]
+      }
+    },
+    {
+      "id": "boiler-room-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": 75,
+        "y": 0,
+        "z": 287
+      },
+      "label": "along the floor pipe",
+      "meta": {
+        "template": "boiler-room",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "boiler-room-exit-flue",
+      "kind": "crumb-exit",
+      "position": {
+        "x": 57,
+        "y": 0,
+        "z": 263
+      },
+      "label": "up the boiler flue vent",
+      "meta": {
+        "template": "boiler-room",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "boiler-room-spot-pipe",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 57,
+        "y": 0,
+        "z": 271
+      },
+      "label": "under the floor pipe",
+      "meta": {
+        "template": "boiler-room",
+        "tier": "cache",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "boiler-room-spot-rags",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 67,
+        "y": 0,
+        "z": 285
+      },
+      "label": "in the rag pile",
+      "meta": {
+        "template": "boiler-room",
+        "tier": "tucked"
+      }
+    },
+    {
+      "id": "boiler-room-spot-bucket",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 44,
+        "y": 0,
+        "z": 281
+      },
+      "label": "by the mop bucket",
+      "meta": {
+        "template": "boiler-room",
+        "tier": "open",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "boiler-room-spot-warm",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 37,
+        "y": 0,
+        "z": 279
+      },
+      "label": "in the boiler warmth",
+      "meta": {
+        "template": "boiler-room",
+        "tier": "open",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "boiler-room-spot-barrel",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 71,
+        "y": 0,
+        "z": 279
+      },
+      "label": "behind the barrel",
+      "meta": {
+        "template": "boiler-room",
+        "tier": "tucked",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "boiler-room-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 59.5,
+        "y": 0,
+        "z": 281
+      },
+      "label": "the Exterminator checking the boiler",
+      "meta": {
+        "template": "boiler-room",
+        "threat": "exterminator",
+        "minDepth": 5
+      }
+    },
+    {
+      "id": "boiler-room-threat-roomba",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 54.4,
+        "y": 0,
+        "z": 274.6
+      },
+      "label": "an old Roomba exiled down here",
+      "meta": {
+        "template": "boiler-room",
+        "threat": "roomba",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "pest-bench-model-chest_wood-13",
+      "kind": "crumb-model",
+      "position": {
+        "x": 185,
+        "y": 0,
+        "z": 265
+      },
+      "rotationY": -0.4,
+      "label": "quaternius-fantasy-props/Chest_Wood",
+      "meta": {
+        "template": "pest-bench",
+        "model": "quaternius-fantasy-props/Chest_Wood",
+        "size": 16
+      }
+    },
+    {
+      "id": "pest-bench-model-sack_trench_small-15",
+      "kind": "crumb-model",
+      "position": {
+        "x": 143,
+        "y": 0,
+        "z": 271
+      },
+      "rotationY": 0.8,
+      "label": "quaternius-toon-shooter/Sack_Trench_Small",
+      "meta": {
+        "template": "pest-bench",
+        "model": "quaternius-toon-shooter/Sack_Trench_Small",
+        "size": 14
+      }
+    },
+    {
+      "id": "pest-bench-lamp-work",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 159,
+        "y": 50,
+        "z": 277
+      },
+      "label": "his work lamp, left on",
+      "meta": {
+        "template": "pest-bench",
+        "color": "#e8f0ff",
+        "intensity": 6,
+        "distance": 80
+      }
+    },
+    {
+      "id": "pest-bench-lamp-chest",
+      "kind": "crumb-lamp",
+      "position": {
+        "x": 185,
+        "y": 6,
+        "z": 269
+      },
+      "label": "gold glinting from the old chest",
+      "meta": {
+        "template": "pest-bench",
+        "color": "#ffd27a",
+        "intensity": 3,
+        "distance": 20
+      }
+    },
+    {
+      "id": "pest-bench-door-entry",
+      "kind": "crumb-door",
+      "position": {
+        "x": 143,
+        "y": 0,
+        "z": 288
+      },
+      "label": "behind the drop cloth",
+      "meta": {
+        "template": "pest-bench",
+        "role": "entry",
+        "kinds": [
+          "crack",
+          "vent",
+          "cable",
+          "climb"
+        ]
+      }
+    },
+    {
+      "id": "pest-bench-door-on",
+      "kind": "crumb-door",
+      "position": {
+        "x": 187,
+        "y": 0,
+        "z": 288
+      },
+      "label": "past the bait box",
+      "meta": {
+        "template": "pest-bench",
+        "role": "forward",
+        "kinds": [
+          "crack",
+          "vent"
+        ]
+      }
+    },
+    {
+      "id": "pest-bench-exit-airbrick",
+      "kind": "crumb-exit",
+      "position": {
+        "x": 165,
+        "y": 0,
+        "z": 261
+      },
+      "label": "the air brick behind the kit",
+      "meta": {
+        "template": "pest-bench",
+        "exit": "vent"
+      }
+    },
+    {
+      "id": "pest-bench-spot-chest",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 176.4,
+        "y": 0,
+        "z": 270.5
+      },
+      "label": "spilled from the old chest",
+      "meta": {
+        "template": "pest-bench",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "pest-bench-spot-case",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 161,
+        "y": 0,
+        "z": 272
+      },
+      "label": "behind the kit case",
+      "meta": {
+        "template": "pest-bench",
+        "tier": "cache",
+        "bias": "curio"
+      }
+    },
+    {
+      "id": "pest-bench-spot-cloth",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 147,
+        "y": 0,
+        "z": 286
+      },
+      "label": "under the drop cloth",
+      "meta": {
+        "template": "pest-bench",
+        "tier": "tucked",
+        "bias": "part"
+      }
+    },
+    {
+      "id": "pest-bench-spot-bait",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 179,
+        "y": 0,
+        "z": 284
+      },
+      "label": "by the bait box",
+      "meta": {
+        "template": "pest-bench",
+        "tier": "open",
+        "bias": "food"
+      }
+    },
+    {
+      "id": "pest-bench-spot-glue",
+      "kind": "crumb-spot",
+      "position": {
+        "x": 167,
+        "y": 0,
+        "z": 285
+      },
+      "label": "beside the glue board",
+      "meta": {
+        "template": "pest-bench",
+        "tier": "open"
+      }
+    },
+    {
+      "id": "pest-bench-threat-exterminator",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 165,
+        "y": 0,
+        "z": 277
+      },
+      "label": "the Exterminator at his bench",
+      "meta": {
+        "template": "pest-bench",
+        "threat": "exterminator",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "pest-bench-threat-trap",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 157,
+        "y": 0,
+        "z": 279
+      },
+      "label": "a mousetrap",
+      "meta": {
+        "template": "pest-bench",
+        "threat": "trap",
+        "minDepth": 6
+      }
+    },
+    {
+      "id": "pest-bench-threat-trap-b",
+      "kind": "crumb-threat",
+      "position": {
+        "x": 173,
+        "y": 0,
+        "z": 283
+      },
+      "label": "a second mousetrap",
+      "meta": {
+        "template": "pest-bench",
+        "threat": "trap",
+        "minDepth": 6
+      }
+    },
+    {
       "id": "attic-christmas-model-candlestick-27",
       "kind": "crumb-model",
       "position": {
-        "x": -71,
+        "x": -181,
         "y": 0,
-        "z": 271
+        "z": 381
       },
       "rotationY": 0.4,
       "label": "quaternius-fantasy-props/CandleStick",
@@ -4171,9 +4861,9 @@
       "id": "attic-christmas-model-lantern_wall-29",
       "kind": "crumb-model",
       "position": {
-        "x": -33,
+        "x": -143,
         "y": 0,
-        "z": 261
+        "z": 371
       },
       "rotationY": -1.2,
       "label": "quaternius-fantasy-props/Lantern_Wall",
@@ -4187,9 +4877,9 @@
       "id": "attic-christmas-model-candlestick_triple-30",
       "kind": "crumb-model",
       "position": {
-        "x": -57,
+        "x": -167,
         "y": 0,
-        "z": 265
+        "z": 375
       },
       "rotationY": 0.2,
       "label": "quaternius-fantasy-props/CandleStick_Triple",
@@ -4203,9 +4893,9 @@
       "id": "attic-christmas-lamp-fairy",
       "kind": "crumb-lamp",
       "position": {
-        "x": -57,
+        "x": -167,
         "y": 3,
-        "z": 287
+        "z": 397
       },
       "label": "a string of fairy lights still plugged in",
       "meta": {
@@ -4219,9 +4909,9 @@
       "id": "attic-christmas-lamp-moon",
       "kind": "crumb-lamp",
       "position": {
-        "x": -37,
+        "x": -147,
         "y": 30,
-        "z": 263
+        "z": 373
       },
       "label": "moonlight through a gap in the tiles",
       "meta": {
@@ -4235,9 +4925,9 @@
       "id": "attic-christmas-door-entry",
       "kind": "crumb-door",
       "position": {
-        "x": -74,
+        "x": -184,
         "y": 0,
-        "z": 288
+        "z": 398
       },
       "label": "along the beams",
       "meta": {
@@ -4253,9 +4943,9 @@
       "id": "attic-christmas-door-on",
       "kind": "crumb-door",
       "position": {
-        "x": -36,
+        "x": -146,
         "y": 0,
-        "z": 288
+        "z": 398
       },
       "label": "over the album",
       "meta": {
@@ -4272,9 +4962,9 @@
       "id": "attic-christmas-exit-vent",
       "kind": "crumb-exit",
       "position": {
-        "x": -75,
+        "x": -185,
         "y": 0,
-        "z": 277
+        "z": 387
       },
       "label": "the heating vent",
       "meta": {
@@ -4286,9 +4976,9 @@
       "id": "attic-christmas-spot-box",
       "kind": "crumb-spot",
       "position": {
-        "x": -65,
+        "x": -175,
         "y": 0,
-        "z": 273
+        "z": 383
       },
       "label": "spilling from the decorations box",
       "meta": {
@@ -4301,9 +4991,9 @@
       "id": "attic-christmas-spot-tinsel",
       "kind": "crumb-spot",
       "position": {
-        "x": -43,
+        "x": -153,
         "y": 0,
-        "z": 284
+        "z": 394
       },
       "label": "in the tinsel",
       "meta": {
@@ -4315,9 +5005,9 @@
       "id": "attic-christmas-spot-album",
       "kind": "crumb-spot",
       "position": {
-        "x": -45,
+        "x": -155,
         "y": 0,
-        "z": 269
+        "z": 379
       },
       "label": "behind the photo album",
       "meta": {
@@ -4330,9 +5020,9 @@
       "id": "attic-christmas-spot-lights",
       "kind": "crumb-spot",
       "position": {
-        "x": -63,
+        "x": -173,
         "y": 0,
-        "z": 285
+        "z": 395
       },
       "label": "by the fairy lights",
       "meta": {
@@ -4344,9 +5034,9 @@
       "id": "attic-christmas-spot-bauble",
       "kind": "crumb-spot",
       "position": {
-        "x": -51,
+        "x": -161,
         "y": 0,
-        "z": 273
+        "z": 383
       },
       "label": "reflected in a bauble",
       "meta": {
@@ -4359,9 +5049,9 @@
       "id": "attic-christmas-threat-spider",
       "kind": "crumb-threat",
       "position": {
-        "x": -37,
+        "x": -147,
         "y": 0,
-        "z": 285
+        "z": 395
       },
       "label": "a spider in the tinsel",
       "meta": {
@@ -4374,9 +5064,9 @@
       "id": "attic-christmas-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": -55,
+        "x": -165,
         "y": 0,
-        "z": 277
+        "z": 387
       },
       "label": "an old mousetrap",
       "meta": {
@@ -4389,9 +5079,9 @@
       "id": "garage-bikes-model-shovel-23",
       "kind": "crumb-model",
       "position": {
-        "x": 21,
+        "x": -89,
         "y": 0,
-        "z": 255
+        "z": 365
       },
       "rotationY": 0.3,
       "label": "quaternius-toon-shooter/Shovel",
@@ -4405,9 +5095,9 @@
       "id": "garage-bikes-model-pallet-24",
       "kind": "crumb-model",
       "position": {
-        "x": 85,
+        "x": -25,
         "y": 0,
-        "z": 301
+        "z": 411
       },
       "rotationY": 0.1,
       "label": "quaternius-toon-shooter/Pallet",
@@ -4421,9 +5111,9 @@
       "id": "garage-bikes-lamp-window",
       "kind": "crumb-lamp",
       "position": {
-        "x": 55,
+        "x": -55,
         "y": 60,
-        "z": 293
+        "z": 403
       },
       "label": "moonlight through the garage window",
       "meta": {
@@ -4437,9 +5127,9 @@
       "id": "garage-bikes-lamp-freezer",
       "kind": "crumb-lamp",
       "position": {
-        "x": 35,
+        "x": -75,
         "y": 6,
-        "z": 263
+        "z": 373
       },
       "label": "a chest freezer’s light",
       "meta": {
@@ -4453,9 +5143,9 @@
       "id": "garage-bikes-door-entry",
       "kind": "crumb-door",
       "position": {
-        "x": 35,
+        "x": -75,
         "y": 0,
-        "z": 288
+        "z": 398
       },
       "label": "the garage door gap",
       "meta": {
@@ -4471,9 +5161,9 @@
       "id": "garage-bikes-door-on",
       "kind": "crumb-door",
       "position": {
-        "x": 61,
+        "x": -49,
         "y": 0,
-        "z": 262
+        "z": 372
       },
       "label": "up the pump hose",
       "meta": {
@@ -4489,9 +5179,9 @@
       "id": "garage-bikes-exit-dogdoor",
       "kind": "crumb-exit",
       "position": {
-        "x": 76,
+        "x": -34,
         "y": 0,
-        "z": 279
+        "z": 389
       },
       "label": "the cat flap to the garden",
       "meta": {
@@ -4503,9 +5193,9 @@
       "id": "garage-bikes-spot-card",
       "kind": "crumb-spot",
       "position": {
-        "x": 57,
+        "x": -53,
         "y": 0,
-        "z": 287
+        "z": 397
       },
       "label": "under the flattened box",
       "meta": {
@@ -4517,9 +5207,9 @@
       "id": "garage-bikes-spot-ball",
       "kind": "crumb-spot",
       "position": {
-        "x": 59,
+        "x": -51,
         "y": 0,
-        "z": 273
+        "z": 383
       },
       "label": "behind the football",
       "meta": {
@@ -4532,9 +5222,9 @@
       "id": "garage-bikes-spot-oil",
       "kind": "crumb-spot",
       "position": {
-        "x": 41,
+        "x": -69,
         "y": 0,
-        "z": 277
+        "z": 387
       },
       "label": "by the oil can",
       "meta": {
@@ -4547,9 +5237,9 @@
       "id": "garage-bikes-spot-wheel",
       "kind": "crumb-spot",
       "position": {
-        "x": 53,
+        "x": -57,
         "y": 0,
-        "z": 263
+        "z": 373
       },
       "label": "in the spokes",
       "meta": {
@@ -4562,9 +5252,9 @@
       "id": "garage-bikes-spot-pump",
       "kind": "crumb-spot",
       "position": {
-        "x": 69,
+        "x": -41,
         "y": 0,
-        "z": 269
+        "z": 379
       },
       "label": "at the pump foot",
       "meta": {
@@ -4577,9 +5267,9 @@
       "id": "garage-bikes-threat-dog",
       "kind": "crumb-threat",
       "position": {
-        "x": 63,
+        "x": -47,
         "y": 0,
-        "z": 285
+        "z": 395
       },
       "label": "the dog, let in to the garage",
       "meta": {
@@ -4592,9 +5282,9 @@
       "id": "garage-bikes-threat-trap",
       "kind": "crumb-threat",
       "position": {
-        "x": 49,
+        "x": -61,
         "y": 0,
-        "z": 281
+        "z": 391
       },
       "label": "a mousetrap",
       "meta": {
@@ -4607,9 +5297,9 @@
       "id": "garage-bikes-threat-spider",
       "kind": "crumb-threat",
       "position": {
-        "x": 35,
+        "x": -75,
         "y": 0,
-        "z": 265
+        "z": 375
       },
       "label": "a spider on the wheel",
       "meta": {
@@ -13510,13 +14200,1107 @@
       }
     },
     {
-      "id": "room-attic-christmas",
+      "id": "room-cellar-stairs",
       "kind": "crumb-room",
       "shape": "box",
       "center": {
         "x": -55,
         "y": 0.5,
         "z": 275
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "The cellar steps",
+      "meta": {
+        "template": "cellar-stairs",
+        "zone": "basement",
+        "minDepth": 5,
+        "floor": "concrete",
+        "floorColor": "#6e6a64",
+        "flavor": "Wooden steps climb into the dark like cliffs. Cold air, old paint, and a torch beam somewhere below.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "cellar-stairs-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 60,
+        "z": 258
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#7a746a",
+      "label": "wall-north",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 2.8,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#5e584e",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 5.75,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#5e584e",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-cellar-step-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 6,
+        "z": 263
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 6,
+        "z": 4
+      },
+      "color": "#7a5a3a",
+      "label": "cellar-step",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-cellar-step-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 18,
+        "z": 261
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 18,
+        "z": 4
+      },
+      "color": "#6e5034",
+      "label": "cellar-step",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-cellar-step-6",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -55,
+        "y": 30,
+        "z": 259
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 30,
+        "z": 4
+      },
+      "color": "#7a5a3a",
+      "label": "cellar-step",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "wood",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-paint-tin-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -70.87918308153932,
+        "y": 9,
+        "z": 272.57714078538766
+      },
+      "radius": 6,
+      "height": 18,
+      "color": "#c9c3b8",
+      "label": "paint-tin",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-paint-drip-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -70.87918308153932,
+        "y": 18.2,
+        "z": 272.57714078538766
+      },
+      "radius": 6.2,
+      "height": 0.6,
+      "color": "#3a6fb0",
+      "label": "paint-drip",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "paint",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-paint-tin-b-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -61,
+        "y": 7,
+        "z": 271
+      },
+      "radius": 5,
+      "height": 14,
+      "color": "#b8b2a6",
+      "label": "paint-tin-b",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-broom-bristles-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -44.98460353205412,
+        "y": 3,
+        "z": 272.0230947019188
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 3,
+        "z": 3
+      },
+      "color": "#c8a65a",
+      "label": "broom-bristles",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "fabric",
+        "solid": true,
+        "cover": false,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-broom-handle-11",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": -49,
+        "y": 2,
+        "z": 287
+      },
+      "radius": 1.2,
+      "height": 40,
+      "color": "#8a6a44",
+      "label": "broom-handle",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "wood",
+        "solid": false,
+        "turn": 1,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "cellar-stairs-newspaper-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -53,
+        "y": 0.3,
+        "z": 279
+      },
+      "halfExtents": {
+        "x": 8,
+        "y": 0.3,
+        "z": 6
+      },
+      "color": "#d8d0bc",
+      "label": "newspaper",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "paper",
+        "solid": false,
+        "cover": true,
+        "turn": -0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "cellar-stairs-model-solid-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": -37,
+        "y": 2,
+        "z": 269
+      },
+      "halfExtents": {
+        "x": 8,
+        "y": 2,
+        "z": 8
+      },
+      "label": "quaternius-fantasy-props/Crate_Wooden footprint",
+      "meta": {
+        "template": "cellar-stairs",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.3
+      }
+    },
+    {
+      "id": "room-boiler-room",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 0.5,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 24,
+        "y": 0.5,
+        "z": 16
+      },
+      "label": "The boiler room",
+      "meta": {
+        "template": "boiler-room",
+        "zone": "basement",
+        "minDepth": 5,
+        "floor": "concrete",
+        "floorColor": "#75706a",
+        "flavor": "The boiler roars and glows like a furnace in a mountain. Pipes everywhere, and the fuse box hums.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 1.1,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "boiler-room-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 60,
+        "z": 258
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#8a8478",
+      "label": "wall-north",
+      "meta": {
+        "template": "boiler-room",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 2.8,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#6a6458",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "boiler-room",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 55,
+        "y": 5.75,
+        "z": 258.8
+      },
+      "halfExtents": {
+        "x": 26,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#6a6458",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "boiler-room",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-boiler-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 41,
+        "y": 30,
+        "z": 264
+      },
+      "halfExtents": {
+        "x": 10,
+        "y": 30,
+        "z": 6
+      },
+      "color": "#c8c4ba",
+      "label": "boiler",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-boiler-window-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 41,
+        "y": 10,
+        "z": 270.2
+      },
+      "halfExtents": {
+        "x": 3,
+        "y": 2,
+        "z": 0.2
+      },
+      "color": "#ff7a2a",
+      "label": "boiler-window",
+      "meta": {
+        "template": "boiler-room",
+        "material": "emissive",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0,
+        "glow": 3
+      }
+    },
+    {
+      "id": "boiler-room-boiler-pipe-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 49,
+        "y": 30,
+        "z": 261
+      },
+      "radius": 1.2,
+      "height": 60,
+      "color": "#b07a4a",
+      "label": "boiler-pipe",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-boiler-pipe-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 53,
+        "y": 30,
+        "z": 261
+      },
+      "radius": 1.2,
+      "height": 60,
+      "color": "#8a8a86",
+      "label": "boiler-pipe",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-boiler-pipe-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 57,
+        "y": 30,
+        "z": 261
+      },
+      "radius": 1.2,
+      "height": 60,
+      "color": "#b07a4a",
+      "label": "boiler-pipe",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-boiler-pipe-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 61,
+        "y": 30,
+        "z": 261
+      },
+      "radius": 1.2,
+      "height": 60,
+      "color": "#8a8a86",
+      "label": "boiler-pipe",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-floor-pipe-10",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 61,
+        "y": 1.6,
+        "z": 267
+      },
+      "radius": 1.6,
+      "height": 40,
+      "color": "#b07a4a",
+      "label": "floor-pipe",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": true,
+        "turn": 1.5707963267948966,
+        "tilt": 0,
+        "roll": 1.5707963267948966
+      }
+    },
+    {
+      "id": "boiler-room-fuse-box-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 71,
+        "y": 40,
+        "z": 260
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 8,
+        "z": 1
+      },
+      "color": "#5a6a5a",
+      "label": "fuse-box",
+      "meta": {
+        "template": "boiler-room",
+        "material": "metal",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-fuse-light-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 71,
+        "y": 34,
+        "z": 261.2
+      },
+      "halfExtents": {
+        "x": 0.5,
+        "y": 0.5,
+        "z": 0.2
+      },
+      "color": "#ff3a2a",
+      "label": "fuse-light",
+      "meta": {
+        "template": "boiler-room",
+        "material": "emissive",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0,
+        "glow": 4
+      }
+    },
+    {
+      "id": "boiler-room-rag-pile-13",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 63,
+        "y": 1.5,
+        "z": 278
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 1.5,
+        "z": 4.5
+      },
+      "color": "#7a6a5a",
+      "label": "rag-pile",
+      "meta": {
+        "template": "boiler-room",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.5,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "boiler-room-model-solid-15",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 51,
+        "y": 2,
+        "z": 283
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 2,
+        "z": 6
+      },
+      "label": "quaternius-fantasy-props/Bucket_Metal footprint",
+      "meta": {
+        "template": "boiler-room",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0.2
+      }
+    },
+    {
+      "id": "boiler-room-model-solid-17",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 75,
+        "y": 2,
+        "z": 268
+      },
+      "halfExtents": {
+        "x": 7,
+        "y": 2,
+        "z": 7
+      },
+      "label": "quaternius-fantasy-props/Barrel footprint",
+      "meta": {
+        "template": "boiler-room",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": 0
+      }
+    },
+    {
+      "id": "room-pest-bench",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 0.5,
+        "z": 275
+      },
+      "halfExtents": {
+        "x": 25,
+        "y": 0.5,
+        "z": 17
+      },
+      "label": "The Exterminator's bench",
+      "meta": {
+        "template": "pest-bench",
+        "zone": "basement",
+        "minDepth": 6,
+        "floor": "concrete",
+        "floorColor": "#6a6660",
+        "flavor": "His kit is laid out on the cellar floor: canisters, glue boards, bait boxes. And behind it all, the cellar hoard.",
+        "root": false,
+        "dark": true,
+        "elevated": 0,
+        "ceiling": 0,
+        "weight": 0.9,
+        "mood": "night"
+      }
+    },
+    {
+      "id": "pest-bench-wall-north-1",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 60,
+        "z": 257
+      },
+      "halfExtents": {
+        "x": 27,
+        "y": 60,
+        "z": 1
+      },
+      "color": "#6e6a60",
+      "label": "wall-north",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plaster",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-baseboard-north-2",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 2.8,
+        "z": 257.8
+      },
+      "halfExtents": {
+        "x": 27,
+        "y": 2.8,
+        "z": 0.4
+      },
+      "color": "#545048",
+      "label": "baseboard-north",
+      "meta": {
+        "template": "pest-bench",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-baseboard-lip-north-3",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 165,
+        "y": 5.75,
+        "z": 257.8
+      },
+      "halfExtents": {
+        "x": 27,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "color": "#545048",
+      "label": "baseboard-lip-north",
+      "meta": {
+        "template": "pest-bench",
+        "material": "paint",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-kit-case-4",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 153,
+        "y": 8,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 11,
+        "y": 8,
+        "z": 6
+      },
+      "color": "#3a3f3a",
+      "label": "kit-case",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-kit-case-lid-5",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 153,
+        "y": 16.6,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 11.2,
+        "y": 0.6,
+        "z": 6.2
+      },
+      "color": "#2a2f2a",
+      "label": "kit-case-lid",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plastic",
+        "solid": false,
+        "cover": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-canister-6",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 171,
+        "y": 12,
+        "z": 265
+      },
+      "radius": 4,
+      "height": 24,
+      "color": "#b8bcc0",
+      "label": "canister",
+      "meta": {
+        "template": "pest-bench",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-canister-cap-7",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 171,
+        "y": 24.6,
+        "z": 265
+      },
+      "radius": 2,
+      "height": 2,
+      "color": "#c0392b",
+      "label": "canister-cap",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plastic",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-canister-8",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 177,
+        "y": 12,
+        "z": 264
+      },
+      "radius": 4,
+      "height": 24,
+      "color": "#b8bcc0",
+      "label": "canister",
+      "meta": {
+        "template": "pest-bench",
+        "material": "metal",
+        "solid": true,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-canister-cap-9",
+      "kind": "crumb-prop",
+      "shape": "cylinder",
+      "center": {
+        "x": 177,
+        "y": 24.6,
+        "z": 264
+      },
+      "radius": 2,
+      "height": 2,
+      "color": "#c0392b",
+      "label": "canister-cap",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plastic",
+        "solid": false,
+        "turn": 0,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-bait-box-10",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 181.51713070827844,
+        "y": 3,
+        "z": 275.6635440936265
+      },
+      "halfExtents": {
+        "x": 4.5,
+        "y": 3,
+        "z": 3.5
+      },
+      "color": "#2a2a2a",
+      "label": "bait-box",
+      "meta": {
+        "template": "pest-bench",
+        "material": "plastic",
+        "solid": true,
+        "cover": false,
+        "turn": 0.3,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-glue-board-11",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 161,
+        "y": 0.2,
+        "z": 281
+      },
+      "halfExtents": {
+        "x": 5,
+        "y": 0.2,
+        "z": 3.5
+      },
+      "color": "#e8d878",
+      "label": "glue-board",
+      "meta": {
+        "template": "pest-bench",
+        "material": "paper",
+        "solid": false,
+        "cover": false,
+        "turn": -0.2,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-drop-cloth-12",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 152.37042571331637,
+        "y": 0.6,
+        "z": 276.28696785835456
+      },
+      "halfExtents": {
+        "x": 6,
+        "y": 0.6,
+        "z": 5
+      },
+      "color": "#8a8070",
+      "label": "drop-cloth",
+      "meta": {
+        "template": "pest-bench",
+        "material": "fabric",
+        "solid": false,
+        "cover": true,
+        "turn": 0.4,
+        "tilt": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "pest-bench-model-solid-14",
+      "kind": "crumb-prop",
+      "shape": "box",
+      "center": {
+        "x": 185,
+        "y": 2,
+        "z": 265
+      },
+      "halfExtents": {
+        "x": 7.5,
+        "y": 2,
+        "z": 5
+      },
+      "label": "quaternius-fantasy-props/Chest_Wood footprint",
+      "meta": {
+        "template": "pest-bench",
+        "material": "paint",
+        "solid": true,
+        "hidden": true,
+        "turn": -0.4
+      }
+    },
+    {
+      "id": "room-attic-christmas",
+      "kind": "crumb-room",
+      "shape": "box",
+      "center": {
+        "x": -165,
+        "y": 0.5,
+        "z": 385
       },
       "halfExtents": {
         "x": 23,
@@ -13544,9 +15328,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -75,
+        "x": -185,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13570,9 +15354,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -67,
+        "x": -177,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13596,9 +15380,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -59,
+        "x": -169,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13622,9 +15406,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -51,
+        "x": -161,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13648,9 +15432,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -43,
+        "x": -153,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13674,9 +15458,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -35,
+        "x": -145,
         "y": 0.6,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 1.5,
@@ -13700,9 +15484,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -67,
+        "x": -177,
         "y": 9,
-        "z": 266
+        "z": 376
       },
       "halfExtents": {
         "x": 9,
@@ -13726,9 +15510,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -67,
+        "x": -177,
         "y": 18.6,
-        "z": 267
+        "z": 377
       },
       "halfExtents": {
         "x": 9.3,
@@ -13752,9 +15536,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -51,
+        "x": -161,
         "y": 4.5,
-        "z": 267
+        "z": 377
       },
       "radius": 4.5,
       "color": "#d23b30",
@@ -13770,9 +15554,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -43,
+        "x": -153,
         "y": 3.5,
-        "z": 265
+        "z": 375
       },
       "radius": 3.5,
       "color": "#d4af37",
@@ -13788,9 +15572,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -57,
+        "x": -167,
         "y": 3,
-        "z": 283
+        "z": 393
       },
       "radius": 3,
       "color": "#2f6fd1",
@@ -13806,9 +15590,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -51,
+        "x": -161,
         "y": 9.3,
-        "z": 267
+        "z": 377
       },
       "radius": 0.9,
       "height": 1.2,
@@ -13828,9 +15612,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -73,
+        "x": -183,
         "y": 0.7,
-        "z": 287
+        "z": 397
       },
       "radius": 0.6,
       "color": "#ff5a4a",
@@ -13847,9 +15631,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -69.4,
+        "x": -179.4,
         "y": 0.7,
-        "z": 285.3170580303842
+        "z": 395.3170580303842
       },
       "radius": 0.6,
       "color": "#5aff7a",
@@ -13866,9 +15650,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -65.8,
+        "x": -175.8,
         "y": 0.7,
-        "z": 285.18140514634865
+        "z": 395.18140514634865
       },
       "radius": 0.6,
       "color": "#5ab4ff",
@@ -13885,9 +15669,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -62.2,
+        "x": -172.2,
         "y": 0.7,
-        "z": 286.7177599838803
+        "z": 396.7177599838803
       },
       "radius": 0.6,
       "color": "#ffd86b",
@@ -13904,9 +15688,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -58.6,
+        "x": -168.6,
         "y": 0.7,
-        "z": 288.5136049906159
+        "z": 398.5136049906159
       },
       "radius": 0.6,
       "color": "#ff5a4a",
@@ -13923,9 +15707,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 0.7,
-        "z": 288.91784854932627
+        "z": 398.91784854932627
       },
       "radius": 0.6,
       "color": "#5aff7a",
@@ -13942,9 +15726,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -51.4,
+        "x": -161.4,
         "y": 0.7,
-        "z": 287.55883099639783
+        "z": 397.55883099639783
       },
       "radius": 0.6,
       "color": "#5ab4ff",
@@ -13961,9 +15745,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -47.8,
+        "x": -157.8,
         "y": 0.7,
-        "z": 285.6860268025624
+        "z": 395.6860268025624
       },
       "radius": 0.6,
       "color": "#ffd86b",
@@ -13980,9 +15764,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -44.2,
+        "x": -154.2,
         "y": 0.7,
-        "z": 285.02128350675326
+        "z": 395.02128350675326
       },
       "radius": 0.6,
       "color": "#ff5a4a",
@@ -13999,9 +15783,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": -40.6,
+        "x": -150.6,
         "y": 0.7,
-        "z": 286.1757630295165
+        "z": 396.1757630295165
       },
       "radius": 0.6,
       "color": "#5aff7a",
@@ -14018,9 +15802,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": -57,
+        "x": -167,
         "y": 0.3,
-        "z": 287
+        "z": 397
       },
       "radius": 0.15,
       "height": 36,
@@ -14040,9 +15824,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -41,
+        "x": -151,
         "y": 1.2,
-        "z": 281
+        "z": 391
       },
       "halfExtents": {
         "x": 5,
@@ -14066,9 +15850,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -39,
+        "x": -149,
         "y": 2,
-        "z": 273
+        "z": 383
       },
       "halfExtents": {
         "x": 5,
@@ -14092,9 +15876,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -55,
+        "x": -165,
         "y": 50,
-        "z": 256
+        "z": 366
       },
       "halfExtents": {
         "x": 25,
@@ -14118,9 +15902,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -71,
+        "x": -181,
         "y": 2,
-        "z": 271
+        "z": 381
       },
       "halfExtents": {
         "x": 3,
@@ -14141,9 +15925,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": -57,
+        "x": -167,
         "y": 2,
-        "z": 265
+        "z": 375
       },
       "halfExtents": {
         "x": 4,
@@ -14164,9 +15948,9 @@
       "kind": "crumb-room",
       "shape": "box",
       "center": {
-        "x": 55,
+        "x": -55,
         "y": 0.5,
-        "z": 275
+        "z": 385
       },
       "halfExtents": {
         "x": 24,
@@ -14194,9 +15978,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 55,
+        "x": -55,
         "y": 60,
-        "z": 258
+        "z": 368
       },
       "halfExtents": {
         "x": 26,
@@ -14220,9 +16004,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 55,
+        "x": -55,
         "y": 2.8,
-        "z": 258.8
+        "z": 368.8
       },
       "halfExtents": {
         "x": 26,
@@ -14246,9 +16030,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 55,
+        "x": -55,
         "y": 5.75,
-        "z": 258.8
+        "z": 368.8
       },
       "halfExtents": {
         "x": 26,
@@ -14272,9 +16056,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 26,
       "height": 3,
@@ -14294,9 +16078,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 22,
       "height": 3.4,
@@ -14316,9 +16100,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14338,9 +16122,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14360,9 +16144,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14382,9 +16166,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14404,9 +16188,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14426,9 +16210,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14448,9 +16232,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14470,9 +16254,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 26,
-        "z": 265
+        "z": 375
       },
       "radius": 0.2,
       "height": 44,
@@ -14492,9 +16276,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 45,
+        "x": -65,
         "y": 0.6,
-        "z": 265
+        "z": 375
       },
       "halfExtents": {
         "x": 1.5,
@@ -14518,9 +16302,9 @@
       "kind": "crumb-prop",
       "shape": "sphere",
       "center": {
-        "x": 67,
+        "x": -43,
         "y": 7,
-        "z": 277
+        "z": 387
       },
       "radius": 7,
       "color": "#e8e2d0",
@@ -14536,9 +16320,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 73,
+        "x": -37,
         "y": 14,
-        "z": 265
+        "z": 375
       },
       "radius": 1.6,
       "height": 28,
@@ -14558,9 +16342,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 73,
+        "x": -37,
         "y": 28.5,
-        "z": 265
+        "z": 375
       },
       "halfExtents": {
         "x": 4,
@@ -14584,9 +16368,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 37,
+        "x": -73,
         "y": 5,
-        "z": 283
+        "z": 393
       },
       "radius": 3.5,
       "height": 10,
@@ -14606,9 +16390,9 @@
       "kind": "crumb-prop",
       "shape": "cylinder",
       "center": {
-        "x": 40,
+        "x": -70,
         "y": 11,
-        "z": 283
+        "z": 393
       },
       "radius": 0.4,
       "height": 8,
@@ -14628,9 +16412,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 43,
+        "x": -67,
         "y": 0.05,
-        "z": 285
+        "z": 395
       },
       "halfExtents": {
         "x": 4,
@@ -14654,9 +16438,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 57,
+        "x": -53,
         "y": 0.4,
-        "z": 285
+        "z": 395
       },
       "halfExtents": {
         "x": 8,
@@ -14680,9 +16464,9 @@
       "kind": "crumb-prop",
       "shape": "box",
       "center": {
-        "x": 78.6,
+        "x": -31.4,
         "y": 9,
-        "z": 279
+        "z": 389
       },
       "halfExtents": {
         "x": 0.3,
@@ -14712,12 +16496,507 @@
       "minX": -220,
       "minZ": -220,
       "maxX": 220,
-      "maxZ": 330
+      "maxZ": 440
     },
     "cellSize": 10,
     "cols": 44,
-    "rows": 55,
+    "rows": 66,
     "offsets": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -17240,6 +19519,490 @@
       0
     ],
     "surfaces": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,

@@ -34,10 +34,11 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
 export const UPGRADE_IDS = Object.keys(UPGRADES) as UpgradeId[];
 
 /** Charts: the house beyond the kitchen and the living room, each opened at the map room. */
-export const CHARTS: Record<Exclude<Zone, "kitchen" | "living">, { cost: Cost; flavor: string }> = {
+export const CHARTS: Record<Exclude<Zone, "kitchen" | "living">, { cost: Cost; flavor: string; after?: Zone }> = {
   kidroom: { cost: { items: { crayon: 1 }, caps: 15 }, flavor: "Up the stairs: the kid's bedroom, the bathroom and the laundry, full of toys and a sleeping giant." },
   garage: { cost: { items: { screw: 1, spring: 1 }, caps: 25 }, flavor: "Through the hall: the cold garage, all parts and traps." },
   attic: { cost: { items: { "tiny-key": 1, "thread-spool": 1 }, caps: 40 }, flavor: "Up through the hatch: the attic, where the old treasure sleeps." },
+  basement: { cost: { items: { "watch-battery": 1, "tiny-key": 1, marble: 1 }, caps: 60 }, after: "attic", flavor: "Down the cellar steps, only deep in a night: the boiler, the old cellar hoard, and the Exterminator who works the dark down there." },
 };
 export const STARTING_ZONES: readonly Zone[] = ["kitchen", "living"];
 
