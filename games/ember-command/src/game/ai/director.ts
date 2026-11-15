@@ -8,10 +8,12 @@ import { startEncounter, updateEncounter, phaseStatus } from "@jgengine/core/wav
 import { createPerception, type PerceptionService } from "@jgengine/core/sensor/perception";
 
 import { combatantDef } from "../catalog";
-import { ARRIVE_RADIUS, ENEMY_WAVE_INTERVAL, ENEMY_WAVE_MAX_FIELDED } from "../tuning";
+import { ARRIVE_RADIUS } from "../tuning";
 import { playerKeepPoint } from "../world/scene";
 import { livingUnits, session, type UnitRuntime } from "../session";
-import { MARCH_PLAN, WAVE_CYCLE } from "./waveManifest";
+import { createEncounter } from "@jgengine/core/waves/encounter";
+import { createEncounterState } from "@jgengine/core/waves/encounterSequence";
+import { marchPlanFor, personalityOf, type PersonalityId } from "./personality";
 
 /**
  * The Black Ant war effort, driven by engine pieces instead of one scripted order:
@@ -45,6 +47,8 @@ const MARCH_PRESSURE: PressureRule = {
 type PlanState = ReturnType<typeof startEncounter>["state"];
 
 export interface EnemyWaveState {
+  /** Who runs the black colony this battle (see `personality.ts`); the campaign meets the classic one. */
+  personality: PersonalityId;
   plan: PlanState;
   /** Attack waves authored for this run. */
   encounter: Encounter;
@@ -106,10 +110,31 @@ export function lastContactSeconds(): number {
 
 /** Where waves march: the live player keep if it still stands, else the authored keep point. */
 function assaultTarget(): { x: number; z: number } {
+  const aim = personalityOf(session.enemyWave.personality).target;
+  if (aim === "chambers") {
+    const campId = session.enemyWave.campId;
+    const origin = (campId !== null ? session.units.get(campId)?.guardPoint : undefined) ?? { x: 0, z: 0 };
+    let best: { x: number; z: number } | null = null;
+    let bestD = Infinity;
+    for (const c of livingUnits("player", "building")) {
+      if (c.catalogId === "keep_player" || c.guardPoint === undefined) continue;
+      const d = Math.hypot(c.guardPoint.x - origin.x, c.guardPoint.z - origin.z);
+      if (d < bestD) { bestD = d; best = c.guardPoint; }
+    }
+    if (best !== null) return best;
+  }
+  if (aim === "foragers" && sceneRef !== null) {
+    const worker = livingUnits("player", "unit").find((u) => u.catalogId === "worker");
+    const at = worker !== undefined ? sceneRef.scene.entity.get(worker.id)?.position : undefined;
+    if (at !== undefined) return { x: at[0], z: at[2] };
+  }
   const keep = livingUnits("player", "building").find((u) => u.catalogId === "keep_player");
   if (keep?.guardPoint !== undefined) return keep.guardPoint;
   return playerKeepPoint();
 }
+
+/** The context the last muster ran in, so the forager aim can read live positions. */
+let sceneRef: GameContext | null = null;
 
 /** The black colony's home, by authored id: its nest (the scene's `keep_enemy`), else a lone mound. */
 const HOME_IDS = ["keep_enemy", "brood_mound"] as const;
@@ -242,17 +267,20 @@ function musterNextWave(ctx: GameContext): void {
   const wave = session.enemyWave;
   const camp = musterCamp(ctx);
   if (camp === null) return;
+  sceneRef = ctx;
+  const rival = personalityOf(wave.personality);
+  const cycle = rival.waves.waves.length;
   const target = assaultTarget();
   const pressure = evaluatePressure(
-    { health: keepHealthFraction(ctx), progress: Math.min(1, wave.sent / WAVE_CYCLE), elapsed: session.elapsed },
+    { health: keepHealthFraction(ctx), progress: Math.min(1, wave.sent / cycle), elapsed: session.elapsed },
     MARCH_PRESSURE,
   );
   wave.tier = pressure.tier;
   wave.lastPressure = pressure;
-  const index = wave.sent % WAVE_CYCLE;
+  const index = wave.sent % cycle;
   const orders = wave.encounter.openWave(index, pressure);
   // Never push the field past its cap: a wave takes only the room left, so held waves cannot dump.
-  const room = ENEMY_WAVE_MAX_FIELDED - livingUnits("enemy", "unit").length;
+  const room = rival.maxFielded - livingUnits("enemy", "unit").length;
   const units = orders.map((order) => order.unit).slice(0, Math.max(0, room));
   if (units.length === 0) return;
   wave.sent += 1;
@@ -386,16 +414,18 @@ export function tickEnemyWaves(ctx: GameContext, dt: number): void {
       },
     },
   };
+  const rival = personalityOf(wave.personality);
+  const plan = marchPlanFor(rival);
   const steps = wave.plan.started
-    ? updateEncounter(MARCH_PLAN, wave.plan, alive >= ENEMY_WAVE_MAX_FIELDED ? 0 : dt, signals)
-    : startEncounter(MARCH_PLAN, wave.plan, signals);
+    ? updateEncounter(plan, wave.plan, alive >= rival.maxFielded ? 0 : dt, signals)
+    : startEncounter(plan, wave.plan, signals);
   wave.plan = steps.state;
   // A repeating phase signals its next beat with another enter, so the beat is the enter itself.
   for (const event of steps.events) {
     if (event.type !== "enter") continue;
     if (event.phaseId === "scout") sendScouts(ctx);
     if (event.phaseId === "expand") raiseForwardCamp(ctx);
-    if (event.phaseId === "attack" && alive < ENEMY_WAVE_MAX_FIELDED) musterNextWave(ctx);
+    if (event.phaseId === "attack" && alive < rival.maxFielded) musterNextWave(ctx);
   }
 
   observeEnemySenses(ctx);
@@ -432,7 +462,17 @@ export function nextWaveEta(): number {
   if (wave.grace > 0) return wave.grace;
   if (phaseStatus(wave.plan, "attack") !== "active") return 0;
   const entered = wave.plan.nodes["attack"]?.enteredAt ?? wave.plan.elapsed;
-  return Math.max(0, ENEMY_WAVE_INTERVAL - (wave.plan.elapsed - entered));
+  return Math.max(0, personalityOf(wave.personality).interval - (wave.plan.elapsed - entered));
+}
+
+/** Hand the black colony to a personality: a fresh plan and wave book, nothing yet sent. */
+export function setRivalPersonality(id: PersonalityId): void {
+  const rival = personalityOf(id);
+  const wave = session.enemyWave;
+  wave.personality = id;
+  wave.plan = createEncounterState(marchPlanFor(rival));
+  wave.encounter = createEncounter({ definition: rival.waves, seed: 7 });
+  wave.sent = 0;
 }
 
 /** What the plan is doing right now, for the HUD. */

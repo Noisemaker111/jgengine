@@ -157,6 +157,7 @@ function fresh(): SessionState {
     formation: { kind: "line", anchor: { x: 0, z: 0 }, facing: 0, members: [], offsets: {} },
     fog: createFogState(FOG_CELL),
     enemyWave: {
+      personality: "classic",
       // Started on the first plan tick, after the opening grace, so the scout phase's enter event
       // reaches the director instead of being spent while no world exists yet.
       plan: createEncounterState(MARCH_PLAN),

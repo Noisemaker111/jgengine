@@ -72,6 +72,7 @@ function OrdersNote({ width }: { width: number }) {
     return c === null ? null : { phase: c.phase, index: c.index, title: c.title, objective: c.objective, step: c.step, steps: c.steps, timer: c.remaining !== null, timed: c.duration !== null && c.duration > 0, count: c.count, away: c.map !== activeMap() ? c.mapLabel : null };
   });
   const live = shape !== null && shape.phase === "live";
+  const rival = useHudSlice((h) => h.rivalName);
   return <RuneView variant="note" width={width} gap={4}>
     {live ? <>
       <Row justify="between">
@@ -92,6 +93,7 @@ function OrdersNote({ width }: { width: number }) {
     </> : <>
       <Eyebrow text={shape === null ? "Free skirmish" : shape.away !== null ? `Next order · ${campaignOrdinal(shape.index - 1)} · on ${shape.away}` : `Next order · ${campaignOrdinal(shape.index - 1)}`} />
       <Text textStyle="verb" text={shape === null ? "Dig out the Black Ant Nest" : shape.title} />
+      {shape === null ? <Small text={`Run by ${rival}`} /> : null}
     </>}
   </RuneView>;
 }

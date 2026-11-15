@@ -66,6 +66,8 @@ export interface HudSnapshot {
   rivalPhase: string;
   /** The pressure tier the Black Ant waves are sized at, 0..2. */
   rivalTier: number;
+  /** Who runs the black colony this battle (a skirmish rival's name; the classic colony in the campaign). */
+  rivalName: string;
   /** Units currently queued/training at the Nest, and the active job's 0..1 progress. */
   producing: number;
   trainProgress: number;
@@ -113,6 +115,7 @@ const initial: HudSnapshot = {
   nextWaveIn: 0,
   rivalPhase: "scouting",
   rivalTier: 0,
+  rivalName: "The Black Colony",
   producing: 0,
   trainProgress: 0,
   hasBarracks: false,
@@ -243,6 +246,7 @@ function changed(next: HudSnapshot): boolean {
     p.nextWaveIn !== next.nextWaveIn ||
     p.rivalPhase !== next.rivalPhase ||
     p.rivalTier !== next.rivalTier ||
+    p.rivalName !== next.rivalName ||
     p.producing !== next.producing ||
     Math.abs(p.trainProgress - next.trainProgress) > 0.02 ||
     p.hasBarracks !== next.hasBarracks ||

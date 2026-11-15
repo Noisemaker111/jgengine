@@ -5,8 +5,10 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { editorLayers } from "../../editorLayers";
 import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
-import { activeCampaignStep, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
+import { activeCampaignStep, campaignStore, flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
 import { createHazardState, skirmishHazardsFor } from "../hazards";
+import { setRivalPersonality } from "../ai/director";
+import { isPersonalityId, resolveRival, rivalStore } from "../ai/personality";
 import { YARD } from "../yardInstance";
 import { raiseAlarm } from "../pheromone";
 import { grantHeroXp, heroXpFor } from "../hero";
@@ -180,6 +182,8 @@ export function setupSkirmish(ctx: GameContext): void {
       // The yard's clocks start with the battle: the mission picks which run, a free skirmish runs all
       // but the magnifying glass. The beam warms up over the middle of the lawn.
       session.hazards = createHazardState(activeCampaignStep(state)?.hazards ?? skirmishHazardsFor(YARD), { x: 0, z: 0 });
+      // Who runs the black colony: the campaign's classic colony, or the skirmish rival picked (or rolled).
+      setRivalPersonality(resolveRival(state, campaignStore.read(state).mode === "skirmish"));
     }
     return state;
   } });
@@ -210,7 +214,8 @@ export function setupSkirmish(ctx: GameContext): void {
   } });
   ctx.game.commands.define("match.title", { apply: (state) => { setupSkirmish(state); return state; } });
   // Field desk: run the yard without the campaign track, or start the campaign over from mission I.
-  ctx.game.commands.define("match.skirmish", { apply: (state) => {
+  ctx.game.commands.define<{ rival?: unknown } | undefined>("match.skirmish", { apply: (state, input) => {
+    if (input?.rival === "roll" || isPersonalityId(input?.rival)) rivalStore.write(state, input.rival);
     setCampaignMode(state, "skirmish");
     setupSkirmish(state);
     state.game.commands.run("match.start", {});

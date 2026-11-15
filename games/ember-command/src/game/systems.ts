@@ -42,6 +42,7 @@ import { onPatio } from "./yard";
 import { YARD } from "./yardInstance";
 import { broodLanes, isMarked, MARK_SECONDS, matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
+import { personalityOf } from "./ai/personality";
 
 /** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
 function researchViews(): Record<UpgradeId, ResearchView> {
@@ -480,6 +481,7 @@ const hudSystem: SystemDefinition = defineSystem({
       nextWaveIn: Math.max(0, Math.ceil(nextWaveEta())),
       rivalPhase: planPhase(),
       rivalTier: session.enemyWave.tier,
+      rivalName: personalityOf(session.enemyWave.personality).label,
       producing: active.length + queuedJobs(session.production).length,
       trainProgress: active.length > 0 ? jobProgress(active[0]!) : 0,
       hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),

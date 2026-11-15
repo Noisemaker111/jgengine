@@ -18,6 +18,7 @@ import { preferences, type CommanderPreferences } from "../preferences";
 import { CAMPAIGN_SLOTS, campaignLabel, campaignSlots, commandProfile, loadCampaignRecord, newCampaignRecord, refreshCampaignSlots, saveCampaignRecord } from "../menuSave";
 import { Eyebrow, Glyph, InkButton, PlankButton, Row, SealButton, Sheet, Small, Text, Title, WaxSeal, useHudSlice } from "./kit";
 import { GILT, INK, OCHRE, WAX } from "./theme";
+import { PERSONALITIES, SKIRMISH_PERSONALITIES, type RivalChoice } from "../ai/personality";
 import { activeMap, chooseMap, MAPS, sceneSet, type MapId } from "../../maps";
 
 /** Capture-only focus request: a shot declares which order it wants highlighted. */
@@ -145,12 +146,25 @@ function RecordsSheet({ slots, recentId, onOpen, onNew, width }: { slots: readon
   </Sheet>;
 }
 
-function SkirmishSheet({ onMarch, width }: { onMarch: () => void; width: number }) {
+const RIVAL_ROWS: readonly { id: RivalChoice; label: string; blurb: string }[] = [
+  ...SKIRMISH_PERSONALITIES.map((id) => ({ id, label: PERSONALITIES[id].label, blurb: PERSONALITIES[id].blurb })),
+  { id: "roll", label: "Surprise me", blurb: "Learn who runs the black nest when their first raid comes over the grass." },
+];
+
+function SkirmishSheet({ onMarch, width }: { onMarch: (rival: RivalChoice) => void; width: number }) {
+  const [rival, setRival] = useState<RivalChoice>("roll");
   return <Sheet width={width} label="Free skirmish">
     <Eyebrow text="No orders" />
     <Title text="Free skirmish" />
-    <Text text="The lawn as it stands: the red nest, a pantry, and the black nest across the garden hose. The sprinkler, the mower, rain and night all run. Dig out the black nest to win." />
-    <PlankButton run={onMarch}>Into the yard</PlankButton>
+    <Text text="The lawn as it stands, every clock running. Dig out the black nest to win. Choose who runs it:" />
+    {RIVAL_ROWS.map((row) =>
+      <RuneAction key={row.id} label={row.label} role="radio" run={() => setRival(row.id)} layout="row" gap={10} padding={[4, 4, 4, 4]} hover="#1f2a1210" radius={2} items="center">
+        <RuneView width={22} height={22} border={{ width: 2, color: INK }} radius={11} items="center" justify="center">
+          {rival === row.id ? <RuneView width={10} height={10} radius={5} fill={WAX} /> : null}
+        </RuneView>
+        <RuneView gap={0} grow={1} shrink><Text textStyle="verb" text={row.label} /><Small text={row.blurb} /></RuneView>
+      </RuneAction>)}
+    <PlankButton run={() => onMarch(rival)}>Into the yard</PlankButton>
   </Sheet>;
 }
 
@@ -365,7 +379,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
   const detail = active === "report" ? <ReportSheet width={sheetWidth} />
     : active === "continue" ? <TakeCommandSheet recent={recent} campaign={campaign} onTake={take} width={sheetWidth} />
     : active === "new" ? <CommissionSheet slot={newSlot} name={name} onName={setName} onBegin={() => startNew(newSlot)} width={sheetWidth} />
-    : active === "skirmish" ? <SkirmishSheet onMarch={() => run("match.skirmish")} width={sheetWidth} />
+    : active === "skirmish" ? <SkirmishSheet onMarch={(rival) => commands.run("match.skirmish", { rival })} width={sheetWidth} />
     : active === "missions" ? <RecordsSheet slots={slots} recentId={recent?.id ?? null} onOpen={(slot) => void openRecord(slot)} onNew={(slot) => startNew(slot)} width={sheetWidth} />
     : active === "settings" ? <FieldSettings ctx={ctx} width={sheetWidth} />
     : active === "credits" ? <CreditsSheet width={sheetWidth} /> : null;

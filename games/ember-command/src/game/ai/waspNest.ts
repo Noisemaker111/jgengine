@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { livingUnits, session } from "../session";
+import { personalityOf } from "./personality";
 import { WASP_SORTIE_CAP, WASP_SORTIE_INTERVAL, WASP_SORTIE_SIZE } from "../tuning";
 
 /**
@@ -31,7 +32,7 @@ export function tickWaspNest(ctx: GameContext): number {
   const nest = livingUnits("enemy", "building").find((u) => u.catalogId === "wasp_nest");
   state.wing = state.wing.filter((id) => session.units.has(id));
   if (nest === undefined || nest.guardPoint === undefined || session.elapsed < state.nextAt) return 0;
-  state.nextAt = session.elapsed + WASP_SORTIE_INTERVAL;
+  state.nextAt = session.elapsed + WASP_SORTIE_INTERVAL * personalityOf(session.enemyWave.personality).waspTempo;
   const target = sortieTarget(ctx, nest.guardPoint);
   if (target === null) return 0;
   let launched = 0;
