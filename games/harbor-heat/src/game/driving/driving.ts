@@ -91,7 +91,9 @@ const BODY_CAMERA: Record<string, ChaseCameraTuning> = {
   car_sport: { ...DRIVE_CAMERA_TUNING, distance: 5.6, height: 1.9, lookHeight: 0.8 },
 };
 
-/** Blackboard key on a hull: a throttle (0..1) held open with no input, for the `jetski-wake` capture state. */
+const wakeId = (vehicleId: string): string => `wake:${vehicleId}`;
+
+/** Blackboard key on a hull: a throttle (0..1) and steer (-1..1) held with no input, for the `jetski-wake` capture state. */
 export const CRUISE_KEY = "capture.cruise";
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
@@ -448,6 +450,31 @@ export function createDriving(): Driving {
     return step;
   }
 
+  /**
+   * The V of white water trailing a moving hull: one scene object behind the stern, stretched longer
+   * and wider with speed, taken away when the hull slows or leaves the water.
+   */
+  function trailWake(ctx: GameContext, vehicleId: string, at: readonly [number, number, number], heading: number, speed: number, radius: number): void {
+    const id = wakeId(vehicleId);
+    if (speed < 2.5) {
+      if (ctx.scene.object.get(id) !== null) ctx.scene.object.remove(id);
+      return;
+    }
+    const back = radius * 0.9;
+    const x = at[0] - Math.sin(heading) * back;
+    const z = at[2] - Math.cos(heading) * back;
+    const length = 4 + speed * 1.1;
+    const visual = { scale: [length * 0.55, 1, length] as [number, number, number] };
+    if (ctx.scene.object.get(id) === null) {
+      ctx.scene.object.place("obj_wake", x, at[1] + 0.03, z, { instanceId: id, onExisting: "replace", rotation: heading, visual });
+      ctx.scene.object.setColliders(id, {});
+      return;
+    }
+    ctx.scene.object.move(id, x, at[1] + 0.03, z);
+    ctx.scene.object.rotate(id, heading);
+    ctx.scene.object.setVisual(id, visual);
+  }
+
   /** The hull's boat sim, built at its pose on first use; the car sim is dropped so dry land restarts from here. */
   function boatFor(ctx: GameContext, vehicleId: string): BoatDynamics {
     const existing = boats.get(vehicleId);
@@ -473,8 +500,11 @@ export function createDriving(): Driving {
     const before = boat.pose();
     const axis = { ...ctx.input.axis(DRIVE_AXIS_BINDINGS) };
     // A capture state can hold the throttle open so a still shows the hull at speed with its wake.
-    const cruise = ctx.scene.entity.blackboard.get<number>(vehicleId, CRUISE_KEY);
-    if (cruise !== undefined) axis.throttle = Math.max(axis.throttle ?? 0, cruise);
+    const cruise = ctx.scene.entity.blackboard.get<{ throttle: number; steer: number }>(vehicleId, CRUISE_KEY);
+    if (cruise !== undefined) {
+      axis.throttle = Math.max(axis.throttle ?? 0, cruise.throttle);
+      if ((axis.steer ?? 0) === 0) axis.steer = cruise.steer;
+    }
     const step = boat.tick(dt, axis);
     const [x, , z] = step.motion.position;
     const radius = vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "")?.collisionRadius ?? 1.2;
@@ -483,8 +513,9 @@ export function createDriving(): Driving {
     let pose = step.motion.position;
     if (blocked) {
       // Bounce: back to where it was, the speed knocked out of it and a little sent back the other way.
+      // The helm still turns it, so a hull pushed against a wall can steer off it instead of sticking.
       const [vx, vz] = boat.velocity();
-      boat.resetTo(before.position, before.heading);
+      boat.resetTo(before.position, step.motion.heading);
       boat.applyImpulse(-vx * 0.25, -vz * 0.25);
       pose = before.position;
       if (Math.hypot(vx, vz) > 4) {
@@ -497,12 +528,13 @@ export function createDriving(): Driving {
     ctx.scene.entity.setPose(vehicleId, {
       position: [pose[0], surface?.surface ?? pose[1], pose[2]],
       rotationX: -step.body.bodyPitch,
-      rotationY: blocked ? before.heading : step.motion.heading,
+      rotationY: step.motion.heading,
       rotationZ: step.body.bodyRoll,
       dt,
     });
     // The wake: white water off the stern while the hull is moving, heavier once it planes.
     const speed = Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed);
+    trailWake(ctx, vehicleId, [pose[0], surface?.surface ?? pose[1], pose[2]], step.motion.heading, speed, radius);
     wakeClock -= dt;
     if (speed > 3 && wakeClock <= 0) {
       wakeClock = 0.12;
@@ -530,6 +562,7 @@ export function createDriving(): Driving {
 
   /** The player is out of the car: drop the handle, the engine note, the dash and the car's touch layout. */
   function stopDriving(ctx: GameContext): void {
+    if (driving !== null && ctx.scene.object.get(wakeId(driving)) !== null) ctx.scene.object.remove(wakeId(driving));
     driving = null;
     drivingAudio.stop(ctx);
     lastTelemetry = { ...ON_FOOT };
@@ -661,6 +694,7 @@ export function createDriving(): Driving {
           } else {
             // Out of the water a hull runs on its car tuning, dragging aground; back in deep water it floats again.
             boats.delete(driving);
+            if (ctx.scene.object.get(wakeId(driving)) !== null) ctx.scene.object.remove(wakeId(driving));
             const car = carVehicleFor(ctx, driving);
             const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
             refreshClamp(ctx, driving, car.pose().position, dt);

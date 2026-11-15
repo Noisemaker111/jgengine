@@ -187,6 +187,7 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_delivery_3: { url: new URL("../../art/parcel-tower-3.glb", import.meta.url).href, anchor: "origin" },
     obj_order_beacon: { url: art("order-beacon"), anchor: "origin" },
     obj_tide_water: { url: art("tide-water"), anchor: "origin" },
+    obj_wake: { url: art("wake"), anchor: "origin" },
     ...Object.fromEntries(WINDOW_ROWS.map((rows) => [`obj_window_lights_${rows}`, { url: art(`window-lights-${rows}`), anchor: "origin" } satisfies ModelConfig])),
     obj_lighthouse: { url: art("lighthouse"), anchor: "origin" },
     obj_submarine: { url: art("submarine"), anchor: "origin" },

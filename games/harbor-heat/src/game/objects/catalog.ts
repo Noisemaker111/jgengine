@@ -27,6 +27,7 @@ export const OBJECTS: readonly ObjectDef[] = [
   // are `prop` markers in the scene document.
   { id: "obj_order_beacon", label: "Order drop", color: "#ffcf4a", footprint: { w: 1, h: 3, d: 1 }, solid: false, fixture: true },
   ...WINDOW_ROWS.map((rows) => ({ id: `obj_window_lights_${rows}`, label: "Lit windows", color: "#ffd59a", footprint: { w: 1, h: 1, d: 0.05 }, solid: false, fixture: true })),
+  { id: "obj_wake", label: "Wake", color: "#e9fbf8", footprint: { w: 1, h: 0.05, d: 1 }, solid: false, fixture: true },
   { id: "obj_tide_water", label: "Flood water", color: "#0d3442", footprint: { w: 2, h: 0.05, d: 2 }, solid: false, fixture: true },
   { id: "obj_lighthouse", label: "Gull Point lighthouse", color: "#f4efe6", footprint: { w: 6, h: 19, d: 6 }, solid: true },
   { id: "obj_submarine", label: "Submarine Sardine", color: "#2c8c97", footprint: { w: 4, h: 3, d: 18 }, solid: false, fixture: true },

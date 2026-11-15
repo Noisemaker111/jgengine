@@ -48,7 +48,8 @@ export function passTime(ctx: GameContext, seconds: number, kind: AwaySummary["k
   const news = result.log.length;
   if (news > 0) lines.push({ label: "On the news wire", value: `${news}` });
   const hours = Math.round((seconds / DAY) * 24);
-  const span = kind === "sleep" ? `${hours} hours` : `${Math.round(seconds / 60)} minutes`;
+  const minutes = Math.round(seconds / 60);
+  const span = kind === "sleep" ? `${hours} ${hours === 1 ? "hour" : "hours"}` : `${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
   const quiet = lines.length === 0;
   const summary: AwaySummary = {
     kind,

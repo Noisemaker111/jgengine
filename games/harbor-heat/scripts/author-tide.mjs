@@ -472,3 +472,27 @@ function buildWindowLights(rows) {
   return batch.group('window lights');
 }
 for (const rows of WINDOW_ROWS) await exportModel(`window-lights-${rows}`, buildWindowLights(rows));
+
+/**
+ * A hull's wake: two white arms spreading back from the stern in a V, a churned band down the middle,
+ * on a unit footprint (z 0 at the stern to -1 behind, x -0.5..0.5 at the far end) the boat scales by
+ * its speed every tick.
+ */
+function buildWake() {
+  const batch = new Batch();
+  const foam = named('wake foam', '#e9fbf8', { roughness: 0.5, transparent: true, opacity: 0.7, depthWrite: false, emissive: '#bff4ee', emissiveIntensity: 0.55, side: THREE.DoubleSide });
+  const churn = named('wake churn', '#cdeff0', { roughness: 0.6, transparent: true, opacity: 0.4, depthWrite: false, emissive: '#9fe0e0', emissiveIntensity: 0.35, side: THREE.DoubleSide });
+  const strip = (x0, x1, w0, w1, material) => {
+    // A flat quad from the stern (z 0, width w0 at x0) to the far end (z -1, width w1 at x1).
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([x0 - w0 / 2, 0, 0, x0 + w0 / 2, 0, 0, x1 + w1 / 2, 0, -1, x1 - w1 / 2, 0, -1], 3));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.computeVertexNormals();
+    batch.add(material, g);
+  };
+  strip(-0.06, -0.47, 0.05, 0.08, foam);
+  strip(0.06, 0.47, 0.05, 0.08, foam);
+  strip(0, 0, 0.14, 0.34, churn);
+  return batch.group('wake');
+}
+await exportModel('wake', buildWake());

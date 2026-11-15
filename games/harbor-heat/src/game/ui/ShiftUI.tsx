@@ -151,7 +151,8 @@ export function ShiftPanel() {
       {view.night === null ? null : <RuneView padding={[2, 6, 2, 6]} radius={3} fill="#5b1e18"><Text family={DISPLAY} size={14} color={HH.amber} text={view.night} /></RuneView>}
       {view.special === null ? null : <Text size={12} color={HH.amber} text={`Special · ${view.special}`} />}
       {view.water === "" ? null : (
-        <RuneView padding={[2, 6, 2, 6]} radius={3} fill={HH.siren}><Text mono size={12} weight={700} color={HH.cream} text={view.water} /></RuneView>
+        // Planing is the hull at its best (teal); every other water state is a warning (siren red).
+        <RuneView padding={[2, 6, 2, 6]} radius={3} fill={view.water === "PLANING" ? "#1f8f8a" : HH.siren}><Text mono size={12} weight={700} color={HH.cream} text={view.water} /></RuneView>
       )}
       <Row justify="between">
         <Label color={view.streak >= 2 ? HH.amber : HH.dim} text={view.open ? `Board ${view.board} · bag ${view.bag.length}/${view.capacity}${view.streak >= 2 ? ` · streak ${view.streak}` : ""}` : "Vell's is closed"} />
