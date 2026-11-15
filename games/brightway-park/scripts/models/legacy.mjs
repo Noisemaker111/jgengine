@@ -1,8 +1,9 @@
 // The original Brightway models (names, origins and footprints kept), lightly enriched.
 import { T, P, V, box, cyl, ball, ring, beam, group, deckRound, bulbs, pennant, ringRail, stairs, signBoard, railing, humanoid, mesh } from './core.mjs';
 
+// The Upside-Down Carousel: each horse hangs head-down from the canopy, hooves to the sky.
 function horse(g, a, i) {
-  const h = group(g, [Math.cos(a) * 2.35, .65, Math.sin(a) * 2.35], -a);
+  const h = group(g, [Math.cos(a) * 2.35, 3.7, Math.sin(a) * 2.35], -a); h.rotation.z = Math.PI;
   cyl(h, .04, 3.2, P.gold, [0, 1.25, 0], .04, 8);
   const coat = [P.cream, P.white, P.pink, P.cream, P.mint, P.white][i];
   const body = ball(h, .55, coat, [0, .8, 0]); body.scale.set(1, .65, .48);
@@ -100,7 +101,7 @@ export function janitor() {
   for (const x of [-1.4, 1.4]) { cyl(g, .4, .85, P.coral, [x, .5, 1.1]); cyl(g, .45, .08, P.gold, [x, .95, 1.1]); } beam(g, [1.4, .1, -1.3], [1.7, 2.3, -1.3], .045, P.wood); box(g, [.75, .25, .25], P.gold, [1.4, .2, -1.3]); return g;
 }
 export function path() {
-  const g = new T.Group(); box(g, [3.96, .12, 3.96], P.darkwood, [0, .06, 0]); for (let i = 0; i < 6; i++) box(g, [3.8, .05, .58], i % 2 ? P.grey : P.asphalt, [0, .15, -1.65 + i * .66]); return g;
+  const g = new T.Group(); box(g, [3.96, .12, 3.96], P.darkwood, [0, .06, 0]); for (let i = 0; i < 6; i++) box(g, [3.8, .05, .58], i % 2 ? P.grey : P.stone, [0, .15, -1.65 + i * .66]); return g;
 }
 export function topiary() {
   const g = new T.Group(); cyl(g, .6, .6, P.coral, [0, .3, 0], .8); box(g, [1.7, .08, 1.7], P.gold, [0, .64, 0], [0, Math.PI / 4, 0]); cyl(g, .15, 1.3, P.wood, [0, 1, 0]); ball(g, 1.1, P.leaf, [0, 2, 0]); ball(g, .7, P.mint, [0, 3, 0]); ball(g, .3, P.leaf, [0, 3.75, 0]); return g;

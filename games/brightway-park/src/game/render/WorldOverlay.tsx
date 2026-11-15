@@ -601,7 +601,7 @@ function scareAuraDraw(object: ParkObject, groundY: number, ready: () => boolean
   group.add(ring);
   const wisps: Mesh[] = [];
   const wispGeometry = new PlaneGeometry(2.4, 2.4);
-  const wispMaterial = new MeshBasicMaterial({ color: "#b8f0e4", map: softDot(), transparent: true, opacity: 0.22, depthWrite: false });
+  const wispMaterial = new MeshBasicMaterial({ color: "#b8f0e4", map: softDot(), transparent: true, opacity: 0.13, depthWrite: false });
   if (scare.fog === true) {
     for (let i = 0; i < 7; i += 1) {
       const wisp = new Mesh(wispGeometry, wispMaterial);
