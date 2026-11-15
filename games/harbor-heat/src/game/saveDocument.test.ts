@@ -20,7 +20,7 @@ import {
   saveHarborState,
 } from "./save";
 import { mission, patchMission } from "./runState";
-import { courierStore, DISPATCH } from "./jobs/courier";
+import { courierStore, CATERING_STALL } from "./jobs/courier";
 import { earn, cashEntries } from "./cash";
 
 const HERO = "save-hero";
@@ -130,7 +130,7 @@ describe("harbor-heat save document", () => {
     const backend = memorySaveBackend();
     const host = boot(backend);
     host.scene.entity.setPose(host.player.userId, {
-      position: [DISPATCH[0], host.world.groundHeightAt(DISPATCH[0], DISPATCH[1]), DISPATCH[1]],
+      position: [CATERING_STALL[0], host.world.groundHeightAt(CATERING_STALL[0], CATERING_STALL[1]), CATERING_STALL[1]],
     });
     host.game.commands.run("courier.accept", {});
     expect(courierStore.read(host).phase).toBe("running");

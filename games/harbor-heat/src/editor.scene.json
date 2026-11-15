@@ -5441,6 +5441,16 @@
       "meta": {
         "catalogId": "obj_blimp_mast"
       }
+    },
+    {
+      "id": "catering_stall",
+      "kind": "poi",
+      "position": {
+        "x": -199,
+        "y": 0,
+        "z": 78
+      },
+      "label": "Boardwalk catering stall"
     }
   ],
   "volumes": [

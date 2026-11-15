@@ -15,7 +15,7 @@ import {
   courierMissionId,
   courierMissionStore,
   DELIVERY_ROUTES,
-  DISPATCH,
+  CATERING_STALL,
   setupCourierLandmarks,
   tickCourier,
 } from "./courier";
@@ -24,7 +24,7 @@ const THIEF = "parcel_thief";
 
 function boot(backend = memorySaveBackend()) {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "courier-test", isNew: true }, save: { backend, mode: "manual", key: "courier-test" } });
-  ctx.scene.entity.spawn("street_runner", { id: ctx.player.userId, position: [DISPATCH[0], 0, DISPATCH[1]], role: "player" });
+  ctx.scene.entity.spawn("street_runner", { id: ctx.player.userId, position: [CATERING_STALL[0], 0, CATERING_STALL[1]], role: "player" });
   registerCommands(ctx);
   ctx.game.commands.run("game.start", {});
   return ctx;
@@ -36,7 +36,7 @@ function moveTo(ctx: ReturnType<typeof boot>, position: readonly [number, number
 
 /** Into a ground car parked at the booth: what an express parcel needs. */
 function driveUp(ctx: ReturnType<typeof boot>): void {
-  ctx.scene.entity.spawn("car_compact", { id: "courier_car", position: [DISPATCH[0] + 2, ctx.world.groundHeightAt(DISPATCH[0] + 2, DISPATCH[1]), DISPATCH[1]], role: "prop" });
+  ctx.scene.entity.spawn("car_compact", { id: "courier_car", position: [CATERING_STALL[0] + 2, ctx.world.groundHeightAt(CATERING_STALL[0] + 2, CATERING_STALL[1]), CATERING_STALL[1]], role: "prop" });
   streetPlayOf(ctx).enterVehicle(ctx, "courier_car");
 }
 

@@ -4,7 +4,7 @@ import { game } from "../game.config";
 import { loop } from "../loop";
 import { content } from "./content";
 import { streetPlayOf, type StreetPlay } from "./streetPlay";
-import { courierRuntime, courierStore, DISPATCH, tickCourier } from "./jobs/courier";
+import { courierRuntime, courierStore, CATERING_STALL, tickCourier } from "./jobs/courier";
 
 const STEP = 1 / 60;
 
@@ -45,7 +45,7 @@ function boot() {
   loop.onInit(ctx);
   loop.onNewPlayer(ctx);
   ctx.scene.entity.setPose(ctx.player.userId, {
-    position: [DISPATCH[0], ctx.world.groundHeightAt(DISPATCH[0], DISPATCH[1]), DISPATCH[1]],
+    position: [CATERING_STALL[0], ctx.world.groundHeightAt(CATERING_STALL[0], CATERING_STALL[1]), CATERING_STALL[1]],
   });
   ctx.game.commands.run("game.start", {});
   return ctx;

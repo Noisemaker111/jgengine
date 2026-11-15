@@ -16,7 +16,7 @@ import { city } from "../city";
 import { cityOf } from "../cityRuntime";
 import { RACE_ENTRY_FEE, SAFEHOUSE_PRICE, slotStore } from "../commands";
 import { drivingStore, MAX_HEAT, MAX_STARS, raceStore, streetPlayOf, wantedStore, type VehicleTelemetry, type WantedSnapshot } from "../streetPlay";
-import { courierDeadline, courierObjectiveStore, courierStore, DELIVERY_ROUTES, DISPATCH, RUSH_BOND, THIEF } from "../jobs/courier";
+import { courierDeadline, courierObjectiveStore, courierStore, DELIVERY_ROUTES, CATERING_STALL, RUSH_BOND, THIEF } from "../jobs/courier";
 import { GIG_RACE_STAKE, gigStore, spotLabel } from "../jobs/gigs";
 import { shiftGoal } from "../pizza/shift";
 import { prompts, systemPromptLabel } from "../prompts";
@@ -123,7 +123,7 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
     return { key: `parcel:${courier.route}`, eyebrow: load, title: `Deliver to ${route.recipient}`, target: route.position, deadline: { remaining: courier.remaining, total: courierDeadline(route.seconds, rush) }, hint: rush ? "Stay under 35 km/h and avoid hits: damage spoils the cargo." : `${route.hint} Stop beside it to hand over. Knocks cost you a damage claim.` };
   }
   if (gig !== null) return gig;
-  const atBooth = Math.hypot(at[0] - DISPATCH[0], at[1] - DISPATCH[1]) < 9;
+  const atBooth = Math.hypot(at[0] - CATERING_STALL[0], at[1] - CATERING_STALL[1]) < 9;
   const world = cityOf(ctx);
   const live = world.missionView();
   const next = world.next();
@@ -141,9 +141,9 @@ export function goalOf(ctx: GameContext, at: XZ): Goal {
   return {
     key: "dispatch",
     eyebrow: `${offer.label} · $${offer.payout}`,
-    title: atBooth ? "Take a catering order" : "Go to Vell's counter",
-    target: atBooth ? undefined : DISPATCH,
-    hint: atBooth ? undefined : "Vell's stands on the shore path under the neon slice. Follow the arrow.",
+    title: atBooth ? "Take a catering order" : "Go to the catering stall",
+    target: atBooth ? undefined : CATERING_STALL,
+    hint: atBooth ? undefined : "The catering stall is at the boardwalk market, just north of Vell's. Follow the arrow.",
     rush: atBooth && courier.delivered > 0 ? `Piping-hot rush · ${courierDeadline(offer.seconds, true)} s · $${RUSH_BOND} bond` : undefined,
   };
 }

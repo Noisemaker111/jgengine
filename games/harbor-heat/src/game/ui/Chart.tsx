@@ -8,7 +8,7 @@ import { useGameStore } from "@jgengine/ui/hooks";
 import { cityOf } from "../cityRuntime";
 import { safehouseStore } from "../commands";
 import { drivingStore, raceStore, wantedStore } from "../streetPlay";
-import { courierStore, DELIVERY_ROUTES, DISPATCH } from "../jobs/courier";
+import { courierStore, DELIVERY_ROUTES, CATERING_STALL } from "../jobs/courier";
 import { stashStore } from "../jobs/stashes";
 import { customerSpot, OVEN, shiftStore, SWAP_DOCKS } from "../pizza/shift";
 import { FLOOD_SHEETS, tideStore } from "../tide/tideRuntime";
@@ -53,7 +53,7 @@ function readMap(ctx: GameContext) {
     const spot = customerSpot(customerId);
     if (spot !== null) pins.push(pin(`drop-${customerId}`, spot, "#fff1d6", 7));
   }
-  pins.push(pin("courier", courier.phase === "running" ? DELIVERY_ROUTES[courier.route % DELIVERY_ROUTES.length]!.position : DISPATCH, "#ffb020", 6.5));
+  pins.push(pin("courier", courier.phase === "running" ? DELIVERY_ROUTES[courier.route % DELIVERY_ROUTES.length]!.position : CATERING_STALL, "#ffb020", 6.5));
   if (circuit !== undefined && race !== undefined) pins.push(pin("gate", circuit.checkpoints[Math.min(race.checkpoint, circuit.checkpoints.length - 1)]!, "#ffb020", 6.5));
   // Gigs: the job in hand is the amber goal, a hailing fare or a paged race a yellow job pin.
   const gigs = gigStore.read(ctx);

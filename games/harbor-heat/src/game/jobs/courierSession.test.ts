@@ -10,7 +10,7 @@ import {
   courierStore,
   courierDeadline,
   DELIVERY_ROUTES,
-  DISPATCH,
+  CATERING_STALL,
   finishCourier,
   setupCourierLandmarks,
   tickCourier,
@@ -20,7 +20,7 @@ const THIEF = "parcel_thief";
 
 function boot() {
   const ctx = createGameContext({ definition: game.game, content, player: { userId: "courier-session", isNew: true }, save: { backend: memorySaveBackend(), mode: "manual", key: "courier-session" } });
-  ctx.scene.entity.spawn("street_runner", { id: ctx.player.userId, position: [DISPATCH[0], 0, DISPATCH[1]], role: "player" });
+  ctx.scene.entity.spawn("street_runner", { id: ctx.player.userId, position: [CATERING_STALL[0], 0, CATERING_STALL[1]], role: "player" });
   registerCommands(ctx);
   ctx.game.commands.run("game.start", {});
   return ctx;

@@ -26,7 +26,10 @@ function site(id: string): readonly [number, number] {
   return [marker.position.x, marker.position.z];
 }
 
+/** Vell's counter, where the shop's own model stands (the oven window is beside it). */
 export const DISPATCH = site("courier_dispatch");
+/** The catering side job's stall at the boardwalk market, kept off Vell's counter so E there always loads pizzas. */
+export const CATERING_STALL = site("catering_stall");
 export const DELIVERY_ROUTES = [
   { label: "Lifeguard party platter", recipient: "Mainsail lifeguards", position: site("courier_drop_0"), seconds: 65, payout: 250, hint: "Follow the shore south. Find the coral slice beacon beside the boardwalk." },
   { label: "Radio crew catering", recipient: "Plaza radio crew", position: site("courier_drop_1"), seconds: 95, payout: 400, hint: "Head north to the cross street, then east to the teal slice beacon." },
@@ -409,7 +412,7 @@ function acceptRefusal(state: GameContext, input: { service?: string } | undefin
   if (courierLoop(state).phase() === "open" || courierRuntime(state).state()?.status === "active") {
     return { reason: "already-running", message: "Finish the catering you are already carrying." };
   }
-  if (!near(state, DISPATCH, 9)) return { reason: "not-at-dispatch", message: "Catering orders are taken at Vell's counter." };
+  if (!near(state, CATERING_STALL, 9)) return { reason: "not-at-dispatch", message: "Catering orders are taken at the boardwalk market stall, north of Vell's." };
   if (input?.service !== "rush") return null;
   if (current.delivered < 1) return { reason: "rush-locked", message: "Complete a standard delivery first." };
   if (groundCarId(state) === null) return { reason: "no-car", message: "Piping-hot rush needs wheels. Standard catering goes on foot." };
@@ -471,8 +474,8 @@ export function registerCourier(ctx: GameContext): void {
   // The receipt's "Try again" / "Next parcel": back at the booth with the parcel in hand, no walk back.
   ctx.game.commands.define<{ service?: string }>("courier.retry", { apply(state, input) {
     dismissReceipt(state);
-    const x = DISPATCH[0] + 3;
-    const at: [number, number, number] = [x, state.world.groundHeightAt(x, DISPATCH[1]), DISPATCH[1]];
+    const x = CATERING_STALL[0] + 3;
+    const at: [number, number, number] = [x, state.world.groundHeightAt(x, CATERING_STALL[1]), CATERING_STALL[1]];
     // An express retry keeps its car, since express needs one; anything else walks up to the booth.
     const car = input?.service === "rush" ? groundCarId(state) : null;
     if (car !== null) streetPlayOf(state).placeVehicle(state, car, at, 0);
@@ -498,8 +501,8 @@ export function tickCourier(ctx: GameContext, dt: number): void {
   const condition = runtime.view()?.objectiveId === "recover"
     ? Math.max(0, held - RUNNER_WEAR * Math.max(0, dt))
     : cargoCondition(held, dt, streetPlayOf(ctx).carSpeedKmh(), (current.lastHealth ?? health) - health, FRAGILITY[current.service ?? "standard"]);
-  const dx = route.position[0] - (position?.[0] ?? DISPATCH[0]);
-  const dz = route.position[1] - (position?.[2] ?? DISPATCH[1]);
+  const dx = route.position[0] - (position?.[0] ?? CATERING_STALL[0]);
+  const dz = route.position[1] - (position?.[2] ?? CATERING_STALL[1]);
   moveThief(ctx, dt);
   const thief = ctx.scene.entity.get(THIEF);
   const thiefFact = thief !== null
@@ -529,7 +532,7 @@ export function courierPrompts(ctx: GameContext): PositionedPrompt[] {
   const delivering = mission?.status === "active" && mission.objective === "deliver";
   if (mission?.status === "active" && !delivering) return [];
   const current = courierStore.read(ctx);
-  const target = delivering ? routeOf(current).position : DISPATCH;
+  const target = delivering ? routeOf(current).position : CATERING_STALL;
   return [{ id: delivering ? "courier:deliver" : "courier:accept", priority: 3, position: { x: target[0], z: target[1] }, prompt: {
     radius: delivering ? 8 : 9,
     display: { kind: "keybind", actionId: "interact" },
