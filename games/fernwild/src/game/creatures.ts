@@ -11,7 +11,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { leveling } from "@jgengine/core/progression/leveling";
 import { createStatPoints, type StatPointSheet } from "@jgengine/core/progression/statPoints";
-import { createCompanionRoster, type CompanionCommand, type CompanionRecord, type CompanionStance } from "@jgengine/core/scene/companion";
+import { createCompanionRoster, type CompanionCommand, type CompanionIntent, type CompanionRecord, type CompanionStance } from "@jgengine/core/scene/companion";
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
@@ -174,7 +174,8 @@ interface World {
   /** Seconds to the harvesters' next swing. */
   harvestIn: number;
   /** Tames frozen by the Hivemind's signal, until when (game seconds). */
-  puppeted: Map<string, number>;
+  /** Bots under the Hivemind's signal: until when, and whether she has turned them on their technician. */
+  puppeted: Map<string, { until: number; hostile: boolean }>;
   /** Uploaded platform bots (the Hoover): their backs carry whoever stands on them. */
   carriers: CarrierField;
   /** Each spawn zone's own random stream for the creatures it spawns (sex, levels, facing). */
@@ -1356,9 +1357,12 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     world.idle.delete(creature.id);
     const record = creature.tamed ? world.roster.get(creature.id) : null;
     const puppet = world.puppeted.get(creature.id);
-    const frozen = puppet !== undefined && puppet > ctx.time.now();
-    if (puppet !== undefined && !frozen) world.puppeted.delete(creature.id);
-    const mind = down || ridden || frozen
+    const seized = puppet !== undefined && puppet.until > ctx.time.now();
+    if (puppet !== undefined && !seized) world.puppeted.delete(creature.id);
+    const turned = seized && puppet.hostile && owner !== null && !down && !ridden;
+    const mind = turned
+      ? ({ kind: "tamed", intent: turnedOn(owner, ctx.player.userId) } as const)
+      : down || ridden || seized
       ? ({ kind: "still" } as const)
       : record !== null
         ? ({
@@ -1736,16 +1740,27 @@ export function sendHome(ctx: GameContext): number {
   return delivered;
 }
 
-/** The Hivemind's signal freezes every one of the technician's bots within `radius` of `at` for `seconds`. */
-export function puppetTames(ctx: GameContext, at: readonly [number, number, number], radius: number, seconds: number): number {
+/** A puppet the Hivemind has turned: it engages its own technician, leashed close to them. */
+function turnedOn(owner: { position: readonly [number, number, number] }, ownerId: string): CompanionIntent {
+  return { kind: "engage", anchor: "owner", leashTo: [owner.position[0], owner.position[1], owner.position[2]], leashDistance: PUPPET_LEASH, candidates: [ownerId], targetId: ownerId };
+}
+
+/** How far a turned puppet chases its technician. */
+const PUPPET_LEASH = 40;
+
+/**
+ * The Hivemind's signal seizes every one of the technician's bots within `radius` of `at` for `seconds`:
+ * frozen, or with `hostile`, turned on the technician until it lets go.
+ */
+export function puppetTames(ctx: GameContext, at: readonly [number, number, number], radius: number, seconds: number, hostile = false): number {
   const world = worldOf(ctx);
   let frozen = 0;
   for (const creature of world.creatures.values()) {
     if (!creature.tamed || creature.dead) continue;
     const self = ctx.scene.entity.get(creature.id)?.position;
     if (self === undefined || Math.hypot(self[0] - at[0], self[2] - at[2]) > radius) continue;
-    world.puppeted.set(creature.id, ctx.time.now() + seconds);
-    ctx.scene.entity.floatText({ instanceId: creature.id, text: "PUPPETED", kind: "damage" });
+    world.puppeted.set(creature.id, { until: ctx.time.now() + seconds, hostile });
+    ctx.scene.entity.floatText({ instanceId: creature.id, text: hostile ? "TURNED" : "PUPPETED", kind: "damage" });
     frozen += 1;
   }
   return frozen;
@@ -1753,7 +1768,7 @@ export function puppetTames(ctx: GameContext, at: readonly [number, number, numb
 
 /** Whether a tame stands frozen under the Hivemind's signal right now. */
 export function isPuppeted(ctx: GameContext, id: string): boolean {
-  return (worldOf(ctx).puppeted.get(id) ?? -Infinity) > ctx.time.now();
+  return (worldOf(ctx).puppeted.get(id)?.until ?? -Infinity) > ctx.time.now();
 }
 
 /** How long an Arcwire's lightning stays on screen, seconds. */

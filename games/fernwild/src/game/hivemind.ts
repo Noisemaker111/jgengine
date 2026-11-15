@@ -210,9 +210,9 @@ function fight(ctx: GameContext, hive: Hive, dt: number): void {
   const phase = step.phase;
   if (step.changed) {
     callHive(ctx, hive, phase.hive);
-    // She reaches into the technician's bots: for a while they stand frozen, puppets of her signal.
+    // She reaches into the technician's bots: for a while they are puppets of her signal, frozen, or enraged turned on you.
     const at = ctx.scene.entity.get(hive.boss!)?.position;
-    if (phase.puppet > 0 && at !== undefined) puppetTames(ctx, at, HIVE_LAIR.radius + 10, phase.puppet);
+    if (phase.puppet > 0 && at !== undefined) puppetTames(ctx, at, HIVE_LAIR.radius + 10, phase.puppet, phase.turn === true);
   }
   const boss = ctx.scene.entity.get(hive.boss!);
   if (now >= hive.nextSpit && boss !== null && me !== null && arena.inside(ctx.player.userId)) {

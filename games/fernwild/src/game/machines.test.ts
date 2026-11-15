@@ -11,7 +11,7 @@ import { aboard, arcFlashes, burrowed, craneNear, creatureCard, kleptoNests, cre
 import { itemTraits } from "./data/items";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
-import { survivorView } from "./survivor";
+import { nearestHarvestable, survivorView } from "./survivor";
 import { baseBuilding, baseView } from "./base";
 import { backDeck } from "./data/robotBodies";
 
@@ -357,4 +357,48 @@ test("on an uploaded Hoover's back you can build: a foundation and a wall walk a
   slayCreature(g.ctx, hoover);
   tick(g, 0.3);
   expect(baseBuilding(g.ctx).list()).toEqual([]);
+});
+
+test("when the enraged Hivemind turns your bots, a puppet attacks you until her signal lets go", () => {
+  const g = quiet();
+  const ticklet = summon(g, "ticklet", { tamed: true, distance: 3 });
+  g.ui.tryInvoke("whistleFollow", {});
+  tick(g, 1);
+  const full = survivorView(g.ctx).health.value;
+  expect(puppetTames(g.ctx, g.ctx.scene.entity.get(g.userId)!.position, 20, 6, true)).toBe(1);
+  let hurt = false;
+  for (let i = 0; i < 50 && !hurt; i += 1) {
+    tick(g, 0.1);
+    hurt = survivorView(g.ctx).health.value < full;
+  }
+  expect(hurt).toBe(true);
+  expect(creatureStep(g.ctx, ticklet)?.targetId).toBe(g.userId);
+  // The signal lets go: it is the technician's bot again and stops biting.
+  tick(g, 7);
+  expect(isPuppeted(g.ctx, ticklet)).toBe(false);
+  const after = survivorView(g.ctx).health.value;
+  tick(g, 3);
+  expect(survivorView(g.ctx).health.value).toBeGreaterThanOrEqual(after);
+});
+
+test("an uploaded Thermite Beetle on its Harvest chip cuts metal and smelts it into ingots as it works", () => {
+  const g = quiet();
+  const me = g.ctx.scene.entity.get(g.userId)!.position;
+  const ore = nearestHarvestable(g.ctx, me, 1500, "strike", "metal")!;
+  expect(ore).not.toBeNull();
+  g.ui.tryInvoke("cheat", { teleport: [ore[0] + 4, ore[2], -Math.PI / 2] });
+  tick(g, 0.1);
+  destroyWild(g.ctx);
+  g.ui.tryInvoke("cheat", { summon: { species: "thermite", level: 1, distance: 2, tamed: true } });
+  tick(g, 0.1);
+  const beetle = creaturesView(g.ctx).aimed!;
+  expect(beetle.species).toBe("thermite");
+  g.ui.tryInvoke("creatureUse", {});
+  g.ui.tryInvoke("toggleHarvest", {});
+  g.ui.tryInvoke("closeCreature", {});
+  tick(g, 40);
+  const carried = (itemId: string) => creatureCard(g.ctx, beetle.id)!.inventory.reduce((sum, slot) => sum + (slot?.itemId === itemId ? slot.count : 0), 0);
+  expect(carried("metal_ingot")).toBeGreaterThan(0);
+  // Smelted as it cuts: never two raw ore waiting to become an ingot.
+  expect(carried("metal")).toBeLessThan(2);
 });
