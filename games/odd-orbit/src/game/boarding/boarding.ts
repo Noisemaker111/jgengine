@@ -9,6 +9,7 @@ import {
   ROOM_SLOTS, SEAL_COST, SETTING_COST, SHUTTER_COST, STARTING_ROOMS, starsFor, wallFriction,
   type Comfort, type HouseView, type RoomFactor, type RoomSettings, type RoomState,
 } from "./rooms";
+import { sayAloud } from "./feeds";
 import { APPLICANT_ORDER, quoted, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
 
 /**
@@ -495,7 +496,8 @@ export const BARK_GAP = DAY_LENGTH * 0.22;
  */
 export function advanceBarks(state: HouseholdState, now: number, notices: Pick<NoticeFeed, "push">): string | null {
   const boarding = boardingOf(state);
-  boarding.nextBarkAt ??= now + BARK_GAP * 0.5;
+  // The first line comes a few seconds in, so a new house hears its tenants straight away.
+  boarding.nextBarkAt ??= now + 3;
   if (now < boarding.nextBarkAt || state.order.length === 0) return null;
   boarding.nextBarkAt = now + BARK_GAP;
   const turn = Math.floor(now / BARK_GAP);
@@ -513,6 +515,7 @@ export function advanceBarks(state: HouseholdState, now: number, notices: Pick<N
     if (species === "basalt") boarding.basaltSpokeDay = state.day;
     const text = `${member.name}: ${quoted(line)}`;
     notices.push({ text, tone: comfort.score >= 55 ? "info" : "warn" });
+    sayAloud(id, line, comfort.score >= 55 ? "happy" : "grumpy");
     return text;
   }
   return null;

@@ -27,6 +27,7 @@ import {
 import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, quoted, SPECIES } from "./boarding/species";
 import type { RoomFactor } from "./boarding/rooms";
 import { spawnTenantBody } from "./sim/setup";
+import { berthAt, focusRoom } from "./boarding/feeds";
 
 export interface PointerInput {
   point: { x: number; y: number; z: number };
@@ -290,6 +291,14 @@ function handlePointer(ctx: GameContext, input: PointerInput): void {
 
   if (input.entity !== null && state.members[input.entity] !== undefined) {
     householdStore.write(ctx, { ...state, selectedMemberId: input.entity });
+    return;
+  }
+
+  // A click on a module's floor opens the Rooms plan on that room.
+  const berth = input.object === null && Number.isFinite(input.point.x) && Number.isFinite(input.point.z) ? berthAt(input.point.x, input.point.z) : null;
+  if (berth !== null) {
+    focusRoom(berth);
+    if (state.selectedMemberId !== null) householdStore.write(ctx, { ...state, selectedMemberId: null });
     return;
   }
 

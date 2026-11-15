@@ -20,6 +20,8 @@ import {
 } from "./boarding";
 import { comfortIn, effectiveRoom, idealSettings, neighbourSlots, rentShare, starsFor, type HouseView } from "./rooms";
 import { SPECIES, SPECIES_IDS } from "./species";
+import { berthAt, bubbles, roomFocus } from "./feeds";
+import { berthPose } from "./layout";
 
 const quiet = { push() {} };
 
@@ -321,5 +323,27 @@ describe("tenants speak up", () => {
     advanceBarks(glorp, 0, { push: (n) => { lines.push(n.text); } });
     advanceBarks(glorp, BARK_GAP, { push: (n) => { lines.push(n.text); } });
     expect(lines.at(-1)).toContain(SPECIES.glorp.lines.complaint.air);
+  });
+});
+
+describe("the house in the world", () => {
+  test("clicking a module's floor opens the Rooms plan on that room; the commons does not", () => {
+    const ctx = boot();
+    const pose = berthPose(2);
+    expect(berthAt(pose.x, pose.z)).toBe(2);
+    expect(berthAt(0, 0)).toBeNull();
+    const before = roomFocus.read().seq;
+    ctx.game.commands.run("world.pointer", { point: { x: pose.x + 0.5, y: 0, z: pose.z - 0.5 }, entity: null, object: null });
+    expect(roomFocus.read()).toEqual({ slot: 2, seq: before + 1 });
+    ctx.game.commands.run("world.pointer", { point: { x: 0, y: 0, z: 0 }, entity: null, object: null });
+    expect(roomFocus.read().seq).toBe(before + 1);
+  });
+
+  test("a tenant who speaks up also gets a speech bubble over their head", () => {
+    const state = house();
+    const glorp = addTenant(state, "glorp", 0);
+    advanceBarks(state, 0, quiet);
+    advanceBarks(state, BARK_GAP, quiet);
+    expect(bubbles.read().some((bubble) => bubble.tenantId === glorp.id && bubble.tone === "grumpy")).toBe(true);
   });
 });

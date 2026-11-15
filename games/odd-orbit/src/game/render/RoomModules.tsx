@@ -3,6 +3,9 @@ import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/ui/provider";
+import { useEffect } from "@jgengine/core/ui/jsx";
+import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { houseProjection } from "../ui/bubbles";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
@@ -313,5 +316,11 @@ export function roomModulesDraw(ctx: GameContext | null): EngineDraw {
 export function RoomModules({ ctx: given }: { ctx?: GameContext }) {
   const hooked = useGameContext();
   const ctx = given ?? hooked;
+  // Hand the camera's projection to the front desk, which anchors speech bubbles with it.
+  const project = useWorldProjection();
+  useEffect(() => {
+    houseProjection.current = (position) => { const p = project(position); return p === null ? { x: 0, y: 0, behind: true } : { x: p.x, y: p.y, behind: p.behind === true }; };
+    return () => { houseProjection.current = null; };
+  }, [project]);
   return <EngineDrawMount create={() => roomModulesDraw(ctx)} deps={[ctx]} />;
 }

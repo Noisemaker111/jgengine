@@ -1,5 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useState } from "@jgengine/core/ui/jsx";
+import { useEffect, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+import { roomFocus } from "../boarding/feeds";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useGame } from "@jgengine/ui/hooks";
@@ -61,7 +62,9 @@ export function RoomsPanel() {
   const ctx = useGameContext();
   const { commands } = useGame();
   const view = useStore(householdStore, (s) => plan(s, ctx.time.now()));
-  const [chosen, setChosen] = useState<number>(0);
+  const focus = useSyncExternalStore(roomFocus.subscribe, roomFocus.read, roomFocus.read);
+  const [chosen, setChosen] = useState<number>(focus.slot);
+  useEffect(() => { setChosen(focus.slot); }, [focus.seq]);
   const run = (name: string, input: Record<string, unknown>) => () => commands.run(name, input);
   const cell = view.cells[chosen]!;
   const rows = [[4, 5, 6, 7], [0, 1, 2, 3]];

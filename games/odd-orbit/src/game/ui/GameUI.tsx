@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useEffect, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
@@ -15,6 +15,8 @@ import { orbitSession } from "../session/lifecycle";
 import { CharterNote, FridgeMagnets, HouseClock, RosterPanel, TermLetter, TransmissionSlip } from "./hud";
 import { BuildPalette, Inspector, PantryLedger } from "./panels";
 import { ApplicantSlip, RoomsPanel } from "./rooms";
+import { houseRuneProjection, SpeechBubbles } from "./bubbles";
+import { roomFocus } from "../boarding/feeds";
 import { HouseSettings, OrbitMenu, type OrbitPreferences } from "./menu";
 import { ENAMEL, Heading, Icon, INK, Paper, Plate, RIM, Row, Text, Veil, orbitThemeFor } from "./kit";
 
@@ -62,6 +64,10 @@ export function GameUI() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ctx, commands]);
+  // Clicking a module in the world opens the Rooms plan on it.
+  const focus = useSyncExternalStore(roomFocus.subscribe, roomFocus.read, roomFocus.read);
+  useEffect(() => { if (focus.seq > 0) setDrawer("rooms"); }, [focus.seq]);
+  const project = useMemo(() => houseRuneProjection(ctx), [ctx]);
   // A selected being takes the side panel; a drawer opened afterwards replaces it, as the DOM habitat did.
   useEffect(() => { if (household.selectedMemberId !== null) setDrawer(null); }, [household.selectedMemberId]);
   const sheet: "build" | "ledger" | "rooms" | "member" | null = drawer ?? (household.selectedMemberId !== null ? "member" : null);
@@ -70,7 +76,8 @@ export function GameUI() {
   const sheetTitle = sheet === "build" ? "Furnish the commons" : sheet === "ledger" ? "Pantry & bills" : sheet === "rooms" ? "Rooms plan" : null;
   const sheetBody = () => sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : sheet === "rooms" ? <RoomsPanel /> : <Inspector />;
 
-  return <RuneRoot context={ctx} theme={theme}>
+  return <RuneRoot context={ctx} theme={theme} project={project}>
+    {modal ? null : <SpeechBubbles />}
     {modal ? null : <RuneView anchor="fill">
       <RuneView anchor="top-left" safe inset={phone ? 10 : 16} gap={phone ? 8 : 12}>
         <HouseClock compact={phone} />
