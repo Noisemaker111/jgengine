@@ -21,11 +21,12 @@ const LOOK_SCALE: Record<ApplianceLook, number> = {
   mower: 1.15,
   garage: 1,
   speaker: 1.1,
-  ridingMower: 0.85,
-  compactor: 0.9,
-  hoa: 0.9,
-  router: 0.8,
-  blowerKing: 0.9,
+  // Bosses stand a head or two over their gang: a boss has to read as the fight from across the lawn.
+  ridingMower: 1.15,
+  compactor: 1.2,
+  hoa: 1.2,
+  router: 1.1,
+  blowerKing: 1.35,
 };
 
 function lookOf(def: EnemyDef): ApplianceLook | undefined {

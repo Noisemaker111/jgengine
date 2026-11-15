@@ -17,6 +17,7 @@ import { hostilesNear } from "./hostiles";
 import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, GunBark, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
 import { C, Plate, Sheet, Text, scrapTheme, useCompact } from "./kit";
 import { ScrapMenu } from "./Menu";
+import { BossBar } from "./BossBar";
 import { BlackMarketPanel, NpcDialog, OverdriveCard, OverdriveTerminal, TalentsPanel, TravelPanel, VaultPanel, VendorPanel } from "./Panels";
 import { ContractCard, Operations, TerminalSettings } from "./Terminal";
 
@@ -73,6 +74,7 @@ function Field() {
       <Hideable id="loot-toasts" end><LootToasts /></Hideable>
     </RuneView>
     <RuneView anchor={portrait ? "center" : "top"} safe inset={16}><ZoneBanner /></RuneView>
+    <BossBar />
     {compact ? null : <RuneView anchor="right" safe inset={12}><Hideable id="item-card"><ItemCard /></Hideable></RuneView>}
     <RuneView anchor="bottom" safe inset={compact ? 8 : 12} gap={compact ? 4 : 8} items="center" padding={[0, 0, portrait ? 220 : 0, 0]}><Hideable id="echo" when={speaking}><EchoBox /></Hideable><WeaponHotbar combat={combat} /></RuneView>
     <RuneView anchor="bottom-left" safe inset={compact ? 8 : 12}><VitalsPlate combat={combat} /></RuneView>
