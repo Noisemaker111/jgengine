@@ -72,8 +72,8 @@ export default defineFlow(game, {
     await f.waitForPage(step("scare"), { timeoutMs: 60000, note: "hint: with the gate open, the next step is a scare" });
     await f.see(/gate creaks open/i, { timeoutMs: 20000, note: "arrival: the player unchained the gate" });
     await f.timeScale(4);
-    await f.waitFor((p) => p.guests > 0, { timeoutMs: 180000, note: "arrival: at dusk the first of the living walk in through the gate" });
-    await f.waitFor((p) => p.riding > 0 || p.queued > 0, { timeoutMs: 180000, note: "arrival: a visitor lines up for or rides the carousel" });
+    await f.waitFor((p) => p.guests > 0, { timeoutMs: 90000, note: "arrival: at dusk the first of the living walk in through the gate" });
+    await f.waitFor((p) => p.riding > 0 || p.queued > 0, { timeoutMs: 90000, note: "arrival: a visitor lines up for or rides the carousel" });
     await f.timeScale(1);
     await f.shot("hauntworks-first-living");
     // Put the ride window away, then open the ledger.
