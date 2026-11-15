@@ -1062,6 +1062,19 @@ export function boardCarrier(ctx: GameContext): void {
   ctx.game.notices.push({ text: `Aboard the ${defOf(creature).label}: it carries you as it walks. Step off its edge to get down.`, tone: "success" });
 }
 
+/** Every uploaded platform bot's back as a frame to build on: where it stands, its turn and its deck. */
+export function carrierFrames(ctx: GameContext): { id: string; position: readonly [number, number, number]; yaw: number; deck: { halfX: number; halfZ: number; height: number } }[] {
+  const world = worldOf(ctx);
+  const out: { id: string; position: readonly [number, number, number]; yaw: number; deck: { halfX: number; halfZ: number; height: number } }[] = [];
+  for (const creature of world.creatures.values()) {
+    if (!world.carriers.has(creature.id)) continue;
+    const self = ctx.scene.entity.get(creature.id);
+    const deck = backDeck(creature.species);
+    if (self !== null && deck !== null) out.push({ id: creature.id, position: self.position, yaw: self.rotationY, deck });
+  }
+  return out;
+}
+
 /** Whether the technician stands on a platform bot's back right now, and which. */
 export function aboard(ctx: GameContext): string | null {
   const world = worldOf(ctx);

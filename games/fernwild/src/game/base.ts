@@ -14,7 +14,7 @@ import { FUEL, FUEL_MAX } from "./data/fuel";
 import { BASE_BUILDING, BEDS, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
 import { itemLabel, itemTraits, SPOILS } from "./data/items";
 import { setScreen } from "./screens";
-import { craneNear } from "./creatures";
+import { carrierFrames, craneNear } from "./creatures";
 
 /** ARK's build reach: the ghost sits this far in front of the survivor. */
 const BUILD_REACH = 3.5;
@@ -32,6 +32,8 @@ interface Base {
   /** Rotate presses: quarter turns on the ground, the next snap variant when snapping. */
   turn: number;
   syncedVersion: number;
+  /** Platform bots whose backs carry pieces this session: the frames the building has been told about. */
+  frames: Set<string>;
   /** The piece in front of the survivor, for E (doors, fires), G (demolish) and the look readout. */
   aimed: string | null;
   /** The burning station the survivor faces within reach: found by distance and facing, since a campfire sits below the eye-height ray. */
@@ -52,7 +54,7 @@ interface Base {
   plots: Map<string, Plot>;
 }
 
-const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null, spoilage: createSpoilage(SPOILS), plot: null, plots: new Map() }));
+const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, frames: new Set(), aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null, spoilage: createSpoilage(SPOILS), plot: null, plots: new Map() }));
 
 const isPlot = (pieceId: string): boolean => pieceId === "crop_plot";
 
@@ -254,6 +256,24 @@ function planFor(ctx: GameContext, base: Base, pieceId: string, yaw: number): St
   return base.building.plan(pieceId, cursor, { rotationY: yaw + (base.turn * Math.PI) / 2, variant: base.turn, groundHeightAt: ctx.world.groundHeightAt });
 }
 
+/**
+ * An uploaded Hoover's back is ground to build on: pose each platform bot's frame where it walked to, so
+ * what stands on its deck walks with it; a platform bot that is gone (died, released) drops what it carried.
+ */
+function syncFrames(ctx: GameContext, base: Base): void {
+  const live = new Set<string>();
+  for (const frame of carrierFrames(ctx)) {
+    base.building.setFrame(frame.id, { position: frame.position, yaw: frame.yaw }, frame.deck);
+    live.add(frame.id);
+  }
+  for (const id of base.frames) {
+    if (live.has(id)) continue;
+    const { removed } = base.building.removeFrame(id);
+    if (removed.length > 0) ctx.game.notices.push({ text: `${removed.length} piece${removed.length === 1 ? "" : "s"} fell from the platform's back`, tone: "deny" });
+  }
+  base.frames = live;
+}
+
 function syncSolids(ctx: GameContext, base: Base): void {
   const version = base.building.version();
   if (version === base.syncedVersion) return;
@@ -264,6 +284,7 @@ function syncSolids(ctx: GameContext, base: Base): void {
 /** Thirty times a second: the ghost for the structure in hand, the piece in front, and the solids. */
 export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number): void {
   const base = baseOf(ctx);
+  syncFrames(ctx, base);
   const standing = new Set<string>();
   for (const piece of base.building.list()) {
     const fire = fireOf(base, piece);
@@ -588,7 +609,7 @@ export function baseView(ctx: GameContext) {
   const def = aimed === null ? null : structureDef(aimed.pieceId);
   return {
     count: base.building.list().length,
-    ghost: base.ghost === null ? null : { piece: itemLabel(base.ghost.pieceId), valid: base.ghost.valid, why: base.ghost.reason === undefined ? null : BLOCKED[base.ghost.reason], mode: base.ghost.mode },
+    ghost: base.ghost === null ? null : { piece: itemLabel(base.ghost.pieceId), valid: base.ghost.valid, why: base.ghost.reason === undefined ? null : BLOCKED[base.ghost.reason], mode: base.ghost.mode, parent: base.ghost.parent ?? null },
     aimed: aimed === null || def === null ? null : { label: def.label, health: Math.ceil(aimed.health), max: def.health, open: aimedDoor(base)?.open === true, door: aimedDoor(base) !== null },
     open: base.building.list().filter((piece) => piece.open).length,
     /** Where the first foundation and doorframe stand, so a proof can measure the survivor against the hut. */

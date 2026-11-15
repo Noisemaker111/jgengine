@@ -77,6 +77,27 @@ export interface BasePiece {
   /** The piece it was set down on when placed freely on a floor. */
   restsOn: string | null;
   owner: string | null;
+  /**
+   * The moving frame it was built on (a carrier's id), or none for the world. Stored in that frame, so
+   * {@link BaseBuilding.snapshot} keeps it local; {@link BaseBuilding.list} and `get` hand it back posed in the world.
+   */
+  parent?: string | null;
+}
+
+/** Where a moving frame stands: its origin and its turn (the entity convention). */
+export interface StructureFramePose {
+  position: BaseVec3;
+  yaw: number;
+}
+
+/** The flat deck on a moving frame that pieces stand on as ground: half-size in the frame (+X right, +Z forward) and its top. */
+export interface StructureFrameDeck {
+  halfX: number;
+  halfZ: number;
+  /** Deck top above the frame's origin, metres. */
+  height: number;
+  /** Deck centre forward of the frame's origin, metres. Default 0. */
+  offsetZ?: number;
 }
 
 /** Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep. */
@@ -95,6 +116,8 @@ export interface StructurePlan {
   targetId: string | null;
   /** Reaches the terrain, so it holds itself up (a foundation snapped beside another still touches ground). */
   grounded: boolean;
+  /** The moving frame it would be built on, when it stands on a deck or snaps to a piece that does. */
+  parent?: string | null;
 }
 
 /** Options for {@link BaseBuilding.plan}. */
@@ -160,6 +183,13 @@ export interface BaseBuilding {
   worldBoxes(item: { pieceId: string; position: BaseVec3; rotationY: number; open?: boolean }): StructureWorldBox[];
   /** Every placed box as a world solid, for `ctx.world.solids`. */
   solids(): WorldSolid[];
+  /**
+   * Pose a moving frame (a walking carrier) pieces can be built on, every tick it moves. Its deck, when
+   * given, is ground a piece can stand on; pieces built there keep their place on it as it walks and turns.
+   */
+  setFrame(id: string, pose: StructureFramePose, deck?: StructureFrameDeck): void;
+  /** The frame is gone (the carrier died or was released): everything built on it falls. */
+  removeFrame(id: string): StructureRemoval;
   /** Bumps on every change; a cheap cache key. */
   version(): number;
   snapshot(): BaseBuildingState;
@@ -265,6 +295,43 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   let placed = new Map<string, BasePiece>();
   let nextId = 1;
   let version = 0;
+  const frames = new Map<string, { pose: StructureFramePose; deck: StructureFrameDeck | null }>();
+
+  const frameToWorld = (pose: StructureFramePose, local: BaseVec3): BaseVec3 => {
+    const turned = rotate(local, pose.yaw);
+    return [pose.position[0] + turned[0], pose.position[1] + turned[1], pose.position[2] + turned[2]];
+  };
+  const frameToLocal = (pose: StructureFramePose, world: BaseVec3): BaseVec3 =>
+    unrotate([world[0] - pose.position[0], world[1] - pose.position[1], world[2] - pose.position[2]], pose.yaw);
+
+  /** A piece where it stands in the world now; `null` while its frame has not been posed. */
+  const posed = (piece: BasePiece): BasePiece | null => {
+    if (piece.parent === undefined || piece.parent === null) return piece;
+    const frame = frames.get(piece.parent);
+    if (frame === undefined) return null;
+    return { ...piece, position: frameToWorld(frame.pose, piece.position), rotationY: piece.rotationY + frame.pose.yaw };
+  };
+  const standing = (): BasePiece[] => {
+    const out: BasePiece[] = [];
+    for (const piece of placed.values()) {
+      const here = posed(piece);
+      if (here !== null) out.push(here);
+    }
+    return out;
+  };
+
+  /** The highest frame deck over a world point, and its top. */
+  const deckAt = (x: number, z: number): { id: string; top: number } | null => {
+    let best: { id: string; top: number } | null = null;
+    for (const [id, frame] of frames) {
+      if (frame.deck === null) continue;
+      const local = frameToLocal(frame.pose, [x, frame.pose.position[1], z]);
+      if (Math.abs(local[0]) > frame.deck.halfX || Math.abs(local[2] - (frame.deck.offsetZ ?? 0)) > frame.deck.halfZ) continue;
+      const top = frame.pose.position[1] + frame.deck.height;
+      if (best === null || top > best.top) best = { id, top };
+    }
+    return best;
+  };
 
   const shapeOf = (pieceId: string): StructureShapeDef | null => {
     const def = pieces.get(pieceId);
@@ -285,7 +352,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const overlaps = (pieceId: string, position: BaseVec3, rotationY: number): boolean => {
     const mine = aabbsOf(pieceId, position, rotationY);
     const myVolume = pieceVolume(pieceId);
-    for (const other of placed.values()) {
+    for (const other of standing()) {
       const theirs = aabbsOf(other.pieceId, other.position, other.rotationY, other.open);
       let shared = 0;
       for (const a of mine) for (const b of theirs) shared += intersection(a, b);
@@ -323,7 +390,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     if ((shape.sockets ?? []).length === 0) return [];
     const reach = snapDistance + 8;
     const out: SnapOption[] = [];
-    for (const target of placed.values()) {
+    for (const target of standing()) {
       if (Math.hypot(target.position[0] - cursor[0], target.position[2] - cursor[2]) > reach) continue;
       const targetShape = pieces.get(target.pieceId)?.shape;
       if (targetShape === undefined) continue;
@@ -381,7 +448,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
 
   const floorUnder = (cursor: BaseVec3): { id: string; top: number } | null => {
     let best: { id: string; top: number } | null = null;
-    for (const piece of placed.values()) {
+    for (const piece of standing()) {
       for (const box of aabbsOf(piece.pieceId, piece.position, piece.rotationY, piece.open)) {
         if (cursor[0] < box.min[0] || cursor[0] > box.max[0] || cursor[2] < box.min[2] || cursor[2] > box.max[2]) continue;
         if (Math.abs(box.max[1] - cursor[1]) > 1.5) continue;
@@ -403,7 +470,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
       (links.get(b) ?? links.set(b, new Set()).get(b)!).add(a);
     };
     const buckets = new Map<string, { id: string; kind: string; position: BaseVec3 }[]>();
-    for (const piece of placed.values()) {
+    for (const piece of standing()) {
       const shape = pieces.get(piece.pieceId)?.shape;
       if (shape === undefined) continue;
       for (const socket of catalog.worldSockets({ type: shape, transform: { position: piece.position, yaw: -piece.rotationY } })) {
@@ -425,7 +492,7 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const collapse = (): BasePiece[] => {
     const links = neighbours();
     const held = new Set<string>();
-    const queue = [...placed.values()].filter((piece) => piece.grounded).map((piece) => piece.id);
+    const queue = [...placed.values()].filter((piece) => piece.grounded || posed(piece) === null).map((piece) => piece.id);
     for (const id of queue) held.add(id);
     while (queue.length > 0) {
       const id = queue.pop()!;
@@ -438,8 +505,8 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     const fallen: BasePiece[] = [];
     for (const piece of [...placed.values()]) {
       if (held.has(piece.id)) continue;
+      fallen.push(posed(piece) ?? piece);
       placed.delete(piece.id);
-      fallen.push(piece);
     }
     return fallen;
   };
@@ -447,8 +514,9 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const take = (id: string): BasePiece[] => {
     const piece = placed.get(id);
     if (piece === undefined) return [];
+    const where = posed(piece) ?? piece;
     placed.delete(id);
-    const removed = [piece, ...collapse()];
+    const removed = [where, ...collapse()];
     version += 1;
     return removed;
   };
@@ -471,6 +539,18 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
       const shape = shapeOf(pieceId);
       const rotationY = options.rotationY ?? 0;
       if (shape === null) return { pieceId, position: cursor, rotationY, valid: false, reason: "unknown-piece", mode: "ground", targetId: null, grounded: false };
+      // A frame's deck is ground too, wherever it has walked to.
+      const terrain = options.groundHeightAt;
+      const decked = [...frames.values()].some((frame) => frame.deck !== null);
+      const groundHeightAt =
+        !decked
+          ? terrain
+          : (x: number, z: number) => {
+              const below = terrain?.(x, z) ?? -Infinity;
+              const deck = deckAt(x, z);
+              return deck !== null && deck.top >= below ? deck.top : below;
+            };
+      const parentOf = (id: string | null): string | null => (id === null ? null : (placed.get(id)?.parent ?? null));
       const snaps = snapOptions(pieceId, shape, cursor);
       const free = snaps.filter((option) => option.valid);
       if (free.length > 0) {
@@ -478,18 +558,23 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
         const best = free[0]!;
         const sameSpot = free.filter((option) => option.targetId === best.targetId && Math.abs(option.mateDistance - best.mateDistance) < MATCH);
         const chosen = sameSpot[((options.variant ?? 0) % sameSpot.length + sameSpot.length) % sameSpot.length]!;
-        const grounded = shape.ground !== undefined && options.groundHeightAt !== undefined && touchesGround(pieceId, chosen.position, chosen.rotationY, options.groundHeightAt);
-        return { pieceId, position: chosen.position, rotationY: chosen.rotationY, valid: true, mode: "snap", targetId: chosen.targetId, grounded };
+        const grounded = shape.ground !== undefined && groundHeightAt !== undefined && touchesGround(pieceId, chosen.position, chosen.rotationY, groundHeightAt);
+        return { pieceId, position: chosen.position, rotationY: chosen.rotationY, valid: true, mode: "snap", targetId: chosen.targetId, grounded, parent: parentOf(chosen.targetId) };
       }
       if (shape.floor === true) {
         const floor = floorUnder(cursor);
         if (floor !== null) {
           const position: BaseVec3 = [cursor[0], floor.top, cursor[2]];
-          const plan: StructurePlan = { pieceId, position, rotationY, valid: true, mode: "floor", targetId: floor.id, grounded: false };
+          const plan: StructurePlan = { pieceId, position, rotationY, valid: true, mode: "floor", targetId: floor.id, grounded: false, parent: parentOf(floor.id) };
           return overlaps(pieceId, position, rotationY) ? { ...plan, valid: false, reason: "overlap" } : plan;
         }
       }
-      if (shape.ground !== undefined && options.groundHeightAt !== undefined) return groundPlan(pieceId, shape, cursor, rotationY, options.groundHeightAt);
+      if (shape.ground !== undefined && groundHeightAt !== undefined) {
+        const plan = groundPlan(pieceId, shape, cursor, rotationY, groundHeightAt);
+        const deck = deckAt(cursor[0], cursor[2]);
+        const onDeck = deck !== null && deck.top >= (terrain?.(cursor[0], cursor[2]) ?? -Infinity);
+        return onDeck ? { ...plan, parent: deck.id } : plan;
+      }
       const blocked = snaps[0];
       if (blocked !== undefined) return { pieceId, position: blocked.position, rotationY: blocked.rotationY, valid: false, reason: "overlap", mode: "snap", targetId: blocked.targetId, grounded: false };
       return { pieceId, position: cursor, rotationY, valid: false, reason: "no-support", mode: "snap", targetId: null, grounded: false };
@@ -498,21 +583,25 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
       if (!plan.valid || !pieces.has(plan.pieceId)) return null;
       if (plan.targetId !== null && !placed.has(plan.targetId)) return null;
       if (overlaps(plan.pieceId, plan.position, plan.rotationY)) return null;
+      const parent = plan.parent ?? null;
+      const frame = parent === null ? null : (frames.get(parent) ?? null);
+      if (parent !== null && frame === null) return null;
       const piece: BasePiece = {
         id: `s${nextId}`,
         pieceId: plan.pieceId,
-        position: [plan.position[0], plan.position[1], plan.position[2]],
-        rotationY: plan.rotationY,
+        position: frame === null ? [plan.position[0], plan.position[1], plan.position[2]] : frameToLocal(frame.pose, plan.position),
+        rotationY: frame === null ? plan.rotationY : plan.rotationY - frame.pose.yaw,
         health: pieces.get(plan.pieceId)!.health,
         open: false,
         grounded: plan.grounded,
         restsOn: plan.mode === "floor" ? plan.targetId : null,
         owner: options.owner ?? null,
+        ...(parent === null ? {} : { parent }),
       };
       nextId += 1;
       placed.set(piece.id, piece);
       version += 1;
-      return copyPlaced(piece);
+      return copyPlaced(posed(piece) ?? piece);
     },
     remove: (id) => ({ removed: take(id) }),
     damage(id, amount, damageClass) {
@@ -535,15 +624,16 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     },
     get: (id) => {
       const piece = placed.get(id);
-      return piece === undefined ? null : copyPlaced(piece);
+      const here = piece === undefined ? null : posed(piece);
+      return here === null ? null : copyPlaced(here);
     },
-    list: () => [...placed.values()].map(copyPlaced),
+    list: () => standing().map(copyPlaced),
     raycast(origin, direction, maxDistance) {
       const length = Math.hypot(direction[0], direction[1], direction[2]);
       if (length === 0) return null;
       const dir: BaseVec3 = [direction[0] / length, direction[1] / length, direction[2] / length];
       let best: StructureHit | null = null;
-      for (const piece of placed.values()) {
+      for (const piece of standing()) {
         const offset: BaseVec3 = [origin[0] - piece.position[0], origin[1] - piece.position[1], origin[2] - piece.position[2]];
         const localOrigin = unrotate(offset, piece.rotationY);
         const localDir = unrotate(dir, piece.rotationY);
@@ -556,7 +646,32 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
       return best;
     },
     worldBoxes,
-    solids: () => [...placed.values()].flatMap((piece) => worldBoxes(piece)),
+    solids: () => standing().flatMap((piece) => worldBoxes(piece)),
+    setFrame(id, pose, deck) {
+      const before = frames.get(id);
+      const next = { pose: { position: [pose.position[0], pose.position[1], pose.position[2]] as BaseVec3, yaw: pose.yaw }, deck: deck ?? null };
+      frames.set(id, next);
+      const moved =
+        before === undefined ||
+        before.pose.yaw !== pose.yaw ||
+        before.pose.position.some((value, axis) => value !== pose.position[axis]);
+      // Only what rides the frame moves with it: a pose change re-draws and re-collides those pieces.
+      if (moved && [...placed.values()].some((piece) => piece.parent === id)) version += 1;
+    },
+    removeFrame(id) {
+      const removed: BasePiece[] = [];
+      for (const piece of [...placed.values()]) {
+        if (piece.parent !== id) continue;
+        removed.push(posed(piece) ?? piece);
+        placed.delete(piece.id);
+      }
+      frames.delete(id);
+      if (removed.length > 0) {
+        removed.push(...collapse());
+        version += 1;
+      }
+      return { removed };
+    },
     version: () => version,
     snapshot: () => ({ pieces: [...placed.values()].map(copyPlaced), nextId }),
     restore(state) {

@@ -12,6 +12,8 @@ import { itemTraits } from "./data/items";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { survivorView } from "./survivor";
+import { baseBuilding, baseView } from "./base";
+import { backDeck } from "./data/robotBodies";
 
 /** Wildwire's machine instincts, played in the real game: tricks, stealth, helpers and the Hivemind's signal. */
 function runner(): HeadlessRunner {
@@ -307,4 +309,52 @@ test("an uploaded Craneback near you lends its crane: the build ghost reaches fu
   expect(craneNear(g.ctx)).toEqual({ reach: 2.5, lift: 3 });
   g.ctx.scene.entity.setPose(crane, { position: [g.ctx.scene.entity.get(g.userId)!.position[0] + 40, 0, g.ctx.scene.entity.get(g.userId)!.position[2]] });
   expect(craneNear(g.ctx)).toBeNull();
+});
+
+test("on an uploaded Hoover's back you can build: a foundation and a wall walk and turn with it, and fall when it dies", () => {
+  const g = quiet();
+  const hoover = summon(g, "hoover", { tamed: true, distance: 12 });
+  const deck = backDeck("hoover")!;
+  const live = g.ctx.scene.entity.get(hoover)!;
+  const start = { position: [...live.position] as [number, number, number], rotationY: live.rotationY };
+  // Stand at the back of the deck facing forward, so the build cursor lands mid-deck.
+  const back: [number, number, number] = [start.position[0] - Math.sin(start.rotationY) * (deck.halfZ - 0.6), start.position[1] + deck.height + 0.05, start.position[2] - Math.cos(start.rotationY) * (deck.halfZ - 0.6)];
+  g.ctx.scene.entity.setPose(g.userId, { position: back, rotationY: start.rotationY });
+  tick(g, 0.3);
+  expect(aboard(g.ctx)).toBe(hoover);
+  const hold = (itemId: string) => {
+    g.ctx.player.inventory.put(HOTBAR, itemId, 1);
+    g.ctx.item.use.use({ from: g.userId, itemId, inventoryId: HOTBAR });
+    tick(g, 0.1);
+  };
+  hold("thatch_foundation");
+  expect(baseView(g.ctx).ghost).toMatchObject({ valid: true, mode: "ground", parent: hoover });
+  g.ui.tryInvoke("fire", { yaw: start.rotationY });
+  tick(g, 0.3);
+  const floor = baseBuilding(g.ctx).list().find((piece) => piece.pieceId === "thatch_foundation")!;
+  expect(floor.parent).toBe(hoover);
+  expect(floor.position[1]).toBeGreaterThan(start.position[1] + deck.height - 0.01);
+  hold("thatch_wall");
+  const wallPlan = baseView(g.ctx).ghost;
+  expect(wallPlan).toMatchObject({ valid: true, mode: "snap", parent: hoover });
+  g.ui.tryInvoke("fire", { yaw: start.rotationY });
+  tick(g, 0.3);
+  expect(baseBuilding(g.ctx).list().length).toBe(2);
+  // The Hoover walks 6 m and turns; the hut on its back keeps its place on the deck.
+  const from = g.ctx.scene.entity.get(hoover)!.position;
+  for (let i = 1; i <= 30; i += 1) {
+    g.ctx.scene.entity.setPose(hoover, { position: [from[0], from[1], from[2] + (6 * i) / 30], rotationY: start.rotationY + (0.5 * i) / 30 });
+    tick(g, 0.05);
+  }
+  const now = g.ctx.scene.entity.get(hoover)!;
+  const moved = baseBuilding(g.ctx).get(floor.id)!;
+  const offset = (p: readonly number[], c: { position: readonly number[]; rotationY: number }) => Math.hypot(p[0]! - c.position[0]!, p[2]! - c.position[2]!);
+  expect(offset(moved.position, now)).toBeCloseTo(offset(floor.position, start), 3);
+  const turn = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+  expect(turn(moved.rotationY - floor.rotationY - (now.rotationY - start.rotationY))).toBeCloseTo(0, 3);
+  // The solids moved too: a world solid sits on the foundation's new top.
+  expect(g.ctx.world.solids.all().some((solid) => Math.hypot(solid.center[0] - moved.position[0], solid.center[2] - moved.position[2]) < 0.01)).toBe(true);
+  slayCreature(g.ctx, hoover);
+  tick(g, 0.3);
+  expect(baseBuilding(g.ctx).list()).toEqual([]);
 });

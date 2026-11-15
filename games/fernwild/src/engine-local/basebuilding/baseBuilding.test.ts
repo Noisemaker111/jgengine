@@ -178,3 +178,89 @@ describe("base building", () => {
     expect(copy.plan("thatch_foundation", [3, 0.3, 0], { groundHeightAt: flat }).valid).toBe(true);
   });
 });
+
+describe("building on a moving frame", () => {
+  // A walking carrier: origin on the ground, a 4 x 7 m deck 3 m up.
+  const deck = { halfX: 2, halfZ: 3.5, height: 3 };
+  const ground = () => -10;
+
+  function carrierBase() {
+    const base = createBaseBuilding(config);
+    base.setFrame("hoover", { position: [10, 0, 0], yaw: 0 }, deck);
+    return base;
+  }
+
+  test("a foundation planned over the deck stands on it and belongs to the frame", () => {
+    const base = carrierBase();
+    const plan = base.plan("thatch_foundation", [10, 3, 1.5], { groundHeightAt: ground });
+    expect(plan).toMatchObject({ valid: true, mode: "ground", grounded: true, parent: "hoover" });
+    expect(near(plan.position, [10, 3.3, 1.5])).toBe(true);
+    const placed = base.place(plan)!;
+    expect(placed.parent).toBe("hoover");
+    expect(near(placed.position, [10, 3.3, 1.5])).toBe(true);
+    // Stored in the frame: the save keeps it local to the deck.
+    expect(near(base.snapshot().pieces[0]!.position, [0, 3.3, 1.5])).toBe(true);
+  });
+
+  test("a foundation half off the deck edge is refused, and off the deck it is a world piece", () => {
+    const base = carrierBase();
+    expect(base.plan("thatch_foundation", [12, 3, 0], { groundHeightAt: ground })).toMatchObject({ valid: false, reason: "too-steep" });
+    const away = base.plan("thatch_foundation", [30, 0, 0], { groundHeightAt: flat });
+    expect(away.parent ?? null).toBeNull();
+  });
+
+  test("pieces ride the frame as it walks and turns: snapped walls, world boxes and solids all follow", () => {
+    const base = carrierBase();
+    const floor = base.place(base.plan("thatch_foundation", [10, 3, 0], { groundHeightAt: ground }))!;
+    const wallPlan = base.plan("thatch_wall", [11.5, 3.5, 0]);
+    expect(wallPlan.parent).toBe("hoover");
+    const wall = base.place(wallPlan)!;
+    const version = base.version();
+    base.setFrame("hoover", { position: [20, 1, 5], yaw: Math.PI / 2 }, deck);
+    expect(base.version()).toBeGreaterThan(version);
+    // A quarter turn: the frame's +X now points to world -Z.
+    expect(near(base.get(floor.id)!.position, [20, 4.3, 5])).toBe(true);
+    expect(near(base.get(wall.id)!.position, [20, 4.3, 3.5])).toBe(true);
+    expect(base.get(wall.id)!.rotationY).toBeCloseTo(wall.rotationY + Math.PI / 2);
+    const wallSolid = base.solids().find((solid) => Math.abs(solid.center[1] - (4.3 + 1.5)) < 1e-6)!;
+    expect(near(wallSolid.center, [20, 5.8, 3.5])).toBe(true);
+    // Building on keeps snapping where the pieces are now.
+    const second = base.plan("thatch_wall", [18.5, 4.8, 5]);
+    expect(second.valid).toBe(true);
+    expect(second.parent).toBe("hoover");
+    expect(near(second.position, [18.5, 4.3, 5])).toBe(true);
+  });
+
+  test("the same pose again changes nothing, and world pieces never move with a frame", () => {
+    const base = carrierBase();
+    const home = base.place(base.plan("thatch_foundation", [-20, 0, 0], { groundHeightAt: flat }))!;
+    base.place(base.plan("thatch_foundation", [10, 3, 0], { groundHeightAt: ground }));
+    const version = base.version();
+    base.setFrame("hoover", { position: [10, 0, 0], yaw: 0 }, deck);
+    expect(base.version()).toBe(version);
+    base.setFrame("hoover", { position: [40, 0, 0], yaw: 1 }, deck);
+    expect(base.get(home.id)!.position).toEqual(home.position);
+  });
+
+  test("when the frame goes, everything built on it falls and the world base stands", () => {
+    const base = carrierBase();
+    const home = base.place(base.plan("thatch_foundation", [-20, 0, 0], { groundHeightAt: flat }))!;
+    const floor = base.place(base.plan("thatch_foundation", [10, 3, 0], { groundHeightAt: ground }))!;
+    const wall = base.place(base.plan("thatch_wall", [11.5, 3.5, 0]))!;
+    const removed = base.removeFrame("hoover").removed.map((piece) => piece.id).sort();
+    expect(removed).toEqual([floor.id, wall.id].sort());
+    expect(base.list().map((piece) => piece.id)).toEqual([home.id]);
+  });
+
+  test("a save restores the deck pieces local to their frame; they wait unseen until it is posed", () => {
+    const base = carrierBase();
+    base.place(base.plan("thatch_foundation", [10, 3, 0], { groundHeightAt: ground }));
+    base.place(base.plan("thatch_wall", [11.5, 3.5, 0]));
+    const copy = createBaseBuilding(config);
+    copy.restore(base.snapshot());
+    expect(copy.list()).toEqual([]);
+    expect(copy.snapshot().pieces.length).toBe(2);
+    copy.setFrame("hoover", { position: [-5, 0, 2], yaw: 0 }, deck);
+    expect(copy.list().map((piece) => piece.position[0])).toEqual([-5, -3.5]);
+  });
+});
