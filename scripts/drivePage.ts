@@ -62,13 +62,16 @@ async function findClickPoint(session: CdpSession, text: string, input = false):
   const deadline = Date.now() + SETTLE_TIMEOUT_MS;
   let last: { x: number; y: number } | null = null;
   let stableRuns = 0;
-  for (let samples = 0; samples < SETTLE_MAX_SAMPLES && Date.now() < deadline; samples += 1) {
+  // Only samples that found the control count toward the cap: a control a slow software surface has not
+  // laid out yet (a card that just opened) is waited for until the deadline, not given up after ten looks.
+  for (let samples = 0; samples < SETTLE_MAX_SAMPLES && Date.now() < deadline;) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const point = (await Promise.race([
       session.evaluate<{ x: number; y: number } | null>(driveInputPointExpr(text, input)),
       new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), Math.max(1, deadline - Date.now())); }),
     ]).finally(() => { if (timer !== undefined) clearTimeout(timer); })) ?? null;
     if (Date.now() >= deadline) break;
+    if (point !== null) samples += 1;
     const moved = point !== null && last !== null &&
       (Math.abs(point.x - last.x) > SETTLE_EPSILON_PX || Math.abs(point.y - last.y) > SETTLE_EPSILON_PX);
     if (point !== null && last !== null && !moved) {

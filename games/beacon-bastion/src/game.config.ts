@@ -138,6 +138,7 @@ function createGame() {
       ended: runEnded(keep.of(ctx)) ? 1 : 0,
       held: keep.of(ctx).fact("keep.held") === true ? 1 : 0,
       map: MAP_IDS.indexOf(activeMap()),
+      selected: session.selectedTowerId === null ? 0 : 1,
     }),
   },
   rendering: {

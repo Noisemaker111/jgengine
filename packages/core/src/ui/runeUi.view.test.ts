@@ -39,3 +39,25 @@ test("an adapterless navigator.gpu is hidden so Rune's WebGL2 fallback gets a cl
   expect(real.gpu).toBeDefined();
   expect(await hideAdapterlessWebGpu({})).toBe(false);
 });
+
+test("a frame for an older spec still places the nodes it drew; the current spec's frame replaces the layout", () => {
+  const api = { set_spec: () => undefined, patch_native: () => undefined, frames_drawn: () => 0 };
+  // type-escape: as above, the private constructor with a recording api.
+  const ui = new (RuneUi as unknown as new (...args: unknown[]) => RuneUi)({ style: {} }, api, "", {});
+  const frame = (payload: object) => (ui as unknown as { onFrame(payload: string): void }).onFrame(JSON.stringify(payload));
+  const hadWindow = "window" in globalThis;
+  if (!hadWindow) Object.defineProperty(globalThis, "window", { configurable: true, value: globalThis });
+  try {
+    ui.setSpec([]);
+    frame({ revision: 1, nativeRects: [["old", [0, 0, 10, 10]]] });
+    ui.setSpec([]);
+    ui.setSpec([]);
+    frame({ revision: 2, nativeRects: [["pause", [100, 0, 44, 44]]] });
+    expect(ui.nativeRects.get("pause")).toEqual([100, 0, 44, 44]);
+    expect(ui.nativeRects.get("old")).toEqual([0, 0, 10, 10]);
+    frame({ revision: 3, nativeRects: [["pause", [100, 0, 44, 44]]] });
+    expect(ui.nativeRects.has("old")).toBe(false);
+  } finally {
+    if (!hadWindow) Reflect.deleteProperty(globalThis, "window");
+  }
+});

@@ -338,8 +338,11 @@ export class RuneUi {
       return;
     }
     this.regions = frame.regions ?? [];
-    if (frame.revision === this.revision && frame.nativeRects !== undefined) {
-      this.nativeRects.clear();
+    if (frame.nativeRects !== undefined) {
+      // A frame for the current spec replaces the layout. One for an older spec still places every node it
+      // drew, so merge it: a HUD whose spec changes faster than frames arrive (speech bubbles, notices on a
+      // slow software surface) would otherwise never place a newly mounted control for focus or probes.
+      if (frame.revision === this.revision) this.nativeRects.clear();
       for (const [id, rect] of frame.nativeRects) this.nativeRects.set(id, rect);
     }
     this.modalFlag = frame.modal === true;
@@ -372,7 +375,21 @@ export class RuneUi {
   }
 
   private wirePassThrough(): void {
-    const move = (event: PointerEvent) => { this.pointer.move(event.clientX, event.clientY, event.buttons); this.applyPointerEvents(); };
+    const move = (event: PointerEvent) => {
+      const before = this.canvas.style.pointerEvents;
+      this.pointer.move(event.clientX, event.clientY, event.buttons);
+      this.applyPointerEvents();
+      // The move that switches the canvas on was delivered to the world below, so Rune never saw the
+      // pointer arrive; a press right after it would land where Rune last saw the pointer. Hand the
+      // canvas the same move so the press finds its control without waiting for another move.
+      if (before === "none" && this.canvas.style.pointerEvents === "auto" && event.target !== this.canvas) {
+        this.canvas.dispatchEvent(new PointerEvent("pointermove", {
+          clientX: event.clientX, clientY: event.clientY, screenX: event.screenX, screenY: event.screenY,
+          pointerId: event.pointerId, pointerType: event.pointerType, isPrimary: event.isPrimary,
+          buttons: event.buttons, bubbles: true, cancelable: true, composed: true,
+        }));
+      }
+    };
     const down = (event: PointerEvent) => { this.pointer.down(event.clientX, event.clientY, event.target === this.canvas); this.applyPointerEvents(); };
     const up = (event: PointerEvent) => { this.pointer.up(event.clientX, event.clientY); this.applyPointerEvents(); };
     window.addEventListener("pointermove", move, { capture: true, passive: true });

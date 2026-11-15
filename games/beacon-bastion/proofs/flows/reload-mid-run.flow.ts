@@ -19,7 +19,7 @@ export default defineFlow(game, {
     await f.command("buildTower1");
     await f.command("tower.build", { point: [0, 0, 4] });
     const built = await f.waitFor((p) => p.towers >= 1, { timeoutMs: 20000, note: "the barista clocks in on the plot" });
-    await f.command("wave.send");
+    await f.click("Open for business");
     await f.see(/\d+ gadgets? left/i, { timeoutMs: 20000 });
     // A fresh profile checkpoints a new day on its own; a reused one (a street already kept) waits for
     // the first save, so save once through the pause menu's own command, then let the checkpoint carry on.

@@ -26,16 +26,15 @@ export default defineFlow(game, {
     await settle();
     await shot("hud");
 
-    // The hiring board's first tile (key 1), then a plot on the street.
-    await f.command("buildTower1");
+    // A tile on the hiring board, then a plot on the street.
+    await f.click("Barista, 50 cash");
+    await f.waitFor((p) => p.selected === 1, { timeoutMs: 20000, note: "the tile picks the barista for hire" });
     await f.command("tower.build", { point: [0, 0, 4] });
     await f.waitFor((p) => p.towers >= 1, { timeoutMs: 20000, note: "the barista clocks in on the bend" });
     await f.command("tower.build", { point: [0, 0, 4] });
     await f.see(/aim:/i, { timeoutMs: 20000, note: "clicking her plot opens the worker card" });
     await settle();
-    // The aim plank's command (T): software Rune keeps the freshly opened card moving, so the drive
-    // presses its key rather than waiting for the plank to settle.
-    await f.command("cycleAim");
+    await f.click("Aim");
     await f.see(/aim: last/i, { note: "the aim plank cycles the worker's target choice" });
     await f.see(/espresso shot/i, { note: "the card offers her gear" });
     await settle();
@@ -55,11 +54,10 @@ export default defineFlow(game, {
     await f.see(/kept on maple street/i, { timeoutMs: 90000, note: "the door hanger writes the street (its thumbnail render is slow on software GL)" });
     await f.click("Back to work");
     await f.see(/gadgets? left|street clear|tech incoming/i, { timeoutMs: 10000 });
-    // With tech moving on the street the HUD never settles under software Rune, so pause by key again.
-    await f.press("Escape");
-    await f.see(/clock out/i, { timeoutMs: 10000, note: "Escape opens the door hanger again" });
+    await f.click("Pause the day");
+    await f.see(/clock out/i, { timeoutMs: 20000, note: "the HUD's pause button opens the door hanger too" });
     await f.click("Clock out to title");
-    await f.see(/continue/i, { timeoutMs: 30000 });
+    await f.see(/continue/i, { timeoutMs: 90000, note: "clocking out saves the street (a slow thumbnail on software GL) and returns to the title" });
     await f.click("Streets");
     await f.see(/wave \d/i, { timeoutMs: 10000 });
     await settle();
