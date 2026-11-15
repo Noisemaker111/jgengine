@@ -134,6 +134,8 @@ function buildGame(id: MapId) {
         doctrine: ["match.start", { name: "research.capture", input: { doctrine: "bulwark" } }],
         // Dev-only: the finale as the player receives it, with the kid's beam over the lawn.
         boss: [{ name: "campaign.skipTo", input: { index: 4 } }, "match.start"],
+        // Dev-only (pair with `?map=front-yard`): mission VI with the column marching onto the driveway.
+        driveway: [{ name: "campaign.skipTo", input: { index: 5 } }, "match.start", "driveway.capture"],
       },
       views: {
         "keep-player": {
@@ -146,7 +148,12 @@ function buildGame(id: MapId) {
           look: "@marker:keep_enemy",
           lookFrom: "22,10",
         },
-        hero: {
+        column: {
+        description: "Follow the Marshal's column, for the front yard's cracks and the car's shade.",
+        look: "@entity:hero",
+        lookFrom: "16,9",
+      },
+      hero: {
           description: "Close on Marshal Mandible, for hero model and health-bar work.",
           look: "@entity:hero",
           lookFrom: "10,4",

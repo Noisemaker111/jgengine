@@ -468,16 +468,16 @@ export function foodGeometry(kind: FoodKind): THREE.BufferGeometry {
       return merge(pieces);
     }
     case "popsicle": {
-      // A strawberry popsicle dropped on the lawn, half melted into a sticky pink lake.
+      // A strawberry popsicle dropped on the lawn, melted flat into a sticky pink lake the ants wade across.
       const puddle = new THREE.CircleGeometry(1, 28);
       puddle.scale(5.6, 3.8, 1);
       puddle.rotateX(-Math.PI / 2);
       puddle.translate(0.8, 0.05, 0.4);
-      const bar = new THREE.BoxGeometry(3.6, 1.1, 7.2, 2, 1, 4);
-      bar.translate(0, 0.62, 0.6);
-      const tip = new THREE.CylinderGeometry(1.8, 1.8, 1.1, 18, 1, false, 0, Math.PI);
+      const bar = new THREE.BoxGeometry(3.6, 0.45, 7.2, 2, 1, 4);
+      bar.translate(0, 0.28, 0.6);
+      const tip = new THREE.CylinderGeometry(1.8, 1.8, 0.45, 18, 1, false, 0, Math.PI);
       tip.rotateY(-Math.PI / 2);
-      tip.translate(0, 0.62, 4.2);
+      tip.translate(0, 0.28, 4.2);
       const stick = new THREE.BoxGeometry(1.1, 0.35, 5.2);
       stick.translate(0, 0.25, -5.4);
       const stickEnd = new THREE.CylinderGeometry(0.55, 0.55, 0.35, 10, 1, false, 0, Math.PI);
@@ -487,7 +487,7 @@ export function foodGeometry(kind: FoodKind): THREE.BufferGeometry {
         tint(puddle, "#ff7aa8"),
         tint(bar, "#ff3d6e"),
         tint(tip, "#ff3d6e"),
-        blob("#ffb3cb", [1.4, 0.18, 2.4], [0.4, 1.18, 1.2], 12),
+        blob("#ffb3cb", [1.4, 0.1, 2.4], [0.4, 0.52, 1.2], 12),
         blob("#ff5c86", [0.9, 0.35, 0.9], [2.2, 0.15, 2.6], 10),
         blob("#ff5c86", [0.7, 0.3, 0.7], [-2.1, 0.12, 3.8], 10),
         tint(stick, "#e8c48a"),

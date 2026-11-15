@@ -422,6 +422,16 @@ export function registerCommands(ctx: GameContext): void {
         return state;
       },
     });
+    // Dev-only: the whole fighting column, the Marshal leading, marches for the middle of the driveway
+    // (a capture of the front yard's cracks and the car's shade under load).
+    ctx.game.commands.define("driveway.capture", {
+      apply: (state) => {
+        const column = livingUnits("player", "unit").filter((u) => u.catalogId !== "worker").map((u) => u.id);
+        session.attackMoveArmed = false;
+        orderSelection(state, { selection: column, point: [-4, 0, -8] });
+        return state;
+      },
+    });
     ctx.game.commands.define("campaign.capture", {
       apply: (state) => {
         if (!startCampaignMission(state)) return state;
