@@ -361,12 +361,21 @@ Mowbot) and `wildwire-storm` (a Signal Storm night).
 
 Engine parts added on this branch: the creature driver's terrain modes (`CreatureBody.terrain` land / amphibious /
 water, `waterSurface` config); `createCarrierField` (`@jgengine/core/movement/carrier`); per-region seeded streams in
-the population director; `SceneEntity.glow` (emissive parts follow a runtime value). All tested in core.
+the population director; `SceneEntity.glow` (emissive parts follow a runtime value); `ocean()` `depthRange` and
+`shore { width, waves }` passed to the shell Ocean. All tested in core.
+
+Water and readability: Lampjaws are 2.6 m bodies swimming 0.9 m under (per-profile `swimDepth`), so head and lure
+stand clear; `world/WaterLife.tsx` lights each lure with a violet point light and spreading ripple rings, and draws
+Arcwire lightning (`arcFlashes`) from the eel to every body it arced into. The sea has a darker deep tone, narrower
+bright shelf and a shore foam line. Land bots under 1.2 m wear a temperament beacon and livery (`readable()` in
+`robotBodies.ts`). Riding a carrier swaps the camera to a pulled-back orbit rig. Review flow: `wildwire-water`.
 
 Proof robustness: herd spawns and director rolls come from each zone's own stream, so adding a zone no longer
 shifts another proof's dice; the taming proofs clear the beach's herds before they start. A zone that genuinely
 changes what stands near the start (a level-6 herd 90 m out) still shows in the danger proof, by design.
 
-Next: base pieces built on the Hoover's back (base building places pieces in the world frame with fixed solids and
-snap sockets; it needs a moving parent before pieces can ride a carrier); puppeted bots turning hostile; a better
-aboard camera (pull the follow camera back while on a carrier).
+Next: base pieces built on the Hoover's back. Not built: base building places pieces in the world frame with fixed
+solids and snap sockets, so riding pieces need a moving-parent seam in core build (pieces stored in a carrier's local
+frame, their solids and sockets re-posed each tick from `createCarrierField`); that is a core build change, not a
+game patch. Also: puppeted bots turning hostile; foliage clearance round spawn zones (editor content) so mid-size
+bots are not hidden in the bush; a rim-light option in the entity model draw for silhouettes at dusk.
