@@ -40,10 +40,15 @@ function driveUntilHolding(session: RunSession, id: PowerUpId, limit = 90): bool
   return false;
 }
 
+/** The events a power-up hunt tries, in order: the first whose department hands it over is used. */
+const HUNT = ["price-check", "grudge-brick", "cart-stuffer", "empty-cart", "lights-out", "last-call"] as const;
+
 /** Two identical runs brought to the same moment: deterministic sims let one use a power-up and the other not. */
-function twins(eventId: string, id: PowerUpId): [RunSession, RunSession] {
-  const a = sessionOn(eventId);
-  const b = sessionOn(eventId);
+function twins(id: PowerUpId): [RunSession, RunSession] {
+  const eventId = HUNT.find((event) => driveUntilHolding(sessionOn(event), id));
+  expect(eventId).toBeDefined();
+  const a = sessionOn(eventId!);
+  const b = sessionOn(eventId!);
   expect(driveUntilHolding(a, id)).toBe(true);
   expect(driveUntilHolding(b, id)).toBe(true);
   expect(a.snapshot().runTime).toBeCloseTo(b.snapshot().runTime, 6);
@@ -97,7 +102,7 @@ describe("shopping in a run", () => {
 
 describe("power-ups", () => {
   test("the fire extinguisher boosts the cart past what the same cart reaches without it", () => {
-    const [boosted, plain] = twins("price-check", "extinguisher");
+    const [boosted, plain] = twins("extinguisher");
     const pilotA = createCoursePilot(sessionTrack(boosted), {});
     const pilotB = createCoursePilot(sessionTrack(plain), {});
     let first = true;
@@ -114,7 +119,7 @@ describe("power-ups", () => {
   });
 
   test("a stack of bouncy balls throws the cart higher than the pogo casters' own hop", () => {
-    const [bounced, hopped] = twins("grudge-brick", "bouncy_balls");
+    const [bounced, hopped] = twins("bouncy_balls");
     let bouncedAir = 0;
     let hoppedAir = 0;
     for (let t = 0; t < 2.5; t += DT) {
@@ -128,7 +133,8 @@ describe("power-ups", () => {
   });
 
   test("marbles spill behind the cart and the shutters sweep them up", () => {
-    const session = sessionOn("price-check");
+    const event = HUNT.find((entry) => driveUntilHolding(sessionOn(entry), "marbles"))!;
+    const session = sessionOn(event);
     expect(driveUntilHolding(session, "marbles")).toBe(true);
     const before = session.snapshot();
     session.tick(DT, { throttle: 1, brake: 0, steer: 0 }, { jumpPressed: false, plowBracing: false, usePower: true });
@@ -151,7 +157,8 @@ describe("power-ups", () => {
   });
 
   test("the rotisserie chicken heals a bent cart", () => {
-    const session = sessionOn("cart-stuffer");
+    const event = HUNT.find((entry) => driveUntilHolding(sessionOn(entry), "rotisserie_chicken"))!;
+    const session = sessionOn(event);
     expect(driveUntilHolding(session, "rotisserie_chicken")).toBe(true);
     // Drive on without hopping, so the next pallet ramp bends the basket and there is something to heal.
     const pilot = createCoursePilot(sessionTrack(session), {});
@@ -208,7 +215,7 @@ describe("the field", () => {
 
 describe("the cart corral", () => {
   test("store credit unlocks a cart, the next run pushes it, and the choice survives a reload", () => {
-    const storage = memory((career) => { career.bank.banked = 1000; });
+    const storage = memory((career) => { career.bank.banked = 600; });
     const session = createRunSession(() => 0, storage);
     expect(session.snapshot().chassis.id).toBe("standard");
     expect(session.chooseChassis("scooter")).toMatchObject({ ok: false });
@@ -216,11 +223,11 @@ describe("the cart corral", () => {
     const snap = session.snapshot();
     expect(snap.chassis.id).toBe("kiddie");
     expect(snap.basket.capacity).toBe(4);
-    expect(snap.career.credits).toBe(400);
+    expect(snap.career.credits).toBe(50);
     expect(snap.corral.find((row) => row.chassis.id === "kiddie")).toMatchObject({ owned: true, selected: true });
     expect(readCareer(storage).carts).toEqual({ owned: ["standard", "kiddie"], selected: "kiddie" });
     expect(session.chooseChassis("standard")).toEqual({ ok: true });
-    expect(session.snapshot().career.credits).toBe(400);
+    expect(session.snapshot().career.credits).toBe(50);
     session.start();
     expect(session.chooseChassis("kiddie")).toMatchObject({ ok: false });
   });

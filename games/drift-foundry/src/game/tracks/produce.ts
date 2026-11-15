@@ -60,7 +60,7 @@ export const PRODUCE: TrackDef = {
   rivalTake: { rival_brick: ["salad-bar"] },
   par: 50,
   stock: {
-    goods: ["watermelon", "pumpkin", "chips", "marshmallows", "soda_case", "cereal", "potted_fern"],
+    goods: ["watermelon", "pumpkin", "chips", "marshmallows", "soda_case", "cereal", "potted_fern", "ice_cream"],
     powerUps: ["rotisserie_chicken", "marbles", "extinguisher", "mop"],
   },
   dressing: {

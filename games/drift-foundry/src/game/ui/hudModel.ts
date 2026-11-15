@@ -78,7 +78,46 @@ export function raceHud(snapshot: SessionSnapshot) {
     riding: snapshot.riding,
     boosting: snapshot.boostLeft > 0,
     pop: freshPop(snapshot),
+    tip: shoppingTip(snapshot, track),
+    jumpNow,
   };
+}
+
+/** The shopping tip under the sign: what to grab next and which way, or which power-up F fires. */
+export interface ShoppingTip {
+  kind: "grab" | "power" | "mod";
+  text: string;
+  /** Which way to steer: 1 left, -1 right, 0 straight on. */
+  side: 1 | -1 | 0;
+}
+
+/** Metres ahead a mod display the next wall needs is called out. */
+const MOD_RANGE = 70;
+
+/** Metres ahead a shelf grab is called out. */
+const TIP_RANGE = 45;
+
+export function shoppingTip(snapshot: SessionSnapshot, track: Track): ShoppingTip | null {
+  const held = snapshot.basket.powerUps[0];
+  if (held !== undefined) return { kind: "power", text: `F · USE THE ${held.label.toUpperCase()} — ${held.blurb.toUpperCase()}`, side: 0 };
+  if (snapshot.route !== "main") return null;
+  // A wall ahead the cart cannot pass yet comes first: point at the display with the mod it needs.
+  const wall = track.gates.find((gate) => gate.route === "main" && gate.atZ > snapshot.run && !snapshot.clearedGateIds.has(gate.id) && (gate.requirement === "plow" ? !snapshot.tuning.hasPlow : snapshot.tuning.jumpPower <= 0));
+  if (wall !== undefined) {
+    const needs = wall.requirement === "plow" ? "pallet_plow" : "spring_casters";
+    const display = track.pickups.find((pickup) => pickup.partId === needs && pickup.route === "main" && !snapshot.collectedIds.has(pickup.id) && pickup.at > snapshot.run - 1 && pickup.at - snapshot.run < MOD_RANGE);
+    if (display !== undefined) {
+      const lane = track.locate(display.position[0], display.position[2]).offset;
+      const side = Math.abs(lane) < 1 ? 0 : lane > 0 ? 1 : -1;
+      const label = wall.requirement === "plow" ? "PALLET PLOW" : "POGO CASTERS";
+      return { kind: "mod", text: `${label} DISPLAY AHEAD — ROLL THROUGH IT FOR THE ${wall.label} · ${Math.round(display.at - snapshot.run)}m`, side };
+    }
+  }
+  const spot = track.shelves.find((entry) => !snapshot.shelvesTaken.has(entry.id) && entry.at > snapshot.run + 3 && entry.at - snapshot.run < TIP_RANGE);
+  if (spot === undefined) return null;
+  const side = spot.lane > 0 ? 1 : -1;
+  const heft = spot.item.kind === "power" ? "POWER-UP" : spot.item.heft === "heavy" ? "HEAVY" : spot.item.heft === "light" ? "LIGHT" : "$" + spot.item.price;
+  return { kind: "grab", text: `${spot.item.label.toUpperCase()} (${heft}) — STEER ${side > 0 ? "LEFT" : "RIGHT"} INTO THE SHELF · ${Math.round(spot.at - snapshot.run)}m`, side };
 }
 
 /** Seconds a grab or trick call stays on the HUD. */
@@ -110,7 +149,8 @@ export function screenKey(snapshot: SessionSnapshot): string {
       PART_SLOTS.map((slot) => hud.installed[slot]?.id ?? null), hud.tag === null ? null : [hud.tag.offered.id, hud.tag.replacing.id, hud.tag.armed],
       Math.round(hud.dash.redline), hud.dash.airborne, hud.dash.bent, hud.dash.armor, hud.crusher.danger, hud.crusher.surge,
       hud.route.length, hud.route.cleared, hud.route.atRisk,
-      hud.basket.items, hud.basket.capacity, hud.basket.feel, hud.basket.powerUps.map((power) => power.id), hud.basket.squeaky, hud.riding, hud.boosting]);
+      hud.basket.items, hud.basket.capacity, hud.basket.feel, hud.basket.powerUps.map((power) => power.id), hud.basket.squeaky, hud.riding, hud.boosting,
+      hud.tip === null ? null : [hud.tip.kind, withoutMetres(hud.tip.text)]]);
   }
   // Off the aisle nothing moves with the cart: customer service, the pause board and the receipt read whole.
   return JSON.stringify([...base, snapshot.track.id, snapshot.event.id, snapshot.career, snapshot.calendar.points, snapshot.calendar.tiers.map((tier) => tier.events.map((entry) => [entry.event.id, entry.selected, entry.medal, entry.best])),

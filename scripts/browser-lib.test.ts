@@ -181,6 +181,12 @@ describe("Chrome graphics profile", () => {
     expect(chromeGraphicsArgs({}, "linux")).toContain("--use-angle=swiftshader");
   });
 
+  test("software captures also get WebGPU on SwiftShader, so the Rune UI canvas can start", () => {
+    expect(chromeGraphicsArgs({ CI: "true" })).toContain("--use-webgpu-adapter=swiftshader");
+    expect(chromeRenderArgs("llvmpipe")).toContain("--enable-unsafe-webgpu");
+    expect(chromeGraphicsArgs({}, "win32")).not.toContain("--enable-unsafe-webgpu");
+  });
+
   test("allows hardware GPU to be explicitly selected in CI", () => {
     expect(chromeGraphicsArgs({ CI: "true", JG_CAPTURE_SOFTWARE_GL: "0" })).not.toContain(
       "--use-angle=swiftshader",

@@ -18,7 +18,7 @@ export default defineFlow(game, {
     await f.expectPage("Number(sessionStorage.setItem('haul', (window.__jgNativeUi?.text() ?? document.body.innerText).match(/(\\d+) cr AT RISK/)?.[1] ?? '0') ?? sessionStorage.getItem('haul')) > 0", "record the haul the HUD shows before the reload, and that it is nonzero");
     await f.reload();
     // the pit offers the run the game kept: a checkpoint with parts, not an empty pit
-    await f.see(/(\d+) parts/, { timeoutMs: 40000 });
+    await f.see(/(\d+) items/, { timeoutMs: 40000 });
     // Continue run
     await f.hold("Enter", { ms: 200 });
     // the corridor HUD is live again

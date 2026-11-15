@@ -7,6 +7,7 @@ import { impactBursts } from "./game/impact";
 import { RIVAL_DEFS } from "./game/race/opponents";
 import { createRunSession, runSessionStore, type RunSession } from "./game/run/session";
 import { autopilotFrame, registerCaptureCommands } from "./game/capture";
+import { registerGameCommands } from "./game/gameCommands";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { AISLE_NINE_TRACK, trackById, type Track } from "./game/tracks/catalog";
 import { createDriveInput } from "./game/vehicle/input";
@@ -56,6 +57,7 @@ export function onInit(ctx: GameContext): void {
   const input = createDriveInput();
   driveInputStore.write(ctx, input);
   registerCaptureCommands(ctx);
+  registerGameCommands(ctx);
 }
 
 export function onNewPlayer(ctx: GameContext): void {

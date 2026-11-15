@@ -29,7 +29,7 @@ export interface TrackStock {
   spacing?: number;
 }
 
-export const GRAB_RADIUS = 2.6;
+export const GRAB_RADIUS = 3.2;
 const DEFAULT_SPACING = 26;
 /** Spots keep this far from a barricade so a grab never decides a gate. */
 const GATE_CLEARANCE = 9;
@@ -40,6 +40,15 @@ export function shelfLane(track: Pick<Track, "def">): number {
   return Math.min(track.def.halfWidth - 1.6, track.def.pavedHalfWidth + 2.5);
 }
 
+function shuffled<T>(list: readonly T[], rng: () => number): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
 export function layShelves(track: Track): readonly ShelfSpot[] {
   const stock = track.def.stock;
   if (stock === undefined || stock.goods.length === 0) return [];
@@ -48,13 +57,17 @@ export function layShelves(track: Track): readonly ShelfSpot[] {
   const lane = shelfLane(track);
   const spots: ShelfSpot[] = [];
   let index = 0;
-  // Power-ups take turns from a seeded start, so every one the department stocks turns up.
-  let powerTurn = Math.floor(rng() * Math.max(1, stock.powerUps.length));
+  // Goods and power-ups each take turns through a seeded shuffle of the list, so everything the
+  // department stocks turns up and no two runs of the same aisle differ.
+  const goods = shuffled(stock.goods, rng);
+  const powers = shuffled(stock.powerUps, rng);
+  let goodsTurn = 0;
+  let powerTurn = 0;
   for (let at = 22; at < track.exitAt - 12; at += spacing) {
     if (track.gates.some((gate) => gate.route === MAIN_ROUTE && Math.abs(gate.atZ - at) < GATE_CLEARANCE)) continue;
     const side = index % 2 === 0 ? 1 : -1;
     const power = index % 4 === 3 && stock.powerUps.length > 0;
-    const id = power ? stock.powerUps[powerTurn++ % stock.powerUps.length]! : stock.goods[Math.floor(rng() * stock.goods.length) % stock.goods.length]!;
+    const id = power ? powers[powerTurn++ % powers.length]! : goods[goodsTurn++ % goods.length]!;
     const item = shelfItemById(id);
     if (item === null) throw new Error(`shelves: ${track.id} stocks unknown item "${id}"`);
     const point = track.point(MAIN_ROUTE, at, side * lane);

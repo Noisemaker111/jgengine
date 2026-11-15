@@ -204,6 +204,8 @@ export interface SessionSnapshot {
   shelvesTaken: ReadonlySet<string>;
   /** The last thing grabbed or used, for the HUD pop. */
   lastGrab: { label: string; at: number } | null;
+  /** Power-ups used this run. */
+  powersUsed: number;
   /** Best self-checkout receipt on this event, or `null` before the first. */
   bestReceipt: number | null;
 }
@@ -309,6 +311,7 @@ export function createRunSession(
   const style = createStyleMeter();
   let lastStyle: { label: string; at: number } | null = null;
   let lastGrab: { label: string; at: number } | null = null;
+  let powersUsed = 0;
   let riding = false;
   let boostLeft = 0;
   let marbles: { id: string; run: number; position: readonly [number, number, number]; until: number; hit: Set<string> }[] = [];
@@ -494,6 +497,7 @@ export function createRunSession(
     rebuildTuning();
     const power = used.used;
     lastGrab = { label: power.useLine, at: runTime };
+    powersUsed += 1;
     pushRadio(power.useLine);
     if (power.id === "extinguisher") boostLeft = BOOST_SECONDS;
     else if (power.id === "bouncy_balls") pendingBounce = true;
@@ -658,6 +662,7 @@ export function createRunSession(
     style.reset();
     lastStyle = null;
     lastGrab = null;
+    powersUsed = 0;
     riding = false;
     boostLeft = 0;
     pendingBounce = false;
@@ -908,6 +913,7 @@ export function createRunSession(
         marbles: marbles.map((spill) => ({ id: spill.id, position: spill.position })),
         shelvesTaken,
         lastGrab,
+        powersUsed,
         bestReceipt: bestReceipts[event.id] ?? null,
       };
     },

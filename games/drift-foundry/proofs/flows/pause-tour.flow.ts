@@ -17,13 +17,13 @@ export default defineFlow(game, {
     };
     const shot = async (name: string, control?: string) => { await settle(control); await f.shot(name); };
     // A phone opens each pane over the plates; its Back stamp returns to them.
-    const back = async () => { if (phone) { await f.click("Back"); await settle("Park the run"); } };
-    await f.see("New run", { timeoutMs: 90000 }); await settle("Yard calendar");
+    const back = async () => { if (phone) { await f.click("Back"); await settle("Park the cart"); } };
+    await f.see("New run", { timeoutMs: 90000 }); await settle("Weekly circular");
     // Held at once with P so the compactor cannot end the run first.
     await f.click("New run"); await f.see("LAP 1/1", { timeoutMs: 90000 });
-    await f.hold("KeyP", { ms: 150 }); await f.see("Back to the run", { timeoutMs: 90000 }); await shot("pause", "Park the run");
-    await f.click("Pit garage"); await f.see("cr banked", { timeoutMs: 90000 }); await shot("pause-garage"); await back();
-    await f.click("Settings"); await f.see("Pit settings", { timeoutMs: 90000 }); await settle("Mute all");
+    await f.hold("KeyP", { ms: 150 }); await f.see("Back to the run", { timeoutMs: 90000 }); await shot("pause", "Park the cart");
+    await f.click("Customer service"); await f.see("store credit", { timeoutMs: 90000 }); await shot("pause-garage"); await back();
+    await f.click("Settings"); await f.see("Picture · sound · controls", { timeoutMs: 90000 }); await settle("Mute all");
     // A real setting change: Mute all flips and reads back on the sheet.
     await f.click("Mute all"); await f.see("On ›", { timeoutMs: 90000 }); await shot("pause-settings");
     await f.click("Mute all"); await f.see("Off ›", { timeoutMs: 90000 }); await back();

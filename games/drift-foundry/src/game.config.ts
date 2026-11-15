@@ -12,6 +12,7 @@ import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
 import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
+import { probeReadings } from "./game/gameCommands";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -83,6 +84,8 @@ export const game = defineGame({
     // the gauntlet actually gives, so the receipt carries a real line, not a number.
     states: {
       title: [],
+      // A live race with nobody else at the handle: what a proof or a flow plays from.
+      race: ["startRun"],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
       // The plow display dodged and the first box wall in the cart's face: the sign says where the plow is.
@@ -102,12 +105,8 @@ export const game = defineGame({
         run: ["startRun"],
       },
     },
-    // `car` is 0 before the car spawns, when the position reads as the origin.
-    probe: (ctx) => {
-      const car = ctx.scene.entity.get(ctx.player.userId);
-      if (car === null) return { car: 0, x: 0, y: 0, z: 0 };
-      return { car: 1, x: car.position[0], y: car.position[1], z: car.position[2] };
-    },
+    // `car` is 0 before the cart spawns; every other reading comes off the live session.
+    probe: probeReadings,
   },
   audio: { sounds: DRIFT_SOUNDS },
   rendering: {

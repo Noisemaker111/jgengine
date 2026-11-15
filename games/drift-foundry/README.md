@@ -39,8 +39,8 @@ Read from `src/game/{cart,run,parts,route,compactor,vehicle,race}`.
 - **Mods** (12, four slots: push / bumper / casters / basket): the Pallet Plow bursts box walls,
   Pogo Casters clear pallet ramps, the Fixed Squeaky Wheel stops the standard cart's wobble, basket
   armor eats one shutter clip. Mod displays along each aisle snap on as you roll through.
-- **Carts** (`cart/chassis.ts`): Standard (8 items, squeaky), Kid-Size Racer ($600, 4 items, darty),
-  Double-Wide Flatbed ($900, 14 items, planted, slow off the line), Mobility Scooter Cart ($1400,
+- **Carts** (`cart/chassis.ts`): Standard (8 items, squeaky), Kid-Size Racer ($550, 4 items, darty),
+  Double-Wide Flatbed ($650, 14 items, planted, slow off the line), Mobility Scooter Cart ($660,
   6 items, fast, never wobbles).
 - **Departments** (`tracks/`): Aisle 9 (straight main aisle: snacks, an iced frozen section at 0.86
   grip, bulk & paint), Produce (juice flood, oranges avalanching across, grape-slick hairpins, salad

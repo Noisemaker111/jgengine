@@ -12,6 +12,8 @@ import { parkedRunMetres } from "../run/progress";
 import { PART_SLOTS } from "../parts/catalog";
 import { FOUNDRY_CREDITS } from "../credits";
 import { foundrySlots, refreshFoundrySlots, saveParkedRunHere } from "../menuSave";
+import { useStore } from "@jgengine/ui/store";
+import { menuPaneStore } from "../gameCommands";
 import type { RunSession, SessionSnapshot } from "../run/session";
 import type { CorralRow, GarageRow } from "../career";
 import type { ChassisId } from "../cart/chassis";
@@ -41,6 +43,9 @@ export function PitMenu({ snapshot, session, publish }: { snapshot: SessionSnaps
   const first = useRef<RuneElement>(null);
   useEffect(() => { refreshFoundrySlots(); }, [title, paused]);
   useEffect(() => { if (open === null) first.current?.focus(); }, [open, title]);
+  // A `menu.pane` command (a proof, a flow, a capture) puts its pane up the way choosing it does.
+  const commanded = useStore(menuPaneStore);
+  useEffect(() => { if (commanded !== null && commanded !== undefined) { setActive(commanded); if (phone) setOpen(commanded); } }, [commanded, phone]);
 
   const whileLoading = async (label: string, work: () => Promise<unknown>) => {
     setBusy(label);

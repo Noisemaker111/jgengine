@@ -40,7 +40,7 @@ export function RaceHud({ live, hud, onPause, onSettings, drive, touch }: HudPro
       <Basket hud={hud} now={now} phone={phone} />
     </RuneView>
     <RuneView anchor="center" padding={[0, 0, phone ? 120 : 160, 0]}><Pop now={now} phone={phone} /></RuneView>
-    <RuneView anchor="top" safe inset={phone ? 10 : 16} padding={phone ? [170, 0, 0, 0] : 0}><Sign hud={hud} now={now} phone={phone} /></RuneView>
+    <RuneView anchor="top" safe inset={phone ? 10 : 16} padding={phone ? [170, 0, 0, 0] : 0} gap={6} items="center"><Sign hud={hud} now={now} phone={phone} />{hud.tip === null ? null : <Tip tip={hud.tip} now={now} phone={phone} />}</RuneView>
     {hud.tag === null ? null : <RuneView anchor={phone ? "top" : "right"} safe inset={phone ? 10 : 16} padding={phone ? [252, 0, 0, 0] : 0}><SalvageTag tag={hud.tag} now={now} phone={phone} /></RuneView>}
     {phone ? <RuneView anchor="bottom" safe inset={10} padding={[0, 0, lower, 0]} gap={8} width={width - 20}>
       <Crusher hud={hud} now={now} width={width - 20} />
@@ -93,6 +93,13 @@ function Sign({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolean
       <Stencil size={phone ? 16 : 24} color="#141414" align="center">{call}</Stencil>
       {phone ? null : <Text size={15} color="#141414" align="center">{sub}</Text>}
     </RuneView>
+  </RuneView>;
+}
+
+/** The shopping tip hung under the sign: the next shelf grab and which way, or the power-up F fires. */
+function Tip({ tip, now, phone }: { tip: NonNullable<RaceHudModel["tip"]>; now: Now; phone: boolean }) {
+  return <RuneView variant="hud" width={phone ? 250 : 460} items="center" border={{ width: 2, color: tip.kind === "power" ? PINK : tip.kind === "mod" ? TEAL : YELLOW }} label="Shopping tip">
+    <Text size={phone ? 12 : 15} align="center" color={tip.kind === "power" ? PINK : tip.kind === "mod" ? TEAL : YELLOW} text={bind(() => now().tip?.text ?? tip.text)} />
   </RuneView>;
 }
 
