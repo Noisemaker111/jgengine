@@ -770,6 +770,8 @@ When a shared primitive misbehaves or lacks a reusable contract, **file a short 
 
 Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing capability. One clear report beats a paragraph of workaround apologetics — the fix belongs in the engine, not in your game.
 
+**A missing part the game needs now: write it as an engine proposal.** Put it in \`<feature>.engine.ts\` next to the game code, exporting \`proposal = defineEngineProposal({ id, target, need, kind, exports })\` from \`@jgengine/core/meta/proposal\` and the implementation under the names it should have at \`target\`. It imports only public \`@jgengine/*\` paths, other \`*.engine.ts\` files and packages (never the game's own files), so it lifts into the engine as-is, and the game keeps going on it. \`npx jgengine propose\` prints the ready-to-file issue (file it at the link above, or with your GitHub tools); \`npx jgengine propose --check\` fails once a published version has the part — then switch the imports to \`target\` and delete the file.
+
 ## Project rules
 
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.

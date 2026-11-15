@@ -57,7 +57,11 @@ World content is editor-first: anything that adds, moves or restyles something v
 2. `npx jgengine recipe <name>` prints a typechecked snippet; `npx jgengine recipe` lists them. [recipes/minimal-game.md](recipes/minimal-game.md) is the whole-game walkthrough; each domain has `recipes/`.
 3. Open `api.md` or a `.d.ts` only for exact signatures, with grep.
 
-If nothing fits, name the shared owner first ([AGENTS.md](../../../AGENTS.md#game-changes-improve-the-framework)); report SDK gaps upstream outside this repo.
+If nothing fits, name the shared owner first ([AGENTS.md](../../../AGENTS.md#game-changes-improve-the-framework)). A part the engine lacks becomes an engine proposal, so the game keeps going and the gap has a trail back to the engine:
+
+1. Write it in `<feature>.engine.ts` next to the game code, exporting `proposal = defineEngineProposal({ id, target, need, kind, exports })` (`@jgengine/core/meta/proposal`) and the implementation under the names and signatures it should have at `target`. `kind` is `new`, `extend`, or `fork` (with `fork: "packages/<pkg>/src/<file>.ts"`, the engine file it copies). For an `extend`, list in `exports` the names the extension adds, so status can tell when it lands. A part too big for one file owns its folder: `cave/cave.engine.ts` may import the rest of `cave/`.
+2. It imports only public `@jgengine/*` paths, other `*.engine.ts` files and packages, never the game's own files, so it lifts into the engine as-is. The game imports it like any module.
+3. `npx jgengine propose` prints a ready-to-file issue per proposal (title, need, target, the full file, a diff for a fork); file it with `gh issue create` or the GitHub tools. `--list` shows each status (`local`, `partial`, `upstream`), `--check` fails on a broken proposal, an id two games carry (the second adopter builds it upstream), or one whose exports now resolve at `target` (switch the imports to `target` and delete the file). `--migrate <folder>` turns an old `engine-local/<name>/` folder into proposal form.
 
 ## Finish
 

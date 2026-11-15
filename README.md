@@ -160,7 +160,36 @@ have their own version lines.
 | [`@jgengine/editor`](packages/editor) | Scene, world and asset editor. Loaded lazily by the runner; standalone with `npx jgengine editor`; agent bridge with `jgengine editor-mcp`. |
 | [`@jgengine/assets`](packages/assets) | License-checked index of CC0 3D models with a pull CLI (the index, not the model files). |
 | [`@jgengine/github`](packages/github) | GitHub contribution data for games that show a real profile. |
-| [`jgengine`](packages/jgengine) | The agent CLI: `create`, `sync`, `find`, `has`, `recipe`, `desktop`, `doctor`, `skills`, `assets`, `editor`, `editor-mcp`, `shoot`, `drive` and more (`npx jgengine help`). |
+| [`jgengine`](packages/jgengine) | The agent CLI: `create`, `sync`, `find`, `has`, `recipe`, `propose`, `desktop`, `doctor`, `skills`, `assets`, `editor`, `editor-mcp`, `shoot`, `drive` and more (`npx jgengine help`). |
+
+## When the engine lacks a part
+
+A game, here or in your own project on the npm packages, that needs something the engine does not
+ship writes it in a `<feature>.engine.ts` file next to its own code and keeps going. The file is the
+working code the game imports, the spec and the issue at once:
+
+```ts
+import { defineEngineProposal } from "@jgengine/core/meta/proposal";
+
+export const proposal = defineEngineProposal({
+  id: "creature-terrain-mode",
+  target: "@jgengine/core/ai/creatureDriver", // the public path it belongs at
+  need: "Creatures wander on a flat plane; on hills they float.",
+  kind: "extend", // "new" | "extend" | "fork" (a fork also names the engine file it copies)
+  exports: ["CreatureTerrainMode", "creatureTerrainHeight"],
+});
+
+export type CreatureTerrainMode = "flat" | "follow";
+export function creatureTerrainHeight(/* ... */) { /* ... */ }
+```
+
+It imports only public `@jgengine/*` paths, other `*.engine.ts` files and packages, so it lifts into
+the engine unchanged. `npx jgengine propose` prints a ready-to-file GitHub issue for each one (it
+never calls GitHub; you or your agent file it at
+[issues](https://github.com/Noisemaker111/jgengine/issues)). `--list` shows which are still local and
+which the engine now has (`upstream`: switch the imports to `target`, delete the file); `--check`
+fails on a broken proposal, one the engine already has, or an id two games carry. In this repo,
+`bun run check engine-proposals` runs the same check over `games/`.
 
 ## Develop the engine
 

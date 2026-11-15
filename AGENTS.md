@@ -40,5 +40,9 @@ and deletes the branch. It reuses a passing gate of the same tree; one run per w
 - Name the shared owner in `packages/` before editing a game. Compose small configurable parts, keep
   game numbers in the game, fix every adopter together, no compatibility shims. A one-adopter
   mechanism may stay local with an issue naming the seam; the second adopter moves it upstream.
+- A missing engine part goes in `<feature>.engine.ts` next to the game code (metadata from
+  `@jgengine/core/meta/proposal`, exports under their final names) and the game keeps going;
+  `bun run jgengine propose` prints the issue to file. A maintainer's agent may build a small part
+  upstream directly instead. `check engine-proposals` fails once the engine has it.
 - Feature model, view and draw live in `packages/core/src/<feature>/`; model code has no rendering,
   browser or backend dependencies.
