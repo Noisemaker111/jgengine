@@ -177,6 +177,19 @@ describe("state and effects", () => {
 });
 
 describe("children", () => {
+  test("a keyed remount discards every host node of the old subtree, nested ones too", () => {
+    const discarded: string[] = [];
+    const host = { ...markupHost, discard: (node: MarkupNode) => { if (node.tag !== null) discarded.push(node.tag); } };
+    const container: MarkupNode = { tag: "#root", text: "", props: {}, children: [] };
+    const root = new Root<MarkupNode>(host, container);
+    const Scene = ({ id }: { id: string }) => h("div", null, h("section", null, h("canvas", null)), id);
+    root.render(h(Scene, { key: "a", id: "a" }));
+    expect(discarded).toEqual([]);
+    root.render(h(Scene, { key: "b", id: "b" }));
+    expect(discarded).toEqual(["canvas", "section", "div"]);
+    expect(treeToMarkup(container.children)).toBe("<div><section><canvas></canvas></section>b</div>");
+  });
+
   test("a hidden sibling does not remount the ones after it", async () => {
     let mounts = 0;
     let show: ((v: boolean) => void) | null = null;

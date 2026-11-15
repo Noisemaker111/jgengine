@@ -7,6 +7,13 @@ type PageNode = Node | RuneNode;
 const dirty = new Set<RuneNode>();
 const native = nativeTreeHost(root => dirty.add(root));
 
+/** A surface leaving the page, directly or under a removed DOM parent, gives up the native canvas. */
+function releaseSurface(node: RuneNode): void {
+  node.connected = false;
+  dirty.delete(node);
+  removeNativeSurface(node);
+}
+
 /** One JSX tree can contain native surfaces and ordinary page tooling, sharing all providers. */
 export const pageHost: Host<PageNode> = {
   createElement(tag, parent) {
@@ -34,9 +41,10 @@ export const pageHost: Host<PageNode> = {
   },
   remove(parent, node) {
     if (parent instanceof RuneNode && node instanceof RuneNode) native.remove(parent, node);
-    else if (node instanceof RuneNode) { node.connected = false; dirty.delete(node); removeNativeSurface(node); }
+    else if (node instanceof RuneNode) releaseSurface(node);
     else if (!(parent instanceof RuneNode)) domHost.remove(parent, node);
   },
+  discard(node) { if (node instanceof RuneNode && node.tag === "rune-surface") releaseSurface(node); },
   childrenPlaced(parent) { if (!(parent instanceof RuneNode)) domHost.childrenPlaced?.(parent); },
   commitDone() {
     for (const node of dirty) syncNativeSurface(node.surface());
