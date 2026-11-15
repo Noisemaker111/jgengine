@@ -25,16 +25,16 @@ export const STARTER_CREW: readonly string[] = ["worker_barista", "worker_farmer
 
 /** What each further trade costs to bring into the union, in the order the hall offers them. */
 export const HIRE_DUES: Readonly<Record<string, number>> = {
-  worker_grandma: 15,
-  worker_electrician: 20,
-  worker_librarian: 20,
-  worker_construction: 25,
-  worker_firefighter: 25,
-  worker_janitor: 25,
-  worker_mail: 30,
-  worker_monk: 30,
-  worker_itguy: 35,
-  worker_lawyer: 40,
+  worker_grandma: 10,
+  worker_electrician: 15,
+  worker_librarian: 15,
+  worker_construction: 20,
+  worker_firefighter: 20,
+  worker_janitor: 20,
+  worker_mail: 25,
+  worker_monk: 25,
+  worker_itguy: 30,
+  worker_lawyer: 30,
 };
 
 /** Training: each rank adds `damage` to every worker of the trade; a rank costs `dues * (rank + 1)`. */
@@ -65,7 +65,7 @@ export function freshUnion(): UnionState {
 
 /** Dues a finished day pays into the hall: a share per wave reached, more per star, and a bonus for a held street. */
 export function duesFor(held: boolean, wave: number, stars: number): number {
-  return Math.max(0, Math.round(wave + stars * 4 + (held ? 6 : 0)));
+  return Math.max(0, Math.round(wave * 2 + stars * 5 + (held ? 10 : 0)));
 }
 
 export function isHired(state: CampaignState, kind: string): boolean {

@@ -29,8 +29,8 @@ describe("the union hall", () => {
   });
 
   test("a finished day pays dues: waves, stars, and a bonus for a held street", () => {
-    expect(duesFor(false, 4, 0)).toBe(4);
-    expect(duesFor(true, 12, 3)).toBe(30);
+    expect(duesFor(false, 4, 0)).toBe(8);
+    expect(duesFor(true, 12, 3)).toBe(49);
     expect(duesFor(true, 12, 3)).toBeGreaterThan(duesFor(false, 12, 0));
   });
 

@@ -9,7 +9,10 @@ import { rebindPath } from "./game/world/path";
 import { assets } from "./game/assets";
 import { BEACON_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
-import { keep, towersStanding } from "./game/keep";
+import { keep, runEnded, towersStanding } from "./game/keep";
+import { campaign } from "./game/campaign";
+import { hiredTrades } from "./game/union";
+import { seasonProgress } from "./game/season";
 import { currentWaveNumber, session } from "./game/session";
 import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { entityModels, scatterModels } from "./game/models";
@@ -127,6 +130,11 @@ function createGame() {
       towers: towersStanding(keep.of(ctx)),
       creeps: session.creeps.size,
       wave: currentWaveNumber(),
+      hired: hiredTrades(campaign.read(ctx)).length,
+      dues: campaign.read(ctx).union.dues,
+      districts: seasonProgress(campaign.read(ctx)).held,
+      ended: runEnded(keep.of(ctx)) ? 1 : 0,
+      held: keep.of(ctx).fact("keep.held") === true ? 1 : 0,
     }),
   },
   rendering: {

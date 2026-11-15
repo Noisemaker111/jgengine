@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
-import { campaign, setDifficulty, setRunModeChoice, type DifficultyId } from "./campaign";
+import { campaign, freshCampaign, setDifficulty, setRunModeChoice, type CampaignState, type DifficultyId } from "./campaign";
+import { nextDistrict, seasonProgress } from "./season";
+import { buyUnion, isHired, type TownUpgradeId } from "./union";
 import type { RunMode } from "./waves/mode";
 import { castAt } from "./combat/cast";
 import { tickTowers } from "./combat/towerAI";
@@ -10,7 +12,7 @@ import { session } from "./session";
 import { beaconRunner } from "./testing";
 import { tickWaves } from "./waves/director";
 import { BUILD_PLOTS } from "./world/path";
-import type { MapId } from "../maps";
+import { MAP_IDS, type MapId } from "../maps";
 import { restartDefense } from "./world/setup";
 
 /**
@@ -49,6 +51,8 @@ interface Outcome {
 const DT = 0.1;
 /** The Overtime board the last played run left on its career. */
 let lastBoard: { wave: number }[] = [];
+/** The career the last played run left behind (its stars, districts and dues). */
+let lastCareer: CampaignState | null = null;
 
 function spend(runner: HeadlessRunner, plan: Plan, built: { next: number }): void {
   const world = keep.of(runner.ctx);
@@ -92,8 +96,9 @@ function useRites(runner: HeadlessRunner): void {
   if (session.boss !== null || session.creeps.size >= 8) runner.ui.tryInvoke("abilityQuiet", {});
 }
 
-function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime", mode: RunMode = "day"): Outcome {
+function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime", mode: RunMode = "day", career?: CampaignState): Outcome {
   const runner = beaconRunner("Town balance");
+  if (career !== undefined) campaign.write(runner.ctx, career);
   setDifficulty(runner.ctx, difficulty);
   setRunModeChoice(runner.ctx, mode);
   restartDefense(runner.ctx);
@@ -133,6 +138,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "fulltime", mode: Ru
   const world = keep.of(runner.ctx);
   if (process.env.BEACON_TRACE) console.log(trace.join(" "), `end:t${Math.round(runner.ctx.time.now())}:L${world.num("keep.lives")}:held${world.fact("keep.held") === true}:creeps${session.creeps.size}:G${world.num("keep.gold")}:gate${world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip)}:distracted${Math.round(distractedSeconds)}s`);
   lastBoard = campaign.read(runner.ctx).overtime;
+  lastCareer = campaign.read(runner.ctx);
   return {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
@@ -252,4 +258,59 @@ describe("pacing", () => {
     const fulltime = playDefense(MIXED, "fulltime");
     expect(overtime.wave * 100 + overtime.lives).toBeLessThan(fulltime.wave * 100 + fulltime.lives);
   }, 60_000);
+});
+
+/** What a sensible manager buys in the union hall, in order, whenever the dues cover it. */
+const HALL_WISHLIST: readonly ({ hire: string } | { train: string } | { town: TownUpgradeId })[] = [
+  { hire: "worker_grandma" },
+  { hire: "worker_electrician" },
+  { hire: "worker_librarian" },
+  { hire: "worker_construction" },
+  { town: "landlines" },
+  { hire: "worker_firefighter" },
+  { hire: "worker_lawyer" },
+  { train: "worker_farmer" },
+  { train: "worker_barista" },
+  { town: "block_party" },
+  { train: "worker_electrician" },
+  { train: "worker_farmer" },
+  { town: "library_card" },
+  { train: "worker_barista" },
+];
+
+/** Spend the career's dues down the wish list, as far as they go. */
+function shopHall(career: CampaignState): CampaignState {
+  const runner = beaconRunner("Union hall");
+  campaign.write(runner.ctx, career);
+  for (const offer of HALL_WISHLIST) buyUnion(runner.ctx, offer);
+  return campaign.read(runner.ctx);
+}
+
+/** The day's crew: the mixed crew, each trade the union lacks swapped for a starter that covers its job. */
+function careerPlan(career: CampaignState, map: MapId): Plan {
+  const stand: Record<string, string> = { worker_electrician: "worker_plumber", worker_construction: "worker_barista", worker_librarian: "worker_teacher", worker_lawyer: "worker_farmer", worker_firefighter: "worker_plumber" };
+  const base = map === "downtown" ? DOWNTOWN_CREW : map === "school" ? { ...MIXED, plots: SCHOOL_PLOTS } : MIXED;
+  return { ...base, builds: base.builds.map((kind) => (isHired(career, kind) ? kind : (stand[kind] ?? "worker_barista"))) };
+}
+
+describe("the campaign curve", () => {
+  test("a career from zero: the starter crew falls on day one, dues fill the union, and the season is kept in under two weeks", async () => {
+    let career = freshCampaign();
+    let map: MapId = "main-street";
+    const log: string[] = [];
+    let firstDay: Outcome | null = null;
+    for (let day = 1; day <= 14 && seasonProgress(career).held < MAP_IDS.length; day += 1) {
+      const plan = careerPlan(career, map);
+      const outcome = await onMap(map, () => playDefense(plan, "fulltime", "day", career));
+      firstDay ??= outcome;
+      career = shopHall(lastCareer!);
+      log.push(`d${day}:${map}:${outcome.held ? "held" : "lost"}@${outcome.wave}:L${outcome.lives}:hired${MAP_IDS.length > 0 ? career.union.hired.length : 0}:dues${career.union.dues}`);
+      if (outcome.held) map = nextDistrict(career, map) ?? map;
+    }
+    if (process.env.BEACON_TRACE) console.log(log.join(" "));
+    expect(firstDay!.held).toBe(false);
+    expect(seasonProgress(career).held).toBe(MAP_IDS.length);
+    expect(log.length).toBeLessThanOrEqual(14);
+    expect(log.length).toBeGreaterThanOrEqual(4);
+  }, 900_000);
 });
