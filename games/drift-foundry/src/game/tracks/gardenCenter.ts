@@ -65,6 +65,7 @@ export const GARDEN_CENTER: TrackDef = {
     powerUps: ["bouncy_balls", "mop", "extinguisher", "rotisserie_chicken"],
   },
   dressing: {
+    indoor: false,
     edge: O.edgeHedge,
     edgeSpacing: 3.6,
     lamp: O.lampGarden,

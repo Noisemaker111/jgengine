@@ -16,6 +16,7 @@ import { tumbleBursts } from "./game/world/hazardFx";
 import {
   clearRunObjects,
   freightWagons,
+  placeAisleRoof,
   placeRunObjects,
   placeTrackScenery,
   placeZoneDressing,
@@ -52,6 +53,7 @@ export const lifecycle: LifecycleConfig<RunSession> = {
 export function onInit(ctx: GameContext): void {
   const propRows = placeZoneDressing(ctx);
   placeTrackScenery(ctx);
+  placeAisleRoof(ctx);
   // Records live in localStorage, or in the game store the world save persists where there is none.
   const records = gameRunStorage(ctx);
   runStorages.set(ctx, records);

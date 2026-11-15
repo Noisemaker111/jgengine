@@ -28,6 +28,6 @@ export default defineFlow(game, {
     await f.click("Mute all"); await f.see("On ›", { timeoutMs: 90000 }); await shot("pause-settings");
     await f.click("Mute all"); await f.see("Off ›", { timeoutMs: 90000 }); await back();
     await settle("Back to the run");
-    await f.click("Back to the run"); await f.see("AT RISK", { timeoutMs: 90000 }); await shot("resumed", "Pause run");
+    await f.click("Back to the run"); await f.see("SHUTTERS CLOSING", { timeoutMs: 90000 }); await shot("resumed", "Pause run");
   },
 });

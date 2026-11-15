@@ -10,7 +10,7 @@ export default defineFlow(game, {
     // New run
     await f.hold("Enter", { ms: 200 });
     // the corridor HUD is live
-    await f.see("AT RISK", { timeoutMs: 20000 });
+    await f.see("SHUTTERS CLOSING", { timeoutMs: 20000 });
     // throttle through the salvage drops, holding E to swap
     await f.hold(["KeyW", "KeyE"], { ms: 8000 });
     // the run advanced past three drops, so the haul is worth keeping
@@ -22,7 +22,7 @@ export default defineFlow(game, {
     // Continue run
     await f.hold("Enter", { ms: 200 });
     // the corridor HUD is live again
-    await f.see("AT RISK", { timeoutMs: 20000 });
+    await f.see("SHUTTERS CLOSING", { timeoutMs: 20000 });
     await f.expectPage("(window.__jgNativeUi?.text() ?? document.body.innerText).match(/(\\d+) cr AT RISK/)?.[1] === sessionStorage.getItem('haul')", "the haul after the reload is the haul before it");
     await f.expect((p) => p.z > 40, "and the route came back, not the start line");
   },

@@ -85,6 +85,8 @@ export interface TrackDressing {
   lampSpacing: number;
   /** Where the lamps hang: down the edges alternating sides (default), or over the centreline. */
   lampAt?: "edge" | "centre";
+  /** False for the one outdoor department: no warehouse roof over it. Default indoors. */
+  indoor?: boolean;
   /** The set-piece the tumbles roll off (an orange pile by default). */
   tumble?: string;
   /** Props scattered off the course. */

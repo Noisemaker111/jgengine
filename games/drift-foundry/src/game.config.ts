@@ -128,12 +128,12 @@ export const game = defineGame({
     environmentSource: hdriEnvironment("interior-industrial", { intensity: 0.55 }),
     lighting: {
       // Indoor fill: shadows stay soft and neutral under the strip lights, never blue.
-      ambient: { color: "#e8e4dc", intensity: 0.22 },
-      hemisphere: { skyColor: "#f4f1ea", groundColor: "#8f8878", intensity: 0.55 },
+      ambient: { color: "#e8e4dc", intensity: 0.32 },
+      hemisphere: { skyColor: "#f4f1ea", groundColor: "#8f8878", intensity: 0.75 },
       directional: [
         {
           color: "#fff6e6",
-          intensity: 1.35,
+          intensity: 1.0,
           // High and nearly overhead: the strip lights' key, kept here so the cascades below tune its shadow.
           position: [-30, 140, 40],
           castShadow: true,

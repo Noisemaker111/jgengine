@@ -3,7 +3,7 @@ import { FIXTURE_STATES, runeUiFixture } from "../../../proofs/runeUiFixture";
 
 const expected: Partial<Record<(typeof FIXTURE_STATES)[number], string>> = {
   title: "New run", continue: "mods fitted", calendar: "Weekly circular", corral: "Mobility Scooter Cart", garage: "Customer service", records: "Store records",
-  settings: "Master volume", credits: "Original Cleanup on Aisle 9 art", hud: "AT RISK", pause: "Back to the run",
+  settings: "Master volume", credits: "Original Cleanup on Aisle 9 art", hud: "SHUTTERS CLOSING", pause: "Back to the run",
   "pause-garage": "Customer service", "pause-settings": "Restart run", "settings-sheet": "Master volume", result: "CUSTOMER SERVICE",
 };
 test("every Cleanup on Aisle 9 UI state serializes native elements at desktop and phone widths", async () => {

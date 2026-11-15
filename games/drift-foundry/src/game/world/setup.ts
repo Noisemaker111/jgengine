@@ -11,6 +11,7 @@ import {
   PICKUP_STATIONS,
   JUMP_CUE,
   PROP_AISLE_SIGN,
+  PROP_CEILING_BAY,
   PROP_CEILING_LIGHT,
   TRACK_OBJECT,
   shelfItemObject,
@@ -49,6 +50,13 @@ function placeIdempotent(
 ): void {
   ctx.scene.object.remove(instanceId);
   ctx.scene.object.place(catalogId, x, y, z, { instanceId, ...(rotation === undefined ? {} : { rotation }) });
+}
+
+/** Aisle 9's warehouse roof: 96 m bays from behind the start to past the self-checkout, placed once. */
+export function placeAisleRoof(ctx: GameContext): number {
+  let bay = 0;
+  for (let z = -72; z <= EXIT_Z + 72; z += 24, bay += 1) placeIdempotent(ctx, PROP_CEILING_BAY, 0, ctx.world.groundHeightAt(0, z), z, `aisle-roof-${bay}`);
+  return bay;
 }
 
 /** Aisle 9's corridor scenery: the zone clutter, the ceiling lights and the hanging signs the shutters swallow. */
@@ -123,6 +131,15 @@ export function placeTrackScenery(ctx: GameContext): number {
       const side = lamp % 2 === 0 ? 1 : -1;
       const at = track.course.pointAt(MAIN_ROUTE, s, side * (track.def.halfWidth + 1.6));
       put(dressing.lamp, at.x, at.z, `${id}-lamp-${lamp}`, at.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2));
+    }
+
+    // The warehouse roof over every indoor department, one bay every 22 m down the main line.
+    if (dressing.indoor !== false) {
+      let bay = 0;
+      for (let s = 0; s < main.length; s += 22, bay += 1) {
+        const at = track.course.pointAt(MAIN_ROUTE, s, 0);
+        put(PROP_CEILING_BAY, at.x, at.z, `${id}-roof-${bay}`, at.heading, at.elevation - ctx.world.groundHeightAt(at.x, at.z));
+      }
     }
 
     const b = track.course.bounds;

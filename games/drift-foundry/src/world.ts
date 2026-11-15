@@ -64,7 +64,7 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
     road({
       path: routePath(route.points),
       width: 2 * (route.id === "main" ? track.def.pavedHalfWidth : Math.min(track.def.pavedHalfWidth, track.def.branches.find((branch) => branch.id === route.id)!.halfWidth)),
-      color: "#d9d4ca",
+      color: "#bab4a8",
       materials: { road: RACING_LINE_SCAN },
       markings: route.id === "main",
       markingColor: "#2f6fd6",
@@ -207,7 +207,7 @@ export const world: WorldFeature = environment({
       // Narrower than the drivable aisle on purpose: a tiled walkway with terrazzo either side, rather
       // than one slab filling the near frame.
       width: HAUL_ROAD_HALF_WIDTH * 2,
-      color: "#d9d4ca",
+      color: "#bab4a8",
       materials: { road: RACING_LINE_SCAN },
       markings: true,
       markingColor: "#2f6fd6",

@@ -510,6 +510,28 @@ author('ceiling-light-wide', ({ box, tube }) => {
     tube([x, 11.1, 0], [x, 15, 0], .025, '#8d99a6');
   }
 });
+/**
+ * One bay of the warehouse roof, 96 m across and 24 m deep, tiled down every indoor aisle: a ribbed
+ * steel deck at 15.3 m, two Warren trusses, silver supply ducts, a red sprinkler main and a row of
+ * fluorescent strip lights on the bottom chords.
+ */
+author('ceiling-bay', ({ box, cylinder, tube }) => {
+  const W = 96, D = 24;
+  box([W, .3, D], [0, 15.4, 0], '#4f555e');
+  for (let x = -W / 2 + 3; x < W / 2; x += 6) box([.25, .35, D], [x, 15.1, 0], '#666d77');
+  for (const z of [-6, 6]) {
+    box([W, .22, .22], [0, 15.0, z], '#c3c8ce');
+    box([W, .22, .22], [0, 13.7, z], '#c3c8ce');
+    for (let x = -W / 2; x < W / 2; x += 4) tube([x, 13.7, z], [x + 2, 15.0, z], .07, '#c3c8ce'), tube([x + 2, 15.0, z], [x + 4, 13.7, z], .07, '#c3c8ce');
+    for (let x = -W / 2 + 4; x < W / 2; x += 8) {
+      box([.5, .1, 3.2], [x, 13.5, z], '#e8eaec');
+      box([.3, .05, 3.0], [x, 13.43, z], '*#fffbe8');
+    }
+  }
+  for (const x of [-18, 18]) cylinder(.7, D, [x, 14.2, 0], '~#b8c0c8', [Math.PI / 2, 0, 0]);
+  cylinder(.45, D, [0, 14.4, 0], '~#b8c0c8', [Math.PI / 2, 0, 0]);
+  tube([-W / 2, 14.8, 0], [W / 2, 14.8, 0], .06, '#d63a3a');
+});
 author('aisle-sign', ({ box, cylinder }) => {
   // The giant hanging aisle marker, read from far down the aisle: a blue board with a fat "9" in blocks.
   for (const x of [-2.2, 2.2]) cylinder(.03, 4, [x, 13, 0], '#8d99a6');

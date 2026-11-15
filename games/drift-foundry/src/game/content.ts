@@ -1,7 +1,7 @@
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 import { ENTITY_CATALOG } from "./entities/catalog";
-import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, OBJECT_CATALOG, PROP_AISLE_SIGN, PROP_CEILING_LIGHT, TRACK_OBJECT, ZONE_PROP_IDS } from "./objects/catalog";
+import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, OBJECT_CATALOG, PROP_AISLE_SIGN, PROP_CEILING_BAY, PROP_CEILING_LIGHT, TRACK_OBJECT, ZONE_PROP_IDS } from "./objects/catalog";
 
 /**
  * Never moved once placed: the department dressing, Aisle 9's clutter, the ceiling lights and aisle
@@ -9,7 +9,7 @@ import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, OBJECT_CATALO
  * marble spills and jump cues stay individual.
  */
 const SCENERY_OBJECTS = new Set<string>([
-  EXIT_GATE_ARCH, GATE_BARRICADE_PLOW, GATE_BARRICADE_JUMP, PROP_CEILING_LIGHT, PROP_AISLE_SIGN,
+  EXIT_GATE_ARCH, GATE_BARRICADE_PLOW, GATE_BARRICADE_JUMP, PROP_CEILING_LIGHT, PROP_AISLE_SIGN, PROP_CEILING_BAY,
   ...ZONE_PROP_IDS, ...Object.values(TRACK_OBJECT),
 ]);
 

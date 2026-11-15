@@ -11,6 +11,7 @@ import {
   MARBLE_SPILL,
   PICKUP_MARKER,
   PROP_AISLE_SIGN,
+  PROP_CEILING_BAY,
   PROP_BOX_PILE,
   PROP_CART_CORRAL,
   PROP_CEILING_LIGHT,
@@ -51,6 +52,8 @@ export const objectModels: Record<string, ModelConfig> = {
   [PROP_WET_FLOOR]: authored("wet-floor"),
   [PROP_CEILING_LIGHT]: authored("ceiling-light-wide", { shadows: "none" }),
   [PROP_AISLE_SIGN]: authored("aisle-sign", { shadows: "none" }),
+  // The roof never casts: the store is lit from its strip lights, and a cast roof would black the floor.
+  [PROP_CEILING_BAY]: authored("ceiling-bay", { shadows: "none" }),
   [GATE_BARRICADE_PLOW]: authored("gate-box-wall"),
   [GATE_BARRICADE_JUMP]: authored("gate-pallet-ramp"),
   [JUMP_CUE]: authored("jump-cue", { shadows: "none" }),

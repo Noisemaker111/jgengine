@@ -14,6 +14,8 @@ export const PROP_WET_FLOOR = "prop_wet_floor";
 /** The fluorescent fixtures hung over the aisle and the giant hanging department signs. */
 export const PROP_CEILING_LIGHT = "prop_ceiling_light";
 export const PROP_AISLE_SIGN = "prop_aisle_sign";
+/** One 96 m x 24 m bay of the warehouse roof: deck, trusses, ducts and strip lights. */
+export const PROP_CEILING_BAY = "prop_ceiling_bay";
 
 export const GATE_BARRICADE_PLOW = "gate_box_wall";
 export const GATE_BARRICADE_JUMP = "gate_pallet_ramp";
@@ -84,6 +86,7 @@ export const OBJECT_CATALOG: Record<string, GameContextObjectEntry> = {
   ...Object.fromEntries(ZONE_PROP_IDS.map((id) => [id, {}])),
   [PROP_CEILING_LIGHT]: {},
   [PROP_AISLE_SIGN]: {},
+  [PROP_CEILING_BAY]: {},
   [GATE_BARRICADE_PLOW]: {},
   [GATE_BARRICADE_JUMP]: {},
   [PICKUP_MARKER]: {},
