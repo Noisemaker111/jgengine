@@ -4,7 +4,7 @@ import type { Point, Zone } from "../world";
 import { completeSets, defOf, ITEMS, itemValue, kindOf, rollItem, SETS, type Item, type ItemKind, type SetId } from "./loot";
 import { LITTLES, type LittleId } from "./littles";
 import { bankHaul, canCarry, loseHaul } from "./haul";
-import { packOf, STARTING_ZONES, unlockedLittles, UPGRADE_IDS, wellFed, type Milestones, type UpgradeId } from "./burrow";
+import { clockOf, collectionOf, packOf, STARTING_ZONES, unlockedLittles, UPGRADE_IDS, wellFed, type Milestones, type UpgradeId } from "./burrow";
 import { ROOT, depthOf, planRoom, seedFor, twistOf, type PlannedLoot, type RoomPlan, type RunSeed } from "./runGen";
 import type { ThreatState } from "./threats";
 
@@ -69,9 +69,9 @@ export function newHome(): Home {
   return {
     version: 1, revision: 0, nextRun: 1, extractions: 0, caught: 0, activeRun: null, last: null, caughtPending: false,
     stash: [], caps: 0, little: "pip",
-    upgrades: { workbench: 1, larder: 0, mapRoom: 0, satchel: 0, trophies: 0 },
+    upgrades: { workbench: 1, larder: 0, mapRoom: 0, satchel: 0, trophies: 0, slippers: 0, clock: 0, herbs: 0 },
     zones: [...STARTING_ZONES], sets: [], kidsBox: [],
-    milestones: { mapRoom: 0, bulkyBanked: 0, setsBanked: 0, deepestExtraction: 0 },
+    milestones: { mapRoom: 0, bulkyBanked: 0, setsBanked: 0, deepestExtraction: 0, cellarBanked: 0 },
     bring: [], ledger: {},
   };
 }
@@ -116,15 +116,16 @@ export function newRun(id: number, home: Home, before: Home = home): Run {
   const pack = packOf(home.upgrades.satchel);
   const brought = before.stash.filter(item => before.bring.includes(item.id));
   const fed = larderMeal(before) === null ? 0 : wellFed(home.upgrades.larder);
-  const maxHealth = 100 + fed;
+  const collection = collectionOf(home.sets.length);
+  const maxHealth = 100 + fed + collection.health;
   let packed: PackedItem[] = [];
   for (const item of brought) { const slot = fitInto(packed, item, pack.w, pack.h); if (slot !== null) packed = [...packed, slot]; }
   const seed = seedFor(id, home.revision), twist = twistOf(seed);
   return {
     id, seed, little: home.little, zones: [...home.zones],
-    elapsed: 0, nightSeconds: NIGHT_SECONDS + little.extraNight + twist.seconds,
+    elapsed: 0, nightSeconds: NIGHT_SECONDS + little.extraNight + twist.seconds + clockOf(home.upgrades.clock),
     health: maxHealth, maxHealth,
-    pack: packed, packW: pack.w, packH: pack.h, capacity: Math.round((pack.weight * little.carry + twist.carry) * 10) / 10,
+    pack: packed, packW: pack.w, packH: pack.h, capacity: Math.round((pack.weight * little.carry + twist.carry + collection.carry) * 10) / 10,
     room: ROOT, visited: [ROOT], deepest: 0,
     taken: [], sprung: [], dead: [], dropped: [], kidTook: [],
     channel: null, hurt: 0, flash: 0, shield: true, threats: [], sling: 0, cause: "",
@@ -195,10 +196,11 @@ function settleRun(home: Home, run: Pick<Run, "id" | "pack" | "kidTook" | "deepe
   const setBonus = sets.reduce((sum, id) => sum + SETS[id].bonus * (home.upgrades.trophies > 0 ? 2 : 1), 0);
   const capsEarned = caps.reduce((sum, item) => sum + itemValue(item), 0) + setBonus;
   const bulky = goods.filter(item => defOf(item).bulky === true).length;
+  const cellar = goods.filter(item => defOf(item).zones?.includes("basement") === true).length;
   const allSets = [...new Set([...home.sets, ...sets])];
   return { ...home, revision: home.revision + 1, activeRun: null, nextRun: run.id + 1, extractions: home.extractions + 1, kidsBox, bring: [],
     stash: [...home.stash, ...moved.banked], caps: home.caps + capsEarned, sets: allSets,
-    milestones: { ...home.milestones, bulkyBanked: home.milestones.bulkyBanked + bulky, setsBanked: allSets.length, deepestExtraction: Math.max(home.milestones.deepestExtraction, run.deepest), mapRoom: home.upgrades.mapRoom },
+    milestones: { ...home.milestones, cellarBanked: home.milestones.cellarBanked + cellar, bulkyBanked: home.milestones.bulkyBanked + bulky, setsBanked: allSets.length, deepestExtraction: Math.max(home.milestones.deepestExtraction, run.deepest), mapRoom: home.upgrades.mapRoom },
     last: { kind, run: run.id, count: carried.length, reason, caps: capsEarned, sets, depth: run.deepest, via } };
 }
 

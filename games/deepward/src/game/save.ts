@@ -33,6 +33,13 @@ function validItem(value: unknown, before: number): value is Item {
   if (made !== null) return made[2] === item.baseId;
   return false;
 }
+/** A burrow saved before an upgrade or milestone existed reads it as not yet built or reached. */
+export function migrateHome(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  const upgrades = isRecord(value["upgrades"]) ? { ...Object.fromEntries(UPGRADE_IDS.map(id => [id, 0])), ...value["upgrades"] } : value["upgrades"];
+  const milestones = isRecord(value["milestones"]) ? { cellarBanked: 0, ...value["milestones"] } : value["milestones"];
+  return { ...value, upgrades, milestones };
+}
 export function validHome(value: unknown): value is Home {
   if (!isRecord(value) || value["version"] !== 1) return false;
   const v = value as Record<string, unknown>;
@@ -54,7 +61,7 @@ export function validHome(value: unknown): value is Home {
   if (!Array.isArray(v["sets"]) || !v["sets"].every(id => (SET_IDS as readonly unknown[]).includes(id))) return false;
   if (!Array.isArray(v["bring"]) || !v["bring"].every(id => typeof id === "string" && stash.some(item => item.id === id))) return false;
   const m = v["milestones"];
-  if (!isRecord(m) || !["mapRoom", "bulkyBanked", "setsBanked", "deepestExtraction"].every(k => natural(m[k]))) return false;
+  if (!isRecord(m) || !["mapRoom", "bulkyBanked", "setsBanked", "deepestExtraction", "cellarBanked"].every(k => natural(m[k]))) return false;
   if (!isRecord(v["ledger"])) return false;
   const ids = new Set(stash.map(item => item.id));
   if (!Object.entries(v["ledger"]).every(([id, outcome]) => (outcome === "salvaged" || outcome === "sold") && !ids.has(id))) return false;
@@ -92,6 +99,7 @@ function readRecord(raw: string): GameSaveDocument {
   try { parsed = JSON.parse(raw); } catch { throw new Error(UNREADABLE); }
   if (!isRecord(parsed) || parsed["version"] !== GAME_SAVE_VERSION || !isRecord(parsed["value"])) throw new Error(DAMAGED);
   const document = parsed["value"] as unknown as GameSaveDocument;
+  if (isRecord(document.systems)) document.systems["burrow"] = migrateHome(document.systems["burrow"]);
   if (!isRecord(document.systems) || !validHome(document.systems["burrow"])) throw new Error(DAMAGED);
   return document;
 }

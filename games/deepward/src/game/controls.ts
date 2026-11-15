@@ -13,7 +13,7 @@ import { BURROW, DEPART, ZONES, eyeLevel, groundDistance, HOME_SPAWN, inCover, i
 import { acknowledgeCaught, age, littlesOf, carry, clockText, depart, familyUp, fits, hasGear, isDawn, ledgerOf, lightsOn, newHome, newRun, pack, peekLoot, recoverInterrupted, roomOf, runSeedOf, settle, twoHanded, type Home, type PackedItem, type Result, type Run } from "./state";
 import { defOf, displayName, ITEMS, itemValue, kindOf, rollItem, tradeValue, type Item, type ItemKind } from "./loot";
 import { LITTLES, isLittle, type LittleId } from "./littles";
-import { CHARTS, goalStep, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
+import { CHARTS, goalStep, herbsOf, hushOf, pay, RECIPES, UPGRADES, type UpgradeId } from "./burrow";
 import { canCarry, loadOf } from "./haul";
 import { NIGHTS, nightOf, OMENS, omensOf, planRoom, twistOf, type Forward, type PlannedExit, type RoomPlan } from "./runGen";
 import { jab, spawnThreat, tickThreats, webDrag, type ThreatEvent, type ThreatState } from "./threats";
@@ -302,7 +302,9 @@ function enterRoom(ctx: GameContext, run: Run, to: string, from: string | null, 
   const arrival = arrivalOf(plan, from);
   const depth = plan.depth;
   const next: Run = { ...run, room: to, visited: run.visited.includes(to) ? run.visited : [...run.visited, to], deepest: Math.max(run.deepest, depth),
-    threats: threatsFor(run, plan), shield: true, channel: null, health: Math.max(0, run.health - cost), hurt: cost > 0 ? 0.4 : run.hurt };
+    threats: threatsFor(run, plan), shield: true, channel: null, hurt: cost > 0 ? 0.4 : run.hurt,
+    // The herb cabinet's honey: a sip at every door you go through.
+    health: Math.min(run.maxHealth, Math.max(0, run.health - cost) + (from === null ? 0 : herbsOf(v.home.upgrades.herbs))) };
   const hint = `${text}${plan.template.name}${depth > 0 ? ` · ${depth} room${depth === 1 ? "" : "s"} from the crack` : " · the crack home is here"}. ${plan.template.flavor}`;
   viewStore.write(ctx, { ...v, run: next, hint });
   teleport(ctx, arrival.at, arrival.facing);
@@ -891,7 +893,7 @@ export function tickControls(ctx: GameContext, dt: number): void {
   // A cat's bell in the pack jingles with every step.
   if (noise > 0) for (const item of v.run.pack) noise *= defOf(item).noisy ?? 1;
   if (v.run.channel !== null) noise = Math.max(noise, v.run.channel.kind === "disarm" && !little.trapSense ? 12 : v.run.channel.kind === "search" || v.run.channel.kind === "toybox" ? 6 : 2);
-  noise *= little.noise * twistOf(v.run.seed).noise;
+  noise *= little.noise * twistOf(v.run.seed).noise * hushOf(v.home.upgrades.slippers);
   const lit = lightsOn(v.run, plan), torch = hasGear(v.run, "torch");
   const visibility = (lit ? 1.8 : template.dark ? (torch ? 1.1 : 0.6) : 1) * twistOf(v.run.seed).light * (torch ? 1.5 : 1) * (sneaking ? 0.6 : 1) * (isDawn(v.run) ? 1.3 : 1) / little.stillness;
   const covered = inCover(template, at);

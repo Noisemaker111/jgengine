@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { openRecord, recordEntry, validHome, RECORD_SLOT, type RunSnapshot, type StoragePort } from "./save";
+import { migrateHome, openRecord, recordEntry, validHome, RECORD_SLOT, type RunSnapshot, type StoragePort } from "./save";
 import { depart, newHome, newRun, settle } from "./state";
 import { rollItem } from "./loot";
 
@@ -37,6 +37,13 @@ describe("the burrow record", () => {
   test("an invented item or an impossible tally is rejected", async () => {
     const home = settle(depart(newHome()), { id: 1, pack: [], kidTook: [], deepest: 0 }, "extracted", "ok");
     expect(validHome(home)).toBe(true);
+    // A burrow saved before the slippers, clock, herbs and the cellar milestone still loads, with none built.
+    const { slippers: _s, clock: _c, herbs: _h, ...oldUpgrades } = home.upgrades;
+    const { cellarBanked: _m, ...oldMilestones } = home.milestones;
+    const old = { ...home, upgrades: oldUpgrades, milestones: oldMilestones };
+    expect(validHome(old)).toBe(false);
+    expect(validHome(migrateHome(old))).toBe(true);
+    expect((migrateHome(old) as typeof home).upgrades.clock).toBe(0);
     expect(validHome({ ...home, stash: [rollItem("coin", 1, "x", "9:coin~x")] })).toBe(false);
     expect(validHome({ ...home, stash: [rollItem("coin", 1, "x", "1:crumb~x")] })).toBe(false);
     expect(validHome({ ...home, extractions: 5 })).toBe(false);

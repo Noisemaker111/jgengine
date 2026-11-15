@@ -7,7 +7,7 @@ import type { Zone } from "../world";
  * run, gear crafted at the workbench, charts that open more of the house, and new Littles moving in.
  * Every cost is exact items from the stash plus bottle caps.
  */
-export type UpgradeId = "workbench" | "larder" | "mapRoom" | "satchel" | "trophies";
+export type UpgradeId = "workbench" | "larder" | "mapRoom" | "satchel" | "trophies" | "slippers" | "clock" | "herbs";
 export interface Cost { items: Partial<Record<ItemKind, number>>; caps: number }
 export interface UpgradeDef { name: string; levels: readonly { cost: Cost; effect: string }[]; flavor: string }
 
@@ -30,7 +30,40 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   trophies: { name: "Trophy shelf", flavor: "Where finished sets live.", levels: [
     { cost: { items: {}, caps: 15 }, effect: "Every banked set shows on the shelf and pays its bonus again as caps." },
   ] },
+  slippers: { name: "Slipper workshop", flavor: "Felt from a lost mitten, stitched into silent soles.", levels: [
+    { cost: { items: { tissue: 1, "thread-spool": 1 }, caps: 25 }, effect: "Felt soles for everyone: footsteps carry a fifth less far." },
+    { cost: { items: { "spider-silk": 1, "safety-pin": 1 }, caps: 45 }, effect: "Silk-stitched soles: footsteps carry a third less far." },
+  ] },
+  clock: { name: "Wind-up clock", flavor: "A watch movement nailed to the stud, ticking the night out.", levels: [
+    { cost: { items: { "watch-battery": 1, "toy-gear": 1 }, caps: 30 }, effect: "Read the night better: every night lasts half a minute longer." },
+    { cost: { items: { "pocket-watch": 1 }, caps: 40 }, effect: "The cellar pocket watch keeps perfect time: a minute and a half longer." },
+  ] },
+  herbs: { name: "Herb cabinet", flavor: "Dried mint, a thimble of honey and a scrap of plaster.", levels: [
+    { cost: { items: { "sugar-cube": 1, tissue: 1 }, caps: 20 }, effect: "A sip of honey at every door you go through: +8 health." },
+    { cost: { items: { "cheese-cube": 1, "spider-silk": 1 }, caps: 40 }, effect: "Silk bandages too: +15 health at every door." },
+  ] },
 };
+/** What the slipper workshop does to every footstep. */
+export const hushOf = (level: number): number => level >= 2 ? 0.67 : level >= 1 ? 0.8 : 1;
+/** Seconds the wind-up clock adds to a night. */
+export const clockOf = (level: number): number => level >= 2 ? 90 : level >= 1 ? 30 : 0;
+/** Health the herb cabinet restores at each door. */
+export const herbsOf = (level: number): number => level >= 2 ? 15 : level >= 1 ? 8 : 0;
+
+/**
+ * The collection: every different set the burrow has ever banked makes every Little a little
+ * stronger for good, so the stash's set list is a goal, not just a bonus.
+ */
+export const COLLECTION: readonly { sets: number; carry: number; health: number; title: string }[] = [
+  { sets: 2, carry: 1, health: 0, title: "Two sets: every Little carries one more." },
+  { sets: 4, carry: 2, health: 10, title: "Four sets: two more carry and 10 more health." },
+  { sets: 6, carry: 3, health: 20, title: "Six sets: three more carry and 20 more health." },
+  { sets: 7, carry: 3, health: 35, title: "Every set: the burrow is a legend. 35 more health." },
+];
+export function collectionOf(sets: number): { carry: number; health: number; next: (typeof COLLECTION)[number] | null } {
+  const reached = COLLECTION.filter(c => sets >= c.sets).at(-1);
+  return { carry: reached?.carry ?? 0, health: reached?.health ?? 0, next: COLLECTION.find(c => sets < c.sets) ?? null };
+}
 export const UPGRADE_IDS = Object.keys(UPGRADES) as UpgradeId[];
 
 /** Charts: the house beyond the kitchen and the living room, each opened at the map room. */
@@ -91,8 +124,12 @@ const GOALS = [
   "Bring a whole set home in one run (the stash lists them) for a big bonus, and Dot moves in.",
   "Chart the garage and the attic. The deeper the room, the better the treasure.",
   "Go deeper. Six rooms in and out again, and Old Fennel moves in.",
+  "Chart the basement at the map room. Deep in a night the cellar opens, and the Exterminator walks his beat down there.",
+  "Bring a basement find home past the Exterminator's torch, and Moth moves in.",
+  "Bank four different sets: every Little gets stronger for good. The Cellar Hoard is the richest.",
+  "Bank every set. The house remembers the Littles who did.",
 ] as const;
-type GoalHome = { extractions: number; upgrades: Record<UpgradeId, number>; zones: readonly Zone[]; sets: readonly string[] };
+type GoalHome = { extractions: number; upgrades: Record<UpgradeId, number>; zones: readonly Zone[]; sets: readonly string[]; milestones?: { cellarBanked?: number; deepestExtraction?: number } };
 /** Which step of the burrow's guidance a home is on: 0 is the very first run. */
 export function goalStep(home: GoalHome): number {
   if (home.extractions === 0) return 0;
@@ -102,17 +139,22 @@ export function goalStep(home: GoalHome): number {
   if (home.upgrades.satchel === 0) return 4;
   if (home.sets.length === 0) return 5;
   if (home.zones.length < 5) return 6;
-  return 7;
+  if ((home.milestones?.deepestExtraction ?? 6) < 6) return 7;
+  if (!home.zones.includes("basement")) return 8;
+  if ((home.milestones?.cellarBanked ?? 0) === 0) return 9;
+  if (home.sets.length < 4) return 10;
+  return 11;
 }
 /** The burrow's next suggestion, in the order a new player meets things. */
 export function nextGoal(home: GoalHome): string { return GOALS[goalStep(home)]!; }
 
 /** What the burrow has done, for the nook's move-in rules. */
-export interface Milestones { mapRoom: number; bulkyBanked: number; setsBanked: number; deepestExtraction: number }
+export interface Milestones { mapRoom: number; bulkyBanked: number; setsBanked: number; deepestExtraction: number; cellarBanked: number }
 export function unlockedLittles(m: Milestones): LittleId[] {
   return LITTLE_IDS.filter(id => id === "pip" || id === "bolt"
     || (id === "wren" && m.mapRoom >= 1)
     || (id === "tuck" && m.bulkyBanked >= 3)
     || (id === "dot" && m.setsBanked >= 1)
-    || (id === "fennel" && m.deepestExtraction >= 6));
+    || (id === "fennel" && m.deepestExtraction >= 6)
+    || (id === "moth" && m.cellarBanked >= 1));
 }

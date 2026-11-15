@@ -5,7 +5,7 @@ import type { Category } from "./loot";
  * how loud they are and what the house's hunters make of them. Two live in the burrow from the
  * start; the rest move in as the burrow grows.
  */
-export type LittleId = "pip" | "bolt" | "wren" | "tuck" | "dot" | "fennel";
+export type LittleId = "pip" | "bolt" | "wren" | "tuck" | "dot" | "fennel" | "moth";
 
 export interface LittleDef {
   name: string;
@@ -69,6 +69,11 @@ export const LITTLES: Record<LittleId, LittleDef> = {
     name: "Old Fennel", title: "the Night Owl", ability: "Keeps hours nobody else can: the night lasts much longer, and hunters take longer to notice someone so still. Walks slowly.",
     color: "#9a86d6", finds: { cap: 1.6 }, noise: 0.8, speed: 0.86, carry: 1, bulkyFree: false, trapSense: false, foodSense: false, shinySense: false, scout: false, extraNight: 120, stillness: 1.6,
     unlock: "Moves in after an extraction six rooms deep.",
+  },
+  moth: {
+    name: "Moth", title: "the Shadow", ability: "Barely there. Every hunter sees her at half the distance, torches and kids included, and she finds the odd curio. Carries little.",
+    color: "#b8b0a0", finds: { curio: 1.4 }, noise: 0.8, speed: 1.04, carry: 0.8, bulkyFree: false, trapSense: false, foodSense: false, shinySense: false, scout: false, extraNight: 0, stillness: 2,
+    unlock: "Moves in after a find from the basement is banked.",
   },
 };
 export const LITTLE_IDS = Object.keys(LITTLES) as LittleId[];

@@ -21,7 +21,7 @@ import { loadOf } from "../haul";
 import { completeSets, defOf, displayName, ITEMS, kindOf, SETS, SET_IDS, tradeValue, type Item, type ItemKind } from "../loot";
 import { LITTLES, LITTLE_IDS } from "../littles";
 import { NIGHTS, nightOf, OMENS, omensOf } from "../runGen";
-import { CHARTS, missing, nextGoal, packOf, RECIPES, UPGRADES, UPGRADE_IDS, wellFed, type Cost } from "../burrow";
+import { CHARTS, collectionOf, missing, nextGoal, packOf, RECIPES, UPGRADES, UPGRADE_IDS, wellFed, type Cost } from "../burrow";
 import { ItemMark } from "./ItemMark";
 import { CrumbMenu, RecordSettings } from "./menu/CrumbMenu";
 import { RECORD_KEY } from "../save";
@@ -162,6 +162,7 @@ function StashSheet({ command, close }: { command: Command; close: () => void })
       </Section>; })}
     <Heading>Sets</Heading>
     <Text color={MUTED}>Carry every piece home in one run: each piece is worth more together, and the set pays a bonus.</Text>
+    {(() => { const c = collectionOf(home.sets.length); return <Text color={GOLD}>{`Collection: ${home.sets.length}/${SET_IDS.length} sets banked${c.carry + c.health > 0 ? ` · every Little has +${c.carry} carry${c.health > 0 ? `, +${c.health} health` : ""}` : ""}.${c.next === null ? "" : ` Next: ${c.next.title}`}`}</Text>; })()}
     {SET_IDS.map(id => { const set = SETS[id], have = new Set(home.stash.map(i => i.baseId)); return <Section key={id}>
       <Row justify="between"><Heading size={19}>{set.name}</Heading><Tag color={home.sets.includes(id) ? GREEN : MUTED}>{home.sets.includes(id) ? "BANKED" : `+${set.bonus} CAPS`}</Tag></Row>
       <Row gap={4}>{set.pieces.map(p => <RuneView key={p} opacity={have.has(p) ? 1 : 0.6} tooltip={`${ITEMS[p].name}${have.has(p) ? " · in the stash" : ""}`}><ItemMark kind={p} size={26} /></RuneView>)}</Row>
