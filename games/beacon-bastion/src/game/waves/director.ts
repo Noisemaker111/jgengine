@@ -13,7 +13,8 @@ import { creepDef } from "../entities/enemies/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { gameClockMs, session, nextCreepInstanceId, newShield, newSpeedStats, type CreepRuntime } from "../session";
 import { bossProfile, PRESSURE_RULE } from "./manifest";
-import { ENDLESS_BOSS_RAMP } from "./endless";
+import { ENDLESS_BOSS_RAMP, ENDLESS_HEALTH_RAMP } from "./endless";
+import { openPlots, outageOn, wifiOff } from "../sinks";
 import { isOvertime, waveTotal } from "./mode";
 import { BUILD_PLOTS, KEEP_POINT, routeOf, SPAWN_POINT_KEY } from "../world/path";
 import { finishRun, legacy, relicBountyScale } from "./legacy";
@@ -32,7 +33,7 @@ export const FLIGHT_HEIGHT = 2.4;
 export const UPDATE_RULE = { fromWave: 3, atShare: 0.45, seconds: 4 } as const;
 
 /** Each wave after the first fields tech this much sturdier (a share of its catalog health), so a fully promoted crew still feels the late waves. */
-export const WAVE_HEALTH_RAMP = 0.03;
+export const WAVE_HEALTH_RAMP = 0.05;
 
 /** How far either side of the centre line tech may walk: the street is 4 m wide. */
 const LANE_HALF_WIDTH = 1.3;
@@ -134,7 +135,7 @@ export function spawnRaider(ctx: GameContext, unit: string, route: string, from?
   const wave = session.encounter.view().wave;
   // Overtime bosses grow with the night; on a day they keep their authored health.
   const bossRamp = isOvertime() ? 1 + ENDLESS_BOSS_RAMP * Math.max(0, wave - 12) : 1;
-  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? bossRamp : MAPS[activeMap()].toughness * (1 + WAVE_HEALTH_RAMP * Math.max(0, wave - 1));
+  const ramp = bossProfile(unit) !== null || def.becomes !== undefined ? bossRamp : MAPS[activeMap()].toughness * (1 + (isOvertime() ? ENDLESS_HEALTH_RAMP : WAVE_HEALTH_RAMP) * Math.max(0, wave - 1));
   const health = Math.round(def.health * difficulty.health * ramp);
   ctx.scene.entity.stats.set(instanceId, "health", { max: health, current: health });
   const runtime: CreepRuntime = {
@@ -194,10 +195,22 @@ export function payBounty(ctx: GameContext, catalogId: string, creep?: CreepRunt
   return paid;
 }
 
+/**
+ * What a piece of tech costs the town when it gets through: its authored leak, except a boss, which
+ * costs its share still standing (at least a quarter), so wearing it down always counts.
+ */
+export function leakCost(ctx: GameContext, creep: CreepRuntime): number {
+  const def = creepDef(creep.catalogId);
+  if (bossProfile(creep.catalogId) === null) return def.leak;
+  const health = ctx.scene.entity.stats.get(creep.instanceId, "health");
+  const share = health === null || health.max <= 0 ? 1 : Math.max(0, Math.min(1, health.current / health.max));
+  return Math.max(Math.ceil(def.leak / 4), Math.ceil(def.leak * share));
+}
+
 function leakCreep(ctx: GameContext, creep: CreepRuntime): void {
   const def = creepDef(creep.catalogId);
   // A leak is a world ripple: the town loses the tech's leak in attention, and its hook ends a lost run.
-  keep.emit(ctx, { kind: "leak", scale: def.leak });
+  keep.emit(ctx, { kind: "leak", scale: leakCost(ctx, creep) });
   if (def.mines !== undefined) {
     const stolen = Math.round(def.mines.stealBase + def.mines.stealPerSecond * creep.alive);
     const purse = keep.of(ctx).num("keep.gold");
@@ -249,7 +262,7 @@ function tickBoss(ctx: GameContext, dt: number): void {
 /** A router's patch: every piece of tech in reach, itself included, takes back a share of its health. */
 function mend(ctx: GameContext, healer: CreepRuntime, dt: number): void {
   const heals = creepDef(healer.catalogId).heals;
-  if (heals === undefined) return;
+  if (heals === undefined || wifiOff(gameClockMs(ctx)) || outageOn(healer.route, gameClockMs(ctx))) return;
   healer.healIn -= dt;
   if (healer.healIn > 0) return;
   healer.healIn = heals.everySeconds;
@@ -267,7 +280,7 @@ function mend(ctx: GameContext, healer: CreepRuntime, dt: number): void {
 /** A router's signal: tech in reach rolls faster for as long as it stays in it. */
 function boostSpeed(ctx: GameContext, creep: CreepRuntime, nowMs: number): void {
   const at = ctx.scene.entity.get(creep.instanceId)?.position;
-  if (at === undefined) return;
+  if (at === undefined || wifiOff(nowMs)) return;
   for (const other of session.creeps.values()) {
     if (other.instanceId === creep.instanceId) continue;
     const boosts = creepDef(other.catalogId).boosts;
@@ -291,7 +304,7 @@ function dropParcel(ctx: GameContext, creep: CreepRuntime): void {
   const world = keep.of(ctx);
   let pick: (typeof BUILD_PLOTS)[number] | null = null;
   let best = PARCEL_REACH;
-  for (const plot of BUILD_PLOTS) {
+  for (const plot of openPlots()) {
     if (world.occupant(plot.id) !== null || session.parcels.has(plot.id)) continue;
     const gap = Math.hypot(plot.position[0] - at[0], plot.position[2] - at[2]);
     if (gap <= best) {
@@ -351,7 +364,7 @@ function tickBehaviour(ctx: GameContext, creep: CreepRuntime, dt: number): void 
   if (def.drops !== undefined) dropParcel(ctx, creep);
   if (def.power !== undefined) tickPower(ctx, creep, dt);
   const every = def.notify?.everySeconds ?? def.spots?.everySeconds ?? def.backups?.everySeconds ?? def.power?.spawn.everySeconds;
-  if (every === undefined || creep.installing > 0 || isFrozen(creep.instanceId)) return;
+  if (every === undefined || creep.installing > 0 || isFrozen(creep.instanceId) || outageOn(creep.route, gameClockMs(ctx))) return;
   creep.notifyIn -= dt;
   if (creep.notifyIn > 0) return;
   creep.notifyIn = every;
@@ -484,7 +497,8 @@ export function tickWaves(ctx: GameContext, dt: number): void {
     mend(ctx, creep, dt);
     boostSpeed(ctx, creep, nowMs);
     tickBehaviour(ctx, creep, dt);
-    const still = isFrozen(creep.instanceId) || creep.installing > 0;
+    // A Power Outage on its road stops it dead.
+    const still = isFrozen(creep.instanceId) || creep.installing > 0 || outageOn(creep.route, nowMs);
     const speed = still ? 0 : creep.speedStats.get("speed", nowMs);
     const waypoints = routeOf(creep.route);
     const next = advancePathFollow({ waypoints, speed }, creep.path, dt);

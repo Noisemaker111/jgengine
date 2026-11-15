@@ -5,7 +5,7 @@ import { campaign, type CampaignState } from "./campaign";
 
 /**
  * The season above the days: the town's districts, worked in order. Main Street is open from the
- * first day; every other district opens once the one before it has been held. A district's best
+ * first day; every other district opens once the one before it has been held for two stars. A district's best
  * stars stay on the career, so the season map shows how well each one was kept.
  */
 
@@ -14,11 +14,14 @@ export function districtStars(state: CampaignState, id: MapId): number {
   return state.districts[id] ?? 0;
 }
 
-/** Whether a district can be worked: the first always, any other once the one before it was held. */
+/** Stars a district must be held for before the next one opens: a scraped hold is not enough. */
+export const OPEN_NEXT_STARS = 2;
+
+/** Whether a district can be worked: the first always, any other once the one before it was held for two stars. */
 export function districtOpen(state: CampaignState, id: MapId): boolean {
   const at = MAP_IDS.indexOf(id);
   if (at <= 0) return at === 0;
-  return districtStars(state, MAP_IDS[at - 1]!) > 0;
+  return districtStars(state, MAP_IDS[at - 1]!) >= OPEN_NEXT_STARS;
 }
 
 /** Keep a finished day's stars on its district, best only. A lost day (0 stars) records nothing. */
@@ -37,5 +40,5 @@ export function seasonProgress(state: CampaignState): { held: number; total: num
 /** The district the season points to next from `from`: the first open one not yet held, or null when every district is held. */
 export function nextDistrict(state: CampaignState, from: MapId): MapId | null {
   const order = [...MAP_IDS.slice(MAP_IDS.indexOf(from) + 1), ...MAP_IDS.slice(0, MAP_IDS.indexOf(from) + 1)];
-  return order.find((id) => districtOpen(state, id) && districtStars(state, id) === 0) ?? null;
+  return order.find((id) => districtOpen(state, id) && districtStars(state, id) < OPEN_NEXT_STARS) ?? null;
 }

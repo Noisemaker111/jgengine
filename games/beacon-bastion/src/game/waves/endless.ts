@@ -69,6 +69,8 @@ export const ERAS: readonly EraDef[] = [
 export const ENDLESS_WAVES = 99;
 /** How much each wave thickens every squad. */
 export const ENDLESS_COUNT_RAMP = 0.06;
+/** How much sturdier ordinary tech gets each Overtime wave (a day ramps faster over its twelve). */
+export const ENDLESS_HEALTH_RAMP = 0.03;
 /** How much tougher each wave past the day's twelfth makes a boss. */
 export const ENDLESS_BOSS_RAMP = 0.05;
 

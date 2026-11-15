@@ -114,14 +114,14 @@ function SeasonMap({ target, setTarget }: { target: MapId; setTarget: (id: MapId
         const open = districtOpen(state, id), stars = districtStars(state, id), picked = target === id;
         return <Plank key={id} variant="parchment" layout="stack" items="start" gap={2} disabled={!open} opacity={open ? 1 : 0.55}
           border={{ width: picked ? 3 : 1, color: picked ? "#c8245a" : "#9c7f4c" }} label={`${MAPS[id].label}${open ? "" : ", locked"}`}
-          tooltip={open ? MAPS[id].detail : `Hold ${MAPS[MAP_IDS[index - 1]!].label} to open it`} run={() => { if (open) setTarget(id); }}>
+          tooltip={open ? MAPS[id].detail : `Hold ${MAPS[MAP_IDS[index - 1]!].label} for two stars to open it`} run={() => { if (open) setTarget(id); }}>
           <Row gap={4} justify="between" width={{ fraction: 1 }}>
             <Text size={14} weight={700} color="#3a2a12">{`${index + 1}. ${MAPS[id].label}`}</Text>
             {id === here ? <Tag color="#8a2414">HERE</Tag> : null}
           </Row>
           {open
             ? <Row gap={2}>{Array.from({ length: 3 }, (_, star) => <Glyph key={star} name="star" size={13} color={star < stars ? "#d9a514" : "#cbb98f"} />)}</Row>
-            : <Text size={12} color="#6a4a2a">{`Locked: hold ${MAPS[MAP_IDS[index - 1]!].label}`}</Text>}
+            : <Text size={12} color="#6a4a2a">{`Locked: two stars on ${MAPS[MAP_IDS[index - 1]!].label}`}</Text>}
         </Plank>;
       })}
     </RuneView>

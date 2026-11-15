@@ -365,7 +365,7 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     health: 1600,
     speed: 1.3,
     bounty: 30,
-    leak: 12,
+    leak: 7,
     scale: 2.4,
     mesh: "cloud",
     color: "#f0f4ff",

@@ -57,9 +57,10 @@ export const MAPS: Record<MapId, MapDef> = {
       fromWave: 6,
       growth: 0.15,
       groups: [
-        { unit: "tech_scooter", count: 4, at: 3 },
-        { unit: "tech_phone", count: 6, at: 8 },
-        { unit: "tech_vacuum", count: 2, at: 12 },
+        { unit: "tech_drone", count: 3, at: 3 },
+        { unit: "tech_fridge", count: 1, at: 7 },
+        { unit: "tech_scooter", count: 4, at: 9 },
+        { unit: "tech_car", count: 1, at: 12 },
       ],
     },
   },
@@ -67,7 +68,7 @@ export const MAPS: Record<MapId, MapDef> = {
     id: "school",
     label: "School Campus",
     detail: "The school run winds round the schoolyard and a bus lane cuts in from the south; at recess the kids crowd the yard's roads",
-    toughness: 1.3,
+    toughness: 1.2,
     recess: { every: 40, seconds: 8, slow: 0.45, center: [-11, -2], radius: 15 },
   },
 };
