@@ -98,9 +98,10 @@ Genres: extraction. 16/16 proven.
 `home: 1, caps: 0, stash: 0, littles: 2, zones: 2, upgrades: 1`.
 
 ### Content budget
-18 room templates in 5 zones plus the burrow; 43 item kinds (8 food, 10 parts, 16 curios, 7 gear,
-bottle caps) in 6 sets; 6 Littles; 7 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights);
-6 connector kinds; 4 exit kinds; 5 burrow upgrades, 5 recipes, 3 charts.
+21 room templates in 6 zones plus the burrow; 47 item kinds (8 food, 11 parts, 20 curios, 7 gear,
+bottle caps) in 7 sets; 7 Littles; 8 threats (Cat, Roomba, spider, mousetrap, Kid, dog, lights, the
+Exterminator); 10 kinds of night and 8 omens; 6 connector kinds; 4 exit kinds; 8 burrow upgrades,
+5 recipes, 4 charts; 4 collection thresholds.
 
 ### Systems
 - Procedural house (`runGen.ts`): probe `depth`, `rooms`, `deepest`.
@@ -176,7 +177,17 @@ hunters held off. The stash capture seeds a few finds; set rows count what is st
 dark finds' marks are lifted to stay readable; each Little in the nook shows carry, pace and noise.
 `proofs/look/` adds the animated Cat, under the bed, the workbench, the cabinets, stash and nook.
 
-Next: rooms with a dog (front hall, workbench, garage bikes) cannot frame round a body that size,
-so their overviews show part of it close; the dog keeps the pack's own colours; the stash lists each
-find on its own tall row (long once the stash fills); tilted panels (the sink cupboard door) still
-fill some overviews.
+Depth round: three more nights (power cut, sleepover, heatwave) and eight omens rolled on top of the
+night, folded into one twist (`twistOf`). The basement is the endgame: charted after the attic, its
+three rooms open only five or more rooms deep, and the Exterminator walks it (a torch that sweeps
+and turns to noise, a hiss as he aims, a spray cloud that cover does not stop; capture state
+`exterminator`). The Cellar Hoard set rolls only there. The slipper workshop, wind-up clock and herb
+cabinet; Moth the Shadow (moves in after a basement find is banked); the collection (every different
+set banked adds carry, then health, for every Little). Guidance runs on to the basement and the
+collection. Old saves migrate: new upgrades and the cellar milestone read as not yet reached. The
+stash lists finds in compact rows; the report says "at the crack" and explains a capless night;
+pack weight shows one decimal. RunLayers no longer re-renders every tick. Tests: 53 in the package.
+
+Next: rooms with a dog (front hall, workbench, garage bikes) cannot frame round a body that size; the
+Exterminator is procedural (boots, coveralls, canister, torch) and reads best side-on; omens have no
+icon of their own; the basement has three rooms and could take a fourth with its own exit kind.

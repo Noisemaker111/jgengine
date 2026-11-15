@@ -94,7 +94,7 @@ function RunHud() {
     <RuneView anchor="bottom-right" safe inset={20} responsive={{ phone: { padding: [0, 0, 64, 0] } }}>
       <Frame width={240} responsive={{ phone: { width: width - 40, layout: "row", items: "center", justify: "between", padding: 10 } }}>
         <Tag>PACK</Tag>
-        <Text size={phone ? 18 : 24} family="Fredoka" text={bind(() => { const r = run(); if (r === null) return ""; const load = loadOf(r.pack, r.capacity, LITTLES[r.little]); return `${r.pack.length} things · ${load.mass}/${r.capacity}`; })} />
+        <Text size={phone ? 18 : 24} family="Fredoka" text={bind(() => { const r = run(); if (r === null) return ""; const load = loadOf(r.pack, r.capacity, LITTLES[r.little]); return `${r.pack.length} thing${r.pack.length === 1 ? "" : "s"} · ${Math.round(load.mass * 10) / 10}/${Math.round(r.capacity * 10) / 10}`; })} />
         <Text color={RED} text={bind(() => { const r = run(); return r !== null && twoHanded(r) ? "Two arms full: slow, no running" : ""; })} />
         {gear === "" ? null : <Row gap={4}>{gear.split(",").map(k => <ItemMark key={k} kind={k as ItemKind} size={24} />)}</Row>}
         <Button onPress={() => ctx.game.commands.run("deepward.pack", {})}>Repack / Tab</Button>
@@ -156,9 +156,9 @@ function StashSheet({ command, close }: { command: Command; close: () => void })
     <Row gap={6}>{(["all", "gear", "food", "part", "curio"] as const).map(f => <Button key={f} fill={filter === f ? GOLD : "#bfa684"} onPress={() => setFilter(f)}>{f === "all" ? "All" : f === "part" ? "Parts" : f === "curio" ? "Curios" : f[0]!.toUpperCase() + f.slice(1)}</Button>)}</Row>
     {shown.length === 0 ? <Text color={MUTED}>Empty shelves. Bring something home from the house.</Text> : shown.map(item => { const def = defOf(item), packed = home.bring.includes(item.id);
       return <Section key={item.id}>
-        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={20}>{displayName(item)}</Heading><Text color={MUTED}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.noisy ? " · jingles" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}`}</Text></RuneView></Row>
-        <Text>{def.flavor}</Text>
-        <Row gap={6}>{def.gear !== undefined ? <Button onPress={() => command("bring", { uid: item.id, on: !packed })}>{packed ? "Packed / unpack" : "Pack for the run"}</Button> : null}<Button onPress={() => command("trade", { id: item.id })}>{`Trade · ${tradeValue(item)} caps`}</Button></Row>
+        {/* One compact row a find: what it is, its facts and flavour, and what you can do with it. */}
+        <Row><ItemMark kind={kindOf(item)} /><RuneView grow={1} shrink gap={2}><Heading size={19}>{displayName(item)}</Heading><Text color={MUTED} size={14}>{`${item.rarity} · ${def.category}${def.bulky ? " · two arms" : ""}${def.noisy ? " · jingles" : ""}${def.set ? ` · ${SETS[def.set].name}` : ""} · weight ${item.mass}. ${def.flavor}`}</Text></RuneView>
+          <RuneView gap={4}>{def.gear !== undefined ? <Button label={packed ? `Unpack ${displayName(item)}` : `Pack ${displayName(item)} for the run`} onPress={() => command("bring", { uid: item.id, on: !packed })}>{packed ? "Packed ✓" : "Pack"}</Button> : null}<Button label={`Trade ${displayName(item)} for ${tradeValue(item)} caps`} onPress={() => command("trade", { id: item.id })}>{`Trade ${tradeValue(item)}`}</Button></RuneView></Row>
       </Section>; })}
     <Heading>Sets</Heading>
     <Text color={MUTED}>Carry every piece home in one run: each piece is worth more together, and the set pays a bonus.</Text>
@@ -247,9 +247,9 @@ function ReportSheet({ close }: { close: () => void }) {
   const report = useStore(viewStore, v => v.report);
   if (report === null) return null;
   return <Sheet title="Home safe!" label="Night report" close={close}>
-    <Tag color={GREEN}>{`${report.clock} · ${report.rooms} ROOM${report.rooms === 1 ? "" : "S"} · ${report.depth} DEEP · OUT BY THE ${report.via === "dogdoor" ? "FLAP" : report.via.toUpperCase()}`}</Tag>
+    <Tag color={GREEN}>{`${report.clock} · ${report.rooms} ROOM${report.rooms === 1 ? "" : "S"} · ${report.depth === 0 ? "AT THE CRACK" : `${report.depth} DEEP`} · OUT BY THE ${report.via === "dogdoor" ? "FLAP" : report.via.toUpperCase()}`}</Tag>
     {report.items.length === 0 ? <Text>You came back empty-handed, but you came back.</Text> : <RuneView layout="grid" columns={2} responsive={{ phone: { columns: 1 } }} gap={6}>{report.items.map(i => <Row key={i.id}><ItemMark kind={i.kind} size={26} /><Text grow={1} shrink color={i.rarity === "common" ? CREAM : GOLD}>{i.name}</Text></Row>)}</RuneView>}
-    <Heading size={22} color={GOLD}>{`+${report.caps} bottle caps`}</Heading>
+    {report.caps > 0 ? <Heading size={22} color={GOLD}>{`+${report.caps} bottle caps`}</Heading> : <Text color={MUTED}>No bottle caps this time: trade finds at the stash, or bring a whole set home.</Text>}
     {report.sets.map(id => <Text key={id} color={GREEN}>{`Set complete: ${SETS[id as keyof typeof SETS].name}! ${SETS[id as keyof typeof SETS].flavor}`}</Text>)}
     {report.littles.map(id => <Text key={id} color={LITTLES[id].color}>{`${LITTLES[id].name} ${LITTLES[id].title} has moved into the burrow!`}</Text>)}
     <Button onPress={close}>Into the burrow</Button>

@@ -15,10 +15,15 @@ The package id is still `deepward`. Run `bun --cwd=games/deepward run dev` from 
 - **Room after room.** A run is a seed. Every room is a path from the crack ("0", then "0-1" for the
   second door out of it), and the room's template, its finds, its hunters and its exits are a pure
   function of the seed and that path (`src/game/runGen.ts`). The house is built from
-  editor-authored room templates in `src/editor.scene.json` (eighteen: under the kitchen cabinets, the counter,
+  editor-authored room templates in `src/editor.scene.json` (twenty-one: under the kitchen cabinets, the counter,
   the pantry shelf, under the fridge, under the bookshelf, under the couch, the living-room rug, the
-  front hall, the toy corner, under the bed, the garage workbench, the attic). Deeper rooms roll
-  better finds and more hunters. The seed is saved, so a reload resumes the same house.
+  front hall, the toy corner, under the bed, the garage workbench, the attic, and the basement's cellar
+  steps, boiler room and Exterminator's bench). Deeper rooms roll better finds and more hunters. The
+  seed is saved, so a reload resumes the same house.
+- **Nights and omens.** Every night is a kind (quiet, thunderstorm, after the party, family away,
+  restless cat, spring clean, full moon, power cut, sleepover, heatwave) and carries one or two
+  omens (lucky penny, creaky floors, windows open, dropped shopping, light sleepers, clocks went back,
+  strong tea, a flat Roomba battery), each changing one number of the run.
 - **Doors.** Rooms join by gaps, drawer-pull climbs, counter-edge drops (bring a napkin parachute),
   charger-cable ziplines, the toy train (wait for it) and vents. Going back is usually slower.
 - **Ways out.** The crack you came from, and, deeper in, a mail slot (only if you travel light), a
@@ -27,21 +32,24 @@ The package id is still `deepward`. Run `bun --cwd=games/deepward run dev` from 
 - **The Littles.** Pip the Forager smells food and carries it at half weight. Bolt the Tinkerer sees
   and disarms mousetraps for springs. Wren the Scout is half as loud and reads every door ahead.
   Tuck the Brute carries two-handed finds without slowing. Dot the Collector sees shiny curios a
-  rarity finer. Old Fennel the Night Owl keeps a longer night. Two live in the burrow; the others
-  move in as it grows.
-- **Finds.** 43 kinds with flavour: food, parts, curios and gear. Gear works while it rides in your
+  rarity finer. Old Fennel the Night Owl keeps a longer night. Moth the Shadow is seen at half the
+  distance by every hunter. Two live in the burrow; the others move in as it grows.
+- **Finds.** 47 kinds with flavour: food, parts, curios and gear. Gear works while it rides in your
   pack: thimble helmet, sewing-needle spear (F), napkin parachute, paperclip grapple, button shield,
-  birthday-candle torch, rubber-band slingshot (G). Six sets (Sewing Basket, Junk Drawer, Midnight
-  Feast, Treasure Hoard, Toy Box, Attic Keepsakes) pay a bonus when carried home together. Size and weight are real:
+  birthday-candle torch, rubber-band slingshot (G). Seven sets (Sewing Basket, Junk Drawer, Midnight
+  Feast, Treasure Hoard, Toy Box, Attic Keepsakes, and the basement's Cellar Hoard) pay a bonus when
+  carried home together, and every different set banked makes every Little stronger for good. Size and weight are real:
   a cheese cube or a coin needs both arms and slows you.
 - **The house hunts.** The Cat prowls, listens, stalks what it heard, crouches with a wiggle and
   pounces where you stood; hide under a towel or dodge. The Roomba sweeps lanes on a schedule and
   swallows what it rolls over. Spiders web the corners. Mousetraps snap. A restless Kid sits up and
   looks; held in sight, they pick you up and keep your pack in the toy box, which you can raid on a
   later night. The dog barks and wakes everything. Someone getting up for water turns the light on.
+  Deep in the basement the Exterminator walks his beat: stay out of his torch beam, and when the
+  canister hisses, get clear before the spray hangs where you stood.
 - **The burrow.** Bank finds in the matchbox stash, trade for bottle caps, build the larder, map
-  room, satchel loft and trophy shelf, craft gear at the workbench and chart the kid's bedroom, the
-  garage and the attic.
+  room, satchel loft, trophy shelf, slipper workshop, wind-up clock and herb cabinet, craft gear at
+  the workbench and chart the kid's bedroom, the garage, the attic and, last, the basement.
 
 Controls: WASD, Shift to run, C or Ctrl to sneak, E to interact, Tab for the pack, F to jab, G to
 fling, Esc to pause.
