@@ -44,14 +44,15 @@ let rafQueue: FrameRequestCallback[] = [];
 let originalRaf: typeof globalThis.requestAnimationFrame;
 let originalCancel: typeof globalThis.cancelAnimationFrame;
 let originalResizeObserver: typeof globalThis.ResizeObserver;
-let originalWindow: typeof globalThis.window;
+/** The `window` global as it was, own property or none: restoring by assignment would leave a `window` of undefined behind for later files. */
+let originalWindow: PropertyDescriptor | undefined;
 
 beforeEach(() => {
   rafQueue = [];
   originalRaf = globalThis.requestAnimationFrame;
   originalCancel = globalThis.cancelAnimationFrame;
   originalResizeObserver = globalThis.ResizeObserver;
-  originalWindow = globalThis.window;
+  originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
     rafQueue.push(callback);
     return rafQueue.length;
@@ -75,7 +76,8 @@ afterEach(() => {
   globalThis.requestAnimationFrame = originalRaf;
   globalThis.cancelAnimationFrame = originalCancel;
   globalThis.ResizeObserver = originalResizeObserver;
-  (globalThis as { window?: unknown }).window = originalWindow;
+  if (originalWindow === undefined) Reflect.deleteProperty(globalThis, "window");
+  else Object.defineProperty(globalThis, "window", originalWindow);
   bindFrameSource(null);
 });
 
