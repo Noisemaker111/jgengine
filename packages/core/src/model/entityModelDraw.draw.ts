@@ -561,6 +561,40 @@ function motionSignature(plan: CharacterMotionPlan, locomotion: boolean, lowTier
  * `instanceId` follows `look`, `held`, `worn`, `characterMotion` and death
  * through context notifications, rebuilding only what changed.
  */
+/** Each emissive material an instance owns, with the emissive intensity its model authored. */
+const glowState = new WeakMap<THREE.Object3D, { applied: number; materials: { material: THREE.MeshStandardMaterial; base: number }[] }>();
+
+/**
+ * Scale an instance's emissive parts to `glow` times what the model authored. The first time, each
+ * emissive material is cloned so a shared model cache never brightens other instances; after that only
+ * a changed value touches the materials.
+ */
+function applyGlow(root: THREE.Object3D, glow: number | undefined): void {
+  const value = glow ?? 1;
+  let state = glowState.get(root);
+  if (state === undefined) {
+    if (glow === undefined) return;
+    const materials: { material: THREE.MeshStandardMaterial; base: number }[] = [];
+    root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const swap = (material: THREE.Material): THREE.Material => {
+        const standard = material as THREE.MeshStandardMaterial;
+        if (!standard.isMeshStandardMaterial || standard.emissive.getHex() === 0) return material;
+        const own = standard.clone();
+        materials.push({ material: own, base: standard.emissiveIntensity });
+        return own;
+      };
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(swap) : swap(mesh.material);
+    });
+    state = { applied: 1, materials };
+    glowState.set(root, state);
+  }
+  if (state.applied === value) return;
+  state.applied = value;
+  for (const entry of state.materials) entry.material.emissiveIntensity = entry.base * value;
+}
+
 export function entityModelDraw(options: EntityModelDrawOptions): EngineDraw {
   const { model, instanceId, measure, lodLevel = 0, ctx } = options;
   const seam = options.seam ?? measure?.target;
@@ -936,6 +970,7 @@ export function entityModelDraw(options: EntityModelDrawOptions): EngineDraw {
       frameState = state;
       children.frame(state);
       if (built === null) return;
+      if (ctx !== null && instanceId !== undefined) applyGlow(built.scene, ctx.scene.entity.get(instanceId)?.glow);
       // Pose order matches the hook subscriptions: animation, first-person
       // head/arms, foot IK, glance.
       built.animation?.pose(state.delta);

@@ -73,6 +73,10 @@ export interface MachineStyle {
   mouth?: boolean;
   /** A flat fluke at the tail's tip, this wide (a whale's). */
   fluke?: number;
+  /** A glowing beacon on top of the hull, in the eye glow, readable from across a field. */
+  beacon?: boolean;
+  /** A bold accent block across each flank (a livery band), so the species reads at a distance. */
+  livery?: boolean;
 }
 
 /** What sets a species apart. Every length is metres. */
@@ -474,6 +478,11 @@ export function bodyGlbModel(plan: BodyPlan): GlbModel {
         }
       }
     }
+    if (m.beacon === true) {
+      rig.part(body, MAT.belly).tube([0, torso.height * 0.5, -torso.length * 0.2], [0, torso.height * 0.5 + torso.height * 0.18, -torso.length * 0.2], torso.width * 0.06, torso.width * 0.06, 6);
+      rig.part(body, MAT.eye).ellipsoid([0, torso.height * 0.5 + torso.height * 0.24, -torso.length * 0.2], [torso.width * 0.11, torso.width * 0.11, torso.width * 0.11], 8, 5);
+    }
+    if (m.livery === true) for (const side of [-1, 1]) rig.part(body, MAT.accent).box([side * (torso.width / 2 + 0.004), torso.height * 0.05, -torso.length * 0.05], [torso.width * 0.012, torso.height * 0.16, torso.length * 0.4]);
     // Panel seams: two dark bands round a boxy hull break the slab into plates.
     if (boxy) for (const z of [-0.18, 0.18]) rig.part(body, MAT.belly).box([0, torso.height * 0.04, z * torso.length], [torso.width / 2 + 0.008, torso.height * 0.465, torso.length * 0.008]);
   }

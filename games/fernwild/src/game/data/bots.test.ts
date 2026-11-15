@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { chargeGlow } from "../tameHunger";
 import { chargeDrain, GLITCHES, HOSTILE, packBonus, QUIRKS, revertChance, rollGlitch, rollQuirk, stormAt, stormNight, targetScore, temperamentConfig, traitMultiplier, type TargetFacts } from "./bots";
 
 const facts = (over: Partial<TargetFacts> = {}): TargetFacts => ({ loud: 0, bright: 0, rich: 0, hurt: 0, machine: false, attacker: false, size: 0, ...over });
@@ -79,4 +80,10 @@ describe("charge, rust and storms", () => {
     expect(revertChance(["devoted"])).toBe(0);
     expect(revertChance(["loose_wiring"])).toBeCloseTo(revertChance([]) * 2);
   });
+});
+
+test("a bot's eye glow follows its charge, never quite dark", () => {
+  expect(chargeGlow(1)).toBe(1);
+  expect(chargeGlow(0)).toBe(0.25);
+  expect(chargeGlow(0.5)).toBeCloseTo(0.65, 5);
 });

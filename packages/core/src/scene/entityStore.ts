@@ -54,6 +54,13 @@ export interface SceneEntity<TMeta = unknown> {
    */
   look?: string;
   /**
+   * How brightly this entity's emissive parts glow, as a multiple of what its model authored (eyes,
+   * lamps, status lights): `0` dark, `1` as authored, above `1` brighter. Render-only, like `look`; absent
+   * draws the model as authored. A robot's eyes tracking its battery, a lantern guttering out.
+   * @capability entity-glow drive an entity's emissive glow at runtime (battery, alert, power) without a new model
+   */
+  glow?: number;
+  /**
    * This entity's own switches for the default character motion (foot IK, glance, locomotion), over
    * its model's and the game's; `false` turns all three off. Render-only, like `look`.
    */
@@ -151,6 +158,8 @@ export type EntityUpdatePatch<TMeta = unknown> = Partial<
   worn?: readonly string[] | null;
   /** The look now drawn; `null` goes back to the model itself. */
   look?: string | null;
+  /** The emissive glow multiple now drawn; `null` goes back to the model as authored. */
+  glow?: number | null;
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
 };
@@ -508,6 +517,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       else if (patch.worn !== undefined) current.worn = [...patch.worn];
       if (patch.look === null) delete current.look;
       else if (patch.look !== undefined) current.look = patch.look;
+      if (patch.glow === null) delete current.glow;
+      else if (patch.glow !== undefined && Number.isFinite(patch.glow)) current.glow = Math.max(0, patch.glow);
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) {
         mirror(handle, current);
@@ -621,6 +632,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           ...(entity.held === undefined ? {} : { held: entity.held }),
           ...(entity.worn === undefined ? {} : { worn: [...entity.worn] }),
           ...(entity.look === undefined ? {} : { look: entity.look }),
+          ...(entity.glow === undefined ? {} : { glow: entity.glow }),
           meta: entity.meta,
         }, undefined, fresh);
         if (!spawnPoses.has(entity.id)) {

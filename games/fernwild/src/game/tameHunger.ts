@@ -58,6 +58,7 @@ export function tickTameHunger(ctx: GameContext, dt: number): void {
     body.tick(dt, { drain: { food: (hunger.pace.get(tame.id) ?? 1) * weather.multiplier * traitMultiplier(traitsOf(ctx, tame.id), "drain") } });
     eatWhileRoom(body, TAME_DIET, diet, supply, "food");
     if (body.value("food") <= 0) starveCreature(ctx, tame.id, STARVE_HEALTH_SHARE * dt);
+    showCharge(ctx, tame.id, body.value("food") / Math.max(1, body.max("food")));
   }
   for (const id of [...hunger.bodies.keys()]) {
     if (alive.has(id)) continue;
@@ -70,6 +71,16 @@ export function tickTameHunger(ctx: GameContext, dt: number): void {
 /** What is running a bot's charge down faster where it stands: rust (rain, water), heat (hard sun) or null. */
 export function chargeWear(ctx: GameContext, id: string): "rust" | "heat" | null {
   return hungerOf(ctx).cause.get(id) ?? null;
+}
+
+/** A bot's eyes glow with its charge: bright when full, a dim ember when nearly flat. */
+export function chargeGlow(share: number): number {
+  return Math.round((0.25 + 0.75 * Math.max(0, Math.min(1, share))) * 20) / 20;
+}
+
+function showCharge(ctx: GameContext, id: string, share: number): void {
+  const glow = chargeGlow(share);
+  if (ctx.scene.entity.get(id)?.glow !== glow) ctx.scene.entity.update(id, { glow });
 }
 
 /** A tame's food and max, or null when it is not a tame. */

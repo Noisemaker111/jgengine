@@ -572,3 +572,19 @@ describe("entity blackboard", () => {
     expect(client.list().map((entity) => entity.id)).toEqual(["a"]);
   });
 });
+
+test("glow: an entity's emissive multiple is set, clamped at zero, cleared with null and kept through a snapshot", () => {
+  const store = createEntityStore();
+  store.spawn("bot", { id: "b1" });
+  expect(store.get("b1")!.glow).toBeUndefined();
+  store.update("b1", { glow: 0.4 });
+  expect(store.get("b1")!.glow).toBe(0.4);
+  store.update("b1", { glow: -2 });
+  expect(store.get("b1")!.glow).toBe(0);
+  store.update("b1", { glow: 1.5 });
+  const copy = createEntityStore();
+  copy.hydrate(store.snapshot());
+  expect(copy.get("b1")!.glow).toBe(1.5);
+  store.update("b1", { glow: null });
+  expect(store.get("b1")!.glow).toBeUndefined();
+});
