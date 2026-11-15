@@ -65,6 +65,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/unlock.proof.ts",
       "proves": [
         "racing.unlock-vehicles-tracks"

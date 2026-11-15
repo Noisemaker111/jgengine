@@ -9,6 +9,7 @@ import { createRunSession, runSessionStore, type RunSession } from "./game/run/s
 import { autopilotFrame, registerCaptureCommands } from "./game/capture";
 import { registerGameCommands } from "./game/gameCommands";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
+import { gameRunStorage, type GameRunStorage } from "./game/run/worldStorage";
 import { AISLE_NINE_TRACK, trackById, type Track } from "./game/tracks/catalog";
 import { createDriveInput } from "./game/vehicle/input";
 import { tumbleBursts } from "./game/world/hazardFx";
@@ -25,6 +26,9 @@ import {
   syncPickupMarkers,
   syncShelfItems,
 } from "./game/world/setup";
+
+/** Each world's run storage, so a world-save load can rebuild the session from what it restored. */
+const runStorages = new WeakMap<GameContext, GameRunStorage>();
 
 const trackOf = (session: RunSession): Track => trackById(session.snapshot().track.id) ?? AISLE_NINE_TRACK;
 
@@ -48,7 +52,10 @@ export const lifecycle: LifecycleConfig<RunSession> = {
 export function onInit(ctx: GameContext): void {
   const propRows = placeZoneDressing(ctx);
   placeTrackScenery(ctx);
-  const session = createRunSession(ctx.world.groundHeightAt, undefined, ctx.game.notices);
+  // Records live in localStorage, or in the game store the world save persists where there is none.
+  const records = gameRunStorage(ctx);
+  runStorages.set(ctx, records);
+  const session = createRunSession(ctx.world.groundHeightAt, records.storage, ctx.game.notices);
   const track = trackOf(session);
   placeRunObjects(ctx, track);
   worldRuntimeStore.write(ctx, createWorldRuntime(propRows, track.id));
@@ -81,6 +88,11 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 
 export function onTick(ctx: GameContext, dt: number): void {
+  // A world-save load restored the records (a continue): rebuild the session from them at the menu.
+  const records = runStorages.get(ctx);
+  if (records?.restored() === true && runSessionStore.peek(ctx)?.snapshot().phase !== "running") {
+    runSessionStore.write(ctx, createRunSession(ctx.world.groundHeightAt, records.storage, ctx.game.notices));
+  }
   const session = runSessionStore.peek(ctx);
   const input = driveInputStore.peek(ctx);
   const world = worldRuntimeStore.peek(ctx);
