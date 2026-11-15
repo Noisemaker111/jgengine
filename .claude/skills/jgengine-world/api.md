@@ -2628,6 +2628,7 @@
 ## @jgengine/core/lighting/lightingZones
 
 - `DEFAULT_LIGHTING_ZONE_FADE` (const): const DEFAULT_LIGHTING_ZONE_FADE: 24 — Soft-edge width a {@link LightingZone} blends across when it sets none, in metres.
+- `LIGHT_GROUP_KEY` (const): const LIGHT_GROUP_KEY: "lightGroup" — The light group a material belongs to (`userData.lightGroup`, from glTF material extras), if any.
 - `LightingZone` (interface): interface LightingZone — A world-space rectangle that re-lights the scene while the camera is inside it: a dark showroom, a sodium-lit loading dock, a cold-blue freezer aisle inside one lit building. Each value scales or recolours the game's authored `rendering.lighting` rig, so the base rig stays the one source and a zone only says how its stretch of the world differs. The camera crossing the edge blends from the base look to the zone's across `fade` metres outside the rectangle.
 - `LightingZoneBase` (interface): interface LightingZoneBase — The rig's authored colours a zone blends away from.
 - `LightingZoneSample` (interface): interface LightingZoneSample — The rig scaled and recoloured for one camera position. Multipliers are 1 and colours the base outside every zone.

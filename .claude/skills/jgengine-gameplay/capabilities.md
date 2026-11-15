@@ -635,6 +635,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PointerConfig` (interface) · `import { PointerConfig } from "@jgengine/core/gameplay"`
 
+## points-series — rank competitors across the rounds of a championship, cup or season by points for finishing places
+
+- `PointsSeries` (interface) · `import { PointsSeries } from "@jgengine/core/progression/pointsSeries"`
+
 ## policy-annotate — tag a scheduled transaction's provenance without changing its value
 
 - `annotate` (function) · `import { annotate } from "@jgengine/core/gameplay"`

@@ -2654,6 +2654,14 @@
 - `assertMedalBoard` (function): function assertMedalBoard(config: MedalBoardConfig): void — Check an authored board; throws `RangeError` naming the medal, event or tier at fault.
 - `createMedalBoard` (function): function createMedalBoard(config: MedalBoardConfig): MedalBoard — A medal board: every event keeps its best result, each medal is a target on that result, and tiers of events open on the medal points the board holds - Trials' and Trackmania's bronze/silver/gold ladder, or a puzzle game's stars. `submit` reports which medals a result earned for the first time, so a game pays one-time rewards from that list.
 
+## @jgengine/core/progression/pointsSeries
+
+- `PointsSeries` (interface): interface PointsSeries { readonly config: PointsSeriesConfig; start(): PointsSeriesState; pointsFor(place: number): number; record(state: PointsSeriesState, round: string, places: Readonly<Record<string, number>>): PointsSeriesState; standings(state: PointsSeries… — ⚠ undocumented · used by `createPointsSeries`: Builds a {@link PointsSeries}; throws on an empty or duplicated round or competitor list.
+- `PointsSeriesConfig` (interface): interface PointsSeriesConfig — A points series: a championship, cup or season of rounds where every competitor scores by where they finished. The config names the rounds in order, the competitors and the points each place pays; the state is a plain record of each round's finishing places, so it saves as JSON and a round can be replayed by recording it again. Standings rank by points, then wins, then the best-place count down the order (countback), then the competitor list's order.
+- `PointsSeriesStanding` (interface): interface PointsSeriesStanding — One row of the standings.
+- `PointsSeriesState` (interface): interface PointsSeriesState — Each run round's finishing places: round id to competitor id to place (1 is first; 0 did not finish).
+- `createPointsSeries` (function): function createPointsSeries(config: PointsSeriesConfig): PointsSeries — Builds a {@link PointsSeries}; throws on an empty or duplicated round or competitor list.
+
 ## @jgengine/core/progression/skillTree
 
 - `SkillActiveDef` (interface): interface SkillActiveDef — An action a node or synergy unlocks, shaped to bind straight into `createAbilityKit`'s slot config.

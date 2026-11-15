@@ -1032,6 +1032,7 @@
     "./progression/gearScore",
     "./progression/leveling",
     "./progression/medalBoard",
+    "./progression/pointsSeries",
     "./progression/skillTree",
     "./progression/standing",
     "./progression/statGraph",

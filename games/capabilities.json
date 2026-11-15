@@ -8753,6 +8753,16 @@
       "intent": "click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)"
     },
     {
+      "id": "points-series",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/progression/pointsSeries",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rank competitors across the rounds of a championship, cup or season by points for finishing places"
+    },
+    {
       "id": "pole-line",
       "packages": [
         "@jgengine/core"

@@ -78,6 +78,35 @@ test("a zoned rig re-lights as the camera enters a zone, blends at its edge and 
   expect(readLightingZoneFactors(m.scene)).toBeUndefined();
 });
 
+test("a zone dims only its named light group's glow, and the glow comes back outside it", async () => {
+  const camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.1, 1000);
+  camera.position.set(0, 5, 0);
+  const tube = new THREE.MeshStandardMaterial({ emissive: "#ffffff", emissiveIntensity: 2 });
+  tube.userData["lightGroup"] = "house";
+  const screen = new THREE.MeshStandardMaterial({ emissive: "#3fb6ff", emissiveIntensity: 1.5 });
+  const scene = new THREE.Scene();
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(), tube), new THREE.Mesh(new THREE.BoxGeometry(), screen));
+  const zones = [{ ...RIG.zones![0]!, emissive: { house: 0.05 } }];
+  const m = await mountTestDraws(createElement(ConfiguredLighting, { lighting: { ...RIG, zones } }), { camera, scene });
+  try {
+    await m.advance(1 / 60);
+    expect(tube.emissiveIntensity).toBe(2);
+    camera.position.set(0, 5, 500);
+    await m.advance(1 / 60);
+    expect(tube.emissiveIntensity).toBeCloseTo(0.1, 5);
+    expect(screen.emissiveIntensity).toBe(1.5);
+    camera.position.set(0, 5, 0);
+    await m.advance(1 / 60);
+    expect(tube.emissiveIntensity).toBe(2);
+    camera.position.set(0, 5, 500);
+    await m.advance(1 / 60);
+  } finally {
+    await m.unmount();
+  }
+  // Unmounting the rig hands every material back its authored glow.
+  expect(tube.emissiveIntensity).toBe(2);
+});
+
 test("a rig without zones publishes nothing and keeps its authored lights", async () => {
   const m = await mountTestDraws(createElement(ConfiguredLighting, { lighting: { ...RIG, zones: undefined } }));
   try {

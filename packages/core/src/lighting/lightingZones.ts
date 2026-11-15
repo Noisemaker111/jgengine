@@ -23,7 +23,16 @@ export interface LightingZone {
   environment?: number;
   /** Multiplier on the tone-mapping exposure (the post chain's authored exposure). Default 1. */
   exposure?: number;
+  /**
+   * Multipliers on the glow of emissive materials, per light group: a material joins group `g` with
+   * `userData.lightGroup = "g"` (in a glTF, the material's `extras`). `{ house: 0.05 }` switches a
+   * store's ceiling tubes off in its showroom while the screens, signs and beacons keep glowing.
+   */
+  emissive?: Readonly<Record<string, number>>;
 }
+
+/** The light group a material belongs to (`userData.lightGroup`, from glTF material extras), if any. */
+export const LIGHT_GROUP_KEY = "lightGroup";
 
 /** The rig's authored colours a zone blends away from. */
 export interface LightingZoneBase {
@@ -43,6 +52,8 @@ export interface LightingZoneSample {
   groundColor: string;
   environment: number;
   exposure: number;
+  /** Emissive multiplier per light group a zone names; a group no zone names stays at 1 (absent). */
+  emissive: Record<string, number>;
 }
 
 /** How strongly `zone` applies at `(x, z)`: 1 inside, easing to 0 across its fade. */
@@ -71,6 +82,7 @@ export function sampleLightingZones(zones: readonly LightingZone[], x: number, z
     groundColor: base.groundColor,
     environment: 1,
     exposure: 1,
+    emissive: {},
   };
   for (const zone of zones) {
     const w = lightingZoneWeight(zone, x, z);
@@ -85,6 +97,9 @@ export function sampleLightingZones(zones: readonly LightingZone[], x: number, z
     if (zone.fill?.groundColor !== undefined) out.groundColor = mixHex(out.groundColor, zone.fill.groundColor, w);
     if (zone.environment !== undefined) out.environment = lerp(out.environment, zone.environment, w);
     if (zone.exposure !== undefined) out.exposure = lerp(out.exposure, zone.exposure, w);
+    if (zone.emissive !== undefined) {
+      for (const [group, scale] of Object.entries(zone.emissive)) out.emissive[group] = lerp(out.emissive[group] ?? 1, scale, w);
+    }
   }
   return out;
 }

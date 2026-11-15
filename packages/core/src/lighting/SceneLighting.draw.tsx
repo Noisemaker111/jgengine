@@ -15,8 +15,8 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 
 import { cascadedShadowsDraw } from "./CascadedShadows.draw";
-import { sampleLightingZones, type LightingZoneBase } from "./lightingZones";
-import { publishLightingZoneFactors } from "./lightingZones.draw";
+import { LIGHT_GROUP_KEY, sampleLightingZones, type LightingZoneBase } from "./lightingZones";
+import { createLightGroupDimmer, publishLightingZoneFactors, type LightGroupDimmer } from "./lightingZones.draw";
 import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { installShadowCache } from "./shadowCache.draw";
@@ -298,6 +298,7 @@ export function configuredLightingDraw(getProps: () => {
   let baseHemisphere = 0.55;
   let installedKey: readonly unknown[] | null = null;
   let zoneBase: LightingZoneBase | null = null;
+  let dimmer: LightGroupDimmer | null = null;
   // The first directional's modulation under zones: the daylight factors times the zone's key.
   const zoned: DaylightModulation = { sunFactor: 1, sunColor: LIGHT_DEFAULT_COLOR, ambientFactor: 1 };
   let zonedActive = false;
@@ -365,6 +366,8 @@ export function configuredLightingDraw(getProps: () => {
           groundColor: lighting.hemisphere?.groundColor ?? "#4c6b34",
         };
     zonedActive = false;
+    dimmer?.restore();
+    dimmer = lighting.zones?.some((zone) => zone.emissive !== undefined) === true ? createLightGroupDimmer(LIGHT_GROUP_KEY) : null;
     if (lighting.ambient !== undefined) {
       ambient = new THREE.AmbientLight(lighting.ambient.color ?? LIGHT_DEFAULT_COLOR);
       baseAmbient = lighting.ambient.intensity ?? 0.55;
@@ -442,6 +445,7 @@ export function configuredLightingDraw(getProps: () => {
           hemisphere.groundColor.set(here.groundColor);
         }
         publishLightingZoneFactors(state.rootScene ?? state.scene, { exposure: here.exposure, environment: here.environment });
+        dimmer?.apply(state.rootScene ?? state.scene, here.emissive);
       } else if (modulation !== undefined) {
         if (ambient !== null) ambient.intensity = baseAmbient * modulation.ambientFactor;
         if (hemisphere !== null) hemisphere.intensity = baseHemisphere * modulation.ambientFactor;
@@ -450,6 +454,8 @@ export function configuredLightingDraw(getProps: () => {
     },
     dispose(state: EngineFrameState) {
       publishLightingZoneFactors(state.rootScene ?? state.scene, undefined);
+      dimmer?.restore();
+      dimmer = null;
       clearLights();
       state.scene.remove(group);
       installedKey = null;

@@ -52,6 +52,12 @@ test("materials that draw the same pixels share a signature; any drawn differenc
   expect(materialSignature(swaying)).toBeNull();
   expect(materialSignature(new THREE.MeshStandardMaterial({ transparent: true }))).toBeNull();
   expect(materialSignature([palette(), palette()])).toBeNull();
+
+  // A lighting zone dims a light group's glow per material, so a grouped material never shares a batch with a plain twin.
+  const house = palette();
+  house.userData["lightGroup"] = "house";
+  expect(materialSignature(house)).not.toBeNull();
+  expect(materialSignature(house)).not.toBe(materialSignature(palette()));
 });
 
 test("a texture the source swaps in after the batch is made reaches the batch before it draws", () => {
