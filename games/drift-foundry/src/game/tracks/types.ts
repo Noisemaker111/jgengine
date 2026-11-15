@@ -64,6 +64,11 @@ export interface TrackBranchDef {
   via?: readonly CourseVec2[];
   halfWidth: number;
   label: string;
+  /**
+   * A secret shortcut through a stockroom: off the shopping tips and the rivals' lines, announced
+   * only the first time a cart rolls into it, and counted in the career's secrets.
+   */
+  secret?: boolean;
 }
 
 /** A placed library or yard prop the track is dressed with: a landmark or set-piece. */
@@ -130,7 +135,14 @@ export interface TrackDef {
   /** Ground level around the course, metres; the course rides its own elevation and banks down to this. */
   baseLevel: number;
   /** A liquid sheet across the track's ground: a juice flood, a koi pond. */
-  liquid?: { level: number; color: string; waveHeight: number; palette?: OceanPalette };
+  liquid?: {
+    level: number;
+    color: string;
+    waveHeight: number;
+    palette?: OceanPalette;
+    /** Route the liquid pools around (a pond); unset floods the whole department. */
+    around?: string;
+  };
   /** Branch ids each rival takes on this track. */
   rivalTake: Readonly<Record<string, readonly string[]>>;
   /** Escape time the line multiplier is judged against, seconds. */

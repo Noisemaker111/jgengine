@@ -32,6 +32,12 @@ export function registerGameCommands(ctx: GameContext): void {
       return state;
     },
   });
+  ctx.game.commands.define("cup.start", {
+    apply(state) {
+      runSessionStore.peek(state)?.startCup();
+      return state;
+    },
+  });
   ctx.game.commands.define("run.park", {
     apply(state) {
       runSessionStore.peek(state)?.returnToTitle();
@@ -64,7 +70,7 @@ export function registerGameCommands(ctx: GameContext): void {
 }
 
 const PHASE_CODE = { start: 0, running: 1, won: 3, crushed: 4 } as const;
-const READING_KEYS = ["phase", "run", "speed", "heading", "airborne", "lap", "laps", "lapTime", "finished", "place", "total", "rivalRun", "rivalsFinished", "goal", "blocked", "gates", "mods", "items", "powerUps", "value", "shelves", "style", "boost", "riding", "damage", "gap", "atRisk", "credits", "points", "tiersOpen", "cartsOwned", "runs", "escapes", "receipt", "finishTime", "parked", "menuPane", "tip", "tipSide", "jumpNow", "powersUsed"] as const;
+const READING_KEYS = ["phase", "run", "speed", "heading", "airborne", "lap", "laps", "lapTime", "finished", "place", "total", "rivalRun", "rivalsFinished", "goal", "blocked", "gates", "mods", "items", "powerUps", "value", "shelves", "style", "boost", "riding", "damage", "gap", "atRisk", "credits", "points", "tiersOpen", "cartsOwned", "runs", "escapes", "receipt", "finishTime", "parked", "menuPane", "tip", "tipSide", "jumpNow", "powersUsed", "cupActive", "cupRound", "cupRank", "cupPoints", "cupsWon", "secrets"] as const;
 /** Every reading at zero, before the session exists. */
 const EMPTY = Object.fromEntries(READING_KEYS.map((key) => [key, 0])) as Record<(typeof READING_KEYS)[number], number>;
 
@@ -125,6 +131,12 @@ function readingsOf(ctx: GameContext, snap: NonNullable<Parameters<typeof sessio
     tipSide: hud?.tip?.side ?? 0,
     jumpNow: hud?.jumpNow === true ? 1 : 0,
     powersUsed: snap.powersUsed,
+    cupActive: snap.cup.active ? 1 : 0,
+    cupRound: snap.cup.roundNumber,
+    cupRank: snap.cup.standings.find((row) => row.id === "player")?.rank ?? 0,
+    cupPoints: snap.cup.standings.find((row) => row.id === "player")?.points ?? 0,
+    cupsWon: snap.cup.won,
+    secrets: snap.secrets.found,
     finishTime: snap.outcome?.kind === "won" ? Math.round(snap.outcome.time * 10) / 10 : 0,
     parked: snap.parkedRun === null ? 0 : 1,
     menuPane: (() => {

@@ -177,6 +177,10 @@ export const TRACKS: readonly Track[] = TRACK_DEFS.map(buildTrack);
 
 export const AISLE_NINE_TRACK: Track = TRACKS[0]!;
 
+/** Every secret stockroom shortcut in the store, as `track:branch` ids. */
+export const SECRET_SHORTCUTS: readonly string[] = TRACK_DEFS.flatMap((def) => def.branches.filter((branch) => branch.secret === true).map((branch) => `${def.id}:${branch.id}`));
+export const SECRET_COUNT = SECRET_SHORTCUTS.length;
+
 export const DEFAULT_TRACK_ID = AISLE_NINE.id;
 
 export function trackById(id: string): Track | null {

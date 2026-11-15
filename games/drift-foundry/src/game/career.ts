@@ -10,6 +10,7 @@ import { createMedalBoard, type MedalBoardState } from "@jgengine/core/progressi
 import { DEFAULT_EVENT_ID, eventById, MEDAL_BOARD, YARD_EVENTS } from "./events/catalog";
 
 import { CHASSIS, chassisById, DEFAULT_CHASSIS, type CartChassis, type ChassisId } from "./cart/chassis";
+import { newCup, readCup, type CupSave } from "./season/cup";
 import { partById, PART_SLOTS, PARTS, type DriftFoundryPartDef, type PartSlotId } from "./parts/catalog";
 
 /** Customer service pays in store credit; the same money buys the next mod and the next cart. */
@@ -94,6 +95,10 @@ export interface CareerSave {
   courses: Record<string, string>;
   /** Carts unlocked at the cart corral, and the one the next run pushes. */
   carts: { owned: readonly ChassisId[]; selected: ChassisId };
+  /** The Closing-Time Cup: this season's round results and the cups lifted. */
+  cup: CupSave;
+  /** Secret shortcuts found, as `track:branch` ids. */
+  secrets: readonly string[];
 }
 
 /** Every event's track today. Careers saved before the tracks ran every event on Row Six. */
@@ -124,6 +129,8 @@ export function newCareer(): CareerSave {
     event: DEFAULT_EVENT_ID,
     courses: eventCourses(),
     carts: { owned: [DEFAULT_CHASSIS], selected: DEFAULT_CHASSIS },
+    cup: newCup(),
+    secrets: [],
   };
 }
 
@@ -146,6 +153,9 @@ export function readCareer(storage?: CareerStorage): CareerSave {
       courses: fresh.courses,
       // A career saved before the cart corral owns the standard cart only.
       carts: readCarts(data["carts"]) ?? fresh.carts,
+      // A career saved before the cup has no season under way.
+      cup: readCup(data["cup"]),
+      secrets: Array.isArray(data["secrets"]) ? [...new Set(data["secrets"].filter((id): id is string => typeof id === "string"))] : [],
     };
   } catch {
     return newCareer();
@@ -317,6 +327,12 @@ export function selectChassis(career: CareerSave, id: ChassisId): CareerSave {
 }
 
 /** Settle a finished run: the haul banks at the self-checkout and is lost to the shutters. */
+/** Pays a cup purse straight into the bank, as banked store credit. */
+export function payPurse(career: CareerSave, credits: number): CareerSave {
+  if (credits <= 0) return career;
+  return { ...career, bank: { ...career.bank, banked: career.bank.banked + credits, deposited: career.bank.deposited + credits } };
+}
+
 export function settleRun(
   career: CareerSave,
   run: { kind: "escape" | "crushed"; place: number; haul: number; medals?: MedalBoardState | undefined },

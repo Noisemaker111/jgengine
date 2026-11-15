@@ -24,11 +24,12 @@ import { gateAdvice, gateSatisfied, gateStanding, inLane, type GateAdvice, type 
 import { createVehicleController, type DriveAxis, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
-import { AISLE_NINE_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
+import { AISLE_NINE_TRACK, SECRET_COUNT, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
 import { FLAT_YARD_GROUND } from "../tracks/ground";
 import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RunStorage } from "./records";
 import { checkpointParts, readParkedRun, saveParkedRun, type ParkedRun } from "./progress";
-import { ESCAPE_BONUS, bankOf, buyChassis as buyCorralChassis, buyPart as buyGaragePart, CART_VALUE_SHARE, corralRows, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, selectChassis as selectCorralChassis, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
+import { CLOSING_TIME_CUP as CUP_SERIES, CUP_ROUNDS, cupBoard, cupRound, recordCupRound, startCup as openCup, type CupBoard } from "../season/cup";
+import { ESCAPE_BONUS, payPurse, bankOf, buyChassis as buyCorralChassis, buyPart as buyGaragePart, CART_VALUE_SHARE, corralRows, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, selectChassis as selectCorralChassis, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
 import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRacers, eventRivals, formatMetric, MEDALS, targetText, YARD_EVENTS, YARD_TIERS, type MedalId, type YardEvent } from "../events/catalog";
 import { basketValue, EMPTY_BASKET, grab, loadPart, loadReading, usePowerUp, type Basket, type LoadFeel } from "../cart/basket";
 import { chassisById, DEFAULT_CHASSIS, wobbleSteer, type CartChassis, type ChassisId } from "../cart/chassis";
@@ -87,6 +88,21 @@ export interface RunOutcome {
   cartValue: number;
   items: number;
   style: number;
+  /** The cup round this run raced, as the results card reads it; `null` off the cup. */
+  cup: CupOutcome | null;
+}
+
+/** What a cup round did to the season. */
+export interface CupOutcome {
+  round: number;
+  of: number;
+  /** Points the player's place paid this round. */
+  points: number;
+  /** The player's rank in the cup after the round. */
+  rank: number;
+  champion: string | null;
+  /** Store credit the final standings paid (only on the last round). */
+  purse: number;
 }
 
 /** One calendar event's result on the results card. */
@@ -208,9 +224,14 @@ export interface SessionSnapshot {
   powersUsed: number;
   /** Best self-checkout receipt on this event, or `null` before the first. */
   bestReceipt: number | null;
+  /** The Closing-Time Cup board: standings, rounds and what is next. */
+  cup: CupBoard;
+  /** Secret shortcuts found so far, of how many the store hides. */
+  secrets: { found: number; total: number };
 }
 
 type CareerView = {
+  cup: SessionSnapshot["cup"];
   corral: SessionSnapshot["corral"];
   career: Omit<SessionSnapshot["career"], "saved">;
   event: SessionSnapshot["event"];
@@ -228,6 +249,8 @@ export interface RunSession {
   buyPart(slot: PartSlotId): { ok: boolean; reason?: string };
   /** Unlock a cart at the corral (or pick an owned one) for the next run. */
   chooseChassis(id: ChassisId): { ok: boolean; reason?: string };
+  /** Open a new Closing-Time Cup season and line up its first round. */
+  startCup(): { ok: boolean; reason?: string };
   /** Park the stopped, grounded run where it stands; false when it is moving or airborne. */
   park(): boolean;
   togglePause(): void;
@@ -322,7 +345,8 @@ export function createRunSession(
   /** The event the open run races; a locked or unknown saved choice falls back to the salvage run. */
   function currentEvent(): YardEvent {
     const chosen = eventById(career.event);
-    return chosen !== null && medalsOf(career).isOpen(chosen.id) ? chosen : eventById(DEFAULT_EVENT_ID)!;
+    // The cup's round races whatever tier it sits in.
+    return chosen !== null && (medalsOf(career).isOpen(chosen.id) || cupRound(career.cup) === chosen.id) ? chosen : eventById(DEFAULT_EVENT_ID)!;
   }
   let event: YardEvent = currentEvent();
   let track: Track = trackOfEvent(event);
@@ -809,6 +833,45 @@ export function createRunSession(
     };
   }
 
+  /**
+   * Scores the round when this run raced the cup's next round: every racer's place from the
+   * standings, the player's 0 when the shutters caught them. The career takes the new season (and
+   * any purse); the next round becomes the event the pit lines up.
+   */
+  function settleCup(escaped: boolean): CupOutcome | null {
+    if (cupRound(career.cup) !== event.id) return null;
+    const places: Record<string, number> = {};
+    for (const entry of standings.snapshot().standings) places[entry.id] = entry.place;
+    if (!escaped) places[PLAYER_RACER_ID] = 0;
+    const result = recordCupRound(career.cup, event.id, places);
+    if (result === null) return null;
+    career = payPurse({ ...career, cup: result.cup }, result.purse);
+    const next = cupRound(result.cup);
+    if (next !== null) career = { ...career, event: next };
+    const board = cupBoard(result.cup);
+    if (result.champion !== null) pushRadio(result.champion === PLAYER_RACER_ID ? "YOU WIN THE CLOSING-TIME CUP" : `${board.standings[0]!.name} TAKES THE CLOSING-TIME CUP`);
+    return {
+      round: (CUP_ROUNDS as readonly string[]).indexOf(event.id) + 1,
+      of: CUP_ROUNDS.length,
+      points: CUP_SERIES.pointsFor(places[PLAYER_RACER_ID] ?? 0),
+      rank: result.rank,
+      champion: result.champion === null ? null : board.standings[0]!.name,
+      purse: result.purse,
+    };
+  }
+
+  /** The first roll into a secret stockroom shortcut: a notice, a style bonus and a line in the career. */
+  function findSecret(): void {
+    const branch = track.def.branches.find((entry) => entry.id === pose.route);
+    if (branch?.secret !== true) return;
+    const id = `${track.id}:${branch.id}`;
+    if (career.secrets.includes(id)) return;
+    career = { ...career, secrets: [...career.secrets, id] };
+    careerSaved = saveCareer(career, storage);
+    notify(`SECRET SHORTCUT: ${branch.label}`, "success");
+    pushRadio(`STAFF ONLY — YOU FOUND THE ${branch.label} (${career.secrets.length}/${SECRET_COUNT})`);
+  }
+
   function recordOutcome(settlement: SessionSettlement<RunBank, ShiftEffect>): void {
     const completed = completeRun(records, { kind: outcome?.kind === "won" ? "won" : "crushed", time: runTime, distance: Math.max(0, Math.min(track.exitAt, runOf(pose))) });
     records = completed.records;
@@ -834,6 +897,7 @@ export function createRunSession(
   function viewOfCareer(): CareerView {
     if (careerView !== null && careerView.career === career && careerView.event === event && careerView.track === track) return careerView.value;
     const value: CareerView = {
+      cup: cupBoard(career.cup),
       corral: corralRows(career),
       career: {
         credits: bankOf(career).banked(),
@@ -905,6 +969,8 @@ export function createRunSession(
         calendar: view.calendar,
         ghost: ghostNow(),
         corral: view.corral,
+        cup: view.cup,
+        secrets: { found: career.secrets.length, total: SECRET_COUNT },
         basket: { goods: basket.goods, powerUps: basket.powerUps, weight: loadReading(basket).weight, value: basketValue(basket), capacity: chassis.capacity, feel: loadReading(basket).feel },
         chassis: { id: chassis.id, label: chassis.label, entityKind: chassis.entityKind, wobble: squeak() },
         style: { points: style.snapshot().points, combo: style.snapshot().combo, comboLeft: style.snapshot().comboLeft, last: lastStyle },
@@ -948,11 +1014,20 @@ export function createRunSession(
         if (parkedRun === null) pushRadio("\"THE STORE IS NOW CLOSING\" — GO GO GO");
       }
     },
+    startCup() {
+      if (phaseNow() === "running") return { ok: false, reason: "Finish or park the run before the cup starts" };
+      career = { ...career, cup: openCup(career.cup) };
+      careerSaved = saveCareer(career, storage);
+      const first = cupRound(career.cup)!;
+      const picked = this.selectEvent(first);
+      return picked.ok ? { ok: true } : picked;
+    },
     selectEvent(eventId) {
       const chosen = eventById(eventId);
       if (chosen === null) return { ok: false, reason: "The store runs no such event" };
       if (phaseNow() === "running") return { ok: false, reason: "Finish or park the run before you change events" };
-      if (!medalsOf(career).isOpen(eventId)) return { ok: false, reason: `${chosen.label} is still locked` };
+      // The cup's round is always open to a season under way, whatever tier it sits in.
+      if (!medalsOf(career).isOpen(eventId) && cupRound(career.cup) !== eventId) return { ok: false, reason: `${chosen.label} is still locked` };
       if (chosen.id === event.id) return { ok: true };
       career = { ...career, event: chosen.id };
       careerSaved = saveCareer(career, storage);
@@ -1035,6 +1110,7 @@ export function createRunSession(
 
       applyPickup(input.salvageSwap === true);
       grabShelf();
+      findSecret();
       for (const award of style.tick(dt, { slip: pose.slip, speedKmh: pose.speedKmh, airborne: pose.airborne, riding, nearEdge: Math.abs(lateralOf(pose)) > track.def.halfWidth - EDGE_BAND, crashed: pose.blockedByGate })) awardStyle(award);
       announceGates();
       adviseStop();
@@ -1111,6 +1187,7 @@ export function createRunSession(
           cartValue: basketValue(basket),
           items: basket.goods.length + basket.powerUps.length,
           style: style.snapshot().points,
+          cup: settleCup(false),
         };
         recordOutcome(settlement);
         return;
@@ -1170,6 +1247,7 @@ export function createRunSession(
           cartValue: basketValue(basket),
           items: basket.goods.length + basket.powerUps.length,
           style: style.snapshot().points,
+          cup: settleCup(true),
         };
         recordOutcome(settlement);
       }

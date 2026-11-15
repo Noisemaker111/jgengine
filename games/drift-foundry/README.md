@@ -44,16 +44,23 @@ Read from `src/game/{cart,run,parts,route,compactor,vehicle,race}`.
   6 items, fast, never wobbles).
 - **Departments** (`tracks/`): Aisle 9 (straight main aisle: snacks, an iced frozen section at 0.86
   grip, bulk & paint), Produce (juice flood, oranges avalanching across, grape-slick hairpins, salad
-  bar shortcut), Garden Centre (outdoors in the rain, mud, koi-pond wade), Electronics (TV walls,
+  bar shortcut, a secret walk-in-cooler cut across the first hairpin), Garden Centre (outdoors in the rain, mud, koi-pond wade), Electronics (TV walls,
   returns conveyors that push with or against you), Loading Bay (tugger trains on timed crossings,
-  a forklift-dropped pallet), Toy Aisle (mezzanine ramps, ball blasters, ball-pit shortcut).
+  a forklift-dropped pallet), Toy Aisle (mezzanine ramps, ball blasters, ball-pit shortcut, the
+  secret staff stairs across the first switchback). Secret shortcuts are off the tips and the
+  rivals' lines; the first roll through one is announced and counted in the career.
 - **Rivals**: Grandma June (easy, wanders shelf to shelf), the Twins (one pushes, one rides),
   Brick the bodybuilder (expert, one clean line); Officer Dale on his segway patrols Lights Out and
   Closing Time, cuts across your lane and tackles on contact (75% of your speed gone and a spin).
 - **Hazards**: box walls and pallet ramps, rolling oranges and foam balls, spills, puddles, tugger
   trains, conveyors, the scrubber and the shutters (contact within 1.5 m locks you in).
-- **Progression**: store credit buys mods and carts; eight events in four tiers (Weeknight, Late
+- **Progression**: store credit buys mods and carts; eleven events in four tiers (Weeknight, Late
   Shift, Empty Cart, Store Legend) medal on finish place, time, cart value or the margin on Brick.
+- **Closing-Time Cup** (`season/cup.ts`, on the engine's `progression/pointsSeries`): a six-round
+  season, one full-field race per department (Last Call, Produce Derby, Dock Derby, Empty Cart,
+  Lights Out, Garden Grand Prix). Places pay 10/6/4/3, the shutters pay nothing, and the rivals score
+  too; the cup board in the pit shows the standings and the rounds, a round races whatever its tier,
+  and lifting the cup pays $500 store credit ($150 for the podium).
 - **Look**: bright fluorescent big-box interior, store-brand packaging (no real brands), original
   procedural models in `scripts/author-models.mjs`; see `src/art-direction.md`.
 

@@ -69,12 +69,18 @@ export function PitMenu({ snapshot, session, publish }: { snapshot: SessionSnaps
     setNotice(result.ok ? `${label} is on the shopping list` : result.reason ?? "The store refused that event");
   };
   const buy = (slot: GarageRow["slot"]) => { const result = session.buyPart(slot); publish(); if (!result.ok) setNotice(result.reason ?? "Customer service refused that mod"); };
+  const openCup = () => {
+    const result = session.startCup();
+    publish();
+    setNotice(result.ok ? "The Closing-Time Cup is on: round 1 is on the shopping list" : result.reason ?? "The cup could not start");
+  };
   const chooseCart = (id: ChassisId) => { const result = session.chooseChassis(id); publish(); setNotice(result.ok ? `${snapshot.corral.find(row => row.chassis.id === id)?.chassis.label ?? id} is waiting by the doors` : result.reason ?? "The corral refused that cart"); };
 
   const items: readonly Item[] = title ? [
     { id: "continue", label: "Continue run", hint: parked === null ? "No cart parked at customer service" : `${metres(parkedRunMetres(parked))} / ${parked.runTime.toFixed(1)} s / ${(parked.basketIds?.length ?? 0)} items`, disabled: parked === null },
     { id: "new", label: "New run", hint: `${snapshot.event.label.toUpperCase()} @ ${snapshot.event.trackLabel.toUpperCase()} - ${snapshot.shift === null ? "a quiet closing" : snapshot.shift.label}` },
     { id: "calendar", label: "Weekly circular", hint: `${snapshot.calendar.points}/${snapshot.calendar.maxPoints} medal points` },
+    { id: "cup", label: "Closing-Time Cup", hint: snapshot.cup.active ? `Round ${snapshot.cup.roundNumber}/${snapshot.cup.roundCount} - ${snapshot.cup.next?.label ?? ""} / P${snapshot.cup.standings.find(row => row.id === "player")?.rank ?? "-"}` : snapshot.cup.won > 0 ? `${snapshot.cup.won} cup${snapshot.cup.won === 1 ? "" : "s"} lifted` : "Six departments, one season" },
     { id: "corral", label: "Cart corral", hint: `${snapshot.chassis.label} / ${snapshot.corral.filter(row => row.owned).length} of ${snapshot.corral.length} carts` },
     { id: "garage", label: "Customer service", hint: `$${snapshot.career.credits} store credit / loyalty ${snapshot.career.standing}` },
     { id: "records", label: "Store records", hint: snapshot.records.bestTime === null ? "No checkout on record" : `Best ${snapshot.records.bestTime.toFixed(1)} s` },
@@ -96,6 +102,7 @@ export function PitMenu({ snapshot, session, publish }: { snapshot: SessionSnaps
     if (id === "continue") return <ContinuePane snapshot={snapshot} thumbnail={recent?.meta["thumbnail"]} meta={recent?.meta} onContinue={startRun} />;
     if (id === "new") return <NewRunPane snapshot={snapshot} />;
     if (id === "calendar") return <CalendarPane calendar={snapshot.calendar} onPick={pickEvent} />;
+    if (id === "cup") return <CupPane cup={snapshot.cup} secrets={snapshot.secrets} onStart={openCup} onRace={newRun} />;
     if (id === "garage") return <GaragePane rows={snapshot.career.garage} credits={snapshot.career.credits} onBuy={buy} />;
     if (id === "corral") return <CorralPane rows={snapshot.corral} credits={snapshot.career.credits} onChoose={chooseCart} />;
     if (id === "records") return <RecordsPane snapshot={snapshot} />;
@@ -217,6 +224,29 @@ function CorralPane({ rows, credits, onChoose }: { rows: readonly CorralRow[]; c
       </RuneView>
       <Stamp label={`Cart ${row.chassis.label}`} disabled={row.selected || (!row.owned && row.chassis.price > credits)} onPress={() => onChoose(row.chassis.id)}>{row.selected ? "PUSHING" : row.owned ? "PUSH IT" : row.chassis.price > credits ? `NEED $${row.chassis.price - credits}` : `BUY $${row.chassis.price}`}</Stamp>
     </Row>)}
+  </>;
+}
+
+/** The Closing-Time Cup: the season's standings against the rivals, its six rounds and the next one. */
+function CupPane({ cup, secrets, onStart, onRace }: { cup: SessionSnapshot["cup"]; secrets: SessionSnapshot["secrets"]; onStart: () => void; onRace: () => void }) {
+  return <>
+    <SheetHead title="Closing-Time Cup" tag={cup.active ? `round ${cup.roundNumber}/${cup.roundCount}` : cup.champion !== null ? `won by ${cup.standings[0]?.name ?? ""}` : "no season on"} />
+    <Text size={15} color={PEN}>{`One full-field race in every department. 10, 6, 4 and 3 points for the places; the shutters pay nothing. Lift it for $500 store credit. ${secrets.found}/${secrets.total} secret stockroom shortcuts found.`}</Text>
+    {cup.standings.map(row => <Row key={row.id} gap={8} width={FULL} padding={[4, 6, 4, 6]} fill={row.id === "player" ? "#e8303a18" : "#00000000"}>
+      <Text family={STENCIL} size={18} color={ORANGE}>{String(row.rank)}</Text>
+      <RuneView grow={1}><Text family={STENCIL} size={16} color={PEN}>{row.name}</Text></RuneView>
+      <Label color={PEN}>{`${row.wins} win${row.wins === 1 ? "" : "s"}`}</Label>
+      <Text family={STENCIL} size={18} color={PEN}>{`${row.points} PTS`}</Text>
+    </Row>)}
+    {cup.rounds.map((round, index) => <Row key={round.id} gap={6} width={FULL} padding={[2, 6, 2, 6]} opacity={round.winner === null && round.id !== cup.next?.id ? 0.7 : 1}>
+      <Label color={PEN}>{`R${index + 1}`}</Label>
+      <RuneView grow={1}><Text size={14} color={PEN}>{`${round.label} - ${round.track}`}</Text></RuneView>
+      <Text size={14} color={PEN}>{round.winner === null ? round.id === cup.next?.id ? "NEXT" : "" : `${round.winner} won${round.yourPlace === null ? "" : round.yourPlace === 0 ? " / you: caught" : ` / you: P${round.yourPlace}`}`}</Text>
+    </Row>)}
+    <Row gap={8}>
+      {cup.active && cup.next !== null ? <Stamp label="Race the next cup round" onPress={onRace}>{`RACE ROUND ${cup.roundNumber}`}</Stamp> : null}
+      <Stamp label="Start a cup season" onPress={onStart}>{cup.active ? "RESTART SEASON" : "START SEASON"}</Stamp>
+    </Row>
   </>;
 }
 

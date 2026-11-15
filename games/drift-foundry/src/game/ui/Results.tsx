@@ -51,6 +51,9 @@ export function Results({ snapshot, onRestart, onTitle }: { snapshot: SessionSna
       {ev.openedTiers.length > 0 ? <Text role="status" color={ORANGE}>{`${ev.openedTiers.join(", ").toUpperCase()} EVENTS NOW IN THE WEEKLY CIRCULAR`}</Text> : null}
       <Text size={15} color={PEN}>{ev.next === null ? "Every medal on this event is yours." : `Next: ${ev.next.medal} - ${ev.next.text}.`}</Text>
     </RuneView>
+    {outcome.cup === null ? null : <Text role="status" color={ORANGE}>{outcome.cup.champion !== null
+      ? `CLOSING-TIME CUP: ${outcome.cup.champion} IS CHAMPION${outcome.cup.purse > 0 ? ` · $${outcome.cup.purse} PURSE` : ""}`
+      : `CUP ROUND ${outcome.cup.round}/${outcome.cup.of} · +${outcome.cup.points} PTS · P${outcome.cup.rank} IN THE CUP`}</Text>}
     <Row gap={10} width={FULL}>{snapshot.race.standings.map(entry => <Row key={entry.id} gap={4}><Text family={STENCIL} size={15} color={entry.id === "player" ? ORANGE : PEN}>{String(entry.place)}</Text><Text size={15} color={entry.id === "player" ? ORANGE : PEN}>{`${entry.name}${entry.id === "player" && !entry.finished ? (won ? " · RUNNING" : " · OUT") : ""}`}</Text></Row>)}</Row>
     <RuneView layout="grid" columns={phone ? 2 : 4} gap={6} width={FULL}>{PART_SLOTS.map(slot => <Row key={slot} gap={6}><RuneGlyph artwork={partArtwork(snapshot.installed[slot]?.id ?? null)} width={22} height={22} /><Text size={15} color={PEN}>{snapshot.installed[slot]?.label ?? "No mod"}</Text></Row>)}</RuneView>
     {won && snapshot.personalBest !== "unchanged" ? <Label color={ORANGE}>{snapshot.personalBest === "first" ? "FIRST CHECKOUT ON RECORD" : snapshot.personalBest === "improved" ? "NEW PERSONAL BEST" : "PERSONAL BEST MATCHED"}</Label> : null}

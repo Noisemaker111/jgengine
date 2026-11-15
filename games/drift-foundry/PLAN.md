@@ -51,7 +51,8 @@ Genres: racing. 17/17 proven.
 
 - Built: carts with weight-driven handling, shelf grabs, five power-ups, style meter, self-checkout
   receipt, six departments (five under a warehouse roof with back walls, the Garden Centre outdoors in
-  bounded rain), per-department lighting zones (dark showroom, sodium dock, cold frozen aisle),
+  bounded rain), per-department lighting zones (dark showroom with its house lights off, sodium dock, cold frozen
+  aisle), the Closing-Time Cup (six-round season with rival standings), two secret shortcuts,
   late-shopper rivals with lines, pennants and Officer Dale, shutters + floor scrubber, cart corral,
   12 mods, onboarding tips folded into one banner, juice, world-save fallback, original procedural art.
 - Proven: 227 unit tests, 17/17 game-suite proofs (save.continue brings back the basket, its
@@ -59,9 +60,10 @@ Genres: racing. 17/17 proven.
 
 ## Next
 
-1. Lighting zones are rectangles; the Toy Aisle and Produce could take their own (pastel spill, a
+1. A cup flow in the browser (start a season from the pit, race round 1, see the board move); the
+   headless session test covers it today.
+2. More secret shortcuts (Electronics' S-bends, the Loading Bay) and a reward for finding all.
+3. Lighting zones are rectangles; the Toy Aisle and Produce could take their own (pastel spill, a
    misted green cooler) once the art asks for it.
-2. The ceiling tube rows stay emissive in the dark showroom; an emissive scale per zone would let
-   Electronics' house lights read as properly off.
-3. `proofs/flows/mid-run-reload.flow.ts` (browser) checks the basket across a real reload; it has
+4. `proofs/flows/mid-run-reload.flow.ts` (browser) checks the basket across a real reload; it has
    not been run in this environment.

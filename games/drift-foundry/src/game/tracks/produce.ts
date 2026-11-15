@@ -26,7 +26,11 @@ export const PRODUCE: TrackDef = {
     turn(180, 24),
     straight(140),
   ],
-  branches: [{ id: "salad-bar", from: 123, to: 251, halfWidth: 5.5, label: "SALAD BAR" }],
+  branches: [
+    { id: "salad-bar", from: 123, to: 251, halfWidth: 5.5, label: "SALAD BAR" },
+    // Straight through the walk-in cooler across the first hairpin.
+    { id: "cold-room", from: 268, to: 364, halfWidth: 4.5, label: "WALK-IN COOLER", secret: true },
+  ],
   hazards: [
     { id: "oranges-stand", kind: "tumble", from: 178, to: 194, cycle: { period: 6, active: 2.4 }, label: "ORANGES ROLLING ACROSS BY THE FLOWER STAND" },
     { id: "oranges-mid-1", kind: "tumble", from: 408, to: 420, cycle: { period: 7, active: 2.6, phase: 1 }, label: "ORANGE AVALANCHE IN THE AISLE" },
@@ -73,7 +77,8 @@ export const PRODUCE: TrackDef = {
     scatterCount: 30,
     landmarks: [
       { object: O.deptSign, at: 40, side: 0 },
-      { object: O.tumbleBin, at: 300, side: -30 },
+      // Outside the hairpin, clear of the walk-in cooler cut through its middle.
+      { object: O.tumbleBin, at: 300, side: 30 },
       { object: O.endcap, at: [170, 1040] },
       { object: O.flowers, at: 186, side: 32 },
       { object: O.deptSign, at: 545, side: 0 },

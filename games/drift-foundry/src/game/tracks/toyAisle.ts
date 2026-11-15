@@ -27,7 +27,11 @@ export const TOY_AISLE: TrackDef = {
     ...detour(-1, 45, 20, 25),
     straight(40, { rise: 3 }),
   ],
-  branches: [{ id: "ball-pit", from: 596, to: 703, halfWidth: 6, label: "BALL PIT" }],
+  branches: [
+    { id: "ball-pit", from: 596, to: 703, halfWidth: 6, label: "BALL PIT" },
+    // The stock-room ramp behind the plush wall, cutting the first switchback.
+    { id: "staff-stairs", from: 262, to: 362, halfWidth: 4.5, label: "STAFF STAIRS", secret: true },
+  ],
   hazards: [
     { id: "balls-ramp-1", kind: "tumble", from: 225, to: 236, cycle: { period: 8, active: 3 }, label: "BALL BLASTER ON THE RAMP" },
     { id: "balls-pin-1", kind: "tumble", from: 292, to: 308, cycle: { period: 7, active: 2.5, phase: 2.5 }, label: "MARBLE RUN SPILLING ON THE HAIRPIN" },
