@@ -47,8 +47,11 @@ export interface ScrapQuest {
   /** What is said when it is turned in. */
   done: string;
   objectives: readonly ScrapObjective[];
-  /** `gun`: a quest-reward unique (`UNIQUE_GUNS`), rolled at the player's level and set down at their feet. */
-  reward: { xp: number; cash?: number; cores?: number; unlocks?: readonly string[]; gun?: string };
+  /**
+   * `gun`: a quest-reward unique (`UNIQUE_GUNS`); `heirloom`: a named heirloom (`LEGENDARY_NAMES`). Either
+   * is rolled at the player's level and set down between the player and the giver.
+   */
+  reward: { xp: number; cash?: number; cores?: number; unlocks?: readonly string[]; gun?: string; heirloom?: string };
   /** Unlocks granted the moment the quest is accepted: the road it sends you down. */
   opens?: readonly string[];
   /** The editor marker the giver walks to when the quest is accepted, to wait for the player there. */
@@ -75,6 +78,8 @@ export const QUEST_IDS = {
   supplyInterdiction: "q_supply_interdiction",
   foundrySiege: "q_foundry_siege",
   reactorBreach: "q_reactor_breach",
+  theCloud: "q_the_cloud",
+  heirloomHunt: "q_heirloom_hunt",
   ripperControl: "q_ripper_control",
   bruiserSurvey: "q_bruiser_survey",
 } as const;
@@ -232,6 +237,44 @@ const SIDE_QUESTS: readonly ScrapQuest[] = [
       { id: "crawlers", kind: "kill", target: "core_crawler", count: 2 },
     ],
     reward: { xp: 7400, cash: 1400, gun: "Antivirus" },
+  },
+
+  // Nana Pruitt's heirloom hunt (level 10+): the neighbours' treasured junk, carried off by the
+  // appliances when the update went out. Each errand brings one home.
+  {
+    id: QUEST_IDS.heirloomHunt, title: "The Heirloom Hunt", act: 2, main: false, giver: "sparx", turnIn: "sparx",
+    requires: [QUEST_IDS.coretown], minLevel: 10,
+    brief: "When the update went out, the Roombas swept up everything that wasn't nailed down. Including Biscuit's old vacuum, God rest that dog. The Roombas hoard by the bus. Bring it home, dear.",
+    done: "Oh, it still smells like him. You keep it. He'd have liked you.",
+    objectives: [{ id: "roombas", kind: "kill", target: "husk", count: 6 }],
+    reward: { xp: 1500, cash: 300, heirloom: "Dust Bunny" },
+  },
+  {
+    id: "q_heirloom_toaster", title: "Something Borrowed", act: 2, main: false, giver: "sparx", turnIn: "sparx",
+    requires: [QUEST_IDS.heirloomHunt], minLevel: 13,
+    brief: "The Okonkwos' wedding toaster. Never used, never returned, and now a smart fridge on Strip Mall Ridge is keeping it cold. Three fridges ought to cover it.",
+    done: "Forty years and not a single slice of toast. It's yours now, sweetie. Make toast with it. Violently.",
+    objectives: [{ id: "fridges", kind: "kill", target: "nomad", count: 3 }],
+    reward: { xp: 2700, cash: 560, heirloom: "Ka-Toast" },
+  },
+  {
+    id: "q_heirloom_extinguisher", title: "Grandma's Kitchen", act: 3, main: false, giver: "sparx", turnIn: "sparx",
+    requires: ["q_heirloom_toaster"], minLevel: 18,
+    brief: "My mother's fire extinguisher. Fifty years by the stove and used exactly once. A smart speaker took it off the wall and plays elevator music at it. Four speakers, dear.",
+    done: "There she is. Mind the pin. She's only ever saved one kitchen, but she saved it properly.",
+    objectives: [{ id: "speakers", kind: "kill", target: "loader", count: 4 }],
+    reward: { xp: 4400, cash: 900, heirloom: "Kitchen Hero" },
+  },
+  {
+    id: "q_heirloom_wish", title: "Wish Upon a Crumb", act: 3, main: false, giver: "sparx", turnIn: "sparx",
+    requires: ["q_heirloom_extinguisher", QUEST_IDS.foundrySiege], minLevel: 22,
+    brief: "The last one. A little girl's toaster, the one she wished on every morning. A home theater system in the Estates won't give it back. She's a pilot now. She'd want it found.",
+    done: "Every heirloom home. You've done more for this street than the HOA ever did. Take hers. Make a wish.",
+    objectives: [
+      { id: "theater", kind: "kill", target: "elite_loader", count: 1 },
+      { id: "doors", kind: "kill", target: "crawler_soldier", count: 4 },
+    ],
+    reward: { xp: 7200, cash: 1400, heirloom: "Wish Upon a Crumb" },
   },
 
   // Hank, the cul-de-sac's garage tinkerer (level 8+): field tests and bounties.
@@ -611,6 +654,25 @@ const STORY_QUESTS: readonly ScrapQuest[] = [
     done: "Mother Router is offline. Maple Hollow's Wi-Fi is down, and nobody has ever been happier.",
     objectives: [{ id: "heart", kind: "kill", target: "foundry_heart", count: 1 }],
     reward: { xp: 20000, cash: 5000 },
+  },
+  {
+    id: QUEST_IDS.theCloud,
+    title: "The Cloud",
+    act: 3,
+    main: true,
+    giver: "rigg",
+    turnIn: "rigg",
+    requires: [QUEST_IDS.reactorBreach],
+    minLevel: 26,
+    brief: "Bad news. Before she went dark, Mother Router backed herself up. To the cloud. Which, it turns out, is a big humming building past the Estates full of her nastiest appliances. Go pull some plugs.",
+    done: "No backup, no restore. Maple Hollow is finally, properly offline. The Cloud's still crawling, though, if you ever miss the noise.",
+    objectives: [
+      { id: "cloud", kind: "reach", target: "data_center", count: 1, label: "Reach The Cloud" },
+      { id: "theaters", kind: "kill", target: "elite_loader", count: 2 },
+      { id: "soundbars", kind: "kill", target: "loader_war", count: 4 },
+    ],
+    reward: { xp: 26000, cash: 6000, heirloom: "Popcorn Apocalypse" },
+    opens: [unlock.zone("data_center")],
   },
   {
     id: QUEST_IDS.bruiserSurvey,

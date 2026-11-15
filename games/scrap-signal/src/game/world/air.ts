@@ -21,6 +21,8 @@ export const ZONE_AIR: Record<string, ZoneAir> = {
   glasswind_flats: { wind: 0.75, rate: 1.04, industry: 0.2, dust: "#f8ffe6" },
   // The Estates hum with Wi-Fi: the drifting motes read cold and violet against the pollen elsewhere.
   cores_blight: { wind: 0.45, rate: 0.74, industry: 1, dust: "#b9a8ff" },
+  // The server farm: no wind, a deafening cooling hum, cold blue motes.
+  data_center: { wind: 0.2, rate: 0.7, industry: 1, dust: "#9fd8ff" },
 };
 
 export const DEFAULT_AIR: ZoneAir = { wind: 0.55, rate: 1, industry: 0.25, dust: "#fff6c2" };

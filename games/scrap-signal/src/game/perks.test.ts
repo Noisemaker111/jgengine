@@ -49,7 +49,8 @@ function makeCtx(): Fake {
   const spawned: string[] = [];
   const entities = [{ id: "p1", name: "player", role: "player", position: [0, 0, 0] as [number, number, number] }];
   const ctx = {
-    player: { userId: "p1" },
+    // An empty weapon rack: no carried buddies, so personalities read on their own.
+    player: { userId: "p1", inventory: { state: () => ({ slots: [] }) } },
     time: { now: () => now / 1000 },
     game: { notices: { push() {} } },
     scene: {

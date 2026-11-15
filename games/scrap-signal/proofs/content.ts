@@ -51,9 +51,13 @@ const heirlooms: ContentProgressionRule[] = [
   { id: "drop:heirloom", path: "src/game/handroll/roll.ts/legendary", requires: [zoneFact(ZONES[ZONES.length - 1]!.id)], provides: [...familyOfHeirloom.keys()].map(heirloomItem) },
 ];
 
+// Errands hand out the neighbours' uniques, and Nana's heirloom hunt (and The Cloud) hand out heirlooms.
 const uniques: ContentProgressionRule[] = scrapQuests.flatMap((quest) => {
-  const gun = quest.reward.gun;
-  return gun === undefined ? [] : [{ id: `quest:${quest.id}`, path: `src/game/quests/catalog.ts/${quest.id}`, requires: [zoneFact(HUB)], provides: [uniqueItem(gun)] }];
+  const provides = [
+    ...(quest.reward.gun === undefined ? [] : [uniqueItem(quest.reward.gun)]),
+    ...(quest.reward.heirloom === undefined ? [] : [heirloomItem(quest.reward.heirloom)]),
+  ];
+  return provides.length === 0 ? [] : [{ id: `quest:${quest.id}`, path: `src/game/quests/catalog.ts/${quest.id}`, requires: [zoneFact(HUB)], provides }];
 });
 
 const shops: ContentProgressionRule[] = [

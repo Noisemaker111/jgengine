@@ -24,7 +24,7 @@ describe("authored document", () => {
     expect(authoredScene.paths.filter((path) => path.kind === "road").length).toBe(
       ROUTES.length + SPUR_ROUTES.length,
     );
-    expect(ROUTES.length).toBe(5);
+    expect(ROUTES.length).toBe(6);
     expect(SPUR_ROUTES.length).toBe(3);
   });
 

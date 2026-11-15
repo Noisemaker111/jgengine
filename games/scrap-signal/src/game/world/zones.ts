@@ -183,6 +183,26 @@ const ZONE_META: readonly ZoneMeta[] = [
     chests: [{ kind: "red" }, { kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
     boss: { catalogId: "foundry_heart", instanceId: "boss_foundry_heart" },
   },
+  {
+    // The endgame neighbourhood past the Estates: the server farm Mother Router backed herself up to.
+    // Elite appliances only, level 28, its halls flat-roofed and humming.
+    id: "data_center",
+    name: "The Cloud",
+    level: 28,
+    settlement: { count: 6, footprint: 10, stories: [2, 3], style: "industrial", palette: { wall: "#e6eef5", storefront: "#1f2a44" } },
+    clusters: [
+      { catalogId: "loader_war", count: 5 },
+      { catalogId: "elite_loader", count: 2 },
+      { catalogId: "crawler_soldier", count: 5 },
+      { catalogId: "elite_husk", count: 3 },
+      { catalogId: "nomad", count: 4 },
+    ],
+    squads: [
+      { catalogId: "firewall_door", count: 2, joins: 2 },
+      { catalogId: "server_rack", count: 2, joins: 4 },
+    ],
+    chests: [{ kind: "red" }, { kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
+  },
 ];
 
 function requireVolume(id: string) {

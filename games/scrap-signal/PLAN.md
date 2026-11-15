@@ -110,7 +110,7 @@ Genres: shooter, looter. 20/20 proven.
 | enemies | 32 |
 | guns | 114 |
 | skills | 27 |
-| zones | 6 |
+| zones | 7 |
 
 ### Systems
 

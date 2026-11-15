@@ -62,7 +62,8 @@ function payQuest(ctx: GameContext, quest: ScrapQuest): void {
   if (quest.reward.cash !== undefined) earn(ctx, "cash", quest.reward.cash, "quest-reward", quest.id);
   if (quest.reward.cores !== undefined) earn(ctx, "cores", quest.reward.cores, "quest-reward", quest.id);
   for (const id of quest.reward.unlocks ?? []) award(ctx, id);
-  if (quest.reward.gun !== undefined) giveUniqueGun(ctx, quest.reward.gun, quest);
+  if (quest.reward.gun !== undefined) giveUniqueGun(ctx, { unique: quest.reward.gun }, quest);
+  if (quest.reward.heirloom !== undefined) giveUniqueGun(ctx, { legendary: quest.reward.heirloom }, quest);
   ctx.scene.entity.floatText({ instanceId: userId, text: `ERRAND DONE · +${quest.reward.xp} XP`, kind: "pickup" });
 }
 
@@ -73,10 +74,10 @@ const REWARD_CLEARANCE = 4.6;
  * A quest's unique gun, rolled at the player's level and set down between the player and the giver,
  * just outside the giver's talk range, to read and take.
  */
-function giveUniqueGun(ctx: GameContext, name: string, quest: ScrapQuest): void {
+function giveUniqueGun(ctx: GameContext, pin: { unique: string } | { legendary: string }, quest: ScrapQuest): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return;
-  const gun = rollGun(seededRng(`quest-reward:${quest.id}`), playerLevel(ctx), { unique: name });
+  const gun = rollGun(seededRng(`quest-reward:${quest.id}`), playerLevel(ctx), pin);
   const giver = quest.turnIn === "radio" ? null : ctx.scene.entity.get(NPCS[quest.turnIn].entity);
   const from = giver?.position ?? me.position;
   const dx = me.position[0] - from[0];

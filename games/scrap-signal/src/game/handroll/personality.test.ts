@@ -6,6 +6,9 @@ import {
   derivePersonality,
   isFreeShot,
   bossLine,
+  RELATIONSHIP_DAMAGE,
+  RELATIONSHIPS,
+  relationshipOf,
   KILL_MILESTONES,
   milestoneLine,
   moodDamageScale,
@@ -68,6 +71,23 @@ describe("weapon personalities", () => {
     const free = [1, 2, 3, 4, 5, 6, 7, 12].filter((shot) => isFreeShot("philosophical", shot));
     expect(free).toEqual([6, 12]);
     expect(isFreeShot("grumpy", 6)).toBe(false);
+  });
+});
+
+describe("relationships", () => {
+  test("some pairs bond and some bicker, both ways round, each with banter", () => {
+    expect(relationshipOf("grumpy", "cheerful")?.kind).toBe("bicker");
+    expect(relationshipOf("cheerful", "grumpy")?.kind).toBe("bicker");
+    expect(relationshipOf("clingy", "dramatic")?.kind).toBe("bond");
+    expect(relationshipOf("grumpy", "clingy")).toBeNull();
+    expect(RELATIONSHIPS.some((entry) => entry.kind === "bond") && RELATIONSHIPS.some((entry) => entry.kind === "bicker")).toBe(true);
+    for (const entry of RELATIONSHIPS) for (const [a, b] of entry.banter) expect(a.length > 5 && b.length > 5).toBe(true);
+  });
+
+  test("buds hit harder together; a rival only shows off while it is the one in hand", () => {
+    expect(moodDamageScale("philosophical", { ...calm, buddy: "bond" })).toBeCloseTo(1 + RELATIONSHIP_DAMAGE.bond, 5);
+    expect(moodDamageScale("philosophical", { ...calm, buddy: "bicker", held: false })).toBe(1);
+    expect(moodDamageScale("philosophical", { ...calm, buddy: "bicker", held: true })).toBeCloseTo(1 + RELATIONSHIP_DAMAGE.bicker, 5);
   });
 });
 

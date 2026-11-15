@@ -311,7 +311,7 @@ export const game = defineGame({
   },
   controls: {
     // The context-specific relay button lives beside its stakes and progress.
-    touch: { hidden: ["relay.overclock", "rift.callWave"] },
+    touch: { hidden: ["relay.overclock", "rift.callWave", "weapon.inspect"] },
     prompts,
     hotbarSelection: () => session.selectedSlot(),
     movement: {

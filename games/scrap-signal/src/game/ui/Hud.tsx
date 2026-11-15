@@ -13,7 +13,7 @@ import { useStore } from "@jgengine/ui/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../ammo";
 import { CHARACTERS } from "../characters";
 import { activePerkBuffs } from "../combat/gunPerks";
-import { gunBarkStore, moodReadout } from "../combat/personalityRuntime";
+import { buddyReadout, gunBarkStore, moodReadout } from "../combat/personalityRuntime";
 import { itemNameById } from "../content";
 import { lastHit, lastHurtAtMs } from "../feel";
 import { handlingView } from "../handling";
@@ -82,6 +82,7 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
         {gun.element === "none" ? null : <Small size={11} color={ELEMENT_COLORS[gun.element]}>{junkCard(gun).element ?? ""}</Small>}
         <Small size={11} color={C.amber} text={bind(() => moodReadout(ctx, gun))} />
       </Row>
+      <Small size={10} color={C.phosphor} text={bind(() => buddyReadout(ctx, gun))} />
     </RuneView>
     <Row>
       <Tube layout="row" items="end" gap={6} grow={1}>

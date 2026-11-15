@@ -49,6 +49,10 @@ export const ENEMY_VARIANTS: readonly EnemyVariant[] = [
   { id: "core_crawler", name: "Smart Garage Door", base: "crawler_soldier", zone: "cores_blight", shield: 100, health: 1.2, damage: 1.2, xp: 1.5, plate: "opticElite" },
   { id: "blight_husk", name: "Firmware Roomba", base: "elite_husk", zone: "cores_blight", elite: true, shield: 120, health: 1.5, damage: 1.3, xp: 1.8, plate: "joint" },
 
+  // The Cloud, level 28: Mother Router's backup, guarded by the server farm's own hardware.
+  { id: "server_rack", name: "Server Rack", base: "nomad", zone: "data_center", surface: "armor", shield: 160, health: 1.5, damage: 1.25, scale: 1.15, xp: 1.8, plate: "iron" },
+  { id: "firewall_door", name: "Firewall Door", base: "crawler_soldier", zone: "data_center", shield: 140, health: 1.4, damage: 1.3, xp: 1.8, plate: "opticElite" },
+
   // Named targets: Borderlands' wanted posters. Each is hunted by one side quest, which puts it in the world.
   { id: "scald", name: "Toasty", base: "scorch_husk", zone: "breakwater_shelf", named: true, elite: true, health: 6, damage: 1.4, scale: 1.25, xp: 6, plate: "opticElite" },
   { id: "gunner_vex", name: "Old Soaky", base: "shelf_raider", zone: "breakwater_shelf", named: true, elite: true, shield: 120, health: 5, damage: 1.3, scale: 1.15, xp: 6, plate: "hazard" },

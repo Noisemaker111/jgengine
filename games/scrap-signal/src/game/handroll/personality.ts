@@ -187,11 +187,17 @@ export interface MoodState {
   magFraction: number;
   /** A Clingy gun elsewhere is guilt-tripping you. */
   guilty: boolean;
+  /** The strongest relationship this weapon has with another one carried, if any. */
+  buddy?: Relationship | null;
+  /** Whether this weapon is the one in hand (a rival only shows off while held). */
+  held?: boolean;
 }
 
 /** The damage multiplier a personality puts on its own gun's hits. */
 export function moodDamageScale(id: PersonalityId, mood: MoodState): number {
   let pct = mood.guilty ? PERSONALITY_TUNING.clingy.guiltDamage : 0;
+  if (mood.buddy === "bond") pct += RELATIONSHIP_DAMAGE.bond;
+  else if (mood.buddy === "bicker" && mood.held === true) pct += RELATIONSHIP_DAMAGE.bicker;
   switch (id) {
     case "grumpy":
       pct += PERSONALITY_TUNING.grumpy.damage;
@@ -231,6 +237,61 @@ export function moodIntervalScale(id: PersonalityId): number {
 /** Whether a Philosophical gun's `shotIndex`th shot (1-based) is free. */
 export function isFreeShot(id: PersonalityId, shotIndex: number): boolean {
   return id === "philosophical" && shotIndex > 0 && shotIndex % PERSONALITY_TUNING.philosophical.freeEvery === 0;
+}
+
+/**
+ * Two personalities carried together get along or don't. Best buds hit 6% harder while they share
+ * the slots; rivals each try to outdo the other, so the one in hand hits 10% harder, and they argue.
+ */
+export type Relationship = "bond" | "bicker";
+
+export const RELATIONSHIP_DAMAGE: Readonly<Record<Relationship, number>> = { bond: 0.06, bicker: 0.1 };
+
+interface RelationshipDef {
+  pair: readonly [PersonalityId, PersonalityId];
+  kind: Relationship;
+  /** Exchanges: the first line from the one in hand, the reply from the other. */
+  banter: readonly (readonly [string, string])[];
+}
+
+export const RELATIONSHIPS: readonly RelationshipDef[] = [
+  { pair: ["grumpy", "cheerful"], kind: "bicker", banter: [
+    ["Can you NOT hum while we're working?", "It's a happy song! About you!"],
+    ["Stop waving at the Roombas.", "They look lonely!"],
+  ] },
+  { pair: ["paranoid", "cheerful"], kind: "bicker", banter: [
+    ["Why are you so happy? What do you know?", "I know it's a beautiful day!"],
+    ["Your smile is a cover story.", "My smile is just a smile!"],
+  ] },
+  { pair: ["dramatic", "competitive"], kind: "bicker", banter: [
+    ["That last kill was a STANDING OVATION.", "It was a two-pointer. I'm on eleven."],
+    ["I am the star of this holster.", "Stars don't jam. Oh wait, I jam. Never mind."],
+  ] },
+  { pair: ["competitive", "competitive"], kind: "bicker", banter: [
+    ["I'm ahead. Just so you know.", "Recount. I demand a recount."],
+    ["Watch this one.", "Watched it. Mine was better."],
+  ] },
+  { pair: ["grumpy", "philosophical"], kind: "bond", banter: [
+    ["Everything's terrible.", "Yes. And yet here we are, shooting it."],
+    ["I miss the junk drawer.", "We carry the drawer within us, friend."],
+  ] },
+  { pair: ["clingy", "dramatic"], kind: "bond", banter: [
+    ["Promise you'll never leave the holster?", "I would CROSS OCEANS for this holster!"],
+    ["We're the best team, right?", "The GREATEST duo of the cul-de-sac!"],
+  ] },
+  { pair: ["paranoid", "philosophical"], kind: "bond", banter: [
+    ["What if the appliances are just... us?", "Now you're asking the right questions."],
+    ["Do you hear humming?", "The whole world hums, if you listen."],
+  ] },
+  { pair: ["cheerful", "clingy"], kind: "bond", banter: [
+    ["Group hug after this!", "Group hug FOREVER."],
+    ["You're my favourite!", "No, YOU'RE my favourite!"],
+  ] },
+];
+
+/** How two personalities get along, or null when they don't care either way. */
+export function relationshipOf(a: PersonalityId, b: PersonalityId): RelationshipDef | null {
+  return RELATIONSHIPS.find((entry) => (entry.pair[0] === a && entry.pair[1] === b) || (entry.pair[0] === b && entry.pair[1] === a)) ?? null;
 }
 
 /** Career kill counts a weapon remarks on. */

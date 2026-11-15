@@ -8179,6 +8179,80 @@
       "label": "The Foreman's wreck mouth"
     },
     {
+      "id": "travel_data_center",
+      "kind": "travel",
+      "position": {
+        "x": -440,
+        "y": 0,
+        "z": -440
+      },
+      "color": "#34d399",
+      "label": "The Cloud bus stop",
+      "meta": {
+        "zoneId": "data_center"
+      }
+    },
+    {
+      "id": "chest_data_center_red_0",
+      "kind": "chest",
+      "position": {
+        "x": -455,
+        "y": 0,
+        "z": -470
+      },
+      "color": "#fbbf24",
+      "label": "red chest",
+      "meta": {
+        "kind": "red",
+        "zoneId": "data_center"
+      }
+    },
+    {
+      "id": "chest_data_center_red_1",
+      "kind": "chest",
+      "position": {
+        "x": -575,
+        "y": 0,
+        "z": -405
+      },
+      "color": "#fbbf24",
+      "label": "red chest",
+      "meta": {
+        "kind": "red",
+        "zoneId": "data_center"
+      }
+    },
+    {
+      "id": "chest_data_center_ammo_2",
+      "kind": "chest",
+      "position": {
+        "x": -470,
+        "y": 0,
+        "z": -400
+      },
+      "color": "#94a3b8",
+      "label": "ammo chest",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "data_center"
+      }
+    },
+    {
+      "id": "chest_data_center_ammo_3",
+      "kind": "chest",
+      "position": {
+        "x": -500,
+        "y": 0,
+        "z": -455
+      },
+      "color": "#94a3b8",
+      "label": "ammo chest",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "data_center"
+      }
+    },
+    {
       "id": "yard_rustflat_waste_0_mailbox",
       "kind": "prop",
       "position": {
@@ -10118,6 +10192,141 @@
         "baseColor": "#897344",
         "tipColor": "#b49a61",
         "seed": "ridge_scrub_east"
+      }
+    },
+    {
+      "id": "zone_data_center",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": -420
+      },
+      "radius": 160,
+      "height": 24,
+      "color": "#38bdf8",
+      "label": "The Cloud",
+      "meta": {
+        "zoneId": "data_center",
+        "level": 28
+      }
+    },
+    {
+      "id": "flatten_data_center",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": -420
+      },
+      "radius": 80,
+      "height": 8,
+      "color": "#94a3b8",
+      "label": "The Cloud flatten",
+      "meta": {
+        "zoneId": "data_center"
+      }
+    },
+    {
+      "id": "cluster_data_center_0_loader_war",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -440,
+        "y": 0,
+        "z": -380
+      },
+      "radius": 28,
+      "height": 14,
+      "color": "#fb923c",
+      "label": "loader_warx5",
+      "meta": {
+        "zoneId": "data_center",
+        "catalogId": "loader_war",
+        "count": 5,
+        "level": 28
+      }
+    },
+    {
+      "id": "cluster_data_center_1_elite_loader",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -440,
+        "y": 0,
+        "z": -380
+      },
+      "radius": 18,
+      "height": 14,
+      "color": "#fb923c",
+      "label": "elite_loaderx2",
+      "meta": {
+        "zoneId": "data_center",
+        "catalogId": "elite_loader",
+        "count": 2,
+        "level": 28
+      }
+    },
+    {
+      "id": "cluster_data_center_2_crawler_soldier",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -530,
+        "y": 0,
+        "z": -470
+      },
+      "radius": 30,
+      "height": 14,
+      "color": "#fb923c",
+      "label": "crawler_soldierx5",
+      "meta": {
+        "zoneId": "data_center",
+        "catalogId": "crawler_soldier",
+        "count": 5,
+        "level": 28
+      }
+    },
+    {
+      "id": "cluster_data_center_3_elite_husk",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -530,
+        "y": 0,
+        "z": -470
+      },
+      "radius": 22,
+      "height": 14,
+      "color": "#fb923c",
+      "label": "elite_huskx3",
+      "meta": {
+        "zoneId": "data_center",
+        "catalogId": "elite_husk",
+        "count": 3,
+        "level": 28
+      }
+    },
+    {
+      "id": "cluster_data_center_4_nomad",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -560,
+        "y": 0,
+        "z": -380
+      },
+      "radius": 28,
+      "height": 14,
+      "color": "#fb923c",
+      "label": "nomadx4",
+      "meta": {
+        "zoneId": "data_center",
+        "catalogId": "nomad",
+        "count": 4,
+        "level": 28
       }
     }
   ],
@@ -12171,6 +12380,295 @@
       ],
       "width": 4,
       "label": "Smart Home Estates back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "road_cores_blight_data_center",
+      "kind": "road",
+      "points": [
+        {
+          "x": -80,
+          "y": 1,
+          "z": -560
+        },
+        {
+          "x": -91.11,
+          "y": 1,
+          "z": -556.11
+        },
+        {
+          "x": -102.22,
+          "y": 1,
+          "z": -552.22
+        },
+        {
+          "x": -113.33,
+          "y": 1,
+          "z": -548.33
+        },
+        {
+          "x": -124.44,
+          "y": 1,
+          "z": -544.44
+        },
+        {
+          "x": -135.56,
+          "y": 1,
+          "z": -540.56
+        },
+        {
+          "x": -146.67,
+          "y": 1,
+          "z": -536.67
+        },
+        {
+          "x": -157.78,
+          "y": 1,
+          "z": -532.78
+        },
+        {
+          "x": -168.89,
+          "y": 1,
+          "z": -528.89
+        },
+        {
+          "x": -180,
+          "y": 1,
+          "z": -525
+        },
+        {
+          "x": -191.11,
+          "y": 1,
+          "z": -521.11
+        },
+        {
+          "x": -202.22,
+          "y": 1,
+          "z": -517.22
+        },
+        {
+          "x": -213.33,
+          "y": 1,
+          "z": -513.33
+        },
+        {
+          "x": -224.44,
+          "y": 1,
+          "z": -509.44
+        },
+        {
+          "x": -235.56,
+          "y": 1,
+          "z": -505.56
+        },
+        {
+          "x": -246.67,
+          "y": 1,
+          "z": -501.67
+        },
+        {
+          "x": -257.78,
+          "y": 1,
+          "z": -497.78
+        },
+        {
+          "x": -268.89,
+          "y": 1,
+          "z": -493.89
+        },
+        {
+          "x": -280,
+          "y": 1,
+          "z": -490
+        },
+        {
+          "x": -291.11,
+          "y": 1,
+          "z": -486.11
+        },
+        {
+          "x": -302.22,
+          "y": 1,
+          "z": -482.22
+        },
+        {
+          "x": -313.33,
+          "y": 1,
+          "z": -478.33
+        },
+        {
+          "x": -324.44,
+          "y": 1,
+          "z": -474.44
+        },
+        {
+          "x": -335.56,
+          "y": 1,
+          "z": -470.56
+        },
+        {
+          "x": -346.67,
+          "y": 1,
+          "z": -466.67
+        },
+        {
+          "x": -357.78,
+          "y": 1,
+          "z": -462.78
+        },
+        {
+          "x": -368.89,
+          "y": 1,
+          "z": -458.89
+        },
+        {
+          "x": -380,
+          "y": 1,
+          "z": -455
+        },
+        {
+          "x": -391.11,
+          "y": 1,
+          "z": -451.11
+        },
+        {
+          "x": -402.22,
+          "y": 1,
+          "z": -447.22
+        },
+        {
+          "x": -413.33,
+          "y": 1,
+          "z": -443.33
+        },
+        {
+          "x": -424.44,
+          "y": 1,
+          "z": -439.44
+        },
+        {
+          "x": -435.56,
+          "y": 1,
+          "z": -435.56
+        },
+        {
+          "x": -446.67,
+          "y": 1,
+          "z": -431.67
+        },
+        {
+          "x": -457.78,
+          "y": 1,
+          "z": -427.78
+        },
+        {
+          "x": -468.89,
+          "y": 1,
+          "z": -423.89
+        },
+        {
+          "x": -480,
+          "y": 1,
+          "z": -420
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "cores_blight",
+        "to": "data_center"
+      }
+    },
+    {
+      "id": "street_data_center_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": -466.12,
+          "y": 0,
+          "z": -380.36
+        },
+        {
+          "x": -470.75,
+          "y": 0,
+          "z": -393.57
+        },
+        {
+          "x": -475.37,
+          "y": 0,
+          "z": -406.79
+        },
+        {
+          "x": -480,
+          "y": 0,
+          "z": -420
+        },
+        {
+          "x": -484.63,
+          "y": 0,
+          "z": -433.21
+        },
+        {
+          "x": -489.25,
+          "y": 0,
+          "z": -446.43
+        },
+        {
+          "x": -493.88,
+          "y": 0,
+          "z": -459.64
+        }
+      ],
+      "width": 7,
+      "label": "The Cloud cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_data_center_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": -451.59,
+          "y": 0,
+          "z": -453.26
+        },
+        {
+          "x": -463.49,
+          "y": 0,
+          "z": -449.09
+        },
+        {
+          "x": -475.38,
+          "y": 0,
+          "z": -444.93
+        },
+        {
+          "x": -487.27,
+          "y": 0,
+          "z": -440.76
+        },
+        {
+          "x": -499.16,
+          "y": 0,
+          "z": -436.6
+        },
+        {
+          "x": -511.05,
+          "y": 0,
+          "z": -432.44
+        },
+        {
+          "x": -522.95,
+          "y": 0,
+          "z": -428.27
+        }
+      ],
+      "width": 4,
+      "label": "The Cloud back alley",
       "meta": {
         "street": "alley"
       }

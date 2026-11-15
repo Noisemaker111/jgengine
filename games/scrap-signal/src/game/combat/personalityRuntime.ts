@@ -13,6 +13,8 @@ import {
   bossLine,
   junkCard,
   milestoneLine,
+  relationshipOf,
+  type Relationship,
   magLoaded,
   moodDamageScale,
   moodIntervalScale,
@@ -56,6 +58,9 @@ interface MoodRuntime {
   guilt: { gunId: string; untilMs: number } | null;
   shots: Map<string, number>;
   lowAmmoSaid: Set<string>;
+  /** When the next banter between carried buddies may start, and a reply waiting its turn. */
+  nextBanterMs: number;
+  reply: { gunId: string; line: string; atMs: number } | null;
   /** A kill landed since the last tick: the tick decides whether the gun says something. */
   killBark: string | null;
   /** A career milestone reached since the last tick: said over any plain kill line. */
@@ -78,6 +83,8 @@ const moodsOf = perContext(
     guilt: null,
     shots: new Map(),
     lowAmmoSaid: new Set(),
+    nextBanterMs: 30_000,
+    reply: null,
     killBark: null,
     milestone: null,
     rival: null,
@@ -127,11 +134,34 @@ function mood(ctx: GameContext, gun: GunDef): MoodState {
   const held = runtime.heldId === gun.id;
   const guilt = runtime.guilt;
   return {
+    buddy: buddyOf(ctx, gun)?.kind ?? null,
+    held,
     heldMs: held ? now - runtime.heldSinceMs : 0,
     killStacks: runtime.stacks.get(gun.id) ?? 0,
     magFraction: magLoaded(ctx, gun) / Math.max(1, effectiveMagSize(gun)),
     guilty: guilt !== null && guilt.gunId !== gun.id && now < guilt.untilMs,
   };
+}
+
+/** The other carried weapon this one has the strongest feelings about (a bond beats a rivalry), or null. */
+function buddyOf(ctx: GameContext, gun: GunDef): { other: GunDef; kind: Relationship; banter: readonly (readonly [string, string])[] } | null {
+  const mine = personalityOf(gun).id;
+  let found: { other: GunDef; kind: Relationship; banter: readonly (readonly [string, string])[] } | null = null;
+  for (const slot of ctx.player.inventory.state("hotbar").slots) {
+    const other = slot === null ? undefined : gunById(slot.itemId);
+    if (other === undefined || other.id === gun.id) continue;
+    const relation = relationshipOf(mine, personalityOf(other).id);
+    if (relation === null) continue;
+    if (found === null || (relation.kind === "bond" && found.kind === "bicker")) found = { other, kind: relation.kind, banter: relation.banter };
+  }
+  return found;
+}
+
+/** The held weapon's relationship readout for the HUD: "BEST BUDS +6%" or "RIVALS +10%", or "". */
+export function buddyReadout(ctx: GameContext, gun: GunDef): string {
+  const buddy = buddyOf(ctx, gun);
+  if (buddy === null) return "";
+  return buddy.kind === "bond" ? `BEST BUDS w/ ${personalityOf(buddy.other).name.toUpperCase()} +6%` : `RIVALS w/ ${personalityOf(buddy.other).name.toUpperCase()} +10%`;
 }
 
 /** The damage multiplier the gun's personality puts on its hits right now. */
@@ -259,6 +289,23 @@ function trackNearest(ctx: GameContext, gun: GunDef, from: string, aim: { yaw: n
   return best === null ? aim : { yaw: best.yaw, pitch: best.pitch };
 }
 
+/** Carried buddies talk now and then between fights: the one in hand opens, the other replies. */
+function tickBanter(ctx: GameContext, runtime: MoodRuntime, held: GunDef, now: number): void {
+  if (runtime.reply !== null && now >= runtime.reply.atMs) {
+    const speaker = gunById(runtime.reply.gunId);
+    if (speaker !== undefined) bark(ctx, speaker, "rival", runtime.reply.line);
+    runtime.reply = null;
+    return;
+  }
+  if (now < runtime.nextBanterMs || now - runtime.lastBarkMs < 6000) return;
+  runtime.nextBanterMs = now + 35_000 + runtime.rng() * 25_000;
+  const buddy = buddyOf(ctx, held);
+  if (buddy === null || buddy.banter.length === 0) return;
+  const [opener, reply] = buddy.banter[Math.min(buddy.banter.length - 1, Math.floor(runtime.rng() * buddy.banter.length))]!;
+  bark(ctx, held, "rival", opener);
+  runtime.reply = { gunId: buddy.other.id, line: reply, atMs: now + 3200 };
+}
+
 /**
  * Once a tick: notice the held weapon changing (switch-away lines, a Competitive sulk, a Clingy guilt
  * trip, a fresh hold clock) and a magazine running low.
@@ -298,6 +345,7 @@ export function tickPersonality(ctx: GameContext): void {
   }
   const held = heldId === null ? undefined : gunById(heldId);
   if (held === undefined) return;
+  tickBanter(ctx, runtime, held, now);
   const reloading = isReloading(ctx, held);
   if (reloading && !runtime.wasReloading) bark(ctx, held, "reload");
   runtime.wasReloading = reloading;
