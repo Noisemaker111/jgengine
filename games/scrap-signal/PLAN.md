@@ -196,3 +196,9 @@ Internal ids keep their earlier names (zone `rustflat_waste`, enemy `husk`, fami
 - [ ] 8. The suburb in the editor: houses, fences, driveways and cul-de-sacs authored in `editor.scene.json` over the six neighbourhoods.
 - [x] 9. Personality depth: a weapon remembers its career kills across saves and remarks at each milestone (10, 25, 50, 100, 250, 500); heirlooms speak their backstory on pickup; a carried weapon (a jealous Clingy or Competitive one first) has an opinion about every newcomer.
 - [x] 10. Suite to 20/20: menu, settings, save and continue, drops by condition, find-features, the workbench, and a content sheet with the level runway.
+
+## Handoff
+
+- Done: the Junk Drawer redesign (milestones 7, 9, 10), suite 20/20, captures reviewed with software Chrome (`CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader JG_BROKER=0 JG_RENDER_SLOTS=2 bun run shoot scrap-signal --mode play --state junk-armed --cold`; also `junk-vacuum`, `boss`). `--view` framings point the camera at the ground in play mode; use states.
+- Engine changes made here: `RuntimeSave.backend` (so the game's save document shares the host's backend) and suite proofs keep no wall-clock autosave (it fired mid-play on a slow machine).
+- Next: milestone 8 (fences, driveways and cul-de-sacs through the editor); ambient life (ticking sprinklers, stray drones); per-body fire sounds (the vacuum and extinguisher borrow the nail gun's); pitched roofs need a building-style option upstream.

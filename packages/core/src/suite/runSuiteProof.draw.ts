@@ -51,13 +51,11 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   let gameCommands = new Set<string>();
   // The proof's own save store, in memory: what the game saves there outlives a restart, and nothing else does.
   const saves = memorySaveBackend();
-  // The world's trailing autosave runs on a wall-clock timer. It is the game's own code, so it runs as
-  // the window's owner: a slow machine that lets the timer elapse mid-play must not see it refused as
-  // proof code touching the closed setup window.
-  const saveTimers: SaveTimers = {
-    set: (handler, ms) => setTimeout(() => owner(handler), ms),
-    clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
-  };
+  // The world's trailing autosave runs on a wall-clock timer, which a deterministic proof cannot own:
+  // on a slow machine it fired mid-play, read state setup had reached and threw SetupClosedError into
+  // the suite worker. A proof's saves are the game's explicit ones (a save command, a checkpoint), so
+  // the trailing timer never fires here.
+  const saveTimers: SaveTimers = { set: () => null, clear: () => {} };
   const openSession = () =>
     createPlaySession(game, {
       seed: options.seed ?? "suite",

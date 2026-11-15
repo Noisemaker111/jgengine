@@ -82,8 +82,8 @@ describe("runSuiteProof", () => {
   });
 
   // Under load a proof's play outlasted the 3 s trailing autosave: the timer fired mid-play, read state
-  // setup had reached and threw SetupClosedError into the suite worker. The timer is the game's own code.
-  test("a game's autosave that fires during play runs as the game, not as proof code", async () => {
+  // setup had reached and threw SetupClosedError into the suite worker. A proof keeps no wall-clock autosave.
+  test("a game's wall-clock autosave never fires during play", async () => {
     const stray: unknown[] = [];
     const onError = (error: unknown) => stray.push(error);
     process.on("uncaughtException", onError);
