@@ -9,7 +9,7 @@ import { captureParkThumb } from "./parkProfile";
 import { refreshParkSlot } from "./parkSlot";
 import { parkFocus } from "./ui/menu/ParkMenu";
 import { hintRing } from "./ui/hintRing";
-import { currentHint } from "./onboarding";
+import { currentHint, parkHints } from "./onboarding";
 import { session } from "./session";
 import { syncAmbience } from "./audio";
 import { tickRating } from "./sim/economy";
@@ -101,11 +101,25 @@ export function stagePark(ctx: GameContext, mode: StageMode): void {
 function advance(ctx: GameContext, seconds: number): void {
   for (let elapsed = 0; elapsed < seconds; elapsed += STEP) {
     ctx.sim.advance(STEP, (dt) => {
-      // The world ticks first, as the frame loop runs it: flows, crew orders, the scenario's clock.
+      // The world ticks first, as the frame loop runs it: flows, crew orders, the scenario's clock; then the hints.
       park.system.update?.(ctx, dt);
+      parkHints.update?.(ctx, dt);
       stepPark(ctx, dt);
     });
   }
+}
+
+/**
+ * Move today's clock forward to just before the gates open; a no-op once it is that late. The clock
+ * only ever moves forward, as with staging.
+ */
+export function jumpToDusk(ctx: GameContext, lead = 2): void {
+  const snapshot = ctx.time.snapshot();
+  const fraction = ctx.time.calendar().dayFraction;
+  const target = DAY_LENGTH * OPEN_FRACTION - lead;
+  const now = fraction * DAY_LENGTH;
+  if (now >= target) return;
+  ctx.time.hydrate({ ...snapshot, now: snapshot.now + (target - now) });
 }
 
 /** Take a ride down now and report it, exactly as the ride sim's own breakdown would. */
@@ -172,6 +186,22 @@ export function registerCaptureCommands(ctx: GameContext): void {
     apply(state, input) {
       session.selectedTool = null;
       session.selectedObject = park.of(state).instances(input.kind).at(-1)?.id ?? null;
+      return state;
+    },
+  });
+  // The drive's time controls. A software renderer runs the sim at a few game seconds a minute, too
+  // slow for a flow to wait out an afternoon or a first arrival: "dusk" moves the clock forward (never
+  // back) to just before the gates' hour; "advance" runs the park's own systems for that many game
+  // seconds at once, the same ticks the frame loop would have run.
+  ctx.game.commands.define("park.dev.dusk", {
+    apply(state) {
+      jumpToDusk(state);
+      return state;
+    },
+  });
+  ctx.game.commands.define<{ seconds?: number }>("park.dev.advance", {
+    apply(state, input) {
+      advance(state, Math.max(0, Math.min(120, input.seconds ?? 10)));
       return state;
     },
   });

@@ -69,12 +69,21 @@ export default defineFlow(game, {
     await f.shot("hauntworks-first-ride");
 
     await f.click("Unchain the gate");
-    await f.waitForPage(step("scare"), { timeoutMs: 60000, note: "hint: with the gate open, the next step is a scare" });
     await f.see(/gate creaks open/i, { timeoutMs: 20000, note: "arrival: the player unchained the gate" });
-    await f.timeScale(4);
-    await f.waitFor((p) => p.guests > 0, { timeoutMs: 90000, note: "arrival: at dusk the first of the living walk in through the gate" });
-    await f.waitFor((p) => p.riding > 0 || p.queued > 0, { timeoutMs: 90000, note: "arrival: a visitor lines up for or rides the carousel" });
-    await f.timeScale(1);
+    await f.waitForPage(step("scare"), { timeoutMs: 60000, note: "hint: with the gate open, the next step is a scare" });
+    // The wait for dusk and the first arrivals is real game time, and a software renderer runs it at a
+    // few game seconds a minute: jump the clock to dusk and run the park's own ticks forward in steps.
+    await f.command("park.dev.dusk", {});
+    for (let tries = 0; tries < 12; tries += 1) {
+      const probe = await f.probe();
+      if (probe.guests > 0 && (probe.riding > 0 || probe.queued > 0)) break;
+      await f.command("park.dev.advance", { seconds: 10 });
+    }
+    await f.waitFor((p) => p.guests > 0, { timeoutMs: 20000, note: "arrival: at dusk the first of the living walk in through the gate" });
+    await f.waitFor((p) => p.riding > 0 || p.queued > 0, { timeoutMs: 20000, note: "arrival: a visitor lines up for or rides the carousel" });
+    // The HUD redraws after the jump on a slow renderer: shoot once it counts the living.
+    await f.waitForPage(`/[1-9]\\d* \\/ \\d+ living/.test(${shown})`, { timeoutMs: 30000, note: "arrival: the status card counts the living inside" });
+    await f.wait(3000);
     await f.shot("hauntworks-first-living");
     // Put the ride window away, then open the ledger.
     await f.press("KeyX");

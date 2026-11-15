@@ -195,6 +195,9 @@ Genres: tycoon. 18/18 proven.
 - Day-night: the sky follows the haunt's clock through `sky({ timeOfDay, dayOffset: 0.5, nightLight })`.
   The engine's `nightLight` keeps the small hours at a share of the mood's light, so a game whose
   authored look is already a night does not drop into the engine's own dark.
+- Browser drive on this Rune build: a control inside a scrolling window reads as covered, so flows run
+  its command; panes fade over each other, so `ui-tour` waits for `point(label)` before each click;
+  under SwiftShader a captured frame's HUD can lag the live UI tree by a step (the page text is current).
 - Engine: jumping the clock backwards left a stale screen-aligned rectangle in the next frames (seen in
   captures); staging now only moves the clock forward.
 - `packages/core/src/onboarding/`: steps are checked only on a game-time tick, so a game built with the
@@ -212,5 +215,6 @@ Genres: tycoon. 18/18 proven.
 7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
 8. [x] A curve: a mid-skill bot wins The First Chill at 70% of its deadline, Talk of the Coast at 71% and the Full Moon Festival at 77%.
 9. [x] Full-moon nights (more of the living, richer scares), the exorcist walks in at noon to the ghost it banishes, ghost halos, a darker graded night, the Full Moon Festival ending.
+12. [x] The sky follows the clock (engine `nightLight`), and the four browser flows pass under SwiftShader: `park.dev.dusk` jumps the clock to the gates' hour and `park.dev.advance` runs the park's own ticks (hints included) forward, through the flows' `fastForward` helper.
 11. [x] Late-game spending: empowered residents, bonds, the manor and the crypt, rituals, legendary attractions by moon, the Skeptic Society's festival siege; the bot ends the festival with ectoplasm still tight.
 10. [x] Suite 18/18: the save written through the host's save backend when there is no browser storage, the shared start / menu.pane / settings.rebind verbs, and proofs for Continue, the credits, rebinding and following the hints.

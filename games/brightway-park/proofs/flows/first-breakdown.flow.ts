@@ -1,6 +1,7 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 import openPark from "./to-open-park.flow";
+import { fastForward } from "./fastForward";
 import { lotScreen } from "./lotScreen";
 
 /**
@@ -28,21 +29,17 @@ export default defineFlow(game, {
     await f.command("brightway.act", { action: "research_stall_icecream" });
     await f.click("Séance");
     // The carousel and the coffin are all the Victorian Child wants: she moves in, and the next step is a gremlin.
-    await f.timeScale(4);
+    await fastForward(f, "globalThis.__brightway.read().ghosts === 1", 60, 5);
     await f.waitForPage("globalThis.__brightway.read().ghosts === 1", { timeoutMs: 30000, note: "ghost: the Victorian Child moves in" });
-    await f.timeScale(1);
     await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: with a ghost at home, the next step is a gremlin" });
-    await f.timeScale(8);
-    await f.waitFor((p) => p.breakdowns > 0, { timeoutMs: 120000, note: "breakdown: the carousel wears out and breaks on its own" });
-    await f.timeScale(1);
+    await fastForward(f, "globalThis.__brightway.read().broken.length > 0", 1500, 30);
+    await f.waitFor((p) => p.breakdowns > 0, { timeoutMs: 30000, note: "breakdown: the carousel wears out and breaks on its own" });
     await f.see(/bind a Gremlin Tinker/i, { timeoutMs: 5000, note: "jam: the haunt says the ride needs a gremlin" });
     await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: the next step is binding a gremlin" });
     await f.expectPage("['category:staff', 'item:staff_mechanic', 'hud:build'].includes(globalThis.__brightway.read().pointed)", "hint: the hint rings the way to the Spooks palette");
     await f.shot("hauntworks-first-jam");
     // With no mechanic, nothing fixes it: still down after a while.
-    await f.timeScale(4);
-    await f.wait(5000);
-    await f.timeScale(1);
+    await f.command("park.dev.advance", { seconds: 20 });
     await f.expect((p) => p.breakdowns > 0, "breakdown: the ride is still waiting");
     await f.expectPage("window.__jgNativeUi.text().includes('ride jammed') || window.__jgNativeUi.text().includes('rides jammed')", "jam: the status card counts the ride as jammed");
 
@@ -51,10 +48,10 @@ export default defineFlow(game, {
     const grass = await lotScreen(f, -12, 36);
     await f.clickAt(grass.x, grass.y);
     await f.see("Gremlin Tinker built", { timeoutMs: 5000, note: "fix: a gremlin is bound by clicking the palette and the lot" });
+    await fastForward(f, "globalThis.__brightway.read().hint === null", 3, 1);
     await f.waitForPage("globalThis.__brightway.read().hint === null", { timeoutMs: 3000, note: "hint: the gremlin step is done" });
-    await f.timeScale(4);
-    await f.see(/running again/i, { timeoutMs: 60000, note: "fix: the new gremlin goes straight to the jammed ride and it runs again" });
-    await f.timeScale(1);
+    await fastForward(f, "globalThis.__brightway.read().broken.length === 0", 120, 4);
+    await f.see(/running again/i, { timeoutMs: 30000, note: "fix: the new gremlin goes straight to the jammed ride and it runs again" });
     await f.expectPage("!window.__jgNativeUi.text().includes('ride jammed')", "fix: no ride is jammed any more");
     await f.shot("hauntworks-gremlin-fixed");
   },
