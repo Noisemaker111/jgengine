@@ -44,7 +44,8 @@ export function lodestonePair(s: ProofSetup<Probe>): void {
  */
 export function twoRaptorsDown(s: ProofSetup<Probe>, give: Record<string, number>, level = 1): void {
   s.waitFor((p) => p.creatures > 0, { timeoutMs: 60_000 });
-  s.command("cheat", { xp: 100_000, give, tamingSpeed: 20 });
+  // The beach's own herds cleared first: the taming proofs test taming, not whatever the start's zones roll.
+  s.command("cheat", { destroyWild: true, xp: 100_000, give, tamingSpeed: 20 });
   s.hold("KeyD", { until: (p) => p.acrossSpawn > 3, ms: 200, timeoutMs: 4000 });
   s.hold("KeyW", { ms: 250 });
   s.command("cheat", { summon: { species: "lodestone", level, distance: 3, knockedOut: true } });

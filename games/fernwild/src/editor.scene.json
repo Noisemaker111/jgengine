@@ -15454,9 +15454,9 @@
       "id": "fabricator_red_peak",
       "kind": "fabricator",
       "position": {
-        "x": -3,
+        "x": -123,
         "y": 0,
-        "z": 238
+        "z": 158
       },
       "label": "Rusted Fabricator",
       "meta": {

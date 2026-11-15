@@ -35,7 +35,8 @@ export default defineProof(game, {
       if ((await p.probe()).babyImprint === before) {
         // No E for it: it wants a walk. Whistle it to heel and walk on.
         await p.press("KeyT");
-        await p.heading((await p.probe()).babyYaw + Math.PI);
+        // Inland, toward the jungle, so the baby can follow on dry ground (not out into the surf).
+        await p.heading((await p.probe()).treeYaw);
         await p.hold("KeyW", { until: (r) => r.babyImprint > before, timeoutMs: 30_000 });
       }
       await p.expect((r) => r.babyImprint > before, "the care raises its imprint");

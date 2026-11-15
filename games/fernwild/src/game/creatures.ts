@@ -16,6 +16,7 @@ import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
+import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "@jgengine/core/random/rng";
 import { createCarrierField, type CarrierField, type CarrierState } from "@jgengine/core/movement/carrier";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
@@ -176,6 +177,8 @@ interface World {
   puppeted: Map<string, number>;
   /** Uploaded platform bots (the Hoover): their backs carry whoever stands on them. */
   carriers: CarrierField;
+  /** Each spawn zone's own random stream for the creatures it spawns (sex, levels, facing). */
+  streams: Map<string, RandomSeed>;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -187,6 +190,10 @@ const FAR_STEP = 0.25;
 const AWAKE_RANGE = 220;
 /** A herd never refills in plain view: only once the survivor is this many metres from the spawn point. */
 const REFILL_UNSEEN = 60;
+/** Seconds before a refill held back because the survivor was watching tries again. */
+const REFILL_RETRY_SEEN = 20;
+/** Seconds before a refill whose spot had no room for the body tries another spot. */
+const REFILL_RETRY_BLOCKED = 5;
 /** Herds wake, sleep and refill on this beat (seconds), not every frame: a big island queues hundreds of refills. */
 const HERD_CHECK = 0.5;
 /** ...or as soon as the survivor is this far (m) from where herds were last checked. */
@@ -278,8 +285,24 @@ const worldOf = perContext((ctx: GameContext): World => {
     harvestIn: 0,
     puppeted: new Map(),
     carriers: createCarrierField({ solidsLayer: "fernwild:carriers" }),
+    streams: new Map(),
   };
 });
+
+/**
+ * The dice a spawn rolls: a herd zone's own stream, so a zone added to the world (or one waking first)
+ * never shifts the creatures another zone spawns; anything spawned outside a zone (a summon, a baby)
+ * rolls the game's shared dice.
+ */
+function spawnDice(ctx: GameContext, region: string): () => number {
+  if (region === "") return ctx.rng;
+  const world = worldOf(ctx);
+  return () => {
+    const [value, next] = stepRandomSeed(world.streams.get(region) ?? randomSeedFrom(hashString(`herd:${region}`) | 0));
+    world.streams.set(region, next);
+    return value;
+  };
+}
 
 function carcassNode(world: World, id: string) {
   const creature = world.creatures.get(id);
@@ -436,9 +459,9 @@ export function makeNoise(ctx: GameContext, id: string, amount: number, seconds 
 
 // --- spawning -----------------------------------------------------------------------------
 
-function rollLevel(ctx: GameContext, max: number): number {
+function rollLevel(dice: () => number, max: number): number {
   // Low levels are common and high ones rare, as on ARK's Island.
-  return WILD_LEVELS.min + Math.floor(Math.pow(ctx.rng(), 1.6) * (max - WILD_LEVELS.min + 1));
+  return WILD_LEVELS.min + Math.floor(Math.pow(dice(), 1.6) * (max - WILD_LEVELS.min + 1));
 }
 
 /** The nearest open ground to `at` a body of `radius` fits on: never inside a trunk or a boulder, never in the sea. */
@@ -522,10 +545,11 @@ export function spawnCreature(
   if (def === null || position === null) return null;
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
-  const sex = ctx.rng() < 0.5 ? "female" : "male";
-  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterPoints((options.level ?? rollLevel(ctx, world.regions.get(options.region ?? "")?.maxLevel ?? WILD_LEVELS.max)) - 1, WILD_STATS, ctx.rng), mutations: 0, lineage: null };
+  const dice = spawnDice(ctx, options.region ?? "");
+  const sex = dice() < 0.5 ? "female" : "male";
+  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterPoints((options.level ?? rollLevel(dice, world.regions.get(options.region ?? "")?.maxLevel ?? WILD_LEVELS.max)) - 1, WILD_STATS, dice), mutations: 0, lineage: null };
   const level = 1 + WILD_STATS.reduce((sum, stat) => sum + genes.wild[stat], 0);
-  ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
+  ctx.scene.entity.spawn(species, { id, position, rotationY: dice() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
   const creature: Creature = {
     id,
     species,
@@ -578,7 +602,10 @@ function tickHerds(ctx: GameContext, world: World, here: readonly [number, numbe
     if (point === null) continue;
     // The very first fill aside, wait until the survivor has wandered off.
     const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < REFILL_UNSEEN;
-    if (near || spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species);
+    // In plain view it waits for the survivor to look away; a spot with no room for the body (a trunk, the
+    // sea) tries again in a few seconds rather than a whole respawn later.
+    if (near) world.director.notifyRemoved(request.region, request.species, undefined, { delay: REFILL_RETRY_SEEN });
+    else if (spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species, undefined, { delay: REFILL_RETRY_BLOCKED });
   }
   world.populated = true;
 }
@@ -1333,7 +1360,12 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     }
     if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
     if (record !== null) rideShoulder(ctx, creature, record.command);
-    else burrow(ctx, creature, step.mode);
+    else {
+      burrow(ctx, creature, step.mode);
+      // A wild bot's eyes flare while the broadcast overclocks it.
+      const glow = world.storm ? 1.8 : null;
+      if ((self?.glow ?? null) !== glow) ctx.scene.entity.update(creature.id, { glow });
+    }
   }
 
   const here = owner?.position ?? null;
@@ -2396,6 +2428,7 @@ interface CreaturesSave {
   storm?: boolean;
   stormsEnded?: boolean;
   carriers?: CarrierState;
+  streams?: Record<string, number>;
 }
 
 export function creaturesSave(ctx: GameContext) {
@@ -2416,6 +2449,7 @@ export function creaturesSave(ctx: GameContext) {
         storm: world.storm,
         stormsEnded: world.stormsEnded,
         carriers: world.carriers.snapshot(),
+        streams: Object.fromEntries(world.streams),
       };
     },
     hydrate: (data: CreaturesSave) => {
@@ -2444,6 +2478,7 @@ export function creaturesSave(ctx: GameContext) {
       world.carriers = createCarrierField({ solidsLayer: "fernwild:carriers" });
       for (const creature of world.creatures.values()) mountDeck(world, creature);
       if (data.carriers !== undefined) world.carriers.restore(data.carriers);
+      world.streams = new Map(Object.entries(data.streams ?? {}) as [string, RandomSeed][]);
       world.storm = data.storm ?? false;
       world.stormsEnded = data.stormsEnded ?? false;
     },
@@ -2474,6 +2509,7 @@ export function resetCreatures(ctx: GameContext): void {
   world.pinged.clear();
   world.puppeted.clear();
   world.carriers = createCarrierField({ solidsLayer: "fernwild:carriers" });
+  world.streams.clear();
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */

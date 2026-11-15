@@ -273,3 +273,13 @@ describe("createPopulationDirector", () => {
     expect(director.alive("a", "x")).toBe(0);
   });
 });
+
+test("each region rolls from its own stream: adding a region never changes another region's spawns", () => {
+  const beach = { region: "beach", species: [{ species: "a", weight: 1, cap: 3 }, { species: "b", weight: 1, cap: 3 }], spawnPoints: [[0, 0], [5, 0], [0, 5], [5, 5]] as const };
+  const reef = { region: "reef", species: [{ species: "c", weight: 1, cap: 4 }], spawnPoints: [[50, 0], [55, 0]] as const };
+  const run = (regions: readonly (typeof beach | typeof reef)[]) => {
+    const director = createPopulationDirector({ regions: regions.map((region) => ({ ...region, spawnPoints: region.spawnPoints.map((p) => [p[0], p[1]] as const) })), seed: 7 });
+    return director.tick(1).filter((request) => request.region === "beach").map((request) => `${request.species}@${request.point?.join(",")}`);
+  };
+  expect(run([reef, beach])).toEqual(run([beach]));
+});

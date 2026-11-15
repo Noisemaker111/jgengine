@@ -1,6 +1,6 @@
 import type { NavPoint } from "../nav/navGrid";
 import { pickUniform, pickWeighted } from "../random/pick";
-import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
+import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 import { createPacedSchedule, type PacedSchedule } from "../time/pacedSchedule";
 
 /** One species that ambiently populates a region: how heavily it is favoured and its alive ceiling. */
@@ -84,6 +84,12 @@ export interface PopulationDirectorState {
   queue: readonly PopulationRespawnSlot[];
   /** Opaque PRNG cursor — round-trip as part of the state, never read or set it directly. */
   rng: RandomSeed;
+  /**
+   * Opaque per-region PRNG cursors. Each region draws from its own stream, seeded from the director's
+   * seed and the region id, so adding, waking or refilling one region never shifts another's rolls.
+   * Absent on state from before streams; such a state starts each region's stream fresh.
+   */
+  streams?: Record<string, RandomSeed>;
 }
 
 /** Stateful ambient population manager for one world; drive it with `tick` and lifecycle notifications. */
@@ -132,6 +138,7 @@ function cloneState(state: PopulationDirectorState): PopulationDirectorState {
     alive,
     queue: state.queue.map((slot) => ({ region: slot.region, readyAt: slot.readyAt })),
     rng: state.rng,
+    streams: { ...(state.streams ?? {}) },
   };
 }
 
@@ -157,8 +164,17 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
     alive: {},
     queue: [],
     rng: randomSeedFrom(config.seed ?? 1),
+    streams: {},
   };
   let queue: QueuedRefill[] = [];
+
+  /** One roll from `regionId`'s own stream. */
+  const roll = (regionId: string): number => {
+    const streams = (state.streams ??= {});
+    const [value, next] = stepRandomSeed(streams[regionId] ?? randomSeedFrom(((config.seed ?? 1) ^ hashString(regionId)) | 0));
+    streams[regionId] = next;
+    return value;
+  };
 
   const totalCap = (region: PopulationRegionConfig): number => {
     let sum = 0;
@@ -214,9 +230,8 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       total += entry.weight ?? 1;
     }
     if (eligible.length === 0 || total <= 0) return null;
-    const [roll, nextRng] = stepRandomSeed(state.rng);
-    state.rng = nextRng;
-    return pickWeighted(() => roll, eligible, (entry) => entry.weight ?? 1)?.species ?? null;
+    const value = roll(region.region);
+    return pickWeighted(() => value, eligible, (entry) => entry.weight ?? 1)?.species ?? null;
   };
 
   const choosePoint = (
@@ -225,13 +240,12 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
   ): NavPoint | undefined => {
     const points = region.spawnPoints;
     if (points === undefined || points.length === 0) return undefined;
-    const [roll, nextRng] = stepRandomSeed(state.rng);
-    state.rng = nextRng;
+    const value = roll(region.region);
     if (ctx?.pickSpawnPoint !== undefined) {
-      const chosen = ctx.pickSpawnPoint(region.region, points, roll);
+      const chosen = ctx.pickSpawnPoint(region.region, points, value);
       return chosen ?? undefined;
     }
-    return pickUniform(() => roll, points);
+    return pickUniform(() => value, points);
   };
 
   return {
