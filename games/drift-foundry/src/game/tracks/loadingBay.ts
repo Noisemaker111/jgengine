@@ -56,6 +56,8 @@ export const LOADING_BAY: TrackDef = {
   sky: { horizonColor: "#d2dae0", zenithColor: "#7d8b98", sunIntensity: 1.9, ambientIntensity: 1.15 },
   baseLevel: 0,
   floor: "#8f8f8a",
+  // Sodium high-bays: a warm orange key, a brown-gold bounce off the concrete.
+  light: { key: { intensity: 0.95, color: "#ffa14a" }, fill: { intensity: 0.72, color: "#ffb36e", groundColor: "#5c4128" }, environment: 0.55, exposure: 0.97 },
   rivalTake: { rival_brick: ["trailer-cut"], rival_twins: ["trailer-cut"] },
   par: 64,
   stock: {

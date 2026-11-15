@@ -1,7 +1,7 @@
 # Cleanup on Aisle 9
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **0/17 proven · 17 missing** · `jgengine suite drift-foundry`
+Game suite: **17/17 proven** · `jgengine suite drift-foundry`
 <!-- /suite-score -->
 
 Physics racing in shopping carts through a gigantic mega-store at closing time. The PA announces

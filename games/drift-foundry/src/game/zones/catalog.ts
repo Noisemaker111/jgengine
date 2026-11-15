@@ -1,6 +1,7 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "@jgengine/core/buildings/buildings";
 import type { BiomeFog, BiomeSky, TerrainColors } from "@jgengine/core/world/features";
 import { libraryFacade } from "../world/librarySurface";
+import type { DepartmentLight } from "../tracks/types";
 import { EXIT_Z, ZONE_A_END, ZONE_B_END } from "../run/constants";
 
 export type ZoneId = "snacks" | "frozen" | "bulk";
@@ -25,6 +26,8 @@ export interface TrackZone {
   wallColor: string;
   /** Floor under the casters - mopped vinyl, frosted tile or dusty concrete decide how much grip the cart gets. */
   surface: ZoneSurface;
+  /** The section's own light over the store rig (Aisle 9 only, where run metres are world z). */
+  light?: DepartmentLight;
 }
 
 /**
@@ -85,6 +88,8 @@ export const ZONES: readonly ZoneDef[] = [
   {
     id: "frozen",
     label: "FROZEN FOODS",
+    // The freezer cases throw a cold blue light across the iced floor.
+    light: { key: { intensity: 0.9, color: "#cfe4ff" }, fill: { intensity: 1.08, color: "#b4d2ff", groundColor: "#5f7ea6" }, environment: 0.9 },
     radioName: "FROZEN",
     start: ZONE_A_END,
     end: ZONE_B_END,

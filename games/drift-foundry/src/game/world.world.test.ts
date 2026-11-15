@@ -102,8 +102,24 @@ describe("drift-foundry world", () => {
     const bands = world.kind === "environment" ? world.terrain?.biomeBands ?? [] : [];
     for (const track of laid) expect(bands.some((band) => band.z === track.def.bandZ && band.sky === track.def.sky)).toBe(true);
     expect(new Set(laid.map((track) => track.def.sky.horizonColor)).size).toBe(laid.length);
-    // Band weather follows the camera everywhere, so it would rain inside the store: no department sets it.
-    expect(bands.filter((band) => band.weather !== undefined)).toHaveLength(0);
+    // Only the outdoor Garden Centre sets weather, and its rain is bounded to its own band: it covers
+    // the whole garden course and stops short of every indoor department.
+    expect(bands.filter((band) => band.weather !== undefined).map((band) => band.z)).toEqual([trackById("garden-center")!.def.bandZ]);
+    const weather = world.kind === "environment" ? [world.weather ?? []].flat() : [];
+    expect(weather).toHaveLength(1);
+    const rain = weather[0]!;
+    expect(rain.kind).toBe("rain");
+    const bounds = rain.bounds!;
+    const [, cz] = bounds.position ?? [0, 0];
+    const minZ = cz - bounds.d / 2 - (bounds.fade ?? 0);
+    const maxZ = cz + bounds.d / 2 + (bounds.fade ?? 0);
+    const garden = trackById("garden-center")!.course.bounds;
+    expect(minZ).toBeLessThan(garden.minZ);
+    expect(maxZ).toBeGreaterThan(garden.maxZ);
+    for (const track of TRACKS) {
+      if (track.def.id === "garden-center") continue;
+      expect(track.course.bounds.minZ > maxZ || track.course.bounds.maxZ < minZ).toBe(true);
+    }
     expect(summary.counts.water ?? (world.kind === "environment" ? [world.water].flat().length : 0)).toBe(laid.filter((track) => track.def.liquid !== undefined).length);
     // The terrain is the course's own grade: a kart on the smelter's top deck stands on it.
     const top = trackById("toy-aisle")!.point("main", 600);

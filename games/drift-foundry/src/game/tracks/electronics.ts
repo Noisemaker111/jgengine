@@ -67,6 +67,8 @@ export const ELECTRONICS: TrackDef = {
   baseLevel: 0,
   // Lights out: dark demo-floor carpet, so the TV walls are the light in the room.
   floor: "#2c3048",
+  // The showroom's house lights are off: a faint blue spill and the screens themselves.
+  light: { key: { intensity: 0.14, color: "#7f8cff" }, fill: { intensity: 0.32, color: "#4a5bb0", groundColor: "#1a1d36" }, environment: 0.22 },
   rivalTake: { rival_brick: ["stockroom"] },
   par: 63,
   stock: {

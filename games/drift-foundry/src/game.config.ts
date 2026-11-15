@@ -13,6 +13,7 @@ import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { probeReadings } from "./game/gameCommands";
+import { storeLightingZones } from "./game/world/lighting";
 import { physics, world } from "./world";
 
 export const game = defineGame({
@@ -143,6 +144,9 @@ export const game = defineGame({
         },
         { color: "#dfe8ff", intensity: 0.35, position: [82, 60, 96] },
       ],
+      // Each department re-lights the rig as the camera drives in: Electronics a dark showroom,
+      // the Loading Bay sodium orange, Frozen Foods cold blue, the Garden Centre an overcast sky.
+      zones: storeLightingZones(),
     },
     postProcessing: {
       toneMapping: "aces",

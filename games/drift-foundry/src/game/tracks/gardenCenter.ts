@@ -58,6 +58,9 @@ export const GARDEN_CENTER: TrackDef = {
   sky: { horizonColor: "#8a9692", zenithColor: "#3a4448", sunIntensity: 1.0, ambientIntensity: 1.1 },
   baseLevel: 0,
   floor: "#9c8f78",
+  // Out under a grey sky: the rain falls over this department only.
+  weather: "rain",
+  light: { key: { intensity: 0.75, color: "#e6ecf2" }, fill: { intensity: 1.12, color: "#d2dce2", groundColor: "#4c5a3e" } },
   liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
   rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,

@@ -97,10 +97,18 @@ function author(name, build) {
 // ---------------------------------------------------------------- carts and shoppers
 
 /**
+ * Where the push bar sits on every cart, in the cart's own space: the player's one shopper model
+ * stands behind whichever chassis is under them, so every chassis puts its bar here.
+ */
+const GRIP = { y: 1.27, z: -.99 };
+/** Radius of the push bar the shopper's hands close around. */
+const BAR = .055;
+
+/**
  * The shopping cart, nose toward +z: four casters, a wire basket that flares toward the front, a
  * fold-down child seat at the back and the push handle. Every chassis is built from the same parts.
  */
-function cart(b, { length = 2.0, width = 1.25, height = 1.15, handle = RED, wire = CHROME, seat = true, base = .32 } = {}) {
+function cart(b, { length = 2.0, width = 1.25, height = 1.15, handle = RED, wire = CHROME, seat = true, base = .32, bar = true } = {}) {
   const { box, cylinder, tube } = b;
   const half = length / 2, w = width / 2;
   // Casters and the lower frame.
@@ -143,12 +151,16 @@ function cart(b, { length = 2.0, width = 1.25, height = 1.15, handle = RED, wire
     box([w * 1.4, .05, .38], [0, top - .25, back + .22], handle);
     box([w * 1.4, .32, .04], [0, top - .1, back + .02], handle);
   }
-  for (const x of [-1, 1]) tube([x * (w + flare), top, back - .05], [x * (w + flare) * .95, top + .12, back - .32], .035, wire);
-  cylinder(.055, (w + flare) * 2, [0, top + .12, back - .34], handle, [0, 0, Math.PI / 2]);
+  if (!bar) return;
+  for (const x of [-1, 1]) tube([x * (w + flare), top, back - .05], [x * (w + flare) * .95, GRIP.y, GRIP.z + .02], .035, wire);
+  cylinder(BAR, (w + flare) * 2, [0, GRIP.y, GRIP.z], handle, [0, 0, Math.PI / 2]);
 }
 
-/** A blocky shopper standing behind the handle, hands on the bar. */
-function shopper(b, { z = -1.38, shirt = '#2fa8ff', pants = '#2b3a5c', skin = SKIN, hair = '#4a2a18', height = 1, bulk = 1, hat, cap, bun, glasses, headband, vest, handleY = 1.27, handleZ = -.99, lean = .18 } = {}) {
+/**
+ * A blocky shopper standing behind the handle, hands closed over the bar: each fist sits on the
+ * bar's back and top, so the forearm stops short of the bar instead of running through it.
+ */
+function shopper(b, { z = -1.38, shirt = '#2fa8ff', pants = '#2b3a5c', skin = SKIN, hair = '#4a2a18', height = 1, bulk = 1, hat, cap, bun, glasses, headband, vest, handleY = GRIP.y, handleZ = GRIP.z, lean = .18 } = {}) {
   const { box, sphere, tube, cylinder } = b;
   const h = height;
   for (const x of [-.13, .13]) {
@@ -168,9 +180,11 @@ function shopper(b, { z = -1.38, shirt = '#2fa8ff', pants = '#2b3a5c', skin = SK
   if (hat) hat(b, [0, chest + .3 * h, headZ]);
   for (const x of [-1, 1]) {
     const shoulder = [x * .24 * bulk, chest - .02, z + lean * .55];
-    const hand = [x * .28, handleY, handleZ];
-    tube(shoulder, hand, .055 * bulk, shirt);
-    sphere(.06, hand, skin);
+    const fist = [x * .3, handleY + BAR * .5, handleZ - BAR * 1.1];
+    const wrist = [x * .3, handleY + BAR * .7, handleZ - BAR * 2.2];
+    tube(shoulder, wrist, .055 * Math.min(bulk, 1.2), shirt);
+    tube(wrist, fist, .045, skin);
+    sphere(.07, fist, skin, [1.15, .9, 1]);
   }
 }
 
@@ -192,9 +206,9 @@ author('cart-flatbed', (b) => {
   box([1.55, .1, 2.6], [0, .34, .15], '#ff7a1e');
   for (const x of [-.65, .65]) for (const z of [-.95, 1.25]) { cylinder(.16, .12, [x, .16, z], INK, [0, 0, Math.PI / 2]); tube([x, .16, z], [x, .3, z], .04, CHROME); }
   for (const x of [-.75, .75]) tube([x, .4, -1.1], [x, .4, 1.4], .04, '#ff7a1e');
-  for (const x of [-.7, .7]) tube([x, .4, -1.15], [x, 1.25, -1.15], .045, '#ff7a1e');
-  tube([-.7, 1.25, -1.15], [.7, 1.25, -1.15], .05, RED);
-  for (let i = 0; i < 5; i++) tube([-.7, .45 + i * .17, -1.15], [.7, .45 + i * .17, -1.15], .02, '#ff7a1e');
+  for (const x of [-.7, .7]) tube([x, .4, -1.1], [x, GRIP.y, GRIP.z], .045, '#ff7a1e');
+  cylinder(BAR, 1.5, [0, GRIP.y, GRIP.z], RED, [0, 0, Math.PI / 2]);
+  for (let i = 0; i < 5; i++) { const t = (i + .5) / 5.5; tube([-.7, .45 + t * (GRIP.y - .45), -1.1 + t * (GRIP.z + 1.1)], [.7, .45 + t * (GRIP.y - .45), -1.1 + t * (GRIP.z + 1.1)], .02, '#ff7a1e'); }
   box([1.4, .05, .25], [0, .4, 1.4], YELLOW);
 });
 author('cart-scooter', (b) => {
@@ -206,7 +220,10 @@ author('cart-scooter', (b) => {
   tube([0, .4, .35], [0, 1.15, .1], .06, '#3a8f5a');
   tube([-.35, 1.2, .05], [.35, 1.2, .05], .05, INK);
   box([.3, .14, .16], [0, 1.15, .12], '*#5de0ce');
-  cart({ ...b }, { length: .9, width: 1.0, height: 1.1, seat: false, base: .5 });
+  cart({ ...b }, { length: .9, width: 1.0, height: 1.1, seat: false, base: .5, bar: false });
+  // The attendant's push bar off the back of the seat, where the shopper's hands land.
+  for (const x of [-.42, .42]) tube([x, .5, -1.05], [x, GRIP.y, GRIP.z], .04, INK);
+  cylinder(BAR, .95, [0, GRIP.y, GRIP.z], '#3a8f5a', [0, 0, Math.PI / 2]);
   tube([.4, .45, -1.1], [.4, 2.3, -1.1], .015, WHITE);
   box([.02, .3, .4], [.4, 2.15, -1.3], '#ff8a1e');
   box([1.0, .06, .2], [0, .32, .95], YELLOW);
