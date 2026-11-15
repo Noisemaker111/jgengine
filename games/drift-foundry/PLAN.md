@@ -1,29 +1,21 @@
 # Cleanup on Aisle 9 — plan
 
 Physics racing in shopping carts through a mega-store at closing time (package id stays `drift-foundry`).
+The design and what the build runs now are in `README.md`; the look in `src/art-direction.md`.
 
-## Handoff
+## State
 
-Done (committed):
-- Content ids renamed to store vocabulary (tracks → departments, rivals, events, mods, hazard kinds).
-- `src/game/cart/`: goods + 5 power-ups, basket load handling (heavy = momentum, light = twitchy),
-  4 chassis (cart corral) with squeaky-wheel wobble, style meter (drift/end-cap/air/back-bar ride/mop
-  swat, combos), self-checkout receipt + best receipts, shelf grab spots per department.
-- Session integration: grabs, power-up use (F/Q), back-bar ride (C), marbles/mop stuns, Officer Dale
-  (blocker rival on Lights Out / Closing Time, tackles), checkout pays 25% of cart value; parked runs
-  keep the basket. New `value` event metric (Cart Stuffer).
-- Re-themed tracks, zones, events, shifts (PA announcements), career, UI (HUD basket/pop, receipt,
-  cart corral pane), look (bright interior, vivid-pop LUT, Lilita One/Nunito), procedural art in
-  `scripts/author-models.mjs` (carts, shoppers, mods, products, fixtures, shutter+scrubber).
-- Tests updated + new `cart/cart.test.ts`, `cart/session.cart.test.ts`; last full run 220/220 green.
+- Built: carts with weight-driven handling, shelf grabs, five power-ups, style meter, self-checkout
+  receipt, six departments, late-shopper rivals with lines and Officer Dale, shutters + floor scrubber,
+  cart corral, 12 mods, onboarding tips, juice, world-save fallback, original procedural art.
+- Proven: 223 unit tests, 17/17 game-suite proofs, boot capability probe, screenshots of Aisle 9,
+  Produce, Garden Centre, Electronics and Toy Aisle (swiftshader, medium tier).
 
-In progress (WIP commit): editor scene re-authored via `scripts/author-{corridor,yard,ambience}.ts`
-(shelving runs, end-caps, freezer fog, scrubber suds, pigeons) and `ambience.test.ts` updated.
+## Next
 
-Next steps:
-1. `bun run test games/drift-foundry` and `bun --cwd=games/drift-foundry run check-types`.
-2. Boot + screenshot: `bun run shoot drift-foundry --mode play --draft --inspect`; fix visual defects
-   (indoor sky/fog, shelving scale, ceiling-light heights, HUD layout on phone).
-3. Rewrite `README.md` (design checklist) and `src/art-direction.md`, `ASSETS.md`, CREDITS for the store;
-   update `games/CONTENT-PROVENANCE.md` row and `apps/web/.../HomeHero.tsx` idea text.
-4. `bun run gen`, `bun run verify:fast`; commit (no push/lane:close).
+1. Department sky bands: the dome stays the global bright haze, so Electronics never gets its dark
+   "lights out" sky and the Garden Centre never reads as outdoors at dusk. Needs a per-band sky on
+   the engine's world sky (an upstream feature) or a per-track sky swap when the run changes track.
+2. The Garden Centre's rain area warning (`[jgengine:rain] area 800x110x80`): weather is set per biome
+   band and the engine sizes the volume from the band; scale it at the engine or drop weather there.
+3. A mid-run reload flow for the basket (`proofs/flows/mid-run-reload.flow.ts` checks mods only).
