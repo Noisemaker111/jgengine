@@ -12,6 +12,7 @@ import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
 import { RoomModules } from "./game/render/RoomModules";
+import { StationBackdrop } from "./game/render/StationBackdrop";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
@@ -37,7 +38,7 @@ export const game = defineGame({
   scene: {
     // The boarding house's modules and neon sign are drawn from the room model; the capture binding
     // hands the live frame to the save card's thumbnail request.
-    WorldOverlay: (props) => createElement(Fragment, {}, createElement(RoomModules, { ctx: props.ctx }), createElement(SceneCaptureBinding, {})),
+    WorldOverlay: (props) => createElement(Fragment, {}, createElement(StationBackdrop, { ctx: props.ctx }), createElement(RoomModules, { ctx: props.ctx }), createElement(SceneCaptureBinding, {})),
     editorLayers,
     objectModels,
     renderEntity,
@@ -134,9 +135,10 @@ export const game = defineGame({
     lens: { frustum: { far: 1200 } },
     rigs: {
       rts: {
-        start: { x: 0, z: -11 },
-        height: 20,
-        pitch: 1.0,
+        start: { x: 0, z: -16 },
+        height: 18,
+        // Shallow enough that the deck edge, the trusses and black space show above the rooms.
+        pitch: 0.64,
         // Looking north from the commons: the rooms sit behind the airlock wall with their cut-away
         // door side facing the camera.
         yaw: Math.PI,

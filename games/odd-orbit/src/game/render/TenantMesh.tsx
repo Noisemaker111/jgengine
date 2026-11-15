@@ -299,10 +299,11 @@ export function tenantMeshDraw(ctx: GameContext | null, entity: SceneEntity): En
   const halo = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.35, depthWrite: false }));
   halo.rotation.x = -Math.PI / 2;
   halo.position.y = 0.03;
-  halo.scale.setScalar(0.55);
+  halo.scale.setScalar(0.85);
   group.add(halo);
   if (rig !== null) {
-    const scale = 0.9 + (plan!.size - 1) * 0.4;
+    // Tenants read at the house camera: about a metre and a half tall, the bigger species bigger.
+    const scale = 1.45 + (plan!.size - 1) * 0.5;
     rig.root.scale.setScalar(scale);
     group.add(rig.root);
   }

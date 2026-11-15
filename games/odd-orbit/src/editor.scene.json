@@ -512,20 +512,6 @@
   },
   "markers": [
     {
-      "id": "hab:hab_corner:-12:-9",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": -9
-      },
-      "label": "hab_corner",
-      "meta": {
-        "object": "hab_corner",
-        "group": "hab"
-      }
-    },
-    {
       "id": "hab:hab_wall:-9:-9",
       "kind": "prop",
       "position": {
@@ -626,81 +612,6 @@
       "label": "hab_wall",
       "meta": {
         "object": "hab_wall",
-        "group": "hab"
-      }
-    },
-    {
-      "id": "hab:hab_wall_window:-12:-6",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": -6
-      },
-      "rotationY": 3.141592653589793,
-      "label": "hab_wall_window",
-      "meta": {
-        "object": "hab_wall_window",
-        "group": "hab"
-      }
-    },
-    {
-      "id": "hab:hab_wall:-12:-3",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": -3
-      },
-      "rotationY": 3.141592653589793,
-      "label": "hab_wall",
-      "meta": {
-        "object": "hab_wall",
-        "group": "hab"
-      }
-    },
-    {
-      "id": "hab:hab_wall_window:-12:0",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": 0
-      },
-      "rotationY": 3.141592653589793,
-      "label": "hab_wall_window",
-      "meta": {
-        "object": "hab_wall_window",
-        "group": "hab"
-      }
-    },
-    {
-      "id": "hab:hab_wall:-12:3",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": 3
-      },
-      "rotationY": 3.141592653589793,
-      "label": "hab_wall",
-      "meta": {
-        "object": "hab_wall",
-        "group": "hab"
-      }
-    },
-    {
-      "id": "hab:hab_wall_window:-12:6",
-      "kind": "prop",
-      "position": {
-        "x": -12,
-        "y": 0,
-        "z": 6
-      },
-      "rotationY": 3.141592653589793,
-      "label": "hab_wall_window",
-      "meta": {
-        "object": "hab_wall_window",
         "group": "hab"
       }
     },
@@ -808,7 +719,7 @@
       "position": {
         "x": 0,
         "y": 0,
-        "z": 6.5
+        "z": 3.8
       },
       "label": "chat_ring",
       "meta": {
@@ -820,9 +731,9 @@
       "id": "starter:holo_arcade",
       "kind": "prop",
       "position": {
-        "x": -8,
+        "x": -6.5,
         "y": 0,
-        "z": 3.5
+        "z": 3.2
       },
       "label": "holo_arcade",
       "meta": {
@@ -834,9 +745,9 @@
       "id": "starter:work_console",
       "kind": "prop",
       "position": {
-        "x": 8,
+        "x": 6.5,
         "y": 0,
-        "z": 4
+        "z": 3.4
       },
       "label": "work_console",
       "meta": {
@@ -1014,34 +925,6 @@
       }
     },
     {
-      "id": "d03:decor_spire:45",
-      "kind": "prop",
-      "position": {
-        "x": -30,
-        "y": 0,
-        "z": -12
-      },
-      "rotationY": -4.32,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:46",
-      "kind": "prop",
-      "position": {
-        "x": 30,
-        "y": 0,
-        "z": -16
-      },
-      "rotationY": 1.44,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
       "id": "d03:decor_spire:47",
       "kind": "prop",
       "position": {
@@ -1064,90 +947,6 @@
         "z": 24
       },
       "rotationY": 6.04,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:49",
-      "kind": "prop",
-      "position": {
-        "x": -2,
-        "y": 0,
-        "z": -34
-      },
-      "rotationY": -4.6,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:50",
-      "kind": "prop",
-      "position": {
-        "x": 12,
-        "y": 0,
-        "z": -33
-      },
-      "rotationY": -2.16,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:51",
-      "kind": "prop",
-      "position": {
-        "x": -15,
-        "y": 0,
-        "z": 33
-      },
-      "rotationY": 5.44,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:52",
-      "kind": "prop",
-      "position": {
-        "x": 17,
-        "y": 0,
-        "z": 32
-      },
-      "rotationY": 5.04,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:53",
-      "kind": "prop",
-      "position": {
-        "x": -33,
-        "y": 0,
-        "z": 6
-      },
-      "rotationY": -1.88,
-      "meta": {
-        "object": "decor_spire",
-        "group": "decor"
-      }
-    },
-    {
-      "id": "d03:decor_spire:54",
-      "kind": "prop",
-      "position": {
-        "x": 33,
-        "y": 0,
-        "z": 10
-      },
-      "rotationY": 5.32,
       "meta": {
         "object": "decor_spire",
         "group": "decor"
@@ -1189,7 +988,7 @@
       "position": {
         "x": 0,
         "y": 0,
-        "z": 5.6
+        "z": 3
       },
       "rotationY": 0,
       "label": "decor_rug_mint",
@@ -1202,9 +1001,9 @@
       "id": "w3:decor_rug_butter:3",
       "kind": "prop",
       "position": {
-        "x": 8,
+        "x": 6.5,
         "y": 0,
-        "z": 3.4
+        "z": 2.8
       },
       "rotationY": 0,
       "label": "decor_rug_butter",
@@ -1217,9 +1016,9 @@
       "id": "w3:decor_rug_pink:4",
       "kind": "prop",
       "position": {
-        "x": -8,
+        "x": -6.5,
         "y": 0,
-        "z": 2.6
+        "z": 2.4
       },
       "rotationY": 0,
       "label": "decor_rug_pink",
@@ -1277,9 +1076,9 @@
       "id": "w3:decor_lamp_table:8",
       "kind": "prop",
       "position": {
-        "x": 3,
+        "x": 3.6,
         "y": 0,
-        "z": 5
+        "z": 4.4
       },
       "rotationY": 0,
       "label": "decor_lamp_table",
@@ -1292,9 +1091,9 @@
       "id": "w3:decor_lamp_table:9",
       "kind": "prop",
       "position": {
-        "x": -3,
+        "x": -3.6,
         "y": 0,
-        "z": 7.6
+        "z": 4.4
       },
       "rotationY": 0,
       "label": "decor_lamp_table",
@@ -1307,9 +1106,9 @@
       "id": "w3:decor_shelf:10",
       "kind": "prop",
       "position": {
-        "x": -11,
+        "x": -9.5,
         "y": 0,
-        "z": -5.2
+        "z": -5.4
       },
       "rotationY": 3.141592653589793,
       "label": "decor_shelf",
@@ -1322,9 +1121,9 @@
       "id": "w3:decor_shelf:11",
       "kind": "prop",
       "position": {
-        "x": -11,
+        "x": 9.5,
         "y": 0,
-        "z": -1.6
+        "z": -2
       },
       "rotationY": 3.141592653589793,
       "label": "decor_shelf",
@@ -1382,9 +1181,9 @@
       "id": "w3:decor_armchair:15",
       "kind": "prop",
       "position": {
-        "x": -3.4,
+        "x": -2.6,
         "y": 0,
-        "z": 3.6
+        "z": 5.6
       },
       "rotationY": 0.7853981633974483,
       "label": "decor_armchair",
@@ -1397,9 +1196,9 @@
       "id": "w3:decor_armchair:16",
       "kind": "prop",
       "position": {
-        "x": 4.4,
+        "x": 2.8,
         "y": 0,
-        "z": 7.4
+        "z": 5.6
       },
       "rotationY": -0.9424777960769379,
       "label": "decor_armchair",
@@ -1412,9 +1211,9 @@
       "id": "w3:decor_stool:17",
       "kind": "prop",
       "position": {
-        "x": -9.6,
+        "x": -8.6,
         "y": 0,
-        "z": 5.6
+        "z": 5
       },
       "rotationY": 0,
       "label": "decor_stool",
@@ -1427,9 +1226,9 @@
       "id": "w3:decor_books:18",
       "kind": "prop",
       "position": {
-        "x": -10.6,
+        "x": -9.4,
         "y": 0,
-        "z": 0.8
+        "z": 0.4
       },
       "rotationY": 0,
       "label": "decor_books",

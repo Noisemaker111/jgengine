@@ -111,6 +111,16 @@ function buildRoom(state: HouseholdState, room: RoomState, now: number, anims: A
     shade.scale.set(0.22, 0.16, 0.22);
     shade.position.set(w / 2 - 0.55, 1.45, -d / 2 + 0.6);
     g.add(shade);
+    // A potted plant by the door: everyone keeps one, even Pip-9 (plastic).
+    const pot = new THREE.MeshStandardMaterial({ color: "#c97b5a", roughness: 0.8 });
+    const leaf = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(((hue + 120) % 360) / 360, 0.5, 0.55), roughness: 0.7 });
+    g.add(block(pot, [0.45, 0.4, 0.45], [w / 2 - 0.6, 0.5, d / 2 - 0.7]));
+    for (const [dx, dy, dz, r] of [[0, 0.95, 0, 0.32], [0.18, 1.15, 0.08, 0.22], [-0.16, 1.1, -0.1, 0.24]] as const) {
+      const ball = new THREE.Mesh(geo.sphere, leaf);
+      ball.scale.setScalar(r);
+      ball.position.set(w / 2 - 0.6 + dx, dy, d / 2 - 0.7 + dz);
+      g.add(ball);
+    }
     const bulb = new THREE.Mesh(geo.sphere, anim.lamp);
     bulb.scale.setScalar(0.24);
     bulb.position.set(0, 1.85, d / 2);

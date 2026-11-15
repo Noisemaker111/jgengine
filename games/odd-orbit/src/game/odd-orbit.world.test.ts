@@ -57,11 +57,11 @@ describe("odd-orbit world", () => {
     expect(paint.surfaceAt(26, 20)).toBe("rock");
     expect(world.sculpt.offsets.every(offset => offset === 0)).toBe(true);
     expect(world.sky?.timeOfDay).toBe(false);
-    // The authored set: 13 commons shell pieces, 6 starter furnishings, the commons' own dressing and
+    // The authored set: 7 commons shell pieces (the north wall and its airlock; the west side is open), 6 starter furnishings, the commons' own dressing and
     // the station masts outside, and the eight room berths the boarding house docks modules on.
-    expect(editorLayers.markers.filter((marker) => marker.meta?.["group"] === "hab")).toHaveLength(13);
+    expect(editorLayers.markers.filter((marker) => marker.meta?.["group"] === "hab")).toHaveLength(7);
     expect(editorLayers.markers.filter((marker) => marker.meta?.["group"] === "starter")).toHaveLength(6);
-    expect(editorLayers.markers.filter((marker) => marker.meta?.["group"] === "decor").length).toBeGreaterThanOrEqual(40);
+    expect(editorLayers.markers.filter((marker) => marker.meta?.["group"] === "decor").length).toBeGreaterThanOrEqual(35);
     expect(editorLayers.markers.filter((marker) => marker.kind === "room_berth")).toHaveLength(8);
     const starter = editorLayers.markers.find(marker => marker.id === "starter:bloom_planter");
     expect(starter?.position).toEqual({ x: 0, y: 0, z: -2 });

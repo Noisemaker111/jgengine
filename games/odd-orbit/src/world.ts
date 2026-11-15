@@ -10,7 +10,8 @@ import { libraryGroundMaps } from "./game/assets";
 export const WORLD_SEED = "odd-orbit-habitat-2026";
 export const DAY_LENGTH = 210;
 export const PLOT = { minX: -26, maxX: 26, minZ: -26, maxZ: 26 } as const;
-const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: 240, d: 240 } });
+// The deck is the authored plate and nothing more: past its trusses is open space, not more ground.
+const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: 64, d: 64 }, padding: 0 });
 
 const terrainDescriptor = terrain({
   bounds: authored.bounds,
