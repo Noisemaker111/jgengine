@@ -38,6 +38,8 @@ export let HAS_FLANK = false;
 export interface BuildPlot {
   id: string;
   position: Waypoint;
+  /** An empty lot that only takes a worker once the town buys it open. */
+  spare: boolean;
 }
 
 export let BUILD_PLOTS: readonly BuildPlot[] = [];
@@ -57,7 +59,7 @@ export function rebindPath(): void {
     [SPAWN_POINT_KEY]: creepPathLength(PATH_WAYPOINTS_XZ),
     [FLANK_POINT_KEY]: HAS_FLANK ? creepPathLength(FLANK_WAYPOINTS_XZ) : creepPathLength(PATH_WAYPOINTS_XZ),
   };
-  BUILD_PLOTS = BUILD_PLOT_XZ.map((plot) => ({ id: plot.id, position: lift(plot.xz) }));
+  BUILD_PLOTS = BUILD_PLOT_XZ.map((plot) => ({ id: plot.id, position: lift(plot.xz), spare: plot.spare }));
 }
 rebindPath();
 
@@ -70,10 +72,10 @@ export function routeOf(entry: string): readonly Waypoint[] {
   return ROUTES[entry] ?? PATH_WAYPOINTS;
 }
 
-export function nearestPlot(point: Waypoint, maxDistance: number): BuildPlot | null {
+export function nearestPlot(point: Waypoint, maxDistance: number, plots: readonly BuildPlot[] = BUILD_PLOTS): BuildPlot | null {
   let best: BuildPlot | null = null;
   let bestDistance = maxDistance;
-  for (const plot of BUILD_PLOTS) {
+  for (const plot of plots) {
     const dx = plot.position[0] - point[0];
     const dz = plot.position[2] - point[2];
     const distance = Math.hypot(dx, dz);

@@ -688,6 +688,34 @@
         "model": "wagon",
         "clearance": 1.5
       }
+    },
+    {
+      "id": "plot-12",
+      "kind": "prop",
+      "position": {
+        "x": 32,
+        "y": 0,
+        "z": -8
+      },
+      "label": "Spare lot 12",
+      "meta": {
+        "clearance": 3,
+        "spare": true
+      }
+    },
+    {
+      "id": "plot-13",
+      "kind": "prop",
+      "position": {
+        "x": 9,
+        "y": 0,
+        "z": 4
+      },
+      "label": "Spare lot 13",
+      "meta": {
+        "clearance": 3,
+        "spare": true
+      }
     }
   ],
   "volumes": [

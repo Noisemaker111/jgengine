@@ -1,4 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { gameClockMs } from "../session";
+import { wifiOff } from "../sinks";
 import { vec3 } from "@jgengine/core/world/vec3";
 
 import { difficultyOf } from "../campaign";
@@ -21,7 +23,7 @@ export interface Strike {
 /** Armor a Wi-Fi router lends tech standing in its signal, the strongest router's only. */
 function boostArmor(ctx: GameContext, creep: CreepRuntime): number {
   const at = ctx.scene.entity.get(creep.instanceId)?.position;
-  if (at === undefined) return 0;
+  if (at === undefined || wifiOff(gameClockMs(ctx))) return 0;
   let best = 0;
   for (const other of session.creeps.values()) {
     if (other.instanceId === creep.instanceId) continue;

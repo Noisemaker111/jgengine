@@ -12,6 +12,7 @@ export type PurseReason =
   | "held-pay"
   | "mail-delivery"
   | "theft"
+  | "town-spend"
   | "tower-build"
   | "tower-upgrade"
   | "tower-sale"
@@ -33,6 +34,7 @@ const EVENT_REASONS: Readonly<Record<string, PurseReason>> = {
   held_pay: "held-pay",
   mail_pay: "mail-delivery",
   theft: "theft",
+  spend: "town-spend",
 };
 
 /** The reason a world call that moved the purse is booked under. */

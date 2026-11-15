@@ -154,6 +154,8 @@ export interface SessionState {
   creepSeq: number;
   /** The School Campus's recess bell: seconds since the last bell and seconds the yard stays full. */
   recess: { clock: number; left: number };
+  /** In-day spending: gear on workers, the town's timed actions, and spare lots bought open (`sinks.ts`). */
+  sinks: { gear: Map<string, { kind: string; untilMs: number }>; outage: Map<string, number>; wifiOffUntilMs: number; spares: Set<string> };
 }
 
 function freshState(): SessionState {
@@ -182,6 +184,7 @@ function freshState(): SessionState {
     inspectedTowerId: null,
     creepSeq: 0,
     recess: { clock: 0, left: 0 },
+    sinks: { gear: new Map(), outage: new Map(), wifiOffUntilMs: 0, spares: new Set() },
   };
 }
 

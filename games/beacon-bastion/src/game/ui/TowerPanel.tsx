@@ -11,7 +11,8 @@ import type { DamageType } from "../combat/damage";
 import { towerDef } from "../entities/towers/catalog";
 import { TOWER_LADDERS } from "../entities/towers/ladders";
 import { keep, MAX_TOWER_LEVEL, sellAction, sellValue, towerOptions, towerStats } from "../keep";
-import { session } from "../session";
+import { gameClockMs, session } from "../session";
+import { GEAR, gearCost } from "../sinks";
 import type { GlyphName } from "./glyphs";
 import { DIM, FIRE, FULL, GOLD, Glyph, Heading, INK, Plank, Row, Tag, Text, usePhone } from "./look";
 
@@ -106,6 +107,14 @@ export function TowerPanel() {
     <Plank minHeight={32} padding={[4, 10, 4, 10]} command={{ name: "cycleAim", input: { instanceId: tower.id } }} label="Aim">
       <Glyph name="eye" size={13} /><Text size={13}>{`Aim: ${AIM_LABEL[stats.aim] ?? stats.aim}`}</Text>{aimKey === null ? null : <Tag size={10}>{aimKey}</Tag>}
     </Plank>
+    {GEAR[tower.kind] === undefined ? null : <Plank minHeight={32} padding={[4, 10, 4, 10]} command={{ name: "town.buy", input: { gear: tower.id } }}
+      label={`Gear: ${GEAR[tower.kind]!.label}`} tooltip={GEAR[tower.kind]!.detail}>
+      <Glyph name="star" size={13} color={GOLD} />
+      <Text size={13} text={bind(() => {
+        const worn = session.sinks.gear.get(tower.id), left = Math.ceil(((worn?.untilMs ?? 0) - gameClockMs(ctx)) / 1000);
+        return left > 0 ? `${GEAR[tower.kind]!.label}: ${left}s left` : `Gear: ${GEAR[tower.kind]!.label} · $${gearCost(tower.kind)}`;
+      })} />
+    </Plank>}
     {fork ? <Tag color={FIRE}>CHOOSE A CAREER — THE OTHER CLOSES</Tag> : null}
     {options.length === 0 ? <Plank disabled>Top of the ladder</Plank> : null}
     <RuneView layout={fork ? "grid" : "stack"} columns={2} gap={6}>{options.map((option) => {

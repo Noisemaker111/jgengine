@@ -14,6 +14,7 @@ import { BLOOD, Glyph, INK, townTheme, Text, usePhone } from "./look";
 import { Memorial } from "./Memorial";
 import { BeaconMenu } from "./menu/BeaconMenu";
 import { TowerPanel } from "./TowerPanel";
+import { TownActions } from "./TownActions";
 import { LandmarkSigns, SpeechBubbles, townRuneProjection } from "./SpeechBubbles";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
@@ -62,6 +63,7 @@ function PlayHud({ notices }: { notices: ReactNode }) {
     </RuneView>
     <RuneView anchor="bottom" safe inset={phone ? 10 : 14}><BuildBar /></RuneView>
     <RuneView anchor="bottom-right" safe inset={phone ? 10 : 16} padding={phone ? [0, 0, 150, 0] : 0}><AbilityStones /></RuneView>
+    <RuneView anchor="bottom-left" safe inset={phone ? 10 : 16} padding={phone ? [0, 0, 150, 0] : 0}><TownActions /></RuneView>
     <RuneView anchor={phone ? "bottom" : "right"} safe inset={16} padding={phone ? [0, 0, 150, 0] : 0}><TowerPanel /></RuneView>
     {notices}
     <Memorial />

@@ -544,6 +544,34 @@
         "model": "lamp",
         "clearance": 1.2
       }
+    },
+    {
+      "id": "plot-12",
+      "kind": "prop",
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 2
+      },
+      "label": "Spare lot 12",
+      "meta": {
+        "clearance": 3,
+        "spare": true
+      }
+    },
+    {
+      "id": "plot-13",
+      "kind": "prop",
+      "position": {
+        "x": 26,
+        "y": 0,
+        "z": -8
+      },
+      "label": "Spare lot 13",
+      "meta": {
+        "clearance": 3,
+        "spare": true
+      }
     }
   ],
   "volumes": [

@@ -126,6 +126,7 @@ export const keep = defineGameSpec({
       held_pay: { world: { "keep.gold": 1 }, note: "The town paid its workers for a clear street." },
       mail_pay: { world: { "keep.gold": 1 }, note: "The mail came in." },
       theft: { world: { "keep.gold": -1 }, note: "A mining rig siphoned the town's cash." },
+      spend: { world: { "keep.gold": -1 }, note: "The town spent cash on gear, a town action or a new lot." },
     },
     totals,
   },

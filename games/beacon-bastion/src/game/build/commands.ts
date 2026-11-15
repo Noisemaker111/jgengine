@@ -7,6 +7,7 @@ import { nextAutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 import { castAt } from "../combat/cast";
 import { AIM_POLICIES, aimAction, keep, runEnded, sellAction, towerOptions, towerStats } from "../keep";
 import { nearestPlot } from "../world/path";
+import { openPlots } from "../sinks";
 import { session } from "../session";
 import { campaign } from "../campaign";
 import { isHired } from "../union";
@@ -35,7 +36,7 @@ const refusal = (result: { reason: string; message: string } | null): Refusal | 
  */
 function rejectBuild(ctx: GameContext, input: BuildPlaceInput): Refusal | null {
   if (session.armedAbility !== null) return null;
-  const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
+  const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS, openPlots());
   if (plot === null) return session.inspectedTowerId === null ? { reason: "no-plot" } : null;
   const world = keep.of(ctx);
   if (world.occupant(plot.id) !== null || session.parcels.has(plot.id)) return null;
@@ -49,7 +50,7 @@ function rejectBuild(ctx: GameContext, input: BuildPlaceInput): Refusal | null {
 function clickPlot(ctx: GameContext, input: BuildPlaceInput): GameContext {
   // An armed ability takes the click: the breaker flips where the player pointed.
   if (castAt(ctx, input.point)) return ctx;
-  const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
+  const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS, openPlots());
   if (plot === null) {
     session.inspectedTowerId = null;
     return ctx;

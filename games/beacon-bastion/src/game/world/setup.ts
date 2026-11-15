@@ -8,6 +8,7 @@ import { creepDef, CREEP_CATALOG } from "../entities/enemies/catalog";
 import { campaign, DIFFICULTY_IDS, rankCouncil, resetCouncil, setDifficulty, type DifficultyId } from "../campaign";
 import { buyUnion, unionRefusal, type TownUpgradeId } from "../union";
 import { bindRunMode, RUN_MODES, type RunMode } from "../waves/mode";
+import { registerSinkCommands } from "../sinks";
 import { setRunModeChoice } from "../campaign";
 import { registerAbilityCommands } from "../combat/cast";
 import { resetSession, session } from "../session";
@@ -132,6 +133,7 @@ export function setupWorld(ctx: GameContext): void {
   registerCaptureCommands(ctx);
   registerAbilityCommands(ctx);
   registerCampaignCommands(ctx);
+  registerSinkCommands(ctx);
   // One command that opens a run from the title, so a capture or a host can start play without a menu click.
   ctx.game.commands.define("run.begin", { apply: (state) => {
     if (gamePhase(state) !== "playing") beginRun(state);

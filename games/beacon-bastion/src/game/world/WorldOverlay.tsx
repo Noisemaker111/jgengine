@@ -37,17 +37,21 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { activeMap, MAPS, type RecessDef } from "../../maps";
 import { recessActive } from "../waves/director";
+import { openPlots } from "../sinks";
 
 function BuildPlots() {
   const gold = useGameStore((c) => keep.of(c).num("keep.gold"));
-  const occupied = useGameStore((c) => BUILD_PLOTS.map((plot) => keep.of(c).occupant(plot.id) !== null).join(","));
+  // Spare lots show only once the town has bought them open.
+  const opened = useGameStore(() => openPlots().map((plot) => plot.id).join(","));
+  const plots = useMemo(() => openPlots(), [opened]);
+  const occupied = useGameStore((c) => plots.map((plot) => keep.of(c).occupant(plot.id) !== null).join(","));
   const selectedId = session.selectedTowerId;
   const cost = selectedId === null ? 0 : buildCost(selectedId);
   const affordable = selectedId !== null && gold >= cost;
   // Concrete pads on the sidewalk - an empty plot reads as a spot waiting for a worker - with a halo
   // coloured by whether the picked worker is affordable.
   const color = selectedId === null ? "#8a8a80" : affordable ? "#5fdf6a" : "#df4a4a";
-  const shapes = useMemo(() => plotShapes(BUILD_PLOTS, occupied.split(",").map((flag) => flag !== "true"), color), [occupied, color]);
+  const shapes = useMemo(() => plotShapes(plots, occupied.split(",").map((flag) => flag !== "true"), color), [plots, occupied, color]);
   return <StaticShapeInstances instances={shapes} />;
 }
 

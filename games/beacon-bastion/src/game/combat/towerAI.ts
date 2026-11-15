@@ -8,6 +8,7 @@ import { vec3 } from "@jgengine/core/world/vec3";
 import { editorLayers } from "../../editorLayers";
 import { campaign, councilAdd, councilScale, type CouncilStat } from "../campaign";
 import { unionDamage, unionReach } from "../union";
+import { gearBoost } from "../sinks";
 import { creepDef } from "../entities/enemies/catalog";
 import { towerDef, voiceLine, type TowerDef } from "../entities/towers/catalog";
 import { keep, towerStats, type TowerStats } from "../keep";
@@ -324,7 +325,8 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     const clock = workerClock(tower.id);
     clock.ability -= dt;
     clock.voice -= dt;
-    const range = stats.range + reach + unionReach(career, tower.kind);
+    const gear = gearBoost(tower.id, nowMs);
+    const range = stats.range + reach + unionReach(career, tower.kind) + gear.range;
     if (stats.snap > 0 && !isDistracted(tower.id)) snapOut(ctx, tower.id, entity.position, range);
     if (isDistracted(tower.id)) continue;
     clock.heat = heatFactor(ctx, entity.position);
@@ -363,7 +365,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
       towerId: tower.id,
       def,
       stats: inReach,
-      damage: stats.damage * scales[def.damageType] * unionDamage(career, tower.kind) * (crit ? stats.crit_mult : 1),
+      damage: stats.damage * scales[def.damageType] * unionDamage(career, tower.kind) * gear.damage * (crit ? stats.crit_mult : 1),
       shot,
       nowMs,
       from: entity.position,
@@ -397,7 +399,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
       speak(ctx, tower.id, tower.kind, "fire");
       clock.voice = VOICE_GAP + (shot % 5);
     }
-    armPursuit(scratch, 1 / Math.max(0.1, stats.rate * clock.heat));
+    armPursuit(scratch, 1 / Math.max(0.1, stats.rate * clock.heat * gear.rate));
     session.towerCooldowns.set(tower.id, scratch.attackCooldown);
   }
 }

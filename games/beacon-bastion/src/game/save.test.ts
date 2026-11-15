@@ -213,11 +213,11 @@ describe("the keep's save document", () => {
     expect(world().num("keep.lives")).toBe(STARTING_LIVES);
   });
 
-  test("the defense section is only the live sim: director, tech, parcels and the boss", () => {
+  test("the defense section is only the live sim: director, tech, parcels, bought lots and the boss", () => {
     playedIntoWave();
     const snapshot = JSON.parse(JSON.stringify(captureDefense(runner.ctx)));
     expect(validDefenseSave(snapshot)).toBe(true);
-    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "map", "openingComposition", "parcels", "pressure"]);
+    expect(Object.keys(snapshot).sort()).toEqual(["abilities", "boss", "clock", "countdown", "creepSeq", "creeps", "encounter", "map", "openingComposition", "parcels", "pressure", "spares"]);
   });
 
   test("the bank is its own section, so a new run does not clear it", async () => {

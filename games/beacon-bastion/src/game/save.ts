@@ -72,6 +72,8 @@ export interface DefenseSave extends PreWorldFields {
   }[];
   /** Plots a drone's parcel is blocking. */
   parcels?: string[];
+  /** Spare lots the town bought open this day. */
+  spares?: string[];
   /** The map the day was played on; its plots only fit that map. */
   map?: MapId;
   /** The clock to the next wave and what an early call would pay. */
@@ -104,6 +106,7 @@ export function captureDefense(ctx: GameContext): DefenseSave {
     })),
     countdown: session.countdown.snapshot(),
     parcels: [...session.parcels],
+    spares: [...session.sinks.spares],
     map: activeMap(),
     abilities: session.abilities.state(),
   };
@@ -139,6 +142,7 @@ export function restoreDefense(ctx: GameContext, save: DefenseSave): void {
   ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop" });
   if (!worldLoaded(ctx).restored) migratePreWorld(ctx, save);
   session.parcels = new Set((save.parcels ?? []).filter((id) => typeof id === "string"));
+  session.sinks.spares = new Set((save.spares ?? []).filter((id) => typeof id === "string"));
 
   if (save.countdown !== undefined) session.countdown.restore(save.countdown);
   if (save.abilities !== undefined) session.abilities.restore(save.abilities);

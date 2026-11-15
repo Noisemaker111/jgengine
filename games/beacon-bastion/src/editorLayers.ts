@@ -33,7 +33,7 @@ export let PATH_WAYPOINTS_XZ: readonly Vec2[] = roadOf(editorLayers, "creep-path
 /** The second road (XZ), when the document authors one. Empty when the scene has only the one road. */
 export let FLANK_WAYPOINTS_XZ: readonly Vec2[] = roadOf(editorLayers, "creep-path-flank");
 /** Build-plot centers (XZ), read from the authored plot markers — the single source for placement. */
-export let BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = [];
+export let BUILD_PLOT_XZ: readonly { id: string; xz: Vec2; spare: boolean }[] = [];
 /**
  * The street's buildings and lamps, authored as `building` markers: each names the model it stands as
  * in `meta.model`, faces the street by its `rotationY`, and may carry a landmark `sign`.
@@ -41,7 +41,8 @@ export let BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = [];
 export let BUILDING_MARKERS: readonly BuildingMarker[] = [];
 
 function derive(layers: EditorDocument): void {
-  BUILD_PLOT_XZ = layers.markers.filter((marker) => marker.id.startsWith("plot-")).map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker) }));
+  // A `spare` plot is an empty lot the town can buy open mid-day (`sinks.ts`).
+  BUILD_PLOT_XZ = layers.markers.filter((marker) => marker.id.startsWith("plot-")).map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker), spare: marker.meta?.["spare"] === true }));
   BUILDING_MARKERS = layers.markers
     .filter((marker) => marker.kind === "building" && typeof marker.meta?.["model"] === "string")
     .map((marker) => ({
