@@ -23,7 +23,7 @@ import { AISLE_NINE_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
 
 /** The aisles everywhere are glossy ceramic tile, laid over the store's terrazzo floor. */
-const RACING_LINE_SCAN = librarySurfaceScan("tile/ceramic", { repeat: 1.2, tint: 0.45 });
+const RACING_LINE_SCAN = librarySurfaceScan("tile/ceramic", { repeat: 1.2, tint: 0.2 });
 
 /** Every department but Aisle 9, each laid in its own stretch of the store along z. */
 const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
@@ -195,7 +195,7 @@ export const world: WorldFeature = environment({
       strength: 1,
       // `tint` under 1 keeps each department's authored floor colour reading through the terrazzo
       // chips instead of every band flattening to the scan's own grey.
-      material: librarySurfaceScan("stone/terrazzo", { repeat: 1.4, strength: 0.6, tint: 0.3 }),
+      material: librarySurfaceScan("stone/terrazzo", { repeat: 1.4, strength: 0.6, tint: 0.12 }),
     },
   }),
   roads: [

@@ -59,9 +59,9 @@ export const GARDEN_CENTER: TrackDef = {
   baseLevel: 0,
   floor: "#9c8f78",
   // Out under a grey sky: the rain falls over this department only.
-  // Heavy enough to read as rain against the pale sky at speed: wide, bright streaks, slanted by a breeze.
-  weather: { kind: "rain", density: 0.95, width: 0.032, opacity: 0.72, dropLength: 1.3, speed: 24, color: "#dfe7f2", wind: [1.5, -0.5] },
-  light: { key: { intensity: 0.75, color: "#e6ecf2" }, fill: { intensity: 1.12, color: "#d2dce2", groundColor: "#4c5a3e" } },
+  // Heavy enough to read as rain against the pale sky at speed: wide streaks a shade darker than the sky, slanted by a breeze.
+  weather: { kind: "rain", density: 1, width: 0.042, opacity: 0.85, dropLength: 1.4, speed: 24, color: "#8e9cb0", wind: [1.5, -0.5] },
+  light: { key: { intensity: 0.75, color: "#e6ecf2" }, fill: { intensity: 1.12, color: "#d2dce2", groundColor: "#4c5a3e" }, environment: 1.4 },
   liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
   rivalTake: { rival_twins: ["koi-pond"] },
   par: 84,

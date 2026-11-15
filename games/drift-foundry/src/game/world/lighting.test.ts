@@ -29,8 +29,8 @@ describe("store lighting zones", () => {
     const snacks = lightOnCourse("aisle-nine", 60);
     expect(snacks).toMatchObject({ key: 1, fill: 1, keyColor: BASE.keyColor });
     const frozen = lightOnCourse("aisle-nine", 225);
-    expect(frozen.keyColor).toBe("#cfe4ff");
-    expect(frozen.groundColor).toBe("#5f7ea6");
+    expect(frozen.keyColor).toBe("#b4d0ff");
+    expect(frozen.groundColor).toBe("#4a6c99");
     const bulk = lightOnCourse("aisle-nine", 400);
     expect(bulk.keyColor).toBe(BASE.keyColor);
   });

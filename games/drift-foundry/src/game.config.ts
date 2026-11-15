@@ -92,6 +92,7 @@ export const game = defineGame({
       toys: ["startRun", { name: "run.autopilot", input: { event: "empty-cart", openAll: true } }],
       garden: ["startRun", { name: "run.autopilot", input: { event: "cart-stuffer", openAll: true } }],
       electronics: ["startRun", { name: "run.autopilot", input: { event: "lights-out", openAll: true } }],
+      frozen: ["startRun", { name: "run.autopilot", input: { event: "last-call", openAll: true } }],
       dock: ["startRun", { name: "run.autopilot", input: { event: "grudge-brick", openAll: true } }],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
@@ -124,11 +125,12 @@ export const game = defineGame({
     // Electronics fades to its dark lights-out haze and the produce cooler to its own; only the
     // exposure and the strip-light key are set here.
     mood: { exposure: 0.85, fog: false },
-    environmentSource: hdriEnvironment("interior-industrial", { intensity: 0.55 }),
+    // Low: the glossy tile mirrors the image light, and at 0.55 the aisles burned out white.
+    environmentSource: hdriEnvironment("interior-industrial", { intensity: 0.36 }),
     lighting: {
       // Indoor fill: shadows stay soft and neutral under the strip lights, never blue.
       ambient: { color: "#e8e4dc", intensity: 0.32 },
-      hemisphere: { skyColor: "#f4f1ea", groundColor: "#8f8878", intensity: 0.75 },
+      hemisphere: { skyColor: "#f4f1ea", groundColor: "#8f8878", intensity: 0.58 },
       directional: [
         {
           color: "#fff6e6",
@@ -143,7 +145,7 @@ export const game = defineGame({
           shadowMaxFar: 220,
           shadowNormalBias: 0.035,
         },
-        { color: "#dfe8ff", intensity: 0.35, position: [82, 60, 96] },
+        { color: "#dfe8ff", intensity: 0.25, position: [82, 60, 96] },
       ],
       // Each department re-lights the rig as the camera drives in: Electronics a dark showroom,
       // the Loading Bay sodium orange, Frozen Foods cold blue, the Garden Centre an overcast sky.

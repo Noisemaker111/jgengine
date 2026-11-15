@@ -89,7 +89,7 @@ export const ZONES: readonly ZoneDef[] = [
     id: "frozen",
     label: "FROZEN FOODS",
     // The freezer cases throw a cold blue light across the iced floor.
-    light: { key: { intensity: 0.9, color: "#cfe4ff" }, fill: { intensity: 1.08, color: "#b4d2ff", groundColor: "#5f7ea6" }, environment: 0.9 },
+    light: { key: { intensity: 0.85, color: "#b4d0ff" }, fill: { intensity: 1.05, color: "#98bcff", groundColor: "#4a6c99" }, environment: 0.8, exposure: 0.92 },
     radioName: "FROZEN",
     start: ZONE_A_END,
     end: ZONE_B_END,
