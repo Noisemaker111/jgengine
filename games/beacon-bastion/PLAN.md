@@ -56,7 +56,7 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - Core twist: Distraction. Phones, watches, speakers and chatbots ping workers; a hit worker looks at their
   phone and stops working unless a Teacher snaps them out, a Librarian hushes the ping, or a Monk keeps
   them present.
-- Out: renaming the folder or package id; endless mode; a second map.
+- Out: renaming the folder or package id.
 - Done scenario: a player hires a mixed crew, learns to answer notifications (Teacher/Librarian/Monk),
   cameras (kill them first), heat (Firefighter) and power (Electrician), and beats the Data Center and
   The Cloud on Full-Time.
@@ -69,8 +69,9 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 - Core loop (30 s): hire on a plot, watch who gets distracted, answer the tech on the street.
 - Session loop: twelve waves, the server rack at 6, the Data Center at 12; the end-of-day card banks cash
   and offers a perk.
-- Long loop: stars per shift seat the Town Council; Overtime is the replay target.
-- Second 0: $150 and fourteen workers on the hiring board; the first wave is earbuds and phones.
+- Long loop: a season of districts (each held one opens the next), the union hall's hires, training and
+  town upgrades bought with dues, stars per shift seating the Town Council; Overtime (endless) is the replay target.
+- Second 0: $150 and four trades in the union; the first wave is earbuds and phones.
 - Onboarding: the wave preview names traits (notifications, flyers, armor, cameras, heat, power) with glyphs.
 - Pace: a new tech kind every wave through wave 6, then composed mixes of the late roster.
 
@@ -111,29 +112,32 @@ Genres: tower-defense. 0/17 proven · 17 missing.
 ## Milestones
 - [x] 1. Reskin and rebuild: damage chart, 14 workers, 18 tech kinds, distraction, waves, scene, HUD.
 - [x] 2. Balance pass (headless `balance.test.ts`) and tests for the new mechanics.
-- [ ] 3. Playtest pass: voice-line frequency, distraction feel, Data Center readability.
-- [ ] 4. A worker animation for "looking at the phone" instead of the floating phone alone.
+- [x] 3. Depth: a season of three districts, the union hall, Overtime through the eras, campaign-curve balance.
+- [ ] 4. Playtest pass: voice-line frequency, distraction feel, Data Center readability, the season's length.
+- [ ] 5. A worker animation for "looking at the phone" instead of the floating phone alone.
+- [ ] 6. A fourth district: the Mall, with an escalator that splits the road.
 
 ## Handoff
-- Done: everything in the README checklist plus the review rounds: skin tones, Rune speech bubbles,
-  bigger tech, low buildings, shrubs, cash/attention wording (engine: fact `label`), notices above the
-  hiring board; an RTS camera that frames the street (pan with arrows/edge, zoom out for both ends);
-  a denser town (more buildings, parked cars, signed DINER/SCHOOL/LIBRARY/BAKERY/HARDWARE); tech
-  walks in lanes so phones spread; the Data Center is a tall narrow tower; a second map (Downtown
-  Grid, `src/downtown.scene.json`). 178 game tests green; check-types clean.
-- Maps are an engine scene set: `src/maps.ts` declares `createSceneSet` (`@jgengine/core/editor/sceneSet`)
-  over `editor.scene.json` and `downtown.scene.json`; `game.config.ts` wraps the game in `withSceneSet`,
-  and the shell rebuilds the game in place (scene, terrain, world spec, roads, plots) when the menu's
-  Map button switches it. No page reload. The JSX host now discards nested Rune surfaces on a keyed
-  remount (`Host.discard`), which the switch needed. Edit a map with the editor CLI's
-  `--scene downtown.scene.json --save`; a map keeps its own (empty) catalogs, the towers table lives in
-  `editor.scene.json`.
+- Done: the README checklist, the review rounds (skin tones, Rune speech bubbles, RTS camera, denser
+  signed town, lanes, the Data Center tower), and the depth rounds:
+  - Season (`season.ts`, `travel.ts`): Main Street, Downtown Grid, School Campus in order, each held
+    district opens the next; best stars per district on the career; the end-of-day board's season map
+    picks the next day's district and travelling hands the career across the scene-set rebuild.
+  - School Campus (`school.scene.json`): schoolyard loop, bus lane, recess bell (slow near the yard,
+    a chalk ring and a crowd of kids while it rings), 1.3x tech.
+  - Downtown: a north-road surge from wave 6 and thirteen plots instead of a toughness bump.
+  - Union hall (`union.ts`): four starter trades, dues from every day, hires, training, town upgrades.
+  - Overtime (`waves/endless.ts`, `waves/mode.ts`): endless through dial-up, smartphones and AI; the
+    career's board and the title's Overtime Board. The old Overtime difficulty is Double Shift.
+  - Balance: `balance.test.ts` plays a whole career from zero (season kept in about five days) and an
+    Overtime night (falls around wave 20); `proofs/flows/from-zero.flow.ts` passes headless.
+- Maps are an engine scene set (`createSceneSet`/`withSceneSet`, `@jgengine/core/editor/sceneSet`); the
+  JSX host discards nested Rune surfaces on a keyed remount (`Host.discard`). Edit a map with the editor
+  CLI's `--scene <file> --save`; the towers table lives in `editor.scene.json`. `bindScene` also binds the
+  map identity (`activeMap()`), so a headless `game.scenes.build(id)` runs that district's rules.
 - Lawn Order (ember-command) can adopt the same scene set for its maps: declare the set, wrap
   `defineGame` in `withSceneSet`, author each map with `--scene`.
-- Downtown is the harder map by tougher tech (`MAPS.downtown.toughness`, 1.06x health on ordinary
-  tech) and two long roads; its west road now S-bends into the town hall and its plots sit on inside
-  corners. The scripted crew holds it only on the corners (`balance.test.ts`, about 2 focus left);
-  the same crew in plot-number order falls. The margin is thin:
-  1.08x toughness loses the finale.
-- Shots: /tmp/claude-0/dnd-cam2-finale.png (Main Street, new camera), dnd-downtown-mid.png,
-  dnd-polish-close.png, dnd-result.png, dnd-title.png.
+- Known: cash piles up late in a day once every plot is staffed and promoted (the scripted crews end
+  with hundreds unspent, Overtime with thousands); a sink (a second-tier career, or rehiring) is open.
+  The older browser flows (`ui-play`, `ui-menus`, `to-first-defense`) still name the pre-reskin text.
+- Shots: see the latest round's report.

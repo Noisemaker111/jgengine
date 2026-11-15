@@ -1,5 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { unlockAllTrades } from "./union";
+import { setRunModeChoice } from "./campaign";
+import { restartDefense } from "./world/setup";
 
 import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";
@@ -8,7 +10,7 @@ import { sendWave, tickWaves } from "./waves/director";
 import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
 
 /** What a staged defense should look like when the capture takes it. */
-export type StageMode = "midwave" | "boss" | "finale" | "result" | "breached";
+export type StageMode = "midwave" | "boss" | "finale" | "result" | "breached" | "overtime" | "recess";
 
 /** One simulation step for a staged run - 30 Hz, the same cadence the frame loop asks for. */
 const STEP = 1 / 30;
@@ -93,6 +95,25 @@ function stageFinale(ctx: GameContext): void {
   keep.of(ctx).set("keep.lives", 14);
 }
 
+/** Deep into an Overtime night: the AI era rolling down a seasoned street. */
+function stageOvertime(ctx: GameContext): void {
+  setRunModeChoice(ctx, "overtime");
+  restartDefense(ctx);
+  hireCrew(ctx);
+  session.encounter.openWave(17, session.pressure);
+  keep.of(ctx).set("keep.wave_started", true);
+  keep.of(ctx).set("keep.wave_ready", false);
+  keep.of(ctx).set("keep.wave", session.encounter.view().wave);
+  advance(ctx, 14);
+}
+
+/** Mid-wave with the recess bell ringing (on a district that has one): the kids are in the yard. */
+function stageRecess(ctx: GameContext): void {
+  stageMidwave(ctx);
+  session.recess.left = 8;
+  session.recess.clock = 0;
+}
+
 /** Release each wave only once the street is clear, so the run is a defense and not a wave rush. */
 function playOutDefense(ctx: GameContext): void {
   for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
@@ -129,6 +150,14 @@ export function stageRun(ctx: GameContext, mode: StageMode): void {
   }
   if (mode === "result") {
     playOutDefense(ctx);
+    return;
+  }
+  if (mode === "overtime") {
+    stageOvertime(ctx);
+    return;
+  }
+  if (mode === "recess") {
+    stageRecess(ctx);
     return;
   }
   stageMidwave(ctx);

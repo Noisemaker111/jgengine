@@ -35,6 +35,8 @@ import { rangeRingBand } from "./rangeRing";
 import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { activeMap, MAPS, type RecessDef } from "../../maps";
+import { recessActive } from "../waves/director";
 
 function BuildPlots() {
   const gold = useGameStore((c) => keep.of(c).num("keep.gold"));
@@ -461,6 +463,76 @@ function WorkerStatus() {
 
 /** VFX-only overlay — the authored scene (draped streets + instanced yard scatter) is auto-mounted
  * by `defineGame({ editorLayers })`. */
+/** Shirt colours for the recess crowd. */
+const KID_COLORS = ["#ff5a8a", "#3ab0ff", "#ffd84a", "#5fdf6a", "#ff9a3a", "#b07aff"];
+
+/**
+ * The schoolyard on a district with a recess bell: a chalk ring round the yard, faint between bells
+ * and bright while it rings, and a crowd of kids that pours out and runs about while the yard is full.
+ */
+function recessDraw(recess: RecessDef): EngineDraw {
+  const [cx, cz] = recess.center;
+  const ringGeometry = new BufferGeometry();
+  const band = rangeRingBand({ center: [cx, cz], radius: recess.radius, sampleHeight: groundHeightAt });
+  ringGeometry.setAttribute("position", new BufferAttribute(band.positions, 3));
+  ringGeometry.setIndex(new BufferAttribute(band.indices, 1));
+  const ringMaterial = new MeshStandardMaterial({ color: "#fff6d8", emissive: "#ffe08a", emissiveIntensity: 0.3, transparent: true, opacity: 0.25, side: DoubleSide, depthWrite: false });
+  const ring = new Mesh(ringGeometry, ringMaterial);
+  ring.renderOrder = 4;
+  const kids = new Group();
+  const body = new CylinderGeometry(0.22, 0.28, 0.8, 8);
+  const head = new SphereGeometry(0.22, 10, 8);
+  const skin = new MeshStandardMaterial({ color: "#e8b48a", roughness: 0.8 });
+  const shirts = KID_COLORS.map((color) => new MeshStandardMaterial({ color, roughness: 0.7 }));
+  const seeds: { angle: number; radius: number; speed: number; mesh: Group }[] = [];
+  for (let index = 0; index < 28; index += 1) {
+    const kid = new Group();
+    kid.scale.setScalar(1.5);
+    const torso = new Mesh(body, shirts[index % shirts.length]!);
+    torso.position.y = 0.4;
+    const face = new Mesh(head, skin);
+    face.position.y = 1;
+    kid.add(torso, face);
+    kids.add(kid);
+    seeds.push({ angle: (index * 2.39996) % (Math.PI * 2), radius: recess.radius * (0.35 + ((index * 37) % 60) / 100), speed: 0.25 + ((index * 13) % 10) / 25, mesh: kid });
+  }
+  let clock = 0;
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(ring, kids);
+    },
+    frame(_state: EngineFrameState, delta: number) {
+      const active = recessActive();
+      ringMaterial.opacity = active ? 0.85 : 0.25;
+      ringMaterial.emissiveIntensity = active ? 0.9 : 0.3;
+      kids.visible = active;
+      if (!active) return;
+      clock += delta;
+      for (const kid of seeds) {
+        const angle = kid.angle + clock * kid.speed;
+        const x = cx + Math.cos(angle) * kid.radius, z = cz + Math.sin(angle) * kid.radius;
+        kid.mesh.position.set(x, groundHeightAt(x, z) + Math.abs(Math.sin(clock * 9 + kid.angle)) * 0.25, z);
+        kid.mesh.rotation.y = -angle;
+      }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(ring, kids);
+      ringGeometry.dispose();
+      ringMaterial.dispose();
+      body.dispose();
+      head.dispose();
+      skin.dispose();
+      for (const shirt of shirts) shirt.dispose();
+    },
+  };
+}
+
+function Schoolyard() {
+  const recess = MAPS[activeMap()].recess;
+  if (recess === undefined) return null;
+  return <EngineDrawMount create={() => recessDraw(recess)} deps={[recess]} />;
+}
+
 export function BeaconBastionWorldOverlay() {
   return (
     <>
@@ -468,6 +540,7 @@ export function BeaconBastionWorldOverlay() {
       <SpawnGate at={SPAWN_POINT} />
       {HAS_FLANK ? <SpawnGate at={ROUTES[FLANK_POINT_KEY]![0]!} facing={Math.PI / 2} /> : null}
       <BuildPlots />
+      <Schoolyard />
       <BuildSites />
       <InspectedTower />
       <WorkerStatus />

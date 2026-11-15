@@ -99,6 +99,8 @@ function createGame() {
       boss: ["run.begin", { name: "run.stage", input: { mode: "boss" } }],
       finale: ["run.begin", { name: "run.stage", input: { mode: "finale" } }],
       result: ["run.begin", { name: "run.stage", input: { mode: "result" } }],
+      overtime: ["run.begin", { name: "run.stage", input: { mode: "overtime" } }],
+      recess: ["run.begin", { name: "run.stage", input: { mode: "recess" } }],
       // The first wave rolled into an empty town: focus lost, the street clear, the wave's pay in.
       breached: ["run.begin", { name: "run.stage", input: { mode: "breached" } }],
       "two-towers": [

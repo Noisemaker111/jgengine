@@ -7,9 +7,10 @@ Game suite: **0/17 proven · 17 missing** · `jgengine suite beacon-bastion`
 Humans-vs-technology tower defense. Ordinary working people defend the last analog town against
 marching technology: earbuds, phones, Flock cameras, smart speakers, robot vacuums, drones, scooters,
 smart fridges, graphics cards, mining rigs, self-driving cars, chatbots, routers, a server rack and,
-last, THE DATA CENTER. Eleven sidewalk plots line Main Street and a short side street; the town has
-twenty Attention Span. A day is twelve waves, six authored, five composed and the finale, on one of
-three shifts. The folder and package id stay `beacon-bastion`. Runs on engine source; start it with
+last, THE DATA CENTER. A career works a season of three districts (Main Street, Downtown Grid, the
+School Campus), each a scene in the engine's scene set; the town has twenty Attention Span. A day is
+twelve waves, six authored, five composed and the finale, on one of three shifts; Overtime is the
+endless night through the eras. The folder and package id stay `beacon-bastion`. Runs on engine source; start it with
 `bun --cwd=games/beacon-bastion run dev` from the repository root. Plan: `PLAN.md`; look: `src/art-direction.md`.
 
 ## Design checklist
@@ -58,17 +59,26 @@ is what the build does now.
   - Town buttons: Blackout (Q, every 40 s) flips the breaker on a point of the street, 120 damage in 3.5 m and a short-circuit; Do Not Disturb (E, every 55 s) slows every gadget to 40% for 4 s, snaps every worker out of their phone and holds notifications.
   - Scrap pay: weight × `1 + 0.2 × (wave − 1)`, capped at ×3.
   - Stars per shift seat the Town Council (Labor Union, Town Budget, Town Rituals); a finished day banks half its till (cap 200) and offers three perks.
-- **Difficulty.** Part-Time: 25 attention, tech ×0.8 health, 32 s breaks. Full-Time: 20, 25 s. Overtime: 12, ×1.2 health, +5 armor, 20 s, a fourth star.
+- **Difficulty.** Part-Time: 25 attention, tech ×0.8 health, 32 s breaks. Full-Time: 20, 25 s. Double Shift: 12, ×1.2 health, +5 armor, 20 s, a fourth star.
+- **The season** (`src/game/season.ts`, `src/game/travel.ts`). Districts open in order: holding one opens the next; each keeps its best stars on the career. The end-of-day board's season map picks where the next day opens; travelling saves the career, switches the scene set and opens the day there.
+  - Main Street (`editor.scene.json`): one winding street and a short side street.
+  - Downtown Grid (`downtown.scene.json`): square blocks, thirteen plots, and from wave 6 a surge of scooters, phones and vacuums down the long north road (20% thicker each wave, not in the finale).
+  - School Campus (`school.scene.json`): the school run winds round the schoolyard and a bus lane cuts in; tech is 1.3× tougher, and every 40 s of a wave the recess bell fills the yard for 8 s and ground tech within 15 m of it crawls at 45%.
+- **The union hall** (`src/game/union.ts`). A career starts with four trades (Barista, Farmer, Plumber, Teacher). Each finished day pays dues: 2 a wave, 5 a star, 10 for a held street. Between days dues hire the other ten trades (10–30), train a trade (+10% damage a rank, three ranks), or build town upgrades: Landlines (distractions 25% shorter), Library Card Program (Librarians +1.5 m and +25%), Block Party (+3 attention a rank), Bike Couriers (+20 opening cash a rank).
+- **Overtime** (`src/game/waves/endless.ts`). Endless: the Dial-Up Era (earbuds, watches, phones, speakers, vacuums, fridges), the Smartphone Era from wave 9 (phones, drones, scooters, cameras, routers, cars) and the AI Era from wave 17 (chatbots, graphics cards, rigs, drones, cars). Squads thicken 6% a wave; every eighth wave brings the era's boss, 5% tougher a wave past 12. A finished night goes on the career's Overtime board (five deepest) and the title's board across careers.
 - **Pacing, checked headless** (`src/game/balance.test.ts`):
   - A town that hires nobody loses by wave 3.
   - Baristas alone can't reach the drones or The Cloud.
   - A mixed, promoted crew holds Full-Time with about 6 of 20 attention and never banks more than 300 unspent.
   - The same crew with its Teacher and Librarian swapped for Baristas loses: answering distraction matters.
-  - The same crew loses on Overtime.
+  - The same crew loses on Double Shift.
+  - Downtown: the eleven workers that hold Main Street fall to its surge; thirteen on its corners hold. School Campus: the crew on its corners holds.
+  - Overtime: the crew works into the AI era (about wave 20) and falls.
+  - A career from zero: the starter crew falls on day one; with dues spent between days the season is kept in about five days.
 - **Failure states.** Losing all attention ends the day with "Total Distraction"; victory is twelve waves with the street clear.
-- **Gap to target.** A worker "looking at the phone" animation (today a floating phone); world-anchored speech bubbles (an engine gap); a second map.
+- **Gap to target.** A worker "looking at the phone" animation (today a floating phone); a fourth district (the Mall with an escalator split).
 
-Loop proof: to-first-defense
+Loop proofs: to-first-defense, from-zero (a headless career from nothing to day two)
 
 The roads, plots, buildings and worker base numbers are read from `src/editor.scene.json`, so moving a
 road or retuning a worker is an editor edit. Run `bun run check-types` and `bun run test` here after changes.
