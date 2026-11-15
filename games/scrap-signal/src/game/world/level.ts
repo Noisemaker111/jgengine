@@ -114,6 +114,14 @@ const roadRoutes = authoredScene.paths.filter((path) => path.kind === "road").ma
 /** Campaign roads chaining zone to zone, draped and flattened from the authored document. */
 export const ROUTES: readonly Route[] = roadRoutes.filter((route) => !POI_IDS.has(route.to));
 
+/**
+ * Side streets and back alleys inside a neighbourhood (`street` paths): a cross street through the
+ * centre and an alley a block behind the houses, so a neighbourhood is more than its one through road.
+ */
+export const STREETS: readonly { id: string; width: number; alley: boolean; points: readonly { x: number; z: number }[] }[] = authoredScene.paths
+  .filter((path) => path.kind === "street")
+  .map((path) => ({ id: path.id, width: path.width ?? 6, alley: path.meta?.["street"] === "alley", points: path.points.map((point) => ({ x: point.x, z: point.z })) }));
+
 /** Spurs peeling off a campaign zone toward a side POI. */
 export const SPUR_ROUTES: readonly Route[] = roadRoutes.filter((route) => POI_IDS.has(route.to));
 

@@ -7,7 +7,7 @@ import { readGrassLook } from "@jgengine/core/grass/grassKind";
 import { enemyById } from "../entities/enemies/catalog";
 import { START_ZONE } from "../progression/unlocks";
 import { MAIN_QUEST_IDS, quests, scrapQuests, zoneOpener } from "../quests/catalog";
-import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
+import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, STREETS, authoredScene } from "./level";
 import { entityModels, objectModels } from "./models";
 import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
@@ -21,15 +21,27 @@ describe("scrap-signal world", () => {
   });
 
   test("routes and spurs render as draped road geometry, not just color", () => {
-    expect(summary.counts.roads).toBe(ROUTES.length + SPUR_ROUTES.length);
+    expect(summary.counts.roads).toBe(ROUTES.length + SPUR_ROUTES.length + STREETS.length);
     const totalLength = summary.roads.reduce((sum, entry) => sum + entry.length, 0);
     expect(totalLength).toBeGreaterThan(1000);
     for (const entry of summary.roads) expect(entry.points).toBeGreaterThanOrEqual(2);
   });
 
+  test("every settled neighbourhood has a cross street and a back alley, not one through road", () => {
+    for (const zone of ZONES.filter((candidate) => candidate.settlement !== undefined)) {
+      const mine = STREETS.filter((street) => street.id.startsWith(`street_${zone.id}_`));
+      expect(mine.map((street) => street.alley).sort()).toEqual([false, true]);
+      for (const street of mine) {
+        const middle = street.points[Math.floor(street.points.length / 2)]!;
+        expect(Math.hypot(middle.x - zone.center.x, middle.z - zone.center.z)).toBeLessThan(zone.flattenRadius);
+      }
+    }
+  });
+
   test("rendered roads and level props both read from the one authored document", () => {
     const authoredRoads = authoredScene.paths.filter((path) => path.kind === "road");
-    expect(summary.counts.roads).toBe(authoredRoads.length);
+    const authoredStreets = authoredScene.paths.filter((path) => path.kind === "street");
+    expect(summary.counts.roads).toBe(authoredRoads.length + authoredStreets.length);
     expect(ROUTES.length + SPUR_ROUTES.length).toBe(authoredRoads.length);
     expect(AUTHORED_PIECES.length).toBeGreaterThan(300);
     expect(authoredScene.markers.every((marker) => marker.position !== undefined)).toBe(true);

@@ -15,7 +15,7 @@ import {
 } from "@jgengine/core/world/features";
 import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
 import { SUBURB } from "./game/palette";
-import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
+import { ROUTES, SPUR_ROUTES, SIDE_POIS, STREETS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
 /** The terrain seed. The name is the world generator's identity: changing it would move every authored site. */
@@ -204,6 +204,10 @@ const roadRibbon = (route: { points: readonly { x: number; z: number }[] }, widt
 const roads: readonly RoadEnvironmentDescriptor[] = [
   ...ROUTES.map((route) => roadRibbon(route, 13, 0.18)),
   ...SPUR_ROUTES.map((route) => roadRibbon(route, 9, 0.24)),
+  // Side streets keep their centre line; back alleys are a narrow strip of plain asphalt.
+  ...STREETS.map((street) =>
+    road({ path: roadPoints(street.points), width: street.width, color: street.alley ? "#6a6c70" : SUBURB_ASPHALT, markings: !street.alley, sidewalk: false, elevation: 0.2 }),
+  ),
 ];
 
 export const world: WorldFeature = environment({

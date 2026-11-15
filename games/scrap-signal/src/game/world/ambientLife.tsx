@@ -31,9 +31,13 @@ export const SPRINKLER_SITES: readonly SprinklerSite[] = sceneDoc.markers
   .filter((_, index) => index % 2 === 0)
   .map((marker, index) => {
     const yaw = marker.rotationY ?? 0;
-    // Back toward the house from the mailbox, and a little to the side: the middle of the front lawn.
-    const inX = -Math.sin(yaw) * 2.6 - Math.cos(yaw) * 1.8;
-    const inZ = -Math.cos(yaw) * 2.6 + Math.sin(yaw) * 1.8;
+    // A metre back toward the house and a step past its corner: the front lawn's side yard, clear of
+    // the walls and of the driveway on the far side. House frame: local (x, z) maps to
+    // (x cos + z sin, -x sin + z cos), and the front faces +z.
+    const dx = 1.6;
+    const dz = -1.0;
+    const inX = dx * Math.cos(yaw) + dz * Math.sin(yaw);
+    const inZ = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
     return { x: marker.position.x + inX, z: marker.position.z + inZ, heading: yaw, phase: index * 1.7 };
   });
 
@@ -83,7 +87,7 @@ function ambientDraw(ctx: GameContext): EngineDraw {
         const near = Math.hypot(site.x - camera.x, site.z - camera.z) < DRAW_RADIUS;
         heads[index]!.visible = near;
         // Impact sprinklers sweep back and forth across the lawn and throw a fan of droplets.
-        const sweep = site.heading + Math.PI + Math.sin(t * 0.5 + site.phase) * SWEEP;
+        const sweep = site.heading + Math.sin(t * 0.5 + site.phase) * SWEEP;
         for (let drop = 0; drop < DROPS; drop += 1) {
           const slot = index * DROPS + drop;
           if (!near) {

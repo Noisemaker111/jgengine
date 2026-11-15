@@ -8182,11 +8182,11 @@
       "id": "yard_rustflat_waste_0_mailbox",
       "kind": "prop",
       "position": {
-        "x": -528.25,
+        "x": -501.66,
         "y": 0,
-        "z": 559.95
+        "z": 551.33
       },
-      "rotationY": 3.142,
+      "rotationY": 0.21,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8195,11 +8195,11 @@
       "id": "yard_rustflat_waste_0_driveway",
       "kind": "prop",
       "position": {
-        "x": -520.35,
+        "x": -509.95,
         "y": 0,
-        "z": 562.65
+        "z": 550.33
       },
-      "rotationY": 3.142,
+      "rotationY": 0.21,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8208,11 +8208,11 @@
       "id": "yard_rustflat_waste_0_fence",
       "kind": "prop",
       "position": {
-        "x": -525.5,
+        "x": -506.5,
         "y": 0,
-        "z": 570.25
+        "z": 541.83
       },
-      "rotationY": 3.142,
+      "rotationY": 0.21,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8221,11 +8221,11 @@
       "id": "yard_rustflat_waste_1_mailbox",
       "kind": "prop",
       "position": {
-        "x": -517.25,
+        "x": -533.41,
         "y": 0,
-        "z": 559.95
+        "z": 545.39
       },
-      "rotationY": 3.142,
+      "rotationY": 2.207,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8234,11 +8234,11 @@
       "id": "yard_rustflat_waste_1_driveway",
       "kind": "prop",
       "position": {
-        "x": -509.35,
+        "x": -530.89,
         "y": 0,
-        "z": 562.65
+        "z": 553.35
       },
-      "rotationY": 3.142,
+      "rotationY": 2.207,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8247,11 +8247,11 @@
       "id": "yard_rustflat_waste_1_fence",
       "kind": "prop",
       "position": {
-        "x": -514.5,
+        "x": -540.06,
         "y": 0,
-        "z": 570.25
+        "z": 553.71
       },
-      "rotationY": 3.142,
+      "rotationY": 2.207,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8260,11 +8260,11 @@
       "id": "yard_rustflat_waste_2_mailbox",
       "kind": "prop",
       "position": {
-        "x": -522.75,
+        "x": -520.16,
         "y": 0,
-        "z": 560.05
+        "z": 548.58
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8273,11 +8273,11 @@
       "id": "yard_rustflat_waste_2_driveway",
       "kind": "prop",
       "position": {
-        "x": -530.65,
+        "x": -518.96,
         "y": 0,
-        "z": 557.35
+        "z": 540.32
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8286,11 +8286,11 @@
       "id": "yard_rustflat_waste_2_fence",
       "kind": "prop",
       "position": {
-        "x": -525.5,
+        "x": -510.54,
         "y": 0,
-        "z": 549.75
+        "z": 543.97
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8299,11 +8299,11 @@
       "id": "yard_rustflat_waste_3_mailbox",
       "kind": "prop",
       "position": {
-        "x": -511.75,
+        "x": -514.07,
         "y": 0,
-        "z": 560.05
+        "z": 581.01
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8312,11 +8312,11 @@
       "id": "yard_rustflat_waste_3_driveway",
       "kind": "prop",
       "position": {
-        "x": -519.65,
+        "x": -512.88,
         "y": 0,
-        "z": 557.35
+        "z": 572.75
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8325,11 +8325,11 @@
       "id": "yard_rustflat_waste_3_fence",
       "kind": "prop",
       "position": {
-        "x": -514.5,
+        "x": -504.46,
         "y": 0,
-        "z": 549.75
+        "z": 576.41
       },
-      "rotationY": 0,
+      "rotationY": -1.385,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8338,11 +8338,11 @@
       "id": "yard_breakwater_shelf_0_mailbox",
       "kind": "prop",
       "position": {
-        "x": -200.75,
+        "x": -205.18,
         "y": 0,
-        "z": 460.45
+        "z": 476.23
       },
-      "rotationY": 3.142,
+      "rotationY": -2.771,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8351,11 +8351,11 @@
       "id": "yard_breakwater_shelf_0_driveway",
       "kind": "prop",
       "position": {
-        "x": -192.85,
+        "x": -196.84,
         "y": 0,
-        "z": 463.15
+        "z": 475.88
       },
-      "rotationY": 3.142,
+      "rotationY": -2.771,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8364,11 +8364,11 @@
       "id": "yard_breakwater_shelf_0_fence",
       "kind": "prop",
       "position": {
-        "x": -198,
+        "x": -198.88,
         "y": 0,
-        "z": 470.75
+        "z": 484.83
       },
-      "rotationY": 3.142,
+      "rotationY": -2.771,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8377,11 +8377,11 @@
       "id": "yard_breakwater_shelf_1_mailbox",
       "kind": "prop",
       "position": {
-        "x": -188.75,
+        "x": -193.94,
         "y": 0,
-        "z": 460.45
+        "z": 471.72
       },
-      "rotationY": 3.142,
+      "rotationY": -2.75,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8390,11 +8390,11 @@
       "id": "yard_breakwater_shelf_1_driveway",
       "kind": "prop",
       "position": {
-        "x": -180.85,
+        "x": -185.61,
         "y": 0,
-        "z": 463.15
+        "z": 471.2
       },
-      "rotationY": 3.142,
+      "rotationY": -2.75,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8403,11 +8403,11 @@
       "id": "yard_breakwater_shelf_1_fence",
       "kind": "prop",
       "position": {
-        "x": -186,
+        "x": -187.47,
         "y": 0,
-        "z": 470.75
+        "z": 480.19
       },
-      "rotationY": 3.142,
+      "rotationY": -2.75,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8416,11 +8416,11 @@
       "id": "yard_breakwater_shelf_2_mailbox",
       "kind": "prop",
       "position": {
-        "x": -176.75,
+        "x": -204.01,
         "y": 0,
-        "z": 460.45
+        "z": 464.08
       },
-      "rotationY": 3.142,
+      "rotationY": 0.371,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8429,11 +8429,11 @@
       "id": "yard_breakwater_shelf_2_driveway",
       "kind": "prop",
       "position": {
-        "x": -168.85,
+        "x": -212.35,
         "y": 0,
-        "z": 463.15
+        "z": 464.42
       },
-      "rotationY": 3.142,
+      "rotationY": 0.371,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8442,11 +8442,11 @@
       "id": "yard_breakwater_shelf_2_fence",
       "kind": "prop",
       "position": {
-        "x": -174,
+        "x": -210.3,
         "y": 0,
-        "z": 470.75
+        "z": 455.47
       },
-      "rotationY": 3.142,
+      "rotationY": 0.371,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8455,11 +8455,11 @@
       "id": "yard_breakwater_shelf_3_mailbox",
       "kind": "prop",
       "position": {
-        "x": -164.75,
+        "x": -193.01,
         "y": 0,
-        "z": 460.45
+        "z": 459.54
       },
-      "rotationY": 3.142,
+      "rotationY": 0.391,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8468,11 +8468,11 @@
       "id": "yard_breakwater_shelf_3_driveway",
       "kind": "prop",
       "position": {
-        "x": -156.85,
+        "x": -201.35,
         "y": 0,
-        "z": 463.15
+        "z": 460.06
       },
-      "rotationY": 3.142,
+      "rotationY": 0.391,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8481,11 +8481,11 @@
       "id": "yard_breakwater_shelf_3_fence",
       "kind": "prop",
       "position": {
-        "x": -162,
+        "x": -199.49,
         "y": 0,
-        "z": 470.75
+        "z": 451.07
       },
-      "rotationY": 3.142,
+      "rotationY": 0.391,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8494,11 +8494,11 @@
       "id": "yard_breakwater_shelf_4_mailbox",
       "kind": "prop",
       "position": {
-        "x": -195.25,
+        "x": -173.45,
         "y": 0,
-        "z": 459.55
+        "z": 459.09
       },
-      "rotationY": 0,
+      "rotationY": -2.036,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8507,11 +8507,11 @@
       "id": "yard_breakwater_shelf_4_driveway",
       "kind": "prop",
       "position": {
-        "x": -203.15,
+        "x": -167.49,
         "y": 0,
-        "z": 456.85
+        "z": 453.24
       },
-      "rotationY": 0,
+      "rotationY": -2.036,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8520,11 +8520,11 @@
       "id": "yard_breakwater_shelf_4_fence",
       "kind": "prop",
       "position": {
-        "x": -198,
+        "x": -163.01,
         "y": 0,
-        "z": 449.25
+        "z": 461.25
       },
-      "rotationY": 0,
+      "rotationY": -2.036,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8533,11 +8533,11 @@
       "id": "yard_breakwater_shelf_5_mailbox",
       "kind": "prop",
       "position": {
-        "x": -183.25,
+        "x": -168.07,
         "y": 0,
-        "z": 459.55
+        "z": 448.33
       },
-      "rotationY": 0,
+      "rotationY": -2.03,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8546,11 +8546,11 @@
       "id": "yard_breakwater_shelf_5_driveway",
       "kind": "prop",
       "position": {
-        "x": -191.15,
+        "x": -162.15,
         "y": 0,
-        "z": 456.85
+        "z": 442.45
       },
-      "rotationY": 0,
+      "rotationY": -2.03,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8559,11 +8559,11 @@
       "id": "yard_breakwater_shelf_5_fence",
       "kind": "prop",
       "position": {
-        "x": -186,
+        "x": -157.62,
         "y": 0,
-        "z": 449.25
+        "z": 450.44
       },
-      "rotationY": 0,
+      "rotationY": -2.03,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8572,11 +8572,11 @@
       "id": "yard_breakwater_shelf_6_mailbox",
       "kind": "prop",
       "position": {
-        "x": -171.25,
+        "x": -162.76,
         "y": 0,
-        "z": 459.55
+        "z": 437.5
       },
-      "rotationY": 0,
+      "rotationY": -2.018,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8585,11 +8585,11 @@
       "id": "yard_breakwater_shelf_6_driveway",
       "kind": "prop",
       "position": {
-        "x": -179.15,
+        "x": -156.9,
         "y": 0,
-        "z": 456.85
+        "z": 431.55
       },
-      "rotationY": 0,
+      "rotationY": -2.018,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8598,11 +8598,11 @@
       "id": "yard_breakwater_shelf_6_fence",
       "kind": "prop",
       "position": {
-        "x": -174,
+        "x": -152.28,
         "y": 0,
-        "z": 449.25
+        "z": 439.48
       },
-      "rotationY": 0,
+      "rotationY": -2.018,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8611,11 +8611,11 @@
       "id": "yard_breakwater_shelf_7_mailbox",
       "kind": "prop",
       "position": {
-        "x": -159.25,
+        "x": -197.04,
         "y": 0,
-        "z": 459.55
+        "z": 425.67
       },
-      "rotationY": 0,
+      "rotationY": 1.968,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8624,11 +8624,11 @@
       "id": "yard_breakwater_shelf_7_driveway",
       "kind": "prop",
       "position": {
-        "x": -167.15,
+        "x": -196.48,
         "y": 0,
-        "z": 456.85
+        "z": 434
       },
-      "rotationY": 0,
+      "rotationY": 1.968,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8637,11 +8637,11 @@
       "id": "yard_breakwater_shelf_7_fence",
       "kind": "prop",
       "position": {
-        "x": -162,
+        "x": -205.48,
         "y": 0,
-        "z": 449.25
+        "z": 432.18
       },
-      "rotationY": 0,
+      "rotationY": 1.968,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8650,11 +8650,11 @@
       "id": "yard_arid_badlands_0_mailbox",
       "kind": "prop",
       "position": {
-        "x": -26.75,
+        "x": -5.46,
         "y": 0,
-        "z": 0.45
+        "z": 36.91
       },
-      "rotationY": 3.142,
+      "rotationY": -1.877,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8663,11 +8663,11 @@
       "id": "yard_arid_badlands_0_driveway",
       "kind": "prop",
       "position": {
-        "x": -18.85,
+        "x": -0.51,
         "y": 0,
-        "z": 3.15
+        "z": 30.19
       },
-      "rotationY": 3.142,
+      "rotationY": -1.877,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8676,11 +8676,11 @@
       "id": "yard_arid_badlands_0_fence",
       "kind": "prop",
       "position": {
-        "x": -24,
+        "x": 5.19,
         "y": 0,
-        "z": 10.75
+        "z": 37.39
       },
-      "rotationY": 3.142,
+      "rotationY": -1.877,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8689,11 +8689,11 @@
       "id": "yard_arid_badlands_1_mailbox",
       "kind": "prop",
       "position": {
-        "x": -14.75,
+        "x": -1.81,
         "y": 0,
-        "z": 0.45
+        "z": 25.4
       },
-      "rotationY": 3.142,
+      "rotationY": -1.862,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8702,11 +8702,11 @@
       "id": "yard_arid_badlands_1_driveway",
       "kind": "prop",
       "position": {
-        "x": -6.85,
+        "x": 3.04,
         "y": 0,
-        "z": 3.15
+        "z": 18.6
       },
-      "rotationY": 3.142,
+      "rotationY": -1.862,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8715,11 +8715,11 @@
       "id": "yard_arid_badlands_1_fence",
       "kind": "prop",
       "position": {
-        "x": -12,
+        "x": 8.84,
         "y": 0,
-        "z": 10.75
+        "z": 25.72
       },
-      "rotationY": 3.142,
+      "rotationY": -1.862,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8728,11 +8728,11 @@
       "id": "yard_arid_badlands_2_mailbox",
       "kind": "prop",
       "position": {
-        "x": -2.75,
+        "x": -14.2,
         "y": 0,
-        "z": 0.45
+        "z": 28.38
       },
-      "rotationY": 3.142,
+      "rotationY": 1.265,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8741,11 +8741,11 @@
       "id": "yard_arid_badlands_2_driveway",
       "kind": "prop",
       "position": {
-        "x": 5.15,
+        "x": -19.15,
         "y": 0,
-        "z": 3.15
+        "z": 35.1
       },
-      "rotationY": 3.142,
+      "rotationY": 1.265,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8754,11 +8754,11 @@
       "id": "yard_arid_badlands_2_fence",
       "kind": "prop",
       "position": {
-        "x": 0,
+        "x": -24.85,
         "y": 0,
-        "z": 10.75
+        "z": 27.9
       },
-      "rotationY": 3.142,
+      "rotationY": 1.265,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8767,11 +8767,11 @@
       "id": "yard_arid_badlands_3_mailbox",
       "kind": "prop",
       "position": {
-        "x": 9.25,
+        "x": -10.68,
         "y": 0,
-        "z": 0.45
+        "z": 17
       },
-      "rotationY": 3.142,
+      "rotationY": 1.28,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8780,11 +8780,11 @@
       "id": "yard_arid_badlands_3_driveway",
       "kind": "prop",
       "position": {
-        "x": 17.15,
+        "x": -15.53,
         "y": 0,
-        "z": 3.15
+        "z": 23.79
       },
-      "rotationY": 3.142,
+      "rotationY": 1.28,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8793,11 +8793,11 @@
       "id": "yard_arid_badlands_3_fence",
       "kind": "prop",
       "position": {
-        "x": 12,
+        "x": -21.33,
         "y": 0,
-        "z": 10.75
+        "z": 16.68
       },
-      "rotationY": 3.142,
+      "rotationY": 1.28,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8806,11 +8806,11 @@
       "id": "yard_arid_badlands_4_mailbox",
       "kind": "prop",
       "position": {
-        "x": 21.25,
+        "x": -7.28,
         "y": 0,
-        "z": 0.45
+        "z": 5.54
       },
-      "rotationY": 3.142,
+      "rotationY": 1.288,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8819,11 +8819,11 @@
       "id": "yard_arid_badlands_4_driveway",
       "kind": "prop",
       "position": {
-        "x": 29.15,
+        "x": -12.08,
         "y": 0,
-        "z": 3.15
+        "z": 12.37
       },
-      "rotationY": 3.142,
+      "rotationY": 1.288,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8832,11 +8832,11 @@
       "id": "yard_arid_badlands_4_fence",
       "kind": "prop",
       "position": {
-        "x": 24,
+        "x": -17.94,
         "y": 0,
-        "z": 10.75
+        "z": 5.31
       },
-      "rotationY": 3.142,
+      "rotationY": 1.288,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8845,11 +8845,11 @@
       "id": "yard_arid_badlands_5_mailbox",
       "kind": "prop",
       "position": {
-        "x": -21.25,
+        "x": 3.84,
         "y": 0,
-        "z": -0.45
+        "z": -16.12
       },
-      "rotationY": 0,
+      "rotationY": -1.488,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8858,11 +8858,11 @@
       "id": "yard_arid_badlands_5_driveway",
       "kind": "prop",
       "position": {
-        "x": -29.15,
+        "x": 5.88,
         "y": 0,
-        "z": -3.15
+        "z": -24.21
       },
-      "rotationY": 0,
+      "rotationY": -1.488,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8871,11 +8871,11 @@
       "id": "yard_arid_badlands_5_fence",
       "kind": "prop",
       "position": {
-        "x": -24,
+        "x": 13.88,
         "y": 0,
-        "z": -10.75
+        "z": -19.7
       },
-      "rotationY": 0,
+      "rotationY": -1.488,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8884,11 +8884,11 @@
       "id": "yard_arid_badlands_6_mailbox",
       "kind": "prop",
       "position": {
-        "x": -9.25,
+        "x": 2.94,
         "y": 0,
-        "z": -0.45
+        "z": -27.96
       },
-      "rotationY": 0,
+      "rotationY": -1.51,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8897,11 +8897,11 @@
       "id": "yard_arid_badlands_6_driveway",
       "kind": "prop",
       "position": {
-        "x": -17.15,
+        "x": 5.16,
         "y": 0,
-        "z": -3.15
+        "z": -36.01
       },
-      "rotationY": 0,
+      "rotationY": -1.51,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8910,11 +8910,11 @@
       "id": "yard_arid_badlands_6_fence",
       "kind": "prop",
       "position": {
-        "x": -12,
+        "x": 13.06,
         "y": 0,
-        "z": -10.75
+        "z": -31.34
       },
-      "rotationY": 0,
+      "rotationY": -1.51,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8923,11 +8923,11 @@
       "id": "yard_arid_badlands_7_mailbox",
       "kind": "prop",
       "position": {
-        "x": 2.75,
+        "x": 25.06,
         "y": 0,
-        "z": -0.45
+        "z": 31.29
       },
-      "rotationY": 0,
+      "rotationY": 2.397,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8936,11 +8936,11 @@
       "id": "yard_arid_badlands_7_driveway",
       "kind": "prop",
       "position": {
-        "x": -5.15,
+        "x": 29.04,
         "y": 0,
-        "z": -3.15
+        "z": 38.63
       },
-      "rotationY": 0,
+      "rotationY": 2.397,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8949,11 +8949,11 @@
       "id": "yard_arid_badlands_7_fence",
       "kind": "prop",
       "position": {
-        "x": 0,
+        "x": 20.1,
         "y": 0,
-        "z": -10.75
+        "z": 40.72
       },
-      "rotationY": 0,
+      "rotationY": 2.397,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -8962,11 +8962,11 @@
       "id": "yard_arid_badlands_8_mailbox",
       "kind": "prop",
       "position": {
-        "x": 14.75,
+        "x": -37.41,
         "y": 0,
-        "z": -0.45
+        "z": -8.31
       },
-      "rotationY": 0,
+      "rotationY": 2.859,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -8975,11 +8975,11 @@
       "id": "yard_arid_badlands_8_driveway",
       "kind": "prop",
       "position": {
-        "x": 6.85,
+        "x": -30.58,
         "y": 0,
-        "z": -3.15
+        "z": -3.52
       },
-      "rotationY": 0,
+      "rotationY": 2.859,
       "meta": {
         "catalogId": "driveway"
       }
@@ -8988,11 +8988,11 @@
       "id": "yard_arid_badlands_8_fence",
       "kind": "prop",
       "position": {
-        "x": 12,
+        "x": -37.64,
         "y": 0,
-        "z": -10.75
+        "z": 2.35
       },
-      "rotationY": 0,
+      "rotationY": 2.859,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9001,11 +9001,11 @@
       "id": "yard_arid_badlands_9_mailbox",
       "kind": "prop",
       "position": {
-        "x": 26.75,
+        "x": -30.76,
         "y": 0,
-        "z": -0.45
+        "z": -11.49
       },
-      "rotationY": 0,
+      "rotationY": -0.282,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9014,11 +9014,11 @@
       "id": "yard_arid_badlands_9_driveway",
       "kind": "prop",
       "position": {
-        "x": 18.85,
+        "x": -37.6,
         "y": 0,
-        "z": -3.15
+        "z": -16.28
       },
-      "rotationY": 0,
+      "rotationY": -0.282,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9027,11 +9027,11 @@
       "id": "yard_arid_badlands_9_fence",
       "kind": "prop",
       "position": {
-        "x": 24,
+        "x": -30.53,
         "y": 0,
-        "z": -10.75
+        "z": -22.14
       },
-      "rotationY": 0,
+      "rotationY": -0.282,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9040,11 +9040,11 @@
       "id": "yard_glasswind_flats_0_mailbox",
       "kind": "prop",
       "position": {
-        "x": 503.25,
+        "x": 512.43,
         "y": 0,
-        "z": -260.05
+        "z": -246.6
       },
-      "rotationY": 3.142,
+      "rotationY": 1.365,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9053,11 +9053,11 @@
       "id": "yard_glasswind_flats_0_driveway",
       "kind": "prop",
       "position": {
-        "x": 513.15,
+        "x": 507.77,
         "y": 0,
-        "z": -257.35
+        "z": -237.46
       },
-      "rotationY": 3.142,
+      "rotationY": 1.365,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9066,11 +9066,11 @@
       "id": "yard_glasswind_flats_0_fence",
       "kind": "prop",
       "position": {
-        "x": 507,
+        "x": 499.62,
         "y": 0,
-        "z": -247.75
+        "z": -245.44
       },
-      "rotationY": 3.142,
+      "rotationY": 1.365,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9079,11 +9079,11 @@
       "id": "yard_glasswind_flats_1_mailbox",
       "kind": "prop",
       "position": {
-        "x": 516.25,
+        "x": 494.32,
         "y": 0,
-        "z": -260.05
+        "z": -262.77
       },
-      "rotationY": 3.142,
+      "rotationY": 2.958,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9092,11 +9092,11 @@
       "id": "yard_glasswind_flats_1_driveway",
       "kind": "prop",
       "position": {
-        "x": 526.15,
+        "x": 503.57,
         "y": 0,
-        "z": -257.35
+        "z": -258.31
       },
-      "rotationY": 3.142,
+      "rotationY": 2.958,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9105,11 +9105,11 @@
       "id": "yard_glasswind_flats_1_fence",
       "kind": "prop",
       "position": {
-        "x": 520,
+        "x": 495.77,
         "y": 0,
-        "z": -247.75
+        "z": -250
       },
-      "rotationY": 3.142,
+      "rotationY": 2.958,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9118,11 +9118,11 @@
       "id": "yard_glasswind_flats_2_mailbox",
       "kind": "prop",
       "position": {
-        "x": 529.25,
+        "x": 545.46,
         "y": 0,
-        "z": -260.05
+        "z": -253.3
       },
-      "rotationY": 3.142,
+      "rotationY": 2.959,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9131,11 +9131,11 @@
       "id": "yard_glasswind_flats_2_driveway",
       "kind": "prop",
       "position": {
-        "x": 539.15,
+        "x": 554.7,
         "y": 0,
-        "z": -257.35
+        "z": -248.85
       },
-      "rotationY": 3.142,
+      "rotationY": 2.959,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9144,11 +9144,11 @@
       "id": "yard_glasswind_flats_2_fence",
       "kind": "prop",
       "position": {
-        "x": 533,
+        "x": 546.91,
         "y": 0,
-        "z": -247.75
+        "z": -240.52
       },
-      "rotationY": 3.142,
+      "rotationY": 2.959,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9157,11 +9157,11 @@
       "id": "yard_glasswind_flats_3_mailbox",
       "kind": "prop",
       "position": {
-        "x": 510.75,
+        "x": 502.41,
         "y": 0,
-        "z": -259.95
+        "z": -265.24
       },
-      "rotationY": 0,
+      "rotationY": -0.183,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9170,11 +9170,11 @@
       "id": "yard_glasswind_flats_3_driveway",
       "kind": "prop",
       "position": {
-        "x": 500.85,
+        "x": 493.17,
         "y": 0,
-        "z": -262.65
+        "z": -269.7
       },
-      "rotationY": 0,
+      "rotationY": -0.183,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9183,11 +9183,11 @@
       "id": "yard_glasswind_flats_3_fence",
       "kind": "prop",
       "position": {
-        "x": 507,
+        "x": 500.96,
         "y": 0,
-        "z": -272.25
+        "z": -278.02
       },
-      "rotationY": 0,
+      "rotationY": -0.183,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -9196,11 +9196,11 @@
       "id": "yard_glasswind_flats_4_mailbox",
       "kind": "prop",
       "position": {
-        "x": 523.75,
+        "x": 543.37,
         "y": 0,
-        "z": -259.95
+        "z": -267.83
       },
-      "rotationY": 0,
+      "rotationY": 1.387,
       "meta": {
         "catalogId": "mailbox"
       }
@@ -9209,11 +9209,11 @@
       "id": "yard_glasswind_flats_4_driveway",
       "kind": "prop",
       "position": {
-        "x": 513.85,
+        "x": 538.91,
         "y": 0,
-        "z": -262.65
+        "z": -258.59
       },
-      "rotationY": 0,
+      "rotationY": 1.387,
       "meta": {
         "catalogId": "driveway"
       }
@@ -9222,11 +9222,11 @@
       "id": "yard_glasswind_flats_4_fence",
       "kind": "prop",
       "position": {
-        "x": 520,
+        "x": 530.59,
         "y": 0,
-        "z": -272.25
+        "z": -266.39
       },
-      "rotationY": 0,
+      "rotationY": 1.387,
       "meta": {
         "catalogId": "picket_fence"
       }
@@ -11621,6 +11621,558 @@
       "meta": {
         "from": "glasswind_flats",
         "to": "poi_wreck_field"
+      }
+    },
+    {
+      "id": "street_rustflat_waste_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": -527.75,
+          "y": 0,
+          "z": 518.72
+        },
+        {
+          "x": -525.17,
+          "y": 0,
+          "z": 532.48
+        },
+        {
+          "x": -522.58,
+          "y": 0,
+          "z": 546.24
+        },
+        {
+          "x": -520,
+          "y": 0,
+          "z": 560
+        },
+        {
+          "x": -517.42,
+          "y": 0,
+          "z": 573.76
+        },
+        {
+          "x": -514.83,
+          "y": 0,
+          "z": 587.52
+        },
+        {
+          "x": -512.25,
+          "y": 0,
+          "z": 601.28
+        }
+      ],
+      "width": 7,
+      "label": "Crabgrass Court cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_rustflat_waste_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": -549.54,
+          "y": 0,
+          "z": 543.16
+        },
+        {
+          "x": -537.16,
+          "y": 0,
+          "z": 540.84
+        },
+        {
+          "x": -524.77,
+          "y": 0,
+          "z": 538.51
+        },
+        {
+          "x": -512.39,
+          "y": 0,
+          "z": 536.19
+        },
+        {
+          "x": -500,
+          "y": 0,
+          "z": 533.86
+        },
+        {
+          "x": -487.62,
+          "y": 0,
+          "z": 531.54
+        },
+        {
+          "x": -475.24,
+          "y": 0,
+          "z": 529.21
+        }
+      ],
+      "width": 4,
+      "label": "Crabgrass Court back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "street_breakwater_shelf_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": -196.23,
+          "y": 0,
+          "z": 421.26
+        },
+        {
+          "x": -190.82,
+          "y": 0,
+          "z": 434.17
+        },
+        {
+          "x": -185.41,
+          "y": 0,
+          "z": 447.09
+        },
+        {
+          "x": -180,
+          "y": 0,
+          "z": 460
+        },
+        {
+          "x": -174.59,
+          "y": 0,
+          "z": 472.91
+        },
+        {
+          "x": -169.18,
+          "y": 0,
+          "z": 485.83
+        },
+        {
+          "x": -163.77,
+          "y": 0,
+          "z": 498.74
+        }
+      ],
+      "width": 7,
+      "label": "Sprinkler Heights cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_breakwater_shelf_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": -206.36,
+          "y": 0,
+          "z": 494.9
+        },
+        {
+          "x": -194.74,
+          "y": 0,
+          "z": 490.03
+        },
+        {
+          "x": -183.12,
+          "y": 0,
+          "z": 485.16
+        },
+        {
+          "x": -171.5,
+          "y": 0,
+          "z": 480.29
+        },
+        {
+          "x": -159.88,
+          "y": 0,
+          "z": 475.42
+        },
+        {
+          "x": -148.26,
+          "y": 0,
+          "z": 470.56
+        },
+        {
+          "x": -136.64,
+          "y": 0,
+          "z": 465.69
+        }
+      ],
+      "width": 4,
+      "label": "Sprinkler Heights back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "street_arid_badlands_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": -40.33,
+          "y": 0,
+          "z": -11.71
+        },
+        {
+          "x": -26.89,
+          "y": 0,
+          "z": -7.81
+        },
+        {
+          "x": -13.44,
+          "y": 0,
+          "z": -3.9
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        {
+          "x": 13.44,
+          "y": 0,
+          "z": 3.9
+        },
+        {
+          "x": 26.89,
+          "y": 0,
+          "z": 7.81
+        },
+        {
+          "x": 40.33,
+          "y": 0,
+          "z": 11.71
+        }
+      ],
+      "width": 7,
+      "label": "Maple Court — The Cul-de-Sac cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_arid_badlands_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": -31.67,
+          "y": 0,
+          "z": 30.17
+        },
+        {
+          "x": -28.15,
+          "y": 0,
+          "z": 18.07
+        },
+        {
+          "x": -24.64,
+          "y": 0,
+          "z": 5.97
+        },
+        {
+          "x": -21.13,
+          "y": 0,
+          "z": -6.14
+        },
+        {
+          "x": -17.61,
+          "y": 0,
+          "z": -18.24
+        },
+        {
+          "x": -14.1,
+          "y": 0,
+          "z": -30.34
+        },
+        {
+          "x": -10.59,
+          "y": 0,
+          "z": -42.44
+        }
+      ],
+      "width": 4,
+      "label": "Maple Court — The Cul-de-Sac back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "street_split_ridge_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": 441.78,
+          "y": 0,
+          "z": 264.09
+        },
+        {
+          "x": 434.52,
+          "y": 0,
+          "z": 276.06
+        },
+        {
+          "x": 427.26,
+          "y": 0,
+          "z": 288.03
+        },
+        {
+          "x": 420,
+          "y": 0,
+          "z": 300
+        },
+        {
+          "x": 412.74,
+          "y": 0,
+          "z": 311.97
+        },
+        {
+          "x": 405.48,
+          "y": 0,
+          "z": 323.94
+        },
+        {
+          "x": 398.22,
+          "y": 0,
+          "z": 335.91
+        }
+      ],
+      "width": 7,
+      "label": "Strip Mall Ridge cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_split_ridge_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": 376.27,
+          "y": 0,
+          "z": 299.21
+        },
+        {
+          "x": 387.05,
+          "y": 0,
+          "z": 305.75
+        },
+        {
+          "x": 397.82,
+          "y": 0,
+          "z": 312.28
+        },
+        {
+          "x": 408.59,
+          "y": 0,
+          "z": 318.81
+        },
+        {
+          "x": 419.37,
+          "y": 0,
+          "z": 325.34
+        },
+        {
+          "x": 430.14,
+          "y": 0,
+          "z": 331.88
+        },
+        {
+          "x": 440.92,
+          "y": 0,
+          "z": 338.41
+        }
+      ],
+      "width": 4,
+      "label": "Strip Mall Ridge back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "street_glasswind_flats_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": 478.7,
+          "y": 0,
+          "z": -267.64
+        },
+        {
+          "x": 492.47,
+          "y": 0,
+          "z": -265.1
+        },
+        {
+          "x": 506.23,
+          "y": 0,
+          "z": -262.55
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": -260
+        },
+        {
+          "x": 533.77,
+          "y": 0,
+          "z": -257.45
+        },
+        {
+          "x": 547.53,
+          "y": 0,
+          "z": -254.9
+        },
+        {
+          "x": 561.3,
+          "y": 0,
+          "z": -252.36
+        }
+      ],
+      "width": 7,
+      "label": "The Fairways cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_glasswind_flats_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": 534.75,
+          "y": 0,
+          "z": -218.83
+        },
+        {
+          "x": 537.05,
+          "y": 0,
+          "z": -231.22
+        },
+        {
+          "x": 539.34,
+          "y": 0,
+          "z": -243.61
+        },
+        {
+          "x": 541.63,
+          "y": 0,
+          "z": -256
+        },
+        {
+          "x": 543.93,
+          "y": 0,
+          "z": -268.39
+        },
+        {
+          "x": 546.22,
+          "y": 0,
+          "z": -280.78
+        },
+        {
+          "x": 548.51,
+          "y": 0,
+          "z": -293.16
+        }
+      ],
+      "width": 4,
+      "label": "The Fairways back alley",
+      "meta": {
+        "street": "alley"
+      }
+    },
+    {
+      "id": "street_cores_blight_cross",
+      "kind": "street",
+      "points": [
+        {
+          "x": -121.52,
+          "y": 0,
+          "z": -553.7
+        },
+        {
+          "x": -107.68,
+          "y": 0,
+          "z": -555.8
+        },
+        {
+          "x": -93.84,
+          "y": 0,
+          "z": -557.9
+        },
+        {
+          "x": -80,
+          "y": 0,
+          "z": -560
+        },
+        {
+          "x": -66.16,
+          "y": 0,
+          "z": -562.1
+        },
+        {
+          "x": -52.32,
+          "y": 0,
+          "z": -564.2
+        },
+        {
+          "x": -38.48,
+          "y": 0,
+          "z": -566.3
+        }
+      ],
+      "width": 7,
+      "label": "Smart Home Estates cross street",
+      "meta": {
+        "street": "cross"
+      }
+    },
+    {
+      "id": "street_cores_blight_alley",
+      "kind": "street",
+      "points": [
+        {
+          "x": -52.58,
+          "y": 0,
+          "z": -525.93
+        },
+        {
+          "x": -54.47,
+          "y": 0,
+          "z": -538.38
+        },
+        {
+          "x": -56.36,
+          "y": 0,
+          "z": -550.84
+        },
+        {
+          "x": -58.25,
+          "y": 0,
+          "z": -563.3
+        },
+        {
+          "x": -60.14,
+          "y": 0,
+          "z": -575.76
+        },
+        {
+          "x": -62.03,
+          "y": 0,
+          "z": -588.21
+        },
+        {
+          "x": -63.92,
+          "y": 0,
+          "z": -600.67
+        }
+      ],
+      "width": 4,
+      "label": "Smart Home Estates back alley",
+      "meta": {
+        "street": "alley"
       }
     }
   ],

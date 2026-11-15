@@ -27,6 +27,21 @@ async function follow(p: Play, near: number, maxSteps = 400): Promise<Probe> {
   throw new Error("the marker never came within reach");
 }
 
+/** One step of closing on what the marker marks, side-stepping when a house or a fence blocks the way. */
+const stall = { best: Number.POSITIVE_INFINITY, stuck: 0, detours: 0 };
+async function close(p: Play, r: Probe): Promise<void> {
+  const yaw = Math.atan2(r.goalX - r.playerX, r.goalZ - r.playerZ);
+  if (r.goalDistance < stall.best - 0.3) { stall.best = r.goalDistance; stall.stuck = 0; }
+  else if ((stall.stuck += 1) >= 4) {
+    stall.detours += 1; stall.stuck = 0; stall.best = Number.POSITIVE_INFINITY;
+    await p.heading(yaw + (stall.detours % 2 === 1 ? Math.PI / 2 : -Math.PI / 2));
+    await p.hold("KeyW", { ms: 600 });
+    return;
+  }
+  await p.heading(yaw);
+  await p.hold("KeyW", { ms: 250 });
+}
+
 /** Press E on whoever the marker points at, read what they say, and take the errand. */
 async function takeErrand(p: Play): Promise<void> {
   await follow(p, 2.4);
@@ -57,8 +72,7 @@ export default defineProof(game, {
     for (let step = 0; step < 300 && (await p.probe()).kills === start.kills; step += 1) {
       const r = await p.probe();
       if (r.goalDistance > 8) {
-        await p.heading(Math.atan2(r.goalX - r.playerX, r.goalZ - r.playerZ));
-        await p.hold("KeyW", { ms: 250 });
+        await close(p, r);
         continue;
       }
       if (r.magFill === 0) {
@@ -74,12 +88,17 @@ export default defineProof(game, {
     }
     await p.expect((r) => r.kills > start.kills, "the first push mower mowed down");
     // Keep at the errand until a level brings the first skill point, then spend it.
-    for (let step = 0; step < 400 && (await p.probe()).skillPoints < 1; step += 1) {
+    for (let step = 0; step < 900 && (await p.probe()).skillPoints < 1; step += 1) {
       const r = await p.probe();
+      // Running low, the marker points at a recycling bin (ammo) or a dropped weapon: go and take it.
+      if (r.goalKind === kind("chest") || r.goalKind === kind("loot")) {
+        if (r.goalDistance > 1.8) await close(p, r);
+        else await p.press("KeyE");
+        continue;
+      }
       if (r.goalKind !== kind("enemy")) break;
       if (r.goalDistance > 8) {
-        await p.heading(Math.atan2(r.goalX - r.playerX, r.goalZ - r.playerZ));
-        await p.hold("KeyW", { ms: 250 });
+        await close(p, r);
         continue;
       }
       if (r.magFill === 0) { await p.press("KeyR"); await p.wait(1600); reloaded = true; continue; }

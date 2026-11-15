@@ -373,7 +373,8 @@ export function structureSolids(
   const solids: WorldSolid[] = [];
   for (const descriptor of world.structures ?? []) {
     if (descriptor.solid === false) continue;
-    solids.push(...buildingSolids(resolveStructureBuildings(descriptor), groundHeight));
+    // The same lots the scene draws: buildings line the world's streets when they run through.
+    solids.push(...buildingSolids(resolveStructureBuildings(descriptor, world.roads ?? []), groundHeight));
   }
   return solids;
 }

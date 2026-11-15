@@ -14,7 +14,7 @@ import { createSceneRaycast } from "../scene/sceneRaycast";
 import { createPerception } from "../sensor/perception";
 import { resolveAuthoredSolids, syncAuthoredSolids } from "./authoredSolids";
 import { resolveStructureBuildings } from "./environmentSummary";
-import { building, environment, type BuildingEnvironmentConfig } from "./features";
+import { building, environment, road, type BuildingEnvironmentConfig } from "./features";
 import { wallSegments } from "./walls";
 import {
   buildingSolids,
@@ -174,6 +174,21 @@ describe("solid derivers", () => {
     expect(solid!.halfExtents[0] * 2).toBeCloseTo(generated!.bounds.maxX - generated!.bounds.minX);
     expect(solid!.center[1] - solid!.halfExtents[1]).toBeCloseTo(2);
     expect(solid!.center[1] + solid!.halfExtents[1]).toBeCloseTo(2 + generated!.floors * generated!.floorHeight);
+  });
+
+  // The scene lines a settlement along a street that runs through it; the solids used the old lane
+  // layout, so the drawn houses were walk-through and invisible walls stood beside them.
+  test("structure solids stand on the same street-lined lots the scene draws", () => {
+    const street = road({ path: [[-40, 0], [40, 0]], width: 8 });
+    const world = environment({ roads: [street], structures: building({ count: 4, seed: "street", position: [0, 0], footprint: { w: 6, d: 6 } }) });
+    const drawn = resolveStructureBuildings(world.structures![0]!, world.roads ?? []);
+    const solids = structureSolids(world);
+    expect(solids).toHaveLength(drawn.length);
+    for (const [index, solid] of solids.entries()) {
+      const house = drawn[index]!;
+      expect(solid.center[0]).toBeCloseTo((house.bounds.minX + house.bounds.maxX) / 2, 3);
+      expect(solid.center[2]).toBeCloseTo((house.bounds.minZ + house.bounds.maxZ) / 2, 3);
+    }
   });
 
   test("solid: false keeps a structure render-only", () => {
