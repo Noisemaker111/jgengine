@@ -15,6 +15,7 @@ import { restoreRides, rideSnapshot } from "./rides";
 import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffState } from "./session";
 import { restoreStaff } from "./staff";
 import { parkProfile } from "./parkProfile";
+import { parkStorage } from "./parkStorage";
 import { ecto } from "./ecto";
 
 export const SAVE_KEY = "hauntworks.save.v1";
@@ -224,11 +225,12 @@ function savedLine(ctx: GameContext, prefix: string): string {
 }
 
 export function savePark(ctx: GameContext): void {
-  if (!session.started || typeof localStorage === "undefined") return;
+  const storage = parkStorage();
+  if (!session.started || storage === null) return;
   try {
-    const previous = localStorage.getItem(SAVE_KEY);
+    const previous = storage.getItem(SAVE_KEY);
     if (previous && !decodeSave(previous)) archiveSave();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(snapshotPark(ctx)));
+    storage.setItem(SAVE_KEY, JSON.stringify(snapshotPark(ctx)));
     session.hasSave = true;
     session.saveStatus = savedLine(ctx, "Saved");
   } catch {
@@ -260,10 +262,11 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
 
 /** Load the park's save; false (and a fresh park for the caller to seed) when there is none or it is unreadable. */
 export function restorePark(ctx: GameContext): boolean {
-  if (typeof localStorage === "undefined") return false;
+  const storage = parkStorage();
+  if (storage === null) return false;
   let raw: string | null;
   try {
-    raw = localStorage.getItem(SAVE_KEY);
+    raw = storage.getItem(SAVE_KEY);
   } catch {
     return false;
   }
@@ -279,8 +282,9 @@ export function restorePark(ctx: GameContext): boolean {
 
 /** Explicit fresh-park action archives the previous save before replacing it. */
 export function archiveSave(): void {
-  if (typeof localStorage === "undefined") return;
-  const previous = localStorage.getItem(SAVE_KEY);
-  if (previous) localStorage.setItem(`${SAVE_KEY}.backup.${Date.now()}`, previous);
-  localStorage.removeItem(SAVE_KEY);
+  const storage = parkStorage();
+  if (storage === null) return;
+  const previous = storage.getItem(SAVE_KEY);
+  if (previous) storage.setItem(`${SAVE_KEY}.backup.${Date.now()}`, previous);
+  storage.removeItem(SAVE_KEY);
 }

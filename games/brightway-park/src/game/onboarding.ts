@@ -132,6 +132,12 @@ export function currentHint(ctx: GameContext): ParkHintView | null {
   return { id: step.id, text: step.text, ui: [...(step.anchor === undefined ? [] : [step.anchor]), ...(points?.ui ?? [])], world: points?.world?.(w) ?? null };
 }
 
+/** The current hint's place in the list, or -1 when there is none: what a proof following the hints reads. */
+export function hintIndex(ctx: GameContext): number {
+  const hint = currentHint(ctx);
+  return hint === null ? -1 : PARK_HINTS.steps.findIndex((step) => step.id === hint.id);
+}
+
 /** Hints the player has done this park. */
 export function hintsTaught(ctx: GameContext): number {
   const run = onboardingOf(ctx)?.run();

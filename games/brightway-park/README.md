@@ -1,7 +1,7 @@
 # Hauntworks
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **14/18 proven · 1 not simulatable · 3 missing** · `jgengine suite brightway-park`
+Game suite: **18/18 proven** · `jgengine suite brightway-park`
 <!-- /suite-score -->
 
 A reversed tycoon. You are the ghost proprietor of a derelict seaside amusement park, and the living

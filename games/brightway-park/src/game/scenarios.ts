@@ -2,6 +2,7 @@ import type { MissionDef } from "@jgengine/core/mission/mission";
 
 import { MONTH_DAYS, monthLabel } from "./books";
 import { DAY_LENGTH } from "./catalog";
+import { parkStorage } from "./parkStorage";
 
 /**
  * The haunt's season as content: each scenario is a `survive` mission that completes the moment
@@ -140,7 +141,7 @@ const WON_KEY = "hauntworks.scenarios-won";
 /** The scenarios this browser has won, kept apart from any one park's save. */
 export function scenariosWon(): readonly string[] {
   try {
-    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(WON_KEY);
+    const raw = parkStorage()?.getItem(WON_KEY) ?? null;
     const parsed: unknown = raw === null ? [] : JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
   } catch {
@@ -152,7 +153,7 @@ export function recordScenarioWin(id: string): void {
   const won = scenariosWon();
   if (won.includes(id)) return;
   try {
-    localStorage.setItem(WON_KEY, JSON.stringify([...won, id]));
+    parkStorage()?.setItem(WON_KEY, JSON.stringify([...won, id]));
   } catch { /* Browser storage may be disabled: the unlock lasts this session only. */ }
 }
 

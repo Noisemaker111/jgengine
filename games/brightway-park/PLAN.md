@@ -9,28 +9,28 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| onboarding | 2/2 | 0 | 0 | 0 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
-| save | 0/1 | 0 | 0 | 1 | 0 |
-| settings | 0/1 | 0 | 0 | 1 | 0 |
-| menu | 0/1 | 0 | 1 | 0 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
+| settings | 1/1 | 0 | 0 | 0 | 0 |
+| menu | 1/1 | 0 | 0 | 0 | 0 |
 | progression | 1/1 | 0 | 0 | 0 | 0 |
 | content | 5/5 | 0 | 0 | 0 | 0 |
 | tycoon | 6/6 | 0 | 0 | 0 | 0 |
-| **total** | **14/18** | 0 | 1 | 3 | 0 |
+| **total** | **18/18** | 0 | 0 | 0 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
+Genres: tycoon. 18/18 proven.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
-| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/bankrupt-replay.proof.ts |
-| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
-| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
-| `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/menu/ParkMenu.tsx: the Credits pane is a screen on the title board's own Rune flow; no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx renders it) |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
+| `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-pause.proof.ts |
+| `menu.start-and-credits` | proven | The main menu starts a game and shows the credits. | proofs/sim/menu-credits.proof.ts |
 | `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
 | `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
@@ -192,10 +192,6 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 - Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
   for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
   worldModel/` wants over kind counts). One adopter so far.
-- `save.continue` cannot be proven headless: the park writes its own browser-storage document
-  (`save: "none"`, `persistence.ts`), and the suite's restart only keeps what goes through the engine's
-  save backend (`packages/core/src/save/`). Moving the park document onto `ctx.game.save` (a custom
-  target with the park's own encode/decode) would let a `save-continue.proof.ts` run.
 - The economy is untuned: chained scares are new, and the balance bot (`bun scripts/balance.ts 60`)
   still plays the old tycoon strategy. It should lay a gauntlet and house a ghost.
 - Day-night lighting: the look is a fixed moonlit mood; the sky does not follow the clock (the engine's
@@ -215,4 +211,4 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
 8. [ ] An ectoplasm economy a steady haunter can grow: the balance bot lays a gauntlet, houses a ghost and wins The First Chill.
 9. [x] Full-moon nights (more of the living, richer scares), the exorcist walks in at noon to the ghost it banishes, ghost halos, a darker graded night, the Full Moon Festival ending.
-10. [ ] The park save on the engine's save backend, so Continue is proven by a suite proof.
+10. [x] Suite 18/18: the save written through the host's save backend when there is no browser storage, the shared start / menu.pane / settings.rebind verbs, and proofs for Continue, the credits, rebinding and following the hints.

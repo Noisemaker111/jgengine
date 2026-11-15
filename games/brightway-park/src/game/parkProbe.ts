@@ -3,7 +3,11 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { MILESTONES } from "./milestones";
 import { GHOSTS } from "./ghostCatalog";
 import { BUILDABLES, type BuildCategory } from "./objects/catalog";
-import { hintsTaught } from "./onboarding";
+import { hintIndex, hintsTaught } from "./onboarding";
+import { menuPane } from "@jgengine/core/game/gameFlow";
+
+/** The menu pane as a number for the probe. */
+const MENU_PANE_CODE: Record<string, number> = { none: 0, controls: 1, settings: 2, credits: 3 };
 import { park, researched } from "./park";
 import { SCENARIOS, scenarioLock } from "./scenarios";
 import { session } from "./session";
@@ -57,6 +61,17 @@ export interface ParkProbe {
   ghostsTotal: number;
   /** Hunters' footage on the record (100 brings the exorcist). */
   evidence: number;
+  /** The menu pane on show: none, controls, settings, credits. */
+  menuPane: number;
+  /** 1 while the clock is stopped. */
+  clockPaused: number;
+  /** 1 while the title or pause board is up rather than the live haunt. */
+  onTitle: number;
+  /** The first scenario's current hint, as its index in the hint list (-1 for none). */
+  hint: number;
+  /** Séances finished or running, and scare props standing. */
+  seances: number;
+  props: number;
 }
 
 /** Open to the player (no lab topic, or its topic done) and how many there are, for one build category. */
@@ -135,5 +150,11 @@ export function parkProbe(ctx: GameContext): ParkProbe {
     ghosts: w.num("park.ghosts"),
     ghostsTotal: GHOSTS.length,
     evidence: w.num("park.evidence"),
+    menuPane: MENU_PANE_CODE[menuPane(ctx) ?? "none"] ?? 0,
+    clockPaused: ctx.time.snapshot().paused ? 1 : 0,
+    onTitle: session.started ? 0 : 1,
+    hint: hintIndex(ctx),
+    seances: topics + w.orders("lab").length,
+    props: w.num("park.props"),
   };
 }

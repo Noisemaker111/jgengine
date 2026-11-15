@@ -25,9 +25,6 @@
   "suite": {
     "genres": [
       "tycoon"
-    ],
-    "notSimulatable": {
-      "menu.start-and-credits": "src/game/ui/menu/ParkMenu.tsx: the Credits pane is a screen on the title board's own Rune flow; no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx renders it)"
-    }
+    ]
   }
 }

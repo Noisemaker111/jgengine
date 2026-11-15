@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { registerBuildCommands } from "../build/commands";
 import { restorePark, savePark } from "../persistence";
+import { bindParkStorage } from "../parkStorage";
 import { resetPark } from "../parkReset";
 import { session } from "../session";
 import { traceNative, tracePark } from "../evidence";
@@ -18,6 +19,8 @@ export function disposeWorld(ctx: GameContext): void {
 export { seedPlacements, type SeedPlacement } from "../parkReset";
 
 export function setupWorld(ctx: GameContext): void {
+  // Before anything reads or writes the save: the browser's storage, or the host's in a headless run.
+  bindParkStorage(ctx);
   resetPark(ctx, { layout: "blank" });
   registerBuildCommands(ctx);
   if (!restorePark(ctx)) {

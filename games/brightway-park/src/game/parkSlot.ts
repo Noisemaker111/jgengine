@@ -1,6 +1,7 @@
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
 import { decodeSave, SAVE_KEY, type ParkSave } from "./persistence";
+import { parkStorage } from "./parkStorage";
 
 const num = (save: ParkSave, key: string): number => {
   const value = save.world.facts[key];
@@ -18,10 +19,11 @@ export const parkSlots = createSaveSlots({
 
 /** Read the saved park back into the card, so Continue and the slot grid show what is on disk. */
 export function refreshParkSlot(): void {
-  if (typeof localStorage === "undefined") return;
+  const storage = parkStorage();
+  if (storage === null) return;
   let raw: string | null = null;
   try {
-    raw = localStorage.getItem(SAVE_KEY);
+    raw = storage.getItem(SAVE_KEY);
   } catch {
     raw = null;
   }

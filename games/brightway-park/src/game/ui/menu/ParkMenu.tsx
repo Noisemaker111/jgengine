@@ -2,6 +2,7 @@
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { menuPane, showMenuPane } from "@jgengine/core/game/gameFlow";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { useGame, useGameStore } from "@jgengine/ui/hooks";
@@ -83,7 +84,11 @@ function TitleBoard(props: ParkMenuProps) {
   const recent = slots.find((slot) => !slot.empty) ?? null;
   useEffect(() => { refreshParkSlot(); }, []);
   const flow = usePanes("main", parkFocus.id, ["new", "saves", "settings", "credits"]);
-  const back = flow.pop;
+  // A pane the shared `menu.pane` verb opens (a pad, a test, a proof) shows here too.
+  const ctx = useGameContext();
+  const sharedPane = useGameStore((c) => menuPane(c));
+  useEffect(() => { if (sharedPane !== null && flow.pane !== (sharedPane === "credits" ? "credits" : "settings")) flow.push(sharedPane === "credits" ? "credits" : "settings"); }, [sharedPane]);
+  const back = () => { showMenuPane(ctx, null); flow.pop(); };
   const scenario = (id: string) => { commands.run("park.scenario", { id }); commands.run("park.start", {}); };
   const savedDay = recent === null ? null : String(recent.meta["day"] ?? day ?? 1);
   {
@@ -95,8 +100,8 @@ function TitleBoard(props: ParkMenuProps) {
       <Verb label="Wake the haunt" primary={recent === null} hint={recent === null ? `Begin with ${scenarioDef(FIRST_SCENARIO)?.title ?? "the first scenario"}` : "Start fresh or pick a scenario"}
         onPress={() => { if (recent === null) scenario(FIRST_SCENARIO); else flow.push("new"); }} />
       <Verb label="Haunt saves" hint={recent === null ? "Nothing saved yet" : `Night ${savedDay} on the board`} onPress={() => flow.push("saves")} />
-      <Verb label="Settings" hint="Motion, sound, controls" onPress={() => flow.push("settings")} />
-      <Verb label="Credits" onPress={() => flow.push("credits")} />
+      <Verb label="Settings" hint="Motion, sound, controls" onPress={() => { showMenuPane(ctx, "settings"); flow.push("settings"); }} />
+      <Verb label="Credits" onPress={() => { showMenuPane(ctx, "credits"); flow.push("credits"); }} />
     </Board>;
     const titled = (title: string, body: unknown) => <Board eyebrow={title} tagline={tagline} footer={footer} onBack={back}>
       <Row justify="between"><Heading>{title}</Heading><Button tone="ghost" onPress={back}>‹ Back</Button></Row>{body as never}
@@ -174,6 +179,8 @@ function PauseBoard(props: ParkMenuProps) {
   const day = useGameStore((c) => park.of(c).num("park.day"));
   const [notice, setNotice] = useState<string | null>(null);
   const flow = usePanes("main", parkFocus.id, ["settings", "help"]);
+  const sharedPane = useGameStore((c) => menuPane(c));
+  useEffect(() => { if (sharedPane !== null && flow.pane !== "settings") flow.push("settings"); }, [sharedPane]);
   const resume = () => commands.run("pauseToggle", {});
   const back = () => { if (flow.depth > 1) flow.pop(); else resume(); };
   const footer = `Hauntworks · night ${day ?? 1}`;

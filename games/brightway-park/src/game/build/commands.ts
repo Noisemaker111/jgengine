@@ -1,6 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
+import { showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { rebindAction } from "@jgengine/core/game/controlGate";
+import type { ActionCodes } from "@jgengine/core/input/actionBindings";
+import { FIRST_SCENARIO } from "../scenarios";
 
 import { BUILDABLES } from "../objects/catalog";
 import { session } from "../session";
@@ -199,17 +203,28 @@ function pointerAction(ctx: GameContext, input: PointerInput): void {
   selectGuestOrObject(ctx, input);
 }
 
+/** Into play: a saved haunt continues, a new one starts the first scenario. What `park.start` and the shared `start` do. */
+function startHaunt(state: GameContext): void {
+  showMenuPane(state, null);
+  session.started = true;
+  openParkDay(state);
+  if (over(state)) { setGamePhase(state, "ended"); state.time.pause(); }
+  else if (ribbonUp(state)) { setGamePhase(state, "paused"); state.time.pause(); }
+  else { setGamePhase(state, "playing"); state.time.play(); }
+  syncAmbience(state);
+  savePark(state); bump(state);
+}
+
 export function registerBuildCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ reduced: boolean }>("park.motion", { apply(state, input) { state.game.store.set("park.reduced-motion", input.reduced); } });
-  ctx.game.commands.define("park.start", { apply(state) {
-    session.started = true;
-    openParkDay(state);
-    if (over(state)) { setGamePhase(state, "ended"); state.time.pause(); }
-    else if (ribbonUp(state)) { setGamePhase(state, "paused"); state.time.pause(); }
-    else { setGamePhase(state, "playing"); state.time.play(); }
-    syncAmbience(state);
-    savePark(state); bump(state);
+  ctx.game.commands.define("park.start", { apply(state) { startHaunt(state); } });
+  // The shared menu verbs, so a pad, a test or a proof runs what the title and pause boards run.
+  ctx.game.commands.define("start", { apply(state) {
+    if (!session.hasSave && park.of(state).fact("scenario.id") === "") { showMenuPane(state, null); beginScenario(state, FIRST_SCENARIO); return; }
+    startHaunt(state);
   } });
+  ctx.game.commands.define<{ pane: MenuPane | null }>("menu.pane", { apply(state, input) { showMenuPane(state, input.pane); bump(state); } });
+  ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", { apply(state, input) { rebindAction(state, input.action, input.codes); bump(state); } });
   ctx.game.commands.define("park.save", { apply(state) { savePark(state); bump(state); } });
   ctx.game.commands.define("park.new", { apply(state) {
     try {
