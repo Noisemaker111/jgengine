@@ -1,7 +1,7 @@
 # NO VACANCY
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **0/16 proven · 16 missing** · `jgengine suite odd-orbit`
+Game suite: **16/16 proven** · `jgengine suite odd-orbit`
 <!-- /suite-score -->
 
 A cosy, funny boarding house bolted to the side of a space station. You rent rooms to aliens whose
@@ -82,8 +82,7 @@ the first four rooms.
   answers keeps the lease with 11 of 12 goals (it never pays the deed down).
 - **References.** *The Sims 2* (readable moods), *RimWorld* (each tenant a plan), *Two Point
   Hospital* (comic room-by-room optimising), *Papers, Please* (the interview at the door).
-- **Gap to target.** Four suite entries unproven (find-features, save.continue, settings.controls,
-  menu.start-and-credits); the station backdrop (trusses, dock, shuttle, stars, planet) is drawn in
-  code rather than authored in the scene document.
+- **Gap to target.** The starfield, planet and deck markings are drawn in code (sky and surface
+  detail); tenant-specific requests and a second station section after the deed are still to come.
 
 Loop proof: from-zero, rooms-tour, to-first-shift, to-transmission

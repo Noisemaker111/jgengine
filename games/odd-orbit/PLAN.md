@@ -13,6 +13,49 @@ species. Just do it, be really creative."
 
 The game keeps the folder and package id `odd-orbit`; every player-facing name is NO VACANCY.
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+## Suite score
+
+What players must be able to do, proven by headless simulation in `bun test` (`jgengine suite odd-orbit`). This is the headline; the engine coverage table below only hints where the engine has a part.
+
+| Area | Proven | Failing | Not simulatable | Missing | Cut |
+| --- | --- | --- | --- | --- | --- |
+| onboarding | 2/2 | 0 | 0 | 0 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
+| settings | 1/1 | 0 | 0 | 0 | 0 |
+| menu | 1/1 | 0 | 0 | 0 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
+| content | 5/5 | 0 | 0 | 0 | 0 |
+| life | 4/4 | 0 | 0 | 0 | 0 |
+| **total** | **16/16** | 0 | 0 | 0 | 0 |
+
+<details><summary>Every required entry</summary>
+
+Genres: life-sim. 16/16 proven.
+
+| Entry | Status | What the player does | Detail |
+| --- | --- | --- | --- |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
+| `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/lose-and-recover.proof.ts |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
+| `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-pause.proof.ts |
+| `menu.start-and-credits` | proven | The main menu starts a game and shows the credits. | proofs/sim/menu-credits.proof.ts |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
+| `content.item-source` | proven | Every item can be obtained by playing. | content check |
+| `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
+| `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
+| `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
+| `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
+| `life.needs` | proven | A character's needs fall over time and actions refill them. | proofs/sim/needs.proof.ts |
+| `life.job-income` | proven | Work earns money. | proofs/sim/job-income.proof.ts |
+| `life.relationships` | proven | Talking to others builds relationships. | proofs/sim/relationships.proof.ts |
+| `life.home-decor` | proven | Buy and place objects in a home. | proofs/sim/home-decor.proof.ts |
+
+</details>
+<!-- /suite-score -->
+
 ## Direction
 
 - **Genre and references.** A life-sim / management hybrid. *The Sims 2* for readable moods and a
@@ -131,19 +174,20 @@ The game keeps the folder and package id `odd-orbit`; every player-facing name i
   room card; tenants scaled up; the applicant waits at the airlock in person.
 - [x] 4. Station dressing: trusses, beacons, docking arm with a moored shuttle, starfield and planet
   limb (procedural backdrop); the deck shrunk to the authored plate.
-- [ ] 4b. Move the backdrop's truss and dock geometry into the scene document once the editor has a
-  kind for it.
+- [x] 4b. Station hardware authored in the scene document; suite 16/16.
 - [ ] 5. Deeper long loop: tenant-specific requests (Velvet's chandelier, Basalt's annual sentence as
   a collectible), a second station section after the deed.
 
 ## Handoff
 
-- Verified: game tests 135 pass, check-types clean, suite 12/16 proven, `from-zero` and `rooms-tour`
-  flows pass in a live browser, capabilities probe boots. Captures use
+- Verified: game tests 135 pass, check-types clean, suite 16/16 proven, `from-zero` and `rooms-tour`
+  flows pass in a live browser, `bun run gen` passes. Captures use
   `CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader JG_BROKER=0 --cold`; Rune panels
   and bubbles do not repaint in live software captures once the sim runs, so their content is proven
   by the headless native UI test and the flows.
+- Station hardware (trusses, masts, solar wings, landing pad, lander, cargo) is authored in the scene;
+  the starfield, planet, deck markings (seams, hazard band, light strip) and beacon bulbs are drawn in
+  code as sky and surface detail.
 - `verify:fast` stops at "provision models for tests" (other games' model pulls get 403 from the
   sandbox proxy).
-- Next: the four missing suite entries (needs menu/settings commands the proof can act on, and a
-  storage the headless restart keeps), milestone 5.
+- Next: milestone 5 (tenant requests, a second section after the deed).
