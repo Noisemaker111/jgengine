@@ -375,7 +375,9 @@ await exportModel('pizza-sign', buildPizzaSign());
  */
 function buildTideWater() {
   const batch = new Batch();
-  const water = named('tide water', '#0d3442', { roughness: 0.06, metalness: 0.55, transparent: true, opacity: 0.84 });
+  // Canal teal with a faint glow of its own, so night water reads as water and not mud under the warm
+  // street light; low metalness keeps the dusk sky from tinting the whole sheet brown.
+  const water = named('tide water', '#10505f', { roughness: 0.1, metalness: 0.12, transparent: true, opacity: 0.9, emissive: '#0b3d4a', emissiveIntensity: 0.45 });
   const foam = named('tide foam', '#7fd1c4', { roughness: 0.4, transparent: true, opacity: 0.35, depthWrite: false });
   batch.add(water, new THREE.CircleGeometry(1, 64), [0, 0, 0], [-Math.PI / 2, 0, 0]);
   batch.add(foam, new THREE.RingGeometry(0.985, 1, 64), [0, 0.002, 0], [-Math.PI / 2, 0, 0]);

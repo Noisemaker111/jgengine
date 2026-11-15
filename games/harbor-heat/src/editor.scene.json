@@ -4905,7 +4905,7 @@
       "position": {
         "x": 112,
         "y": 0,
-        "z": 150
+        "z": 164
       },
       "label": "Port swap dock"
     },
@@ -4981,7 +4981,7 @@
       "position": {
         "x": 115,
         "y": 0,
-        "z": 153
+        "z": 167
       },
       "rotationY": 0,
       "catalogId": "obj_swap_dock",

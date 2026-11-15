@@ -102,7 +102,7 @@ export function registerCaptureCommands(ctx: GameContext): void {
       const dock = SWAP_DOCKS.find((d) => d.id === "swap_dock_port") ?? SWAP_DOCKS[0];
       if (dock === undefined) return state;
       const [x, z] = dock.position;
-      state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: Math.PI * 0.75 });
+      state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: Math.PI / 2 });
       const shop = pizzeriaStore.read(state);
       if (shop.oven < 2) pizzeriaStore.write(state, { ...shop, oven: 2 });
       const shift = shiftStore.read(state);
