@@ -139,6 +139,23 @@ export interface OrbitFollowRuntimeState {
 }
 
 /**
+ * Re-seat the boom when the orbit config changes under a running camera: a runtime rig override that brings
+ * its own `initialDistance` (a pull-back while riding a carrier, a close-in for a cutscene) moves the held
+ * distance there, and every change keeps the held distance inside the new min/max. Same config, same state.
+ * @internal
+ */
+export function orbitReframe(
+  state: OrbitFollowRuntimeState,
+  before: Pick<ResolvedOrbitCameraConfig, "initialDistance">,
+  after: Pick<ResolvedOrbitCameraConfig, "initialDistance" | "minDistance" | "maxDistance">,
+): OrbitFollowRuntimeState {
+  const held = after.initialDistance !== before.initialDistance ? after.initialDistance : state.lockedDistance;
+  if (held === null) return state;
+  const lockedDistance = Math.min(after.maxDistance, Math.max(after.minDistance, held));
+  return lockedDistance === state.lockedDistance ? state : { ...state, lockedDistance };
+}
+
+/**
  * Swing an orbit camera round its target onto a heading (the {@link orbitYawFromCamera} convention), keeping
  * its distance and height: what `ctx.camera.turnTo` does to the third-person camera after a teleport.
  * @internal

@@ -4,6 +4,7 @@ import {
   compensatedFov,
   DEFAULT_ORBIT_CAMERA,
   orbitFollowStep,
+  orbitReframe,
   orbitTurnTo,
   orbitYawFromCamera,
   resolveFollowTargetFromPosition,
@@ -229,5 +230,21 @@ describe("orbitFollowStep snapDistance", () => {
   test("the distance is a knob", () => {
     const far = orbitFollowStep({ state, desiredTarget: { x: 200, y: 1, z: 0 }, deltaSeconds: 1 / 60, config: { ...DEFAULT_ORBIT_CAMERA, snapDistance: Infinity }, dragging: false });
     expect(far.target.x).toBeLessThan(50);
+  });
+});
+
+describe("orbitReframe", () => {
+  const state = { target: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 2, z: -7 }, lockedDistance: 7 };
+  const base = resolveOrbitCameraConfig({});
+  test("an override with its own initial distance moves the held boom there, and back when it lifts", () => {
+    const pulled = resolveOrbitCameraConfig({ initialDistance: 22, minDistance: 14, maxDistance: 40 });
+    const out = orbitReframe(state, base, pulled);
+    expect(out.lockedDistance).toBe(22);
+    expect(orbitReframe(out, pulled, base).lockedDistance).toBe(base.initialDistance);
+  });
+  test("the same framing keeps the state, and a held distance stays inside new limits", () => {
+    expect(orbitReframe(state, base, base)).toBe(state);
+    const tight = resolveOrbitCameraConfig({ minDistance: 9 });
+    expect(orbitReframe(state, base, tight).lockedDistance).toBe(9);
   });
 });

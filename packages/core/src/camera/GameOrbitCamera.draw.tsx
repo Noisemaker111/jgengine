@@ -12,6 +12,7 @@ import {
   compensatedFov,
   ORBIT_CAMERA_FRAME_PRIORITY,
   orbitFollowStep,
+  orbitReframe,
   orbitTurnTo,
   orbitYawFromCamera,
   resolveFollowTargetFromPosition,
@@ -102,8 +103,10 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
     const props = getProps();
     const patch = props.config;
     if (resolved === null || appliedPatch !== patch) {
+      const before = resolved;
       appliedPatch = patch;
       resolved = resolveOrbitCameraConfig(patch);
+      if (before !== null && runtime !== null) runtime = orbitReframe(runtime, before, resolved);
     }
     const config = resolved;
     controls.enableDamping = true;
