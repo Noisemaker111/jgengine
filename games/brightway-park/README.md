@@ -22,7 +22,7 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   is 150 seconds; a moon is eight nights (20 minutes at 1x); a season is eight moons. The player lays a
   path, builds and connects a ride, and unchains the gate (it refuses with no ride running).
 - **Nerve and ectoplasm.** Every visitor arrives with 10 to 36 nerve, by kind. A ride costs its rider
-  1.6 nerve per point of Fright and yields its scare yield (a knob the player turns; the living refuse
+  1.6 nerve per point of Fright and yields 1.5 ectoplasm per point of its scare yield (a knob the player turns; the living refuse
   a ride turned up past what its Fright is worth) as ectoplasm; scare props jolt anyone who walks into
   their reach for their fright in nerve, harvested the same way. Scares that land within 18 seconds of
   each other chain: each link adds a quarter to the next scare's multiplier, up to x2.5, so a path laid
@@ -51,8 +51,10 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   seconds and it drifts off. The Ghost register (G) shows every want, ticked.
 - **Threats.** Hunters and TV crews film every scare they witness. If they flee screaming the footage
   is lost; if they walk out calmly it goes on the record. At 100 evidence an exorcist comes at noon: the
-  newest ghost is blessed out for two nights, the rumor takes a knock and the fee is paid in ectoplasm.
+  newest ghost is blessed out for two nights (the exorcist walks in from the gate to its haunt), the rumor takes a knock and the fee is paid in ectoplasm.
   A Gargoyle Sentry watching makes their cameras fail. Evidence fades by 12 a noon.
+- **Full moons.** Night 5 of every moon is a full moon: 1.6x the living head for the gate and every
+  scare yields 1.25x. The HUD and the dusk banner say so.
 - **Everything else from the tycoon machinery**: four spooks with patrol areas (Ghoul Groundskeeper,
   Gremlin Tinker, Phantom Barker, Gargoyle Sentry); ten stalls for the living's needs (Cursed Candy
   Floss, Witch's Brew, the Fortune Teller...); the séance table (34 topics in family chains); rumor
@@ -74,8 +76,7 @@ the haunt is one declaration in `park.ts`. Numbers are what the build does now.
   Mansion* for readable stylized ghosts with personalities; *Theme Hospital*'s dry humour over a
   management sim. The tycoon bones are the engine's shared world model and ride sim.
 - **Gap to target.** The ectoplasm economy is unbalanced (chained scares are new and untuned); the
-  three scenarios have not been played through end to end; ghost hunters and the exorcist need a body
-  on screen (they are notices and numbers today). See `PLAN.md`.
+  three scenarios have not been played through end to end; the sky does not follow the clock. See `PLAN.md`.
 
 Loop proof: to-open-park
 

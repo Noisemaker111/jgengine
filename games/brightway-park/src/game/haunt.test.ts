@@ -10,7 +10,7 @@ import { ghostStatuses, MOVE_IN_SECONDS, RESTLESS_SECONDS } from "./ghosts";
 import { BUILDABLES, SKEPTIC_LINE } from "./objects/catalog";
 import { cellFor, park, researched } from "./park";
 import { resetPark } from "./parkReset";
-import { chainMultiplier, CHAIN_SECONDS, liveChain, shrugsOff, tickScares } from "./scares";
+import { chainMultiplier, CHAIN_SECONDS, ECTO_PER_NERVE, liveChain, shrugsOff, tickScares } from "./scares";
 import { seedGuests } from "./sim/guests";
 import { session } from "./session";
 import { EXORCIST_EVIDENCE, leaveWithFootage, noonExorcism } from "./threats";
@@ -91,7 +91,7 @@ describe("hauntworks scares", () => {
     const fright = BUILDABLES.prop_coffin!.scare!.fright;
     expect(guest.courage).toBe(30 - fright);
     expect(guest.combo).toBe(1);
-    expect(w.num("park.cash")).toBeCloseTo(cash + fright);
+    expect(w.num("park.cash")).toBeCloseTo(cash + fright * ECTO_PER_NERVE);
     // Ready again only after its cooldown.
     tickScares(ctx);
     expect(guest.courage).toBe(30 - fright);

@@ -11,7 +11,7 @@
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../src/game.config";
 import { BUILDABLES, BUILD_IDS } from "../src/game/objects/catalog";
-import { LOT, park } from "../src/game/park";
+import { cellFor, LOT, park } from "../src/game/park";
 import { session } from "../src/game/session";
 import { connectPark } from "../src/game/build/links";
 import { FIRST_SCENARIO } from "../src/game/scenarios";
@@ -54,6 +54,13 @@ const tryBuild = () => {
   for (const kind of order) {
     if (BUILDABLES[kind]!.cost > cash) continue;
     if (w.canPlace(kind)?.reason === "locked") continue;
+    // A scare prop goes beside a path, where the living walk past it: a gauntlet, not a field.
+    if (BUILDABLES[kind]!.scare !== undefined) {
+      const beside = w.instances("path_walk").flatMap((path) => path.position === null ? [] : [[path.position[0] + 4, path.position[1]], [path.position[0] - 4, path.position[1]]] as const);
+      const spot = beside.map(([x, z]) => cellFor(kind, x, z)).find((cell) => w.canPlace(kind, { cell }) === null);
+      if (spot !== undefined && runner.ctx.game.commands.run("brightway.place", { kind, cell: spot }).status === "applied") { built += 1; spentOnBuilds += BUILDABLES[kind]!.cost; return; }
+      continue;
+    }
     for (let row = 2; row < LOT.rows - 2; row += 1) for (let col = 2; col < LOT.cols - 2; col += 1) {
       if (w.canPlace(kind, { cell: [col, row] }) !== null) continue;
       const before = new Set(w.instances().map((i) => i.id));

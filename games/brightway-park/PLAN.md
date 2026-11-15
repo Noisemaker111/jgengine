@@ -59,7 +59,7 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
   props that chain, gloom that adds dread, ghost hunters and TV crews whose footage brings an exorcist,
   a season of nights ending in the Full Moon Festival. Out: a piece-by-piece haunted-house editor,
   pathfinding along every path, multiplayer, hunters and the exorcist as walking bodies (notices and
-  numbers for now).
+  numbers; the exorcist does walk).
 - Look and camera: a moonlit derelict pier in teal and violet, glowing lanterns and translucent ghosts,
   readable stylized silhouettes; an RTS camera over a grid, mouse and keyboard first, touch through the
   build palette. Day and night matter: the living come at dusk and leave at dawn.
@@ -192,7 +192,10 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 - Ghost residents (`src/game/ghosts.ts`): "an NPC who settles when a set of placed-structure wants holds
   for N seconds, and leaves when it lapses" is a general settler/tenant model (`packages/core/src/
   worldModel/` wants over kind counts). One adopter so far.
-- Hunters and the exorcist have no bodies: the exorcist should walk in at noon to the ghost it banishes.
+- `save.continue` cannot be proven headless: the park writes its own browser-storage document
+  (`save: "none"`, `persistence.ts`), and the suite's restart only keeps what goes through the engine's
+  save backend (`packages/core/src/save/`). Moving the park document onto `ctx.game.save` (a custom
+  target with the park's own encode/decode) would let a `save-continue.proof.ts` run.
 - The economy is untuned: chained scares are new, and the balance bot (`bun scripts/balance.ts 60`)
   still plays the old tycoon strategy. It should lay a gauntlet and house a ghost.
 - Day-night lighting: the look is a fixed moonlit mood; the sky does not follow the clock (the engine's
@@ -211,4 +214,5 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 6. [x] Onboarding hints that point at the gate, the ride, the gate button and the spooks.
 7. [x] HAUNTWORKS: the living with nerve and groups, dusk-to-dawn nights, ectoplasm from scares, scare props with chains, gloom, six ghost residents with wants, hunters and the exorcist, a moonlit look, the Full Moon Festival.
 8. [ ] An ectoplasm economy a steady haunter can grow: the balance bot lays a gauntlet, houses a ghost and wins The First Chill.
-9. [ ] Hunters, TV crews and the exorcist walk the park as bodies; the Full Moon Festival ends in its own celebration.
+9. [x] Full-moon nights (more of the living, richer scares), the exorcist walks in at noon to the ghost it banishes, ghost halos, a darker graded night, the Full Moon Festival ending.
+10. [ ] The park save on the engine's save backend, so Continue is proven by a suite proof.

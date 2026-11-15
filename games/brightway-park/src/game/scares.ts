@@ -10,9 +10,12 @@ import { think } from "./sim/thoughts";
 import { FULL_MOON, isFullMoon } from "./books";
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 
-/** What a scare's harvest is multiplied by tonight: more under a full moon. */
+/** Ectoplasm a scare wrings out per point of nerve it costs (or of a ride's yield): fear is rich stuff. */
+export const ECTO_PER_NERVE = 1.5;
+
+/** What a scare's harvest is multiplied by tonight: the base rate, more under a full moon. */
 export function moonHarvest(w: WorldModel): number {
-  return isFullMoon(w.num("park.day")) ? FULL_MOON.harvest : 1;
+  return ECTO_PER_NERVE * (isFullMoon(w.num("park.day")) ? FULL_MOON.harvest : 1);
 }
 
 /**
