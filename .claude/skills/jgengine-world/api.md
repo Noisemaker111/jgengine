@@ -483,7 +483,7 @@
 ## @jgengine/core/anim/humanoidActions
 
 - `HUMANOID_ACTIONS` (const): const HUMANOID_ACTIONS: Readonly<Record<HumanoidActionName, HumanoidActionClip>> — The authored action set. Jump is held while airborne, Swim and Tread loop while swimming, and the rest are one-shots that return to locomotion (Death holds its last key).
-- `HUMANOID_ACTION_NAMES` (const): const HUMANOID_ACTION_NAMES: readonly ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death"] — Engine-authored action clips for any humanoid rig mapped onto the skeleton standard: the motions a mocap library rarely ships beside its walk cycles (jump, swim, punch, tool swing, gather, hurt, death). Each clip is plain pose data on standard slots, so one authoring serves every rig the standard maps; `buildHumanoidActionClips` (`humanoidActionClips.draw`) turns it into the rig's own clips at load time.
+- `HUMANOID_ACTION_NAMES` (const): const HUMANOID_ACTION_NAMES: readonly ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death", "Ride"] — Engine-authored action clips for any humanoid rig mapped onto the skeleton standard: the motions a mocap library rarely ships beside its walk cycles (jump, swim, punch, tool swing, gather, hurt, death). Each clip is plain pose data on standard slots, so one authoring serves every rig the standard maps; `buildHumanoidActionClips` (`humanoidActionClips.draw`) turns it into the rig's own clips at load time.
 - `HUMANOID_ACTION_SLOTS` (const): const HUMANOID_ACTION_SLOTS: readonly SkeletonSlot[] — Every slot an authored clip may turn.
 - `HUMANOID_FIRST_PERSON_CARRY` (const): const HUMANOID_FIRST_PERSON_CARRY: Readonly<Pose> — The arms a first-person body carries in front of it, hands low in view at chest height, so the fists and whatever they hold stay on screen while standing or walking. Turns from the idle pose.
 - `HumanoidActionClip` (interface): interface HumanoidActionClip — One authored action: its keys and whether it loops.
@@ -517,6 +517,8 @@
 - `LOCOMOTION_FACING_PARAM` (const): const LOCOMOTION_FACING_PARAM: "facing" — Dot of the character's facing with its motion direction: `1` running forward, `-1` running backwards. A custom mover feeds it under `ANIM_PARAMS_KEY`.
 - `LOCOMOTION_GROUNDED_PARAM` (const): const LOCOMOTION_GROUNDED_PARAM: "grounded" — Ground contact reported by the shared player motor; absent for custom movers without authored parameters.
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
+- `LOCOMOTION_RIDE_STATE` (const): const LOCOMOTION_RIDE_STATE: "ride" — State id of the clip held while seated.
+- `LOCOMOTION_SEATED_PARAM` (const): const LOCOMOTION_SEATED_PARAM: "seated" — Sitting on a seat: `true` for a rider drawn on an open vehicle (`boardVehicle(..., { rider: "seated" })`); absent otherwise.
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
 - `LOCOMOTION_STATE` (const): const LOCOMOTION_STATE: "locomotion" — State id of the forward idle/walk/run blend.
 - `LOCOMOTION_STRAFE_STATE` (const): const LOCOMOTION_STRAFE_STATE: "strafe" — State id of the lateral strafe blend.

@@ -21,6 +21,7 @@ import {
   LOCOMOTION_GROUNDED_PARAM,
   LOCOMOTION_SPEED_PARAM,
   LOCOMOTION_SWIMMING_PARAM,
+  LOCOMOTION_SEATED_PARAM,
   LOCOMOTION_TURN_RATE_PARAM,
   LOCOMOTION_VERTICAL_SPEED_PARAM,
 } from "@jgengine/core/anim/locomotionGraph";
@@ -189,6 +190,7 @@ export function readModelAnimationParams(
   // A rider drawn on its seat moves with the vehicle, not on its feet: it holds its idle pose.
   const seated = ctx.scene.entity.blackboard.get<boolean>(instanceId, SEATED_RIDER_KEY) === true;
   out[LOCOMOTION_SPEED_PARAM] = seated ? 0 : speed;
+  if (seated) out[LOCOMOTION_SEATED_PARAM] = true;
   if (step !== undefined && !seated) {
     const yaw = ctx.scene.entity.get(instanceId)?.rotationY ?? 0;
     const planar = Math.hypot(step.dx, step.dz);

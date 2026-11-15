@@ -20,6 +20,8 @@ export interface LocomotionGraphInput {
   swim?: string;
   /** Clip while swimming in place. Omitted, `swim` plays at every speed. */
   tread?: string;
+  /** Held while the body sits on a seat (`seated`): a rider astride an open vehicle. Outranks every other state. */
+  ride?: string;
   /** Speed (world units/sec) above which the character walks. Default 0.5. */
   walkSpeed?: number | undefined;
   /** Speed above which it runs. Default 6. */
@@ -66,6 +68,8 @@ export const LOCOMOTION_CROUCHED_PARAM = "crouched";
 export const LOCOMOTION_AIRBORNE_PARAM = "airborne";
 /** Swimming, as the shared player motor reports it; a custom mover feeds it under `ANIM_PARAMS_KEY`. */
 export const LOCOMOTION_SWIMMING_PARAM = "swimming";
+/** Sitting on a seat: `true` for a rider drawn on an open vehicle (`boardVehicle(..., { rider: "seated" })`); absent otherwise. */
+export const LOCOMOTION_SEATED_PARAM = "seated";
 /**
  * Signed lateral share of the character's motion: `-1` fully to its left, `+1` fully to its right,
  * `0` straight ahead or straight back. A custom mover feeds it under `ANIM_PARAMS_KEY`.
@@ -92,6 +96,8 @@ export const LOCOMOTION_TURN_STATE = "turn";
 export const LOCOMOTION_AIRBORNE_STATE = "airborne";
 /** State id of the swim blend. */
 export const LOCOMOTION_SWIM_STATE = "swim";
+/** State id of the clip held while seated. */
+export const LOCOMOTION_RIDE_STATE = "ride";
 
 const DEFAULT_STRAFE_GATE = 0.35;
 const DEFAULT_STRAFE_RELEASE = 0.2;
@@ -238,6 +244,14 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
     if (input.swim !== undefined) directional.push({ from: LOCOMOTION_AIRBORNE_STATE, to: LOCOMOTION_SWIM_STATE, when: [{ param: LOCOMOTION_SWIMMING_PARAM, op: "==", value: true }], duration: 0.3 });
   }
 
+  // A seated rider holds the ride pose whatever else the motor reports.
+  if (input.ride !== undefined) {
+    const below = Object.keys(states);
+    states[LOCOMOTION_RIDE_STATE] = { kind: "clip", clip: input.ride };
+    for (const from of below) directional.unshift({ from, to: LOCOMOTION_RIDE_STATE, when: [{ param: LOCOMOTION_SEATED_PARAM, op: "==", value: true }], duration: 0.25 });
+    directional.push({ from: LOCOMOTION_RIDE_STATE, to: LOCOMOTION_STATE, when: [{ param: LOCOMOTION_SEATED_PARAM, op: "!=", value: true }], duration: 0.25 });
+  }
+
   const oneShots = Object.entries(input.oneShots ?? {}).filter(([, spec]) => typeof spec === "string" || spec.length > 0);
   oneShots.sort(([a], [b]) => Number(b === "death") - Number(a === "death"));
   for (const [name, spec] of oneShots) {
@@ -280,6 +294,7 @@ export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | u
   const jump = clip(states.jump);
   const swim = clip(states.swim);
   const tread = clip(states.tread);
+  const ride = clip(states.ride);
   return locomotionGraph({
     idle: states.idle,
     walk: clip(states.walk) ?? states.idle,
@@ -291,6 +306,7 @@ export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | u
     ...(jump === undefined ? {} : { jump }),
     ...(swim === undefined ? {} : { swim }),
     ...(tread === undefined ? {} : { tread }),
+    ...(ride === undefined ? {} : { ride }),
     ...(states.rootMotion === true ? { rootMotion: true } : {}),
     walkSpeed: states.walkSpeed,
     runSpeed: states.runSpeed,

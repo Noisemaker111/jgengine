@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createAnimGraphRuntime } from "./animGraph";
 import {
   LOCOMOTION_BACKWARD_STATE,
+  LOCOMOTION_LAYER,
+  LOCOMOTION_RIDE_STATE,
+  LOCOMOTION_SEATED_PARAM,
   LOCOMOTION_SPEED_PARAM,
   LOCOMOTION_STATE,
   LOCOMOTION_STRAFE_STATE,
@@ -274,5 +277,23 @@ describe("locomotion blend tree", () => {
       LOCOMOTION_BACKWARD_STATE,
       LOCOMOTION_TURN_STATE,
     ]);
+  });
+});
+
+describe("seated riders", () => {
+  test("a seated body holds the ride clip at any speed and walks off it when it stands", () => {
+    const graph = animGraphFromConfig({ states: { idle: "idle", walk: "walk", ride: "ride" } })!;
+    const runtime = createAnimGraphRuntime(graph);
+    const durations = { idle: 2, walk: 1, ride: 2.4 };
+    runtime.advance(0.1, { [LOCOMOTION_SPEED_PARAM]: 5, [LOCOMOTION_SEATED_PARAM]: true }, durations);
+    runtime.advance(0.5, { [LOCOMOTION_SPEED_PARAM]: 5, [LOCOMOTION_SEATED_PARAM]: true }, durations);
+    expect(runtime.stateOf(LOCOMOTION_LAYER)).toBe(LOCOMOTION_RIDE_STATE);
+    runtime.advance(0.1, { [LOCOMOTION_SPEED_PARAM]: 0 }, durations);
+    runtime.advance(0.5, { [LOCOMOTION_SPEED_PARAM]: 0 }, durations);
+    expect(runtime.stateOf(LOCOMOTION_LAYER)).toBe(LOCOMOTION_STATE);
+  });
+
+  test("a graph without a ride clip has no ride state", () => {
+    expect(locomotionGraph({ idle: "idle", walk: "walk" }).layers[0]!.states[LOCOMOTION_RIDE_STATE]).toBeUndefined();
   });
 });

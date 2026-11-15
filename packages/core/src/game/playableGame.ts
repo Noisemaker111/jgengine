@@ -213,6 +213,8 @@ export interface ModelAnimationStates {
   swim?: string;
   /** Clip while swimming in place; omit to hold `swim` at every speed. */
   tread?: string;
+  /** Clip held while seated on an open vehicle (`seated` parameter); `humanoidAnimation()` supplies the authored Ride. */
+  ride?: string;
   /** Play every locomotion state as root motion: the rig holds in place and the blended travel comes out as `rootDelta` for the movement owner to consume. */
   rootMotion?: boolean;
   /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */

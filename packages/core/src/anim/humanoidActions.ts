@@ -16,7 +16,7 @@ import { SKELETON_SLOTS, type SkeletonSlot } from "./skeletonStandard";
  */
 
 /** Clip names the authored actions are added under; a rig that already has one keeps its own. */
-export const HUMANOID_ACTION_NAMES = ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death"] as const;
+export const HUMANOID_ACTION_NAMES = ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death", "Ride"] as const;
 
 /** One authored action's clip name. */
 export type HumanoidActionName = (typeof HUMANOID_ACTION_NAMES)[number];
@@ -82,6 +82,16 @@ export function mirrorHumanoidPose(pose: Readonly<Pose>): Pose {
 }
 
 const both = (left: Pose): Pose => ({ ...left, ...mirrorHumanoidPose(left) });
+
+/**
+ * Astride a seat (a scooter, a jet-ski, a horse): hips dropped so the seat takes the weight, thighs
+ * forward and a little apart, shins hanging to the footrests, a slight lean, hands forward on the bars.
+ */
+const RIDE_SEAT: Pose = {
+  spine: [10, 0, 0],
+  head: [-8, 0, 0],
+  ...both({ "upperArm.l": [-48, 0, 12], "lowerArm.l": [-34, 0, 0], "upperLeg.l": [-78, 0, 9], "lowerLeg.l": [72, 0, 0], "foot.l": [-6, 0, 0] }),
+};
 
 const JUMP_TUCK: Pose = {
   spine: [-4, 0, 0],
@@ -218,6 +228,16 @@ export const HUMANOID_ACTIONS: Readonly<Record<HumanoidActionName, HumanoidActio
       { at: 0.5 },
     ],
   },
+  Ride: {
+    name: "Ride",
+    duration: 2.4,
+    loop: true,
+    keys: [
+      { at: 0, rotate: RIDE_SEAT, hips: [0, -0.42, 0.04] },
+      { at: 1.2, rotate: { ...RIDE_SEAT, spine: [12, 0, 0] }, hips: [0, -0.43, 0.04] },
+      { at: 2.4, rotate: RIDE_SEAT, hips: [0, -0.42, 0.04] },
+    ],
+  },
   Death: {
     name: "Death",
     duration: 1.5,
@@ -261,6 +281,7 @@ export function humanoidAnimation(input: HumanoidAnimationInput): ModelAnimation
       jump: HUMANOID_ACTIONS.Jump.name,
       swim: HUMANOID_ACTIONS.Swim.name,
       tread: HUMANOID_ACTIONS.Tread.name,
+      ride: HUMANOID_ACTIONS.Ride.name,
       walkSpeed: input.walkSpeed ?? 0.3,
       runSpeed: input.runSpeed ?? 3.2,
     },

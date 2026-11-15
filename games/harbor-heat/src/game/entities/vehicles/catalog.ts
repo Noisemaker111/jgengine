@@ -37,21 +37,23 @@ export interface VehicleDef {
   /** A hull's own physics on the water (the engine's boat model); its car tuning only drives it aground. */
   boat?: BoatTuning;
   /**
-   * An open ride draws its rider here (the feet, in the vehicle's frame: x right, y up, z forward)
-   * instead of hiding them inside a closed body. Absent: the rider is hidden.
+   * An open ride draws its rider seated here (the rider's origin in the vehicle's frame: x right, y up,
+   * z forward) instead of hiding them inside a closed body. Absent: the rider is hidden.
    */
   seat?: readonly [number, number, number];
 }
 
 /**
- * Where the rider stands on each open ride: on the scooter's floorboard and the trike's pedals, up on
- * the jet-ski's deck behind the bars, and at the gondola's stern like a gondolier.
+ * Where the rider sits on each open ride, as the rider's own origin (the feet of a standing body) in
+ * the vehicle's frame: the engine's Ride pose drops the hips about 0.56 m onto the seat, so each
+ * offset is the seat top less that. Astride the scooter, the trike's saddle and the jet-ski's
+ * saddle; on the gondola's cushioned love seat.
  */
 const OPEN_SEATS: Readonly<Record<string, readonly [number, number, number]>> = {
-  car_compact: [0, 0.25, -0.15],
-  car_muscle: [0, 0.35, -0.45],
-  car_sport: [0, 0.4, -0.3],
-  car_suv: [0, 0.3, -2.3],
+  car_compact: [0, 0.46, -0.25],
+  car_muscle: [0, 0.81, -0.5],
+  car_sport: [0, 0.07, -0.35],
+  car_suv: [0, -0.09, -0.45],
 };
 
 /**
