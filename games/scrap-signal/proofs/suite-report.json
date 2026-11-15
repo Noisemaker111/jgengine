@@ -16,9 +16,23 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/drops-rarity.proof.ts",
+      "proves": [
+        "loot.drops-rarity"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/enemy-threat.proof.ts",
       "proves": [
         "shooter.enemy-threat"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/find-features.proof.ts",
+      "proves": [
+        "onboarding.find-features"
       ],
       "ok": true
     },
@@ -30,9 +44,30 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/menu-credits.proof.ts",
+      "proves": [
+        "menu.start-and-credits"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/rebind-reload.proof.ts",
+      "proves": [
+        "settings.controls"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/reload.proof.ts",
       "proves": [
         "shooter.reload-ammo"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
       ],
       "ok": true
     },
@@ -65,5 +100,36 @@
       "ok": true
     }
   ],
-  "data": []
+  "data": [
+    {
+      "id": "content.item-source",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.item-use",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.recipes-reachable",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.placeables-place",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.weapons-have-ammo",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "progression.runway",
+      "ok": true,
+      "problems": []
+    }
+  ]
 }

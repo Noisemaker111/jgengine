@@ -8,7 +8,10 @@ import { noteShotNoise, stageFrontBoss, stageFrontFight } from "./encounters/fro
 import { stageRelay } from "./relay";
 import { noteRunStarted } from "./bootPhase";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
-import { activeCharacter, characterById, pickCharacter, resetCharacterState, talentTree, bonus } from "./characters";
+import { activeCharacter, characterById, CHARACTERS, pickCharacter, resetCharacterState, talentTree, bonus } from "./characters";
+import { showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { rebindAction } from "@jgengine/core/game/controlGate";
+import type { ActionCodes } from "@jgengine/core/input/actionBindings";
 import { scrapSave } from "./save";
 import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
@@ -523,13 +526,22 @@ export function registerCommands(ctx: GameContext): void {
     apply(state, input) {
       // A call sign the player typed is the run's name; only fall back to the reclaimer's when empty.
       scrapProfile.name = scrapProfile.name ?? activeCharacter()?.name ?? null;
-      void captureScrapThumb().then(async () => {
+      // The run is written at once; the menu card's thumbnail follows when a frame can be read
+      // (a headless host has none), and the document is written again with it.
+      void (async () => {
         const save = scrapSave(state);
         if (typeof input?.slot === "string" && input.slot !== save.slot()) await save.switchSlot(input.slot, { flush: false });
+        // Both halves: the world snapshot (wallet, inventory, quests) and this document's systems.
+        await state.game.save?.save();
         await save.save();
         await refreshScrapSlots(state);
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "SAVED TO THE FRIDGE", kind: "pickup" });
-      });
+        const before = scrapProfile.thumbnail;
+        if ((await captureScrapThumb()) !== before) {
+          await save.save();
+          await refreshScrapSlots(state);
+        }
+      })();
       return state;
     },
   });
@@ -599,6 +611,25 @@ export function registerCommands(ctx: GameContext): void {
         text: `${def.name.toUpperCase()} — ${def.className.toUpperCase()}`,
         kind: "pickup",
       });
+    },
+  });
+
+  // The shared front-end verbs a pad, a capture or a proof reaches: `start` leaves the title with
+  // the first tinkerer, `menu.pane` shows the title's credits, `settings.rebind` moves a control.
+  ctx.game.commands.define("start", {
+    apply(state: GameContext) {
+      showMenuPane(state, null);
+      state.game.commands.run("character.pick", { characterId: CHARACTERS[0]!.id });
+    },
+  });
+  ctx.game.commands.define<{ pane?: MenuPane | null }>("menu.pane", {
+    apply(state: GameContext, input) {
+      showMenuPane(state, input.pane ?? null);
+    },
+  });
+  ctx.game.commands.define<{ action?: string; codes?: ActionCodes | null }>("settings.rebind", {
+    apply(state: GameContext, input) {
+      if (typeof input.action === "string") rebindAction(state, input.action, input.codes ?? null);
     },
   });
 

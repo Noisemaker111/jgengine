@@ -1,7 +1,7 @@
 # JUNK DRAWER
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **9/20 proven · 11 missing** · `jgengine suite scrap-signal`
+Game suite: **20/20 proven** · `jgengine suite scrap-signal`
 <!-- /suite-score -->
 
 A first-person looter-shooter in Maple Hollow, a sprawling, overgrown suburb after the appliances

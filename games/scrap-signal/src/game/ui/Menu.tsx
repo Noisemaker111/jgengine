@@ -5,7 +5,8 @@ import { createRuneFlow } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { useCanvasCover } from "@jgengine/core/ui/canvasCover.view";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useGame, useGamePhase } from "@jgengine/ui/hooks";
+import { useGame, useGamePhase, useGameStore } from "@jgengine/ui/hooks";
+import { menuPane } from "@jgengine/core/game/gameFlow";
 import { useGameContext } from "@jgengine/ui/provider";
 import { CHARACTERS } from "../characters";
 import { SCRAP_CREDITS } from "../credits";
@@ -72,10 +73,17 @@ export function ScrapMenu() {
     scrapProfile.name = name === "" ? null : name;
     commands.run("character.pick", { characterId, slot: bay });
   };
+  // The shared menu pane (what `menu.pane` sets, and what a pad or a proof reaches) opens the same credits.
+  const pane = useGameStore(c => menuPane(c));
+  useEffect(() => {
+    const showing = flow.read().at(-1)?.kind === "credits";
+    if (pane === "credits" && !showing) flow.push("credits");
+    if (pane !== "credits" && showing) flow.pop();
+  }, [pane, flow]);
   return <RuneLayers flow={flow}>{entry => entry.kind === "credits"
-    ? <Credits back={() => flow.pop()} />
+    ? <Credits back={() => commands.run("menu.pane", { pane: null })} />
     : <Broadcast kept={recent === null ? null : { name: recent.name ?? "Tinkerer", detail }} onContinue={() => { if (recent !== null) commands.run("run.continue", { slot: recent.id }); }}
-      callSign={callSign} onCallSign={setCallSign} onPick={pick} onCredits={() => flow.push("credits")} />}
+      callSign={callSign} onCallSign={setCallSign} onPick={pick} onCredits={() => commands.run("menu.pane", { pane: "credits" })} />}
   </RuneLayers>;
 }
 

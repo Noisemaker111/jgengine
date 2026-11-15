@@ -9,40 +9,40 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| onboarding | 2/2 | 0 | 0 | 0 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
-| save | 0/1 | 0 | 0 | 1 | 0 |
-| settings | 0/1 | 0 | 0 | 1 | 0 |
-| menu | 0/1 | 0 | 0 | 1 | 0 |
-| progression | 0/1 | 0 | 0 | 1 | 0 |
-| content | 0/5 | 0 | 0 | 5 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
+| settings | 1/1 | 0 | 0 | 0 | 0 |
+| menu | 1/1 | 0 | 0 | 0 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
+| content | 5/5 | 0 | 0 | 0 | 0 |
 | shooter | 4/4 | 0 | 0 | 0 | 0 |
-| loot | 3/4 | 0 | 0 | 1 | 0 |
-| **total** | **9/20** | 0 | 0 | 11 | 0 |
+| loot | 4/4 | 0 | 0 | 0 | 0 |
+| **total** | **20/20** | 0 | 0 | 0 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: shooter, looter. 9/20 proven · 11 missing.
+Genres: shooter, looter. 20/20 proven.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
-| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/downed-reconstruct.proof.ts |
-| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
-| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
-| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
-| `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
-| `content.item-source` | missing | Every item can be obtained by playing. | no content sheet (proofs/content.ts) |
-| `content.item-use` | missing | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no content sheet (proofs/content.ts) |
-| `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
-| `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
-| `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
+| `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-reload.proof.ts |
+| `menu.start-and-credits` | proven | The main menu starts a game and shows the credits. | proofs/sim/menu-credits.proof.ts |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
+| `content.item-source` | proven | Every item can be obtained by playing. | content check |
+| `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
+| `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
+| `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
+| `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
 | `shooter.aim-fire-hit` | proven | Aim, fire, and hurt an enemy. | proofs/sim/aim-fire-hit.proof.ts |
 | `shooter.reload-ammo` | proven | Weapons run dry and reload from carried ammo. | proofs/sim/reload.proof.ts |
 | `shooter.enemy-threat` | proven | Enemies find the player and hurt them. | proofs/sim/enemy-threat.proof.ts |
 | `shooter.weapon-swap` | proven | Switch between carried weapons. | proofs/sim/weapon-swap.proof.ts |
-| `loot.drops-rarity` | missing | Defeated enemies and containers drop loot of varied rarity. |  |
+| `loot.drops-rarity` | proven | Defeated enemies and containers drop loot of varied rarity. | proofs/sim/drops-rarity.proof.ts |
 | `loot.gear-upgrade` | proven | Equipping better gear changes the player's numbers. | proofs/sim/workbench-merge.proof.ts |
 | `loot.vendor-or-salvage` | proven | Unwanted loot sells or salvages into something useful. | proofs/sim/workbench-salvage.proof.ts |
 | `loot.build-choices` | proven | Perks or skills let the player shape a build. | proofs/sim/skill-spend.proof.ts |

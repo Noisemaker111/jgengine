@@ -6,11 +6,11 @@ import { CHARACTERS } from "./characters";
 import { scrapSave } from "./save";
 import { scrapProfile } from "./scrapProfile";
 
-/** The runs a reclaimer can keep: one per leg of the signal. */
+/** The runs a tinkerer can keep, one per kitchen drawer. */
 export const SCRAP_SLOTS = [
-  { id: "relay", label: "The Relay" },
-  { id: "signal", label: "Cold Signal" },
-  { id: "wastes", label: "The Wastes" },
+  { id: "relay", label: "Crabgrass Court" },
+  { id: "signal", label: "Sprinkler Heights" },
+  { id: "wastes", label: "The Cul-de-Sac" },
 ] as const;
 
 /** The kept-run index the menu reads. */
@@ -30,7 +30,7 @@ export function refreshScrapSlots(ctx: GameContext): Promise<unknown> {
     nameOf: (_slot, document) => {
       const character = (document.systems["character"] ?? {}) as { id?: string };
       const profile = (document.systems["profile"] ?? {}) as { name?: string | null };
-      return profile.name ?? characterName(character.id) ?? "Reclaimer";
+      return profile.name ?? characterName(character.id) ?? "Tinkerer";
     },
     metaOf: (_slot, document) => {
       const character = (document.systems["character"] ?? {}) as { id?: string };

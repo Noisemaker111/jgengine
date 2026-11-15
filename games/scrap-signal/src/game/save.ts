@@ -228,7 +228,8 @@ function gunsSystem(): GameSaveSystem {
  */
 export function createScrapSave(ctx: GameContext, options: { backend?: SaveBackend; slot?: string } = {}): GameSave {
   return createGameSave({
-    backend: options.backend ?? localSaveBackend(),
+    // Beside the world snapshot, on whatever backend the host gave it (a cloud store, a proof's memory).
+    backend: options.backend ?? ctx.game.save?.backend ?? localSaveBackend(),
     game: "scrap-signal",
     slot: options.slot ?? ctx.game.save?.slot() ?? "default",
     clock: () => ctx.time.now(),

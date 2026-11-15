@@ -70,6 +70,12 @@ export interface RuntimeSaveSlot {
  * (backend swap) all come for free from the underlying save store.
  */
 export interface RuntimeSave {
+  /**
+   * The backend this save writes through. A game that keeps its own save document (its own
+   * `createGameSave`) writes it here too, so a host that injected a backend (a cloud store, a suite
+   * proof's in-memory store) holds the game's document beside the world snapshot.
+   */
+  readonly backend?: SaveBackend;
   status(): SaveStatus;
   slot(): string;
   /** Capture the live world and persist it now (serialized against any in-flight write). */
@@ -203,6 +209,7 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
   const save = (): Promise<void> => persist();
 
   return {
+    backend: config.backend,
     status: () => store.status(),
     slot: () => store.slot(),
     save,

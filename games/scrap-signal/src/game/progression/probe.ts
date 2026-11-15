@@ -4,6 +4,12 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { activeCharacter, CHARACTERS } from "../characters";
 import { FAMILY_BASES, gunById, LEGENDARY_NAMES, magLoaded, MANUFACTURERS, UNIQUE_GUNS } from "../handroll";
 import { session } from "../session";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
+import { menuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+
+/** `phase` in the probe is the game phase's index here; `menuPane` the shown pane's (0: none). */
+export const GAME_PHASES: readonly string[] = ["menu", "playing", "paused"];
+export const MENU_PANES: readonly (MenuPane | null)[] = [null, "controls", "settings", "credits"];
 import { AMMO_STAT_IDS } from "../ammo";
 import { roundsLeft } from "../items/ammoCrates";
 import { gearById } from "../items/gear/catalog";
@@ -135,6 +141,9 @@ export function depthProbe(ctx: GameContext) {
     skillPoints: stat("skillPoints"),
     gunsHeld: hotbar.filter((slot) => slot !== null).length,
     heldSlot: session.selectedSlot(),
+    groundRarities: new Set(ctx.scene.worldItem.list().flatMap((item) => { const gun = gunById(item.itemId); return gun === undefined ? [] : [gun.rarity]; })).size,
+    phase: GAME_PHASES.indexOf(gamePhase(ctx)),
+    menuPane: MENU_PANES.indexOf(menuPane(ctx)),
     heldPower: hitPower(hotbar[session.selectedSlot()]?.itemId ?? ""),
     cores: ctx.game.economy.balance(userId, "cores"),
     heldAmmo: heldAmmo(ctx),

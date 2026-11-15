@@ -248,6 +248,6 @@ const LEGACY_IDS: Readonly<Record<string, string>> = {
 };
 
 /** Prefer current saves; import an existing legacy slot once without changing its bytes. */
-export async function loadSavedProgress(ctx: GameContext, backend: SaveBackend = localSaveBackend()): Promise<boolean> {
+export async function loadSavedProgress(ctx: GameContext, backend: SaveBackend = ctx.game.save?.backend ?? localSaveBackend()): Promise<boolean> {
   return loadLegacySave(ctx.game.save, backend, "jgengine:save:the-robots", "jgengine:save:scrap-signal", LEGACY_IDS);
 }
