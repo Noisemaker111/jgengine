@@ -123,7 +123,9 @@ Genres: strategy. 0/17 proven · 17 missing.
 - Unit pursuit and combat — `@jgengine/core/ai/pursuit`, `scene.entity.effect`.
 - Foraging — `@jgengine/core/world/resourceNode` (per-node budget and haul from `catalog.ts`).
 - Hatching and digging — `@jgengine/core/work/unitTraining`, `@jgengine/core/gameplay` work queues.
-- Black-ant director — `@jgengine/core/waves/*`, `ai/director/*`, `sensor/perception`.
+- Black-ant director — `@jgengine/core/waves/*`, `ai/director/*`, `sensor/perception`; skirmish rival
+  personalities are data in `ai/personality.ts` (interval, field cap, raid book, aim, wasp tempo).
+- Colony traits between battles — game-local `game/colony.ts` over `@jgengine/core/store/defineStore`.
 - Missions — `@jgengine/core/mission` (`defendMission`, `escortMission`), `run/sessionLoop`.
 - Fog — `@jgengine/core/map/fog`, scaled by night and patio high ground.
 - Pheromone trails — game-local `game/pheromone.ts` [partial: one adopter].
@@ -155,17 +157,20 @@ Genres: strategy. 0/17 proven · 17 missing.
   the Magnifying Glass.
 - [x] 5. Paper wasp nest on the far fence sends sorties at foragers (skirmish, missions IV-V); scouts mark enemies.
 - [x] 6. A second lawn: the Front Yard on the engine scene set, with skirmish and mission VI.
+- [x] 7. Depth: the Colony sheet (campaign map, royal jelly, queen traits and caste research), three
+  skirmish rival personalities, and one more hazard mission per lawn (The Downpour, Noon Heat).
 
 ## Handoff
 
-- Done (committed): the LAWN ORDER redesign, the depth rounds, readable ants, nav-grid routes, the
-  wasp nest, and now the Front Yard: a second lawn on the cherry-picked engine scene set (driveway
-  heat, cool cracks, the car's moving shade, gnome and tyre obstacles, mailbox wasps), its skirmish,
-  mission VI (The Long Driveway) and a title Lawn picker. Mission VI marches the colony to the front
-  yard through a saved record and an in-place lawn switch.
-- Engine: cherry-picked scene sets (11deb82) and the JSX host discard fix (2eb6d84), restoring an fs
-  import the merge dropped in `packages/editor/src/mcp/loadGameLayers.ts`.
-- Evidence: 215 game tests incl. the mid-skill balance sim (all six missions won; VI in 119 s, ~16
-  ants lost) and front-yard heat/shade/layout tests. Shots: `shots/backyard-play.png`,
-  `shots/frontyard-play.png`, `shots/frontyard-keep-enemy.png` (draft software renders).
-- Next: a front-yard shot mid-mission (heat pressure, the car shade over a column), real-GPU shots.
+- Done (committed): the LAWN ORDER redesign, depth rounds, readable ants, nav-grid routes, the wasp
+  nest, the Front Yard (second lawn on the engine scene set), and this round: the front-yard column
+  capture (popsicle melted flat so ants stop sinking into it), three skirmish rivals (Swarm, Diggers,
+  Wasp-Friends, or a roll), the Colony sheet as the campaign map with royal jelly, queen traits and
+  caste research, and two hazard missions: IV The Downpour (storm clock) and VIII Noon Heat.
+- Evidence: 224 game tests incl. the mid-skill balance sim (all eight missions won; Downpour 132 s / 3
+  lost, Noon Heat 138 s / 12 lost, the beam finale still ~22 lost), rival and colony sims. JPEG shots
+  in `shots/`: `colony-map.jpg`, `backyard-storm.jpg`, `frontyard-noon.jpg`, `frontyard-driveway.jpg`,
+  `backyard-boss.jpg` (draft software renders).
+- Next: rain reads only through the HUD cloud wash and strip in software captures (check the
+  WeatherLayer on a GPU); `drive --rpc sim_advance` barely advances a mission's clock in captures, so
+  mid-mission shots need a longer advance; the Downpour is on the easy side for mission IV.

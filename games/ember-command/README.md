@@ -16,7 +16,7 @@ package id stay `ember-command`. Runs on engine source; start it with
 Read from `src/game/{catalog,tuning,pheromone,hazards,yard,upgrades,hero,systems,ai,campaign}`. Numbers
 are what the build does now.
 
-- **Campaign — five missions on the engine's mission machine** (`@jgengine/core/mission`), each with
+- **Campaign — eight missions on the engine's mission machine** (`@jgengine/core/mission`), each with
   the yard clocks it is about:
   1. **The Popsicle Claim** (build order; sprinkler). Dig a Barracks Chamber, hatch four Soldiers,
      march Marshal Mandible onto the dropped popsicle. Fails `muster_stalled`, `keep_fallen`, `mandible_fell`.
@@ -24,13 +24,31 @@ are what the build does now.
      `mandible_waylaid`.
   3. **Mower Day** (timed defence; mower, rain). Hold the nest 150 s under black-ant raids;
      `watch_overrun`.
-  4. **Raid the Black Queen** (night, sprinkler). March to the brood mound, then dig it out;
+  4. **The Downpour** (storm, sprinkler, night). Dig a Granary Chamber within 240 s, then hold the nest
+     120 s while a summer storm rains for most of every minute (slow wading, trails wash six times as
+     fast); `stores_soaked`, `storm_overrun`.
+  5. **Raid the Black Queen** (night, sprinkler). March to the brood mound, then dig it out;
      `raid_stalled`, `mandible_fell`.
-  5. **The Kid with the Magnifying Glass** (boss; the beam). Outlast 60 s in the shade, then dig out
+  6. **The Kid with the Magnifying Glass** (boss; the beam). Outlast 60 s in the shade, then dig out
      the black nest while the burning spot hunts the densest knot of red ants; `verdict_lost`.
-  6. **The Long Driveway** (the Front Yard; heat, night). Lead the Marshal across the baking driveway to
+  7. **The Long Driveway** (the Front Yard; heat, night). Lead the Marshal across the baking driveway to
      the far lawn, dig the wasps out of the mailbox, then dig out the black nest; `driveway_stalled`.
+  8. **Noon Heat** (the Front Yard; heat, no night). Hold the nest 120 s while the black raids cook
+     crossing the driveway, then cross it to dig the wasps out of the mailbox; `noon_overrun`, `noon_stalled`.
   Each mission banks sugar and leaf into the granary stores that open the next one.
+- **The colony between battles** (`game/colony.ts`, the title's Colony sheet). The sheet is the
+  campaign map: the route across both lawns with won, next and locked orders. Each won order pays 2
+  royal jelly, spent on permanent queen traits (Fertile Queen: brood 20% faster; Deep Larder: +80
+  sugar, +30 leaf each battle; Keen Antennae: +15% sight; Packed Earth: chambers take 30% less), 2
+  jelly each, and caste research (Serrated Mandibles: soldiers +20%; Acid Glands: spitters +25%;
+  Beetle Plating: beetles take 25% less; Swift Foragers: workers +15% pace), 3 each. Sixteen jelly
+  across the campaign buys about two thirds of them. Traits live in the record and apply to campaign
+  battles only.
+- **Skirmish rivals** (`game/ai/personality.ts`). The free skirmish sheet picks who runs the black
+  nest, or rolls one: **The Swarm** (raiders only, every 30 s, 4 growing to 8, field cap 26), **The
+  Diggers** (majors with raiders every 55 s, aimed at your nearest chamber), **The Wasp-Friends** (a
+  wasp in every raid, nest sorties 40% sooner, raids hunting your foragers). The campaign always meets
+  the classic colony. The orders note names the rival.
 - **Two lawns** (the engine scene set, `src/maps.ts`): **The Backyard** (`editor.scene.json`) and **The
   Front Yard** (`frontyard.scene.json`): a driveway of asphalt that burns ants 4/s by day, crossed by
   cool sidewalk cracks (no heat, 25% faster, and routes prefer them), a parked car whose shade slides
