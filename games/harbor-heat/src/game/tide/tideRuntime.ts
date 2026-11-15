@@ -4,6 +4,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { DISTRICTS } from "../world/districts";
 import { nightRules } from "../pizza/nights";
 import { upgradeRank } from "../progression/upgrades";
+import { objectById } from "../objects/catalog";
 import { districtDepth, MAX_DEPTH, minutesToNextStage, shiftOpen, stageAt, tideLevelAt, type TideStage, type TideStageId } from "./tide";
 
 /**
@@ -88,10 +89,22 @@ function floorOf(ctx: GameContext, sheet: FloodSheet): number {
   return floor;
 }
 
+/** The sheet's outline is a squircle, |x|^4 + |z|^4 = 1 (`tide-water.glb`), so its edges follow the street grid. */
+export const SHEET_POWER = 4;
+
 function insideSheet(sheet: FloodSheet, x: number, z: number): boolean {
   const dx = (x - sheet.center[0]) / sheet.rx;
   const dz = (z - sheet.center[1]) / sheet.rz;
-  return dx * dx + dz * dz <= 1;
+  return Math.pow(Math.abs(dx), SHEET_POWER) + Math.pow(Math.abs(dz), SHEET_POWER) <= 1;
+}
+
+/** Points around a sheet's outline, for the chart. */
+export function sheetOutline(sheet: FloodSheet, segments = 32): [number, number][] {
+  return Array.from({ length: segments }, (_, i) => {
+    const a = (i / segments) * Math.PI * 2;
+    const c = Math.cos(a), s = Math.sin(a);
+    return [sheet.center[0] + Math.sign(c) * Math.pow(Math.abs(c), 2 / SHEET_POWER) * sheet.rx, sheet.center[1] + Math.sign(s) * Math.pow(Math.abs(s), 2 / SHEET_POWER) * sheet.rz];
+  });
 }
 
 /** The water level now, in metres above the city floor. */
@@ -187,6 +200,50 @@ export function tickTide(ctx: GameContext): TideStage | null {
     next: next === null ? null : { label: next.stage.label, minutes: next.minutes },
   });
   return rose ? stage : null;
+}
+
+const rippleClock = perContext(() => ({ t: 0, n: 0 }));
+/** Seconds between ripple rings, and how far from the rider they land. */
+const RIPPLE_EVERY = 0.22;
+const RIPPLE_REACH = 26;
+
+/**
+ * Life on the flood: rain rings and lapping rings on the water around the rider, most of them where
+ * the water meets something standing in it (a wall, a post, a parked car), so the sheet reads as
+ * moving water around the kerbs instead of one flat plane.
+ */
+export function tickRipples(ctx: GameContext, dt: number): void {
+  const clock = rippleClock(ctx);
+  clock.t -= dt;
+  if (clock.t > 0 || runtimes(ctx).level <= 0.05) return;
+  clock.t = RIPPLE_EVERY;
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (player === null) return;
+  clock.n += 1;
+  const a = Math.sin(clock.n * 12.9898) * 43758.5453;
+  const angle = (a - Math.floor(a)) * Math.PI * 2;
+  const b = Math.sin(clock.n * 78.233) * 12543.123;
+  const reach = 4 + (b - Math.floor(b)) * RIPPLE_REACH;
+  let x = player.position[0] + Math.cos(angle) * reach;
+  let z = player.position[2] + Math.sin(angle) * reach;
+  let radius = 0.9;
+  // Lap against the nearest thing standing in the water, at its edge.
+  for (const object of ctx.scene.object.inBox([x - 6, -5, z - 6], [x + 6, 30, z + 6])) {
+    const def = objectById(object.catalogId);
+    if (def === undefined || !def.solid) continue;
+    const scale = (object as { visual?: { scale?: readonly number[] } }).visual?.scale;
+    const hw = (def.footprint.w / 2) * (scale?.[0] ?? 1);
+    const hd = (def.footprint.d / 2) * (scale?.[2] ?? 1);
+    const ex = Math.max(-hw, Math.min(hw, x - object.position[0]));
+    const ez = Math.max(-hd, Math.min(hd, z - object.position[2]));
+    x = object.position[0] + ex + Math.sign(x - object.position[0] - ex || 1) * 0.4;
+    z = object.position[2] + ez + Math.sign(z - object.position[2] - ez || 1) * 0.4;
+    radius = 1.6;
+    break;
+  }
+  const water = waterAt(ctx, x, z);
+  if (water === null || water.openSea || water.depth < 0.2) return;
+  ctx.scene.entity.vfx({ kind: "nova", color: 0xbff4ee, from: [x, water.surface + 0.03, z], radius });
 }
 
 /** Forget the sheet bookkeeping after a reload: the next tick re-places them from the clock. */

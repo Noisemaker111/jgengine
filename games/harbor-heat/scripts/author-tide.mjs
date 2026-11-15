@@ -377,17 +377,45 @@ await exportModel('pizza-sign', buildPizzaSign());
  * The flood sheet: a unit disc of night water the tide runtime scales to a district and lifts with the
  * level. Dark, glossy and slightly see-through so the neon and the string lights reflect off it.
  */
+/** The flood sheet's outline: a squircle (|x|^4 + |z|^4 = 1), so its long edges run with the street grid. */
+export const SHEET_POWER = 4;
+function sheetLoop(scale, segments = 160) {
+  const points = [];
+  for (let i = 0; i < segments; i++) {
+    const a = (i / segments) * Math.PI * 2;
+    const c = Math.cos(a), s = Math.sin(a);
+    const x = Math.sign(c) * Math.pow(Math.abs(c), 2 / SHEET_POWER), z = Math.sign(s) * Math.pow(Math.abs(s), 2 / SHEET_POWER);
+    points.push([x * scale, z * scale]);
+  }
+  return points;
+}
+/** A flat band between two scaled outlines, lying on y = 0. */
+function sheetBand(inner, outer) {
+  const a = sheetLoop(inner), b = sheetLoop(outer);
+  const position = [], index = [];
+  for (let i = 0; i < a.length; i++) position.push(a[i][0], 0, a[i][1], b[i][0], 0, b[i][1]);
+  for (let i = 0; i < a.length; i++) {
+    const j = (i + 1) % a.length;
+    index.push(i * 2, j * 2, i * 2 + 1, j * 2, j * 2 + 1, i * 2 + 1);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  return geometry;
+}
 function buildTideWater() {
   const batch = new Batch();
   // Canal teal with a faint glow of its own, so night water reads as water and not mud under the warm
   // street light; low metalness keeps the dusk sky from tinting the whole sheet brown.
-  const water = named('tide water', '#10505f', { roughness: 0.1, metalness: 0.12, transparent: true, opacity: 0.9, emissive: '#0b3d4a', emissiveIntensity: 0.45 });
-  const foam = named('tide foam', '#7fd1c4', { roughness: 0.4, transparent: true, opacity: 0.35, depthWrite: false });
-  batch.add(water, new THREE.CircleGeometry(1, 64), [0, 0, 0], [-Math.PI / 2, 0, 0]);
+  const water = named('tide water', '#10505f', { roughness: 0.1, metalness: 0.12, transparent: true, opacity: 0.9, emissive: '#0b3d4a', emissiveIntensity: 0.45, side: THREE.DoubleSide });
+  const foam = named('tide foam', '#7fd1c4', { roughness: 0.4, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
+  const shape = new THREE.Shape(sheetLoop(1).map(([x, z]) => new THREE.Vector2(x, z)));
+  batch.add(water, new THREE.ShapeGeometry(shape, 1), [0, 0, 0], [Math.PI / 2, 0, 0]);
   // Where the flood laps against the dry kerb: a soft wide wash and a bright waterline on top of it.
-  const lip = named('tide lip', '#c9f3ec', { roughness: 0.3, transparent: true, opacity: 0.55, depthWrite: false, emissive: '#7fd1c4', emissiveIntensity: 0.4 });
-  batch.add(foam, new THREE.RingGeometry(0.96, 1, 96), [0, 0.002, 0], [-Math.PI / 2, 0, 0]);
-  batch.add(lip, new THREE.RingGeometry(0.994, 1, 96), [0, 0.004, 0], [-Math.PI / 2, 0, 0]);
+  const lip = named('tide lip', '#c9f3ec', { roughness: 0.3, transparent: true, opacity: 0.55, depthWrite: false, emissive: '#7fd1c4', emissiveIntensity: 0.4, side: THREE.DoubleSide });
+  batch.add(foam, sheetBand(0.96, 1), [0, 0.002, 0]);
+  batch.add(lip, sheetBand(0.994, 1), [0, 0.004, 0]);
   return batch.group('tide water');
 }
 await exportModel('tide-water', buildTideWater());
@@ -415,3 +443,31 @@ function buildMast() {
   return batch.group('blimp mast');
 }
 await exportModel('blimp-mast', buildMast());
+
+/**
+ * Lit windows for a building's street face at night: a unit panel (x -0.5..0.5, y 0..1) of glowing
+ * window panes, scaled to the face's width and height where it is placed. One file per storey count,
+ * so a pane row lines up with a storey; about half the flats have a lamp on, a few the blue of a TV,
+ * and the ground floor stays dark for the shopfronts and awnings.
+ */
+export const WINDOW_ROWS = [2, 3, 4, 5, 6, 8, 10, 14, 20];
+function buildWindowLights(rows) {
+  const batch = new Batch();
+  const warm = glow('window warm', '#ffd59a', 1.3, { roughness: 0.6 });
+  const amber = glow('window amber', '#ffae5c', 1.2, { roughness: 0.6 });
+  const tv = glow('window tv', '#8fe0ff', 1.0, { roughness: 0.6 });
+  const cols = 6;
+  let n = rows * 7919;
+  const rand = () => { n = (n * 16807) % 2147483647; return n / 2147483647; };
+  for (let r = rows >= 3 ? 1 : 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const pick = rand();
+      if (pick > 0.55) continue;
+      const material = pick < 0.06 ? tv : pick < 0.2 ? amber : warm;
+      const w = 0.5 / cols, h = 0.48 / rows;
+      batch.add(material, new THREE.PlaneGeometry(w, h), [-0.5 + (c + 0.5) / cols, (r + 0.55) / rows, 0]);
+    }
+  }
+  return batch.group('window lights');
+}
+for (const rows of WINDOW_ROWS) await exportModel(`window-lights-${rows}`, buildWindowLights(rows));

@@ -11,7 +11,7 @@ import { drivingStore, raceStore, wantedStore } from "../streetPlay";
 import { courierStore, DELIVERY_ROUTES, CATERING_STALL } from "../jobs/courier";
 import { stashStore } from "../jobs/stashes";
 import { customerSpot, OVEN, shiftStore, SWAP_DOCKS } from "../pizza/shift";
-import { FLOOD_SHEETS, tideStore } from "../tide/tideRuntime";
+import { FLOOD_SHEETS, sheetOutline, tideStore } from "../tide/tideRuntime";
 import { gigStore } from "../jobs/gigs";
 import { DISTRICTS, districtAt, RACE_ROUTES, ROADS, SAFEHOUSE_POS, SHORE_X, STASH_SPOTS } from "../world/districts";
 import { StreetSign, Text, useRoom, useVersioned } from "./kit";
@@ -29,7 +29,7 @@ const BLIP: Record<WorldBlip["kind"], [string, number]> = { objective: ["#ffb020
 interface Pin { id: string; position: Pt; color: string; radius: number }
 const pin = (id: string, position: Pt, color: string, radius: number): Pin => ({ id, position, color, radius });
 /** Each flood sheet as a 24-point ellipse in world XZ, drawn over its district once the water is up. */
-const FLOOD_SHAPES = FLOOD_SHEETS.map((sheet) => ({ district: sheet.district, corners: Array.from({ length: 24 }, (_, i): Pt => { const a = (i / 24) * Math.PI * 2; return [sheet.center[0] + Math.cos(a) * sheet.rx, sheet.center[1] + Math.sin(a) * sheet.rz]; }) }));
+const FLOOD_SHAPES = FLOOD_SHEETS.map((sheet) => ({ district: sheet.district, corners: sheetOutline(sheet) as Pt[] }));
 
 /** Everything the chart draws, read once per store version. */
 function readMap(ctx: GameContext) {

@@ -10,7 +10,7 @@ import { nearestOnPath } from "@jgengine/core/roads/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/roads/streets";
 import { streets } from "../../world";
 import { editorLayers } from "../../editorLayers";
-import { buildingsForZone } from "./buildings";
+import { buildingsForZone, windowLightsFor } from "./buildings";
 import { cityLayout, LOT_ROADS, roadSource, zoneAt } from "./cityLayout";
 import { setLampSpots } from "./nightLook";
 import { PALM_IDS } from "./models";
@@ -204,7 +204,7 @@ const SHOP_ZONES: readonly CityZone[] = ["core", "commercial"];
 function dressBuilding(
   ctx: GameContext,
   zone: CityZone,
-  lot: { x: number; z: number; rotationY: number; w: number; d: number; floor: number; height: number },
+  lot: { x: number; z: number; rotationY: number; w: number; d: number; floor: number; height: number; floors: number },
   ids: string[],
 ): void {
   const sin = Math.sin(lot.rotationY);
@@ -228,6 +228,12 @@ function dressBuilding(
       ids.push(id);
     }
   }
+  // Lit flats on the street face, one pane row per storey, so the night city has windows to reflect.
+  const lights = windowLightsFor(lot.floors);
+  const [wx, wz] = at(0, lot.d / 2 + 0.06);
+  const panel = ctx.scene.object.place(lights, wx, lot.floor, wz, { rotation: lot.rotationY, visual: { scale: [lot.w * 0.94, lot.height, 1] } });
+  ctx.scene.object.setColliders(panel, {});
+  ids.push(panel);
   const piece = pickFor(ROOF_PIECES, lot.x + 11, lot.z - 7);
   if (piece !== undefined && lot.w >= 8 && lot.d >= 8) {
     const [rx, rz] = at(((Math.abs(Math.round(lot.x)) % 5) - 2) * (lot.w / 10), -lot.d * 0.15);
@@ -264,7 +270,7 @@ function placeBuildings(ctx: GameContext, layout: CityLayout, ids: string[]): Bu
     ctx.scene.object.setColliders(id, blockColliders(size));
     ids.push(id);
     placed.push({ x, z, rotationY: lot.rotationY, halfW: w / 2, halfD: d / 2 });
-    dressBuilding(ctx, lot.zone, { x, z, rotationY: lot.rotationY, w, d, floor: y + 0.1, height: lot.height }, ids);
+    dressBuilding(ctx, lot.zone, { x, z, rotationY: lot.rotationY, w, d, floor: y + 0.1, height: lot.height, floors: lot.floors }, ids);
     if (lot.driveway !== undefined) {
       const [dx, dz] = lot.driveway.center;
       const drive = ctx.scene.object.place("obj_driveway", dx, ctx.world.groundHeightAt(dx, dz) - 0.02, dz, {

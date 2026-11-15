@@ -8,12 +8,13 @@ import { modelLoadFallbacks, subscribeModelLoadFallbacks } from "@jgengine/core/
  * Dev-build banner naming every model the loader replaced with a placeholder box, so a missing asset
  * is read by name on screen instead of passing as one more pink box. Mounted with devtools; a
  * production build never draws it (the console warning stays, and the release gate keeps missing
- * models from shipping at all).
+ * models from shipping at all). A capture run (`?capture=1`) skips it too: `shoot` and `drive` already
+ * list the missing models in their own report, and the banner would sit over the game's HUD in the shot.
  * @internal
  */
 export function MissingModelsNotice() {
   const missing = useSyncExternalStore(subscribeModelLoadFallbacks, modelLoadFallbacks, modelLoadFallbacks);
-  if (missing.length === 0 || isProductionEnvironment()) return null;
+  if (missing.length === 0 || isProductionEnvironment() || isCaptureRun()) return null;
   const shown = missing.slice(0, 6);
   return (
     <div
@@ -46,4 +47,8 @@ export function MissingModelsNotice() {
       <div style={{ opacity: 0.75, fontWeight: 500 }}>Run bun run games:provision; never fetched? jgengine assets find &lt;name&gt; --game &lt;dir&gt; --provision</div>
     </div>
   );
+}
+
+function isCaptureRun(): boolean {
+  return typeof window !== "undefined" && new URLSearchParams(window.location.search).get("capture") === "1";
 }

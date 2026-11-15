@@ -3,8 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { harborProfile } from "./menuProfile";
 import { DAY_SECONDS } from "./clock";
-import { tickTide } from "./tide/tideRuntime";
-import { pizzeriaStore, shiftStore, SWAP_DOCKS } from "./pizza/shift";
+import { tickTide, waterAt } from "./tide/tideRuntime";
+import { customerSpot, pizzeriaStore, shiftStore, SWAP_DOCKS } from "./pizza/shift";
 import { focusHarborVerb } from "./ui/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
@@ -93,7 +93,7 @@ export function registerCaptureCommands(ctx: GameContext): void {
   });
   // High water at the port swap dock: the clock at `hour`, the rider on the dock's jet-ski with two
   // hot boxes in the bag, so a capture sees the flood, the tide card and the order cards at once.
-  ctx.game.commands.define<{ hour?: number }>("shift.stage", {
+  ctx.game.commands.define<{ hour?: number; toward?: string; back?: number }>("shift.stage", {
     apply(state, input) {
       const clock = state.time.snapshot();
       const hour = typeof input?.hour === "number" ? input.hour : 21.6;
@@ -116,6 +116,17 @@ export function registerCaptureCommands(ctx: GameContext): void {
         ],
       });
       state.game.commands.run("pizza.swap", {});
+      // Optionally ride the jet-ski out to a customer's door and stop `back` metres short, facing it.
+      const spot = input?.toward === undefined ? null : customerSpot(input.toward);
+      const hull = streetPlayOf(state).drivingVehicleId();
+      if (spot !== null && hull !== null) {
+        const dx = spot[0] - x, dz = spot[1] - z;
+        const length = Math.hypot(dx, dz) || 1;
+        const back = input?.back ?? 16;
+        const px = spot[0] - (dx / length) * back, pz = spot[1] - (dz / length) * back;
+        const surface = waterAt(state, px, pz)?.surface ?? state.world.groundHeightAt(px, pz);
+        streetPlayOf(state).placeVehicle(state, hull, [px, surface, pz], Math.atan2(dx, dz));
+      }
       return state;
     },
   });

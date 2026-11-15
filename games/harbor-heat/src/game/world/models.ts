@@ -3,7 +3,7 @@ import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 
-import { BUILDING_SPECS } from "./buildings";
+import { BUILDING_SPECS, WINDOW_ROWS } from "./buildings";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "../assets";
@@ -187,6 +187,7 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_delivery_3: { url: new URL("../../art/parcel-tower-3.glb", import.meta.url).href, anchor: "origin" },
     obj_order_beacon: { url: art("order-beacon"), anchor: "origin" },
     obj_tide_water: { url: art("tide-water"), anchor: "origin" },
+    ...Object.fromEntries(WINDOW_ROWS.map((rows) => [`obj_window_lights_${rows}`, { url: art(`window-lights-${rows}`), anchor: "origin" } satisfies ModelConfig])),
     obj_lighthouse: { url: art("lighthouse"), anchor: "origin" },
     obj_submarine: { url: art("submarine"), anchor: "origin" },
     obj_string_lights: { url: art("string-lights"), anchor: "origin" },

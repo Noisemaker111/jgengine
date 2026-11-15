@@ -55,7 +55,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { radioOf, registerRadio, tickRadio } from "./game/radio/runtime";
 import { circuitLabel, recordTideRushWin } from "./game/race/tideRush";
 import { bulletinForTide } from "./game/radio/bulletins";
-import { resetTide, tickTide } from "./game/tide/tideRuntime";
+import { resetTide, tickRipples, tickTide } from "./game/tide/tideRuntime";
 import { pizzeriaBoardStore, registerShift, setupShift, tickShift } from "./game/pizza/shift";
 
 const CICADA_STAGE_ID = "cicada_stage_car";
@@ -298,6 +298,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickStreaming(ctx);
   const rose = tickTide(ctx);
   if (rose !== null) radioOf(ctx).report(bulletinForTide(rose));
+  tickRipples(ctx, dt);
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickNightLook(ctx);

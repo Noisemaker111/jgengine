@@ -80,9 +80,15 @@ const DRIVE_CAMERA_TUNING: ChaseCameraTuning = {
   bank: { perYawRate: 0.1, max: 0.18, damping: 6.5 },
 };
 
-/** A long body pulls the chase camera back and up so the bus is framed, not filling the screen. */
-const LONG_BODY_CAMERA: Record<string, ChaseCameraTuning> = {
+/**
+ * Per-body chase framing: a long body pulls the camera back and up so the bus is framed, not filling
+ * the screen; the small rides (scooter, jet-ski) bring it in close and low so the rider, the pizza bag
+ * and the wake read instead of a speck on the water.
+ */
+const BODY_CAMERA: Record<string, ChaseCameraTuning> = {
   car_bus: { ...DRIVE_CAMERA_TUNING, distance: 12.5, height: 4.6, lookHeight: 2.1 },
+  car_compact: { ...DRIVE_CAMERA_TUNING, distance: 5.4, height: 2.1, lookHeight: 1.0 },
+  car_sport: { ...DRIVE_CAMERA_TUNING, distance: 5.6, height: 1.9, lookHeight: 0.8 },
 };
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
@@ -498,6 +504,8 @@ export function createDriving(): Driving {
       const heading = step.motion.heading;
       const stern: [number, number, number] = [pose[0] - Math.sin(heading) * back, (surface?.surface ?? pose[1]) + 0.1, pose[2] - Math.cos(heading) * back];
       ctx.scene.entity.vfx({ kind: "spark", color: 0xe8fbff, from: stern, radius: Math.min(2.6, 0.6 + speed * 0.08 + step.hull.planing * 0.8) });
+      // A trail of spreading rings left on the water behind the stern: the wake's V as it widens.
+      ctx.scene.entity.vfx({ kind: "nova", color: 0xcff7f2, from: [stern[0], stern[1] - 0.07, stern[2]], radius: Math.min(3.2, 1 + speed * 0.12) });
     }
     lastTelemetry = {
       mode: "ground",
@@ -540,7 +548,7 @@ export function createDriving(): Driving {
         vehicleSeats.register({ id: vehicleId, kit: { kind: definition.dynamics.type === "aircraft" ? "flying" : "ground" } });
       }
       const result = boardVehicle(ctx, vehicleSeats, ctx.player.userId, vehicleId, {
-        chase: LONG_BODY_CAMERA[definition.id] ?? DRIVE_CAMERA_TUNING,
+        chase: BODY_CAMERA[definition.id] ?? DRIVE_CAMERA_TUNING,
       });
       if (!result.ok) return;
       driving = vehicleId;
