@@ -228,12 +228,15 @@ function dressBuilding(
       ids.push(id);
     }
   }
-  // Lit flats on the street face, one pane row per storey, so the night city has windows to reflect.
+  // Lit flats on the street face and the back (the canal side, where a boat sees them), one pane row
+  // per storey; the back panel is the front one turned round, offset so its lit flats differ.
   const lights = windowLightsFor(lot.floors);
-  const [wx, wz] = at(0, lot.d / 2 + 0.06);
-  const panel = ctx.scene.object.place(lights, wx, lot.floor, wz, { rotation: lot.rotationY, visual: { scale: [lot.w * 0.94, lot.height, 1] } });
-  ctx.scene.object.setColliders(panel, {});
-  ids.push(panel);
+  for (const side of [1, -1]) {
+    const [wx, wz] = at(side * lot.w * 0.02, side * (lot.d / 2 + 0.06));
+    const panel = ctx.scene.object.place(lights, wx, lot.floor, wz, { rotation: lot.rotationY + (side < 0 ? Math.PI : 0), visual: { scale: [lot.w * 0.94, lot.height, 1] } });
+    ctx.scene.object.setColliders(panel, {});
+    ids.push(panel);
+  }
   const piece = pickFor(ROOF_PIECES, lot.x + 11, lot.z - 7);
   if (piece !== undefined && lot.w >= 8 && lot.d >= 8) {
     const [rx, rz] = at(((Math.abs(Math.round(lot.x)) % 5) - 2) * (lot.w / 10), -lot.d * 0.15);
