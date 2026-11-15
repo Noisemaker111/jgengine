@@ -466,6 +466,14 @@
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
 - `VERSION` (const): const VERSION: "0.58.0" — Installed `@jgengine/core` semver - compare against {@link CHANGELOG} keys when migrating.
 
+## @jgengine/core/meta/proposal
+
+- `ENGINE_PROPOSAL_KINDS` (const): const ENGINE_PROPOSAL_KINDS: readonly EngineProposalKind[] — The kinds {@link defineEngineProposal} accepts.
+- `EngineProposal` (interface): interface EngineProposal — What a `<feature>.engine.ts` file says about the engine part it carries.
+- `EngineProposalKind` (type): type EngineProposalKind = "new" | "extend" | "fork" — Engine proposals: a game (in this repo or a project on the npm packages) that needs an engine part the engine lacks writes it in a `<feature>.engine.ts` file next to its own code. That one file is the working shim the game imports, the spec of the part (its exports carry their final names and signatures) and the body of the issue `jgengine propose` prints. It exports a `proposal` built with {@link defineEngineProposal}, which names where the part should live once upstream.
+- `defineEngineProposal` (function): function defineEngineProposal<const T extends EngineProposal>(proposal: T): T — Declare the engine part a `<feature>.engine.ts` file carries. Returns `proposal` unchanged and throws when it is invalid, so a broken proposal fails the first time the game loads it.
+- `engineProposalProblems` (function): function engineProposalProblems(value: unknown): string[] — Every way `value` fails to be a valid {@link EngineProposal}, one sentence each; empty when it is valid. Pure: `jgengine propose` runs the same rules over the literal it reads from a file.
+
 ## @jgengine/core/runtime/adapter
 
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology | undefined; authority?: MultiplayerAuthority | undefined } | { kind: "ws"; topology?: MultiplayerTopology | undefined; url?: string | undefined; authority?: MultiplayerAuthority | undefined } | { kind: "socketio"; to… — ⚠ undocumented · used by `convex`: Convex transport.
