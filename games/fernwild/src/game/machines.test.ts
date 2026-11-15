@@ -402,3 +402,30 @@ test("an uploaded Thermite Beetle on its Harvest chip cuts metal and smelts it i
   // Smelted as it cuts: never two raw ore waiting to become an ingot.
   expect(carried("metal")).toBeLessThan(2);
 });
+
+test("a hut on a Hoover's back: whoever stands on its roof rides the Hoover as it walks and turns", () => {
+  const g = quiet();
+  const hoover = summon(g, "hoover", { tamed: true, distance: 12 });
+  g.ui.tryInvoke("cheat", { deckHut: "thatch" });
+  tick(g, 0.1);
+  const pieces = baseBuilding(g.ctx).list();
+  expect(pieces.map((piece) => piece.pieceId).sort()).toEqual(["thatch_ceiling", "thatch_foundation", "thatch_wall", "thatch_wall"]);
+  expect(pieces.every((piece) => piece.parent === hoover)).toBe(true);
+  // Up on the roof.
+  const roof = pieces.find((piece) => piece.pieceId === "thatch_ceiling")!.position;
+  g.ctx.scene.entity.setPose(g.userId, { position: [roof[0], roof[1] + 0.05, roof[2]], rotationY: 0 });
+  tick(g, 0.3);
+  expect(aboard(g.ctx)).toBe(hoover);
+  const before = [...g.ctx.scene.entity.get(g.userId)!.position];
+  const from = [...g.ctx.scene.entity.get(hoover)!.position];
+  const yaw = g.ctx.scene.entity.get(hoover)!.rotationY;
+  for (let i = 1; i <= 30; i += 1) {
+    g.ctx.scene.entity.setPose(hoover, { position: [from[0]!, from[1]!, from[2]! + (6 * i) / 30], rotationY: yaw + (0.4 * i) / 30 });
+    tick(g, 0.05);
+  }
+  const after = g.ctx.scene.entity.get(g.userId)!.position;
+  expect(after[2] - before[2]!).toBeGreaterThan(4);
+  // Still on the roof, not dropped onto the floor below it.
+  expect(after[1]).toBeGreaterThan(roof[1] - 0.5);
+  expect(aboard(g.ctx)).toBe(hoover);
+});

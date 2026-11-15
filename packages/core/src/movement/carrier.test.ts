@@ -65,3 +65,15 @@ test("someone who steps off the deck is no longer carried, and the state round-t
   expect(copy.has("whale")).toBe(true);
   expect(copy.snapshot()).toEqual(field.snapshot());
 });
+
+test("a rider high over a tall carrier's deck, inside its stand tolerance, is carried too", () => {
+  const ctx = world();
+  // A tall walker: deck 8 m up, riders up to 4 m over it (the roof of a hut built there).
+  ctx.scene.entity.spawn("player", { id: "p1", position: [0, 11.5, 0], role: "player" });
+  const field = createCarrierField();
+  field.add("whale", { halfX: 2, halfZ: 3, height: 8, standTolerance: 4 });
+  field.step(ctx);
+  ctx.scene.entity.setPose("whale", { position: [0, 0, 2] });
+  expect(field.step(ctx)).toEqual(["p1"]);
+  expect(ctx.scene.entity.get("p1")!.position[2]).toBeCloseTo(2, 5);
+});

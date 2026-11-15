@@ -350,10 +350,13 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const pieceVolume = (pieceId: string): number => boxesOf(pieceId, false).reduce((sum, box) => sum + volume(box), 0);
 
   const overlaps = (pieceId: string, position: BaseVec3, rotationY: number): boolean => {
-    const mine = aabbsOf(pieceId, position, rotationY);
+    // Measured in the new piece's own frame: pieces on a grid turned to any heading (a carrier's deck) stay
+    // box-exact there, where world-axis bounds of turned boxes would swell and clash with their neighbours.
+    const mine = aabbsOf(pieceId, [0, 0, 0], 0);
     const myVolume = pieceVolume(pieceId);
     for (const other of standing()) {
-      const theirs = aabbsOf(other.pieceId, other.position, other.rotationY, other.open);
+      const offset = unrotate([other.position[0] - position[0], other.position[1] - position[1], other.position[2] - position[2]], rotationY);
+      const theirs = aabbsOf(other.pieceId, offset, other.rotationY - rotationY, other.open);
       let shared = 0;
       for (const a of mine) for (const b of theirs) shared += intersection(a, b);
       if (shared <= 0) continue;

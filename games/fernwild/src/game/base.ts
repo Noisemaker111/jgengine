@@ -343,6 +343,36 @@ export function placeHeld(ctx: GameContext, itemId: string, yaw: number | undefi
 }
 
 /**
+ * Stand a foundation of one tier in the middle of the nearest uploaded platform bot's back, with a wall on its
+ * front and back edges and a roof across them, each planned straight onto the deck or its socket. For proofs and shots of a hut that
+ * walks; false if there is no platform bot or a piece will not stand.
+ */
+export function buildOnDeck(ctx: GameContext, tier: string): boolean {
+  const base = baseOf(ctx);
+  syncFrames(ctx, base);
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  const frame = carrierFrames(ctx).sort((a, b) => (me === null ? 0 : Math.hypot(a.position[0] - me.position[0], a.position[2] - me.position[2]) - Math.hypot(b.position[0] - me.position[0], b.position[2] - me.position[2])))[0];
+  if (frame === undefined) {
+    ctx.game.notices.push({ text: "No uploaded platform bot to build on", tone: "deny" });
+    return false;
+  }
+  const ahead = forward(frame.yaw);
+  const top = frame.position[1] + frame.deck.height;
+  const stand = (pieceId: string, cursor: BaseVec3, rotationY: number): boolean => {
+    const plan = base.building.plan(`${tier}_${pieceId}`, cursor, { rotationY, variant: 0, groundHeightAt: ctx.world.groundHeightAt });
+    const placed = plan.valid && base.building.place(plan, { owner: ctx.player.userId }) !== null;
+    // A proof that cannot stand its hut says which piece and why, on screen.
+    if (!placed) ctx.game.notices.push({ text: `Deck ${pieceId}: ${BLOCKED[plan.reason ?? "no-support"]}`, tone: "deny" });
+    return placed;
+  };
+  if (!stand("foundation", [frame.position[0], top, frame.position[2]], frame.yaw)) return false;
+  const floor = base.building.list().at(-1)!.position;
+  const ok = [1, -1].every((way) => stand("wall", [floor[0] + ahead[0] * 1.6 * way, floor[1] + 1, floor[2] + ahead[2] * 1.6 * way], frame.yaw)) && stand("ceiling", [floor[0], floor[1] + 3, floor[2]], frame.yaw);
+  syncSolids(ctx, base);
+  return ok;
+}
+
+/**
  * Stand a closed hut of one tier 4 m in front of the survivor, its door shut and facing them: a foundation, a
  * doorframe on the near edge, walls on the other three, the door and the roof. Each piece is planned straight onto
  * its socket. For proofs and tests about what a hut does, not how it is aimed together. False if any piece will not stand.

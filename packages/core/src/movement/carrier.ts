@@ -99,7 +99,8 @@ export function createCarrierField(config: CarrierFieldConfig = {}): CarrierFiel
     return Math.abs(local[0]) <= deck.halfX && Math.abs(local[2]) <= deck.halfZ && above >= -0.25 && above <= (deck.standTolerance ?? 0.6);
   };
   const candidatesOf = (ctx: GameContext, carrierId: string, deck: CarrierDeck): Iterable<string> => {
-    const reach = Math.hypot(deck.halfX, deck.halfZ) + Math.abs(deck.offsetZ ?? 0) + 1;
+    // Riders stand up to the stand tolerance over a deck that may sit high on the carrier: reach that far up too.
+    const reach = Math.hypot(deck.halfX, deck.halfZ, deck.height + (deck.standTolerance ?? 0.6)) + Math.abs(deck.offsetZ ?? 0) + 1;
     return config.candidates?.(ctx, carrierId, reach) ?? ctx.scene.entity.inRadius(carrierId, reach);
   };
 

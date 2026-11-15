@@ -3,7 +3,7 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { baseSave, buildHut, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
+import { baseSave, buildHut, buildOnDeck, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { resetRootServer, rootServerSave, tickRootServer } from "./game/rootServer";
 import { placeFabricatorSolids } from "./game/machineRuins";
@@ -287,6 +287,8 @@ interface Cheat {
   turn?: number;
   /** A closed hut of this tier (thatch, wood, stone) 4 m ahead, its shut door facing the survivor. */
   hut?: string;
+  /** A foundation with a wall front and back and a roof, of this tier, on the nearest uploaded platform bot's back. */
+  deckHut?: string;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -303,6 +305,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   if (input.fuel !== undefined) fuelStations(ctx, input.fuel);
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.hut !== undefined) buildHut(ctx, input.hut);
+  if (input.deckHut !== undefined) buildOnDeck(ctx, input.deckHut);
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.storm !== undefined) setStorm(ctx, input.storm);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });

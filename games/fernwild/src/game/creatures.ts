@@ -1043,10 +1043,16 @@ export function kleptoNests(ctx: GameContext): { id: string; at: readonly [numbe
   return out;
 }
 
+/**
+ * How high over a platform's deck a body still rides it, metres: a storey of a hut built on its back, so
+ * whoever stands on the roof walks with it as surely as whoever stands on the floor.
+ */
+const DECK_HEADROOM = 4.5;
+
 /** An uploaded platform bot gets a deck on its back; a wild one, or a dead one, has none. */
 function mountDeck(world: World, creature: Creature): void {
   const deck = botProfile(creature.species)?.platform === true ? backDeck(creature.species) : null;
-  if (deck !== null && creature.tamed && !creature.dead) world.carriers.add(creature.id, deck);
+  if (deck !== null && creature.tamed && !creature.dead) world.carriers.add(creature.id, { ...deck, standTolerance: DECK_HEADROOM });
   else world.carriers.remove(creature.id);
 }
 
