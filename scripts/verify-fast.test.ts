@@ -495,6 +495,14 @@ describe("static gates", () => {
     expect(gatesFor(["packages/core/src/a.ts"])).not.toContain("games-save-states");
   });
 
+  test("a game or engine source change pays the engine-proposal gate, a test alone does not", () => {
+    expect(gatesFor(["games/fernwild/src/remains.engine.ts"])).toContain("engine-proposals");
+    // A package change can bring a proposal's target upstream.
+    expect(gatesFor(["packages/core/src/ai/creatureDriver.ts"])).toContain("engine-proposals");
+    expect(gatesFor(["packages/core/src/ai/creatureDriver.test.ts"])).not.toContain("engine-proposals");
+    expect(gatesFor(["README.md"])).not.toContain("engine-proposals");
+  });
+
   test("--cheap keeps only the type-checks and gates", () => {
     const plan: Plan = {
       changed: ["packages/core/src/a.ts"],

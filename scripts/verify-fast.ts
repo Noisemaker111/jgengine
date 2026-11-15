@@ -346,7 +346,7 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
  * ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["artifacts", "path-portability", "layers", "games-save-states", "games-sync"]);
+  const gates = new Set(["artifacts", "path-portability", "layers", "games-save-states", "games-sync", "engine-proposals"]);
   if (changed.some((path) => path.startsWith("packages/"))) gates.add("skill-api");
   return [...gates].filter((gate) => gate === "skill-api" || keepGate(gate, changed));
 }

@@ -187,6 +187,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check games-save-states
       - run: bun run check games-ledger
+      - run: bun run check engine-proposals
       # A few at a time on the runner's cores: one after another took 52 s for three games.
       - name: type-check the reached games
         run: bun scripts/check-types-all.ts $(for game in $GAMES; do printf 'games/%s ' "$game"; done)

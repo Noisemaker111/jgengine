@@ -101,6 +101,8 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
+  // Every `*.engine.ts` proposal: valid, liftable as-is, not already upstream, one id per game.
+  { name: "engine-proposals", script: "packages/jgengine/src/cli/index.ts", args: ["propose", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/"], skipsTests: true },
   { name: "games-suite-score", script: "scripts/gen-game-suite.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: GAME_SUITE_READS },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
