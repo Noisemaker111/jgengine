@@ -5,6 +5,8 @@ import { FAMILY_BASES, junkCard, mergeCost, mergeGuns, mergePlan, MANUFACTURERS,
 import {
   derivePersonality,
   isFreeShot,
+  KILL_MILESTONES,
+  milestoneLine,
   moodDamageScale,
   moodIntervalScale,
   moodReloadScale,
@@ -65,6 +67,15 @@ describe("weapon personalities", () => {
     const free = [1, 2, 3, 4, 5, 6, 7, 12].filter((shot) => isFreeShot("philosophical", shot));
     expect(free).toEqual([6, 12]);
     expect(isFreeShot("grumpy", 6)).toBe(false);
+  });
+});
+
+describe("career kills", () => {
+  test("every personality remarks on each milestone, and only there", () => {
+    for (const personality of PERSONALITIES) {
+      for (const n of KILL_MILESTONES) expect(milestoneLine(personality.id, n)).toContain(String(n));
+      expect(milestoneLine(personality.id, 11)).toBeNull();
+    }
   });
 });
 

@@ -13,7 +13,7 @@ import type { GunDef } from "./guns";
 export type PersonalityId = "grumpy" | "cheerful" | "paranoid" | "dramatic" | "philosophical" | "clingy" | "competitive";
 
 /** The moments a weapon speaks up. */
-export type BarkEvent = "pickup" | "reload" | "kill" | "switchAway" | "lowAmmo" | "jam" | "merge";
+export type BarkEvent = "pickup" | "reload" | "kill" | "switchAway" | "lowAmmo" | "jam" | "merge" | "rival";
 
 export interface PersonalityDef {
   id: PersonalityId;
@@ -53,6 +53,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["I'm running on fumes here.", "Feed me or I quit.", "Running low. Not that you'd care."],
       jam: ["Nope.", "Not today."],
       merge: ["You glued me to WHAT?", "I hate this. I hate all of this."],
+      rival: ["Oh good. Another one.", "Don't expect me to share the holster."],
     },
   },
   {
@@ -69,6 +70,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["Uh-oh, running a teensy bit low!", "Almost out! Still smiling!"],
       jam: ["Whoopsie!"],
       merge: ["New parts! I feel all tingly!", "I'm a whole new me!"],
+      rival: ["Ooh, a new friend! Hi new friend!", "Welcome to the team!"],
     },
   },
   {
@@ -85,6 +87,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["We're low. They know we're low.", "Ammo's low. That's what they want."],
       jam: ["Something's in my barrel. Probably a tracker."],
       merge: ["New parts? Who manufactured these?!", "These parts could be bugged. Everything is bugged."],
+      rival: ["Who's the new one? Check it for wires.", "I don't trust that one. Not one bit."],
     },
   },
   {
@@ -101,6 +104,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["The finale approaches!", "Now. NOW is when it gets good."],
       jam: ["I am... overcome."],
       merge: ["A costume change! At last!", "Reborn, like a phoenix! A crafty phoenix!"],
+      rival: ["An understudy? In MY production?", "They'll never have my range."],
     },
   },
   {
@@ -117,6 +121,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["Scarcity teaches us to aim.", "Few rounds remain. Make them mean something."],
       jam: ["I paused to consider the void."],
       merge: ["Am I still me, with new parts? A ship of Theseus, with a trigger.", "The parts change. The question remains."],
+      rival: ["Another voice in the drawer. Welcome, fellow traveller.", "We are all junk, in the end."],
     },
   },
   {
@@ -133,6 +138,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["I'm almost empty... like my heart.", "Don't swap me just because I'm low!"],
       jam: ["I'm too upset to fire."],
       merge: ["We're... together now? Forever?", "You changed me. I love it."],
+      rival: ["Who is SHE?", "You said I was the only one.", "I saw how you looked at that one."],
     },
   },
   {
@@ -149,6 +155,7 @@ export const PERSONALITIES: readonly PersonalityDef[] = [
       lowAmmo: ["Gimme more! I'm on a streak!", "Don't make me lose on a technicality!"],
       jam: ["I'm not playing.", "*sulking noises*", "Oh, NOW you want me?"],
       merge: ["Upgrades? I was already winning.", "New parts. Same champion."],
+      rival: ["New kid, huh? Try to keep up.", "I'll have twice its kills by lunch."],
     },
   },
 ];
@@ -224,6 +231,25 @@ export function moodIntervalScale(id: PersonalityId): number {
 /** Whether a Philosophical gun's `shotIndex`th shot (1-based) is free. */
 export function isFreeShot(id: PersonalityId, shotIndex: number): boolean {
   return id === "philosophical" && shotIndex > 0 && shotIndex % PERSONALITY_TUNING.philosophical.freeEvery === 0;
+}
+
+/** Career kill counts a weapon remarks on. */
+export const KILL_MILESTONES: readonly number[] = [10, 25, 50, 100, 250, 500];
+
+/** What each personality says when its career count reaches a milestone (`{n}` is the count). */
+const MILESTONE_LINES: Readonly<Record<PersonalityId, string>> = {
+  grumpy: "{n}. Don't make it a whole thing.",
+  cheerful: "That's {n} together! I made us a scrapbook!",
+  paranoid: "{n} confirmed. They're keeping a list too, you know.",
+  dramatic: "{n} curtain calls! Fetch my roses!",
+  philosophical: "{n}. Is the number large, or are we small?",
+  clingy: "{n}! That's {n} reasons you can never leave me.",
+  competitive: "{n}! New personal best. Again.",
+};
+
+/** The line for reaching `kills`, or null when it is not a milestone. */
+export function milestoneLine(id: PersonalityId, kills: number): string | null {
+  return KILL_MILESTONES.includes(kills) ? MILESTONE_LINES[id].replaceAll("{n}", String(kills)) : null;
 }
 
 /** A short live readout of the mood for the HUD ("+18% CLINGY"), or "" when it has nothing to say. */

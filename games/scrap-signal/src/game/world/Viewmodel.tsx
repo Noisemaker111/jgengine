@@ -29,7 +29,9 @@ const FLASH_LIGHT = 5;
 function buildGun(gun: GunDef): { group: Group; flash: Group; muzzleZ: number; dispose(): void } {
   const junk = buildJunkWeapon(gun);
   const group = junk.group;
-  group.position.set(0, -0.02, -0.1);
+  // Junk is chunkier than a gun: a touch smaller and lower keeps the centre of the view clear.
+  group.scale.setScalar(0.8);
+  group.position.set(0.02, -0.04, -0.1);
   const flash = new Group();
   flash.position.set(0, junk.muzzleY, junk.muzzleZ - 0.01);
   flash.visible = false;
@@ -45,7 +47,7 @@ function buildGun(gun: GunDef): { group: Group; flash: Group; muzzleZ: number; d
   return {
     group,
     flash,
-    muzzleZ: junk.muzzleZ - 0.1,
+    muzzleZ: junk.muzzleZ * 0.8 - 0.1,
     dispose() {
       junk.dispose();
       flashGeometry.dispose();

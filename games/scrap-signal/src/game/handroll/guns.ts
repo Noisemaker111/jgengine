@@ -43,6 +43,8 @@ export interface GunDef {
   perks?: readonly string[];
   /** Personality id (see `personality.ts`); absent on older guns, which derive it from their id. */
   personality?: string;
+  /** Career kills: the weapon remembers, and says so at its milestones. Kept on the def, so it saves. */
+  kills?: number;
 }
 
 /** What a body does beyond its numbers: the vacuum drags, the extinguisher chills. */

@@ -216,6 +216,12 @@ export const game = defineGame({
         { name: "front.capture", input: { mode: "fight" } },
         { name: "kit.capture", input: { family: "launcher", rarity: "epic" } },
       ],
+      // A busted vacuum, for how the bodies built in the hand read at their plainest.
+      "junk-vacuum": [
+        { name: "character.pick", input: { characterId: "gunk" } },
+        { name: "front.capture", input: { mode: "fight" } },
+        { name: "kit.capture", input: { family: "vacuum", rarity: "common" } },
+      ],
       // The relay contract's first ambush, so a flow can prove the session opens in the real game
       // without a two-minute walk from the crash site.
       "dead-air": [{ name: "character.pick", input: { characterId: "gunk" } }, { name: "relay.capture", input: { mode: "upload" } }],

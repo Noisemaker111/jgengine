@@ -19,6 +19,8 @@ export interface JunkCard {
   element: string | null;
   /** An heirloom's backstory line. */
   story: string | null;
+  /** Career kills with this weapon. */
+  kills: number;
 }
 
 export function junkCard(gun: GunDef): JunkCard {
@@ -38,6 +40,7 @@ export function junkCard(gun: GunDef): JunkCard {
     personalityColor: personality.color,
     element: gun.element === "none" ? null : ELEMENT_LABELS[gun.element],
     story: heirloom === null ? null : (heirloomStory(heirloom) ?? null),
+    kills: gun.kills ?? 0,
   };
 }
 

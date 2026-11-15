@@ -10,6 +10,8 @@ import {
   gunById,
   isFreeShot,
   isReloading,
+  junkCard,
+  milestoneLine,
   magLoaded,
   moodDamageScale,
   moodIntervalScale,
@@ -55,6 +57,10 @@ interface MoodRuntime {
   lowAmmoSaid: Set<string>;
   /** A kill landed since the last tick: the tick decides whether the gun says something. */
   killBark: string | null;
+  /** A career milestone reached since the last tick: said over any plain kill line. */
+  milestone: { gunId: string; line: string } | null;
+  /** A carried weapon that will remark on the newcomer once the newcomer has said hello. */
+  rival: { gunId: string; atMs: number } | null;
   /** The held gun was mid-reload at the last tick. */
   wasReloading: boolean;
   lastBarkMs: number;
@@ -72,6 +78,8 @@ const moodsOf = perContext(
     shots: new Map(),
     lowAmmoSaid: new Set(),
     killBark: null,
+    milestone: null,
+    rival: null,
     wasReloading: false,
     lastBarkMs: Number.NEGATIVE_INFINITY,
     rng: seededRng("junk-barks"),
@@ -85,6 +93,7 @@ const BARK_GAP_MS: Record<BarkEvent, number> = {
   pickup: 0,
   merge: 0,
   jam: 800,
+  rival: 1500,
   switchAway: 600,
   reload: 3500,
   lowAmmo: 2500,
@@ -93,16 +102,19 @@ const BARK_GAP_MS: Record<BarkEvent, number> = {
 /** Kills only sometimes get a line: every kill would drown the fight. */
 const KILL_BARK_CHANCE = 0.45;
 
-/** Have `gun` say something for `event`, if it is not still talking. Returns the line, or null. */
-export function bark(ctx: GameContext, gun: GunDef, event: BarkEvent): string | null {
+/**
+ * Have `gun` say something for `event`, if it is not still talking. Returns the line, or null. An
+ * `exact` line (a milestone, an heirloom's story) is said in place of a picked one, and always.
+ */
+export function bark(ctx: GameContext, gun: GunDef, event: BarkEvent, exact?: string): string | null {
   const runtime = moodsOf(ctx);
   const now = nowMs(ctx);
-  if (now - runtime.lastBarkMs < BARK_GAP_MS[event]) return null;
-  if (event === "kill" && runtime.rng() >= KILL_BARK_CHANCE) return null;
+  if (exact === undefined && now - runtime.lastBarkMs < BARK_GAP_MS[event]) return null;
+  if (exact === undefined && event === "kill" && runtime.rng() >= KILL_BARK_CHANCE) return null;
   const personality = personalityOf(gun);
   const lines = personality.barks[event];
-  if (lines.length === 0) return null;
-  const line = lines[Math.min(lines.length - 1, Math.floor(runtime.rng() * lines.length))]!;
+  if (exact === undefined && lines.length === 0) return null;
+  const line = exact ?? lines[Math.min(lines.length - 1, Math.floor(runtime.rng() * lines.length))]!;
   runtime.lastBarkMs = now;
   gunBarkStore.write(ctx, { gunId: gun.id, name: gun.name, personality: personality.name, color: personality.color, line, event, atMs: now });
   return line;
@@ -185,11 +197,23 @@ export function moodKill(ctx: GameContext, gun: GunDef, from: string): void {
       ctx.scene.entity.effect({ from, to: from, effect: "damage", via: { amount: -amount } });
     }
   }
-  runtime.killBark = gun.id;
+  gun.kills = (gun.kills ?? 0) + 1;
+  const milestone = milestoneLine(id, gun.kills);
+  if (milestone !== null) runtime.milestone = { gunId: gun.id, line: milestone };
+  else runtime.killBark = gun.id;
 }
 
+/** A weapon says hello when it is picked up; an heirloom tells its story instead. */
 export function moodPickup(ctx: GameContext, gun: GunDef): void {
-  bark(ctx, gun, "pickup");
+  const story = junkCard(gun).story;
+  bark(ctx, gun, "pickup", story === null ? undefined : `\u201c${story}\u201d`);
+  // One of the weapons already carried has an opinion about the newcomer: a jealous one first.
+  const carried = ctx.player.inventory.state("hotbar").slots.flatMap((slot) => {
+    const other = slot === null ? undefined : gunById(slot.itemId);
+    return other === undefined || other.id === gun.id ? [] : [other];
+  });
+  const jealous = carried.find((other) => ["clingy", "competitive"].includes(personalityOf(other).id)) ?? carried[0];
+  if (jealous !== undefined) moodsOf(ctx).rival = { gunId: jealous.id, atMs: nowMs(ctx) + 2200 };
 }
 
 /**
@@ -253,7 +277,15 @@ export function tickPersonality(ctx: GameContext): void {
   }
   const killer = runtime.killBark === null ? undefined : gunById(runtime.killBark);
   runtime.killBark = null;
-  if (killer !== undefined) bark(ctx, killer, "kill");
+  const proud = runtime.milestone === null ? undefined : gunById(runtime.milestone.gunId);
+  if (proud !== undefined && runtime.milestone !== null) bark(ctx, proud, "kill", runtime.milestone.line);
+  else if (killer !== undefined) bark(ctx, killer, "kill");
+  runtime.milestone = null;
+  const rival = runtime.rival === null || now < runtime.rival.atMs ? undefined : gunById(runtime.rival.gunId);
+  if (rival !== undefined) {
+    runtime.rival = null;
+    bark(ctx, rival, "rival");
+  }
   const held = heldId === null ? undefined : gunById(heldId);
   if (held === undefined) return;
   const reloading = isReloading(ctx, held);

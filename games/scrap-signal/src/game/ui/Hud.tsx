@@ -129,7 +129,7 @@ export function ItemCard() {
   return <Hull width={270} hidden={bind(() => !within(ctx, pickup.atMs, 6000))} border={{ width: 2, color: RARITY_COLORS[gun.rarity] }}>
     <Stamp tone="phosphor">{card.condition}</Stamp>
     <Text family="Russo One" size={16} color={RARITY_COLORS[gun.rarity]}>{gun.name}</Text>
-    <Small>{`Level ${gun.level} · ${card.body} + ${card.mod}`}</Small>
+    <Small>{`Level ${gun.level} · ${card.body} + ${card.mod}${card.kills > 0 ? ` · ${card.kills} kills` : ""}`}</Small>
     <Small size={11} color={C.ink}>{card.bodyText}</Small>
     {card.modText === "" ? null : <Small size={11}>{`${card.mod}: ${card.modText}`}</Small>}
     <RuneView gap={1} padding={[4, 6, 4, 6]} fill="#00000044" border={{ width: 1, color: card.personalityColor }}>

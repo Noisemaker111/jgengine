@@ -61,7 +61,8 @@ function buildProp(kind: YardProp): { group: Group; dispose(): void } {
     // The overturned school bus at the opening, tipped onto its side in the grass.
     const bus = new Group();
     bus.rotation.z = Math.PI / 2 - 0.12;
-    bus.position.set(-1.1, 1.25, 0);
+    bus.position.set(-0.8, 0.9, 0);
+    bus.scale.setScalar(0.72);
     group.add(bus);
     const yellow = mat(paint("#ffc20e", 0.45));
     const black = mat(paint("#1b1b1f", 0.6));
