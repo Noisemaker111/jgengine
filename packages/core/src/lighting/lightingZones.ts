@@ -17,7 +17,7 @@ export interface LightingZone {
   fade?: number;
   /** The key light (the first `directional`): `intensity` multiplies its authored intensity, `color` replaces its colour. */
   key?: { intensity?: number; color?: string };
-  /** The fill (`ambient` and `hemisphere`): `intensity` multiplies both, `color` replaces the ambient and hemisphere sky colours, `groundColor` the hemisphere ground colour. */
+  /** The fill (`ambient`, `hemisphere` and every `directional` after the first): `intensity` multiplies them all, `color` replaces the ambient and hemisphere sky colours, `groundColor` the hemisphere ground colour. */
   fill?: { intensity?: number; color?: string; groundColor?: string };
   /** Multiplier on the image-based environment light's intensity. Default 1. */
   environment?: number;

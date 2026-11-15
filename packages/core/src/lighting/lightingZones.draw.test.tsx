@@ -15,13 +15,13 @@ function lights(scene: THREE.Scene) {
     if (object instanceof THREE.HemisphereLight) found.hemisphere.push(object);
     if (object instanceof THREE.DirectionalLight) found.directional.push(object);
   });
-  return { ambient: found.ambient[0]!, hemisphere: found.hemisphere[0]!, key: found.directional[0]! };
+  return { ambient: found.ambient[0]!, hemisphere: found.hemisphere[0]!, key: found.directional.find((light) => light.position.x === 0)!, fill: found.directional.find((light) => light.position.x === 40)! };
 }
 
 const RIG: LightingConfig = {
   ambient: { color: "#ffffff", intensity: 0.4 },
   hemisphere: { skyColor: "#ffffff", groundColor: "#808080", intensity: 0.8 },
-  directional: [{ position: [0, 30, 0], intensity: 2, color: "#ffffff" }],
+  directional: [{ position: [0, 30, 0], intensity: 2, color: "#ffffff" }, { position: [40, 20, 0], intensity: 0.6, color: "#ddeeff" }],
   zones: [
     {
       area: { w: 100, d: 100, position: [0, 500] },
@@ -55,6 +55,9 @@ test("a zoned rig re-lights as the camera enters a zone, blends at its edge and 
     expect(rig.key.intensity).toBeCloseTo(0.5, 5);
     expect(rig.key.color.getHexString()).toBe(new THREE.Color("#ff8800").getHexString());
     expect(rig.hemisphere.groundColor.getHexString()).toBe("000000");
+    // A second directional is fill: it scales with the zone's fill and keeps its own colour.
+    expect(rig.fill.intensity).toBeCloseTo(0.3, 5);
+    expect(rig.fill.color.getHexString()).toBe(new THREE.Color("#ddeeff").getHexString());
     expect(readLightingZoneFactors(m.scene)).toEqual({ exposure: 0.6, environment: 0.2 });
 
     // Ten metres past the north edge is halfway through the fade.

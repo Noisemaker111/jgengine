@@ -177,6 +177,20 @@ describe("world features", () => {
       bounds: { w: 400, d: 225, position: [0, 187.5], fade: 12 },
     });
     expect((world.weather![0] as { bounds?: unknown }).bounds).toBeUndefined();
+  });
+
+  test("a band's weather can carry its own rain or snow look", () => {
+    const world = environment({
+      terrain: terrain({
+        bounds: { w: 400, d: 600 },
+        biomeBands: [
+          { z: -150, weather: { kind: "rain", density: 0.9, width: 0.03, opacity: 0.7 } },
+          { z: 150, weather: { kind: "snow", flakeSize: 0.12 } },
+        ],
+      }),
+    });
+    expect(world.weather![0]).toMatchObject({ kind: "rain", density: 0.9, width: 0.03, opacity: 0.7, bounds: { d: 300, position: [0, -150] } });
+    expect(world.weather![1]).toMatchObject({ kind: "snow", flakeSize: 0.12, bounds: { d: 300, position: [0, 150] } });
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
 

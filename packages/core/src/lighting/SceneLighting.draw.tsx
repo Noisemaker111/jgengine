@@ -301,6 +301,8 @@ export function configuredLightingDraw(getProps: () => {
   // The first directional's modulation under zones: the daylight factors times the zone's key.
   const zoned: DaylightModulation = { sunFactor: 1, sunColor: LIGHT_DEFAULT_COLOR, ambientFactor: 1 };
   let zonedActive = false;
+  // Under zones the other directionals are fill: each scales with the zone's fill, keeping its colour.
+  let fillFactor = 1;
 
   // One draw per resolved directional; only the first carries daylight modulation, and the
   // modulation object is read live so a day-cycle swap never rebuilds the lights.
@@ -310,8 +312,13 @@ export function configuredLightingDraw(getProps: () => {
     modulated: boolean,
   ): EngineDraw => {
     const props: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined } = { entry, profile };
+    const fill: DaylightModulation = { sunFactor: 1, sunColor: entry.color ?? LIGHT_DEFAULT_COLOR, ambientFactor: 1 };
     const read = () => {
-      props.modulation = !modulated ? undefined : zonedActive ? zoned : getProps().modulation;
+      if (modulated) props.modulation = zonedActive ? zoned : getProps().modulation;
+      else if (zonedActive) {
+        fill.sunFactor = fillFactor;
+        props.modulation = fill;
+      } else props.modulation = undefined;
       return props;
     };
     return usesCascades(entry) ? cascadedShadowsDraw(read) : singleShadowLightDraw(read);
@@ -423,6 +430,7 @@ export function configuredLightingDraw(getProps: () => {
         zoned.sunFactor = (modulation?.sunFactor ?? 1) * here.key;
         zoned.sunColor = here.keyColor;
         zoned.ambientFactor = ambientFactor;
+        fillFactor = here.fill;
         zonedActive = true;
         if (ambient !== null) {
           ambient.intensity = baseAmbient * ambientFactor;

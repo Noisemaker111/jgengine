@@ -603,7 +603,7 @@ export interface LightingConfig {
   /**
    * World rectangles that re-light this rig while the camera is inside them (a dark showroom, a
    * sodium-lit dock, a cold freezer aisle), blended across each zone's `fade`. Each scales or
-   * recolours the key (first `directional`), the fill (`ambient` + `hemisphere`), the image-based
+   * recolours the key (first `directional`), the fill (`ambient`, `hemisphere`, later `directional`s), the image-based
    * environment light and the post chain's exposure; later zones win overlaps.
    */
   zones?: readonly LightingZone[];

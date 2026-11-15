@@ -266,8 +266,17 @@ export interface BiomeBand {
   /** Sky horizon/zenith colors and sun/ambient intensity for the zone, cross-faded per camera z; unset fields keep the base sky. */
   sky?: BiomeSky;
   /** Precipitation over the zone: rain or snow that falls only across this band's stretch of z (to the midpoints with its neighbours) and the terrain's width. */
-  weather?: "rain" | "snow";
+  weather?: "rain" | "snow" | BiomeBandWeather;
 }
+
+/**
+ * A band's precipitation with its look tuned: `kind` plus any rain or snow knobs (density, drop
+ * width, opacity, wind...). Where it falls is the band's own stretch of z, so `area`, `position`
+ * and `bounds` are not set here.
+ */
+export type BiomeBandWeather =
+  | ({ kind: "rain" } & Omit<RainEnvironmentConfig, "area" | "position" | "bounds">)
+  | ({ kind: "snow" } & Omit<SnowEnvironmentConfig, "area" | "position" | "bounds">);
 
 export interface TerrainEnvironmentConfig {
   bounds?: WorldBounds;
@@ -955,7 +964,9 @@ function bandWeatherDescriptors(
     const area: EnvironmentArea = { w: width, d: WEATHER_AREA_CAMERA_SCALE_HINT, h: 80 };
     const position: EnvironmentVec2 = [0, band.z];
     const bounds: WeatherBounds = { w: world.w, d: maxZ - minZ, position: [0, (minZ + maxZ) / 2], fade: 12 };
-    out.push(band.weather === "rain" ? rain({ area, position, bounds }) : snow({ area, position, bounds }));
+    const look = typeof band.weather === "string" ? { kind: band.weather } : band.weather;
+    const { kind, ...knobs } = look;
+    out.push(kind === "rain" ? rain({ ...knobs, area, position, bounds }) : snow({ ...knobs, area, position, bounds }));
   }
   return out;
 }

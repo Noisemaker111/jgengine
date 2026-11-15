@@ -981,6 +981,7 @@ export {
   tilemap,
   voxel,
   type BiomeBand,
+  type BiomeBandWeather,
   type BuildingEnvironmentDescriptor,
   type EnvironmentWorldFeature,
   type GrassEnvironmentDescriptor,
