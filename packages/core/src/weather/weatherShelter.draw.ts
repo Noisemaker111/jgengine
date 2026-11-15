@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { DEFAULT_WEATHER_BOUNDS_FADE } from "./weatherMath";
 import type { EditorVolume } from "@jgengine/core/editor/types";
 
 /** Cosmetic roof clipping is bounded independently of authoritative shelter queries. */
@@ -81,3 +82,37 @@ export const WEATHER_SHELTER_SHADER = `
     return exposure;
   }
 `;
+
+/**
+ * GLSL twin of `weatherBoundsCoverage`: `uBounds` is the field's world XZ rectangle
+ * (minX, minZ, maxX, maxZ) and `uBoundsFade` its soft edge. An unbounded field passes a rectangle
+ * far larger than any world.
+ * @internal
+ */
+export const WEATHER_BOUNDS_SHADER = `
+  uniform vec4 uBounds;
+  uniform float uBoundsFade;
+  float weatherBounds(vec3 point) {
+    vec2 outside = max(max(uBounds.xy - point.xz, point.xz - uBounds.zw), vec2(0.0));
+    float t = clamp(length(outside) / max(uBoundsFade, 0.001), 0.0, 1.0);
+    return 1.0 - t * t * (3.0 - 2.0 * t);
+  }
+`;
+
+/** The rectangle an unbounded field hands {@link WEATHER_BOUNDS_SHADER}. @internal */
+export const WEATHER_UNBOUNDED = 1e7;
+
+/** Writes a field's bounds (or the unbounded rectangle) into its shader uniforms. @internal */
+export function writeWeatherBounds(
+  rect: { value: THREE.Vector4 },
+  fade: { value: number },
+  bounds: { minX: number; minZ: number; maxX: number; maxZ: number; fade?: number } | undefined,
+): void {
+  if (bounds === undefined) {
+    rect.value.set(-WEATHER_UNBOUNDED, -WEATHER_UNBOUNDED, WEATHER_UNBOUNDED, WEATHER_UNBOUNDED);
+    fade.value = 1;
+    return;
+  }
+  rect.value.set(bounds.minX, bounds.minZ, bounds.maxX, bounds.maxZ);
+  fade.value = bounds.fade ?? DEFAULT_WEATHER_BOUNDS_FADE;
+}

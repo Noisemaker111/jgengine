@@ -12,6 +12,7 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { linkPmremBake, PMREM_BAKE_CAMERA } from "./pmremLink.draw";
 import { warmupDrawsToTarget, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe.draw";
+import { readLightingZoneFactors } from "./lightingZones.draw";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
@@ -216,9 +217,12 @@ export function environmentLightingDraw(getProps: () => EnvironmentLightingProps
         current.step(target, state.camera.getWorldPosition(probeEye), state.delta);
       }
       const daylight = props.daylight;
-      if (daylight === undefined || target === null || target.environment === null) return;
-      // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored.
-      target.environmentIntensity = (props.source?.intensity ?? props.intensity ?? DEFAULT_IBL_INTENSITY) * (daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4);
+      const zone = target === null ? undefined : readLightingZoneFactors(target);
+      if ((daylight === undefined && zone === undefined) || target === null || target.environment === null) return;
+      // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored. A
+      // lighting zone around the camera scales the result.
+      const daylightShare = daylight === undefined ? 1 : daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4;
+      target.environmentIntensity = (props.source?.intensity ?? props.intensity ?? DEFAULT_IBL_INTENSITY) * daylightShare * (zone?.environment ?? 1);
     },
     dispose() {
       releaseBake?.();

@@ -17,6 +17,7 @@ import type {
   GrassEnvironmentDescriptor,
   OceanEnvironmentDescriptor,
   RainEnvironmentDescriptor,
+  WeatherBounds,
   RoadEnvironmentDescriptor,
   SnowEnvironmentDescriptor,
   TerrainEnvironmentDescriptor,
@@ -41,6 +42,7 @@ import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
 import { SnowField } from "@jgengine/core/weather/SnowField.draw";
+import type { WeatherBoundsRect } from "@jgengine/core/weather/weatherMath";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link EnvironmentScene}: the environment world feature to draw. */
@@ -125,6 +127,13 @@ function weatherVolume(area: { w: number; d: number; h?: number }): readonly [nu
   return [area.w, area.h ?? 60, area.d];
 }
 
+/** A descriptor's world-space {@link WeatherBounds} as the rectangle the weather fields clip to. */
+export function weatherBoundsRect(bounds: WeatherBounds | undefined): WeatherBoundsRect | undefined {
+  if (bounds === undefined) return undefined;
+  const [x, z] = bounds.position ?? [0, 0];
+  return { minX: x - bounds.w / 2, minZ: z - bounds.d / 2, maxX: x + bounds.w / 2, maxZ: z + bounds.d / 2, ...(bounds.fade === undefined ? {} : { fade: bounds.fade }) };
+}
+
 function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowEnvironmentDescriptor; index: number }) {
   const ctx = useGameContext();
   const [cx, cz] = areaCenter(weather.area);
@@ -141,6 +150,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
           color={weather.color}
           wind={[weather.wind[0], 0, weather.wind[1]]}
           volume={weatherVolume(weather.area)}
+          {...(weather.bounds === undefined ? {} : { bounds: weatherBoundsRect(weather.bounds) })}
         />
       </SceneObjectGroup>
     );
@@ -157,6 +167,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
         color={weather.color}
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
+        {...(weather.bounds === undefined ? {} : { bounds: weatherBoundsRect(weather.bounds) })}
       />
     </SceneObjectGroup>
   );

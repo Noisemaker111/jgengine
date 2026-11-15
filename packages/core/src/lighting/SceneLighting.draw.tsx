@@ -15,6 +15,8 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 
 import { cascadedShadowsDraw } from "./CascadedShadows.draw";
+import { sampleLightingZones, type LightingZoneBase } from "./lightingZones";
+import { publishLightingZoneFactors } from "./lightingZones.draw";
 import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { installShadowCache } from "./shadowCache.draw";
@@ -280,7 +282,8 @@ export function ShadowPipeline(props: { profile?: GraphicsProfile | undefined })
 
 /** Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light
  * set rebuilds when the `lighting` config or `profile` identity changes, and daylight modulation
- * retunes ambient, hemisphere and the first directional per frame. */
+ * and the camera's `lighting.zones` retune ambient, hemisphere and the first directional per frame
+ * (zones also publish their exposure and environment share for the post chain and image light). */
 export function configuredLightingDraw(getProps: () => {
   lighting: LightingConfig;
   profile?: GraphicsProfile | undefined;
@@ -294,6 +297,10 @@ export function configuredLightingDraw(getProps: () => {
   let baseAmbient = 0.55;
   let baseHemisphere = 0.55;
   let installedKey: readonly unknown[] | null = null;
+  let zoneBase: LightingZoneBase | null = null;
+  // The first directional's modulation under zones: the daylight factors times the zone's key.
+  const zoned: DaylightModulation = { sunFactor: 1, sunColor: LIGHT_DEFAULT_COLOR, ambientFactor: 1 };
+  let zonedActive = false;
 
   // One draw per resolved directional; only the first carries daylight modulation, and the
   // modulation object is read live so a day-cycle swap never rebuilds the lights.
@@ -304,7 +311,7 @@ export function configuredLightingDraw(getProps: () => {
   ): EngineDraw => {
     const props: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined } = { entry, profile };
     const read = () => {
-      props.modulation = modulated ? getProps().modulation : undefined;
+      props.modulation = !modulated ? undefined : zonedActive ? zoned : getProps().modulation;
       return props;
     };
     return usesCascades(entry) ? cascadedShadowsDraw(read) : singleShadowLightDraw(read);
@@ -342,6 +349,15 @@ export function configuredLightingDraw(getProps: () => {
     installedKey = key;
     clearLights();
     const dynamic = resolveDynamicLights(lighting);
+    zoneBase = lighting.zones === undefined || lighting.zones.length === 0
+      ? null
+      : {
+          keyColor: lighting.directional?.[0]?.color ?? LIGHT_DEFAULT_COLOR,
+          ambientColor: lighting.ambient?.color ?? LIGHT_DEFAULT_COLOR,
+          skyColor: lighting.hemisphere?.skyColor ?? "#bfe3ff",
+          groundColor: lighting.hemisphere?.groundColor ?? "#4c6b34",
+        };
+    zonedActive = false;
     if (lighting.ambient !== undefined) {
       ambient = new THREE.AmbientLight(lighting.ambient.color ?? LIGHT_DEFAULT_COLOR);
       baseAmbient = lighting.ambient.intensity ?? 0.55;
@@ -396,14 +412,36 @@ export function configuredLightingDraw(getProps: () => {
       for (const child of children) child.update?.(state);
     },
     frame(state: EngineFrameState) {
-      const modulation = getProps().modulation;
-      if (modulation !== undefined) {
+      const props = getProps();
+      const modulation = props.modulation;
+      const zones = props.lighting.zones;
+      if (zoneBase !== null && zones !== undefined) {
+        const camera = state.camera.position;
+        const base = modulation === undefined ? zoneBase : { ...zoneBase, keyColor: modulation.sunColor };
+        const here = sampleLightingZones(zones, camera.x, camera.z, base);
+        const ambientFactor = (modulation?.ambientFactor ?? 1) * here.fill;
+        zoned.sunFactor = (modulation?.sunFactor ?? 1) * here.key;
+        zoned.sunColor = here.keyColor;
+        zoned.ambientFactor = ambientFactor;
+        zonedActive = true;
+        if (ambient !== null) {
+          ambient.intensity = baseAmbient * ambientFactor;
+          ambient.color.set(here.ambientColor);
+        }
+        if (hemisphere !== null) {
+          hemisphere.intensity = baseHemisphere * ambientFactor;
+          hemisphere.color.set(here.skyColor);
+          hemisphere.groundColor.set(here.groundColor);
+        }
+        publishLightingZoneFactors(state.rootScene ?? state.scene, { exposure: here.exposure, environment: here.environment });
+      } else if (modulation !== undefined) {
         if (ambient !== null) ambient.intensity = baseAmbient * modulation.ambientFactor;
         if (hemisphere !== null) hemisphere.intensity = baseHemisphere * modulation.ambientFactor;
       }
       for (const child of children) child.frame?.(state, state.delta);
     },
     dispose(state: EngineFrameState) {
+      publishLightingZoneFactors(state.rootScene ?? state.scene, undefined);
       clearLights();
       state.scene.remove(group);
       installedKey = null;

@@ -7,8 +7,8 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
-import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
-import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
+import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount, weatherBoundsReach, type WeatherBoundsRect } from "./weatherMath";
+import { WEATHER_BOUNDS_SHADER, WEATHER_SHELTER_SHADER, writeWeatherBounds } from "./weatherShelter.draw";
 import {
   createWeatherUniformSet,
   updateWeatherUniformSet,
@@ -27,6 +27,8 @@ export interface SnowFieldProps {
   wind?: WeatherVector;
   origin?: WeatherVector;
   followCamera?: boolean;
+  /** World XZ rectangle the snow stays inside, fading out across its edge; unset snows everywhere the camera goes. */
+  bounds?: WeatherBoundsRect | undefined;
   speed?: number;
   size?: number;
   sway?: number;
@@ -54,6 +56,8 @@ type SnowMaterialUniforms = {
   uShelterCount: WeatherUniformSet["shelterCount"];
   uWind: WeatherUniformSet["wind"];
   uAnchor: { value: THREE.Vector3 };
+  uBounds: { value: THREE.Vector4 };
+  uBoundsFade: { value: number };
   uVolume: { value: THREE.Vector3 };
   uSpeed: { value: number };
   uSize: { value: number };
@@ -91,6 +95,8 @@ export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: Weather
           uShelterCount: set.shelterCount,
           uWind: set.wind,
           uAnchor: { value: new THREE.Vector3() },
+          uBounds: { value: new THREE.Vector4() },
+          uBoundsFade: { value: 1 },
           uVolume: { value: new THREE.Vector3() },
           uSpeed: { value: props.speed ?? 3.2 },
           uSize: { value: props.size ?? 0.11 },
@@ -103,6 +109,7 @@ export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: Weather
         blending: THREE.NormalBlending,
         vertexShader: `
         ${WEATHER_SHELTER_SHADER}
+        ${WEATHER_BOUNDS_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
         uniform vec3 uAnchor;
@@ -132,7 +139,7 @@ export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: Weather
           ) * uSway * (0.45 + 0.55 * aDrift);
           vec3 local = aSpawn * uVolume + vec3(uWind.x, -fallSpeed, uWind.z) * uTime + wander;
           vec3 worldCenter = mod(local - origin, uVolume) + origin;
-          vExposure = weatherExposure(worldCenter);
+          vExposure = weatherExposure(worldCenter) * weatherBounds(worldCenter);
           float flakeSize = uSize * (0.48 + 1.08 * aDrift);
           vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
           vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
@@ -184,16 +191,15 @@ export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: Weather
       else target.set(origin[0], origin[1], origin[2]);
       const volume = props.volume ?? DEFAULT_VOLUME;
       uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      writeWeatherBounds(uniforms.uBounds, uniforms.uBoundsFade, props.bounds);
       uniforms.uSpeed.value = props.speed ?? 3.2;
       uniforms.uSize.value = props.size ?? 0.11;
       uniforms.uSway.value = props.sway ?? 0.62;
       uniforms.uOpacity.value = props.opacity ?? 0.86;
       uniforms.uColor.value.set(props.color ?? DEFAULT_SNOW_COLOR);
-      geometry.instanceCount = resolveWeatherInstanceCount(
-        props.count ?? DEFAULT_SNOW_COUNT,
-        (props.density ?? DEFAULT_SNOW_DENSITY) * set.snow.value,
-        props.budget,
-      );
+      geometry.instanceCount = weatherBoundsReach(props.bounds, target.x, target.z, volume[0] * 0.5, volume[2] * 0.5)
+        ? resolveWeatherInstanceCount(props.count ?? DEFAULT_SNOW_COUNT, (props.density ?? DEFAULT_SNOW_DENSITY) * set.snow.value, props.budget)
+        : 0;
       const metrics = set.metrics?.snow;
       if (metrics !== undefined) {
         metrics.count = geometry.instanceCount;

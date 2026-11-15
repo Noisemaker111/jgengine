@@ -1000,6 +1000,7 @@ export {
   type TerrainPolylineRegion,
   type TerrainRectRegion,
   type TerrainRegionStyle,
+  type WeatherBounds,
   type WeatherEnvironmentDescriptor,
   type WorldFeature,
   type WorldGridCell,

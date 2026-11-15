@@ -56,3 +56,49 @@ export function lightningStrikeEnvelope(timeSeconds: number, startedAt: number, 
   const flicker = 0.62 + (Math.sin(elapsed * 97 + seed) * 0.5 + 0.5) * 0.38;
   return (1 - elapsed / duration) * flicker;
 }
+
+/** Width of the soft edge a bounded precipitation field fades out across, in metres. */
+export const DEFAULT_WEATHER_BOUNDS_FADE = 10;
+
+/**
+ * A world-space XZ rectangle a rain or snow field stays inside. Drops past an edge fade out across
+ * `fade` metres, so a storm confined to one district or biome band ends in a soft wall of rain
+ * instead of following the camera into the next one.
+ */
+export interface WeatherBoundsRect {
+  minX: number;
+  minZ: number;
+  maxX: number;
+  maxZ: number;
+  /** Soft-edge width outside the rectangle; default {@link DEFAULT_WEATHER_BOUNDS_FADE}. */
+  fade?: number;
+}
+
+/** How far `(x, z)` lies outside the rectangle, 0 inside it. @internal */
+export function weatherBoundsDistance(bounds: WeatherBoundsRect, x: number, z: number): number {
+  const dx = Math.max(bounds.minX - x, 0, x - bounds.maxX);
+  const dz = Math.max(bounds.minZ - z, 0, z - bounds.maxZ);
+  return Math.hypot(dx, dz);
+}
+
+/**
+ * How much of a bounded field's precipitation reaches `(x, z)`, 0..1: 1 inside the rectangle,
+ * easing to 0 across its `fade` edge. Unbounded (`undefined`) fields cover everywhere. The weather
+ * shaders apply the same curve per drop.
+ */
+export function weatherBoundsCoverage(bounds: WeatherBoundsRect | undefined, x: number, z: number): number {
+  if (bounds === undefined) return 1;
+  const fade = Math.max(1e-3, bounds.fade ?? DEFAULT_WEATHER_BOUNDS_FADE);
+  const t = clampWeatherRatio(weatherBoundsDistance(bounds, x, z) / fade);
+  return 1 - t * t * (3 - 2 * t);
+}
+
+/**
+ * Whether a camera-anchored wrap volume `halfW` x `halfD` around `(x, z)` can hold any drop inside
+ * the bounds — false lets a field skip drawing while the camera is far from its storm.
+ */
+export function weatherBoundsReach(bounds: WeatherBoundsRect | undefined, x: number, z: number, halfW: number, halfD: number): boolean {
+  if (bounds === undefined) return true;
+  const fade = bounds.fade ?? DEFAULT_WEATHER_BOUNDS_FADE;
+  return x + halfW >= bounds.minX - fade && x - halfW <= bounds.maxX + fade && z + halfD >= bounds.minZ - fade && z - halfD <= bounds.maxZ + fade;
+}

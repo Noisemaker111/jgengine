@@ -5,6 +5,8 @@ import {
   DEFAULT_RAIN_COUNT,
   DEFAULT_SNOW_COUNT,
   resolveWeatherInstanceCount,
+  weatherBoundsCoverage,
+  weatherBoundsReach,
 } from "./weatherMath";
 
 test("resolveWeatherInstanceCount clamps density", () => {
@@ -46,4 +48,26 @@ test("lightning envelope freezes, rewinds and repeats from simulation time and s
   expect(lightningStrikeEnvelope(4.9, 5, 0.18, 123)).toBe(0);
   expect(lightningStrikeEnvelope(5.2, 5, 0.18, 123)).toBe(0);
   expect(lightningStrikeEnvelope(5.05, 5, 0.18, 124)).not.toBe(sampled);
+});
+
+test("weatherBoundsCoverage is full inside, eases out across the fade and is zero past it", () => {
+  const bounds = { minX: -10, minZ: 100, maxX: 10, maxZ: 200, fade: 8 };
+  expect(weatherBoundsCoverage(undefined, 5000, 5000)).toBe(1);
+  expect(weatherBoundsCoverage(bounds, 0, 150)).toBe(1);
+  expect(weatherBoundsCoverage(bounds, 10, 200)).toBe(1);
+  expect(weatherBoundsCoverage(bounds, 0, 96)).toBeCloseTo(0.5, 5);
+  expect(weatherBoundsCoverage(bounds, 0, 92)).toBe(0);
+  expect(weatherBoundsCoverage(bounds, 0, -400)).toBe(0);
+  // Corners measure the true distance, not the larger axis.
+  expect(weatherBoundsCoverage(bounds, 16, 206)).toBe(0);
+  expect(weatherBoundsCoverage(bounds, 13, 203)).toBeGreaterThan(0);
+});
+
+test("weatherBoundsReach skips a field whose wrap volume cannot touch its bounds", () => {
+  const bounds = { minX: -10, minZ: 100, maxX: 10, maxZ: 200 };
+  expect(weatherBoundsReach(undefined, 0, -9000, 60, 60)).toBe(true);
+  expect(weatherBoundsReach(bounds, 0, 150, 60, 60)).toBe(true);
+  expect(weatherBoundsReach(bounds, 0, 40, 60, 60)).toBe(true);
+  expect(weatherBoundsReach(bounds, 0, -100, 60, 60)).toBe(false);
+  expect(weatherBoundsReach(bounds, 200, 150, 60, 60)).toBe(false);
 });

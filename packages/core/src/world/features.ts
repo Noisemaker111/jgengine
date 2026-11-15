@@ -21,6 +21,18 @@ export type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "high
 
 export type EnvironmentVec2 = readonly [number, number];
 
+/**
+ * A world-space rectangle rain or snow stays inside: the camera-anchored drops still follow the
+ * view, but any drop outside the rectangle fades out across `fade` metres, so a storm stays over
+ * its own district or biome band instead of falling indoors next door.
+ */
+export interface WeatherBounds extends WorldBounds {
+  /** World-space center `[x, z]`; default the origin. */
+  position?: EnvironmentVec2;
+  /** Soft-edge width outside the rectangle, in metres. Default 10. */
+  fade?: number;
+}
+
 export interface EnvironmentArea extends WorldBounds {
   h?: number;
   /** World-space center of the area; default `[0, 0]` (the world origin). Sites a weather/vegetation band away from the origin, like `building()`/`ocean()` `position`. */
@@ -253,7 +265,7 @@ export interface BiomeBand {
   fog?: BiomeFog;
   /** Sky horizon/zenith colors and sun/ambient intensity for the zone, cross-faded per camera z; unset fields keep the base sky. */
   sky?: BiomeSky;
-  /** Precipitation covering the zone — expands into a full-width weather strip centered at `[0, z]`, `fade`-deep. */
+  /** Precipitation over the zone: rain or snow that falls only across this band's stretch of z (to the midpoints with its neighbours) and the terrain's width. */
   weather?: "rain" | "snow";
 }
 
@@ -328,6 +340,8 @@ export interface RainEnvironmentConfig {
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`. No visual effect on rain/snow (see `area`); kept for API symmetry with other weather-adjacent features. */
   position?: EnvironmentVec2;
+  /** World-space rectangle the precipitation is confined to (see {@link WeatherBounds}); unset falls everywhere the camera goes. */
+  bounds?: WeatherBounds;
   density?: number;
   speed?: number;
   dropLength?: number;
@@ -354,6 +368,8 @@ export interface SnowEnvironmentConfig {
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`. No visual effect on rain/snow (see `area`); kept for API symmetry with other weather-adjacent features. */
   position?: EnvironmentVec2;
+  /** World-space rectangle the precipitation is confined to (see {@link WeatherBounds}); unset falls everywhere the camera goes. */
+  bounds?: WeatherBounds;
   density?: number;
   speed?: number;
   flakeSize?: number;
@@ -610,11 +626,11 @@ export type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind">
 
 export type RainEnvironmentDescriptor = { kind: "rain" } & Required<
   Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity">
->;
+> & Pick<RainEnvironmentConfig, "bounds">;
 
 export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
   Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity">
->;
+> & Pick<SnowEnvironmentConfig, "bounds">;
 
 /** A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws. */
 export interface GrassEnvironmentDescriptor {
@@ -914,22 +930,32 @@ function withPadFlatten(
 }
 
 /**
- * Expands each `biomeBand.weather` into a precipitation volume centered on the band's z. The volume is
- * camera-anchored, so it is sized to camera scale (at most {@link WEATHER_AREA_CAMERA_SCALE_HINT} per
- * axis), not to the terrain's full width: a world-wide area only spread the drops thin.
+ * Expands each `biomeBand.weather` into a precipitation volume confined to the band. The drops are
+ * camera-anchored, so the volume is sized to camera scale (at most {@link WEATHER_AREA_CAMERA_SCALE_HINT}
+ * per axis), and `bounds` keeps them inside the band's own stretch of z: from the midpoint with the
+ * band before it to the midpoint with the band after it (the terrain's edge at either end), across
+ * the terrain's full width.
  */
 function bandWeatherDescriptors(
   terrainDescriptor: TerrainEnvironmentDescriptor | undefined,
 ): readonly WeatherEnvironmentDescriptor[] {
   const bands = terrainDescriptor?.biomeBands;
   if (bands === undefined || bands.length === 0) return [];
-  const width = Math.min(terrainDescriptor!.bounds.w, WEATHER_AREA_CAMERA_SCALE_HINT);
+  const world = terrainDescriptor!.bounds;
+  const width = Math.min(world.w, WEATHER_AREA_CAMERA_SCALE_HINT);
+  const sorted = [...bands].sort((a, b) => a.z - b.z);
   const out: WeatherEnvironmentDescriptor[] = [];
   for (const band of bands) {
     if (band.weather === undefined) continue;
-    const area: EnvironmentArea = { w: width, d: Math.min(band.fade ?? 64, WEATHER_AREA_CAMERA_SCALE_HINT), h: 80 };
+    const index = sorted.indexOf(band);
+    const before = sorted[index - 1];
+    const after = sorted[index + 1];
+    const minZ = before === undefined ? Math.min(-world.d / 2, band.z) : (before.z + band.z) / 2;
+    const maxZ = after === undefined ? Math.max(world.d / 2, band.z) : (band.z + after.z) / 2;
+    const area: EnvironmentArea = { w: width, d: WEATHER_AREA_CAMERA_SCALE_HINT, h: 80 };
     const position: EnvironmentVec2 = [0, band.z];
-    out.push(band.weather === "rain" ? rain({ area, position }) : snow({ area, position }));
+    const bounds: WeatherBounds = { w: world.w, d: maxZ - minZ, position: [0, (minZ + maxZ) / 2], fade: 12 };
+    out.push(band.weather === "rain" ? rain({ area, position, bounds }) : snow({ area, position, bounds }));
   }
   return out;
 }
@@ -1146,6 +1172,7 @@ export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescrip
     color: config.color ?? "#9ec8ff",
     width: config.width ?? 0.018,
     opacity: config.opacity ?? 0.48,
+    ...(config.bounds === undefined ? {} : { bounds: config.bounds }),
   };
 }
 
@@ -1163,6 +1190,7 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
     wind: config.wind ?? [0, 0],
     color: config.color ?? "#ffffff",
     opacity: config.opacity ?? 0.86,
+    ...(config.bounds === undefined ? {} : { bounds: config.bounds }),
   };
 }
 

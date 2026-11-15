@@ -40,6 +40,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { measureComposerPasses } from "@jgengine/core/devtools/frameBreakdown.draw";
 import { linkDrawsOffFrame, sceneRevealed, warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
 import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
+import { readLightingZoneFactors } from "@jgengine/core/lighting/lightingZones.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { BeautyPass } from "./beautyPass.draw";
@@ -605,7 +606,8 @@ export function buildPostGraph(
     let sampled = false;
     composer.addPass(passNamed(
       new ExposureMeterPass((samples, seconds) => {
-        const target = authoredExposure * exposureForKey(keyLuminanceFromSamples(samples), autoExposure, readSkyLight(scene)?.daylight ?? 1);
+        const zone = readLightingZoneFactors(scene)?.exposure ?? 1;
+        const target = authoredExposure * zone * exposureForKey(keyLuminanceFromSamples(samples), autoExposure, readSkyLight(scene)?.daylight ?? 1);
         // The first sample lands on its own target; fading in from the authored exposure would
         // open every load on a visible exposure slideshow.
         current = sampled ? adaptExposure(current, target, seconds, autoExposure.adaptationSeconds) : target;
@@ -675,6 +677,9 @@ export function postProcessingDraw(getProps: () => PostProcessingProps): EngineD
   let lastWidth = -1;
   let lastHeight = -1;
   let lastPixelRatio = -1;
+  let authoredExposure = 1;
+  let metered = false;
+  let zoned = false;
 
   return {
     priority: 1,
@@ -694,12 +699,14 @@ export function postProcessingDraw(getProps: () => PostProcessingProps): EngineD
       prevExposure = gl.toneMappingExposure;
       gl.toneMapping = TONE_MAPPING[props.config.toneMapping ?? "agx"];
       gl.toneMappingExposure = props.config.exposure ?? 1;
+      authoredExposure = props.config.exposure ?? 1;
 
       const width = Math.max(1, state.size.width);
       const height = Math.max(1, state.size.height);
       const graph = buildPostGraph(gl, scene, camera, planPostStages(props.config, props.quality ?? "high", props.stages), width, height);
       syncSize(graph, width, height, gl.getPixelRatio());
       built = graph;
+      metered = graph.composer.passes.some((pass) => pass instanceof ExposureMeterPass);
       lastWidth = width;
       lastHeight = height;
       lastPixelRatio = gl.getPixelRatio();
@@ -734,6 +741,14 @@ export function postProcessingDraw(getProps: () => PostProcessingProps): EngineD
     frame(_state: EngineFrameState, delta: number) {
       const graph = built;
       if (graph === null) return;
+      // A lighting zone around the camera scales the authored exposure; a metered chain folds it
+      // into its own target instead.
+      if (!metered) {
+        const zone = readLightingZoneFactors(_state.rootScene ?? _state.scene)?.exposure;
+        if (zone !== undefined) _state.gl.toneMappingExposure = zone === 1 ? authoredExposure : quantizeExposure(authoredExposure * zone);
+        else if (zoned) _state.gl.toneMappingExposure = authoredExposure;
+        zoned = zone !== undefined;
+      }
       if (graph.grade !== null) requireUniform(graph.grade.uniforms, "uTime").value += delta;
       measureComposerPasses(graph.composer);
       for (const pass of graph.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();

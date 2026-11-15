@@ -20,6 +20,7 @@ import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, Mate
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
+import type { LightingZone } from "@jgengine/core/lighting/lightingZones";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
 import type { LookMood } from "../render/lookMood";
@@ -599,6 +600,13 @@ export interface LightingConfig {
    * and a shaded side. Default true; `false` keeps the scene lit by ambient/hemisphere/IBL alone.
    */
   fallbackKey?: boolean;
+  /**
+   * World rectangles that re-light this rig while the camera is inside them (a dark showroom, a
+   * sodium-lit dock, a cold freezer aisle), blended across each zone's `fade`. Each scales or
+   * recolours the key (first `directional`), the fill (`ambient` + `hemisphere`), the image-based
+   * environment light and the post chain's exposure; later zones win overlaps.
+   */
+  zones?: readonly LightingZone[];
 }
 
 export interface BackdropFogConfig {

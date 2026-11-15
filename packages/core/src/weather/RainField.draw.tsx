@@ -9,8 +9,8 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
-import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
-import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
+import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount, weatherBoundsCoverage, weatherBoundsReach, type WeatherBoundsRect } from "./weatherMath";
+import { WEATHER_BOUNDS_SHADER, WEATHER_SHELTER_SHADER, writeWeatherBounds } from "./weatherShelter.draw";
 import {
   createWeatherUniformSet,
   updateWeatherUniformSet,
@@ -29,6 +29,8 @@ export interface RainFieldProps {
   wind?: WeatherVector;
   origin?: WeatherVector;
   followCamera?: boolean;
+  /** World XZ rectangle the rain stays inside, fading out across its edge; unset rains everywhere the camera goes. */
+  bounds?: WeatherBoundsRect | undefined;
   speed?: number;
   length?: number;
   width?: number;
@@ -63,6 +65,8 @@ type RainMaterialUniforms = {
   uWind: WeatherUniformSet["wind"];
   uLightning: WeatherUniformSet["lightning"];
   uAnchor: { value: THREE.Vector3 };
+  uBounds: { value: THREE.Vector4 };
+  uBoundsFade: { value: number };
   uVolume: { value: THREE.Vector3 };
   uSpeed: { value: number };
   uLength: { value: number };
@@ -102,6 +106,8 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
           uWind: set.wind,
           uLightning: set.lightning,
           uAnchor: { value: new THREE.Vector3() },
+          uBounds: { value: new THREE.Vector4() },
+          uBoundsFade: { value: 1 },
           uVolume: { value: new THREE.Vector3() },
           uSpeed: { value: props.speed ?? 22 },
           uLength: { value: props.length ?? 1.35 },
@@ -114,6 +120,7 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
         blending: THREE.NormalBlending,
         vertexShader: `
         ${WEATHER_SHELTER_SHADER}
+        ${WEATHER_BOUNDS_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
         uniform vec3 uAnchor;
@@ -138,7 +145,7 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
           vec3 velocity = vec3(uWind.x, -speed, uWind.z);
           vec3 local = aSpawn * uVolume + velocity * uTime;
           vec3 worldCenter = mod(local - origin, uVolume) + origin;
-          vExposure = weatherExposure(worldCenter);
+          vExposure = weatherExposure(worldCenter) * weatherBounds(worldCenter);
           vec3 direction = normalize(velocity);
           vec3 cameraRay = normalize(cameraPosition - worldCenter);
           vec3 sideRaw = cross(direction, cameraRay);
@@ -185,7 +192,9 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
       const props = getProps();
       const set = shared;
       if (set === null || mesh === null || material === null || geometry === null) return;
-      reportRain(source, rainAmount(props.density ?? DEFAULT_RAIN_DENSITY, set.rain.value));
+      const camera = state.camera.position;
+      const coverage = weatherBoundsCoverage(props.bounds, camera.x, camera.z);
+      reportRain(source, rainAmount(props.density ?? DEFAULT_RAIN_DENSITY, set.rain.value) * coverage);
       reportWind(source, [set.wind.value.x, set.wind.value.z]);
       const uniforms = material.uniforms;
       const followCamera = props.followCamera ?? true;
@@ -195,16 +204,16 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
       else target.set(origin[0], origin[1], origin[2]);
       const volume = props.volume ?? DEFAULT_VOLUME;
       uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      writeWeatherBounds(uniforms.uBounds, uniforms.uBoundsFade, props.bounds);
       uniforms.uSpeed.value = props.speed ?? 22;
       uniforms.uLength.value = props.length ?? 1.35;
       uniforms.uWidth.value = props.width ?? 0.018;
       uniforms.uOpacity.value = props.opacity ?? 0.48;
       uniforms.uColor.value.set(props.color ?? DEFAULT_RAIN_COLOR);
-      geometry.instanceCount = resolveWeatherInstanceCount(
-        props.count ?? DEFAULT_RAIN_COUNT,
-        (props.density ?? DEFAULT_RAIN_DENSITY) * set.rain.value,
-        props.budget,
-      );
+      // A bounded storm the camera's wrap volume cannot reach draws nothing at all.
+      geometry.instanceCount = weatherBoundsReach(props.bounds, target.x, target.z, volume[0] * 0.5, volume[2] * 0.5)
+        ? resolveWeatherInstanceCount(props.count ?? DEFAULT_RAIN_COUNT, (props.density ?? DEFAULT_RAIN_DENSITY) * set.rain.value, props.budget)
+        : 0;
       const metrics = set.metrics?.rain;
       if (metrics !== undefined) {
         metrics.count = geometry.instanceCount;

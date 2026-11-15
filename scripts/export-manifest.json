@@ -630,6 +630,8 @@
     "./lighting/environmentLighting",
     "./lighting/lightProbes",
     "./lighting/lightingBalance",
+    "./lighting/lightingZones",
+    "./lighting/lightingZones.draw",
     "./lighting/pmremLink.draw",
     "./lighting/reflectionProbe.draw",
     "./lighting/shadowCache",

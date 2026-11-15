@@ -142,7 +142,7 @@ describe("world features", () => {
     });
   });
 
-  test("biomeBand weather expands into camera-scale positioned volumes alongside explicit weather, without the oversize warning", () => {
+  test("biomeBand weather expands into camera-scale volumes confined to each band's stretch of z, alongside explicit weather, without the oversize warning", () => {
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     let world;
     try {
@@ -164,14 +164,19 @@ describe("world features", () => {
 
     expect(world.weather).toHaveLength(3);
     expect(world.weather![0]).toMatchObject({ kind: "rain", density: 0.9 });
+    // Bands sort by z: rain runs from the terrain's south edge to the midpoint with sand (z -75),
+    // snow from the midpoint with sand (z 75) to the north edge.
     expect(world.weather![1]).toMatchObject({
       kind: "rain",
-      area: { w: 120, d: 50, h: 80, position: [0, -150] },
+      area: { w: 120, d: 120, h: 80, position: [0, -150] },
+      bounds: { w: 400, d: 225, position: [0, -187.5], fade: 12 },
     });
     expect(world.weather![2]).toMatchObject({
       kind: "snow",
-      area: { w: 120, d: 64, h: 80, position: [0, 150] },
+      area: { w: 120, d: 120, h: 80, position: [0, 150] },
+      bounds: { w: 400, d: 225, position: [0, 187.5], fade: 12 },
     });
+    expect((world.weather![0] as { bounds?: unknown }).bounds).toBeUndefined();
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
 
