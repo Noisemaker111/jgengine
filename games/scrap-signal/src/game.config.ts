@@ -216,6 +216,9 @@ export const game = defineGame({
         { name: "front.capture", input: { mode: "fight" } },
         { name: "kit.capture", input: { family: "launcher", rarity: "epic" } },
       ],
+      // One of each appliance, then each boss, at combat distance.
+      lineup: [{ name: "character.pick", input: { characterId: "gunk" } }, "lineup.capture"],
+      "lineup-bosses": [{ name: "character.pick", input: { characterId: "gunk" } }, { name: "lineup.capture", input: { bosses: true } }],
       // A busted vacuum, for how the bodies built in the hand read at their plainest.
       "junk-vacuum": [
         { name: "character.pick", input: { characterId: "gunk" } },
@@ -298,6 +301,7 @@ export const game = defineGame({
     fire: { hold: ["mouse0"], repeatMs: 30 },
     aim: { hold: ["mouse2"] },
     reload: ["KeyR"],
+    "weapon.inspect": ["KeyI"],
     throwGrenade: ["KeyG"],
     useHealthVial: ["KeyQ"],
     ...hotbarSlotBindings(4, { action: (slot) => `selectSlot${slot}` }),

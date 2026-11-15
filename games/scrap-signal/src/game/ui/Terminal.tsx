@@ -92,10 +92,12 @@ export function ContractCard() {
   const relay = useStore(relayStore, s => ({ phase: s.phase, wave: s.wave, enemies: s.enemies.length, rewarded: s.rewarded, overclock: s.overclock === true }), (a, b) => JSON.stringify(a) === JSON.stringify(b));
   const riftLive = useStore(riftStore, s => s.run !== null && (s.run.phase === "running" || s.run.phase === "intermission"));
   const outside = useGameStore(c => relayDistance(c) > RELAY.radius);
+  // The idle contract only advertises itself near the radio tower; the errand tracker owns the column.
+  const far = useGameStore(c => relayDistance(c) > 25);
   const active = relay.phase === "defend" || relay.phase === "upload";
   const fade = useMemo(() => idleFade(() => `${relay.phase}:${relay.wave}:${relay.rewarded}:${relay.enemies}:${Math.round(relayDistance(ctx) / 20)}`, () => active, 0.55, 7000), [ctx, relay.phase, relay.wave, relay.rewarded, relay.enemies, active]);
   const { compact } = useCompact();
-  if (character === null || (!active && riftLive)) return null;
+  if (character === null || (!active && (riftLive || far))) return null;
   return <Hull opacity={fade} width={compact ? 200 : 260} gap={compact ? 4 : 6} padding={compact ? 7 : 10} border={{ width: 2, color: active ? C.amber : "#22363c" }}>
     <Stamp tone="phosphor">{relay.rewarded ? "Radio restored" : "Radio contract"}</Stamp>
     <Tube gap={4}>

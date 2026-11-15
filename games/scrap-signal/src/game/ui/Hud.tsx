@@ -77,7 +77,6 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
   return <Hull opacity={fade} width={compact ? 240 : 260} gap={compact ? 4 : 6} padding={compact ? 7 : 10} border={{ width: 2, color: RARITY_COLORS[gun.rarity] }}>
     <RuneView gap={1}>
       <Text family="Russo One" size={compact ? 13 : 15} color={RARITY_COLORS[gun.rarity]}>{gun.name}</Text>
-      {compact ? null : <Small size={11}>{`${junkCard(gun).condition} ${junkCard(gun).body} + ${junkCard(gun).mod} · lv${gun.level} · ${gun.weapon.damage} dmg`}</Small>}
       <Row gap={6}>
         <Small size={11} color={junkCard(gun).personalityColor}>{junkCard(gun).personality.toUpperCase()}</Small>
         {gun.element === "none" ? null : <Small size={11} color={ELEMENT_COLORS[gun.element]}>{junkCard(gun).element ?? ""}</Small>}
@@ -96,7 +95,7 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
     </Row>
     <Pips value={() => reloading() ? 0 : loaded()} max={() => gun.magSize} count={Math.min(gun.magSize, 24)} color={C.amber} width={Math.max(4, Math.floor((compact ? 222 : 236) / Math.min(gun.magSize, 24)) - 2)} height={compact ? 4 : 6} />
     <Text size={12} color={C.red} text={bind(() => activePerkBuffs(ctx, gun).map(b => `${b.label}${b.stacks > 1 ? ` x${b.stacks}` : ""} · ${Math.ceil(b.leftMs / 1000)}s`).join("   ").toUpperCase())} />
-    {compact ? null : <Small size={11} text={bind(() => reloading() ? "Reloading…" : loaded() === 0 ? "Empty · R to reload" : "R reload · G water balloon")} />}
+    {compact ? null : <Small size={11} text={bind(() => reloading() ? "Reloading…" : loaded() === 0 ? "Empty · R to reload" : "I inspect · R reload")} />}
   </Hull>;
 }
 
@@ -188,24 +187,27 @@ export function MissionTracker() {
   const def = primary === undefined ? undefined : scrapQuestById(primary.questId);
   const finished = primary !== undefined && primary.objectives.every(o => o.progress >= o.count);
   const returnTo = def === undefined || def.turnIn === "radio" ? null : NPCS[def.turnIn].name;
-  return <Plate opacity={fade} width={compact ? 200 : 260} gap={compact ? 3 : 5} padding={compact ? 7 : 10}>
-    <Stamp>Errands</Stamp>
+  return <Plate opacity={fade} width={compact ? 200 : 250} gap={compact ? 3 : 4} padding={compact ? 6 : 8}>
     <MastCard />
-    {active.length === 0 ? <Small color={C.ink}>No errand · find a neighbour with a "Talk" prompt [E]</Small> : null}
+    {active.length === 0 ? <Small color={C.ink}>Find a neighbour with a "Talk" prompt [E]</Small> : null}
     {primary === undefined || def === undefined ? null : <RuneView gap={3}>
-      <Text size={13} color={C.amber}>{def.title.toUpperCase()}</Text>
+      <Text size={12} color={C.amber}>{def.title.toUpperCase()}</Text>
       {primary.objectives.map(objective => {
         const done = objective.progress >= objective.count, goal = def.objectives.find(c => c.id === objective.id);
         return <Row key={objective.id} justify="between" items="start"><Small grow={1} shrink color={done ? C.xp : C.ink}>{`${done ? "✓" : "▸"} ${goal === undefined ? objective.id : objectiveLabel(goal)}`}</Small><Small color={C.phosphor}>{`${Math.min(objective.progress, objective.count)} / ${objective.count}`}</Small></Row>;
       })}
       {finished && returnTo !== null ? <Small color={C.ink}>{`▸ Return to ${returnTo}`}</Small> : null}
     </RuneView>}
-    {others.map(entry => { const d = scrapQuestById(entry.questId); return d === undefined ? null : <Small key={entry.questId}>{`+ ${d.title}`}</Small>; })}
+    {others.length === 0 ? null : <Small>{`+ ${others.length} more errand${others.length === 1 ? "" : "s"}`}</Small>}
+    <FieldNotes inline />
   </Plate>;
 }
 
-/** Bolt's field notes: the onboarding's current step, with Next and Hide. */
-export function FieldNotes() {
+/**
+ * DING's fridge-magnet notes: the onboarding's current step. `inline` folds it into the errand
+ * tracker as one hint line with Next and Hide, so the column holds a single panel.
+ */
+export function FieldNotes({ inline = false }: { inline?: boolean }) {
   const { commands } = useGame();
   const view = useGameStore(c => {
     const runtime = onboardingOf(c), run = runtime?.run();
@@ -217,6 +219,13 @@ export function FieldNotes() {
   const { compact } = useCompact();
   if (view === null) return null;
   const at = Math.max(0, view.steps.findIndex(s => s.current));
+  if (inline) return <RuneView gap={2} padding={[4, 0, 0, 0]} border={{ width: 0, color: "#00000000" }}>
+    <Small size={11} color={C.phosphor}>{`Tip ${at + 1}/${view.steps.length} · ${view.steps[at]?.label ?? ""}`}</Small>
+    <Row gap={4}>
+      {view.next ? <Button minHeight={24} padding={[2, 8, 2, 8]} onPress={() => void commands.run("onboarding.next", {})}>Next</Button> : null}
+      {view.skippable ? <Button minHeight={24} padding={[2, 8, 2, 8]} onPress={() => void commands.run("onboarding.skip", {})}>Hide tips</Button> : null}
+    </Row>
+  </RuneView>;
   return <Plate width={compact ? 200 : 260} gap={compact ? 3 : 4} padding={compact ? 7 : 10}>
     <Stamp tone="phosphor">{`${view.title} · ${at + 1} of ${view.steps.length}`}</Stamp>
     {view.steps.slice(at, compact ? at + 1 : at + 2).map(s => <Small key={s.id} color={s.current ? C.ink : C.dim}>{`${s.done ? "✓" : "▸"} ${s.label}`}</Small>)}

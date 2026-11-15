@@ -352,6 +352,19 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
+  // I turns the weapon in hand over: its full card (body, mod, personality, kills) for a few seconds.
+  ctx.game.commands.define("weapon.inspect", {
+    apply(state: GameContext) {
+      const gunId = selectedGunId(state);
+      if (gunId === null) return;
+      const shown = lastPickupStore.read(state);
+      const now = state.time.now() * 1000;
+      // A second press puts it away.
+      if (shown !== null && shown.gunId === gunId && now - shown.atMs < 6000) lastPickupStore.write(state, { gunId, atMs: now - 6000 });
+      else lastPickupStore.write(state, { gunId, atMs: now });
+    },
+  });
+
   ctx.game.commands.define<{ itemId?: string }>("workbench.salvage", {
     apply(state: GameContext, input) {
       if (input.itemId !== undefined) salvageGun(state, input.itemId);
@@ -707,6 +720,26 @@ export function registerCommands(ctx: GameContext): void {
     });
     // Dev-only: drop the chassis to its last point of health, so the game's own downed tick opens
     // the Last Gasp window for a capture instead of standing in enemy fire for it.
+    // Dev-only: one of each appliance (or each boss) in an arc ahead, so a capture reads them all at
+    // combat distance. Never shipped.
+    ctx.game.commands.define<{ bosses?: boolean }>("lineup.capture", {
+      cheat: true,
+      apply(state: GameContext, input) {
+        const me = state.scene.entity.get(state.player.userId);
+        if (me === null) return;
+        const kinds = input.bosses === true
+          ? ["old_tusk", "captain_rusk", "wreck_maw", "foreman_maw", "foundry_heart"]
+          : ["husk", "marauder", "nomad", "ripper", "bruiser", "crawler", "loader", "elite_husk"];
+        const yaw = me.rotationY ?? 0;
+        const distance = input.bosses === true ? 26 : 16;
+        kinds.forEach((kind, index) => {
+          const offset = (index - (kinds.length - 1) / 2) * (input.bosses === true ? 0.32 : 0.2);
+          const x = me.position[0] + Math.sin(yaw + offset) * distance;
+          const z = me.position[2] + Math.cos(yaw + offset) * distance;
+          state.scene.entity.spawn(kind, { id: `lineup_${kind}`, position: [x, state.world.groundHeightAt(x, z), z], rotationY: yaw + Math.PI });
+        });
+      },
+    });
     ctx.game.commands.define("reserve.capture", {
       cheat: true,
       apply(state: GameContext) {

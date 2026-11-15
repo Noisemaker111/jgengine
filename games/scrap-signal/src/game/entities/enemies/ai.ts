@@ -84,6 +84,8 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     if (def === undefined) continue;
     // A fighter the front is driving already has its orders; the zone AI must not fight it for the wheel.
     if (isFrontUnit(ctx, entity.id)) continue;
+    // A dev capture's lineup stands still to be looked at.
+    if (import.meta.env.DEV && entity.id.startsWith("lineup_")) continue;
     const home = homeOf(ctx, entity.id);
     if (home === undefined) rememberHome(ctx, entity.id, entity.position);
     const anchor = homeOf(ctx, entity.id) ?? entity.position;

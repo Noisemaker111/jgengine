@@ -60,8 +60,8 @@ function buildProp(kind: YardProp): { group: Group; dispose(): void } {
   } else if (kind === "schoolBus") {
     // The school bus at the opening, abandoned with a flat tyre and a lean, its windows out.
     const bus = new Group();
-    bus.rotation.z = 0.07;
-    bus.position.set(0, 0.05, 0);
+    bus.rotation.z = 0.03;
+    bus.position.set(0, -0.08, 0);
     bus.scale.setScalar(0.72);
     group.add(bus);
     const yellow = mat(paint("#ffc20e", 0.45));

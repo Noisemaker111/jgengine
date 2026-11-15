@@ -14,7 +14,7 @@ import { riftStore } from "../rift/rift";
 import { relayStore } from "../relay";
 import { speechStore } from "../stores";
 import { hostilesNear } from "./hostiles";
-import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, FieldNotes, GunBark, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
+import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, GunBark, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
 import { C, Plate, Sheet, Text, scrapTheme, useCompact } from "./kit";
 import { ScrapMenu } from "./Menu";
 import { BlackMarketPanel, NpcDialog, OverdriveCard, OverdriveTerminal, TalentsPanel, TravelPanel, VaultPanel, VendorPanel } from "./Panels";
@@ -58,8 +58,6 @@ function Field() {
   const runShown = useStore(riftStore, s => s.run !== null);
   const contractLive = useStore(relayStore, s => s.phase === "defend" || s.phase === "upload");
   const speaking = useStore(speechStore, s => s !== null);
-  // A short landscape phone folds the field notes under the wallet; a portrait phone stacks the foot.
-  const notesRight = compact && !portrait;
   return <>
     <DamageVignette />
     <SpreadReticle />
@@ -68,12 +66,10 @@ function Field() {
       <Hideable id="dead-air" start when={!(inRun && !contractLive)}><ContractCard /></Hideable>
       <Hideable id="overdrive" start when={runShown}><OverdriveCard /></Hideable>
       {inRun ? null : <Hideable id="missions" start><MissionTracker /></Hideable>}
-      {notesRight ? null : <Hideable id="field-notes" start><FieldNotes /></Hideable>}
     </RuneView>
     <RuneView anchor="top-right" safe inset={compact ? 8 : 12} gap={compact ? 4 : 6} items="end" padding={[compact ? 38 : 44, 0, 0, 0]} maxWidth={210}>
       <Counter icon="coin" color={C.xp} label="Cash" read={cashOf} />
       <Counter icon="gem" color={C.cores} label="Spare parts" read={coresOf} />
-      {notesRight ? <Hideable id="field-notes" end><FieldNotes /></Hideable> : null}
       <Hideable id="loot-toasts" end><LootToasts /></Hideable>
     </RuneView>
     <RuneView anchor={portrait ? "center" : "top"} safe inset={16}><ZoneBanner /></RuneView>

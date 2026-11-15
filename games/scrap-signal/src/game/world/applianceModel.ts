@@ -93,7 +93,7 @@ const chrome = (color = "#d4d9de"): ConstructorParameters<typeof MeshStandardMat
 const rubber = (color = "#25272b"): ConstructorParameters<typeof MeshStandardMaterial>[0] => ({ color, roughness: 0.9, metalness: 0 });
 const led = (color: string, intensity = 2.4): ConstructorParameters<typeof MeshStandardMaterial>[0] => ({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.3 });
 
-const EYE_HOSTILE = "#ff3b30";
+const EYE_HOSTILE = "#ff1e10";
 const EYE_ELITE = "#ffb000";
 
 export interface ApplianceStyle {
@@ -104,8 +104,15 @@ export interface ApplianceStyle {
 
 /** Two glowing LED eyes at `y` on the +Z face, `gap` apart: the hostile tell every machine shares. */
 function eyes(p: Parts, at: Vec3, gap: number, size: number, elite: boolean, parent?: Object3D): void {
-  const material = p.mat("eye", led(elite ? EYE_ELITE : EYE_HOSTILE, 3));
-  for (const sign of [-1, 1]) p.add(new SphereGeometry(size, 10, 8), material, [at[0] + sign * gap, at[1], at[2]], undefined, parent);
+  // A dark bezel, a lit LED and a pinpoint pupil: a bare emissive sphere tone-mapped to peach at range.
+  const material = p.mat("eye", led(elite ? EYE_ELITE : EYE_HOSTILE, 1.3));
+  const bezel = p.mat("bezel", rubber("#0d0d10"));
+  const pupil = p.mat("pupil", { color: "#1a0000", roughness: 0.3 });
+  for (const sign of [-1, 1]) {
+    p.add(new CylinderGeometry(size * 1.35, size * 1.35, size * 0.5, 14), bezel, [at[0] + sign * gap, at[1], at[2] - size * 0.2], [Math.PI / 2, 0, 0], parent);
+    p.add(new SphereGeometry(size, 12, 10), material, [at[0] + sign * gap, at[1], at[2]], undefined, parent);
+    p.add(new SphereGeometry(size * 0.38, 8, 6), pupil, [at[0] + sign * gap, at[1] - size * 0.1, at[2] + size * 0.82], undefined, parent);
+  }
   // A scowl: one angled brow bar per eye, so they read as angry from range.
   const brow = p.mat("brow", rubber("#141518"));
   for (const sign of [-1, 1]) p.add(new BoxGeometry(size * 2.6, size * 0.6, size * 0.6), brow, [at[0] + sign * gap, at[1] + size * 1.5, at[2]], [0, 0, sign * 0.45], parent);
