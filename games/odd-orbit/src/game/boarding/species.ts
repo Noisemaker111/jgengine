@@ -229,3 +229,12 @@ export function isSpeciesId(value: unknown): value is SpeciesId {
 export const STARTING_TENANTS: readonly SpeciesId[] = ["krrt", "glorp", "fog", "pip"];
 /** Who may knock at the airlock, in the order the house first hears of them. */
 export const APPLICANT_ORDER: readonly SpeciesId[] = ["twins", "velvet", "basalt", "glorp", "krrt", "fog", "pip"];
+
+/**
+ * The station reputation an applicant waits for before they will even buzz: an aristocrat only
+ * applies to a house people talk about, and a rock that pays a century up front wants proof it will
+ * still be here.
+ */
+export const APPLY_REPUTATION: Partial<Record<SpeciesId, number>> = { velvet: 38, basalt: 52 };
+/** Tenants who moved out will give the house another try once its name is good enough. */
+export const RETURN_REPUTATION = 68;

@@ -6,6 +6,7 @@ import { FURNITURE_BY_ID } from "../objects/catalog";
 import type { NoticeFeed } from "@jgengine/core/notifications/notices";
 import { noteEvent, type HouseholdState } from "../session/types";
 import { roomRunningCost, type RoomState } from "../boarding/rooms";
+import { LANDMARK_REPUTATION } from "../boarding/boarding";
 
 export const CREDIT_CURRENCY: CurrencyDefinition = { id: "credits", name: "Credits", decimals: 2 };
 export const HABITAT_UPKEEP = 80;
@@ -31,7 +32,9 @@ export const TERM_RENT = [HABITAT_UPKEEP, 170, 250, 330] as const;
 /** Tonight's docking fee: the lease term's rate, or nothing once the house owns its section outright. */
 export function rentFor(state: Pick<HouseholdState, "charter" | "boarding">): number {
   if (state.boarding !== undefined && state.boarding.deedOwed <= 0) return 0;
-  return TERM_RENT[Math.min(TERM_RENT.length - 1, Math.max(0, state.charter?.term ?? 0))]!;
+  const fee = TERM_RENT[Math.min(TERM_RENT.length - 1, Math.max(0, state.charter?.term ?? 0))]!;
+  // A landmark house pays half: the Dockmaster likes the visitors it brings.
+  return (state.boarding?.reputation ?? 0) >= LANDMARK_REPUTATION ? Math.round(fee / 2) : fee;
 }
 
 /** The docking fee, each furnishing's running cost and each module's own draw. */

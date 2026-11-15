@@ -230,6 +230,18 @@ describe("the landlord's verbs", () => {
     expect(buyModule(state, 4)).toBe("Already docked");
   });
 
+  test("a five-star house earns a premium; a landmark pays half the docking fee", () => {
+    const state = house();
+    addTenant(state, "pip", 0);
+    boardingOf(state).rooms[0]!.settings = { ...idealSettings(SPECIES.pip) };
+    const plain = settleBoardingNight(structuredClone(state), DAY_LENGTH, quiet).rent;
+    boardingOf(state).reputation = 90;
+    expect(settleBoardingNight(state, DAY_LENGTH, quiet).rent).toBe(Math.round(plain * 1.1));
+    const bill = nextBill(state, []);
+    boardingOf(state).reputation = 96;
+    expect(nextBill(state, [])).toBe(bill - 40);
+  });
+
   test("the deed stops the docking fee once paid", () => {
     const state = house();
     state.credits = DEED_PRICE + 100;

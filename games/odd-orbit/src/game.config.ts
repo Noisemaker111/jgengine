@@ -17,6 +17,10 @@ import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
 import { householdStore } from "./game/session/store";
+import { orbitSession } from "./game/session/lifecycle";
+import { pairKey } from "./game/session/types";
+import { metricValue } from "./game/sim/charter";
+import { FURNITURE_BY_ID } from "./game/objects/catalog";
 import { DAY_LENGTH, physics, terrainField, world } from "./world";
 
 export const game = defineGame({
@@ -89,6 +93,14 @@ export const game = defineGame({
         day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1,
         rooms: boarding?.rooms.length ?? 0, housed: boarding?.rooms.filter((room) => room.tenantId !== null).length ?? 0,
         reputation: Math.round(boarding?.reputation ?? 0), applicant: boarding?.applicant == null ? 0 : 1, deed: Math.round(boarding?.deedOwed ?? 0),
+        // Pip-9's own readings (the tenant the suite proofs follow): a need, a room, a friendship.
+        pipSnack: Math.round(state.members["alien:3"]?.needs.hunger ?? -1),
+        pipRoom: boarding?.rooms.find((room) => room.tenantId === "alien:3")?.slot ?? -1,
+        fogPip: Math.round(state.relationships[pairKey("alien:2", "alien:3")] ?? 0),
+        comfy: metricValue(state, ctx.scene.object.list(), "comfy"),
+        furnishings: ctx.scene.object.list().filter((object) => FURNITURE_BY_ID[object.catalogId] !== undefined).length,
+        pantry: state.pantry, debt: Math.round(state.debt),
+        screen: orbitSession.read(ctx).screen === null ? 0 : orbitSession.read(ctx).screen === "paused" ? 2 : 1,
       };
     },
   },

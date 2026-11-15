@@ -10,7 +10,7 @@ import {
   type Comfort, type HouseView, type RoomFactor, type RoomSettings, type RoomState,
 } from "./rooms";
 import { sayAloud } from "./feeds";
-import { APPLICANT_ORDER, quoted, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
+import { APPLICANT_ORDER, APPLY_REPUTATION, RETURN_REPUTATION, quoted, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
 
 /**
  * The house's own ledger beside the household's: which modules are bolted on, who lives in each,
@@ -69,6 +69,11 @@ export const FEUD_AT = -35;
 /** Opinion at or above which a friend covers a short cheque. */
 export const FRIEND_AT = 35;
 export const MAX_REVIEWS = 6;
+/** A five-star listing: tenants pay a tenth more for the address. */
+export const FIVE_STAR_REPUTATION = 85;
+export const FIVE_STAR_PREMIUM = 1.1;
+/** A station landmark: the Dockmaster halves the docking fee for the house everyone visits. */
+export const LANDMARK_REPUTATION = 95;
 
 export function createBoarding(now = 0): BoardingState {
   const rooms: RoomState[] = [];
@@ -349,6 +354,7 @@ export function settleBoardingNight(state: HouseholdState, now: number, notices:
         noteEvent(state, notices, `${state.members[friend]!.name} covered ${cover} of ${member.name}'s rent. Friends look after friends.`, "success");
       }
     }
+    if (boarding.reputation >= FIVE_STAR_REPUTATION) paid = Math.round(paid * FIVE_STAR_PREMIUM);
     report.rent += paid;
     const stars = starsFor(comfort.score);
     const text = stars >= 4 ? pickLine(def.lines.happy, state.day + id.length) : comfort.reasons[0]?.text || pickLine(def.lines.unhappy, state.day);
@@ -418,7 +424,9 @@ export function driftNeighbours(state: HouseholdState, now: number, dt: number):
 export function applicantPool(state: HouseholdState): SpeciesId[] {
   const housed = new Set(state.order.map((id) => speciesOfMember(state.members[id]!)));
   const boarding = boardingOf(state);
-  return APPLICANT_ORDER.filter((id) => !housed.has(id) && !boarding.departed.includes(id));
+  return APPLICANT_ORDER.filter((id) => !housed.has(id)
+    && (!boarding.departed.includes(id) || boarding.reputation >= RETURN_REPUTATION)
+    && boarding.reputation >= (APPLY_REPUTATION[id] ?? 0));
 }
 
 /** Let the airlock queue move: a new face when a room stands empty, a shrug when they wait too long. */
