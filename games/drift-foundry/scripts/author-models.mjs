@@ -214,9 +214,20 @@ author('cart-scooter', (b) => {
 
 author('shopper-player', (b) => shopper(b, { shirt: '#ff4f5a', pants: '#2b3a5c', hair: '#3a2416', cap: '#ffd21e' }));
 
+/**
+ * A cart-safety flag on a whippy pole: each rival flies their own colour high above the shelving, so
+ * the field reads apart at a glance even from behind and far down the aisle.
+ */
+function pennant(b, color, x = .55, z = -.95) {
+  b.tube([x, .4, z], [x, 3.1, z], .025, '#e8eaec');
+  b.box([.03, .45, .7], [x, 2.85, z - .35], '*' + color);
+  b.sphere(.06, [x, 3.12, z], '*' + color);
+}
+
 /** A rival: its own cart and its own shopper, so the field reads apart at speed. */
 author('cart-rival-grandma', (b) => {
   cart(b, { handle: '#8a5cd6' });
+  pennant(b, '#b07cff');
   shopper(b, { shirt: '#b89ad6', pants: '#6b5a8a', hair: '#e8e8ec', height: .82, bun: true, glasses: true, lean: .32 });
   // Coupon binder and a handbag in the child seat.
   b.box([.36, .3, .1], [0, 1.05, -.45], '#ffd21e', [.3, 0, 0]);
@@ -224,6 +235,7 @@ author('cart-rival-grandma', (b) => {
 });
 author('cart-rival-twins', (b) => {
   cart(b, { handle: '#ff8a1e' });
+  pennant(b, '#ff8a1e');
   shopper(b, { shirt: '#ff8a1e', pants: '#2fa8ff', hair: '#5a3a1a' });
   // The other twin rides in the basket, arms up.
   const { box, sphere, tube } = b;
@@ -235,6 +247,7 @@ author('cart-rival-twins', (b) => {
 });
 author('cart-rival-brick', (b) => {
   cart(b, { handle: '#2b2f36' });
+  pennant(b, '#ff3b30');
   shopper(b, { shirt: '#e8303a', pants: '#2b2f36', skin: SKIN_DARK, hair: '#1a1a1a', bulk: 1.55, height: 1.08, headband: WHITE, lean: .1 });
   // A protein tub and a kettlebell in the basket.
   b.cylinder(.2, .42, [0, .85, .35], '#2b2f36');
@@ -250,6 +263,7 @@ author('cart-rival-guard', (b) => {
   tube([-.3, 1.12, .33], [.3, 1.12, .33], .04, INK);
   cylinder(.06, .02, [0, 1.16, .34], '*#ff2d2d');
   shopper(b, { z: 0, shirt: '#1f3a6b', pants: '#1a2440', hair: '#2a1a10', cap: '#1a2440', vest: '#ffd21e', handleY: 1.12, handleZ: .33, lean: .12 });
+  pennant(b, '#3f8cff', .4, -.2);
   // The flashlight, beamed forward.
   cylinder(.05, .3, [.35, 1.15, .45], INK, [Math.PI / 2, 0, 0]);
   cylinder(.06, .02, [.35, 1.15, .61], '*#fff6c9', [Math.PI / 2, 0, 0]);
@@ -429,12 +443,33 @@ function gondola(b, { length = 4.2, height = 2.6, depth = 1.1, seed = 1, colors,
     box([.03, .08, length - .1], [depth / 2, y + .02, 0], '#ffd21e');
     if (s === shelves - 1 && height < 3) continue;
     for (const side of [-1, 1]) {
+      // Each shelf face is one product line, the way a store merchandises: boxes, cans or bottles,
+      // in runs of one brand colour with a contrasting label band, so a shelf reads as packaging.
+      const kind = Math.floor(random() * 3);
       let z = -length / 2 + .15;
       while (z < length / 2 - .25) {
-        const w = .35 + random() * .4, h = .25 + random() * .3;
         const color = colors[Math.floor(random() * colors.length)];
-        box([.36, h, w], [side * .24, y + h / 2 + .03, z + w / 2], color);
-        z += w + .03;
+        const label = colors[Math.floor(random() * colors.length)];
+        const run = 2 + Math.floor(random() * 3);
+        if (kind === 0) {
+          const w = .3 + random() * .25, h = .3 + random() * .25;
+          for (let r = 0; r < run && z < length / 2 - .25; r++, z += w + .02) {
+            box([.36, h, w], [side * .24, y + h / 2 + .03, z + w / 2], color);
+            box([.37, h * .3, w * .9], [side * .24, y + h * .55, z + w / 2], label);
+          }
+        } else if (kind === 1) {
+          for (let r = 0; r < run * 2 && z < length / 2 - .2; r++, z += .2) {
+            b.cylinder(.08, .2, [side * .3, y + .13, z + .1], color, [0, 0, 0], .08, 8);
+            b.cylinder(.08, .2, [side * .14, y + .13, z + .1], color, [0, 0, 0], .08, 8);
+            b.cylinder(.082, .07, [side * .3, y + .13, z + .1], label, [0, 0, 0], .082, 8);
+          }
+        } else {
+          for (let r = 0; r < run * 2 && z < length / 2 - .2; r++, z += .17) {
+            b.cylinder(.07, .34, [side * .26, y + .2, z + .08], color, [0, 0, 0], .07, 6);
+            b.cylinder(.03, .1, [side * .26, y + .42, z + .08], label, [0, 0, 0], .03, 6);
+          }
+        }
+        z += .06;
       }
     }
   }
@@ -442,6 +477,8 @@ function gondola(b, { length = 4.2, height = 2.6, depth = 1.1, seed = 1, colors,
 }
 const GROCERY = ['#ff4f5a', '#3fb6ff', '#ffd21e', '#5de0ce', '#ff8a1e', '#7a5cff', WHITE, '#3fae4a', '#ff4fa0'];
 author('gondola', (b) => gondola(b, { colors: GROCERY, seed: 3 }));
+author('gondola-b', (b) => gondola(b, { colors: ['#e8303a', '#ffd21e', '#ffffff', '#2f6fd6', '#ff8a1e', '#3fae4a'], seed: 17 }));
+author('gondola-c', (b) => gondola(b, { colors: ['#7a5cff', '#5de0ce', '#ff4fa0', '#ffe9a8', '#3fb6ff', '#2b2f36'], seed: 29, sign: '#2f6fd6' }));
 author('gondola-tall', (b) => gondola(b, { height: 4.2, colors: GROCERY, seed: 7, sign: '#ff4f5a' }));
 author('toy-shelf', (b) => {
   gondola(b, { colors: ['#ff4fa0', '#ffd21e', '#5de0ce', '#7a5cff', '#ff8a1e', '#3fb6ff'], seed: 11, upright: '#fff1f6' });

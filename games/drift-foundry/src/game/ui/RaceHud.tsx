@@ -9,6 +9,8 @@ import { FLAG_ARTWORK, GEAR_ARTWORK, LEFT_ARTWORK, PAUSE_ARTWORK, RIGHT_ARTWORK,
 import { FULL, GUNMETAL, HazardBand, INK, DIM, Label, PEN, ORANGE, RED, Row, STEEL, STENCIL, Stencil, TEAL, Text, YELLOW } from "./pit";
 
 const PINK = "#ff4fa0";
+/** Each rival's cart flag colour, so the race board and the aisle agree on who is who. */
+const RIVAL_FLAGS: Readonly<Record<string, string>> = { rival_grandma: "#8a5cd6", rival_twins: "#e0701a", rival_brick: "#d6302a" };
 import type { LiveRace, RaceHud as RaceHudModel } from "./hudModel";
 
 /*
@@ -65,7 +67,7 @@ function Tower({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolea
           <Text family={STENCIL} size={phone ? 15 : 18} color={TEAL} text={bind(() => `${now().race.lapTime.toFixed(1)}s`)} /></RuneView>
       </Row>
       {race.standings.map(entry => <Row key={entry.id} gap={8} padding={[2, 6, 2, 0]} fill={entry.id === "player" ? YELLOW : "#00000000"}>
-        <RuneView width={22} items="center" fill={entry.id === "player" ? "#141414" : STEEL}><Text family={STENCIL} size={14} color={entry.id === "player" ? YELLOW : INK}>{String(entry.place)}</Text></RuneView>
+        <RuneView width={22} items="center" fill={entry.id === "player" ? "#141414" : RIVAL_FLAGS[entry.id] ?? STEEL}><Text family={STENCIL} size={14} color={entry.id === "player" ? YELLOW : INK}>{String(entry.place)}</Text></RuneView>
         <Text size={phone ? 14 : 16} color={entry.id === "player" ? "#141414" : INK}>{entry.name}</Text>
       </Row>)}
       {phone || hud.ghost === null ? null : <RuneView gap={1} padding={[4, 0, 0, 0]}>

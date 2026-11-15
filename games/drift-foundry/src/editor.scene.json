@@ -1,494 +1,5 @@
 {
   "version": 1,
-  "simulation": {
-    "emitters": [
-      {
-        "id": "freezer-fog-1",
-        "position": {
-          "x": -24,
-          "y": 0.4,
-          "z": 165
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "freezer-fog-2",
-        "position": {
-          "x": 24,
-          "y": 0.4,
-          "z": 190
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            -1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "freezer-fog-3",
-        "position": {
-          "x": -24,
-          "y": 0.4,
-          "z": 215
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "freezer-fog-4",
-        "position": {
-          "x": 24,
-          "y": 0.4,
-          "z": 240
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            -1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "freezer-fog-5",
-        "position": {
-          "x": -24,
-          "y": 0.4,
-          "z": 265
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "freezer-fog-6",
-        "position": {
-          "x": 24,
-          "y": 0.4,
-          "z": 290
-        },
-        "config": {
-          "rate": 10,
-          "max": 50,
-          "direction": [
-            -1,
-            0.05,
-            0
-          ],
-          "spread": 0.5,
-          "spawnJitter": [
-            0.6,
-            0.3,
-            2
-          ],
-          "speed": {
-            "min": 0.4,
-            "max": 1.1
-          },
-          "gravity": [
-            0,
-            -0.05,
-            0
-          ],
-          "drag": 0.6,
-          "lifetime": {
-            "min": 2.5,
-            "max": 4
-          },
-          "size": {
-            "start": 1.2,
-            "end": 3.2
-          },
-          "colorStart": 15398911,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.18,
-            "end": 0
-          }
-        },
-        "options": {
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "scrubber-suds",
-        "position": {
-          "x": 0,
-          "y": 0.6,
-          "z": 0
-        },
-        "config": {
-          "rate": 60,
-          "max": 160,
-          "direction": [
-            0,
-            0.5,
-            1
-          ],
-          "spread": 0.9,
-          "spawnJitter": [
-            20,
-            0.3,
-            0.5
-          ],
-          "speed": {
-            "min": 1.5,
-            "max": 4
-          },
-          "gravity": [
-            0,
-            -3,
-            0
-          ],
-          "drag": 0.3,
-          "lifetime": {
-            "min": 0.6,
-            "max": 1.4
-          },
-          "size": {
-            "start": 0.35,
-            "end": 0.6
-          },
-          "colorStart": 16777215,
-          "colorEnd": 12577023,
-          "alpha": {
-            "start": 0.9,
-            "end": 0
-          }
-        },
-        "options": {
-          "follow": "compactor_wall",
-          "offset": [
-            0,
-            0.6,
-            3.4
-          ],
-          "blending": "normal",
-          "space": "world"
-        }
-      },
-      {
-        "id": "scrubber-spray",
-        "position": {
-          "x": 0,
-          "y": 2,
-          "z": 0
-        },
-        "config": {
-          "rate": 16,
-          "max": 70,
-          "direction": [
-            0,
-            1,
-            0.4
-          ],
-          "spread": 0.35,
-          "spawnJitter": [
-            22,
-            0.4,
-            1
-          ],
-          "speed": {
-            "min": 1,
-            "max": 2.2
-          },
-          "gravity": [
-            0,
-            0.3,
-            0
-          ],
-          "drag": 0.4,
-          "lifetime": {
-            "min": 1.6,
-            "max": 2.6
-          },
-          "size": {
-            "start": 1.5,
-            "end": 4
-          },
-          "colorStart": 14677247,
-          "colorEnd": 16777215,
-          "alpha": {
-            "start": 0.08,
-            "end": 0
-          }
-        },
-        "options": {
-          "follow": "compactor_wall",
-          "offset": [
-            0,
-            2,
-            2.8
-          ],
-          "blending": "normal",
-          "space": "world"
-        }
-      }
-    ],
-    "habitats": [
-      {
-        "id": "gulls-1",
-        "species": "gull",
-        "position": {
-          "x": -26,
-          "y": 13,
-          "z": 90
-        },
-        "radius": 20,
-        "count": 5,
-        "seed": "pigeons-1",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 6,
-          "separationRadius": 2.5,
-          "neighborRadius": 12,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 30
-        }
-      },
-      {
-        "id": "gulls-2",
-        "species": "gull",
-        "position": {
-          "x": 27,
-          "y": 13,
-          "z": 230
-        },
-        "radius": 20,
-        "count": 5,
-        "seed": "pigeons-2",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 6,
-          "separationRadius": 2.5,
-          "neighborRadius": 12,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 30
-        }
-      },
-      {
-        "id": "gulls-3",
-        "species": "gull",
-        "position": {
-          "x": -26,
-          "y": 13,
-          "z": 390
-        },
-        "radius": 20,
-        "count": 5,
-        "seed": "pigeons-3",
-        "role": "cosmetic",
-        "steering": {
-          "maxSpeed": 6,
-          "separationRadius": 2.5,
-          "neighborRadius": 12,
-          "cohesionWeight": 0.8,
-          "alignmentWeight": 1,
-          "stragglerRadius": 30
-        }
-      }
-    ]
-  },
   "markers": [
     {
       "id": "d03-1-endcap",
@@ -1279,9 +790,9 @@
         "z": -25.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1293,9 +804,9 @@
         "z": -21
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1321,9 +832,9 @@
         "z": -12
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1335,9 +846,9 @@
         "z": -7.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1363,9 +874,9 @@
         "z": 1.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1377,9 +888,9 @@
         "z": 6
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1405,9 +916,9 @@
         "z": 15
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1419,9 +930,9 @@
         "z": 19.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1433,9 +944,9 @@
         "z": 28.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1447,9 +958,9 @@
         "z": 33
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1475,9 +986,9 @@
         "z": 42
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1489,9 +1000,9 @@
         "z": 46.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1517,9 +1028,9 @@
         "z": 55.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1531,9 +1042,9 @@
         "z": 60
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1559,9 +1070,9 @@
         "z": 69
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1573,9 +1084,9 @@
         "z": 73.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1587,9 +1098,9 @@
         "z": 82.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1601,9 +1112,9 @@
         "z": 87
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1629,9 +1140,9 @@
         "z": 96
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1643,9 +1154,9 @@
         "z": 100.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1671,9 +1182,9 @@
         "z": 109.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1685,9 +1196,9 @@
         "z": 114
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1713,9 +1224,9 @@
         "z": 123
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1727,9 +1238,9 @@
         "z": 127.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -1741,9 +1252,9 @@
         "z": 136.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -1755,9 +1266,9 @@
         "z": 141
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3463,9 +2974,9 @@
         "z": -30
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3477,9 +2988,9 @@
         "z": -25.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3505,9 +3016,9 @@
         "z": -16.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3519,9 +3030,9 @@
         "z": -12
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3547,9 +3058,9 @@
         "z": -3
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3561,9 +3072,9 @@
         "z": 1.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3589,9 +3100,9 @@
         "z": 10.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3603,9 +3114,9 @@
         "z": 15
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3631,9 +3142,9 @@
         "z": 24
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3645,9 +3156,9 @@
         "z": 28.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3673,9 +3184,9 @@
         "z": 37.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3687,9 +3198,9 @@
         "z": 42
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3715,9 +3226,9 @@
         "z": 55.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3743,9 +3254,9 @@
         "z": 64.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3757,9 +3268,9 @@
         "z": 69
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3785,9 +3296,9 @@
         "z": 78
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3799,9 +3310,9 @@
         "z": 82.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3827,9 +3338,9 @@
         "z": 91.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3841,9 +3352,9 @@
         "z": 96
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3869,9 +3380,9 @@
         "z": 109.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3897,9 +3408,9 @@
         "z": 118.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3911,9 +3422,9 @@
         "z": 123
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3939,9 +3450,9 @@
         "z": 132
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -3953,9 +3464,9 @@
         "z": 136.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_c",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_c"
       }
     },
     {
@@ -3981,9 +3492,9 @@
         "z": 145.5
       },
       "rotationY": 0,
-      "catalogId": "prop_gondola",
+      "catalogId": "prop_gondola_b",
       "meta": {
-        "catalogId": "prop_gondola"
+        "catalogId": "prop_gondola_b"
       }
     },
     {
@@ -6675,6 +6186,495 @@
   ],
   "paths": [],
   "annotations": [],
+  "simulation": {
+    "emitters": [
+      {
+        "id": "freezer-fog-1",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 165
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-2",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 190
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-3",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 215
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-4",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 240
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-5",
+        "position": {
+          "x": -24,
+          "y": 0.4,
+          "z": 265
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "freezer-fog-6",
+        "position": {
+          "x": 24,
+          "y": 0.4,
+          "z": 290
+        },
+        "config": {
+          "rate": 10,
+          "max": 50,
+          "direction": [
+            -1,
+            0.05,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            0.6,
+            0.3,
+            2
+          ],
+          "speed": {
+            "min": 0.4,
+            "max": 1.1
+          },
+          "gravity": [
+            0,
+            -0.05,
+            0
+          ],
+          "drag": 0.6,
+          "lifetime": {
+            "min": 2.5,
+            "max": 4
+          },
+          "size": {
+            "start": 1.2,
+            "end": 3.2
+          },
+          "colorStart": 15398911,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.18,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "scrubber-suds",
+        "position": {
+          "x": 0,
+          "y": 0.6,
+          "z": 0
+        },
+        "config": {
+          "rate": 60,
+          "max": 160,
+          "direction": [
+            0,
+            0.5,
+            1
+          ],
+          "spread": 0.9,
+          "spawnJitter": [
+            20,
+            0.3,
+            0.5
+          ],
+          "speed": {
+            "min": 1.5,
+            "max": 4
+          },
+          "gravity": [
+            0,
+            -3,
+            0
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 0.6,
+            "max": 1.4
+          },
+          "size": {
+            "start": 0.35,
+            "end": 0.6
+          },
+          "colorStart": 16777215,
+          "colorEnd": 12577023,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            0.6,
+            3.4
+          ],
+          "blending": "normal",
+          "space": "world"
+        }
+      },
+      {
+        "id": "scrubber-spray",
+        "position": {
+          "x": 0,
+          "y": 2,
+          "z": 0
+        },
+        "config": {
+          "rate": 16,
+          "max": 70,
+          "direction": [
+            0,
+            1,
+            0.4
+          ],
+          "spread": 0.35,
+          "spawnJitter": [
+            22,
+            0.4,
+            1
+          ],
+          "speed": {
+            "min": 1,
+            "max": 2.2
+          },
+          "gravity": [
+            0,
+            0.3,
+            0
+          ],
+          "drag": 0.4,
+          "lifetime": {
+            "min": 1.6,
+            "max": 2.6
+          },
+          "size": {
+            "start": 1.5,
+            "end": 4
+          },
+          "colorStart": 14677247,
+          "colorEnd": 16777215,
+          "alpha": {
+            "start": 0.08,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            2,
+            2.8
+          ],
+          "blending": "normal",
+          "space": "world"
+        }
+      }
+    ],
+    "habitats": [
+      {
+        "id": "gulls-1",
+        "species": "gull",
+        "position": {
+          "x": -26,
+          "y": 13,
+          "z": 90
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-1",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      },
+      {
+        "id": "gulls-2",
+        "species": "gull",
+        "position": {
+          "x": 27,
+          "y": 13,
+          "z": 230
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-2",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      },
+      {
+        "id": "gulls-3",
+        "species": "gull",
+        "position": {
+          "x": -26,
+          "y": 13,
+          "z": 390
+        },
+        "radius": 20,
+        "count": 5,
+        "seed": "pigeons-3",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "separationRadius": 2.5,
+          "neighborRadius": 12,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 30
+        }
+      }
+    ]
+  },
   "prefabs": [],
   "collections": [],
   "catalogs": []

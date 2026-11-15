@@ -65,6 +65,8 @@ const GLB: Record<string, string> = {
   "item-rotisserie_chicken": new URL("./item-rotisserie_chicken.glb", import.meta.url).href,
   gondola: new URL("./gondola.glb", import.meta.url).href,
   "gondola-tall": new URL("./gondola-tall.glb", import.meta.url).href,
+  "gondola-b": new URL("./gondola-b.glb", import.meta.url).href,
+  "gondola-c": new URL("./gondola-c.glb", import.meta.url).href,
   "toy-shelf": new URL("./toy-shelf.glb", import.meta.url).href,
   "tv-wall": new URL("./tv-wall.glb", import.meta.url).href,
   freezer: new URL("./freezer.glb", import.meta.url).href,

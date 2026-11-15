@@ -19,6 +19,8 @@ import {
   PROP_FREEZER,
   PROP_GONDOLA,
   PROP_GONDOLA_TALL,
+  PROP_GONDOLA_B,
+  PROP_GONDOLA_C,
   PROP_PALLET_STACK,
   PROP_WET_FLOOR,
 } from "./objects/catalog";
@@ -48,6 +50,8 @@ export const objectModels: Record<string, ModelConfig> = {
   [PROP_BOX_PILE]: authored("box-pile"),
   [PROP_GONDOLA]: authored("gondola"),
   [PROP_GONDOLA_TALL]: authored("gondola-tall"),
+  [PROP_GONDOLA_B]: authored("gondola-b"),
+  [PROP_GONDOLA_C]: authored("gondola-c"),
   [PROP_CART_CORRAL]: authored("cart-corral"),
   [PROP_WET_FLOOR]: authored("wet-floor"),
   [PROP_CEILING_LIGHT]: authored("ceiling-light-wide", { shadows: "none" }),

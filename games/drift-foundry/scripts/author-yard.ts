@@ -25,16 +25,18 @@ function add(id: string, kind: string, x: number, z: number, rotationY: number, 
 const clear = (x: number, z: number): boolean => kept.every((at) => at === undefined || Math.hypot(at.x - x, at.z - z) > 3.5);
 
 /** What lines the aisle in each section: snack gondolas, then frozen cases, then the tall bulk shelving. */
-const INNER = (z: number): string => (z < 150 ? "prop_gondola" : z < 300 ? "prop_freezer" : "prop_gondola_tall");
+const SNACKS = ["prop_gondola", "prop_gondola_b", "prop_gondola_c"];
+const INNER = (z: number, i: number): string => (z < 150 ? SNACKS[i % SNACKS.length]! : z < 300 ? "prop_freezer" : "prop_gondola_tall");
 /** The second course behind it, a block back: tall shelving with pallet stacks between. */
 const OUTER = ["prop_gondola_tall", "prop_gondola_tall", "prop_pallet_stack", "prop_gondola_tall"];
 
 /** Shelving runs: one unbroken course each side, long axis down the aisle, so no bare floor shows past the walkway. */
 let wall = 0;
 for (const side of [-1, 1]) {
-  for (let z = -30; z <= 490; z += 4.5) {
+  for (let z = -30, i = 0; z <= 490; z += 4.5, i += 1) {
     const x = side * 23.2;
-    if (clear(x, z)) add(`d04-${++wall}-inner`, "prop", x, z, 0, { catalogId: INNER(z) }, INNER(z));
+    const id = INNER(z, i + (side > 0 ? 1 : 0));
+    if (clear(x, z)) add(`d04-${++wall}-inner`, "prop", x, z, 0, { catalogId: id }, id);
   }
   for (let z = -24, i = 0; z <= 490; z += 9, i += 1) {
     const x = side * (32 + random() * 2);

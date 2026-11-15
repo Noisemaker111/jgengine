@@ -9,6 +9,9 @@ export const PROP_FREEZER = "prop_freezer";
 export const PROP_BOX_PILE = "prop_box_pile";
 export const PROP_GONDOLA = "prop_gondola";
 export const PROP_GONDOLA_TALL = "prop_gondola_tall";
+/** Two more snack gondolas in other packaging mixes, so a shelving run never repeats one face. */
+export const PROP_GONDOLA_B = "prop_gondola_b";
+export const PROP_GONDOLA_C = "prop_gondola_c";
 export const PROP_CART_CORRAL = "prop_cart_corral";
 export const PROP_WET_FLOOR = "prop_wet_floor";
 /** The fluorescent fixtures hung over the aisle and the giant hanging department signs. */
@@ -78,6 +81,8 @@ export const ZONE_PROP_IDS = [
   PROP_BOX_PILE,
   PROP_GONDOLA,
   PROP_GONDOLA_TALL,
+  PROP_GONDOLA_B,
+  PROP_GONDOLA_C,
   PROP_CART_CORRAL,
   PROP_WET_FLOOR,
 ] as const;

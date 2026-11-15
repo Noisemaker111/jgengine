@@ -29,7 +29,7 @@ describe("Aisle 9 ambient life", () => {
     expect(kinds.get("decal") ?? 0).toBeGreaterThan(30);
     const shelving = editorLayers.markers.filter((marker) => marker.id.startsWith("d04-"));
     expect(shelving.length).toBeGreaterThan(80);
-    expect(new Set(shelving.map((marker) => marker.catalogId))).toEqual(new Set(["prop_gondola", "prop_freezer", "prop_gondola_tall", "prop_pallet_stack"]));
+    expect(new Set(shelving.map((marker) => marker.catalogId))).toEqual(new Set(["prop_gondola", "prop_gondola_b", "prop_gondola_c", "prop_freezer", "prop_gondola_tall", "prop_pallet_stack"]));
   });
 
   test("the credits name the sky, the grade and both fonts", () => {
