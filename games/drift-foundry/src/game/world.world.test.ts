@@ -97,12 +97,13 @@ describe("drift-foundry world", () => {
     expect(summary.roads[0]!.length).toBeGreaterThan(EXIT_Z);
   });
 
-  test("every laid track has its own light and ground, and the slag and the flood are liquid", () => {
+  test("every department has its own light and ground, the juice flood and koi pond are liquid, and no rain falls indoors", () => {
     const laid = TRACKS.filter((track) => track !== AISLE_NINE_TRACK);
     const bands = world.kind === "environment" ? world.terrain?.biomeBands ?? [] : [];
     for (const track of laid) expect(bands.some((band) => band.z === track.def.bandZ && band.sky === track.def.sky)).toBe(true);
     expect(new Set(laid.map((track) => track.def.sky.horizonColor)).size).toBe(laid.length);
-    expect(bands.filter((band) => band.weather === "rain")).toHaveLength(1);
+    // Band weather follows the camera everywhere, so it would rain inside the store: no department sets it.
+    expect(bands.filter((band) => band.weather !== undefined)).toHaveLength(0);
     expect(summary.counts.water ?? (world.kind === "environment" ? [world.water].flat().length : 0)).toBe(laid.filter((track) => track.def.liquid !== undefined).length);
     // The terrain is the course's own grade: a kart on the smelter's top deck stands on it.
     const top = trackById("toy-aisle")!.point("main", 600);

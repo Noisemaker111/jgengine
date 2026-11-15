@@ -913,17 +913,21 @@ function withPadFlatten(
   };
 }
 
-/** Expands each `biomeBand.weather` into a full-width precipitation strip centered on the band's z, `fade`-deep. */
+/**
+ * Expands each `biomeBand.weather` into a precipitation volume centered on the band's z. The volume is
+ * camera-anchored, so it is sized to camera scale (at most {@link WEATHER_AREA_CAMERA_SCALE_HINT} per
+ * axis), not to the terrain's full width: a world-wide area only spread the drops thin.
+ */
 function bandWeatherDescriptors(
   terrainDescriptor: TerrainEnvironmentDescriptor | undefined,
 ): readonly WeatherEnvironmentDescriptor[] {
   const bands = terrainDescriptor?.biomeBands;
   if (bands === undefined || bands.length === 0) return [];
-  const width = terrainDescriptor!.bounds.w;
+  const width = Math.min(terrainDescriptor!.bounds.w, WEATHER_AREA_CAMERA_SCALE_HINT);
   const out: WeatherEnvironmentDescriptor[] = [];
   for (const band of bands) {
     if (band.weather === undefined) continue;
-    const area: EnvironmentArea = { w: width, d: band.fade ?? 64, h: 80 };
+    const area: EnvironmentArea = { w: width, d: Math.min(band.fade ?? 64, WEATHER_AREA_CAMERA_SCALE_HINT), h: 80 };
     const position: EnvironmentVec2 = [0, band.z];
     out.push(band.weather === "rain" ? rain({ area, position }) : snow({ area, position }));
   }

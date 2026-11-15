@@ -11,7 +11,7 @@ import { detour, straight, turn, type TrackDef } from "./types";
 export const GARDEN_CENTER: TrackDef = {
   id: "garden-center",
   label: "Garden Centre",
-  blurb: "Outdoors in the rain: down into the sunken nursery, through the mud and back up the lumber ramp. Wade the koi pond or take the path.",
+  blurb: "Outdoors after the rain: down into the sunken nursery, through the mud and back up the lumber ramp. Wade the koi pond or take the path.",
   origin: 60,
   start: { x: -300, z: -2150, heading: Math.PI / 2 },
   halfWidth: 10,
@@ -56,7 +56,6 @@ export const GARDEN_CENTER: TrackDef = {
   ground: { low: "#3f4a33", high: "#6f7a52", waterline: "#3c4a4c" },
   fog: { color: "#71807d", near: 40, far: 230 },
   sky: { horizonColor: "#8a9692", zenithColor: "#3a4448", sunIntensity: 1.0, ambientIntensity: 1.1 },
-  weather: "rain",
   baseLevel: 0,
   liquid: { level: -11.55, color: "#2f6a5e", waveHeight: 0.14, palette: { deep: "#0f2a26", foam: "#b9d3c4" } },
   rivalTake: { rival_twins: ["koi-pond"] },

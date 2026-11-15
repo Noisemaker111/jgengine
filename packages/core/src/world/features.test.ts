@@ -142,7 +142,7 @@ describe("world features", () => {
     });
   });
 
-  test("biomeBand weather expands into positioned strips alongside explicit weather", () => {
+  test("biomeBand weather expands into camera-scale positioned volumes alongside explicit weather, without the oversize warning", () => {
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     let world;
     try {
@@ -157,6 +157,7 @@ describe("world features", () => {
         }),
         weather: rain({ density: 0.9 }),
       });
+      expect(warn.mock.calls.filter((call) => String(call[0]).includes("far larger"))).toHaveLength(0);
     } finally {
       warn.mockRestore();
     }
@@ -165,11 +166,11 @@ describe("world features", () => {
     expect(world.weather![0]).toMatchObject({ kind: "rain", density: 0.9 });
     expect(world.weather![1]).toMatchObject({
       kind: "rain",
-      area: { w: 400, d: 50, h: 80, position: [0, -150] },
+      area: { w: 120, d: 50, h: 80, position: [0, -150] },
     });
     expect(world.weather![2]).toMatchObject({
       kind: "snow",
-      area: { w: 400, d: 64, h: 80, position: [0, 150] },
+      area: { w: 120, d: 64, h: 80, position: [0, 150] },
     });
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
