@@ -145,6 +145,9 @@ Genres: strategy. 0/17 proven · 17 missing.
   `packages/core/src/scene/` would replace `yardKinds.draw.tsx`.
 - A second lawn map: resolved by the engine scene set (`@jgengine/core/editor/sceneSet`); LAWN ORDER is
   its second adopter.
+
+## Milestones
+
 - [x] 1. Re-theme: castes, chambers, sugar/leaf, popsicle, procedural bodies, backyard scene.
 - [x] 2. Pheromone trails: hauling scent, the Pheromone Line verb, speed and harvest bonuses.
 - [x] 3. Yard hazards: sprinkler, mower, rain, night, magnifying-glass beam; HUD yard strip and night wash.

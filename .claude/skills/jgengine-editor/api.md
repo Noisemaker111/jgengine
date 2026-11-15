@@ -341,6 +341,16 @@
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
 
+## @jgengine/core/editor/sceneSet
+
+- `PlayableSceneSwitch` (interface): interface PlayableSceneSwitch<TPlayable> — A playable that can rebuild itself for each scene of a set: what the shell switches between.
+- `SceneSet` (interface): interface SceneSet<Id extends string = string, TDocument = unknown> { readonly ids: readonly Id[]; readonly defaultId: Id; entry(id: Id): SceneSetEntry<TDocument>; active(): Id; select(id: string): boolean; subscribe(listener: (id: Id) => void): () => void; next(id?: Id): Id; has(id: unknown): id is Id } — ⚠ undocumented · used by `withSceneSet`: Attach a scene set to a playable game: the shell mounts `build(set.active())` and, whenever `set.select` switches, remounts with `build(id)`…
+- `SceneSetEntry` (interface): interface SceneSetEntry<TDocument = unknown> — A game's set of authored scene documents (maps, levels, districts) and which one is live. A game that ships more than one `editor.scene.json`-style document declares them here once: each scene names its document, the file it lives in under the game's `src/` (so the editor CLI can load and save it with `--scene`), and a label. `select` switches the live scene and notifies subscribers; the shell answers by rebuilding the game for that scene (`withSceneSet`), so the scene, its terrain and everything the game derives from the document come up fresh without a page reload.
+- `SceneSetOptions` (interface): interface SceneSetOptions<Id extends string, TDocument> { scenes: Readonly<Record<Id, SceneSetEntry<TDocument>>>; defaultId: Id; initial?: string | null; storage?: SceneSetStorage<Id> } — ⚠ undocumented
+- `SceneSetStorage` (interface): interface SceneSetStorage<Id extends string> — Where the last choice is remembered between sessions (a browser's storage, a URL, a test map).
+- `createSceneSet` (function): function createSceneSet<Id extends string, TDocument = unknown>(options: SceneSetOptions<Id, TDocument>): SceneSet<Id, TDocument> — ⚠ undocumented
+- `withSceneSet` (function): function withSceneSet<TPlayable extends object>(set: SceneSet, build: (id: string) => TPlayable): TPlayable & { scenes: PlayableSceneSwitch<TPlayable> } — Attach a scene set to a playable game: the shell mounts `build(set.active())` and, whenever `set.select` switches, remounts with `build(id)`. Returns the playable for the live scene, carrying the switch under `scenes`.
+
 ## @jgengine/core/editor/simulation
 
 - `AuthoredEmitter` (interface): interface AuthoredEmitter — A named emitter authored in metres: either a library effect name or a full config.
@@ -767,7 +777,8 @@
 
 ## @jgengine/editor/mcp/cli
 
-- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; save: boolean; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `DEFAULT_SCENE_FILE` (const): const DEFAULT_SCENE_FILE: "editor.scene.json" — The scene document a game ships by default.
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; /** The scene document under the game's `src/`; `editor.scene.json` unless `--scene` names another. */ sceneFile: string; port: number; rpcSources: RpcPayloadSource[]; save: boolean; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
 - `SaveSceneResult` (type): type SaveSceneResult = { ok: true; saved: string; derivedSkipped: number } | { ok: false; error: string } — Result of a `--save` write-back: the path written and how many derived entries it left out, or why nothing was written.
 
 ## @jgengine/editor/mcp/fieldSpec
@@ -786,6 +797,7 @@
 - `LoadGameLayersResult` (type): type LoadGameLayersResult = | { ok: true; document: EditorDocument } | { ok: false; errors: EditorDocumentDiagnostic[] } — Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it.
 - `decodeGameLayers` (function): function decodeGameLayers(resolved: unknown): LoadGameLayersResult — Validates an already-resolved `editorLayers` export value (post module-load, post factory-call) against the editor document schema — the exact check {@link loadGameLayers} applies at the untrusted-input boundary between game-authored code and a live editor session.
 - `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> — Node-only: resolves a game's `editorLayers` export straight from games/<id>/src and validates its shape before it reaches a live editor session — the untrusted-input boundary between game-authored code and the engine.
+- `loadGameSceneFile` (function): function loadGameSceneFile(gameId: string, file: string): Promise<LoadGameLayersResult> — One of a game's other scene documents (a second map), read straight from `games/<id>/src/<file>` rather than through its `editorLayers` module, which names only the live scene.
 
 ## @jgengine/editor/mcp/rpcPayload
 

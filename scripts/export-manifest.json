@@ -338,6 +338,7 @@
     "./editor/modelNodeVisibility",
     "./editor/movementCatalog",
     "./editor/runtimeInspector",
+    "./editor/sceneSet",
     "./editor/simulation",
     "./editor/staticPrefab",
     "./editor/types",
