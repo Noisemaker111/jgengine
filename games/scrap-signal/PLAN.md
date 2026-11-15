@@ -182,7 +182,7 @@ Internal ids keep their earlier names (zone `rustflat_waste`, enemy `husk`, fami
 
 - A timed move-speed and attack-interval scale on an enemy (chilled by the extinguisher, dazzled by glitter) lives game-local in `src/game/combat/soak.ts`, read by the enemy attack step. One adopter; the second game that slows or blinds an enemy moves it into `packages/core/src/combat/` as a status modifier the AI reads.
 - Weapon voice lines (event → personality → rate-limited line) live game-local in `src/game/combat/personalityRuntime.ts`. The seam is a generic "barks" runtime (`packages/core/src/dialogue/`) keyed by event and speaker; the second game with talking items moves it upstream.
-- The world's terrain seed, ids and authored placements are still the old desert layout re-dressed: neighbourhood-scale suburban streets and houses are a pass through the editor (`editor.scene.json`), not done here.
+- The world's terrain seed, ids and authored placements are still the old layout re-dressed (grass ground, procedural pastel village houses and storefronts, re-skinned props): fences, driveways and cul-de-sacs are a pass through the editor (`editor.scene.json`), not done here. The terrain's shape stays as authored because the scene's props sit at heights measured on it.
 
 ## Milestones
 

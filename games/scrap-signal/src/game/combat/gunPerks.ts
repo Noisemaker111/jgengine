@@ -30,7 +30,7 @@ import { session } from "../session";
 import { lastPickupStore } from "../stores";
 import { zoneLevelAt } from "../world/sites";
 import { isFluxed, type GunHitMods, type HitOutcome } from "./hitModel";
-import { moodDamageFor, moodKill, moodReloadFor } from "./personalityRuntime";
+import { moodBoss, moodDamageFor, moodKill, moodReloadFor } from "./personalityRuntime";
 
 /**
  * Gun perks on the engine's triggered-rules seam. The engine owns matching, predicates, stacking,
@@ -406,6 +406,7 @@ export function registerPerks(ctx: GameContext): void {
     runtime.deathsThisHit?.add(event.instanceId);
     if (runtime.splashGun !== null) perkKill(ctx, runtime.splashGun.gun, runtime.splashGun.from, event.instanceId, false);
     dropBossLegendary(ctx, event);
+    moodBoss(ctx, event.catalogId);
   });
   // Dev-only capture affordance: hand the player a perked gun and a few husks to try it on, so a
   // capture can photograph the card and a proc without farming a boss. Never shipped.

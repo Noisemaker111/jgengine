@@ -260,7 +260,8 @@ export function buildAppliance(look: ApplianceLook, style: ApplianceStyle): Appl
       const body = p.mat("body", enamel(style.body ?? "#1f2a44", 0.35));
       p.add(new CylinderGeometry(0.08, 0.25, 1.2, 12), p.mat("stand", chrome("#9aa2ab")), [0, 0.6, 0]);
       p.add(new BoxGeometry(1.0, 0.75, 0.12), body, [0, 1.55, 0]);
-      const screen = p.mat("screen", led("#ffd84a", 1.2));
+      // A stern blue settings screen: the amber eyes have to read on it.
+      const screen = p.mat("screen", led("#2f5fb8", 0.9));
       blinkers.push(screen);
       p.add(new BoxGeometry(0.88, 0.62, 0.02), screen, [0, 1.55, 0.07]);
       p.add(new BoxGeometry(0.3, 0.4, 0.03), p.mat("clipboard", enamel("#c9a26b", 0.8)), [0.65, 1.1, 0.2], [0.2, -0.3, 0.1]);

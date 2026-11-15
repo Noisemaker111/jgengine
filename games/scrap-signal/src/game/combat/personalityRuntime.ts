@@ -10,6 +10,7 @@ import {
   gunById,
   isFreeShot,
   isReloading,
+  bossLine,
   junkCard,
   milestoneLine,
   magLoaded,
@@ -199,8 +200,17 @@ export function moodKill(ctx: GameContext, gun: GunDef, from: string): void {
   }
   gun.kills = (gun.kills ?? 0) + 1;
   const milestone = milestoneLine(id, gun.kills);
-  if (milestone !== null) runtime.milestone = { gunId: gun.id, line: milestone };
+  if (milestone !== null && runtime.milestone === null) runtime.milestone = { gunId: gun.id, line: milestone };
   else runtime.killBark = gun.id;
+}
+
+/** A boss fell to the player: the weapon in hand has something to say about it, over any other line. */
+export function moodBoss(ctx: GameContext, catalogId: string): void {
+  const boss = enemyById(catalogId);
+  const held = equippedGun();
+  const gun = held === null ? undefined : gunById(held);
+  if (boss?.family !== "boss" || gun === undefined) return;
+  moodsOf(ctx).milestone = { gunId: gun.id, line: bossLine(personalityOf(gun).id, boss.name) };
 }
 
 /** A weapon says hello when it is picked up; an heirloom tells its story instead. */

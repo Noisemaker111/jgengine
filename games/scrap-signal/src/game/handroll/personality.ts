@@ -247,6 +247,22 @@ const MILESTONE_LINES: Readonly<Record<PersonalityId, string>> = {
   competitive: "{n}! New personal best. Again.",
 };
 
+/** What each personality says over a boss it just helped bring down (`{boss}` is its name). */
+const BOSS_LINES: Readonly<Record<PersonalityId, string>> = {
+  grumpy: "{boss}. Down. Can I nap now?",
+  cheerful: "We did it! Bye-bye, {boss}! You were very scary!",
+  paranoid: "{boss} is down. Which means something worse is coming.",
+  dramatic: "And so falls {boss}! What a third act!",
+  philosophical: "Even {boss} was only an appliance, in the end.",
+  clingy: "We beat {boss} TOGETHER. That makes us official.",
+  competitive: "{boss}: zero. Me: everything.",
+};
+
+/** The line over a fallen boss. */
+export function bossLine(id: PersonalityId, boss: string): string {
+  return BOSS_LINES[id].replaceAll("{boss}", boss);
+}
+
 /** The line for reaching `kills`, or null when it is not a milestone. */
 export function milestoneLine(id: PersonalityId, kills: number): string | null {
   return KILL_MILESTONES.includes(kills) ? MILESTONE_LINES[id].replaceAll("{n}", String(kills)) : null;

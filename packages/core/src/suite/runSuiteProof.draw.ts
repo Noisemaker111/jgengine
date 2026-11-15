@@ -6,7 +6,7 @@ import { bootCaptureState } from "@jgengine/core/play/headlessFlow.draw";
 import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys.draw";
 import { createPlaySession } from "@jgengine/core/play/playSession.draw";
 import { aliasContext } from "@jgengine/core/runtime/contextIdentity";
-import { memorySaveBackend } from "@jgengine/core/save/saveStore";
+import { memorySaveBackend, type SaveTimers } from "@jgengine/core/save/saveStore";
 
 import { auditSuiteContent, type SuiteContent } from "./contentAudit";
 import type { SuiteProofResult, SuiteReport } from "./gameSuite";
@@ -51,10 +51,17 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   let gameCommands = new Set<string>();
   // The proof's own save store, in memory: what the game saves there outlives a restart, and nothing else does.
   const saves = memorySaveBackend();
+  // The world's trailing autosave runs on a wall-clock timer. It is the game's own code, so it runs as
+  // the window's owner: a slow machine that lets the timer elapse mid-play must not see it refused as
+  // proof code touching the closed setup window.
+  const saveTimers: SaveTimers = {
+    set: (handler, ms) => setTimeout(() => owner(handler), ms),
+    clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  };
   const openSession = () =>
     createPlaySession(game, {
       seed: options.seed ?? "suite",
-      save: { backend: saves },
+      save: { backend: saves, timers: saveTimers },
       onCommand: ({ name }) => {
         if (phase !== "play" || cheated !== null) return;
         if (session.ctx.game.commands.isCheat(name) || CHEAT_COMMAND_NAME.test(name) || !gameCommands.has(name)) cheated = name;

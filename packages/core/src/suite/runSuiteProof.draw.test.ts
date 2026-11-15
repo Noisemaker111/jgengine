@@ -81,6 +81,35 @@ describe("runSuiteProof", () => {
     expect(stray).toEqual([]);
   });
 
+  // Under load a proof's play outlasted the 3 s trailing autosave: the timer fired mid-play, read state
+  // setup had reached and threw SetupClosedError into the suite worker. The timer is the game's own code.
+  test("a game's autosave that fires during play runs as the game, not as proof code", async () => {
+    const stray: unknown[] = [];
+    const onError = (error: unknown) => stray.push(error);
+    process.on("uncaughtException", onError);
+    try {
+      const proof = defineProof(fixture(), {
+        proves: ["building.place-snap"],
+        setup(s) {
+          s.ctx.game.store.set("wood", 2);
+          s.ctx.game.store.set("kept", { from: s.ctx.player });
+        },
+        async play(p) {
+          await p.press("mouse0");
+          // Real time past the trailing autosave, as a slow machine spends it.
+          await new Promise((resolve) => setTimeout(resolve, 3200));
+          await p.act("craft");
+          await p.expect((r) => r.huts === 1, "a hut built from gathered wood");
+        },
+      });
+      const { report } = await runSuiteProof(proof);
+      expect(report.ok).toBe(true);
+      expect(stray).toEqual([]);
+    } finally {
+      process.off("uncaughtException", onError);
+    }
+  }, 10_000);
+
   test("setup may seed state directly; play proves through a key and the game's own command", async () => {
     const proof = defineProof(fixture(), {
       proves: ["building.place-snap"],

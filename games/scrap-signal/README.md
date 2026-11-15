@@ -63,8 +63,13 @@ Read from `src/game/{handroll,combat,characters,progression,quests,world,items}`
   the viewmodel builds each weapon from its parts with googly eyes (`src/game/world/junkModel.ts`);
   hedges, maples, driveway cars, moving boxes, curbside sofas, giant lawn flamingos, yard-sale signs and
   telephone poles dress the yards under a clear summer sky.
-- **Gap to target.** The ground plan is still the earlier layout re-dressed; houses, fences and
-  cul-de-sacs authored in the editor are the next pass (PLAN milestone 8).
+- **Talking junk, deeper.** A weapon keeps its career kills (on its card, and in the save) and says
+  a line at 10, 25, 50, 100, 250 and 500; the weapon in hand remarks on every boss it helps bring
+  down; an heirloom's pickup line is its backstory; a carried weapon (a jealous Clingy or Competitive
+  one first) has an opinion about every newcomer.
+- **Gap to target.** The ground plan is still the earlier layout re-dressed, with procedural pastel
+  houses and storefronts; fences, driveways and cul-de-sacs authored in the editor are the next pass
+  (PLAN milestone 8).
 
 Internal ids keep their earlier names (zones, enemies, families, rarities, NPCs) as the save, scene and
 proof identity; every player-facing name comes from display fields. `src/game/save.ts` maps guns

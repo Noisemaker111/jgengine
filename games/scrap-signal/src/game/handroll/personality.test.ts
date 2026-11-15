@@ -5,6 +5,7 @@ import { FAMILY_BASES, junkCard, mergeCost, mergeGuns, mergePlan, MANUFACTURERS,
 import {
   derivePersonality,
   isFreeShot,
+  bossLine,
   KILL_MILESTONES,
   milestoneLine,
   moodDamageScale,
@@ -75,6 +76,7 @@ describe("career kills", () => {
     for (const personality of PERSONALITIES) {
       for (const n of KILL_MILESTONES) expect(milestoneLine(personality.id, n)).toContain(String(n));
       expect(milestoneLine(personality.id, 11)).toBeNull();
+      expect(bossLine(personality.id, "Mother Router")).toContain("Mother Router");
     }
   });
 });
