@@ -1,9 +1,9 @@
 import { seededRng } from "@jgengine/core/random/rng";
 
 /** The seven tenant silhouettes, plus the generic shapes older households were generated with. */
-export type CreatureBodyShape = "blob" | "mist" | "insectoid" | "twin" | "rock" | "robot" | "balloon" | "tall" | "round";
+export type CreatureBodyShape = "blob" | "mist" | "insectoid" | "twin" | "rock" | "robot" | "balloon" | "jelly" | "orb" | "fungus" | "tall" | "round";
 
-export const BODY_SHAPES: readonly CreatureBodyShape[] = ["blob", "mist", "insectoid", "twin", "rock", "robot", "balloon", "tall", "round"];
+export const BODY_SHAPES: readonly CreatureBodyShape[] = ["blob", "mist", "insectoid", "twin", "rock", "robot", "balloon", "jelly", "orb", "fungus", "tall", "round"];
 /** The shapes the old procedural generator drew from. */
 const GENERATED_SHAPES: readonly CreatureBodyShape[] = ["blob", "tall", "round", "insectoid"];
 

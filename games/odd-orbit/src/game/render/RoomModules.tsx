@@ -55,8 +55,11 @@ function buildRoom(state: HouseholdState, room: RoomState, now: number, anims: A
   const { w, d } = BERTH_SIZE;
   const eff = effectiveRoom(houseView(state, now), room);
   const s = eff.settings;
-  const shell = new THREE.MeshStandardMaterial({ color: STATION.module, roughness: 0.5, metalness: 0.15 });
-  const trim = new THREE.MeshStandardMaterial({ color: STATION.trim, roughness: 0.4, metalness: 0.4 });
+  // Each module type reads at a glance: a suite in rose with gold trim, a capsule in mint, a bunker in gunmetal.
+  const kind = room.kind ?? "standard";
+  const shellColor = kind === "suite" ? "#ffd6e8" : kind === "capsule" ? "#d6f5e6" : kind === "bunker" ? "#8d88a8" : STATION.module;
+  const shell = new THREE.MeshStandardMaterial({ color: shellColor, roughness: 0.5, metalness: kind === "bunker" ? 0.5 : 0.15 });
+  const trim = new THREE.MeshStandardMaterial({ color: kind === "suite" ? "#e8b84a" : STATION.trim, roughness: 0.4, metalness: kind === "suite" ? 0.8 : 0.4 });
   const airTint = AIR_COLOR[s.atmosphere as Atmosphere];
   const floor = new THREE.MeshStandardMaterial({ color: airTint, roughness: 0.7, emissive: airTint, emissiveIntensity: 0.12 });
   const lightColor = LIGHT_COLOR[s.light as Light];
@@ -72,11 +75,11 @@ function buildRoom(state: HouseholdState, room: RoomState, now: number, anims: A
   const port = new THREE.Mesh(geo.torus, trim);
   port.scale.setScalar(0.48);
   port.position.set(0, 1.45, -d / 2 + 0.19);
-  g.add(port);
+  if (kind !== "bunker") g.add(port);
   const pane = new THREE.Mesh(geo.circle, glowMat);
   pane.scale.setScalar(0.44);
   pane.position.set(0, 1.45, -d / 2 + 0.18);
-  g.add(pane);
+  if (kind !== "bunker") g.add(pane);
   g.add(block(glowMat, [w * 0.6, 0.08, 0.16], [0, WALL_H + 0.15, -d / 2 + 0.3]));
   // Chunky retro rib on the back wall's crown, and a gasket ring when the room is sealed.
   g.add(block(trim, [w + 0.5, 0.22, 0.5], [0, WALL_H + 0.3, -d / 2]));
@@ -235,7 +238,7 @@ function signature(state: HouseholdState, now: number): string {
   const b = boardingOf(state);
   const rooms = b.rooms.map((r) => {
     const comfort = r.tenantId === null ? -1 : Math.floor(tenantComfort(state, r.tenantId, now).score / 5);
-    return `${r.slot}:${r.settings.atmosphere}${r.settings.gravity}${r.settings.climate}${r.settings.light}:${r.sealed ? 1 : 0}${r.shuttered ? 1 : 0}:${r.tenantId ?? "-"}:${comfort}`;
+    return `${r.slot}:${r.kind ?? ""}:${r.settings.atmosphere}${r.settings.gravity}${r.settings.climate}${r.settings.light}:${r.sealed ? 1 : 0}${r.shuttered ? 1 : 0}:${r.tenantId ?? "-"}:${comfort}`;
   });
   return `${rooms.join("|")}#${b.flareUntil > now ? "F" : ""}#${Object.keys(b.noisyUntil).length}#${b.applicant?.species ?? ""}`;
 }

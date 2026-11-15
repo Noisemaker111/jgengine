@@ -25,7 +25,7 @@ import {
   setRoomSetting, shutterRoom, tuneRoom,
 } from "./boarding/boarding";
 import { ATMOSPHERES, CLIMATES, GRAVITIES, LIGHTS, quoted, SPECIES } from "./boarding/species";
-import type { RoomFactor } from "./boarding/rooms";
+import { MODULE_KIND, MODULE_KINDS, type ModuleKind, type RoomFactor } from "./boarding/rooms";
 import { spawnTenantBody } from "./sim/setup";
 import { berthAt, focusRoom } from "./boarding/feeds";
 
@@ -626,8 +626,11 @@ function registerBoardingCommands(ctx: GameContext): void {
       }, (s) => `${s.members[id]?.name ?? "A tenant"} moved into room ${slot + 1}.`);
     },
   });
-  ctx.game.commands.define<{ slot: number }>("room.buy", {
-    apply(gameCtx, { slot }) { edit(gameCtx, (s) => buyModule(s, slot), `A new module docked at berth ${slot + 1}. VACANCY.`); },
+  ctx.game.commands.define<{ slot: number; kind?: ModuleKind }>("room.buy", {
+    apply(gameCtx, { slot, kind }) {
+      const chosen: ModuleKind = kind !== undefined && (MODULE_KINDS as readonly string[]).includes(kind) ? kind : "standard";
+      edit(gameCtx, (s) => buyModule(s, slot, chosen), `A ${MODULE_KIND[chosen].name.toLowerCase()} docked at berth ${slot + 1}. VACANCY.`);
+    },
   });
   ctx.game.commands.define<{ amount: number }>("deed.pay", {
     apply(gameCtx, { amount }) {

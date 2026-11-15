@@ -18,7 +18,7 @@ export type Climate = (typeof CLIMATES)[number];
 export const LIGHTS = ["dark", "dim", "bright"] as const;
 export type Light = (typeof LIGHTS)[number];
 
-export const SPECIES_IDS = ["glorp", "fog", "krrt", "twins", "basalt", "pip", "velvet"] as const;
+export const SPECIES_IDS = ["glorp", "fog", "krrt", "twins", "basalt", "pip", "velvet", "lumen", "mote", "aunt"] as const;
 export type SpeciesId = (typeof SPECIES_IDS)[number];
 
 /** How strongly a mismatch on one factor hurts, in comfort points. */
@@ -57,7 +57,17 @@ export interface SpeciesDef {
     noise: number;
     /** Warms (+1) or chills (-1) the rooms beside theirs. */
     heat?: number;
+    /** Glows: the rooms beside theirs are a step brighter unless shuttered. */
+    glow?: boolean;
+    /** A gravity well: the rooms beside theirs are a step heavier, and no wall stops it. */
+    pull?: boolean;
+    /** Spores through unsealed walls: breathers next door sneeze unless they are fungal too. */
+    spores?: boolean;
   };
+  /** Shares mushrooms: a ration in the galley every rent night. */
+  growsFood?: number;
+  /** Does not mind spores (they are family). */
+  fungal?: boolean;
   /** A star review counts this many times in the station's reputation. */
   reviewWeight: number;
   /** Rooms are hers; walls are a suggestion. Sister Fog's absorption reaches the neighbours too. */
@@ -210,6 +220,57 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
       moveOut: "I am leaving, darling, and I am telling everyone.",
     },
   },
+  lumen: {
+    id: "lumen", name: "Lumen", title: "Bioluminescent jelly · glows through the walls · shy as a moth",
+    bodyPlan: plan("jelly", 1, 8, 2, 172, 0.95, 0.9), traits: ["playful", "kind"], lifestyle: "bloom", post: "Botanist",
+    rent: 38, checks: 1,
+    air: { likes: ["oxygen", "methane"], penalty: 40 }, gravity: { likes: ["low", "standard"], penalty: 15 },
+    climate: { likes: ["temperate", "cold"], tolerates: ["hot"], penalty: 12 }, light: { likes: ["dark"], tolerates: ["dim"], penalty: 22 },
+    quiet: 2, noisePenalty: 9, emits: { noise: 0, glow: true }, reviewWeight: 1,
+    lines: {
+      greet: "Oh! Sorry. I'll dim myself. I can't, actually, but I'll try.",
+      happy: ["In the dark I look like a tiny festival. Thank you for the dark.", "I glowed pink when Pip-9 said good morning. Don't tell anyone.", "My room is a lantern and I am the candle. Cosy."],
+      unhappy: ["Too bright to sleep and too bright to hide. A bad combination.", "I keep flickering. That's how you know I'm upset."],
+      complaint: { air: "The air's wrong. My bell won't fill.", gravity: "I'm pooling on the floor. Jellies shouldn't pool.", climate: "I'm wilting at the edges in this heat.", light: "I can't sleep in light. I can't even see my own glow.", noise: "Too loud. My tendrils curl up.", leak: "Something's seeping in. It makes me fizz." },
+      interview: ["Oxygen, or a little swamp. I'm easy.", "Dark, please. Very dark. I bring my own light.", "I glow. Through walls. Your night-shift neighbours might want shutters."],
+      rejected: "That's alright. I'm used to people squinting.",
+      moveOut: "I'm off to find a darker corner of the galaxy. Glow well.",
+    },
+  },
+  mote: {
+    id: "mote", name: "Mote", title: "A tiny, terribly dense being · bends the floor next door",
+    bodyPlan: plan("orb", 0.75, 2, 1, 40, 1.1, 0.4), traits: ["industrious", "serene"], lifestyle: "yield", post: "Signal-keeper",
+    rent: 34, checks: 1,
+    air: { likes: ["vacuum", "oxygen", "methane"], penalty: 0 }, gravity: { likes: ["heavy"], tolerates: ["standard"], penalty: 25 },
+    climate: { likes: ["cold", "temperate"], tolerates: ["hot"], penalty: 10 }, light: { likes: ["dim", "bright"], tolerates: ["dark"], penalty: 8 },
+    quiet: 3, noisePenalty: 6, emits: { noise: 1, pull: true }, reviewWeight: 1,
+    lines: {
+      greet: "Hello. Don't drop anything near me. It won't come back.",
+      happy: ["The floor sags just right. Like a hammock made of physics.", "I attracted three spoons and a friend today.", "Heavy room, light heart."],
+      unhappy: ["I'm floating. I'm not built for floating. I'm built for sinking.", "Everything keeps drifting away from me. Socially, too."],
+      complaint: { air: "", gravity: "Not enough pull in here. I feel like a balloon.", climate: "Too hot. My core ticks.", light: "Can't see my orbiting crumbs.", noise: "Loud. It shakes my orbit.", leak: "" },
+      interview: ["Anything. Nothing. I'm not fussy about air.", "Heavy gravity, mild, a lamp on.", "I pull. The rooms next to mine get heavier. Floaters hate me. Rocks love me."],
+      rejected: "Fine. I'll collapse in on myself somewhere else.",
+      moveOut: "I'm leaving. The house is lighter already.",
+    },
+  },
+  aunt: {
+    id: "aunt", name: "Auntie Spore", title: "A fungal matriarch · shares mushrooms, sheds spores",
+    bodyPlan: plan("fungus", 1.2, 2, 3, 22, 0.9, 0.5), traits: ["kind", "thrifty"], lifestyle: "bloom", post: "Forager",
+    rent: 32, checks: 1, growsFood: 1, fungal: true,
+    air: { likes: ["methane", "oxygen"], penalty: 35 }, gravity: { likes: ["standard", "heavy"], penalty: 12 },
+    climate: { likes: ["temperate", "hot"], penalty: 12 }, light: { likes: ["dark", "dim"], tolerates: ["bright"], penalty: 14 },
+    quiet: 3, noisePenalty: 7, emits: { noise: 1, spores: true }, reviewWeight: 1,
+    lines: {
+      greet: "Come here, let me look at you. You're too thin. Have a mushroom.",
+      happy: ["I've left mushrooms in the galley. Eat them before they eat you. Joking.", "Damp, dim and full of gossip. Perfect.", "My caps are coming in lovely this week."],
+      unhappy: ["My gills are drying out, dear. This won't do.", "Nobody's eating my mushrooms. I'm wounded."],
+      complaint: { air: "This air's thin as gruel.", gravity: "Floaty. My stem doesn't like floaty.", climate: "Too cold. My spores won't settle.", light: "Glaring. I'm a mushroom, not a sunflower.", noise: "Such a racket! I can't hear myself grow.", leak: "Something's sneaking in. Not spores. I'd know." },
+      interview: ["Swampy or plain, as long as it's damp.", "Warm, dim, a bit musty. Like a good cellar.", "I shed a little. Spores. The neighbours might sneeze. I'll leave mushrooms in the galley every night to make up for it."],
+      rejected: "Your loss, petal. I make a lovely stew.",
+      moveOut: "I'm off. I've left a few spores behind to remember me by.",
+    },
+  },
 };
 
 /** A tenant's line in speech marks, unless it already carries its own (the Twins quote each head). */
@@ -228,13 +289,13 @@ export function isSpeciesId(value: unknown): value is SpeciesId {
 /** The four tenants who live here when the house opens; the rest arrive at the airlock. */
 export const STARTING_TENANTS: readonly SpeciesId[] = ["krrt", "glorp", "fog", "pip"];
 /** Who may knock at the airlock, in the order the house first hears of them. */
-export const APPLICANT_ORDER: readonly SpeciesId[] = ["twins", "velvet", "basalt", "glorp", "krrt", "fog", "pip"];
+export const APPLICANT_ORDER: readonly SpeciesId[] = ["twins", "lumen", "velvet", "mote", "basalt", "aunt", "glorp", "krrt", "fog", "pip"];
 
 /**
  * The station reputation an applicant waits for before they will even buzz: an aristocrat only
  * applies to a house people talk about, and a rock that pays a century up front wants proof it will
  * still be here.
  */
-export const APPLY_REPUTATION: Partial<Record<SpeciesId, number>> = { velvet: 38, basalt: 52 };
+export const APPLY_REPUTATION: Partial<Record<SpeciesId, number>> = { lumen: 20, velvet: 38, mote: 45, basalt: 52, aunt: 58 };
 /** Tenants who moved out will give the house another try once its name is good enough. */
 export const RETURN_REPUTATION = 68;

@@ -16,6 +16,17 @@ import {
 } from "../boarding/rooms";
 import { ATMOSPHERES, CLIMATES, GRAVITIES, INTERVIEW_QUESTIONS, LIGHTS, quoted, SPECIES } from "../boarding/species";
 import { householdStore } from "../session/store";
+import { MODULE_KIND, MODULE_KINDS } from "../boarding/rooms";
+import { COUNCIL } from "../boarding/boarding";
+import type { StoryState } from "../boarding/stories";
+
+/** One line per life story in progress, for the Rooms plan. */
+function storyLine(state: HouseholdState, id: string, story: StoryState): string {
+  const partner = story.partner === undefined ? "someone" : state.members[story.partner]?.name ?? "someone";
+  if (story.arc === "career") return story.beat >= 2 ? "has the dock job (pays a quarter more)" : "is chasing a job on the docks";
+  if (story.arc === "romance") return story.beat >= 1 ? `is with ${partner} — keep them next door` : `is sweet on ${partner}`;
+  return `is having a hard week — comfort 70+ by tomorrow night`;
+}
 import type { HouseholdState } from "../session/types";
 import { ENAMEL, Fine, Heading, Icon, INK, Paper, Plate, RIM, Row, Swatch, Tag, Text, WARN, creditsText } from "./kit";
 
@@ -54,6 +65,8 @@ function plan(state: HouseholdState, now: number) {
     next: nextModulePrice(state), deed: Math.round(boarding.deedOwed), deedPaid: deedPaid(state),
     tenants: state.order.map((id) => ({ id, name: state.members[id]!.name, slot: roomOf(state, id)?.slot ?? null })),
     reviews: boarding.reviews.map((r) => ({ ...r })),
+    council: { nights: boarding.councilNights ?? 0, seat: boarding.councilSeat === true },
+    stories: Object.entries(boarding.stories ?? {}).filter(([id]) => state.members[id] !== undefined).map(([id, story]) => ({ id, name: state.members[id]!.name, line: storyLine(state, id, story) })),
   };
 }
 
@@ -94,10 +107,13 @@ export function RoomsPanel() {
     {view.fixtures.length > 0 ? <Row gap={6} padding={[2, 0, 2, 0]}>{view.fixtures.map((f) => <Row key={f.id} gap={4}><Swatch plan={f.plan} size={24} /><Fine size={12} color={WARN}>{`${f.name} has no room — in the broom cupboard`}</Fine></Row>)}</Row> : null}
     {cell.built ? <RoomCard cell={cell} view={view} run={run} /> : <RuneView gap={6}>
       <Heading size={17}>{`Berth ${chosen + 1}: open dock`}</Heading>
-      <Fine>{`The next module costs ${view.next.price} credits and the station wants ${view.next.reputation} reputation first. Each module adds a nightly docking draw.`}</Fine>
-      <Plate tone="butter" disabled={cell.blocked !== null} onPress={run("room.buy", { slot: chosen })}><Icon name="hammer" size={16} /><Text weight={700}>{`Dock a module · ${view.next.price} credits`}</Text></Plate>
-      {cell.blocked !== null ? <Fine color={WARN}>{cell.blocked}</Fine> : null}
+      <Fine>{`The next berth costs ${view.next.price} credits for a standard module, and the station wants ${view.next.reputation} reputation first. Each module adds a nightly docking draw. Pick what kind to dock:`}</Fine>
+      {MODULE_KINDS.map((kind) => { const def = MODULE_KIND[kind]; const price = Math.round(view.next.price * def.price); const blocked = view.reputation < view.next.reputation ? `The station wants ${view.next.reputation} reputation` : view.credits < price ? `Needs ${price} credits` : null;
+        return <Plate key={kind} tone={kind === "suite" ? "pink" : kind === "capsule" ? "mint" : kind === "bunker" ? "sky" : "butter"} disabled={blocked !== null} layout="stack" gap={1} items="start" onPress={run("room.buy", { slot: chosen, kind })}>
+          <Text weight={700} size={14}>{`${def.name} · ${price} credits`}</Text><Fine size={12}>{blocked ?? def.blurb}</Fine>
+        </Plate>; })}
     </RuneView>}
+    {view.stories.length > 0 ? <><Heading size={16} padding={[8, 0, 0, 0]}>Life in the house</Heading>{view.stories.map((s) => <Fine key={s.id} size={12}>{`${s.name}: ${s.line}`}</Fine>)}</> : null}
     <Heading size={16} padding={[8, 0, 0, 0]}>Latest reviews</Heading>
     {view.reviews.length === 0 ? <Fine>No reviews yet. Tenants write them on rent night.</Fine> : view.reviews.map((r, i) => <RuneView key={`${r.day}-${r.tenantId}-${i}`} gap={0}>
       <Row gap={4}><Text size={13} weight={700}>{r.name}</Text><Text size={13} color="#c2477f">{"★".repeat(r.stars) + "☆".repeat(5 - r.stars)}</Text></Row>
@@ -105,7 +121,11 @@ export function RoomsPanel() {
     </RuneView>)}
     <Heading size={16} padding={[8, 0, 0, 0]}>The station section</Heading>
     {view.deedPaid
-      ? <Text>The section is yours outright. No docking fee is ever charged again.</Text>
+      ? <>
+        <Text>The section is yours outright. No docking fee is ever charged again.</Text>
+        <Heading size={16} padding={[8, 0, 0, 0]}>The Station Council</Heading>
+        <Fine>{view.council.seat ? "You sit on the Station Council. The tenants made you a sash." : `A seat on the council goes to a house with reputation ${COUNCIL.reputation}+ and ${COUNCIL.tenants} tenants with a door, ${COUNCIL.nights} rent nights running. Tonight: ${view.council.nights} of ${COUNCIL.nights}.`}</Fine>
+      </>
       : <>
         <Fine>{`The deed to this slice of the station: ${creditsText(view.deed)} credits still owed. Pay it off and the nightly docking fee stops for good.`}</Fine>
         <Row gap={6}>

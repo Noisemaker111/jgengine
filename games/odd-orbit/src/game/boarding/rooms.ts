@@ -1,5 +1,5 @@
 import {
-  CLIMATES, SPECIES, type Atmosphere, type Climate, type FactorWant, type Gravity, type Light, type SpeciesDef, type SpeciesId,
+  CLIMATES, GRAVITIES, LIGHTS, SPECIES, type Atmosphere, type Climate, type FactorWant, type Gravity, type Light, type SpeciesDef, type SpeciesId,
 } from "./species";
 
 /**
@@ -34,6 +34,34 @@ export interface RoomState {
   /** Flare shutters: a solar flare does not reach this room. */
   shuttered: boolean;
   tenantId: string | null;
+  /** What sort of module this is; absent means standard (and every room from before module types). */
+  kind?: ModuleKind;
+}
+
+/** The modules the station will dock, each a different bargain. */
+export const MODULE_KINDS = ["standard", "suite", "capsule", "bunker"] as const;
+export type ModuleKind = (typeof MODULE_KINDS)[number];
+export interface ModuleKindDef {
+  id: ModuleKind;
+  name: string;
+  blurb: string;
+  /** Multiplier on the berth's price. */
+  price: number;
+  /** Multiplier on the tenant's cheque. */
+  rent: number;
+  /** Extra nightly draw on top of the module fee. */
+  running: number;
+  /** Comfort added (or taken) for the module itself. */
+  comfort: number;
+}
+export const MODULE_KIND: Record<ModuleKind, ModuleKindDef> = {
+  standard: { id: "standard", name: "Standard module", blurb: "The plain berth. Nothing to love, nothing to hate.", price: 1, rent: 1, running: 0, comfort: 0 },
+  suite: { id: "suite", name: "Luxury suite", blurb: "Velvet curtains and a bigger porthole: comfort +10 and rent ×1.4, but it draws 12 more a night.", price: 1.5, rent: 1.4, running: 12, comfort: 10 },
+  capsule: { id: "capsule", name: "Capsule pod", blurb: "Cheap and cheerful: costs 60%, rent ×0.75, and the walls are so thin the neighbours sound half as loud again.", price: 0.6, rent: 0.75, running: -4, comfort: 0 },
+  bunker: { id: "bunker", name: "Shielded bunker", blurb: "Sealed and shuttered from the start: nothing leaks or flares in. No porthole, so comfort -6.", price: 1.25, rent: 1, running: 6, comfort: -6 },
+};
+export function moduleKindOf(room: Pick<RoomState, "kind">): ModuleKindDef {
+  return MODULE_KIND[room.kind ?? "standard"];
 }
 
 export const DEFAULT_SETTINGS: RoomSettings = { atmosphere: "oxygen", gravity: "standard", climate: "temperate", light: "dim" };
@@ -50,7 +78,7 @@ export const MODULE_REPUTATION = [0, 0, 0, 0, 30, 45, 60, 75] as const;
 /** Nightly running cost of one room: the module's docking fee plus what its settings draw. */
 export function roomRunningCost(room: RoomState): number {
   const s = room.settings;
-  return 22
+  return 22 + moduleKindOf(room).running
     + (s.gravity === "standard" ? 0 : 4)
     + (s.climate === "temperate" ? 0 : 2)
     + (s.atmosphere === "methane" ? 2 : 0);
@@ -99,7 +127,9 @@ export interface EffectiveRoom {
   /** Air seeping in from the other side of a wall that this room does not have. */
   leakIn: Atmosphere[];
   /** Neighbours whose output reaches this room (for blame in the comfort lines). */
-  sources: { tenantId: string; what: "leak" | "noise" | "heat" | "chill" }[];
+  sources: { tenantId: string; what: "leak" | "noise" | "heat" | "chill" | "glow" | "pull" | "spores" }[];
+  /** Spores drifting in from a fungal neighbour. */
+  spores?: boolean;
 }
 
 const NOISE_WORDS = ["silent", "quiet", "chatter", "loud", "racket"] as const;
@@ -121,6 +151,9 @@ export function effectiveRoom(house: HouseView, room: RoomState): EffectiveRoom 
   // A tenant does not keep itself awake: only what eats noise counts in its own room.
   let noise = own === null ? 0 : Math.min(0, SPECIES[own].emits.noise);
   let heat = 0;
+  let glow = 0;
+  let pull = 0;
+  let spores = false;
   for (const n of neighboursOf(house.rooms, room)) {
     const nSpecies = n.tenantId === null ? null : house.speciesOf(n.tenantId);
     if (nSpecies !== null) {
@@ -130,6 +163,12 @@ export function effectiveRoom(house: HouseView, room: RoomState): EffectiveRoom 
       } else if (def.emits.noise < 0 && def.driftsThroughWalls) {
         noise += def.emits.noise * 0.5;
       }
+      if (def.emits.glow === true && !room.shuttered) { glow = 1; sources.push({ tenantId: n.tenantId!, what: "glow" }); }
+      if (def.emits.pull === true) { pull = 1; sources.push({ tenantId: n.tenantId!, what: "pull" }); }
+      if (def.emits.spores === true && !room.sealed && !n.sealed) { spores = true; sources.push({ tenantId: n.tenantId!, what: "spores" }); }
+      if (def.emits.glow === true && !room.shuttered) { glow = 1; sources.push({ tenantId: n.tenantId!, what: "glow" }); }
+      if (def.emits.pull === true) { pull = 1; sources.push({ tenantId: n.tenantId!, what: "pull" }); }
+      if (def.emits.spores === true && !room.sealed && !n.sealed) { spores = true; sources.push({ tenantId: n.tenantId!, what: "spores" }); }
       if (def.emits.heat !== undefined && def.emits.heat !== 0 && !room.sealed) {
         heat += def.emits.heat;
         sources.push({ tenantId: n.tenantId!, what: def.emits.heat > 0 ? "heat" : "chill" });
@@ -147,11 +186,15 @@ export function effectiveRoom(house: HouseView, room: RoomState): EffectiveRoom 
     heat += 1;
   }
   settings.climate = shiftClimate(settings.climate, Math.max(-1, Math.min(1, heat)));
-  return { settings, noise: Math.max(0, Math.min(4, Math.round(noise * 2) / 2)), leakIn, sources };
+  if (glow > 0) settings.light = LIGHTS[Math.min(LIGHTS.length - 1, LIGHTS.indexOf(settings.light) + 1)]!;
+  if (pull > 0) settings.gravity = GRAVITIES[Math.min(GRAVITIES.length - 1, GRAVITIES.indexOf(settings.gravity) + 1)]!;
+  // Capsule modules have thin walls: everything next door is half as loud again.
+  if (room.kind === "capsule") noise *= 1.5;
+  return { settings, noise: Math.max(0, Math.min(4, Math.round(noise * 2) / 2)), leakIn, sources, spores };
 }
 
 export interface ComfortReason {
-  factor: RoomFactor | "noise" | "leak";
+  factor: RoomFactor | "noise" | "leak" | "spores" | "module";
   penalty: number;
   text: string;
 }
@@ -183,6 +226,8 @@ export function comfortIn(species: SpeciesDef, room: EffectiveRoom): Comfort {
   // A whiff of the wrong air through the wall: a breather minds it, a rock or a robot does not.
   const badLeak = room.leakIn.some((air) => !species.air.likes.includes(air) && species.air.penalty > 0);
   if (badLeak) add("leak", Math.round(species.air.penalty * 0.4), species.lines.complaint.leak);
+  if (room.spores === true && species.fungal !== true && species.air.penalty > 0) add("spores", 12, "Achoo! Something mushroomy is drifting through the wall.");
+  if (room.spores === true && species.fungal !== true && species.air.penalty > 0) add("spores", 12, "Achoo! Something mushroomy is drifting through the wall.");
   const total = reasons.reduce((sum, r) => sum + r.penalty, 0);
   const score = Math.max(0, Math.min(100, 100 - total));
   if (species.secondHeadLight === undefined) return { score, reasons };

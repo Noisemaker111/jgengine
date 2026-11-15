@@ -20,6 +20,7 @@ import {
   advanceApplicants, advanceBarks, driftNeighbours, expireBoarding, roomOf, settleBoardingNight, tenantComfort,
 } from "../boarding/boarding";
 import { AIRLOCK, BERTH_SIZE, berthPose } from "../boarding/layout";
+import { advanceStories } from "../boarding/stories";
 import {
   bloomHarvestIn, careerView, MASTERY_LABEL, rungProgressIn, STATION_NAME,
   yieldRateIn, type CareerView,
@@ -202,6 +203,7 @@ function stepHousehold(ctx: GameContext, dt: number, now: number): void {
   if (Math.floor(now / DAY_LENGTH) > state.day && state.economy.cursors["upkeep"]!.nextDueSeconds <= now) {
     const night = settleBoardingNight(state, now, ctx.game.notices);
     for (const id of night.movedOut) ctx.scene.entity.despawn(id);
+    advanceStories(state, now, ctx.game.notices);
   }
   const view = careerView(state);
   if (Math.floor(now / DAY_LENGTH) > state.day) {

@@ -270,6 +270,85 @@ function velvet(plan: AlienBodyPlan): Rig {
   };
 }
 
+function lumen(plan: AlienBodyPlan): Rig {
+  const root = new THREE.Group();
+  const bell = mat(bodyColor(plan, 70), { transparent: true, opacity: 0.7, roughness: 0.1, emissive: bodyColor(plan, 60), emissiveIntensity: 1.1 });
+  const core = mat("#fff6d8", { emissive: "#ffe9a8", emissiveIntensity: 1.6 });
+  const body = new THREE.Group();
+  body.position.y = 1.0;
+  const dome = mesh(GEO.sphere, bell, [0.5, 0.42, 0.5]);
+  body.add(dome);
+  body.add(mesh(GEO.sphere, core, [0.16, 0.16, 0.16], [0, 0.05, 0]));
+  body.add(eye(0.07, [-0.14, 0.12, 0.42]), eye(0.07, [0.14, 0.12, 0.42]));
+  const tendrils: THREE.Mesh[] = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const t = mesh(GEO.cyl, bell, [0.025, 0.7, 0.025], [Math.cos(a) * 0.32, -0.45, Math.sin(a) * 0.32]);
+    tendrils.push(t);
+    body.add(t);
+  }
+  root.add(body);
+  return {
+    root, glow: [bell],
+    animate(t) {
+      const pulse = Math.sin(t * 1.8);
+      dome.scale.set(0.5 + pulse * 0.04, 0.42 - pulse * 0.05, 0.5 + pulse * 0.04);
+      body.position.y = 1.0 + Math.sin(t * 0.9) * 0.08;
+      bell.emissiveIntensity = 0.9 + (pulse + 1) * 0.3;
+      tendrils.forEach((m, i) => { m.rotation.x = Math.sin(t * 2 + i) * 0.2; m.rotation.z = Math.cos(t * 1.7 + i) * 0.2; });
+    },
+  };
+}
+
+function mote(plan: AlienBodyPlan): Rig {
+  const root = new THREE.Group();
+  const dense = mat(bodyColor(plan, 22), { metalness: 0.6, roughness: 0.25 });
+  const ringMat = mat(bodyColor(plan, 70), { emissive: bodyColor(plan, 55), emissiveIntensity: 0.6 });
+  const ball = mesh(GEO.sphere, dense, [0.32, 0.32, 0.32], [0, 0.42, 0]);
+  root.add(ball);
+  root.add(eye(0.1, [0, 0.5, 0.27]));
+  const rings: THREE.Mesh[] = [];
+  for (let i = 0; i < 2; i++) {
+    const ring = mesh(GEO.torus, ringMat, [0.55 + i * 0.15, 0.55 + i * 0.15, 0.55 + i * 0.15], [0, 0.42, 0]);
+    ring.rotation.x = Math.PI / 2 + i * 0.5;
+    rings.push(ring);
+    root.add(ring);
+  }
+  const crumbs: THREE.Mesh[] = [];
+  for (let i = 0; i < 3; i++) { const c = mesh(GEO.lowSphere, ringMat, [0.06, 0.06, 0.06]); crumbs.push(c); root.add(c); }
+  return {
+    root, glow: [ringMat],
+    animate(t) {
+      rings.forEach((r, i) => { r.rotation.z = t * (0.6 + i * 0.4); });
+      crumbs.forEach((c, i) => { const a = t * (1.2 + i * 0.3) + i * 2; c.position.set(Math.cos(a) * 0.75, 0.42 + Math.sin(a * 1.3) * 0.15, Math.sin(a) * 0.75); });
+    },
+  };
+}
+
+function aunt(plan: AlienBodyPlan): Rig {
+  const root = new THREE.Group();
+  const stem = mat("#f4e6cf", { roughness: 0.8 });
+  const cap = mat(bodyColor(plan, 48), { roughness: 0.6 });
+  const dot = mat("#fff6e4", { roughness: 0.7 });
+  root.add(mesh(GEO.cyl, stem, [0.26, 0.8, 0.26], [0, 0.4, 0]));
+  root.add(eye(0.07, [-0.11, 0.55, 0.24]), eye(0.07, [0.11, 0.55, 0.24]), eye(0.06, [0, 0.68, 0.24]));
+  const top = new THREE.Group();
+  top.position.y = 0.95;
+  top.add(mesh(GEO.sphere, cap, [0.62, 0.32, 0.62]));
+  for (let i = 0; i < 6; i++) { const a = i * 1.05; top.add(mesh(GEO.lowSphere, dot, [0.07, 0.04, 0.07], [Math.cos(a) * 0.38, 0.2, Math.sin(a) * 0.38])); }
+  root.add(top);
+  const spores: THREE.Mesh[] = [];
+  const sporeMat = mat("#e8ffb0", { transparent: true, opacity: 0.6, emissive: "#c9ec5f", emissiveIntensity: 0.5 });
+  for (let i = 0; i < 5; i++) { const s = mesh(GEO.lowSphere, sporeMat, [0.035, 0.035, 0.035]); s.castShadow = false; spores.push(s); root.add(s); }
+  return {
+    root, glow: [cap],
+    animate(t) {
+      top.rotation.z = Math.sin(t * 0.8) * 0.06;
+      spores.forEach((s, i) => { const k = (t * 0.25 + i * 0.2) % 1; s.position.set(Math.sin(i * 2.3) * 0.5, 1.1 + k * 1.2, Math.cos(i * 1.9) * 0.5); });
+    },
+  };
+}
+
 function generic(plan: AlienBodyPlan): Rig {
   const root = new THREE.Group();
   const skin = mat(bodyColor(plan, 64));
@@ -279,7 +358,8 @@ function generic(plan: AlienBodyPlan): Rig {
 }
 
 const BUILDERS: Record<CreatureBodyShape, (plan: AlienBodyPlan) => Rig> = {
-  blob: glorp, mist: fog, insectoid: krrt, twin: twins, rock: basalt, robot: pip, balloon: velvet, tall: generic, round: generic,
+  blob: glorp, mist: fog, insectoid: krrt, twin: twins, rock: basalt, robot: pip, balloon: velvet,
+  jelly: lumen, orb: mote, fungus: aunt, tall: generic, round: generic,
 };
 
 export function buildTenantRig(plan: AlienBodyPlan): Rig {

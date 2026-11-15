@@ -85,6 +85,8 @@ export const game = defineGame({
       "term-review": ["orbit.new", { name: "household.stage", input: { mode: "review" } }],
       // The first applicant waiting in the corridor, buzzer slip up.
       airlock: ["orbit.new", { name: "household.stage", input: { mode: "airlock" } }],
+      // A late house: all eight berths, every module type, the newer species moved in.
+      showcase: ["orbit.new", { name: "household.stage", input: { mode: "showcase" } }],
     },
     probe: (ctx) => {
       const state = householdStore.read(ctx);

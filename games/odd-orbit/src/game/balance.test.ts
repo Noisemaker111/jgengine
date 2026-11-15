@@ -68,6 +68,11 @@ function furnish(ctx: GameContext, toolId: string): boolean {
 /** Rank the choices a careful player prefers, then take the first one the household can afford. */
 const PREFERENCE: Record<string, readonly string[]> = {
   trader: ["haggle", "buy", "decline"],
+  festival: ["host", "lanterns", "skip"],
+  meteorShower: ["shutters", "watch"],
+  flare: ["shutters", "ride"],
+  eggs: ["keep"],
+  molt: ["handy", "clean", "leave"],
   overtime: ["decline"],
   dust: ["seal", "endure"],
   brownout: ["cells", "dark"],

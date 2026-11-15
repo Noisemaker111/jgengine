@@ -121,7 +121,7 @@ export function CharterNote({ compact }: { compact: boolean }) {
   </Paper>;
 }
 
-const INCIDENT_ICON: Record<string, GameIconName> = { trader: "coin", overtime: "hourglass", dust: "leaf", brownout: "lightning", spoilage: "poison", traveller: "hand", quarrel: "fist", fever: "potionRed", meteor: "fire", hullLeak: "frost", flare: "fire", eggs: "gem", molt: "skull" };
+const INCIDENT_ICON: Record<string, GameIconName> = { trader: "coin", overtime: "hourglass", dust: "leaf", brownout: "lightning", spoilage: "poison", traveller: "hand", quarrel: "fist", fever: "potionRed", meteor: "fire", hullLeak: "frost", flare: "fire", eggs: "gem", molt: "skull", festival: "star", meteorShower: "fire" };
 
 /** A call at the front desk: what happened, the house's answers and the fuse. */
 export function TransmissionSlip({ width }: { width: number }) {
@@ -200,7 +200,9 @@ function rosterSource(ctx: GameContext): RuneSource<string> {
 export function RosterPanel({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const source = useMemo(() => rosterSource(ctx), [ctx]);
-  return <RuneView gap={8} label="Tenants"><RuneFor source={source} keyBy={(id) => id}>{(id) => <MemberMagnet id={id} compact={compact} />}</RuneFor></RuneView>;
+  // A full house packs the key-tags tighter so nine tenants still fit down the side.
+  const crowded = useStore(householdStore, (s) => s.order.length > 5);
+  return <RuneView gap={crowded ? 4 : 8} label="Tenants"><RuneFor source={source} keyBy={(id) => id}>{(id) => <MemberMagnet id={id} compact={compact || crowded} />}</RuneFor></RuneView>;
 }
 
 function MemberMagnet({ id, compact }: { id: string; compact: boolean }) {
@@ -221,7 +223,7 @@ function MemberMagnet({ id, compact }: { id: string; compact: boolean }) {
             <Text size={9} weight={700} color={INK} text={bind(() => { const s = householdStore.read(ctx); return roomOf(s, id) === null ? "—" : String(Math.round(tenantComfort(s, id, ctx.time.now()).score)); })} />
           </RuneView></Row>
           <RuneView hidden={bind(() => { const m = member(); return m === undefined || (!m.recovering && Math.min(...Object.values(m.needs)) >= 25); })}><Icon name="heart" size={13} color={WARN} /></RuneView></Row>
-        <Fine size={compact ? 11 : 12} color="#4a2f52" text={bind(() => companyName(householdStore.read(ctx), id))} />
+        <Fine size={compact ? 11 : 12} color="#4a2f52" text={bind(() => { const line = companyName(householdStore.read(ctx), id); return compact ? line.split(" — ")[0]! : line; })} />
         <Row gap={3}>{NEEDS.map((need) => <Meter key={need} label={need} width={compact ? 26 : 36} height={5} value={() => member()?.needs[need] ?? 0} color={bind(() => (member()?.needs[need] ?? 0) < 30 ? "#ff6b7d" : NEED_COLORS[need])} />)}</Row>
       </RuneView>
     </Plate>

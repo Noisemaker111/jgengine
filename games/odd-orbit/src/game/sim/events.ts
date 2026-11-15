@@ -200,6 +200,38 @@ export const INCIDENTS: readonly IncidentDef[] = [
     fallback: "leave",
   },
   {
+    id: "festival", cost: 0, weight: 0.8, cooldownSeconds: DAY_LENGTH * 4, after: DAY_LENGTH * 2.5, title: "Station Lantern Festival", tone: "success",
+    when: (r) => r.state.incident == null,
+    text: () => "It's the Lantern Festival up and down the spoke. Every house is stringing lights. The tenants are looking at you hopefully.",
+    choices: [
+      { id: "host", label: "Throw a party in the commons", detail: () => "4 rations and 60 credits; everyone +30 fun, -15 stress; reputation +6", blocked: (s) => afford(60)(s) ?? (s.pantry >= 4 ? null : "Needs 4 rations"),
+        apply: (s) => { spend(s, 60); s.pantry -= 4; for (const m of members(s)) { bumpNeed(m, "fun", 30); bumpNeed(m, "social", 20); stress(m, -15); } boardingOf(s).reputation = Math.min(100, boardingOf(s).reputation + 6); return "NO VACANCY threw the party of the spoke. Glorp danced. Old Basalt said \"...Nice.\""; } },
+      { id: "lanterns", label: "Just hang lanterns", detail: () => "15 credits; everyone +10 fun", blocked: afford(15),
+        apply: (s) => { spend(s, 15); for (const m of members(s)) bumpNeed(m, "fun", 10); return "Paper lanterns in every porthole. Cosy."; } },
+      { id: "skip", label: "Sit this one out", detail: () => "Reputation -2", apply: (s) => { boardingOf(s).reputation = Math.max(0, boardingOf(s).reputation - 2); return "The house stayed dark while the spoke partied. People noticed."; } },
+    ],
+    fallback: "skip",
+  },
+  {
+    id: "meteorShower", cost: 20, weight: 0.9, cooldownSeconds: DAY_LENGTH * 3, after: DAY_LENGTH * 1.8, title: "Meteor shower incoming", tone: "warn",
+    when: (r) => r.state.incident == null && boardingOf(r.state).rooms.some((room) => !room.shuttered && room.tenantId !== null),
+    text: (s) => `A meteor shower is about to sweep the station. ${unshuttered(s)} rooms have no shutters; their portholes may crack and let in a draught for a day.`,
+    choices: [
+      { id: "shutters", label: "Shutter every room", detail: (s) => `${unshuttered(s) * SHUTTER_COST} credits, kept for good`, blocked: (s) => afford(unshuttered(s) * SHUTTER_COST)(s),
+        apply: (s) => { const n = unshuttered(s); spend(s, n * SHUTTER_COST); for (const room of boardingOf(s).rooms) room.shuttered = true; return `Shutters down on ${n} rooms. The meteors pinged off harmlessly. It was quite pretty, actually.`; } },
+      { id: "watch", label: "Watch the show", detail: () => "Everyone +15 fun; unshuttered let rooms get a draught for a day (comfort -15)",
+        apply: (s, _i, now) => {
+          const b = boardingOf(s);
+          b.draftUntil ??= {};
+          let cracked = 0;
+          for (const room of b.rooms) if (!room.shuttered && room.tenantId !== null) { b.draftUntil[room.id] = now + DAY_LENGTH; cracked += 1; }
+          for (const m of members(s)) bumpNeed(m, "fun", 15);
+          return `The whole house watched from the corridor. Gorgeous. ${cracked} portholes cracked.`;
+        } },
+    ],
+    fallback: "watch",
+  },
+  {
     id: "trader", cost: 0, weight: 1.2, cooldownSeconds: DAY_LENGTH * 1.5, title: "A galley trader docks", tone: "info",
     when: (r) => r.state.incident == null,
     text: () => "A trader's skiff is at the airlock with crates of rations and an eye on your galley.",

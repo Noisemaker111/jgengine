@@ -5,11 +5,12 @@ import { clampNeed, emptyNeeds } from "../needs/needs";
 import { noteEvent, pairKey, type HouseholdState, type MemberState } from "../session/types";
 import { DAY_LENGTH } from "../../world";
 import {
-  comfortIn, createRoom, effectiveRoom, idealSettings, MODULE_PRICE, MODULE_REPUTATION, neighboursOf, rentShare,
+  comfortIn, createRoom, MODULE_KIND, moduleKindOf, type ModuleKind, effectiveRoom, idealSettings, MODULE_PRICE, MODULE_REPUTATION, neighboursOf, rentShare,
   ROOM_SLOTS, SEAL_COST, SETTING_COST, SHUTTER_COST, STARTING_ROOMS, starsFor, wallFriction,
   type Comfort, type HouseView, type RoomFactor, type RoomSettings, type RoomState,
 } from "./rooms";
 import { sayAloud } from "./feeds";
+import { CAREER_RAISE, hasDockJob, type StoryState } from "./stories";
 import { APPLICANT_ORDER, APPLY_REPUTATION, RETURN_REPUTATION, quoted, SPECIES, SPECIES_IDS, type SpeciesId } from "./species";
 
 /**
@@ -52,6 +53,14 @@ export interface BoardingState {
   departed: SpeciesId[];
   /** Tenants who have moved in since the house opened (for the lease). */
   admitted: number;
+  /** Each tenant's life story in progress (absent in older saves). */
+  stories?: Record<string, StoryState>;
+  /** A cracked porthole lets a draught into a room until this time (meteor shower damage). */
+  draftUntil?: Record<string, number>;
+  /** Nights in a row the house has met the Station Council's bar, once the deed is paid. */
+  councilNights?: number;
+  /** The landlord sits on the Station Council: the long game is won. */
+  councilSeat?: boolean;
   /** When the next tenant says something out loud; absent in saves from before tenants spoke up. */
   nextBarkAt?: number;
   /** The day Old Basalt last spoke: one sentence a day, no more. */
@@ -59,6 +68,10 @@ export interface BoardingState {
 }
 
 export const STARTING_REPUTATION = 50;
+/** Comfort lost while a cracked porthole lets in a draught. */
+export const DRAFT_PENALTY = 15;
+/** The Station Council's bar: reputation and tenants, held for this many nights, once the deed is paid. */
+export const COUNCIL = { reputation: 88, tenants: 7, nights: 3 } as const;
 export const DEED_PRICE = 6000;
 export const APPLICANT_WAIT = 90;
 /** Game seconds between applicants while a room stands empty. */
@@ -120,7 +133,14 @@ export function tenantComfort(state: HouseholdState, tenantId: string, now = 0):
   const species = SPECIES[speciesOfMember(member)];
   const room = roomOf(state, tenantId);
   if (room === null) return { score: FIXTURE_COMFORT, reasons: [{ factor: "atmosphere", penalty: 100 - FIXTURE_COMFORT, text: species.lines.unhappy[0]! }] };
-  return comfortIn(species, effectiveRoom(houseView(state, now), room));
+  const comfort = comfortIn(species, effectiveRoom(houseView(state, now), room));
+  const draft = (state.boarding?.draftUntil?.[room.id] ?? 0) > now ? DRAFT_PENALTY : 0;
+  const bonus = moduleKindOf(room).comfort - draft;
+  if (bonus === 0) return comfort;
+  const reasons = [...comfort.reasons];
+  if (moduleKindOf(room).comfort < 0) reasons.push({ factor: "module", penalty: -moduleKindOf(room).comfort, text: "No porthole in here. I miss the stars." });
+  if (draft > 0) reasons.push({ factor: "module", penalty: draft, text: "There's a draught from the cracked porthole. Brr." });
+  return { ...comfort, reasons, score: Math.max(0, Math.min(100, comfort.score + bonus)), ...(comfort.second === undefined ? {} : { second: Math.max(0, Math.min(100, comfort.second + bonus)) }) };
 }
 
 export function vacantRooms(state: HouseholdState): RoomState[] {
@@ -249,7 +269,7 @@ export function shutterRoom(state: HouseholdState, slot: number): BoardingRefusa
 }
 
 /** Why the module at a slot cannot be bought yet; null when it can. */
-export function moduleBlocker(state: HouseholdState, slot: number): BoardingRefusal | null {
+export function moduleBlocker(state: HouseholdState, slot: number, kind: ModuleKind = "standard"): BoardingRefusal | null {
   if (slot < 0 || slot >= ROOM_SLOTS) return "No such berth";
   if (roomBySlot(state, slot) !== null) return "Already docked";
   const boarding = boardingOf(state);
@@ -257,7 +277,8 @@ export function moduleBlocker(state: HouseholdState, slot: number): BoardingRefu
   const price = MODULE_PRICE[Math.min(next, MODULE_PRICE.length - 1)]!;
   const rep = MODULE_REPUTATION[Math.min(next, MODULE_REPUTATION.length - 1)]!;
   if (boarding.reputation < rep) return `The station wants ${rep} reputation`;
-  if (state.credits < price) return `Needs ${price} credits`;
+  const cost = Math.round(price * MODULE_KIND[kind].price);
+  if (state.credits < cost) return `Needs ${cost} credits`;
   return null;
 }
 
@@ -266,13 +287,16 @@ export function nextModulePrice(state: HouseholdState): { price: number; reputat
   return { price: MODULE_PRICE[Math.min(next, MODULE_PRICE.length - 1)]!, reputation: MODULE_REPUTATION[Math.min(next, MODULE_REPUTATION.length - 1)]! };
 }
 
-export function buyModule(state: HouseholdState, slot: number): BoardingRefusal | null {
-  const blocked = moduleBlocker(state, slot);
+export function buyModule(state: HouseholdState, slot: number, kind: ModuleKind = "standard"): BoardingRefusal | null {
+  const blocked = moduleBlocker(state, slot, kind);
   if (blocked !== null) return blocked;
   const { price } = nextModulePrice(state);
-  state.credits -= price;
+  state.credits -= Math.round(price * MODULE_KIND[kind].price);
   const boarding = boardingOf(state);
-  boarding.rooms = [...boarding.rooms, createRoom(slot)].sort((a, b) => a.slot - b.slot);
+  const room = createRoom(slot);
+  if (kind !== "standard") room.kind = kind;
+  if (kind === "bunker") { room.sealed = true; room.shuttered = true; }
+  boarding.rooms = [...boarding.rooms, room].sort((a, b) => a.slot - b.slot);
   return null;
 }
 
@@ -319,6 +343,7 @@ export interface NightReport {
   reviews: Review[];
   movedOut: string[];
   sabotage: number;
+  mushrooms?: number;
 }
 
 /**
@@ -343,8 +368,9 @@ export function settleBoardingNight(state: HouseholdState, now: number, notices:
     const comfort = comforts.get(id)!;
     // Cheques: one per head; Old Basalt paid the century already.
     const shares = def.checks === 2 ? [rentShare(comfort.score), rentShare(comfort.second ?? comfort.score)] : [rentShare(comfort.score)];
-    let paid = shares.reduce((sum, share) => sum + Math.round(def.rent * share), 0);
-    const full = def.rent * def.checks;
+    const kindRent = moduleKindOf(room).rent * (hasDockJob(state, id) ? CAREER_RAISE : 1);
+    let paid = shares.reduce((sum, share) => sum + Math.round(def.rent * kindRent * share), 0);
+    const full = Math.round(def.rent * kindRent) * def.checks;
     if (paid < full && def.rent > 0) {
       const friend = state.order.find((other) => other !== id && book.opinion(id, other) >= FRIEND_AT && (comforts.get(other)?.score ?? 0) >= 55 && roomOf(state, other) !== null);
       if (friend !== undefined) {
@@ -371,6 +397,12 @@ export function settleBoardingNight(state: HouseholdState, now: number, notices:
   boarding.reviews = [...report.reviews.sort((a, b) => a.stars - b.stars).slice(0, 2), ...boarding.reviews].slice(0, MAX_REVIEWS);
   state.credits += report.rent;
   state.dayIncome += report.rent;
+  // Auntie Spore's mushrooms turn up in the galley.
+  const grown = state.order.reduce((sum, id) => sum + (roomOf(state, id) === null ? 0 : SPECIES[speciesOfMember(state.members[id]!)].growsFood ?? 0), 0);
+  if (grown > 0) {
+    state.pantry = Math.min(40, state.pantry + grown);
+    report.mushrooms = grown;
+  }
   // Feuding neighbours: the unhappier one makes the other's tomorrow louder.
   for (const room of boarding.rooms) {
     if (room.tenantId === null) continue;
@@ -398,7 +430,26 @@ export function settleBoardingNight(state: HouseholdState, now: number, notices:
   }
   syncBook(state, book);
   if (report.rent > 0) noteEvent(state, notices, `Rent night: ${report.rent} credits in the jar · reputation ${Math.round(boarding.reputation)}.`, "success");
+  if (report.mushrooms) noteEvent(state, notices, `Auntie Spore left ${report.mushrooms} ration${report.mushrooms === 1 ? "" : "s"} of mushrooms in the galley.`, "success");
+  advanceCouncil(state, notices);
   return report;
+}
+
+/**
+ * Past the deed: the Station Council offers a seat to the landlord of a house everyone talks about.
+ * Reputation at the bar, seven tenants with a door, three rent nights running.
+ */
+export function advanceCouncil(state: HouseholdState, notices: Pick<NoticeFeed, "push">): void {
+  const boarding = boardingOf(state);
+  if (boarding.councilSeat === true || boarding.deedOwed > 0) return;
+  const housed = state.order.filter((id) => roomOf(state, id) !== null).length;
+  const met = boarding.reputation >= COUNCIL.reputation && housed >= COUNCIL.tenants;
+  boarding.councilNights = met ? (boarding.councilNights ?? 0) + 1 : 0;
+  if (met && boarding.councilNights < COUNCIL.nights) noteEvent(state, notices, `The Station Council is watching: ${boarding.councilNights} of ${COUNCIL.nights} nights at the bar.`, "info");
+  if (boarding.councilNights >= COUNCIL.nights) {
+    boarding.councilSeat = true;
+    noteEvent(state, notices, "The Station Council has offered you a seat. NO VACANCY is the heart of the station now. The tenants made you a sash.", "success");
+  }
 }
 
 /** Neighbours drift apart when one's output hurts the other, and closer when the wall is kind. */
@@ -531,6 +582,7 @@ export function advanceBarks(state: HouseholdState, now: number, notices: Pick<N
 
 export function expireBoarding(state: HouseholdState, now: number): void {
   const boarding = boardingOf(state);
+  for (const [room, until] of Object.entries(boarding.draftUntil ?? {})) if (until <= now) delete boarding.draftUntil![room];
   for (const [room, until] of Object.entries(boarding.noisyUntil)) if (until <= now) delete boarding.noisyUntil[room];
   if (boarding.flareUntil > 0 && boarding.flareUntil <= now) boarding.flareUntil = 0;
 }

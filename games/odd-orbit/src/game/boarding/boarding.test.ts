@@ -39,10 +39,10 @@ function boot(): GameContext {
   return ctx;
 }
 
-describe("the seven tenants", () => {
+describe("the tenants", () => {
   test("every species has a distinct silhouette, a full voice and three interview answers", () => {
     const shapes = new Set(SPECIES_IDS.map((id) => SPECIES[id].bodyPlan.shape));
-    expect(shapes.size).toBe(7);
+    expect(shapes.size).toBe(SPECIES_IDS.length);
     for (const id of SPECIES_IDS) {
       const def = SPECIES[id];
       expect(def.lines.interview).toHaveLength(3);

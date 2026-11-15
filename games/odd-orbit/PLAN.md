@@ -175,12 +175,16 @@ Genres: life-sim. 16/16 proven.
 - [x] 4. Station dressing: trusses, beacons, docking arm with a moored shuttle, starfield and planet
   limb (procedural backdrop); the deck shrunk to the authored plate.
 - [x] 4b. Station hardware authored in the scene document; suite 16/16.
-- [ ] 5. Deeper long loop: tenant-specific requests (Velvet's chandelier, Basalt's annual sentence as
-  a collectible), a second station section after the deed.
+- [x] 5. Depth round: three new species with new clash mechanics (glow, gravity well, spores and
+  shared food), module types (suite, capsule, bunker), tenant life stories (dock job, romance,
+  crisis), Lantern Festival and meteor shower events, a Station Council seat past the deed, a
+  `showcase` capture state, a compact roster for a full house.
+- [ ] 6. Tenant-specific requests (Velvet's chandelier, Basalt's yearly sentence as a keepsake) and a
+  second boarding house after the council seat.
 
 ## Handoff
 
-- Verified: game tests 135 pass, check-types clean, suite 16/16 proven, `from-zero` and `rooms-tour`
+- Verified: game tests 144 pass, check-types clean, suite 16/16 proven, `from-zero` and `rooms-tour`
   flows pass in a live browser, `bun run gen` passes. Captures use
   `CHROME_PATH=/opt/pw-browsers/chromium JG_CAPTURE_GL=swiftshader JG_BROKER=0 --cold`; Rune panels
   and bubbles do not repaint in live software captures once the sim runs, so their content is proven
@@ -190,4 +194,4 @@ Genres: life-sim. 16/16 proven.
   code as sky and surface detail.
 - `verify:fast` stops at "provision models for tests" (other games' model pulls get 403 from the
   sandbox proxy).
-- Next: milestone 5 (tenant requests, a second section after the deed).
+- Next: milestone 6 (tenant requests, a second house).

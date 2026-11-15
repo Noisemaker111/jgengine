@@ -26,6 +26,27 @@ neon sign are original procedural three.js; portraits are original SVG.
 | Old Basalt | a slow rock being | heavy gravity, warm; doesn't breathe | heat; pays a century (640) up front |
 | Pip-9 | maintenance robot | a door of its own | clanking; mends things (Handy) |
 | Velvet | gas-giant aristocrat | low gravity, methane, cold, bright, quiet | a little humming; tips lavishly, reviews twice |
+| Lumen | bioluminescent jelly | dark, cool, low or standard gravity | glow: rooms next door a step brighter unless shuttered |
+| Mote | tiny, terribly dense being | heavy gravity; doesn't breathe | a gravity well: rooms next door a step heavier, through any wall |
+| Auntie Spore | fungal matriarch | damp, warm, dim | spores through unsealed walls (breathers sneeze); a ration of mushrooms every rent night |
+
+Choosier applicants wait for reputation (Lumen 20, Velvet 38, Mote 45, Basalt 52, Auntie Spore 58);
+tenants who moved out reapply at 68.
+
+**Module types.** When a berth docks you choose: a standard module; a luxury suite (×1.5 price,
+rent ×1.4, comfort +10, 12 more a night); a capsule pod (60% price, rent ×0.75, thin walls make
+neighbours half as loud again); or a shielded bunker (sealed and shuttered from the start, no
+porthole so comfort −6).
+
+**Life stories.** Over the weeks tenants' lives move on: one chases and lands a dock job (their
+cheque rises by a quarter), close neighbours fall in love (keep them next door, or hearts break), and
+a tenant with a run of bad nights has a crisis that a lovely room by the next night turns around.
+
+**Station events** now include the Lantern Festival (throw a party for reputation) and meteor
+showers (shutter up, or watch the show and live with cracked, draughty portholes for a day).
+
+**Past the deed:** a seat on the Station Council goes to a house holding reputation 88+ with seven
+tenants housed for three rent nights running.
 
 ## How it plays
 

@@ -2,10 +2,12 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { simulateHousehold } from "./sim/simulate";
 import { householdStore } from "./session/store";
+import { addTenant, boardingOf, buyModule, tuneRoom } from "./boarding/boarding";
+import { spawnTenantBody } from "./sim/setup";
 import { DAY_LENGTH } from "../world";
 
 /** What a staged household should look like when the capture takes it. */
-export type StageMode = "shift" | "week" | "transmission" | "review" | "airlock";
+export type StageMode = "shift" | "week" | "transmission" | "review" | "airlock" | "showcase";
 
 /** The half-second step the household sim is written for; `simulateHousehold` clamps longer frames. */
 const STEP = 0.25;
@@ -38,6 +40,24 @@ export function stageHousehold(ctx: GameContext, mode: StageMode = "shift"): voi
   }
   if (mode === "transmission") {
     for (let elapsed = 0; elapsed < DAY_LENGTH * 3 && householdStore.read(ctx).incident == null; elapsed += STEP) advanceFor(ctx, STEP);
+    return;
+  }
+  if (mode === "showcase") {
+    // A late house for the look pass: every berth docked as each module type, the newer species in.
+    householdStore.update(ctx, (state) => {
+      const boarding = boardingOf(state);
+      state.credits = 9000;
+      boarding.reputation = 80;
+      const kinds = ["suite", "capsule", "bunker", "standard"] as const;
+      for (let slot = 4; slot < 8; slot++) buyModule(state, slot, kinds[slot - 4]!);
+      for (const [species, slot] of [["lumen", 3], ["mote", 4], ["aunt", 5], ["velvet", 6], ["basalt", 7]] as const) {
+        const member = addTenant(state, species, slot);
+        spawnTenantBody(ctx, member.id, member.bodyPlan, slot);
+        tuneRoom(state, slot);
+      }
+      return { ...state };
+    });
+    advanceFor(ctx, 6);
     return;
   }
   if (mode === "airlock") {

@@ -109,6 +109,9 @@ const PORTRAIT: Record<AlienBodyPlan["shape"], { body: string; eyeY: number; eye
   rock: { body: "M18 60 14 40l10-12 6-14 14 2 8 12 6 14-4 18Z", eyeY: 34, eyeGap: 8, trim: "M22 46h20l-6 6" },
   robot: { body: "M20 24h32v24H20Zm4 26h24v8H24Z", eyeY: 36, eyeGap: 10, trim: "M44 24v-12" },
   balloon: { body: "M36 10a24 22 0 1 1 0 44 24 22 0 1 1 0-44Zm-8 46-2 8m8-8v8m8-8 2 8", eyeY: 30, eyeGap: 10, trim: "M14 30h44M16 40h40" },
+  jelly: { body: "M12 38q0-24 24-24t24 24Z", eyeY: 30, eyeGap: 10, trim: "M18 40v18m9-18v16m9-16v18m9-18v16m9-16v18" },
+  orb: { body: "M36 22a14 14 0 1 1 0 28 14 14 0 1 1 0-28Z", eyeY: 36, eyeGap: 8, trim: "M10 40q26-14 52 0M14 30q22 22 44 0" },
+  fungus: { body: "M8 34q2-22 28-22t28 22Zm20 0h16v26H28Z", eyeY: 44, eyeGap: 7, trim: "M22 22h2m12-4h2m12 6h2" },
   tall: { body: "M24 57V26q0-18 12-18t12 18v31Z", eyeY: 31, eyeGap: 8 },
   round: { body: "M17 40q0-24 19-24t19 24q0 19-19 19T17 40Z", eyeY: 36, eyeGap: 8 },
 };
