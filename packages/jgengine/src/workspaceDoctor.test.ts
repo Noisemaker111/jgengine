@@ -6,6 +6,22 @@ import { spawnSync } from "node:child_process";
 import { diagnoseProject, runDoctor } from "./doctor";
 import { inspectWorkspaceSdkInstall } from "./workspaceDoctor";
 
+// A directory symlink needs admin rights or Developer Mode on Windows; a junction is the same link to a folder without them.
+const DIR_LINK = process.platform === "win32" ? "junction" : "dir";
+/** Whether this machine may create a file symlink at all: Windows without Developer Mode may not, and has none to diagnose. */
+const FILE_LINKS = ((): boolean => {
+  const dir = mkdtempSync(join(tmpdir(), "jgengine-file-link-"));
+  try {
+    writeFileSync(join(dir, "target"), "");
+    symlinkSync(join(dir, "target"), join(dir, "link"));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
+
 function manifest(dir: string, data: object) { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, "package.json"), JSON.stringify(data)); }
 async function fixture(run: (root: string, studio: string) => void | Promise<void>, pattern = "games/*") {
   const root = mkdtempSync(join(tmpdir(), "jgengine-workspace-doctor-"));
@@ -20,7 +36,7 @@ async function fixture(run: (root: string, studio: string) => void | Promise<voi
     }
     manifest(studio, { name: "@example/studio", version: "1.0.0", peerDependencies: { "@jgengine/core": "^0.19.0" } });
     manifest(join(studio, "node_modules", "@jgengine", "core"), { name: "@jgengine/core", version: "0.18.1" });
-    mkdirSync(join(root, "node_modules", "@example"), { recursive: true });symlinkSync(studio, join(root, "node_modules", "@example", "studio"), "dir");
+    mkdirSync(join(root, "node_modules", "@example"), { recursive: true });symlinkSync(studio, join(root, "node_modules", "@example", "studio"), DIR_LINK);
     await run(root, studio);
   } finally { rmSync(root, { recursive: true, force: true }); }
 }
@@ -71,9 +87,9 @@ test("outside and broken wildcard symlinks fail coverage while inside aliases de
   try {
     manifest(outside, { name: "outside" });
     await fixture(root => {
-      symlinkSync(join(root, "games", "field"), join(root, "games", "alias"), "dir");
+      symlinkSync(join(root, "games", "field"), join(root, "games", "alias"), DIR_LINK);
       const deduplicated = inspectWorkspaceSdkInstall(root);expect(deduplicated.projects).toHaveLength(3);expect(deduplicated.coverage.complete).toBe(true);
-      symlinkSync(outside, join(root, "games", "escape"), "dir");symlinkSync(join(root, "nonexistent"), join(root, "games", "broken"), "dir");
+      symlinkSync(outside, join(root, "games", "escape"), DIR_LINK);symlinkSync(join(root, "nonexistent"), join(root, "games", "broken"), DIR_LINK);
       const report = inspectWorkspaceSdkInstall(root);expect(report.status).toBe("incomplete");
       expect(report.coverage.exclusions.some(item => item.path.endsWith("escape"))).toBe(true);
       expect(report.coverage.errors.some(error => error.includes("broken"))).toBe(true);
@@ -82,7 +98,7 @@ test("outside and broken wildcard symlinks fail coverage while inside aliases de
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("manifest symlinks cannot escape the root even when the directory stays inside", async () => {
+test.skipIf(!FILE_LINKS)("manifest symlinks cannot escape the root even when the directory stays inside", async () => {
   const outside = mkdtempSync(join(tmpdir(), "jgengine-workspace-manifest-"));
   try {
     manifest(outside, { name: "outside" });
@@ -134,7 +150,7 @@ test.each(["null", "{broken}", '{"workspaces":{"packages":"*"}}', '{"workspaces"
   });
 });
 
-test("shared manifest files retain distinct directory resolver contexts", async () => {
+test.skipIf(!FILE_LINKS)("shared manifest files retain distinct directory resolver contexts", async () => {
   await fixture((root, studio) => {
     rmSync(join(studio, "node_modules"), { recursive: true });
     const template = join(root, "template");manifest(template, { name: "shared", dependencies: { "@jgengine/core": "catalog:" } });
@@ -148,7 +164,7 @@ test("shared manifest files retain distinct directory resolver contexts", async 
   });
 });
 
-test("a dangling wildcard manifest symlink is unreadable coverage rather than an optional absent package", async () => {
+test.skipIf(!FILE_LINKS)("a dangling wildcard manifest symlink is unreadable coverage rather than an optional absent package", async () => {
   await fixture((root, studio) => {
     rmSync(join(studio, "node_modules"), { recursive: true });mkdirSync(join(root, "games", "bad"));
     symlinkSync(join(root, "nonexistent-package.json"), join(root, "games", "bad", "package.json"));

@@ -263,6 +263,15 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
     io.err(`lane:close: ${behind}; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.`);
     return EXIT_VERIFY_FAILED;
   }
+  // land --commit needs a git identity; without one the lane used to fail at the commit, after the
+  // whole gate had passed. `git var` answers from the same config git commit reads.
+  const ident = io.sh(["git", "var", "GIT_COMMITTER_IDENT"], false);
+  if (ident.status !== 0) {
+    io.err(
+      'lane:close: git has no identity to commit as; nothing ran and nothing landed. Set it once (git config --global user.name "<name>" and git config --global user.email "<email>") and close again.',
+    );
+    return EXIT_CANNOT_ANSWER;
+  }
   // What GitHub would refuse the merge for, settled before minutes of gate: a draft PR (#3117 passed
   // its whole gate, was refused as a draft, and paid the gate again) or a PR into another base.
   const refusal = readyThisPull(branch, args.pr, io);

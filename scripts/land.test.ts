@@ -399,10 +399,13 @@ function originWithBeta(): { bare: string; work: string; partner: string; base: 
   const partner = join(root, "partner");
   gitOk(root, ["init", "-q", "--bare", "-b", "beta", bare]);
   gitOk(root, ["init", "-q", "-b", "beta", work]);
+  // Git for Windows defaults core.autocrlf to true, and these repos carry no .gitattributes, so a checkout
+  // wrote CRLF and every "\n"-anchored lane edit missed. The real repo pins LF (`* text=auto eol=lf`).
+  gitOk(work, ["config", "core.autocrlf", "false"]);
   commit(work, "shared.txt", "one\n", "base");
   gitOk(work, ["remote", "add", "origin", bare]);
   gitOk(work, ["push", "-q", "-u", "origin", "beta"]);
-  gitOk(root, ["clone", "-q", bare, partner]);
+  gitOk(root, ["clone", "-q", "-c", "core.autocrlf=false", bare, partner]);
   const base = gitOk(work, ["rev-parse", "HEAD"]);
   return { bare, work, partner, base };
 }

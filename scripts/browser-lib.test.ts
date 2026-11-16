@@ -934,8 +934,9 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
   test("a drive below the free-space floor fails loudly before capturing", () => {
     const root = mkdtempSync(join(tmpdir(), "jg-space-"));
     try {
-      expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: String(1024 * 1024) })).toThrow(
-        /has [\d.]+ (GB|MB) free, less than the 1024\.0 GB a capture needs/,
+      // A petabyte floor: a 1 TB one passed on a workstation with 1.5 TB free.
+      expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: String(1024 ** 3) })).toThrow(
+        /has [\d.]+ (GB|MB) free, less than the 1048576\.0 GB a capture needs/,
       );
       expect(() => ensureCaptureFreeSpace(root, { JG_CAPTURE_MIN_FREE_MB: "1" })).not.toThrow();
     } finally {

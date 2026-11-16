@@ -456,9 +456,17 @@ describe("a broker's death is never silent (#3085)", () => {
       const stopped = start("60");
       await ready(stopped.pid);
       expect(log()).toContain(`broker died unannounced: pid ${killed.pid}`);
-      process.kill(stopped.pid, "SIGTERM");
-      await stopped.exited;
-      expect(log()).toContain("broker stopping: SIGTERM");
+      // Windows has no catchable SIGTERM (process.kill ends the process outright), so there the
+      // announced stop is the broker's own /v1/stop.
+      if (process.platform === "win32") {
+        await fetch(`http://127.0.0.1:${port}/v1/stop`, { method: "POST", body: JSON.stringify({ by: "the test" }) });
+        await stopped.exited;
+        expect(log()).toContain("broker stopping: asked to stop by the test");
+      } else {
+        process.kill(stopped.pid, "SIGTERM");
+        await stopped.exited;
+        expect(log()).toContain("broker stopping: SIGTERM");
+      }
       expect(existsSync(statePath)).toBe(false);
 
       // 0.005 min is 300 ms: the idle stop the broker takes after 10 minutes in use.

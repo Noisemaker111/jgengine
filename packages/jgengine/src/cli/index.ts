@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
+import { bunExecutable } from "../bunExecutable";
 import { runCreate } from "../create";
 import { runHas } from "../find/has";
 import { runFind } from "../find/runFind";
@@ -192,7 +193,7 @@ function runPlants(argv: string[]): number {
     console.error("error: the plants CLI fits the engine's species library and runs only inside the jgengine monorepo.");
     return 1;
   }
-  return spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
+  return spawnSync(bunExecutable(), [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
 }
 
 function runSuite(argv: string[]): number {
@@ -202,14 +203,14 @@ function runSuite(argv: string[]): number {
     console.error("error: the suite command runs the in-repo games' proofs and runs only inside the jgengine monorepo.");
     return 1;
   }
-  return spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
+  return spawnSync(bunExecutable(), [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
 }
 
 function runEditorMcp(argv: string[]): number {
   const here = dirname(fileURLToPath(import.meta.url));
   const monorepoCli = join(here, "..", "..", "..", "editor", "src", "mcp", "cli.ts");
   if (existsSync(monorepoCli)) {
-    const result = spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" });
+    const result = spawnSync(bunExecutable(), [monorepoCli, ...argv], { stdio: "inherit" });
     return result.status ?? 1;
   }
   console.error(
