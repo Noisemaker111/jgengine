@@ -5,13 +5,13 @@ name: CI
 permissions:
   contents: read
 
-# Pushes to beta and main only. A PR is gated by lane:close's verify:fast receipt on the pushed head
+# Pushes to beta only. A PR is gated by lane:close's verify:fast receipt on the pushed head
 # (scripts/lane-close.ts), which covers every class PR CI caught in the week of 1-7 Nov 2026; the
 # rest were beta already red or runner timeouts. This run on the beta push is the backstop, and a red
 # one opens the "CI red on beta" issue below.
 on:
   push:
-    branches: [main, beta]
+    branches: [beta]
 
 # One run per ref at a time, never cancelled, because a branch's green is a fact someone asks about: on 24 Oct 11 of 44 pushes to beta were
 # cancelled, 122 runner-minutes went on runs killed after they started (40115639711,
@@ -193,14 +193,11 @@ jobs:
       - name: test the games' scripts and the reached games
         run: bun test games/scripts games/shared $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
 
-  # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
-  # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
-  # narrativeAuthoring.test.ts). The Ubuntu jobs cannot see them, so beta learned about them from
-  # whoever ran the suite on a PC. This job runs that suite on windows-latest for a push to beta
-  # and for workflow_dispatch; a main push skips it in seconds through `windows`, and no
-  # `continue-on-error` or allow-list hides a failure - red here is the point until #2119 closes.
-  windows-tests:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/beta')
+  # Package tests that fail on Windows only (#2119: symlink cases, and `Bun.build` returning
+  # `EINVAL: failed to open root directory: /C:/...`). The Ubuntu jobs cannot see them, so beta
+  # learned about them from whoever ran the suite on a PC. No `continue-on-error` or allow-list
+  # hides a failure here.
+  windows:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -215,27 +212,6 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun --cwd=packages/jgengine run test
-
-  # The `windows` check branch protection reads: green in seconds on a main
-  # push, and green on a beta push or manual run only when the Windows suite passed.
-  windows:
-    needs: [windows-tests]
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: windows verdict
-        env:
-          EVENT: ${{ github.event_name }}
-          REF: ${{ github.ref }}
-          TESTS: ${{ needs.windows-tests.result }}
-        run: |
-          if [ "$EVENT" = "workflow_dispatch" ] || { [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/beta" ]; }; then
-            test "$TESTS" = "success"
-            exit 0
-          fi
-          test "$TESTS" = "skipped"
-          echo "windows suite skipped: main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
 
   ci:
     needs: [changes, quick, types, test, web-build, games, windows]
@@ -277,7 +253,7 @@ jobs:
             echo "ran: every test shard"
           fi
           echo "game scope $GAMES: boots run locally in lane:close ($REASON)"
-      - name: Track a red main or beta in one issue each
+      - name: Track a red beta in one issue
         if: always() && github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}

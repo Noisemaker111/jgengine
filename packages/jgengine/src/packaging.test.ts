@@ -41,9 +41,8 @@ describe("jgengine CLI packaging", () => {
     const workflow = readFileSync(join(repoRoot, ".github", "workflows", "publish.yml"), "utf8");
     // Full order is gated against package manifests by scripts/check-release-set.ts.
     expect(workflow).toMatch(/for p in core [a-z ]+ jgengine; do/);
-    // A release starts from main's CI run, so every merged package change still reaches it (#2279).
-    expect(workflow).toContain("workflow_run:");
-    expect(workflow).toContain("branches: [main]");
+    // A release is a tag on a beta commit, so every merged package change reaches it.
+    expect(workflow).toContain('tags: ["v*"]');
   });
 
   test("package layout matches what npm pack would ship after build", () => {

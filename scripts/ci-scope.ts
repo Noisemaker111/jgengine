@@ -68,7 +68,7 @@ const FULL = [
   /^games\/shared\//,
   /^scripts\/(?:perf-|smoke|ensure-ready|browser-lib)/,
   /^\.github\/workflows\//,
-  // `bun run release` rewrites CHANGELOG.md, so its presence marks the release PR.
+  // `bun run release` rewrites CHANGELOG.md, so its presence marks the release commit.
   /^CHANGELOG\.md$/,
 ];
 

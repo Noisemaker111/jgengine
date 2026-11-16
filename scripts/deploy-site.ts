@@ -1,8 +1,8 @@
 // Deploy jgengine.com. The site build bakes game covers and reads game models, and CI never touches
 // models (Jon, 25 Oct), so the deploy runs on this machine. It builds in its own worktree at the commit
 // being deployed, so the folder a release ran in can be emptied or removed without breaking the deploy.
-// That worktree is removed afterwards, pass or fail. `bun run release --wait` runs it after the Publish
-// run succeeds; `bun run deploy:site` runs it alone, for HEAD.
+// That worktree is removed afterwards, pass or fail. `bun run release` runs it after npm serves the
+// release; `bun run deploy:site` runs it alone, for HEAD.
 import { spawnSync } from "node:child_process";
 import { lstatSync } from "node:fs";
 import { join } from "node:path";

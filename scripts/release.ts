@@ -1,33 +1,31 @@
-// One command for a whole release cut, so publishing is not a hand-assembled sequence:
-//   bun run release              # 0.17.0 -> 0.18.0, cut CHANGELOG, mirror, regen api.md
+// One command for a whole release. beta is the only branch: the cut is one commit on it, and a
+// `v<version>` tag on that commit is what publishes.
+//   bun run release              # 0.17.0 -> 0.18.0: cut, commit to beta, wait for CI, tag, publish, deploy
+//   bun run release --patch      # 0.17.0 -> 0.17.1, for a fixes-only release
 //   bun run release --dry-run    # print the plan, write nothing
-//   bun run release --no-gen     # skip the generated-artifact refresh
-//   bun run release --wait           # cut, land, wait for Publish, then deploy jgengine.com from that commit
-//   bun run release --wait 0.38.4    # the same wait and deploy for a version already cut (release-await.ts)
-//
-// The cut is written on release/<version>, cut from origin/beta, whichever checkout runs the command.
+//   bun run release --wait 0.38.4             # finish a release already cut: CI, tag, publish, deploy
+//   bun run release --wait 0.38.4 --sha <c>   # the same, tagging a later beta commit (a fix forward)
 //
 // A release is a milestone, not a step after each change: publish at most about once a day,
 // or when an outside user needs a version. The games in games/ run engine source from the same
 // commit, so nothing here has to run per PR.
-// Those fragments accumulate until a cut; cutting per change cost ~40 serial minutes each and
-// published 0.38.2, a patch that narrowed two public types for one field.
 //
-// It refuses a commit that does not contain origin/beta: a release cut from a stale main published
-// `@jgengine/core@0.35.0` four merges behind beta and six game lanes could not import `agents/system`.
+// The cut starts from origin/beta's tip, folds the per-PR notes in changes/*.md into
+// `## [Unreleased]` and deletes them, runs set-version --release, renames `## [Unreleased]` to the
+// new version, prepends the lockstep Migrate bullet, leaves a fresh empty [Unreleased], and mirrors
+// the same notes into the typed CHANGELOG export in packages/core/src/meta/changelog.ts.
 //
-// It folds the per-PR notes in changes/*.md into `## [Unreleased]` and deletes them, runs
-// set-version --release, renames `## [Unreleased]` to the new version, prepends the
-// lockstep Migrate bullet, leaves a fresh empty [Unreleased], and mirrors the same notes into
-// the typed CHANGELOG export in packages/core/src/meta/changelog.ts.
+// The tag is pushed only once beta's CI is green on the commit, so publish.yml (which runs on the
+// tag) never starts on an unproved commit. Before this, a release was a release/<version> branch,
+// a PR into beta, a fast-forward of a second branch `main`, a second full CI run there, and a
+// Publish run chained to that CI: 17 release PRs in three weeks, and Publish failed 14 of 40 runs,
+// several because beta moved while main's CI ran.
 import { spawnSync } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
-import { checkoutGitHub } from "./github";
-import { mergeVerified } from "./land";
-import { awaitPublish, type AwaitResult, type RunGh } from "./release-await";
+import { awaitCi, awaitPublish, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
   migrate: string[];
@@ -251,28 +249,26 @@ export function checkReleaseAncestor(input: {
   return { ...base, ok: false, missing, reason: `${ref} has ${missing.length} commit(s) that ${target} does not contain` };
 }
 
-/** The refusal a stale release branch prints, one line per fact. */
+/** The refusal a commit off beta prints, one line per fact. */
 export function ancestorFailureLines(report: AncestorReport): string[] {
   const lines = [
-    `release: refusing to cut from ${report.target}: ${report.reason ?? "it does not contain the branch everything lands on"}.`,
+    `release: refusing to publish ${report.target}: ${report.reason ?? "it is not on the branch everything lands on"}.`,
   ];
   if (report.missing.length > 0) {
     lines.push(`release: missing from ${report.target} (${report.ref} ${report.refSha?.slice(0, 8) ?? "?"}):`);
     for (const commit of report.missing) lines.push(`  ${commit}`);
   }
-  lines.push("release: merge origin/beta into the release branch and run again.");
+  lines.push("release: a release tags a commit on beta; run `bun run release` from beta's tip.");
   return lines;
 }
 
-export type ReleaseStart = { ok: true; branch: string; from: string } | { ok: false; reason: string };
+export type ReleaseStart = { ok: true; from: string } | { ok: false; reason: string };
 
 /**
- * The cut goes on its own `release/<version>` branch, cut from `origin/beta` whichever checkout runs
- * the command. It used to be committed onto the branch it ran from: on `beta`, `land` refused to land
- * `beta` into itself (exit 3) after the cut was already committed there. `from` is where the checkout
- * was, so the release can switch back once it has landed.
+ * The cut starts on origin/beta's tip, detached, whichever checkout runs the command, and is pushed
+ * from there straight to beta. `from` is where the checkout was, so the release can switch back.
  */
-export function startReleaseBranch(input: { cwd: string; patch?: boolean; git?: GitRunner }): ReleaseStart {
+export function startReleaseCut(input: { cwd: string; git?: GitRunner }): ReleaseStart {
   const git = input.git ?? runGit;
   const run = (args: string[]) => git(args, input.cwd);
   const status = run(["status", "--porcelain"]);
@@ -280,25 +276,14 @@ export function startReleaseBranch(input: { cwd: string; patch?: boolean; git?: 
   if (status.stdout.trim() !== "") {
     return { ok: false, reason: "this checkout has uncommitted changes; commit or move them, then run again." };
   }
-  const shown = run(["show", "origin/beta:packages/core/package.json"]);
-  if (shown.status !== 0) {
-    return { ok: false, reason: "cannot read origin/beta:packages/core/package.json; fetch origin beta, then run again." };
-  }
-  const branch = `release/${nextReleaseVersion((JSON.parse(shown.stdout) as { version: string }).version, input.patch)}`;
-  if (run(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]).status === 0) {
-    const unique = run(["rev-list", "--count", `origin/beta..${branch}`]).stdout.trim();
-    if (unique !== "0") {
-      return { ok: false, reason: `${branch} already has ${unique} commit(s) that origin/beta does not have; move or delete it, then run again.` };
-    }
-  }
   const named = run(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
   const from = named === "HEAD" ? run(["rev-parse", "HEAD"]).stdout.trim() : named;
-  const switched = run(["switch", "-C", branch, "origin/beta"]);
-  if (switched.status !== 0) return { ok: false, reason: `cannot start ${branch} from origin/beta: ${switched.stderr.trim()}` };
-  return { ok: true, branch, from };
+  const switched = run(["switch", "--detach", "origin/beta"]);
+  if (switched.status !== 0) return { ok: false, reason: `cannot start the cut at origin/beta: ${switched.stderr.trim()}` };
+  return { ok: true, from };
 }
 
-const KNOWN_FLAGS = ["--dry-run", "--no-gen", "--patch", "--no-fetch", "--commit", "--wait", "--run", "--sha"];
+const KNOWN_FLAGS = ["--dry-run", "--no-gen", "--patch", "--no-fetch", "--wait", "--sha"];
 
 /** The first `--flag` this script does not take. A retired flag fails here instead of falling through to a cut. */
 export function unknownFlag(args: readonly string[]): string | undefined {
@@ -314,16 +299,16 @@ function main(): void {
     process.exit(2);
   }
   const wait = waitRequest(args);
-  if (wait !== null && wait.runId !== undefined && !Number.isInteger(wait.runId)) {
-    console.error("release: --run takes a publish run id");
-    process.exit(2);
-  }
-  if (wait !== null && wait.version !== undefined) {
-    void waitForVersion(root, wait.version, wait);
+  if (wait !== null) {
+    if (wait.version === undefined) {
+      console.error("release: --wait takes the version to finish, e.g. --wait 0.58.0");
+      process.exit(2);
+    }
+    void resumeRelease(root, wait.version, wait.sha);
     return;
   }
-  if (wait !== null && (wait.runId !== undefined || wait.sha !== undefined)) {
-    console.error("release: --run and --sha name a publish run, so they go with --wait <version>");
+  if (args.includes("--sha")) {
+    console.error("release: --sha names the commit to tag, so it goes with --wait <version>");
     process.exit(2);
   }
   const dryRun = args.includes("--dry-run");
@@ -340,22 +325,16 @@ function main(): void {
     process.exit(1);
   }
 
-  // A release cut from a stale branch is how a published version ended up missing merged work.
   if (!args.includes("--no-fetch")) spawnSync("git", ["fetch", "--quiet", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 20_000 });
   let cutFrom: string | null = null;
   if (!dryRun) {
-    const start = startReleaseBranch({ cwd: root, patch: patchRelease });
+    const start = startReleaseCut({ cwd: root });
     if (!start.ok) {
       console.error(`release: ${start.reason}`);
       process.exit(1);
     }
     cutFrom = start.from;
-    console.log(`release: cutting on ${start.branch}, from origin/beta`);
-  }
-  const ancestor = checkReleaseAncestor({ cwd: root, target: args.includes("--commit") ? args[args.indexOf("--commit") + 1] : "HEAD" });
-  if (!ancestor.ok) {
-    for (const line of ancestorFailureLines(ancestor)) console.error(line);
-    process.exit(1);
+    console.log("release: cutting on origin/beta's tip");
   }
 
   // Build and check the site before cutting anything. Publishing first and building the site after once
@@ -366,6 +345,7 @@ function main(): void {
     console.log(site.line);
     if (!site.ok) {
       console.error("release: stopped before cutting; nothing was published. Fix the site, then run the release again.");
+      switchBack(root, cutFrom);
       process.exit(1);
     }
   }
@@ -379,6 +359,7 @@ function main(): void {
   const total = Object.values(sections).reduce((n, list) => n + list.length, 0);
   if (total === 0) {
     console.error("release: `## [Unreleased]` has no entries — nothing to cut.");
+    switchBack(root, cutFrom);
     process.exit(1);
   }
 
@@ -416,88 +397,116 @@ function main(): void {
     const gen = spawnSync("bun", ["scripts/gen-skill-api-safe.ts"], { cwd: root, stdio: "inherit" });
     if (gen.status !== 0) process.exit(gen.status ?? 1);
   }
-  if (wait !== null && cutFrom !== null) void landAndAwait(root, sdk, cutFrom);
-  else console.log("release: review the diff, then commit and open the release PR.");
+  void commitAndRelease(root, sdk, cutFrom);
 }
 
 export interface WaitRequest {
-  /** The version already cut. Absent means cut, land and wait. */
+  /** The version already cut; absent when `--wait` names none. */
   version?: string | undefined;
-  runId?: number | undefined;
+  /** A later beta commit to tag instead of the cut, for a release whose own commit CI failed. */
   sha?: string | undefined;
 }
 
-/** `--wait` cuts, lands and waits; `--wait <version>` only waits on a version already cut. Null without `--wait`. */
+/** `--wait <version>` finishes a release already cut. Null without `--wait`. */
 export function waitRequest(args: readonly string[]): WaitRequest | null {
   const at = args.indexOf("--wait");
   if (at < 0) return null;
   const next = args[at + 1];
-  const value = (flag: string): string | undefined => {
-    const i = args.indexOf(flag);
-    return i < 0 ? undefined : args[i + 1];
-  };
-  const run = value("--run");
+  const sha = args.indexOf("--sha");
   return {
     version: next !== undefined && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(next) ? next : undefined,
-    runId: run === undefined ? undefined : Number(run),
-    sha: value("--sha"),
+    sha: sha < 0 ? undefined : args[sha + 1],
   };
 }
 
+type Git = (args: readonly string[]) => { status: number | null; stdout: string; stderr: string };
+
+function gitIn(root: string): Git {
+  return (args) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
+}
+
+function switchBack(root: string, from: string | null): void {
+  if (from === null) return;
+  const back = gitIn(root)(["switch", "--quiet", ...(/^[0-9a-f]{40}$/.test(from) ? ["--detach"] : []), from]);
+  if (back.status !== 0) console.error(`release: this checkout did not switch back to ${from}: ${back.stderr.trim()}`);
+}
+
 /**
- * `--wait <version>`: the version is already cut and on main. Wait for its Publish run, then deploy
- * jgengine.com from the commit that run published: the same tail `--wait` runs after a cut, following
- * beta when Publish refused a commit beta had passed (0.54.0's resume only waited on main and stopped
- * there). A failed deploy is retried by running this again, not by hand.
+ * Commit the cut and push it straight to beta. The push is a fast-forward or nothing: a beta that
+ * moved during the cut refuses it, and the release is run again from the new tip.
  */
-async function waitForVersion(root: string, version: string, wait: WaitRequest): Promise<never> {
-  spawnSync("git", ["fetch", "--quiet", "origin", "main"], { cwd: root, stdio: "ignore", timeout: 20_000 });
-  const sha = resolveCommit(root, wait.sha ?? "origin/main");
-  if (sha === "") {
-    console.error(`release: cannot resolve ${wait.sha ?? "origin/main"} to a commit`);
+async function commitAndRelease(root: string, version: string, from: string | null): Promise<never> {
+  const git = gitIn(root);
+  const fail = (line: string): never => {
+    console.error(line);
+    process.exit(1);
+  };
+  if (git(["add", "-A"]).status !== 0) fail("release: staging the cut failed");
+  const made = git(["commit", "--quiet", "-m", `Release ${version}`]);
+  if (made.status !== 0) fail(`release: committing the cut failed: ${made.stderr.trim()}`);
+  const sha = git(["rev-parse", "HEAD"]).stdout.trim();
+  const pushed = git(["push", "origin", `${sha}:refs/heads/beta`]);
+  if (pushed.status !== 0) {
+    switchBack(root, from);
+    fail(`release: beta refused the cut (${pushed.stderr.trim()}); nothing was tagged or published. Run \`bun run release\` again from beta's new tip.`);
+  }
+  console.log(`release: Release ${version} is on beta as ${sha.slice(0, 8)}`);
+  switchBack(root, from);
+  process.exit(await finishRelease(root, version, sha));
+}
+
+/**
+ * `--wait <version>`: finish a release whose cut is already on beta. The commit is `--sha`, else the
+ * commit its tag names, else beta's `Release <version>` commit.
+ */
+async function resumeRelease(root: string, version: string, sha?: string): Promise<never> {
+  const git = gitIn(root);
+  spawnSync("git", ["fetch", "--quiet", "--tags", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 30_000 });
+  const tagged = git(["rev-parse", "--verify", "--quiet", `refs/tags/v${version}^{commit}`]).stdout.trim();
+  const cut = git(["log", "origin/beta", "--format=%H", "--extended-regexp", `--grep=^Release ${version.replaceAll(".", "\\.")}$`, "-1"]).stdout.trim();
+  const target = sha === undefined ? tagged || cut : git(["rev-parse", "--verify", "--quiet", `${sha}^{commit}`]).stdout.trim();
+  if (target === "") {
+    console.error(`release: no commit to release ${version} from: no v${version} tag and no "Release ${version}" commit on origin/beta`);
     process.exit(1);
   }
-  process.exit(await publishAndDeploy(root, version, sha, wait.runId));
+  process.exit(await finishRelease(root, version, target));
 }
 
 /**
- * Wait for Publish on `sha` (pushing beta's tip to main and publishing that when beta passed it), then
- * deploy jgengine.com from the commit that was published. The site deploy runs here, not in CI,
+ * Wait for beta's CI on `sha`, tag it `v<version>` (which starts publish.yml), wait for npm to serve
+ * the release, then deploy jgengine.com from the same commit. The site deploy runs here, not in CI,
  * because its build needs game models.
  */
-async function publishAndDeploy(root: string, version: string, sha: string, runId?: number): Promise<number> {
-  const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
+async function finishRelease(root: string, version: string, sha: string): Promise<number> {
+  const git = gitIn(root);
   const gh = ghIn(root);
-  let first = true;
-  let pushedAt: string | undefined;
-  const published = await publishFollowingBeta({
-    sha,
-    // A named run belongs to the first commit only; a commit pushed after it has its own run, created
-    // after the push.
-    publish: (target) => {
-      const run = first ? runId : undefined;
-      first = false;
-      return awaitPublish({ version, sha: target, runId: run, notBefore: pushedAt, gh, log: (line) => console.log(line) });
-    },
-    pushTip: () => {
-      pushedAt = new Date().toISOString();
-      return fastForwardMain(git);
-    },
-    log: (line) => console.log(line),
-  });
-  if (!published.ok) {
-    console.error(`release: ${published.error}`);
+  const log = (line: string) => console.log(line);
+  const tag = `v${version}`;
+  const existing = git(["rev-parse", "--verify", "--quiet", `refs/tags/${tag}^{commit}`]).stdout.trim();
+  if (existing !== "" && existing !== sha) {
+    console.error(`release: ${tag} already names ${existing.slice(0, 8)}, not ${sha.slice(0, 8)}; a published tag is never moved`);
     return 1;
   }
+  if (existing === "") {
+    const ci = await awaitCi({ sha, gh, log });
+    console.log(ci.line);
+    if (!ci.ok) return 1;
+    const made = git(["tag", "--annotate", tag, sha, "--message", `Release ${version}`]);
+    if (made.status !== 0) {
+      console.error(`release: tagging ${sha.slice(0, 8)} failed: ${made.stderr.trim()}`);
+      return 1;
+    }
+  }
+  const pushed = git(["push", "origin", `refs/tags/${tag}`]);
+  if (pushed.status !== 0) {
+    console.error(`release: pushing ${tag} failed: ${pushed.stderr.trim()}`);
+    return 1;
+  }
+  console.log(`release: pushed ${tag} on ${sha.slice(0, 8)}; publish.yml runs on it`);
   return publishThenDeploy(
-    async () => published.result,
-    () => deploySite(root, runStep, published.sha),
+    () => awaitPublish({ version, sha, gh, log }),
+    () => deploySite(root, runStep, sha),
   );
-}
-
-function resolveCommit(root: string, rev: string): string {
-  const out = spawnSync("git", ["rev-parse", "--verify", "--quiet", rev], { cwd: root, encoding: "utf8" });
-  return out.status === 0 ? out.stdout.trim() : "";
 }
 
 /** `gh` run in the release folder, so it reads that repository. */
@@ -506,109 +515,6 @@ function ghIn(root: string): RunGh {
     const result = spawnSync("gh", [...args], { cwd: root, encoding: "utf8" });
     return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   };
-}
-
-/**
- * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes
- * and opens it), merge it, fast-forward `main`, then wait for the Publish
- * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
- */
-async function landAndAwait(root: string, version: string, cutFrom: string): Promise<never> {
-  const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
-  const commit = git(["add", "-A"]);
-  if (commit.status !== 0) {
-    console.error(`release: staging the cut failed: ${commit.stderr.trim()}`);
-    process.exit(1);
-  }
-  const staged = git(["diff", "--cached", "--quiet"]);
-  if (staged.status !== 0) {
-    const made = git(["commit", "-m", `Release ${version}`]);
-    if (made.status !== 0) {
-      console.error(`release: committing the cut failed: ${made.stderr.trim()}`);
-      process.exit(1);
-    }
-  }
-  const land = spawnSync("bun", ["scripts/land.ts"], { cwd: root, stdio: "inherit" });
-  if (land.status !== 0) {
-    console.error("release: land did not finish; the cut is committed on this branch and nothing was merged");
-    process.exit(land.status ?? 1);
-  }
-
-  if (mergeRelease(root) === null) process.exit(1);
-  const forward = fastForwardMain(git);
-  if (!forward.ok) {
-    console.error(`release: fast-forwarding main failed: ${forward.error}`);
-    process.exit(1);
-  }
-  const back = git(["checkout", "--quiet", cutFrom]);
-  if (back.status !== 0) console.error(`release: published, but this checkout did not switch back to ${cutFrom}: ${back.stderr.trim()}`);
-  process.exit(await publishAndDeploy(root, version, forward.sha));
-}
-
-/**
- * Publish `sha`. Beta can move while Publish runs, and Publish refuses a commit beta has already
- * passed: the 0.47.0 cut was refused when #2575 merged between its push and its Publish check. So a
- * failed publish pushes beta's tip to `main` and publishes that instead, at most twice.
- */
-export async function publishFollowingBeta(input: {
-  sha: string;
-  publish: (sha: string) => Promise<AwaitResult>;
-  pushTip: () => { ok: true; sha: string } | { ok: false; error: string };
-  log: (line: string) => void;
-  retries?: number;
-}): Promise<{ ok: true; sha: string; result: AwaitResult } | { ok: false; error: string }> {
-  let sha = input.sha;
-  let result = await input.publish(sha);
-  for (let retry = 0; !result.ok && retry < (input.retries ?? 2); retry++) {
-    const tip = input.pushTip();
-    if (!tip.ok) return { ok: false, error: `fast-forwarding main failed: ${tip.error}` };
-    if (tip.sha === sha) break;
-    input.log(`release: beta moved to ${tip.sha.slice(0, 8)} while Publish ran; publishing that commit`);
-    sha = tip.sha;
-    result = await input.publish(sha);
-  }
-  return { ok: true, sha, result };
-}
-
-/**
- * Push the merged release to `main`. The local `origin/beta` ref predates the merge `land` waited
- * for, so it is fetched first: pushing the stale ref moved `main` to the commit before the release
- * and 0.40.0 sat unpublished.
- */
-export function fastForwardMain(
-  git: (args: readonly string[]) => { status: number | null; stdout: string; stderr: string },
-): { ok: true; sha: string } | { ok: false; error: string } {
-  const fetched = git(["fetch", "--quiet", "origin", "beta"]);
-  if (fetched.status !== 0) return { ok: false, error: `fetching origin/beta: ${fetched.stderr.trim()}` };
-  const tip = git(["rev-parse", "origin/beta"]);
-  if (tip.status !== 0) return { ok: false, error: `reading origin/beta: ${tip.stderr.trim()}` };
-  const sha = tip.stdout.trim();
-  const pushed = git(["push", "origin", `${sha}:main`]);
-  if (pushed.status !== 0) return { ok: false, error: pushed.stderr.trim() };
-  return { ok: true, sha };
-}
-
-/**
- * The release PR's merge is the event the publish run follows. The release checked its own commit
- * before cutting (the site build at the commit it releases), so it merges the head it pushed, as
- * lane:close does; CI on the beta push and Publish's own check of that commit follow.
- */
-function mergeRelease(root: string): number | null {
-  const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
-  const listed = checkoutGitHub(root).listPulls({ head: branch, state: "open", limit: 1 });
-  const pr = listed.ok ? listed.value[0] : undefined;
-  if (pr === undefined) {
-    console.error(`release: no open PR for ${branch}${listed.ok ? "" : `: ${listed.error}`}; nothing was published`);
-    return null;
-  }
-  const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
-  const merged = mergeVerified(checkoutGitHub(root), pr.number, head);
-  if (!merged.ok) {
-    console.error(`release: GitHub refused to merge #${pr.number}: ${merged.error}; nothing was published`);
-    return null;
-  }
-  console.log(`release: merged #${pr.number} as ${merged.sha}`);
-  return pr.number;
 }
 
 /** Compute the version a normal or patch release will publish. */

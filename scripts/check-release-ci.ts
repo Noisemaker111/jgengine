@@ -1,10 +1,9 @@
 /**
  * Refuses to publish a commit whose own CI run is not green.
  *
- * A release fast-forwards `main` to a `beta` commit, so that commit's CI already ran on the
- * merge and again on the `main` push. `publish.yml` starts from that run's completion and reads
- * its verdict here instead of re-running the suite, so the guarantee that a red commit cannot
- * publish is kept and the duplicate run is gone (#2279).
+ * A release tags a beta commit whose CI already ran on the push to beta. `publish.yml` runs on
+ * that tag and reads the verdict here instead of re-running the suite, so a red commit cannot
+ * publish and the suite never runs twice (#2279).
  *
  * Only the `ci.yml` verdict for this exact SHA counts: a green run of another commit, or a run
  * still in progress, is not evidence. A manual `workflow_dispatch` answers the same question,
@@ -42,7 +41,7 @@ export function decideCiRuns(runs: readonly CiRun[], sha: string): CiVerdict {
   if (mine.length === 0) {
     return {
       ok: false,
-      message: `no CI run found for ${sha.slice(0, 8)} - a release publishes a commit CI has already proved; push it through a PR first`,
+      message: `no CI run found for ${sha.slice(0, 8)} - a release publishes a commit CI has already proved on beta`,
     };
   }
   const green = mine.find((run) => run.status === "completed" && run.conclusion === "success");
@@ -60,11 +59,17 @@ export function decideCiRuns(runs: readonly CiRun[], sha: string): CiVerdict {
 
 /** The `ci.yml` runs the Actions API reports for `sha`, newest first. */
 export function readCiRuns(repo: string, sha: string): CiRun[] {
-  const raw = execFileSync(
-    "gh",
-    ["api", `repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=50`],
-    { encoding: "utf8", maxBuffer: 16 * 1024 * 1024, timeout: 60_000 },
+  return parseCiRuns(
+    execFileSync("gh", ["api", `repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=50`], {
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 60_000,
+    }),
   );
+}
+
+/** The runs in one Actions API `workflow_runs` answer. */
+export function parseCiRuns(raw: string): CiRun[] {
   const parsed = JSON.parse(raw) as {
     workflow_runs?: Array<{
       id: number;

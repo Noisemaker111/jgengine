@@ -5,7 +5,7 @@ import { join } from "node:path";
 // The concurrency block decides whether a run finishes. On 24 Oct a push to beta cancelled the
 // previous beta run 6 times in 13 minutes: 122 runner-minutes were spent on runs that never
 // reached a verdict, and "is beta green" was answered by a run that never finished. CI runs only
-// on those two branches now, and never cancels.
+// on beta now, and never cancels.
 const workflow = readFileSync(join(import.meta.dir, "..", ".github", "workflows", "ci.yml"), "utf8");
 
 function concurrencyBlock(text: string): { group: string; cancel: string } {
@@ -16,14 +16,14 @@ function concurrencyBlock(text: string): { group: string; cancel: string } {
   };
 }
 
-test("beta and main serialise instead of cancelling, so every push gets a verdict", () => {
+test("beta pushes serialise instead of cancelling, so every push gets a verdict", () => {
   expect(concurrencyBlock(workflow).cancel).toBe("false");
 });
 
-test("CI runs on pushes to beta and main, never on a pull request: lane:close's receipt gates a PR", () => {
+test("CI runs on pushes to beta, never on a pull request: lane:close's receipt gates a PR", () => {
   const on = /^on:\n((?: {2}.*\n|\s*\n)+?)(?=^\S)/m.exec(workflow)?.[1] ?? "";
   expect(on).toContain("push:");
-  expect(on).toMatch(/branches:\s*\[main, beta\]/);
+  expect(on).toMatch(/branches:\s*\[beta\]/);
   expect(on).not.toContain("pull_request");
   expect(workflow).not.toMatch(/github\.event\.pull_request|github\.base_ref/);
 });

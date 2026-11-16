@@ -1,6 +1,7 @@
-// The wait half of a release: wait for the Publish run of one commit and answer with the version it
-// published. `bun run release --wait` calls this after it lands a cut, and `bun run release --wait <version>`
-// calls it for a version already cut. The flags, and the deploy after the wait, live in release.ts.
+// The wait half of a release: wait for beta's CI on the release commit, then for the Publish run its
+// `v<version>` tag starts, and answer with the version it published. `bun run release` calls this after
+// it pushes the cut, and `bun run release --wait <version>` for a version already cut. The flags, the tag
+// and the deploy after the wait live in release.ts.
 //
 // A release lane spent 265 minutes in 24 h in `Start-Sleep 480; gh run view …; npm view …` loops. The
 // wait is real — publishing is asynchronous — so this owns it in one bounded place, reports the run it
@@ -8,6 +9,7 @@
 import { spawnSync } from "node:child_process";
 
 import { checkLiveRelease, unservedLockstep } from "./check-release-artifacts";
+import { decideCiRuns, parseCiRuns } from "./check-release-ci";
 
 export interface ProcResult {
   status: number;
@@ -40,41 +42,70 @@ export interface JobStep {
 }
 
 export const PUBLISH_WORKFLOW = "publish.yml";
-/** publish.yml starts on `workflow_run` of this workflow completing on main, never before it. */
+/** The workflow whose verdict on the release commit gates the tag. */
 export const CI_WORKFLOW = "ci.yml";
-/** A publish run is build + sharded tests + pack/install/compile + 13 publishes + verify: ~11 min measured. */
+/** A publish run is build + pack/install/compile + 13 publishes + verify: ~11 min measured. */
 export const PUBLISH_TIMEOUT_MS = 45 * 60_000;
+/** Beta's CI on one commit: ~8 min measured, longer when runners queue. */
+export const CI_TIMEOUT_MS = 60 * 60_000;
 /** Long enough not to hammer the API, short enough that a lane never wonders if it is alive. */
 export const POLL_INTERVAL_MS = 10_000;
-/**
- * How long a publish run may take to appear once main's CI run for the commit has finished. While that
- * CI run is still going, publish.yml cannot have queued yet, so the wait keeps going (bounded by the
- * overall timeout): 0.41.0's main CI took ~5 minutes and a 3-minute window reported it unpublished.
- */
+/** How long a run may take to appear after the push that starts it. */
 export const START_GRACE_MS = 3 * 60_000;
 
-/**
- * The publish run for `sha`. GitHub labels a `workflow_run` run with the default branch's tip when it was
- * queued, not with the commit it publishes, so with `since` (when main's CI for `sha` started) the run is
- * the first one queued after it, whatever commit it names, and nothing queued before it counts: 0.54.0's
- * wait took an earlier refused run, labelled with beta's tip, as the verdict on main's new commit.
- * Without `since`, the newest run labelled `sha` by id: a re-run replaces the attempt it retried.
- */
-export function pickRun(runs: readonly PublishRun[], sha: string, since?: string): PublishRun | null {
-  if (since !== undefined) {
-    let first: PublishRun | null = null;
-    for (const run of runs) {
-      if (run.createdAt === undefined || run.createdAt < since) continue;
-      if (first === null || run.databaseId < first.databaseId) first = run;
-    }
-    if (first !== null) return first;
-  }
+/** The run for `sha`: the newest by id, so a re-run replaces the attempt it retried. */
+export function pickRun(runs: readonly PublishRun[], sha: string): PublishRun | null {
   let newest: PublishRun | null = null;
   for (const run of runs) {
-    if (run.headSha !== sha || (since !== undefined && run.createdAt !== undefined && run.createdAt < since)) continue;
+    if (run.headSha !== sha) continue;
     if (newest === null || run.databaseId > newest.databaseId) newest = run;
   }
   return newest;
+}
+
+/**
+ * Wait until beta's CI has a verdict on `sha`. The release tags a commit only once that verdict is
+ * green, so publish.yml never starts on a commit CI has not proved.
+ */
+export async function awaitCi(options: {
+  sha: string;
+  gh?: RunGh;
+  timeoutMs?: number;
+  graceMs?: number;
+  intervalMs?: number;
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
+  log?: (line: string) => void;
+}): Promise<{ ok: boolean; line: string }> {
+  const gh = options.gh ?? defaultGh;
+  const now = options.now ?? Date.now;
+  const sleep = options.sleep ?? ((ms: number) => Bun.sleep(ms));
+  const timeout = options.timeoutMs ?? CI_TIMEOUT_MS;
+  const grace = options.graceMs ?? START_GRACE_MS;
+  const started = now();
+  const short = options.sha.slice(0, 8);
+  let logged = false;
+  for (;;) {
+    const read = gh(["api", `repos/{owner}/{repo}/actions/workflows/${CI_WORKFLOW}/runs?head_sha=${options.sha}&per_page=50`]);
+    const runs = read.status === 0 ? parseCiRuns(read.stdout) : [];
+    const verdict = decideCiRuns(runs, options.sha);
+    if (verdict.ok) return { ok: true, line: `release: ${verdict.message}` };
+    const pending = runs.some((run) => run.status !== "completed");
+    if (runs.length > 0 && !pending) return { ok: false, line: `release: ${verdict.message}; nothing was tagged or published` };
+    const waited = now() - started;
+    if (runs.length === 0 && waited >= grace) {
+      return { ok: false, line: `release: no ${CI_WORKFLOW} run for ${short} ${Math.round(grace / 1000)}s after it reached beta; nothing was tagged` };
+    }
+    if (waited >= timeout) {
+      return { ok: false, line: `release: CI on ${short} still running after ${Math.round(timeout / 60_000)} minutes; finish with \`bun run release --wait <version>\`` };
+    }
+    if (!logged && runs.length > 0) {
+      options.log?.(`release: waiting on beta's CI for ${short} (${runs[0]?.url ?? CI_WORKFLOW})`);
+      logged = true;
+    }
+    // CI on beta takes minutes; bounded by the timeout above
+    await sleep(options.intervalMs ?? POLL_INTERVAL_MS);
+  }
 }
 
 /** The jobs that failed, in the order the run ran them; the first is the cause to name. */
@@ -121,7 +152,7 @@ export const liveRegistryCheck: RegistryCheck = {
 
 export interface AwaitOptions {
   version: string;
-  /** The commit Publish runs on; `main`'s head after the release lands. */
+  /** The commit the release tag names; publish.yml runs on it. */
   sha: string;
   gh?: RunGh;
   /** The registry the release must reach before the wait answers. */
@@ -129,12 +160,6 @@ export interface AwaitOptions {
   /** How long npm may take to serve every package after the run ends. */
   registryTimeoutMs?: number;
   runId?: number | undefined;
-  /**
-   * ISO time `main` was pushed to `sha`: no run created before it is this commit's. Main's CI run for a
-   * just-pushed commit may not be listed yet, and 0.54.0's follow-up took the earlier refused run, which
-   * GitHub had labelled with the same beta tip, as the new commit's verdict.
-   */
-  notBefore?: string | undefined;
   timeoutMs?: number;
   graceMs?: number;
   intervalMs?: number;
@@ -202,76 +227,23 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
   };
 
   const listRuns = (): PublishRun[] => {
-    const result = gh([
-      "run",
-      "list",
-      "--workflow",
-      PUBLISH_WORKFLOW,
-      // No --branch: publish.yml follows a CI run, and GitHub reports the triggering run's branch
-      // (beta), so filtering on main never found 0.40.0's run. The SHA is the match.
-      "--limit",
-      "10",
-      "--json",
-      "databaseId,status,conclusion,headSha,url,createdAt",
-    ]);
+    const result = gh(["run", "list", "--workflow", PUBLISH_WORKFLOW, "--commit", options.sha, "--limit", "10", "--json", "databaseId,status,conclusion,headSha,url,createdAt"]);
     if (result.status !== 0) return [];
     return parseJson<PublishRun[]>(result.stdout) ?? [];
   };
+  const find = (): PublishRun | null => (options.runId === undefined ? pickRun(listRuns(), options.sha) : readRun(options.runId));
 
-  /** Main's CI run for the commit: publish.yml is queued only after it completes. */
-  const readCiRun = (): PublishRun | null => {
-    const result = gh([
-      "run",
-      "list",
-      "--workflow",
-      CI_WORKFLOW,
-      // The released commit is also beta's tip, and beta's push run (with its Windows suite) is a
-      // different verdict from the main run publish.yml follows.
-      "--branch",
-      "main",
-      "--commit",
-      options.sha,
-      "--limit",
-      "10",
-      "--json",
-      "databaseId,status,conclusion,headSha,url,createdAt",
-    ]);
-    if (result.status !== 0) return null;
-    return pickRun(parseJson<PublishRun[]>(result.stdout) ?? [], options.sha);
-  };
-
-  let ci: PublishRun | null = options.runId === undefined ? readCiRun() : null;
-  const since = (): string | undefined => {
-    const times = [ci?.createdAt, options.notBefore].filter((time): time is string => time !== undefined);
-    return times.length === 0 ? undefined : times.sort().at(-1);
-  };
-  let run = options.runId === undefined ? pickRun(listRuns(), options.sha, since()) : readRun(options.runId);
-  // Publish starts only after main's CI for the commit finishes; until then a missing run is expected.
-  // Once CI is done, a run not yet queued is normal for a few seconds; give it the grace window.
-  let graceFrom = started;
-  while (run === null && options.runId === undefined && now() - started < timeout) {
-    ci = readCiRun();
-    if (ci !== null && ci.status !== "completed") graceFrom = now();
-    else if (ci !== null && ci.conclusion !== "success") break;
-    if (now() - graceFrom >= grace) break;
-    // Bounded by the overall timeout while CI runs, then by the grace window
+  let run = find();
+  while (run === null && now() - started < grace) {
+    // The tag was just pushed; GitHub queues its run within seconds. Bounded by the grace window
     await sleep(interval);
-    run = pickRun(listRuns(), options.sha, since());
-  }
-  while (run === null && options.runId !== undefined && now() - started < grace) {
-    // The run id is known; reading it can fail briefly, and this window is bounded
-    await sleep(interval);
-    run = readRun(options.runId);
+    run = find();
   }
   if (run === null) {
-    let line: string;
-    if (options.runId !== undefined) line = `release: publish run ${options.runId} could not be read`;
-    else if (ci !== null && ci.status === "completed" && ci.conclusion !== "success")
-      line = `release: CI run ${ci.databaseId} on main for ${options.sha.slice(0, 8)} ended ${ci.conclusion ?? "without a conclusion"}, so ${PUBLISH_WORKFLOW} never starts and ${options.version} is not published (${ci.url})`;
-    else if (ci !== null && ci.status !== "completed")
-      line = `release: CI run ${ci.databaseId} on main for ${options.sha.slice(0, 8)} still running after ${Math.round(timeout / 60_000)} minutes, so ${PUBLISH_WORKFLOW} has not started (${ci.url})`;
-    else
-      line = `release: no ${PUBLISH_WORKFLOW} run for ${options.sha.slice(0, 8)} on main ${Math.round(grace / 1000)}s after its CI finished - nothing was queued, so ${options.version} is not published`;
+    const line =
+      options.runId === undefined
+        ? `release: no ${PUBLISH_WORKFLOW} run for ${options.sha.slice(0, 8)} ${Math.round(grace / 1000)}s after v${options.version} was pushed, so ${options.version} is not published`
+        : `release: publish run ${options.runId} could not be read`;
     return { ok: false, line, runId: options.runId ?? null, code: 1 };
   }
   log(`release: waiting on publish run ${run.databaseId} (${run.url})`);
