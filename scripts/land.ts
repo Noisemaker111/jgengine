@@ -12,7 +12,7 @@
 // the diff has none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
 // error: the landing runs as it does without the flag.
 //
-// It refuses on `main` or (without `--commit`) a dirty tree, pushes, and reuses an open PR or opens one
+// It refuses on the base branch or (without `--commit`) a dirty tree, pushes, and reuses an open PR or opens one
 // (body: --body-file when given, else the `changes/` fragment this branch's own diff adds, else the
 // branch's commit messages, whole). It never waits and never merges: `lane:close` merges once its local
 // receipt covers the pushed head.
@@ -546,9 +546,9 @@ function lines(result: Run): string[] {
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
-/** A branch is landable when it is not `main` and has nothing uncommitted. */
+/** A branch is landable when it is not the base and has nothing uncommitted. */
 export function landRefusal(branch: string, dirty: string, base: string): string | null {
-  if (branch === "main" || branch === base) return `refusing to land ${branch}: land a task branch into ${base}, never ${branch} itself.`;
+  if (branch === base) return `refusing to land ${branch}: land a task branch into ${base}, never ${branch} itself.`;
   if (dirty.trim().length > 0) return "refusing to land a dirty tree: pass --commit, or commit or stash first.";
   return null;
 }
@@ -1072,7 +1072,7 @@ export function mergeVerified(
  * Branches no landing deletes, whatever merged from them: the bases, releases, the backup and rescue
  * copies people keep on purpose, and the branch the PR screenshots live on.
  */
-export const KEPT_BRANCH = /^(?:beta|main|pr-shots|(?:release|backup|rescue)\/.+)$/;
+export const KEPT_BRANCH = /^(?:beta|pr-shots|(?:backup|rescue)\/.+)$/;
 
 /**
  * Why a landed branch stays on origin, or null when it may go: a {@link KEPT_BRANCH}, or a branch an

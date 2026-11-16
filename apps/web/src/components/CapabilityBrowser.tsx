@@ -13,7 +13,7 @@ function demoOf(row: Capability) {
 }
 
 const PAGE = 40;
-const REPO_SKILLS = "https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills";
+const REPO_SKILLS = "https://github.com/Noisemaker111/jgengine/blob/beta/.claude/skills";
 
 /** Search and filter every intent row from the skills' generated capability indexes. */
 export function CapabilityBrowser() {

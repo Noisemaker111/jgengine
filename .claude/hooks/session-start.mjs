@@ -18,7 +18,7 @@ const git = (...args) => {
 const notes = [];
 
 const branch = git("rev-parse", "--abbrev-ref", "HEAD");
-if (branch && branch !== "HEAD" && branch !== "beta" && branch !== "main") {
+if (branch && branch !== "HEAD" && branch !== "beta") {
   const unpushed = Number(git("rev-list", "--count", "HEAD", "--not", "--remotes")) || 0;
   if (unpushed > 0) notes.push(`"${branch}" has ${unpushed} commit(s) not pushed yet.`);
   // A lane resumed days later reads the rules as they were when it branched: one such lane still followed
