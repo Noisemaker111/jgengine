@@ -1,5 +1,6 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { bunExecutable } from "../../packages/jgengine/src/bunExecutable";
 
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
@@ -23,7 +24,7 @@ const registryPlugin = (): Plugin => ({
   buildStart() {
     if (registryBuilt) return;
     registryBuilt = true;
-    const result = spawnSync("bun", [registryScript], { stdio: "inherit" });
+    const result = spawnSync(bunExecutable(), [registryScript], { stdio: "inherit" });
     if (result.status !== 0) {
       throw new Error("jgengine-registry: scripts/build-registry.ts failed");
     }
@@ -42,7 +43,7 @@ const gamesPlayerPlugin = (): Plugin => ({
       console.log("[games-player] cache hit — games/* unchanged, skipped rebuild");
       return;
     }
-    const result = spawnSync("bun", ["run", "--cwd", devAppRoot, "build:site"], {
+    const result = spawnSync(bunExecutable(), ["run", "--cwd", devAppRoot, "build:site"], {
       stdio: "inherit",
     });
     if (result.status !== 0) {
@@ -103,7 +104,7 @@ const gamesPlayerDevPlugin = (): Plugin => {
       const startBuild = () => {
         if (build !== null || ready || failed) return;
         console.log("[games-player] building the /play runner in the background…");
-        build = spawn("bun", ["run", "--cwd", devAppRoot, "build:site"], {
+        build = spawn(bunExecutable(), ["run", "--cwd", devAppRoot, "build:site"], {
           stdio: "inherit",
         });
         build.once("exit", (code) => {

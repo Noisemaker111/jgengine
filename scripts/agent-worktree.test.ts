@@ -38,7 +38,10 @@ describe("linking a worktree to the main checkout", () => {
     }
     write(tsgoBin(main));
     mkdirSync(join(main, "packages", "shell", "node_modules", "@jgengine"), { recursive: true });
-    symlinkSync("../../../core", join(main, "packages", "shell", "node_modules", "@jgengine", "core"));
+    // What `bun install` writes: a relative symlink on POSIX, an absolute junction on Windows.
+    const coreLink = join(main, "packages", "shell", "node_modules", "@jgengine", "core");
+    if (process.platform === "win32") symlinkSync(join(main, "packages", "core"), coreLink, "junction");
+    else symlinkSync("../../../core", coreLink);
     write(join(main, "packages", "shell", "node_modules", ".vite", "deps.json"));
   });
 
@@ -65,7 +68,7 @@ describe("linking a worktree to the main checkout", () => {
     expect(linkDeps(main, target)).toEqual(["node_modules", "packages/shell/node_modules"]);
     expect(realpathSync(join(target, "node_modules"))).toBe(realpathSync(join(main, "node_modules")));
     const link = join(target, "packages", "shell", "node_modules", "@jgengine", "core");
-    expect(readlinkSync(link)).toBe(join("..", "..", "..", "core"));
+    if (process.platform !== "win32") expect(readlinkSync(link)).toBe(join("..", "..", "..", "core"));
     expect(realpathSync(link)).toBe(realpathSync(join(target, "packages", "core")));
     expect(existsSync(join(target, "packages", "shell", "node_modules", ".vite"))).toBe(false);
     expect(linkDeps(main, target)).toEqual([]);

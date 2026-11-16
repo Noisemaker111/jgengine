@@ -255,8 +255,9 @@ stamina = changeMeter(stamina, -30).meter; // sprinting
 stamina = tickMeter(stamina, { regen: 10, regenDelay: 1 }, 2).meter; // 90 after two seconds
 ```
 
-[jgengine.com/adopt](https://jgengine.com/adopt) adds health, XP, saves and a minimap to an
-existing three.js game, one at a time.
+A game that doesn't use `defineGame` can still host the engine's systems on `createGameContext`
+(`@jgengine/core/runtime/gameContext`). [jgengine.com/adopt](https://jgengine.com/adopt) adds health,
+XP, saves and a minimap to an existing three.js game, one at a time.
 
 **Or play the games in this repo** (needs [Bun](https://bun.sh)):
 
@@ -265,6 +266,9 @@ git clone https://github.com/Noisemaker111/jgengine && cd jgengine
 bun run agent:bootstrap   # install, link workspaces, prepare generated files
 bun run dev:site          # jgengine.com locally; every game plays at /games/<id>
 ```
+
+One game on its own: `bun run games:provision <id>` (links its asset packs), then
+`bun --cwd=games/<id> run dev`.
 
 ## How it runs
 
@@ -299,6 +303,7 @@ Agents start with [AGENTS.md](AGENTS.md). From the repo root:
 ```sh
 bun run agent:bootstrap        # setup; @jgengine/* resolves to package source, no build step
 bun run test <path>            # tests; no path runs all of them
+bun test games                 # every game's tests and scripts
 bun run verify:fast            # the checks your branch's diff reaches, in seconds
 bun run gen                    # regenerate committed files after a public API change
 bun run find <words>           # which package and folder owns a concept

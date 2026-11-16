@@ -71,6 +71,8 @@ interface Script {
   alive?: (pid: number) => boolean;
   /** Why the lane's verify:fast writes receipts this landing code cannot read; default none. */
   receiptsBehind?: string;
+  /** git has no user.name/user.email to commit as; default it has one. */
+  noIdentity?: boolean;
   /** The boat host gate's exit, per run in order (null: the host cannot run it); absent: no host. */
   remote?: (number | null)[];
 }
@@ -155,6 +157,7 @@ function io(script: Script = {}): Fake {
       if (key === "git rev-parse --absolute-git-dir") return { ...run(), stdout: `${GIT_DIR}\n` };
       if (key === "git rev-parse HEAD") return { ...run(), stdout: `${head}\n` };
       if (key === "git rev-parse HEAD^{tree}") return { ...run(), stdout: `${headTree}\n` };
+      if (key === "git var GIT_COMMITTER_IDENT") return script.noIdentity === true ? { status: 128, stdout: "", stderr: "Author identity unknown" } : { ...run(), stdout: "Lane <lane@example.com> 0 +0000\n" };
       if (key === "run preflight --no-verify") return { ...run(), status: script.preflight ?? 0 };
       if (key === "run verify:fast --landing") {
         const status = verifies[Math.min(verifyRuns, verifies.length - 1)] ?? 0;
@@ -283,6 +286,14 @@ describe("lane:close end to end", () => {
     expect(fake.calls.some((call) => call.includes("land.ts"))).toBe(false);
     expect(merges(fake)).toEqual([]);
     expect(fake.lines.err.join("\n")).toContain("this lane's scripts/verify-receipt.ts is older than beta's; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.");
+  });
+
+  test("a machine with no git identity stops before the gate, not at the commit after it", () => {
+    const fake = io({ noIdentity: true });
+    expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
+    expect(fake.calls).not.toContain("run preflight --no-verify");
+    expect(fake.calls.some((call) => call.includes("land.ts"))).toBe(false);
+    expect(fake.lines.err.join("\n")).toContain("git has no identity to commit as; nothing ran and nothing landed");
   });
 
   test("a base that moved without a conflict merges at once: no rebase, no second verify", () => {

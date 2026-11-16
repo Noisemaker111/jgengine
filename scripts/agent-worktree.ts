@@ -15,8 +15,8 @@
  * `ensureWorktreeReady` is the same repair path exposed to any tree through
  * `bun run ensure-ready` (which every test/build/smoke script runs).
  */
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, statSync, symlinkSync, unlinkSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { hasInstall, missingDependencies } from "./checkout-ready";
 
@@ -87,12 +87,54 @@ function exists(path: string): boolean {
 }
 
 /**
- * Link dependencies: the root node_modules is a symlink to the main checkout's
- * store; each workspace's node_modules is copied as-is because it holds only
- * relative symlinks, which then resolve to this worktree's own packages.
+ * Where a copied link should point. POSIX installs write relative links, kept as they are. Windows
+ * installs write junctions with absolute targets: one into the main checkout's own workspace (a
+ * `@jgengine/*` package) moves to the same path in the worktree; one into the shared store stays.
+ */
+function relinkTarget(link: string, mainRoot: string, target: string): string {
+  if (!isAbsolute(link)) return link;
+  const inside = relative(mainRoot, link);
+  if (inside === "" || inside.startsWith("..") || isAbsolute(inside)) return link;
+  if (inside.split(/[\\/]/)[0] === "node_modules") return link;
+  return join(target, inside);
+}
+
+/**
+ * Copy a workspace node_modules, recreating each link rather than what it points at. On Windows a
+ * link becomes a junction (directory) or a copied file: a real symlink there needs admin rights or
+ * Developer Mode, which is why `cpSync(verbatimSymlinks)` failed with EPERM.
+ */
+function copyLinks(from: string, to: string, mainRoot: string, target: string, top: boolean): void {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    if (top && SKIPPED_CACHE.test(entry.name)) continue;
+    const src = join(from, entry.name);
+    const dest = join(to, entry.name);
+    if (entry.isSymbolicLink()) {
+      const link = relinkTarget(readlinkSync(src), mainRoot, target);
+      if (process.platform !== "win32") {
+        symlinkSync(link, dest);
+        continue;
+      }
+      const resolved = resolve(from, link);
+      if (statSync(resolved, { throwIfNoEntry: false })?.isFile() === true) copyFileSync(resolved, dest);
+      else symlinkSync(resolved, dest, "junction");
+    } else if (entry.isDirectory()) {
+      copyLinks(src, dest, mainRoot, target, false);
+    } else {
+      copyFileSync(src, dest);
+    }
+  }
+}
+
+/**
+ * Link dependencies: the root node_modules is a junction to the main checkout's
+ * store; each workspace's node_modules is copied link by link (`copyLinks`) so
+ * its workspace links resolve to this worktree's own packages.
  */
 export function linkDeps(mainRoot: string, target: string): string[] {
   const linked: string[] = [];
+  const mainReal = realpathSync(mainRoot);
   for (const rel of workspaceDirs(mainRoot)) {
     const from = join(mainRoot, rel, "node_modules");
     const to = join(target, rel, "node_modules");
@@ -100,11 +142,7 @@ export function linkDeps(mainRoot: string, target: string): string[] {
     if (rel === "") {
       symlinkSync(realpathSync(from), to, "junction");
     } else {
-      cpSync(from, to, {
-        recursive: true,
-        verbatimSymlinks: true,
-        filter: (src) => !SKIPPED_CACHE.test(src.slice(from.length + 1).split(/[\\/]/)[0] ?? ""),
-      });
+      copyLinks(from, to, mainReal, target, true);
     }
     linked.push(rel === "" ? "node_modules" : `${rel}/node_modules`);
   }

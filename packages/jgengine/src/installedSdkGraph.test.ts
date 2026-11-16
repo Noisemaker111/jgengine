@@ -25,7 +25,7 @@ async function fixture(run: (root: string, game: string, studio: string) => void
     writePackage(join(root, "node_modules", "@jgengine", "ws"), "@jgengine/ws", "0.19.0", { dependencies: { "@jgengine/core": "^0.19.0" } });
     writePackage(join(root, "node_modules", "@jgengine", "shell"), "@jgengine/shell", "0.19.0", { dependencies: { "@jgengine/core": "^0.19.0" }, peerDependencies: { "@jgengine/ws": "^0.19.0" } });
     mkdirSync(join(root, "node_modules", "@example"), { recursive: true });
-    symlinkSync(studio, join(root, "node_modules", "@example", "studio"), "dir");
+    symlinkSync(studio, join(root, "node_modules", "@example", "studio"), "junction");
     writePackage(join(studio, "node_modules", "@jgengine", "shell"), "@jgengine/shell", "0.18.1", { dependencies: { "@jgengine/core": "^0.18.1" } });
     writePackage(join(studio, "node_modules", "@jgengine", "core"), "@jgengine/core", "0.18.1");
     await run(root, game, studio);
@@ -51,7 +51,7 @@ test("doctor catches a linked consumer's private SDK although the game's direct 
 test("same-version copies still split module identity in a differently composed peer consumer", async () => {
   await fixture(async (root, game, studio) => {
     const relay = writePackage(join(root, "relay"), "@example/relay", "1.0.0", { peerDependencies: { "@jgengine/core": "^0.19.0" } });
-    symlinkSync(relay, join(root, "node_modules", "@example", "relay"), "dir");
+    symlinkSync(relay, join(root, "node_modules", "@example", "relay"), "junction");
     writePackage(join(relay, "node_modules", "@jgengine", "core"), "@jgengine/core", "0.19.0");
     writeFileSync(join(game, "package.json"), JSON.stringify({ dependencies: { "@jgengine/ws": "catalog:runtime", "@example/relay": "file:../../relay" } }));
     const canonical = createRequire(join(game, "package.json")).resolve("@jgengine/core/identity");

@@ -14,7 +14,7 @@ let server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "junction");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React from '@jgengine/core/ui/jsx';

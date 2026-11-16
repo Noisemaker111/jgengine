@@ -40,7 +40,7 @@ beforeAll(async () => {
       await mkdir(`${directory}/node_modules`, { recursive: true });
       await Promise.all([
 
-        ...["three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
+        ...["three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../../node_modules", peer), `${directory}/node_modules/${peer}`, "junction")),
       ]);
     });
     // Public subpaths resolve to package source through the repo's tsconfig paths: no build or pack.

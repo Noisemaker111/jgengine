@@ -21,7 +21,7 @@ interface Read { panels: number; width: number }
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "junction");
   await Bun.write(`${scratch}/counter.ts`, `
     import { installRenderCounter } from '../../packages/core/src/devtools/renderCounter';
     installRenderCounter(globalThis);

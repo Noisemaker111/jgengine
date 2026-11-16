@@ -12,6 +12,7 @@ import {
   verifyPlan,
   MAX_BOOTS,
   changedFiles,
+  docReaderTests,
   fastSteps,
   fullSteps,
   gatesFor,
@@ -301,6 +302,20 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
   test("a script change runs every scripts test, since they reach scripts by spawning them", () => {
     expect(plan(["scripts/capture.ts"]).tests).toEqual(expect.arrayContaining(["scripts/capture.test.ts", "scripts/captureCliParity.test.ts"]));
     expect(plan(["scripts/capture.ts"]).tests).not.toContain("packages/core/src/world/city.test.ts");
+  });
+
+  test("prose a test reads by its quoted path runs that test; a same-named file elsewhere does not", () => {
+    const sources: Record<string, string> = {
+      "scripts/cutlistSurface.test.ts": 'readFileSync(join(root, "README.md"), "utf8")',
+      "games/scripts/check-suite.test.ts": "readFileSync(join(gameDir, 'PLAN.md'))",
+    };
+    const read = (path: string): string => sources[path] ?? "";
+    const withReader = [...testFiles, "scripts/cutlistSurface.test.ts"];
+    const readers = docReaderTests(["README.md", "games/fernwild/README.md"], withReader, read);
+    expect(readers.get("README.md")).toEqual(["scripts/cutlistSurface.test.ts"]);
+    expect(readers.has("games/fernwild/README.md")).toBe(false);
+    const planned = verifyPlan({ changed: ["README.md"], testFiles: withReader, workspaces: fakeWorkspaces, graph: emptyGraph, docReaders: readers });
+    expect(planned.tests).toContain("scripts/cutlistSurface.test.ts");
   });
 
   test("a package's data file runs that package's suite; its notes do not", () => {

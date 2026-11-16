@@ -15,7 +15,7 @@ beforeAll(async () => {
   await rm(dir, { recursive: true, force: true });
   await mkdir(`${dir}/node_modules`, { recursive: true });
 
-  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
+  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "junction");
   await Bun.write(`${dir}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/core/hud/ShellHudPresentation.draw';

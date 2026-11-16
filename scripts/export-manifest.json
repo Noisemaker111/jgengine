@@ -2186,6 +2186,7 @@
   ],
   "jgengine": [
     ".",
+    "./bunExecutable",
     "./cli/index",
     "./clickInput",
     "./compatibility",

@@ -464,29 +464,32 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const fields = [
     `  name: ${JSON.stringify(name)},`,
     "  simulation: { hz: 60 },",
-    "  // Pick the look for this game's art direction: cinematic | photoreal | toon | comic | retro, or an explicit postProcessing stack.",
-    '  look: "cinematic",',
-    "  // The light: day | bright | golden | dusk | overcast | night, or { preset, sun, skyColor, fog, saturation } to move a few tokens.",
-    '  mood: "day",',
+    "  rendering: {",
+    "    // Pick the look for this game's art direction: cinematic | photoreal | toon | comic | retro, or an explicit postProcessing stack.",
+    '    look: "cinematic",',
+    "    // The light: day | bright | golden | dusk | overcast | night, or { preset, sun, skyColor, fog, saturation } to move a few tokens.",
+    '    mood: "day",',
+    "  },",
     "  // Menus, panes and HUD parts draw in this kit (src/game/ui/kit.ts).",
     "  uiKit: kit,",
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
     `  input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"]${options.flow ? ', pause: ["Escape", "KeyP"]' : ""} },`,
-    ...(options.loop ? ["  movement: { canSprint: sprintAllowed },", "  prompts: cachePrompts,"] : []),
+    ...(options.loop ? ["  controls: { movement: { canSprint: sprintAllowed }, prompts: cachePrompts },"] : []),
     ...(options.flow
       ? ["  // The title, pause and checkpoints; GameUI draws the menus over the world.", "  systems: [createGameFlowSystem(), ...systems],"]
       : ["  systems,"]),
     "  loop: { onNewPlayer },",
     "  GameUI,",
-    ...(options.editor
+    ...(options.editor || options.world
       ? [
-          "  // The authored scene renders and opens in the editor (F2+E) with zero extra wiring.",
-          "  editorLayers,",
+          "  scene: {",
+          ...(options.editor ? ["    // The authored scene renders and opens in the editor (F2+E) with zero extra wiring.", "    editorLayers,"] : []),
+          ...(options.world ? ["    entityModels,", "    objectModels,"] : []),
+          "  },",
         ]
       : []),
-    ...(options.world ? ["  entityModels,", "  objectModels,"] : []),
     ...(options.flow
       ? ["  // A capture or flow presses New game (`start`); the probe is what proofs and playtests read.", '  capture: { play: ["start"], probe },']
       : ["  // The probe is what proofs and playtests read.", "  capture: { probe },"]),

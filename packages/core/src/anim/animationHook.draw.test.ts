@@ -13,7 +13,7 @@ let browser: Browser, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules`, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../../../../packages/shell/node_modules/three"), `${scratch}/node_modules/three`, "dir");
+  await symlink(resolve(import.meta.dir, "../../../../packages/shell/node_modules/three"), `${scratch}/node_modules/three`, "junction");
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';
     import {createRoot} from '@jgengine/core/ui/jsx/client.view';

@@ -448,6 +448,8 @@ export function verifyPlan(input: {
   exempt?: readonly string[];
   /** What `lane:close` runs: also the site build and its bundle budgets when the change reaches them. */
   landing?: boolean;
+  /** Changed prose file -> the tests that read it from disk by name (`docReaderTests`). */
+  docReaders?: ReadonlyMap<string, readonly string[]>;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
   const deleted = [...new Set(input.deleted ?? [])].sort();
@@ -479,6 +481,9 @@ export function verifyPlan(input: {
   const tests = new Set<string>();
   for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
   for (const test of input.testFiles) if (reachedBy.has(test)) tests.add(test);
+  // Prose a test reads from disk by name: the graph cannot see a readFileSync, and a README rewrite
+  // that dropped a line the surface test requires passed here and failed CI's shard i (#3211).
+  for (const file of touchedPaths) for (const test of input.docReaders?.get(file) ?? []) tests.add(test);
 
   // Prose no compiler or test reads: a game's README or PLAN edit used to type-check the game and run
   // its whole suite plus every cross-game suite. A test that imports one (`?raw`) still reaches it
@@ -1075,6 +1080,29 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
   };
 }
 
+/**
+ * For each changed prose file, the tests whose source names its repo path as a quoted string, the
+ * way a test reads it: `join(root, "README.md")`, `"games/README.md"`. A path quoted only by its
+ * basename matches only a root file, so a game README edit does not pull in every README reader.
+ */
+export function docReaderTests(changed: readonly string[], testFiles: readonly string[], read: (path: string) => string): Map<string, string[]> {
+  const docs = changed.filter((path) => DOC_FILE.test(path));
+  const readers = new Map<string, string[]>();
+  if (docs.length === 0) return readers;
+  for (const test of testFiles) {
+    let source: string;
+    try {
+      source = read(test);
+    } catch {
+      continue;
+    }
+    for (const doc of docs) {
+      if (source.includes(`"${doc}"`) || source.includes(`'${doc}'`)) readers.set(doc, [...(readers.get(doc) ?? []), test]);
+    }
+  }
+  return readers;
+}
+
 /** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
 const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
 
@@ -1226,14 +1254,16 @@ async function main(argv: readonly string[]): Promise<number> {
   const graph = buildImportGraph(root, tree, {
     packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
   });
+  const testFiles = walkTestFiles(root, [...TEST_ROOTS, "games"]);
   const planned = verifyPlan({
     changed,
     deleted: deletedFiles(root, base),
-    testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
+    testFiles,
     workspaces: allWorkspaces,
     graph,
     exempt: pureRenames(root, base),
     landing,
+    docReaders: docReaderTests(changed, testFiles, (path) => readFileSync(join(root, path), "utf8")),
   });
   // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
   // needs, and lane:close reuses it instead of running it again.

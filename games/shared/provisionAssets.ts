@@ -3,6 +3,7 @@ import { createReadStream, existsSync, readdirSync, readFileSync, statSync } fro
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { bunExecutable } from "../../packages/jgengine/src/bunExecutable";
 
 import { assetStoreRoot, dirHasEntries, dirHasFiles, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
@@ -133,7 +134,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const child = spawn("bun", [join(assetsDir, "src/cli/pull.ts"), "pull", target, "--dir", outRoot], {
+    const child = spawn(bunExecutable(), [join(assetsDir, "src/cli/pull.ts"), "pull", target, "--dir", outRoot], {
       cwd,
       stdio: "inherit",
       windowsHide: true,
@@ -217,7 +218,7 @@ export function libraryPullMiddleware(gameDirOf: (game: string | undefined) => s
       const gameDir = gameDirOf(typeof game === "string" ? game : undefined);
       if (gameDir === undefined) return reply(404, { error: `no game ${String(game)} to serve ${key} into` });
       // Vite runs under Node, which cannot load the library index's TypeScript, so Bun does the pull.
-      const child = spawn("bun", [provisionScript, basename(gameDir), "--library", key], { cwd: gameDir, windowsHide: true });
+      const child = spawn(bunExecutable(), [provisionScript, basename(gameDir), "--library", key], { cwd: gameDir, windowsHide: true });
       let out = "";
       child.stdout.on("data", (chunk: Buffer) => {
         out += chunk.toString("utf8");
@@ -252,7 +253,7 @@ export function shouldProvision(env: Readonly<Record<string, string | undefined>
 export function startTextureCompression(cwd: string, games: readonly string[] = []): void {
   if (!shouldProvision(process.env)) return;
   try {
-    spawn("bun", [compressScript, ...games], { cwd, detached: true, stdio: "ignore", windowsHide: true }).unref();
+    spawn(bunExecutable(), [compressScript, ...games], { cwd, detached: true, stdio: "ignore", windowsHide: true }).unref();
   } catch {
     // No bun on PATH: the originals keep serving.
   }
@@ -286,7 +287,7 @@ export function textureVariantMiddleware(publicDir: string, variantDir: string) 
 /** Run `games:provision` for one game in Bun (Vite runs under Node, which cannot load the catalogs' TypeScript). */
 function provisionInBun(gameDir: string): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    const child = spawn("bun", [provisionScript, basename(gameDir)], { cwd: gameDir, stdio: "inherit", windowsHide: true });
+    const child = spawn(bunExecutable(), [provisionScript, basename(gameDir)], { cwd: gameDir, stdio: "inherit", windowsHide: true });
     child.once("error", () => resolve(false));
     child.once("exit", (code) => resolve(code === 0));
   });
