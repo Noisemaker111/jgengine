@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
-import { delimiter, join } from "node:path";
+import { win32 } from "node:path";
 
 import { bunExecutable } from "./bunExecutable";
+
+// Windows path rules on every host: CI runs this on Linux, where the host delimiter is ":".
+const { delimiter, join } = win32;
 
 const npmGlobal = join("C:", "node");
 const npmBunExe = join(npmGlobal, "node_modules", "bun", "bin", "bun.exe");

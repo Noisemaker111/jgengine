@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { delimiter, join } from "node:path";
+import { win32 } from "node:path";
 
 /**
  * The bun to spawn from code that may run under Node, such as a Vite config or the CLI on `npx`.
@@ -15,10 +15,11 @@ export function bunExecutable(
 ): string {
   if (runningBun !== null) return runningBun;
   if (platform !== "win32") return "bun";
+  // Windows path rules whatever the host, so the lookup reads the same in a test on Linux.
   const path = env["PATH"] ?? env["Path"] ?? "";
-  for (const dir of path.split(delimiter)) {
+  for (const dir of path.split(win32.delimiter)) {
     if (dir === "") continue;
-    for (const candidate of [join(dir, "bun.exe"), join(dir, "node_modules", "bun", "bin", "bun.exe")]) {
+    for (const candidate of [win32.join(dir, "bun.exe"), win32.join(dir, "node_modules", "bun", "bin", "bun.exe")]) {
       if (exists(candidate)) return candidate;
     }
   }
