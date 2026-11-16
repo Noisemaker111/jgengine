@@ -30,8 +30,8 @@ export function HomeHero() {
             <a href="#games" className="btn btn-primary">
               Play a game <span className="arrow" aria-hidden>→</span>
             </a>
-            <a href="#start" className="btn btn-secondary">
-              Get started
+            <a href="#api" className="btn btn-secondary">
+              See the API
             </a>
             <a href={REPO_URL} className="btn btn-quiet">
               <GitHubIcon /> GitHub

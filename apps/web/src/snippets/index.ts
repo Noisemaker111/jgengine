@@ -1,6 +1,6 @@
 // The code the site shows lives in this folder as real files. apps/web check-types compiles them
 // against the engine source on every change, so a snippet that stops building fails CI, not a reader.
-export type SnippetFile = "save.ts" | "mobile-hud.tsx" | "controllers.ts" | "physics.ts" | "keybinds.ts" | "meadow.ts" | "car.ts" | "projectiles.ts" | "adopt-minimap.tsx" | "adopt-health.ts" | "adopt-damage.ts" | "adopt-xp.ts" | "cable.ts" | "hills.ts";
+export type SnippetFile = "save.ts" | "mobile-hud.tsx" | "controllers.ts" | "physics.ts" | "keybinds.ts" | "meadow.ts" | "car.ts" | "projectiles.ts" | "adopt-minimap.tsx" | "adopt-health.ts" | "adopt-damage.ts" | "adopt-xp.ts" | "cable.ts" | "hills.ts" | "tour-rules.ts" | "tour-loop.ts" | "tour-hud.tsx" | "tour-game.ts";
 
 let raw: Record<string, string> | undefined;
 

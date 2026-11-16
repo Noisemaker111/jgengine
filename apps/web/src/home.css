@@ -980,3 +980,137 @@
   color: var(--jg-muted);
   line-height: 1.6;
 }
+
+/* The API tour: four steps on the left, the file on the right. */
+.tour {
+  display: grid;
+  gap: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .tour {
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    align-items: start;
+    gap: 2rem;
+  }
+}
+.tour-steps {
+  display: grid;
+  gap: 0.6rem;
+}
+.tour-step {
+  display: flex;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--jg-line);
+  border-radius: 0.8rem;
+  background: var(--jg-raised);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.tour-step:hover {
+  border-color: color-mix(in oklab, var(--jg-accent) 40%, var(--jg-line));
+}
+.tour-step.is-active {
+  border-color: var(--jg-accent);
+  background: color-mix(in oklab, var(--jg-accent) 8%, var(--jg-raised));
+}
+.tour-step-num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.45rem;
+  background: color-mix(in oklab, var(--jg-accent) 14%, transparent);
+  color: var(--jg-accent-text);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.tour-step-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.tour-step-title {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--jg-fg);
+}
+.tour-step-file {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--jg-faint);
+}
+.tour-step-body {
+  display: none;
+  margin-top: 0.35rem;
+  color: var(--jg-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.tour-step.is-active .tour-step-body {
+  display: block;
+}
+.tour-code {
+  min-width: 0;
+}
+.tour-code .code-surface pre {
+  max-height: 34rem;
+}
+.tour-layers {
+  margin-top: 2rem;
+  padding: 1.25rem 1.4rem;
+  border: 1px dashed var(--jg-line);
+  border-radius: 0.9rem;
+}
+.tour-layers-head {
+  color: var(--jg-muted);
+  line-height: 1.6;
+}
+.tour-layers-head .font-mono {
+  margin-right: 0.4rem;
+  color: var(--jg-fg);
+}
+.tour-layers ul {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+@media (min-width: 768px) {
+  .tour-layers ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.tour-layers li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--jg-raised);
+  font-size: 0.85rem;
+  color: var(--jg-fg);
+  overflow-wrap: anywhere;
+}
+.tour-layer-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--jg-accent-text);
+}
+.tour-layer-note {
+  color: var(--jg-faint);
+}
+@media (min-width: 1100px) {
+  .lp-reasons.is-three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

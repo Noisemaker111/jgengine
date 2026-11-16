@@ -2,7 +2,7 @@
 
 The landing page for JGengine and the front door for agents. It is drawn with the engine's own JSX runtime (`@jgengine/core/ui/jsx`), not React, and served from Cloudflare through the official Cloudflare Vite plugin.
 
-- `/` sells the engine: the pitch, a curated pick of the best-looking games (`FEATURED` in `src/components/story/Showcase.tsx`), why jgengine, and how to start. `/decisions` holds the differences, decision log, stack and counts. `/games` opens every playable project; `/capabilities` indexes the SDK; `/editor` runs the scene editor.
+- `/` sells the engine: the pitch, a curated pick of the best-looking games (`FEATURED` in `src/components/story/Showcase.tsx`), the API in four files (`src/components/story/ApiTour.tsx`, quoting `src/snippets/tour-*`, which the root README quotes too), why jgengine, and how to start. `/decisions` holds the differences, decision log, stack and counts. `/games` opens every playable project; `/capabilities` indexes the SDK; `/editor` runs the scene editor.
 - Agents get `/llms.txt` and `/llms-full.txt` from the same site constants as the human pages.
 - The games catalog and static runner live on `/games` and `/play`.
 
