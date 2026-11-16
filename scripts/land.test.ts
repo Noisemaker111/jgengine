@@ -346,8 +346,7 @@ test("opening a PR sends the explicit body rather than the fragment, over REST",
   expect(api.calls[1]?.fields).toEqual({ base: "beta", head: "agent/lane-x", title: "Menus", body: "the body I wrote" });
 });
 
-test("refuses main, the base branch and a dirty tree", () => {
-  expect(landRefusal("main", "", "beta")).toContain("refusing to land main");
+test("refuses the base branch and a dirty tree", () => {
   expect(landRefusal("beta", "", "beta")).toContain("refusing to land beta");
   expect(landRefusal("agent/x", " M scripts/land.ts\n", "beta")).toContain("dirty tree");
   expect(landRefusal("agent/x", "  \n", "beta")).toBeNull();
@@ -1213,8 +1212,8 @@ test("a merged lane's head branch is deleted on origin, once its PR has merged a
   expect(deleteLandedBranch(api.github, { branch: "agent/menus", landedSha: "head1", pr: 7 })).toEqual({ kind: "kept", line: "origin/agent/menus is already gone" });
 });
 
-test("bases, releases, backups, rescues and pr-shots are never deleted, and nothing asks GitHub about them", () => {
-  for (const branch of ["beta", "main", "release/1.2", "backup/beta-2026-11-01", "rescue/lost-work", "pr-shots"]) {
+test("the base, backups, rescues and pr-shots are never deleted, and nothing asks GitHub about them", () => {
+  for (const branch of ["beta", "backup/beta-2026-11-01", "rescue/lost-work", "pr-shots"]) {
     const api = fakeGitHub({ repo: LAND_REPO, branches: { [branch]: "head1" } });
     const cleanup = deleteLandedBranch(api.github, { branch, landedSha: "head1", pr: 7 });
     expect(cleanup).toEqual({ kind: "kept", line: `kept origin/${branch}: a branch no landing deletes` });

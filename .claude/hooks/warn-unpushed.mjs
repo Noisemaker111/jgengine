@@ -62,7 +62,7 @@ const count = Number(git("rev-list", "--count", "HEAD", "--not", "--remotes"));
 if (!Number.isFinite(count) || count <= 0) process.exit(0);
 
 const defaultBranch =
-  (git("symbolic-ref", "--quiet", "refs/remotes/origin/HEAD") ?? "").split("/").pop() || "main";
+  (git("symbolic-ref", "--quiet", "refs/remotes/origin/HEAD") ?? "").split("/").pop() || "beta";
 const remoteMain = `origin/${defaultBranch}`;
 if (git("merge-base", "--is-ancestor", "HEAD", remoteMain) !== null) process.exit(0);
 if (git("diff", "--quiet", `${remoteMain}...HEAD`) !== null) process.exit(0);

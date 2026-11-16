@@ -167,10 +167,10 @@ if (parsed.dry) {
   process.exit(0);
 }
 
-// Base the new commit on the existing archive branch, or on main the first time.
+// Base the new commit on the existing archive branch, or on beta the first time.
 // fetch updates remote-tracking refs only — never checks out.
 const hasArchive = tryGit(["ls-remote", "--exit-code", "origin", ARCHIVE_BRANCH]) !== null;
-const baseRef = hasArchive ? ARCHIVE_BRANCH : "main";
+const baseRef = hasArchive ? ARCHIVE_BRANCH : "beta";
 git(["fetch", "-q", "origin", baseRef]);
 const baseCommit = git(["rev-parse", `origin/${baseRef}`]);
 

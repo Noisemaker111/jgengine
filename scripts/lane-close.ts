@@ -21,7 +21,7 @@
 // changed. GitHub merges the PR only while its head is that commit. CI on the beta push stays the
 // backstop. The last line names the merge commit; exit 1 when verify, land or the merge failed, 3 when
 // it cannot answer (no PR, no branch). Once merged, it deletes the PR's head branch on origin (never
-// beta, main, release/*, backup/*, rescue/* or pr-shots, nor a branch another open PR still uses).
+// beta, backup/*, rescue/* or pr-shots, nor a branch another open PR still uses).
 //
 // One run per worktree: a second lane:close started while the first is still verifying is
 // refused (exit 4) and told which run holds the worktree, instead of racing it for the same
@@ -225,7 +225,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err("lane:close: could not read the current branch");
     return EXIT_CANNOT_ANSWER;
   }
-  if (branch === "main" || branch === "beta") {
+  if (branch === "beta") {
     io.err(`lane:close: refusing to close ${branch}: a lane is a task branch, not the base`);
     return EXIT_CANNOT_ANSWER;
   }

@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const CHANGELOG_URL = "https://raw.githubusercontent.com/Noisemaker111/jgengine/main/CHANGELOG.md";
+const CHANGELOG_URL = "https://raw.githubusercontent.com/Noisemaker111/jgengine/beta/CHANGELOG.md";
 const FETCH_TIMEOUT_MS = 8000;
 
 /** One published release's notes, by Keep a Changelog section. */
