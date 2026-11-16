@@ -1,40 +1,42 @@
 name: Publish
 
-# A release is a fast-forward of `main` onto a proved `beta` commit, so the suite that decides
-# whether that tree is sound has already run on the merge commit. This workflow starts when that
-# run finishes and reads its verdict, instead of running 10,574 tests again on the release commit:
-# one environment-sensitive test used to block a release that the PR had already passed (#2279).
+# A release is a `v<version>` tag on a beta commit whose CI is already green: `bun run release`
+# pushes the tag only after that verdict, so this workflow reads it instead of running the 10,574
+# tests again (one environment-sensitive test used to block a release the PR had passed, #2279).
+# Re-run a release with `gh workflow run publish.yml --ref v<version>`.
 #
-# What a release still proves, and the PR cannot: the packages build from this exact tree
+# What a release still proves, and CI cannot: the packages build from this exact tree
 # (`bun run build`), the published `.d.ts` surface type-checks (`bun run check --sdk`), the tree
 # carries no source artifacts, the candidate packs into installable tarballs, a real adopter
 # compiles against those tarballs, and every published package installs from the registry.
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
 
 concurrency:
   group: publish
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # A workflow_run checks out the default branch tip by default, which is not necessarily
-          # the commit whose CI just finished; publish the commit CI judged.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: The tag names the version this tree publishes
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "publish runs on a release tag: $GITHUB_REF_NAME is not v$version (dispatch it with --ref v$version)"
+            exit 1
+          fi
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -54,10 +56,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-        run: bun scripts/check-release-ci.ts --sha "$SHA"
-      - name: Refuse to publish a commit behind beta
-        # A release commit already on beta landed through it; beta moving on since is not a stale cut.
+        run: bun scripts/check-release-ci.ts --sha "$(git rev-parse HEAD)"
+      - name: Refuse to publish a commit that is not on beta
+        # A release commit on beta landed through it; beta moving on since is not a stale cut.
         run: bun scripts/check-release-ancestor.ts --landed
       - name: Stage the lockstep changelog into each package
         run: for p in core rapier ws sql navbake ui convex node shell assets editor github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
@@ -95,3 +96,12 @@ jobs:
       - name: Verify every published package installs
         # npm serves an accepted publish minutes later: 0.49.0's core took 7m12s, so 300 s failed a good release.
         run: bun scripts/check-release-artifacts.ts --wait 900
+      - name: Record the release on GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v head="## $version" '$0 == head { on = 1; next } on && /^## / { exit } on' CHANGELOG.md > notes.md
+          flags=""
+          case "$version" in *-*) flags="--prerelease" ;; esac
+          gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$version" --notes-file notes.md $flags

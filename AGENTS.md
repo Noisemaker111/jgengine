@@ -27,6 +27,9 @@ Branch from `origin/beta`. `bun run lane:close -m "<what changed>"` (harness bac
 dry run: it runs setup, generation and the gate, then commits, pushes, opens the PR, merges into beta
 and deletes the branch. It reuses a passing gate of the same tree; one run per worktree.
 
+Releases (owner's go only): `bun run release` commits the cut to beta and pushes a `v<version>` tag
+once CI is green; the tag publishes. No release branch or PR.
+
 ## Where to start
 
 - `README.md` for the parts and layering. New game or large feature: `create-game-jg` skill.

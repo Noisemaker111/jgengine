@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  awaitCi,
   awaitPublish,
   failureLine,
   failedJobs,
@@ -32,62 +33,64 @@ const job = (name: string, conclusion: string | null): PublishJob => ({
 
 describe("which run is this release's", () => {
   test("the newest run on the release commit wins, so a re-run replaces the attempt it retried", () => {
-    const shas = "a".repeat(40);
-    // gh lists newest first; 0.51.0 picked the older beta run of its commit from that order.
-    const picked = pickRun(
-      [
-        run({ databaseId: 3, headSha: shas }),
-        run({ databaseId: 2, headSha: "b".repeat(40) }),
-        run({ databaseId: 1, headSha: shas }),
-      ],
-      shas,
-    );
+    const sha = "a".repeat(40);
+    // gh lists newest first; 0.51.0 picked the older run of its commit from that order.
+    const picked = pickRun([run({ databaseId: 3, headSha: sha }), run({ databaseId: 2, headSha: "b".repeat(40) }), run({ databaseId: 1, headSha: sha })], sha);
     expect(picked?.databaseId).toBe(3);
-    expect(pickRun([run({ databaseId: 1, headSha: shas }), run({ databaseId: 3, headSha: shas })], shas)?.databaseId).toBe(3);
-  });
-
-  test("once main's CI for the commit started, the run is the first queued after it, whatever commit GitHub names", () => {
-    const sha = "a".repeat(40);
-    const since = "2026-11-08T02:45:47Z";
-    // 0.54.0: a refused run from before main's CI, labelled with beta's tip (the new main), was taken as its verdict.
-    const stale = run({ databaseId: 1, headSha: sha, conclusion: "failure", createdAt: "2026-11-08T02:30:31Z" });
-    expect(pickRun([stale], sha, since)).toBeNull();
-    // Beta moved during main's CI, so the real run names beta's newer tip.
-    const real = run({ databaseId: 2, headSha: "c".repeat(40), createdAt: "2026-11-08T02:58:00Z" });
-    const later = run({ databaseId: 3, headSha: "d".repeat(40), createdAt: "2026-11-08T03:30:00Z" });
-    expect(pickRun([later, stale, real], sha, since)?.databaseId).toBe(2);
-    expect(pickRun([stale], sha)?.databaseId).toBe(1);
-  });
-
-  test("a commit just pushed to main takes no run created before the push, even before its CI is listed", async () => {
-    const sha = "a".repeat(40);
-    const stale = run({ databaseId: 1, headSha: sha, conclusion: "failure", createdAt: "2026-11-08T02:58:00Z" });
-    const fresh = run({ databaseId: 2, headSha: sha, createdAt: "2026-11-08T03:20:00Z" });
-    let lists = 0;
-    const result = await awaitPublish({
-      version: "0.54.0",
-      sha,
-      notBefore: "2026-11-08T03:05:00Z",
-      gh: (args) => {
-        if (args[0] === "run" && args.includes("ci.yml")) return { status: 0, stdout: "[]", stderr: "" };
-        if (args[0] === "run") {
-          lists += 1;
-          return { status: 0, stdout: JSON.stringify(lists < 3 ? [stale] : [fresh, stale]), stderr: "" };
-        }
-        return { status: 0, stdout: JSON.stringify(fresh), stderr: "" };
-      },
-      registry: served,
-      graceMs: 60_000,
-      now: () => 0,
-      sleep: async () => {},
-      log: () => {},
-    });
-    expect(result.ok).toBe(true);
-    expect(result.runId).toBe(2);
+    expect(pickRun([run({ databaseId: 1, headSha: sha }), run({ databaseId: 3, headSha: sha })], sha)?.databaseId).toBe(3);
   });
 
   test("a commit with no publish run is null, not the newest run of anything", () => {
     expect(pickRun([run({ headSha: "b".repeat(40) })], "a".repeat(40))).toBeNull();
+  });
+});
+
+describe("waiting on beta's CI before the tag", () => {
+  const ciRuns = (...runs: { status: string; conclusion: string | null }[]) =>
+    JSON.stringify({ workflow_runs: runs.map((entry, i) => ({ id: i + 1, head_sha: "a".repeat(40), event: "push", html_url: `u${i}`, ...entry })) });
+
+  test("a run still going is waited on until it is green", async () => {
+    let reads = 0;
+    const result = await awaitCi({
+      sha: "a".repeat(40),
+      gh: () => {
+        reads += 1;
+        return { status: 0, stdout: reads < 3 ? ciRuns({ status: "in_progress", conclusion: null }) : ciRuns({ status: "completed", conclusion: "success" }), stderr: "" };
+      },
+      sleep: async () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(reads).toBe(3);
+  });
+
+  test("a red run stops the release before anything is tagged", async () => {
+    let slept = 0;
+    const result = await awaitCi({
+      sha: "a".repeat(40),
+      gh: () => ({ status: 0, stdout: ciRuns({ status: "completed", conclusion: "failure" }), stderr: "" }),
+      sleep: async () => {
+        slept += 1;
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.line).toContain("nothing was tagged");
+    expect(slept).toBe(0);
+  });
+
+  test("a commit CI never picked up is reported once the grace window passes", async () => {
+    let clock = 0;
+    const result = await awaitCi({
+      sha: "a".repeat(40),
+      gh: () => ({ status: 0, stdout: ciRuns(), stderr: "" }),
+      graceMs: 60_000,
+      intervalMs: 10_000,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.line).toContain("no ci.yml run for aaaaaaaa 60s after it reached beta");
   });
 });
 
@@ -258,31 +261,7 @@ describe("waiting on the publish run", () => {
     expect(asked).toBe(false);
   });
 
-  test("the run is found by SHA whatever branch GitHub reports, since publish.yml follows beta's CI run", async () => {
-    const sha = "a".repeat(40);
-    const listed: string[][] = [];
-    const result = await awaitPublish({
-      version: "0.38.4",
-      sha,
-      gh: (args) => {
-        if (args[0] === "run") {
-          listed.push([...args]);
-          return { status: 0, stdout: JSON.stringify(args.includes("--branch") ? [] : [run({ headSha: sha })]), stderr: "" };
-        }
-        return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
-      },
-      registry: served,
-      graceMs: 0,
-      sleep: async () => {},
-      log: () => {},
-    });
-    expect(result.ok).toBe(true);
-    const publishLists = listed.filter((args) => args.includes("publish.yml"));
-    expect(publishLists.length).toBeGreaterThan(0);
-    for (const args of publishLists) expect(args).not.toContain("--branch");
-  });
-
-  test("a merge commit that never queued a run is reported by name, not waited on", async () => {
+  test("a tag that never queued a run is reported by name, not waited on", async () => {
     const result = await awaitPublish({
       version: "0.38.4",
       sha: "c".repeat(40),
@@ -292,84 +271,6 @@ describe("waiting on the publish run", () => {
       log: () => {},
     });
     expect(result.ok).toBe(false);
-    expect(result.line).toContain("no publish.yml run for cccccccc on main");
-  });
-
-  test("main CI running longer than the grace window keeps the wait going until publish queues", async () => {
-    // 0.41.0: main CI took ~5 minutes, publish.yml queued after it, and a 3-minute window gave up.
-    const sha = "d".repeat(40);
-    let clock = 0;
-    const ciDoneAt = 5 * 60_000;
-    const gh = (args: readonly string[]) => {
-      const ci = args.includes("ci.yml");
-      if (args[0] === "run" && ci) {
-        const done = clock >= ciDoneAt;
-        const ciRun = run({ headSha: sha, databaseId: 1, status: done ? "completed" : "in_progress", conclusion: done ? "success" : null });
-        return { status: 0, stdout: JSON.stringify([ciRun]), stderr: "" };
-      }
-      // Publish queues 20 s after CI completes.
-      const queued = clock >= ciDoneAt + 20_000;
-      if (args[0] === "run") return { status: 0, stdout: JSON.stringify(queued ? [run({ headSha: sha })] : []), stderr: "" };
-      return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
-    };
-    const result = await awaitPublish({
-      version: "0.41.0",
-      sha,
-      gh,
-      registry: served,
-      graceMs: 3 * 60_000,
-      intervalMs: 10_000,
-      now: () => clock,
-      sleep: async (ms) => {
-        clock += ms;
-      },
-      log: () => {},
-    });
-    expect(result.ok).toBe(true);
-    expect(result.line).toBe("release: published @jgengine/core@0.41.0 (publish run 40107700057)");
-    expect(clock).toBeGreaterThan(ciDoneAt);
-  });
-
-  test("a main CI run that failed is named, since publish.yml never starts after it", async () => {
-    const sha = "e".repeat(40);
-    let slept = 0;
-    const gh = (args: readonly string[]) => {
-      if (args[0] === "run" && args.includes("ci.yml"))
-        return { status: 0, stdout: JSON.stringify([run({ headSha: sha, databaseId: 7, conclusion: "failure" })]), stderr: "" };
-      if (args[0] === "run") return { status: 0, stdout: "[]", stderr: "" };
-      return { status: 1, stdout: "", stderr: "unexpected" };
-    };
-    const result = await awaitPublish({
-      version: "0.41.0",
-      sha,
-      gh,
-      graceMs: 3 * 60_000,
-      sleep: async () => {
-        slept++;
-      },
-      log: () => {},
-    });
-    expect(result.ok).toBe(false);
-    expect(result.line).toContain("CI run 7 on main for eeeeeeee ended failure");
-    expect(slept).toBe(0);
-  });
-
-  test("beta's failed run of the same commit is not main's verdict", async () => {
-    // 0.51.0: beta's push run failed its Windows suite while main's run of the same commit passed and published.
-    const sha = "f".repeat(40);
-    const betaRun = run({ headSha: sha, databaseId: 8, conclusion: "failure" });
-    const mainRun = run({ headSha: sha, databaseId: 9 });
-    const gh = (args: readonly string[]) => {
-      if (args[0] === "run" && args.includes("ci.yml")) {
-        const branch = args[args.indexOf("--branch") + 1];
-        const runs = branch === "main" ? [mainRun] : [betaRun];
-        return { status: 0, stdout: JSON.stringify(runs), stderr: "" };
-      }
-      if (args[0] === "run") return { status: 0, stdout: "[]", stderr: "" };
-      return { status: 1, stdout: "", stderr: "unexpected" };
-    };
-    const result = await awaitPublish({ version: "0.51.0", sha, gh, graceMs: 0, sleep: async () => {}, log: () => {} });
-    expect(result.line).not.toContain("ended failure");
-    expect(result.line).toContain("no publish.yml run for ffffffff on main");
+    expect(result.line).toContain("no publish.yml run for cccccccc 0s after v0.38.4 was pushed");
   });
 });

@@ -3,20 +3,19 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, publishFollowingBeta, sectionLines, splitComment, startReleaseBranch, unknownFlag, waitRequest } from "./release";
-import type { AwaitResult } from "./release-await";
+import { checkReleaseAncestor, cutChangelog, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment, startReleaseCut, unknownFlag, waitRequest } from "./release";
 
 describe("--wait", () => {
-  test("alone it cuts, lands and waits; with a version it only waits on that version", () => {
+  test("names the version to finish, and a later beta commit to tag with --sha", () => {
     expect(waitRequest(["--dry-run"])).toBeNull();
     expect(waitRequest(["--wait"])).toMatchObject({ version: undefined });
-    expect(waitRequest(["--wait", "0.45.0"])).toMatchObject({ version: "0.45.0" });
+    expect(waitRequest(["--wait", "0.45.0"])).toMatchObject({ version: "0.45.0", sha: undefined });
     expect(waitRequest(["--wait", "0.45.0-next.2"])).toMatchObject({ version: "0.45.0-next.2" });
-    expect(waitRequest(["--wait", "--run", "40107700057"])).toMatchObject({ version: undefined, runId: 40107700057 });
+    expect(waitRequest(["--wait", "0.45.0", "--sha", "abc"])).toMatchObject({ version: "0.45.0", sha: "abc" });
   });
 
-  test("the retired --await is an unknown argument, never a cut", () => {
-    expect(unknownFlag(["--await", "0.45.0"])).toBe("--await");
+  test("a retired flag is an unknown argument, never a cut", () => {
+    for (const flag of ["--await", "--run", "--commit"]) expect(unknownFlag([flag, "0.45.0"])).toBe(flag);
     expect(unknownFlag(["--wait", "0.45.0", "--dry-run", "--sha", "abc"])).toBeUndefined();
   });
 });
@@ -235,16 +234,16 @@ function releaseRepo(name: string, version: string): Fixture {
   return repo;
 }
 
-describe("startReleaseBranch", () => {
-  test("from the beta checkout the cut goes on release/<version>, and beta is never committed to", () => {
+describe("startReleaseCut", () => {
+  test("the cut starts detached at origin/beta, and the branch the checkout was on is untouched", () => {
     const repo = releaseRepo("start-beta", "0.46.0");
     try {
       const betaBefore = repo.git("rev-parse", "beta");
-      expect(startReleaseBranch({ cwd: repo.dir })).toEqual({ ok: true, branch: "release/0.47.0", from: "beta" });
+      expect(startReleaseCut({ cwd: repo.dir })).toEqual({ ok: true, from: "beta" });
+      expect(repo.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("HEAD");
       repo.commit("CHANGELOG.md", "## 0.47.0\n", "Release 0.47.0");
-      expect(repo.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("release/0.47.0");
       expect(repo.git("rev-parse", "beta")).toBe(betaBefore);
-      expect(repo.git("rev-list", "--count", "origin/beta..release/0.47.0")).toBe("1");
+      expect(repo.git("rev-list", "--count", "origin/beta..HEAD")).toBe("1");
     } finally {
       repo.done();
     }
@@ -258,7 +257,7 @@ describe("startReleaseBranch", () => {
       const tip = repo.git("rev-parse", "HEAD");
       repo.git("update-ref", "refs/remotes/origin/beta", tip);
       repo.git("checkout", "-q", "beta");
-      expect(startReleaseBranch({ cwd: repo.dir }).ok).toBe(true);
+      expect(startReleaseCut({ cwd: repo.dir }).ok).toBe(true);
       expect(repo.git("rev-parse", "HEAD")).toBe(tip);
     } finally {
       repo.done();
@@ -270,7 +269,7 @@ describe("startReleaseBranch", () => {
     try {
       const sha = repo.git("rev-parse", "HEAD");
       repo.git("checkout", "-q", "--detach");
-      expect(startReleaseBranch({ cwd: repo.dir })).toEqual({ ok: true, branch: "release/0.47.0", from: sha });
+      expect(startReleaseCut({ cwd: repo.dir })).toEqual({ ok: true, from: sha });
     } finally {
       repo.done();
     }
@@ -280,133 +279,12 @@ describe("startReleaseBranch", () => {
     const repo = releaseRepo("start-dirty", "0.46.0");
     try {
       writeFileSync(join(repo.dir, "base.txt"), "edited\n");
-      const start = startReleaseBranch({ cwd: repo.dir });
+      const start = startReleaseCut({ cwd: repo.dir });
       expect(start.ok).toBe(false);
       if (!start.ok) expect(start.reason).toContain("uncommitted changes");
       expect(repo.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("beta");
     } finally {
       repo.done();
     }
-  });
-
-  test("refuses a release branch that already holds commits origin/beta does not have", () => {
-    const repo = releaseRepo("start-taken", "0.46.0");
-    try {
-      repo.git("checkout", "-q", "-b", "release/0.47.0");
-      repo.commit("half-cut.txt", "x\n", "half a cut");
-      repo.git("checkout", "-q", "beta");
-      const start = startReleaseBranch({ cwd: repo.dir });
-      expect(start.ok).toBe(false);
-      if (!start.ok) expect(start.reason).toContain("already has 1 commit");
-    } finally {
-      repo.done();
-    }
-  });
-});
-
-describe("publishFollowingBeta", () => {
-  const published = (sha: string): AwaitResult => ({ ok: true, line: `published ${sha}`, runId: 1, code: 0 });
-  const refused = (sha: string): AwaitResult => ({ ok: false, line: `refused ${sha}`, runId: 1, code: 1 });
-
-  test("publishes the pushed commit once when it succeeds", async () => {
-    const seen: string[] = [];
-    const out = await publishFollowingBeta({
-      sha: "a",
-      publish: async (sha) => {
-        seen.push(sha);
-        return published(sha);
-      },
-      pushTip: () => ({ ok: true, sha: "a" }),
-      log: () => {},
-    });
-    expect(seen).toEqual(["a"]);
-    expect(out).toMatchObject({ ok: true, sha: "a" });
-  });
-
-  test("publishes beta's new tip when beta moved past the commit that was refused", async () => {
-    const seen: string[] = [];
-    const out = await publishFollowingBeta({
-      sha: "a",
-      publish: async (sha) => {
-        seen.push(sha);
-        return sha === "a" ? refused(sha) : published(sha);
-      },
-      pushTip: () => ({ ok: true, sha: "b" }),
-      log: () => {},
-    });
-    expect(seen).toEqual(["a", "b"]);
-    expect(out).toMatchObject({ ok: true, sha: "b" });
-    expect(out.ok && out.result.ok).toBe(true);
-  });
-
-  test("stops when beta has not moved, so the refusal is the answer", async () => {
-    const seen: string[] = [];
-    const out = await publishFollowingBeta({
-      sha: "a",
-      publish: async (sha) => {
-        seen.push(sha);
-        return refused(sha);
-      },
-      pushTip: () => ({ ok: true, sha: "a" }),
-      log: () => {},
-    });
-    expect(seen).toEqual(["a"]);
-    expect(out.ok && out.result.ok).toBe(false);
-  });
-
-  test("retries at most twice", async () => {
-    const seen: string[] = [];
-    let tips = 0;
-    const out = await publishFollowingBeta({
-      sha: "a",
-      publish: async (sha) => {
-        seen.push(sha);
-        return refused(sha);
-      },
-      pushTip: () => ({ ok: true, sha: `t${++tips}` }),
-      log: () => {},
-    });
-    expect(seen).toEqual(["a", "t1", "t2"]);
-    expect(out.ok && out.result.ok).toBe(false);
-  });
-
-  test("a failed push to main is reported, and nothing more is published", async () => {
-    const seen: string[] = [];
-    const out = await publishFollowingBeta({
-      sha: "a",
-      publish: async (sha) => {
-        seen.push(sha);
-        return refused(sha);
-      },
-      pushTip: () => ({ ok: false, error: "offline" }),
-      log: () => {},
-    });
-    expect(seen).toEqual(["a"]);
-    expect(out).toEqual({ ok: false, error: "fast-forwarding main failed: offline" });
-  });
-});
-
-describe("fastForwardMain", () => {
-  test("fetches beta before pushing, and pushes the fetched tip rather than the stale ref", () => {
-    const calls: string[] = [];
-    let fetched = false;
-    const git = (args: readonly string[]) => {
-      calls.push(args.join(" "));
-      if (args[0] === "fetch") fetched = true;
-      if (args[0] === "rev-parse") return { status: 0, stdout: `${fetched ? "merged" : "stale"}\n`, stderr: "" };
-      return { status: 0, stdout: "", stderr: "" };
-    };
-    expect(fastForwardMain(git)).toEqual({ ok: true, sha: "merged" });
-    expect(calls).toEqual(["fetch --quiet origin beta", "rev-parse origin/beta", "push origin merged:main"]);
-  });
-
-  test("a failed fetch never pushes", () => {
-    const calls: string[] = [];
-    const git = (args: readonly string[]) => {
-      calls.push(args[0] ?? "");
-      return { status: args[0] === "fetch" ? 1 : 0, stdout: "", stderr: "offline" };
-    };
-    expect(fastForwardMain(git).ok).toBe(false);
-    expect(calls).toEqual(["fetch"]);
   });
 });
