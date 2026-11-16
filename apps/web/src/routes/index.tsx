@@ -7,6 +7,7 @@ import { definePage } from "../site/routes";
 import { GitHubIcon, Page } from "../components/Layout";
 import { CodeBlock } from "../components/marketing";
 import { PromptStudio } from "../components/PromptStudio";
+import { ApiTour } from "../components/story/ApiTour";
 import { HomeHero } from "../components/story/HomeHero";
 import { Showcase } from "../components/story/Showcase";
 import { GAME_IDS } from "../lib/games";
@@ -39,6 +40,7 @@ function Home() {
     <Page>
       <HomeHero />
       <Showcase />
+      <ApiTour />
 
       <section id="why" className="band band-alt" aria-labelledby="why-heading">
         <div className="band-inner">
@@ -48,18 +50,26 @@ function Home() {
               Your agent writes the game. The engine keeps it on track.
             </h2>
           </header>
-          <ul className="lp-reasons">
-            <Reason mark="›_" title="Built for coding agents">
-              The skills ship inside the npm packages, so your agent reads the API where it already looks. The CLI tells it where
-              things live and whether the engine already does something, then lets it screenshot and play what it built.
+          <ul className="lp-reasons is-three">
+            <Reason mark="{}" title="Rules are plain data">
+              Game state is JSON in a typed store slot and rules are functions from state to state. The same code runs in the
+              browser, on a Node host and in a test, and saves, replays and multiplayer carry it without extra code.
             </Reason>
-            <Reason mark="▶" title={`Proven on ${GAME_IDS.length} real games`}>
+            <Reason mark="⧉" title="Eleven parts, not a black box">
+              A boss fight or a supply drop is built from small parts: a meter, a ladder, a schedule, a loot table. Each one can be
+              turned off, swapped or retuned, or taken into a three.js game you already have.
+            </Reason>
+            <Reason mark="›_" title="Agents can see what they built">
+              The skills ship inside the npm packages. The CLI tells an agent where things live and whether the engine already does
+              something, then screenshots the game and plays it with keys.
+            </Reason>
+            <Reason mark="▶" title={`Tested on ${GAME_IDS.length} real games`}>
               The games on this site live in the engine's repo and run its source from the same commit. A change that breaks one
               gets fixed in the same pull request.
             </Reason>
-            <Reason mark="⧉" title="Small parts, not a black box">
-              Features are combined from eleven small parts, such as meters, schedules and loot tables. Each one can be turned
-              off, swapped or retuned, or taken into a three.js game you already have.
+            <Reason mark="ms" title="Measured, not claimed">
+              One frame budget for every game: p95 under 16.7 ms on an RTX 3070. Experiments ship only when the numbers say so,
+              and the ones that lost are written down too.
             </Reason>
             <Reason mark="⇄" title="Editor, multiplayer, desktop">
               A scene editor in the browser, one multiplayer protocol over WebSocket, WebRTC or Convex with a Node host, and
