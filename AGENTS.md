@@ -1,5 +1,10 @@
 # JGengine
 
+Every agent reads this whole file before every reply, so each line costs every task and outlives the change that added it. It was 31.7 KB until 2026-11-10 and has stayed under 3 KB since; keep it that way for these reasons, not a limit:
+- A line belongs here only if an agent would get most tasks wrong without it and can't learn it from the code, `bun run find`, a skill or the doc a line points to.
+- How a feature works goes in its package's README, a skill or a test; what a change did goes in its PR. Game-specific rules go in that game's `PLAN.md`.
+- When agents keep making the same mistake, fix the tool or generator that lets them make it. Add a line only when that isn't possible, and rewrite or delete the line it replaces in the same PR.
+
 TypeScript game framework: reusable systems in `packages/`, ten playable adopters in `games/`.
 Games run package source from the same commit, not npm releases.
 
