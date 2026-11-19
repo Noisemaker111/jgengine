@@ -55,12 +55,12 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     };
     await removeDir(scratch);
     await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-    await symlink(resolve(editorRoot, "node_modules/three"), `${scratch}/node_modules/three`, "dir");
+    await symlink(resolve(editorRoot, "node_modules/three"), `${scratch}/node_modules/three`, "junction");
     const store = resolve(repoRoot, "node_modules/.bun");
     const stdlib = (await readdir(store)).find((entry) => entry.startsWith("three-stdlib@"));
     if (stdlib === undefined) throw new Error("three-stdlib is unavailable");
-    await symlink(`${store}/${stdlib}/node_modules/three-stdlib`, `${scratch}/node_modules/three-stdlib`, "dir");
-    await symlink(resolve(editorRoot, "../navbake/node_modules/recast-navigation"), `${scratch}/node_modules/recast-navigation`, "dir");
+    await symlink(`${store}/${stdlib}/node_modules/three-stdlib`, `${scratch}/node_modules/three-stdlib`, "junction");
+    await symlink(resolve(editorRoot, "../navbake/node_modules/recast-navigation"), `${scratch}/node_modules/recast-navigation`, "junction");
     await installPublicPackages(scratch, ["core", "ui", "ws", "shell", "navbake", "editor"]);
     step("linking the packages");
     await Bun.write(`${scratch}/fixture.tsx`, `

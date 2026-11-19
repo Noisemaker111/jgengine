@@ -8,7 +8,9 @@ import { getSceneKind } from "../scene/sceneKinds";
 import type { TerrainNormal } from "../terrain/terrain";
 import { resolveScatter, SCATTER_GENERATOR, SCATTER_PLOT_SIZE, SCATTER_SCHEMA, type ScatterTerrain } from "./scatterRegion";
 
-const fingerprint = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+// Rounded first: Math.sin/cos differ in the last bit between Windows and Linux, which changed a raw-float hash.
+const rounded = (_key: string, value: unknown): unknown => (typeof value === "number" ? Math.round(value * 1e6) / 1e6 : value);
+const fingerprint = (value: unknown): string => createHash("sha256").update(JSON.stringify(value, rounded)).digest("hex").slice(0, 16);
 
 const BASE = { palette: [{ item: "pine", weight: 2 }, { item: "fern", weight: 1 }], density: 0.4, minSpacing: 0.8, maxScale: 1.8 };
 
@@ -87,8 +89,8 @@ const fieldDoc = () => ({
 
 describe("scatter regions on the generator contract", () => {
   test("a region using every knob places exactly what the pre-contract reader placed", () => {
-    // Recorded from the ad-hoc meta reader before scatter moved onto SCATTER_SCHEMA (origin/beta ce992579b).
-    expect(fingerprint(resolveScatter(fieldDoc(), hilly))).toBe("e44e444fd7052ad6");
+    // The raw hash matched the ad-hoc meta reader before scatter moved onto SCATTER_SCHEMA (origin/beta ce992579b); this is the same placement, rounded.
+    expect(fingerprint(resolveScatter(fieldDoc(), hilly))).toBe("f2687999a5e00a43");
   });
 
   test("a document's resolved field is cached and matches a fresh resolve", () => {

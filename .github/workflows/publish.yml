@@ -75,7 +75,8 @@ jobs:
       - name: Publish packages that are not installable from the registry
         run: |
           # `npm view` reported success for a version whose tarball returned 404 (#2280), and a
-          # re-run then skipped the broken package forever. Metadata without a tarball is repaired.
+          # re-run then skipped the broken package forever. Only a confirmed 404 is repaired: the
+          # plan exits non-zero when the registry did not answer, and that stops the run here.
           for p in core rapier ws sql navbake ui convex node shell assets editor github jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
@@ -83,14 +84,17 @@ jobs:
               *-*) tag=next ;;
               *) tag=latest ;;
             esac
-            plan=$(bun scripts/check-release-artifacts.ts --plan "$name@$version")
+            plan=$(bun scripts/check-release-artifacts.ts --plan "$name@$version") || {
+              echo "$name@$version: registry did not answer, run again"
+              exit 1
+            }
             echo "$name@$version: $plan"
-            if [ "$plan" = "skip" ]; then
-              continue
-            fi
-            if [ "$plan" = "repair" ]; then
-              npm unpublish "$name@$version" --force
-            fi
+            case "$plan" in
+              skip) continue ;;
+              publish) ;;
+              repair) npm unpublish "$name@$version" --force ;;
+              *) echo "$name@$version: unknown plan '$plan'"; exit 1 ;;
+            esac
             (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
           done
       - name: Verify every published package installs

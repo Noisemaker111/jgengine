@@ -61,7 +61,6 @@ describe("tooling reaches GitHub only through gh", () => {
         "packages/github/src/source.ts": "await fetch(`https://api.github.com/repos/${repo}`);\n",
         "packages/assets/src/rocketboxPull.ts": 'const ROCKETBOX_API = "https://api.github.com/repos/microsoft/Microsoft-Rocketbox/contents";\n',
         "apps/web/src/api/github.ts": 'const token = process.env["GITHUB_TOKEN"] || undefined;\n',
-        "scripts/pr-video.ts": 'import { uploadPoliciesAssets } from "user-attachments";\n',
         "scripts/land.test.ts": 'gh(["pr", "merge"]);\n',
         "apps/web/.output/server/index.ts": "fetch(`https://api.github.com/x`);\n",
       }),
@@ -71,7 +70,7 @@ describe("tooling reaches GitHub only through gh", () => {
   });
 
   test("a waiver covers only the routes it names", () => {
-    expect(scan({ "scripts/pr-video.ts": "await fetch(`https://api.github.com/repos/${repo}`);\n" })).toEqual(["scripts/pr-video.ts:1"]);
+    expect(scan({ "packages/assets/src/pull.ts": 'import { Octokit } from "octokit";\n' })).toEqual(["packages/assets/src/pull.ts:1"]);
   });
 
   test("this repository is clean today", () => {
