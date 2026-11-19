@@ -139,9 +139,13 @@ test("without WebGPU the Rune bundle still draws, through WebGL2", async () => {
   expect(result.frames).toBeGreaterThan(0);
 });
 
+// On WebGL2, as a visitor without WebGPU draws: headless Linux CI's software WebGPU finds no adapter
+// for a third device in one page once one was destroyed (run 44536132147), which says nothing
+// about Rune's reopen, and a hardware GPU reopens on WebGPU (checked on Windows).
 test("two Rune instances draw side by side, and one closes and reopens", async () => {
-  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(false) });
+  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(true) });
   const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
+  await page.addInitScript(() => { delete (Navigator.prototype as { gpu?: unknown }).gpu; });
   const errors: string[] = [];
   const log: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
