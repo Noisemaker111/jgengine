@@ -107,7 +107,7 @@ If every attempt fails, `pull` throws one aggregated error naming every URL it t
 
 **A whole new pack** G�� add one entry to the matching `src/sources/*.ts` (this is the layer contributors PR). No filenames are hand-typed; `reindex` reads the real `.glb` names out of the extracted pack, so entries can't silently 404.
 
-```ts
+```ts fragment
 // src/sources/quaternius.ts G�� QUATERNIUS_PACKS
 { id: "quaternius-fantasy-props", slug: "fantasypropsmegakit", title: "Fantasy Props MegaKit", categories: ["fantasy", "prop"] },
 ```
@@ -141,15 +141,15 @@ Build the catalog once, then address ids (or aliases) G�� resolve returns `{
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import { quaterniusStylizedNature } from "@jgengine/assets/generated/packs";
+import type { GameSceneConfig } from "@jgengine/core/game/playableGame";
 
 const catalog = buildCatalog({ basePath: "/models", packs: [quaterniusStylizedNature] });
 
 catalog.resolve("quaternius-stylized-nature/Pine_1"); // { url: "/models/quaternius-stylized-nature/Pine_1.glb" }
 catalog.resolve("nature/tree_pine");                   // alias G�� same url
 
-// wire ids straight into a game's model seams:
-export const game: PlayableGame = {
-  // GǪ
+// wire ids straight into a game's model seams (the `scene` of its game config):
+export const scene: GameSceneConfig = {
   objectModels: {
     "quaternius-stylized-nature/Pine_1": { url: catalog.resolve("quaternius-stylized-nature/Pine_1")!.url, scale: 1.4 },
   },

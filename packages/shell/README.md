@@ -4,13 +4,13 @@ Game player shell for [JGengine](https://github.com/Noisemaker111/jgengine): pla
 
 ```tsx
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import type { GameRegistry } from "@jgengine/shell/registry";
+import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
-const games: GameRegistry = {
-  "my-game": () => import("./game").then((m) => m.myGame),
-};
+declare const loadMyGame: () => Promise<PlayableGame>; // () => import("./game.config").then((m) => m.game)
 
-<GamePlayerShell playable={await games["my-game"]()} />;
+const games: GameRegistry = { "my-game": loadMyGame };
+
+<GamePlayerShell playable={await games["my-game"]!()} />;
 ```
 
 Peer deps: `three`, `three-stdlib`. UI uses the engine's JSX runtime. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. Apache-2.0.
@@ -20,6 +20,8 @@ Weather primitives live in `@jgengine/core/weather` for game scene overlays:
 ```tsx
 import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
 import { LightningStrike } from "@jgengine/core/weather/LightningStrike.draw";
+
+declare const stormTick: number; // bump it to fire a new strike
 
 <WeatherLayer mode="rain" intensity={0.8} wind={[1.5, 0, -0.4]} rain={{ count: 7000 }} />;
 <LightningStrike origin={[0, 22, 0]} target={[4, 0, -6]} strikeKey={stormTick} />;
@@ -41,16 +43,16 @@ Summed Gerstner waves, crest-driven foam, and Fresnel water color were shaped fr
 
 ## Structures
 
-`GeneratedBuilding` renders the seeded facade/roof kit produced by `generateBuilding` in `@jgengine/core`:
+`InstancedBuildings` renders the seeded facade/roof kit produced by `generateBuilding` in `@jgengine/core`:
 
 ```tsx
-import { GeneratedBuilding } from "@jgengine/core/buildings/GeneratedBuilding.draw";
+import { InstancedBuildings } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
 
-<GeneratedBuilding building={generateBuilding({ seed: "block-a", floors: 6 })} />;
+<InstancedBuildings buildings={[{ building: generateBuilding({ seed: "block-a", floors: 6 }) }]} />;
 ```
 
-Building parts are batched into one `InstancedMesh` per part kind, so a whole building costs about a dozen draw calls regardless of part count. `InstancedBuildings` batches many buildings together the same way — a full district in one pass — and is what `EnvironmentScene` uses for `building()` world features:
+Building parts are batched into one `InstancedMesh` per part kind, so a whole building costs about a dozen draw calls regardless of part count. Many buildings batch together the same way — a full district in one pass — and it is what `EnvironmentScene` uses for `building()` world features:
 
 ```tsx
 import { InstancedBuildings } from "@jgengine/core/buildings/GeneratedBuilding.draw";

@@ -13,6 +13,8 @@ import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
+import { RUN_PHASES, runSessionStore } from "./game/run/session";
+import { TRACKS } from "./game/tracks/catalog";
 
 export const game = defineGame({
   name: "Drift Foundry",
@@ -104,8 +106,20 @@ export const game = defineGame({
     // `car` is 0 before the car spawns, when the position reads as the origin.
     probe: (ctx) => {
       const car = ctx.scene.entity.get(ctx.player.userId);
-      if (car === null) return { car: 0, x: 0, y: 0, z: 0 };
-      return { car: 1, x: car.position[0], y: car.position[1], z: car.position[2] };
+      // What the dash shows a driver: the run's phase, its clock and metres down the track, which
+      // track, and the kart's heading, speed and whether it is in the air.
+      const snap = runSessionStore.peek(ctx)?.snapshot();
+      const run = {
+        phase: snap === undefined ? -1 : RUN_PHASES.indexOf(snap.phase),
+        track: snap === undefined ? -1 : TRACKS.findIndex((track) => track.id === snap.track.id),
+        run: snap?.run ?? 0,
+        runTime: snap?.runTime ?? 0,
+        heading: snap?.pose.heading ?? 0,
+        speedKmh: snap?.pose.speedKmh ?? 0,
+        airborne: snap?.pose.airborne === true ? 1 : 0,
+      };
+      if (car === null) return { car: 0, x: 0, y: 0, z: 0, ...run };
+      return { car: 1, x: car.position[0], y: car.position[1], z: car.position[2], ...run };
     },
   },
   audio: { sounds: DRIFT_SOUNDS },

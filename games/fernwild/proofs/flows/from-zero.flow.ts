@@ -29,6 +29,11 @@ const toSpot =
   (x: number, z: number): Bearing =>
   (p) => ({ yaw: Math.atan2(x - p.x, z - p.z), distance: Math.hypot(x - p.x, z - p.z) });
 
+/** A station the survivor built: walk to it by sight, or back to where it was built once it is out of sight. */
+const toBuilt =
+  (what: Sight, at: [number, number]): Bearing =>
+  (p) => (distOf(p, what) >= 0 ? toSight(what)(p) : toSpot(at[0], at[1])(p));
+
 /** Where a sight stands, as x and z, from the survivor's bearing and distance to it. */
 const spotOf = (p: Probe, what: Sight): [number, number] => [p.x + Math.sin(yawOf(p, what)) * distOf(p, what), p.z + Math.cos(yawOf(p, what)) * distOf(p, what)];
 /** The spot `metres` out in front of the hut's doorway, on the line from the floor's middle through it. */
@@ -183,6 +188,9 @@ async function guardUntil(f: Flow<Probe>, done: Check, note: string, maxMs: numb
 
 /** Take the hotbar tool on `key` in hand (0: bare hands), pressing its number only when it is not already held. */
 async function hand(f: Flow<Probe>, key: (p: Probe) => number): Promise<void> {
+  // Stone tools wear out: one that broke is made again from what the bag holds, as a player would.
+  if (key === pick && (await f.probe()).pickKey === 0) await remake(f, "stone_pick");
+  if (key === hatchet && (await f.probe()).hatchetKey === 0) await remake(f, "stone_hatchet");
   const p = await f.probe();
   const want = key(p);
   if (want === p.holding) return;
@@ -193,6 +201,23 @@ async function hand(f: Flow<Probe>, key: (p: Probe) => number): Promise<void> {
 const bare = (): number => 0;
 const pick = (p: Probe): number => p.pickKey;
 const hatchet = (p: Probe): number => p.hatchetKey;
+
+/** Craft a worn-out stone tool again: a pick from stone, a hatchet from flint, each with wood and thatch from a tree. */
+async function remake(f: Flow<Probe>, recipe: "stone_pick" | "stone_hatchet"): Promise<void> {
+  const made = recipe === "stone_pick" ? (q: Probe) => q.pickKey > 0 : (q: Probe) => q.hatchetKey > 0;
+  const p = await f.probe();
+  if (p.thatch < 10 || p.wood < 1) {
+    await hand(f, bare);
+    await gather(f, "tree", (q) => q.thatch >= 10 && q.wood >= 1);
+  }
+  if (recipe === "stone_pick" && p.stone < 1) await gather(f, "rock", (q) => q.stone >= 1);
+  if (recipe === "stone_hatchet" && p.flint < 1) {
+    await hand(f, pick);
+    await gather(f, "rock", (q) => q.flint >= 1);
+  }
+  await f.command("craft", { recipeId: recipe });
+  await f.waitFor(made, { timeoutMs: 20_000, note: `a new ${recipe === "stone_pick" ? "pick" : "hatchet"} is made` });
+}
 
 /**
  * Put the first building piece in the bag on the hotbar, take it in hand and place it where the ghost stands,
@@ -259,8 +284,10 @@ async function chaseDown(f: Flow<Probe>, maxMs = 150_000): Promise<void> {
  * and fight the one that closes in.
  */
 async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void> {
-  const carve = (await f.probe()).holding;
-  const kill = (q: Probe): number => (q.spearKey > 0 ? q.spearKey : carve);
+  // The carving tool is the one in hand, or the pick when the hands are empty.
+  if ((await f.probe()).holding === 0) await hand(f, pick);
+  const carve = (q: Probe): number => (q.holding === q.spearKey || q.holding === 0 ? q.pickKey : q.holding);
+  const kill = (q: Probe): number => (q.spearKey > 0 ? q.spearKey : carve(q));
   let health = (await f.probe()).health;
   for (let spent = 0; spent < maxMs; ) {
     const p = await f.probe();
@@ -277,9 +304,14 @@ async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void>
       spent += 5000;
       continue;
     }
+    if (p.pickKey === 0) {
+      // The pick wore out mid-hunt: bare hands neither kill nor carve, so make another first.
+      await remake(f, "stone_pick");
+      continue;
+    }
     if (p.aimedWild === 1) {
       // A wild one in front: the spear while it lives, the carving tool on the body it leaves.
-      await hand(f, p.aimedHealth > 0 ? kill : () => carve);
+      await hand(f, p.aimedHealth > 0 ? kill : carve);
       await f.hold("mouse0", { ms: 500 });
       spent += 500;
       const q = await f.probe();
@@ -373,16 +405,26 @@ export default defineFlow(game, {
     await hand(f, hatchet);
     await gather(f, "rock", (p) => p.stone >= 16 && p.flint >= 3);
     await hand(f, pick);
-    await gather(f, "tree", (p) => p.thatch >= 12 && p.wood >= 2);
+    // Two wood for the fire's frame, and three more to burn in it.
+    await gather(f, "tree", (p) => p.thatch >= 12 && p.wood >= 5);
     await learnAndCraft(f, "campfire", (p) => p.pieceSlot >= 0);
     await placePiece(f);
     await f.waitFor((p) => p.campfires === 1, { timeoutMs: 2000, note: "a campfire stands" });
+    // E feeds it a log and it burns; a fire with nothing in it cooks nothing.
+    await f.press("KeyE");
+    const lit = await f.waitFor((p) => p.campfireDist >= 0, { timeoutMs: 2000, note: "the campfire burns" });
+    // A hunt runs far past where the fire can be seen; a player remembers where they built it.
+    const campfire = toBuilt("campfire", spotOf(lit, "campfire"));
 
     // meat: the pick on a dodo, lystrosaurus or phiomia, then on its body
     await hand(f, pick);
     await hunt(f, (p) => p.rawMeat >= 2);
     // cook it at the campfire
-    await walkTo(f, 2.5, "campfire");
+    await walkTo(f, 2.5, campfire);
+    // It burned down during the hunt: another log on before the meat goes on.
+    await f.heading(campfire(await f.probe()).yaw);
+    await f.press("KeyE");
+    await f.waitFor((p) => p.campfireDist >= 0, { timeoutMs: 2000, note: "the campfire burns again" });
     await f.command("craft", { recipeId: "cook_meat" });
     await f.waitFor((p) => p.cookedMeat >= 1, { timeoutMs: 40_000, note: "meat cooked on the campfire" });
 
@@ -497,6 +539,9 @@ export default defineFlow(game, {
     // the engram learned with the stone in, to see what the hide is for
     await f.command("learn", { engramId: "mortar_and_pestle" });
     await hunt(f, (p) => p.hide >= 15 && p.rawMeat + p.spoiledMeat >= 1, 900_000);
+    // A pick remade on the hunt took stone from the pile: top it back up first.
+    await hand(f, hatchet);
+    await gather(f, "rock", (p) => p.stone >= 65);
     await learnAndCraft(f, "mortar_and_pestle", (p) => p.pieceSlot >= 0, false);
     await placePiece(f);
     await hand(f, bare);
@@ -518,7 +563,7 @@ export default defineFlow(game, {
     await hand(f, hatchet);
     await gather(f, "tree", (p) => p.wood >= 230 || p.weight >= p.weightMax - 4, 480_000);
     // and carried home to the campfire
-    await walkTo(f, 3, "campfire", 300_000);
+    await walkTo(f, 3, campfire, 300_000);
     await f.wait(1000);
   },
 });

@@ -36,7 +36,8 @@ test("answers every feature in one call: covered, partial and gap", () => {
   expect(answers.map((answer) => [answer.feature, answer.verdict])).toEqual([
     ["torpor", "covered"],
     ["weather wind", "covered"],
-    ["weather lightning", "partial"],
+    // "wind" names a weather capability and "lightning" none: a half match is no match, not the nearest row.
+    ["weather lightning", "gap"],
     ["orbit", "partial"],
     ["breeding", "gap"],
   ]);

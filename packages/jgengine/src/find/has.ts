@@ -16,7 +16,7 @@ export type HasVerdict = "covered" | "partial" | "gap";
 /** One feature's answer. */
 export interface HasAnswer {
   feature: string;
-  /** `covered`: a part or a capability whose names carry the words; `partial`: only a folder is named for it; `gap`: nothing scores above the bar. */
+  /** `covered`: a part or a capability carries every word; `partial`: only a folder is named for it; `gap`: no match. */
   verdict: HasVerdict;
   /** Engine folders named for the feature, core first. */
   folders: string[];
@@ -149,13 +149,14 @@ export function answerHas(features: readonly string[], sources: HasSources): Has
     const scored = searched
       .map((words) => ({ entry: words.entry, ...scoreCapability(words, tokens) }))
       .filter((row) => row.score >= BAR && (parts.length === 0 || row.named));
-    const complete = scored.some((row) => row.complete);
+    // Only a capability that carries every word is an answer: one that matched some of them is the
+    // nearest neighbour, which reads as "covered" to whoever plans from it.
     const matches = scored
-      .filter((row) => row.complete === complete)
+      .filter((row) => row.complete)
       .sort((a, b) => b.score - a.score || a.entry.skill.localeCompare(b.entry.skill) || a.entry.slug.localeCompare(b.entry.slug))
       .map((row) => row.entry);
     const folders = locateIn(sources.code, tokens).map((home) => home.home);
-    const verdict: HasVerdict = parts.length > 0 || (matches.length > 0 && complete) ? "covered" : matches.length > 0 || folders.length > 0 ? "partial" : "gap";
+    const verdict: HasVerdict = parts.length > 0 || matches.length > 0 ? "covered" : folders.length > 0 ? "partial" : "gap";
     return {
       feature,
       verdict,

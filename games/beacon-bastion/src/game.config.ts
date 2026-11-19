@@ -113,6 +113,11 @@ export const game = defineGame({
       towers: towersStanding(keep.of(ctx)),
       creeps: session.creeps.size,
       wave: currentWaveNumber(),
+      // The from-zero proof plays a whole run: when the horn will sound, and how the run ended.
+      waveReady: keep.of(ctx).fact("keep.wave_ready") === true ? 1 : 0,
+      lives: keep.of(ctx).num("keep.lives"),
+      held: keep.of(ctx).fact("keep.held") === true ? 1 : 0,
+      fallen: keep.of(ctx).fact("keep.fallen") === true ? 1 : 0,
     }),
   },
   rendering: {

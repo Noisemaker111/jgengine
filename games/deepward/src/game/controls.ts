@@ -1245,6 +1245,8 @@ export function captureProbe(ctx: GameContext) {
   const v = viewStore.read(ctx), at = playerAt(ctx);
   const load = loadOf(v.dive?.cache ?? []);
   return { x: at?.[0] ?? 0, z: at?.[2] ?? 0, inDive: v.mode === "dive" ? 1 : 0,
+    // The session's mode, as its place in the list: 0 home, 1 dive, 2 saving, 3 blocked, 4 reprinting, 5 loading.
+    mode: ["home", "dive", "saving", "blocked", "reprinting", "loading"].indexOf(v.mode), paused: v.paused ? 1 : 0,
     reprinting: v.mode === "reprinting" ? 1 : 0, oxygen: v.dive?.oxygen ?? 0,
     tankSeconds: v.dive?.tankSeconds ?? 0, reserve: v.ammo?.reserve ?? 0,
     carried: v.dive?.cache.length ?? 0, stash: v.home.stash.length,

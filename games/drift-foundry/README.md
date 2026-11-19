@@ -105,9 +105,8 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     obstacle every few seconds; UI: barrier silhouettes read before you reach them.
   - *Mad Max (2015)* — feel: a car getting visibly uglier and faster; density: three distinct yards in
     one run; UI: pit-radio lines that name what you just bolted on.
-- **Gap to target.** One authored route and one lap: all eight events race the same corridor, so
-  the calendar varies rules, not road. A second corridor or a lap circuit that returns through a
-  different yard is the next content step. Ghosts are local only; there is no shared leaderboard.
+- **Gap to target.** Every track is a single lap: no circuit returns through a different yard.
+  Ghosts are local only; there is no shared leaderboard.
 
 Loop proof: to-corridor
 

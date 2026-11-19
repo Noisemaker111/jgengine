@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
-import { checkBudget, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { checkBudget, gateSummary, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { frameVerdict, knownSlowAdded, parseKnownSlow, readKnownSlow, summarizeRecord, unjudgedFrameTime } from "./perf-budget";
 import { FRAME_GAMES } from "./ci-scope";
 
@@ -301,3 +301,13 @@ describe("summarizeRecord", () => {
   });
 });
 
+
+test("the closing line counts games inside, over and not judged, and names the build", () => {
+  const ok = (game: string) => ({ game, summary: `${game} ok`, violations: [], error: null });
+  const line = gateSummary(
+    [ok("a"), ok("b"), { ...ok("c"), known: "heavy forest" }, { ...ok("d"), unjudged: "software rasterizer" }],
+    "dev",
+    "perf-known-slow.json",
+  );
+  expect(line).toBe("perf gate: 2 inside budget, 1 over it (known in perf-known-slow.json), 1 not judged (software rasterizer); measured on the dev server's build, not what players get");
+});

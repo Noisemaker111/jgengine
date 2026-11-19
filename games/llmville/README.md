@@ -42,9 +42,9 @@ and is enforced by the Convex mutations in `packages/backend/convex/`.
   - *Factorio* - density: every machine is busy on a job you assigned and its output is visible.
   - *Cookie Clicker* - progression: numbers that compound into the next unlock tier.
 - **Gap to target.** No sound at all; tok/s readouts in the model deck print unrounded
-  floats; the camera is a fixed close top-down view; bots need the agent REST API and a key.
+  floats; bots need the agent REST API and a key.
 
-Loop proof: llmville-first-model (needs a running Convex backend and a signed-in account; see Develop)
+Loop proof: from-zero (to tutorial step 4 of 9; a browser flow that needs the local backend below and a signed-in account, so the headless from-zero check skips it until LLMville runs without Convex)
 
 ## Develop
 
@@ -52,20 +52,20 @@ From the repository root, after `bun install --frozen-lockfile`:
 
 ```sh
 # 1. Backend: a local Convex deployment with no account (state lives in packages/backend/.convex)
-cd llmville/packages/backend
+cd games/llmville/packages/backend
 CONVEX_AGENT_MODE=anonymous bunx convex dev --typecheck disable
 #    once, in another shell:
 CONVEX_AGENT_MODE=anonymous bunx convex env set BETTER_AUTH_SECRET <any 64 hex chars>
 CONVEX_AGENT_MODE=anonymous bunx convex env set SITE_URL http://localhost:3001
 
-# 2. Web: llmville/.env.local holds VITE_CONVEX_URL=http://127.0.0.1:3210 and
+# 2. Web: games/llmville/.env.local holds VITE_CONVEX_URL=http://127.0.0.1:3210 and
 #    VITE_CONVEX_SITE_URL=http://127.0.0.1:3211
 bun --cwd=games/llmville run dev        # http://localhost:3001 (strict port: auth trusts it)
 ```
 
-Sign up with any test email on the local backend, or play as a guest. `bun run games:test` and
-`bun run games:check-types` at the root cover the web client, `@llmville/game` and the Convex
-functions.
+Sign up with any test email on the local backend, or play as a guest. `bun run test games/llmville`
+covers the web client and `@llmville/game`; `bun --cwd=games/llmville run check-types` and
+`bun --cwd=games/llmville/packages/backend run check-types` check the client and the Convex functions.
 
 All UI draws on Rune-native primitives (`src/ui/`, see `docs/rune-port.md`). The headless play
 test `src/ui/play.test.tsx` mounts the real screens and tablet with a stubbed backend and walks
@@ -78,7 +78,7 @@ the game by pressing actions; `proofs/runeUiFixture.tsx` samples any screen's na
 - `packages/backend/convex/` - schema, auth, permissions and gameplay: `models.ts` (unlock,
   training, stat rolls), `serving.ts` and `world.ts` (income and the world read-model),
   `inference.ts` (GPU job assignment), `frontier.ts`, `dailyMarket.ts`, `market.ts` (economy),
-  `bills.ts` (bills). `jgengine/` wraps the `@jgengine/convex` factories; `multiplayer/` wires
+  `bills.ts` (bills). `runtime.ts` and `presence.ts` call the `@jgengine/convex` factories; `multiplayer/` wires
   presence and chat.
 
 ## Deployment

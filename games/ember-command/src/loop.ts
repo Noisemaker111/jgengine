@@ -28,8 +28,12 @@ async function resumeCampaign(ctx: GameContext): Promise<void> {
   // An empty slot leaves the boot field alone; only a held campaign is read into it.
   if (await campaignHeld(ctx, slot)) {
     await openCampaignSlot(ctx, slot);
-    if (!session.started) setupSkirmish(ctx);
-    restoreCampaign(ctx);
+    // A battle the player already started is the one in play: its own checkpoints wrote the slot just
+    // read, so restoring the mission machine from it would abandon the order under way.
+    if (!session.started) {
+      setupSkirmish(ctx);
+      restoreCampaign(ctx);
+    }
     // The saved kit is the one piece of hero state the campaign carries into this battle.
     loadHeroPicks(ctx);
   }

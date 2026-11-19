@@ -715,7 +715,7 @@
 ## @jgengine/core/play/headlessFlow.draw
 
 - `HeadlessFlowOptions` (interface): interface HeadlessFlowOptions — Options for {@link runFlowHeadless}.
-- `runFlowHeadless` (function): function runFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions = {}): Promise<FlowRunReport> — Play a proof flow headless: the real game through {@link createPlaySession}, keys mapped to the game's own bindings, every wait in game time, so a flow that takes a minute in the browser takes seconds here. Screenshots are skipped. A failing step stops the run and the report names it with the probe readings.
+- `runFlowHeadless` (function): function runFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions = {}): Promise<FlowRunReport> — ⚠ undocumented
 
 ## @jgengine/core/play/headlessKeys.draw
 

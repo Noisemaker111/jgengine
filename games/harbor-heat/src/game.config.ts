@@ -22,6 +22,7 @@ import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { sessionStore } from "./game/session";
 import { HARBOR_DECALS } from "./game/combat/impactLook";
+import { courierPrompts, courierStore, THIEF } from "./game/jobs/courier";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
@@ -209,7 +210,7 @@ export const game = defineGame({
       const race = raceStore.read(ctx);
       // The nearest parked car (police cruisers excluded), so a flow can walk up to one and press E.
       let car: { x: number; z: number; distance: number } | null = null;
-      if (vehicleId === null && entity !== null) {
+      if (vehicleId == null && entity !== null) {
         for (const other of ctx.scene.entity.list()) {
           if (vehicleById(other.name) === undefined || other.id.startsWith("cruiser_")) continue;
           const distance = Math.hypot(other.position[0] - entity.position[0], other.position[2] - entity.position[2]);
@@ -217,7 +218,7 @@ export const game = defineGame({
         }
       }
       return {
-        driving: vehicleId === null ? 0 : 1,
+        driving: vehicleId == null ? 0 : 1,
         carX: car?.x ?? 0,
         carZ: car?.z ?? 0,
         carDistance: car?.distance ?? -1,
@@ -236,6 +237,22 @@ export const game = defineGame({
         wave: convoySnapshot(ctx)?.wave ?? 0,
         // The run is stopped behind the pause phone: a flow tells "never paused" from "paused then resumed".
         paused: sessionStore.read(ctx).paused ? 1 : 0,
+        // The courier job: where its prompt stands (the dispatch booth, or the drop while a parcel
+        // is carried; -1 while the job points nowhere), and parcels delivered so far.
+        courierX: courierPrompts(ctx)[0]?.position.x ?? 0,
+        courierZ: courierPrompts(ctx)[0]?.position.z ?? 0,
+        courierDistance: (() => {
+          const prompt = courierPrompts(ctx)[0];
+          return prompt === undefined || entity === null ? -1 : Math.hypot(prompt.position.x - entity.position[0], prompt.position.z - entity.position[2]);
+        })(),
+        delivered: courierStore.read(ctx).delivered,
+        // The runner who grabs the parcel at the drop, while the chase is on (-1 with none).
+        runnerX: ctx.scene.entity.get(THIEF)?.position[0] ?? 0,
+        runnerZ: ctx.scene.entity.get(THIEF)?.position[2] ?? 0,
+        runnerDistance: (() => {
+          const runner = ctx.scene.entity.get(THIEF);
+          return runner === null || entity === null ? -1 : Math.hypot(runner.position[0] - entity.position[0], runner.position[2] - entity.position[2]);
+        })(),
       };
     },
   },
