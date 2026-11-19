@@ -38,8 +38,13 @@ const TWO_GAMES = `<!doctype html><html><body style="margin:0;background:#000">
   b.mount("b", "{}", () => { window.__frames.b += 1; });
   a.set_spec(tree("#204060"), 1);
   b.set_spec(tree("#602040"), 1);
+  // As RuneUi does: the closed game's canvas goes, and the reopened one gets a fresh canvas.
   window.__reopen = () => {
     a.unmount();
+    const old = document.getElementById("a");
+    const fresh = old.cloneNode(false);
+    old.remove();
+    document.body.appendChild(fresh);
     window.__frames.a = 0;
     a.mount("a", "{}", () => { window.__frames.a += 1; });
     a.set_spec(tree("#206040"), 2);
@@ -138,17 +143,23 @@ test("two Rune instances draw side by side, and one closes and reopens", async (
   const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(false) });
   const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
   const errors: string[] = [];
+  const log: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text()); });
+  page.on("console", (message) => {
+    log.push(`${message.type()}: ${message.text()}`);
+    if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text());
+  });
   await page.goto(`http://localhost:${server.port}/two`);
   const frames = () => (window as unknown as { __frames?: { a: number; b: number } }).__frames;
   await page.waitForFunction(() => { const f = (window as unknown as { __frames?: { a: number; b: number } }).__frames; return f !== undefined && f.a > 0 && f.b > 0; });
   const before = await page.evaluate(frames);
   await page.evaluate(() => (window as unknown as { __reopen(): void }).__reopen());
-  await page.waitForFunction(() => ((window as unknown as { __frames: { a: number } }).__frames.a) > 0);
+  // A reopen that never draws says what the page printed, not only that the wait ran out.
+  const drew = await page.waitForFunction(() => ((window as unknown as { __frames: { a: number } }).__frames.a) > 0).then(() => true, () => false);
   const after = await page.evaluate(frames);
   await browser.close();
   expect(errors).toEqual([]);
+  expect(drew, `the reopened instance never drew; the page printed:\n${log.join("\n")}`).toBe(true);
   expect(before!.a).toBeGreaterThan(0);
   expect(before!.b).toBeGreaterThan(0);
   expect(after!.a).toBeGreaterThan(0);
