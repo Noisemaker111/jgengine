@@ -138,7 +138,7 @@ const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality l
   --set             not taken here: a setting override measures a cost against the defaults,
                     not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
 
-interface GameOutcome {
+export interface GameOutcome {
   game: string;
   /** Over the frame budget and listed as known; reported, not failed. */
   known?: string;
@@ -147,6 +147,22 @@ interface GameOutcome {
   violations: string[];
   /** Why the game could not be measured at all, as opposed to measured over budget. */
   error: string | null;
+  /** Why its frame times were not judged (a software rasterizer), when they were not. */
+  unjudged?: string;
+}
+
+/**
+ * The gate's closing line: how many games are inside the frame budget, how many are over it (listed as
+ * known), and how many were measured but not judged, and which build was measured. A game whose frame
+ * time nobody judged is never counted as inside.
+ */
+export function gateSummary(outcomes: readonly GameOutcome[], build: PerfBuild, knownPath: string): string {
+  const notJudged = outcomes.filter((outcome) => outcome.unjudged !== undefined);
+  const over = outcomes.filter((outcome) => outcome.unjudged === undefined && outcome.known !== undefined);
+  const inside = outcomes.filter((outcome) => outcome.unjudged === undefined && outcome.known === undefined && outcome.summary !== null);
+  const reason = notJudged[0]?.unjudged;
+  const buildLabel = build === "production" ? "the production build players get" : "the dev server's build, not what players get";
+  return `perf gate: ${inside.length} inside budget, ${over.length} over it (known in ${knownPath}), ${notJudged.length} not judged${reason === undefined ? "" : ` (${reason})`}; measured on ${buildLabel}`;
 }
 
 /**
@@ -232,9 +248,10 @@ async function main(): Promise<void> {
           });
           writePerfRecord(measured.record, join(repoRoot, ".scratch", "perf-gate", `${game}.json`));
           const budget = loaded.budget;
+          const unjudged = unjudgedFrameTime(measured.record);
+          if (unjudged !== null) outcome = { ...outcome, unjudged };
           if (!rasterizerPrinted) {
             rasterizerPrinted = true;
-            const unjudged = unjudgedFrameTime(measured.record);
             console.log(`perf gate: rasterizer ${measured.record.gpu}${unjudged === null ? "" : ` — frame times not judged: ${unjudged}`}`);
           }
           const violations = checkBudget(measured.record, budget);
@@ -303,9 +320,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const knownCount = measured.filter((outcome) => outcome.known !== undefined).length;
-  console.log(`\nperf gate: ${games.length} games inside budget (${lines.length} measured${knownCount > 0 ? `, ${knownCount} known over it in ${KNOWN_SLOW_PATH}` : ""})`);
-  console.log(`perf gate: ${build === "production" ? "the production build players get" : "the dev server's build, not what players get"}; machine${machineClause(runMachine())}`);
+  console.log(`\n${gateSummary(measured, build, KNOWN_SLOW_PATH)} (${lines.length} measured)`);
+  console.log(`perf gate: machine${machineClause(runMachine())}`);
 }
 
 if (import.meta.main) {

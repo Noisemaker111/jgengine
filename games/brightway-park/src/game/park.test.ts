@@ -81,10 +81,10 @@ describe("a new park", () => {
     expect(w.fact(`${ride}.closed`)).toBe(false);
     expect(runner.ctx.game.commands.run("brightway.act", { action: "open_gate" }).status).toBe("applied");
 
-    // Guests trickle in: a handful in the first minute, not a flood.
+    // Guests trickle in: one every few seconds in the first minute, not a flood.
     step(runner, 60);
     expect(w.num("park.guests_today")).toBeGreaterThan(0);
-    expect(w.num("park.guests_today")).toBeLessThan(12);
+    expect(w.num("park.guests_today")).toBeLessThan(20);
     // The rating moves over the day, not in seconds.
     expect(w.num("park.rating")).toBeLessThan(60);
   }, 30_000);

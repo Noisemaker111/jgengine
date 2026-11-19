@@ -93,7 +93,7 @@ export const SCENARIOS: readonly ScenarioDef[] = [
     months: 3,
     targets: [
       { fact: "park.guests", atLeast: 120, label: "guests in the park" },
-      { fact: "park.rating", atLeast: 400, label: "stars" },
+      { fact: "park.rating", atLeast: 250, label: "stars" },
     ],
     reward: 5_000,
   }),

@@ -42,7 +42,9 @@ export interface KartTireEffects {
   marks?: TireMarks;
   particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
 }
-export type RunPhase = "start" | "running" | "won" | "crushed";
+/** A run's phases in order: the dash and the proofs read a phase by its place here. */
+export const RUN_PHASES = ["start", "running", "won", "crushed"] as const;
+export type RunPhase = (typeof RUN_PHASES)[number];
 
 export interface RadioCall {
   id: number;

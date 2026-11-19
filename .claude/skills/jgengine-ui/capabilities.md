@@ -265,10 +265,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
 
-## headless-flow — play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks
-
-- `runFlowHeadless` (function) · `import { runFlowHeadless } from "@jgengine/core/play/headlessFlow.draw"`
-
 ## hold-vs-toggle — resolve one action frame under a hold-or-toggle preference
 
 - `holdToggleActive` (function) · `import { holdToggleActive } from "@jgengine/core/settings/accessibilitySettings"`

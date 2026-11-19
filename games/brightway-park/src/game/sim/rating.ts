@@ -29,7 +29,7 @@ export function ratingTarget(
  */
 export function demand(totalAppeal: number, ticketPrice: number, rating: number, open: boolean, marketing = 1): number {
   if (!open) return 0;
-  const perMinute = (3 + totalAppeal * 0.2 + rating * 0.04) * marketing;
+  const perMinute = (8 + totalAppeal * 0.8 + rating * 0.18) * marketing;
   const worth = 4 + totalAppeal * 0.15 + rating * 0.02;
   const priceResistance = Math.max(0, Math.min(1, 1 - (ticketPrice - worth) * 0.05));
   return (perMinute / 60) * priceResistance;

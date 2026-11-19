@@ -15,6 +15,7 @@ import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
 import { householdStore } from "./game/session/store";
+import { INCIDENTS } from "./game/sim/events";
 import { DAY_LENGTH, physics, terrainField, world } from "./world";
 
 export const game = defineGame({
@@ -79,7 +80,9 @@ export const game = defineGame({
         const member = state.members[id];
         if (member !== undefined && member.action.kind === "use" && member.action.goal === "work") working += 1;
       }
-      return { day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1 };
+      // Which transmission waits on an answer, as its place in the storyteller's list (-1 for none).
+      const incidentKind = state.incident == null ? -1 : INCIDENTS.findIndex((def) => def.id === state.incident?.id);
+      return { day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, incidentKind, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1 };
     },
   },
   rendering: {

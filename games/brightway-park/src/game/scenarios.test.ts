@@ -40,15 +40,15 @@ describe("brightway-park scenarios on the shared mission runtime", () => {
     // Three months, a season, two seasons: hours of play at 1x.
     expect(SCENARIOS.map((scenario) => scenario.months)).toEqual([3, 8, 16]);
     expect(scenarioSeconds(3)).toBe(3 * MONTH_DAYS * DAY_LENGTH);
-    expect(scenarioDef(FIRST_SCENARIO)?.goal).toBe("120 guests in the park and 400 stars by the end of May, Year 1");
+    expect(scenarioDef(FIRST_SCENARIO)?.goal).toBe("120 guests in the park and 250 stars by the end of May, Year 1");
   });
 
   test("Brightway Beginnings is won the moment both targets hold, not before", () => {
     const park = runtime();
     park.start(FIRST_SCENARIO);
-    expect(kinds(park.tick(60, { facts: facts({ guests: 150, rating: 300 }) }))).not.toContain("completed");
+    expect(kinds(park.tick(60, { facts: facts({ guests: 150, rating: 249 }) }))).not.toContain("completed");
     expect(kinds(park.tick(60, { facts: facts({ guests: 119, rating: 450 }) }))).not.toContain("completed");
-    const won = park.tick(60, { facts: facts({ guests: 120, rating: 400 }) });
+    const won = park.tick(60, { facts: facts({ guests: 120, rating: 250 }) });
     expect(kinds(won)).toContain("completed");
     const reward = won.find((event) => event.kind === "reward");
     if (reward?.kind === "reward") expect(reward.rewards.economy).toEqual({ cash: 5000 });

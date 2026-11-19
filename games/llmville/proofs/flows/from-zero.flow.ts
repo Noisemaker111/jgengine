@@ -3,7 +3,7 @@ import { defineFlow } from "@jgengine/core/play/flow";
 export default defineFlow(null, {
   browser: true,
   async run(f) {
-    // a fresh world on a signed-in account (local Convex: bun --cwd=llmville run convex:dev) opens on tutorial step 1
+    // a fresh world on a signed-in account (local Convex: bun --cwd=games/llmville run convex:dev) opens on tutorial step 1
     await f.see("Give your GPUs a home", { timeoutMs: 30000 });
     await f.click("Shop for a rack");
     await f.click("Buy ×1");

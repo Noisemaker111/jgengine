@@ -51,7 +51,35 @@ export function bootCaptureState(session: PlaySession, capture: GameCaptureConfi
  *
  * @capability headless-flow play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks
  */
+/**
+ * An empty `localStorage` for a headless run that has none, as a fresh browser profile has: a game that
+ * keeps its record in the page's storage boots the way a new player's does. Returns the undo.
+ */
+function freshPageStorage(): () => void {
+  if ("localStorage" in globalThis) return () => undefined;
+  const items = new Map<string, string>();
+  const storage = {
+    get length() { return items.size; },
+    key: (index: number) => [...items.keys()][index] ?? null,
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: (key: string, value: string) => { items.set(key, String(value)); },
+    removeItem: (key: string) => { items.delete(key); },
+    clear: () => { items.clear(); },
+  };
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: storage });
+  return () => { Reflect.deleteProperty(globalThis, "localStorage"); };
+}
+
 export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions = {}): Promise<FlowRunReport> {
+  const unstore = freshPageStorage();
+  try {
+    return await playFlowHeadless(flow, options);
+  } finally {
+    unstore();
+  }
+}
+
+async function playFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions): Promise<FlowRunReport> {
   const game = flow.game;
   const session = createPlaySession(game, options.seed === undefined ? {} : { seed: options.seed });
   const { ctx } = session;
@@ -65,18 +93,23 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
   const reports: { label: string; probe: unknown }[] = [];
 
   const keys = createHeadlessKeys(game, session);
-  const tick = keys.tick;
+  // One frame, then a turn for the game's own promises: a save written on a key press lands while the
+  // flow waits on it, as it does between frames in a page.
+  const tick = async (): Promise<void> => {
+    keys.tick();
+    await Promise.resolve();
+  };
   const ticksFor = keys.ticksFor;
   const keysDown = keys.down;
   const keysUp = keys.up;
 
-  const waitUntil = (check: ProbeCheck<TProbe>, timeoutMs: number, what: string): TProbe => {
+  const waitUntil = async (check: ProbeCheck<TProbe>, timeoutMs: number, what: string): Promise<TProbe> => {
     const deadline = session.clockMs + timeoutMs;
     for (;;) {
       const readings = readProbe();
       if (check(readings)) return readings;
       if (session.clockMs >= deadline) throw new Error(`${what}: not true after ${timeoutMs} ms of game time`);
-      tick();
+      await tick();
     }
   };
 
@@ -86,34 +119,34 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
         keysDown(keys);
         try {
           const minimum = how.ms ?? 0;
-          for (let index = 0, count = minimum > 0 ? ticksFor(minimum) : 0; index < count; index += 1) tick();
-          if (how.until !== undefined) waitUntil(how.until, how.timeoutMs ?? FLOW_WAIT_MS, `hold ${keysLabel(keys)} until ${describeCheck(how.until)}`);
+          for (let index = 0, count = minimum > 0 ? ticksFor(minimum) : 0; index < count; index += 1) await tick();
+          if (how.until !== undefined) await waitUntil(how.until, how.timeoutMs ?? FLOW_WAIT_MS, `hold ${keysLabel(keys)} until ${describeCheck(how.until)}`);
         } finally {
           keysUp(keys);
-          tick();
+          await tick();
         }
       }),
     press: (keys) =>
       stepper.run(`press ${keysLabel(keys)}`, async () => {
         keysDown(keys);
         try {
-          for (let index = 0, count = ticksFor(FLOW_PRESS_MS); index < count; index += 1) tick();
+          for (let index = 0, count = ticksFor(FLOW_PRESS_MS); index < count; index += 1) await tick();
         } finally {
           keysUp(keys);
-          tick();
+          await tick();
         }
       }),
     heading: (yaw) =>
       stepper.run(`heading ${yaw.toFixed(3)}`, async () => {
         if (!Number.isFinite(yaw)) throw new RangeError("heading needs a finite yaw in radians");
         ctx.camera.turnTo(yaw);
-        tick();
+        await tick();
       }),
     teleport: (to) =>
       stepper.run(`teleport ${to.x},${to.z}`, async () => {
         const moved = teleportPlayer(ctx, session.userId, to);
         if (!moved.ok) throw new Error(moved.error);
-        tick();
+        await tick();
       }),
     command: (name, input) =>
       stepper.run(`command ${name}`, async () => {
@@ -135,7 +168,7 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
       }),
     wait: (ms) =>
       stepper.run(`wait ${ms} ms`, async () => {
-        for (let index = 0, count = ticksFor(ms); index < count; index += 1) tick();
+        for (let index = 0, count = ticksFor(ms); index < count; index += 1) await tick();
       }),
     waitFor: (check, waitOptions = {}) =>
       stepper.run(`wait for ${waitOptions.note ?? describeCheck(check)}`, async () =>
@@ -157,7 +190,7 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
   return runFlowReport(stepper, reports, async () => {
     await stepper.run(flow.state === undefined && options.state === undefined ? "boot" : `boot state ${options.state ?? flow.state}`, async () => {
       bootCaptureState(session, game.capture, options.state ?? flow.state);
-      tick();
+      await tick();
     });
     await flow.run(api);
   });

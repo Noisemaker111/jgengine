@@ -184,6 +184,8 @@ export const game = defineGame({
   input: { ...DEFAULT_WALK_CODES, interact: ["KeyE"] },
   systems: [gatherLoop],
   GameUI,
+  // Rune draws the HUD: the engine's UI runtime on the game canvas, as every shipped game sets it.
+  uiRenderer: "rune",
 });
 ```
 

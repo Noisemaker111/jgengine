@@ -5,12 +5,18 @@ Deterministic navigation-mesh baking for authored JGengine geometry, backed by [
 ```ts
 import { bakeNavMesh, initNavBake } from "@jgengine/navbake";
 import { createNavRuntime, createNavCrowd, navMeshFromBake } from "@jgengine/core/world";
+import type { EditorDocument } from "@jgengine/core/editor/types";
+
+declare const scene: EditorDocument; // the game's editor.scene.json
+declare const positions: number[], indices: number[]; // walkable triangles
+declare const from: [number, number, number], to: [number, number, number];
+declare const edited: { positions: number[]; indices: number[] }; // the same triangles after an edit
 
 await initNavBake();
 const mesh = bakeNavMesh({ positions, indices, agentRadius: 0.4, agentHeight: 1.8, maxSlope: 45, maxClimb: 0.4 });
 
 // The editor stores that mesh as a `nav` bake on the scene document; runtime reads it back.
-const nav = createNavRuntime({ mesh: navMeshFromBake(document.bakes)!, links: [{ id: "ladder", kind: "ladder", from, to }] });
+const nav = createNavRuntime({ mesh: navMeshFromBake(scene.bakes) ?? mesh, links: [{ id: "ladder", kind: "ladder", from, to }] });
 nav.applyMesh(bakeNavMesh({ ...edited, agentRadius: 0.4, agentHeight: 1.8, maxSlope: 45, maxClimb: 0.4 }));
 const crowd = createNavCrowd({ nav });
 ```
@@ -24,9 +30,14 @@ A scene authors its navigation in the editor: `nav_area` box volumes (`meta.mode
 ```ts
 import { bakeAuthoredNavMesh } from "@jgengine/navbake";
 import { createNavRuntime, navAuthoringFromDocument, navLinksFromDocument, navMeshFromBake } from "@jgengine/core/world";
+import type { EditorDocument } from "@jgengine/core/editor/types";
 
-const { areas } = navAuthoringFromDocument(document);
+declare const scene: EditorDocument; // the game's editor.scene.json
+declare const positions: number[], indices: number[]; // any scene triangles besides the areas
+declare const from: [number, number, number], to: [number, number, number];
+
+const { areas } = navAuthoringFromDocument(scene);
 const mesh = bakeAuthoredNavMesh({ areas, positions, indices, agentRadius: 0.4, agentHeight: 1.8, maxSlope: 45, maxClimb: 0.4 });
-const nav = createNavRuntime({ mesh: navMeshFromBake(document.bakes)!, links: navLinksFromDocument(document) });
+const nav = createNavRuntime({ mesh: navMeshFromBake(scene.bakes) ?? mesh, links: navLinksFromDocument(scene) });
 nav.plan(from, to)?.links; // the links the route crosses, with their authored id and kind
 ```

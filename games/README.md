@@ -53,13 +53,14 @@ id appears in the game's `src/`. `bun --filter="@games/*" run check-types` and `
 
 ## Design checklist and loop proofs
 
-Every game carries a design brief in its `PLAN.md`, written once milestone 1 plays: the core loop (30
+A game's design brief lives in its `PLAN.md`, written once milestone 1 plays: the core loop (30
 seconds), session loop (10 minutes) and long loop (hours), what the player has at second 0 and why,
 the first 10 minutes beat by beat with what each teaches or unlocks, a content budget, the systems
 and the onboarding style.
 
-Every game also has `proofs/flows/from-zero.flow.ts`: a flow with no `state` that boots a new game
-with no save and plays its first minutes through real input (`bun run drive <game> --flow from-zero`).
+A game's `proofs/flows/from-zero.flow.ts` boots a new game with no save and plays to the end of its
+first loop through real input. `games/scripts/fromZero.test.ts` runs every game's flow headless and
+lists a browser-only one as skipped; `bun run drive <game> --flow from-zero` plays one.
 
 Every game's README states the same six-section design checklist (core loop, progression, failure
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming
@@ -79,6 +80,11 @@ A flow is TypeScript against the game's own probe; it names the capture state it
 headless (game time, no browser) unless it sets `browser: true` or the run passes `--browser`:
 
 ```ts
+import { defineFlow } from "@jgengine/core/play/flow";
+import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
+
+declare const game: HeadlessPlayable<{ glided: number; found: number }>; // the game's own game.config
+
 export default defineFlow(game, {
   state: "journey",
   async run(f) {

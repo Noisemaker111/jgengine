@@ -6,14 +6,19 @@ Convex adapters for [JGengine](https://github.com/Noisemaker111/jgengine): a cli
 
 `resolveConvexMultiplayer` resolves a `MultiplayerSession` when a game's `multiplayer` adapter is `convex(...)` (or `force`), wrapping `createConvexBackend`:
 
-```ts
+```tsx
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
+import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
+import type { PlayableGame } from "@jgengine/shell/registry";
+
+declare const playable: PlayableGame; // the game's game.config
+declare const convexUrl: string | undefined; // import.meta.env.VITE_CONVEX_URL in a Vite game
 
 const session = resolveConvexMultiplayer({
-  game: myGame,
+  game: playable.game,
   gameId: "my-game",
-  url: import.meta.env.VITE_CONVEX_URL,
-  force: import.meta.env.VITE_CONVEX_URL !== undefined,
+  url: convexUrl,
+  force: convexUrl !== undefined,
 });
 
 <GamePlayerShell playable={playable} multiplayer={session} />;
@@ -45,6 +50,12 @@ No game-specific code lives there — any JGengine game can point at the same de
 The same factory also returns `helpers` — `loadSnapshot`, `applyCommand`, `persistSnapshot`, `runCommand` — bound to the same runtimes and auth mode, for a host mutation that must pair snapshot work with its own table writes in one transaction. `loadServerSnapshot` / `persistServerSnapshot` are exported standalone for the same reason:
 
 ```ts
+import { mutationGeneric as mutation } from "convex/server"; // `./_generated/server` in a real convex/ folder
+import { v } from "convex/values";
+import { createGameServerFunctions } from "@jgengine/convex/server";
+
+const { helpers } = createGameServerFunctions();
+
 export const buyWithReceipt = mutation({
   args: { serverId: v.id("jgGameServers"), input: v.any() },
   handler: async (ctx, args) => {

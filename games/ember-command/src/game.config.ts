@@ -8,7 +8,11 @@ import { assets } from "./game/assets";
 import { EMBER_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
 import { entityModels, flockModels, scatterModels } from "./game/models";
-import { isPlayerSelectable } from "./game/session";
+import { isPlayerSelectable, livingUnits } from "./game/session";
+import { missionMarkers } from "@jgengine/core/mission/triggers";
+import { campaignReadout, campaignStore, MUSTER_MARKER } from "./game/campaign";
+import { HERO_ID } from "./game/hero";
+import { GOLD, LUMBER } from "./game/tuning";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { EmberCommandWorldOverlay } from "./game/world/WorldOverlay";
@@ -92,6 +96,32 @@ export const game = defineGame({
   // after the map moves — `bun run shoot ember-command --view keep-enemy`.
   capture: {
     play: ["match.start"],
+    // What the command card and the field show a commander: the treasury, what stands and marches,
+    // where Bram, the keep and the muster ground are, and campaign missions won.
+    probe: (ctx) => {
+      const units = livingUnits("player");
+      const hero = ctx.scene.entity.get(HERO_ID)?.position;
+      const keep = units.find((unit) => unit.catalogId === "keep_player")?.guardPoint;
+      const muster = missionMarkers(editorLayers)[MUSTER_MARKER];
+      return {
+        gold: ctx.game.economy.balance(ctx.player.userId, GOLD),
+        lumber: ctx.game.economy.balance(ctx.player.userId, LUMBER),
+        barracks: units.filter((unit) => unit.catalogId === "barracks").length,
+        footmen: units.filter((unit) => unit.catalogId === "footman").length,
+        heroX: hero?.[0] ?? 0,
+        heroZ: hero?.[2] ?? 0,
+        keepX: keep?.x ?? 0,
+        keepZ: keep?.z ?? 0,
+        musterX: muster?.x ?? 0,
+        musterZ: muster?.z ?? 0,
+        won: campaignStore.read(ctx).won.length,
+        // The open campaign mission's objective, 1-based, and how far its counter has come (0 with none open).
+        missionStep: campaignReadout(ctx)?.step ?? 0,
+        missionCounted: campaignReadout(ctx)?.counted ?? 0,
+        // ready 0, live 1, cleared 2, failed 3, finished 4 (-1 off the campaign).
+        missionPhase: ["ready", "live", "cleared", "failed", "finished"].indexOf(campaignReadout(ctx)?.phase ?? ""),
+      };
+    },
     // `mission-live` is the campaign mission as the player receives it: `match.start` opens the
     // next mission from the campaign track, so the objective card, the mission notice and the live
     // wave are already on screen. Nothing is staged, and nothing needs to be played first.
