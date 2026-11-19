@@ -11,7 +11,7 @@ function frameCached<T>(compute: (ctx: GameContext) => T): (ctx: GameContext) =>
   const cache = perContext((_ctx: GameContext) => ({ at: -Infinity, value: undefined as T | undefined }));
   return (ctx) => {
     const slot = cache(ctx);
-    const now = typeof performance === "undefined" ? Date.now() : performance.now();
+    const now = performance.now();
     if (slot.value === undefined || now - slot.at >= FRAME_MS) {
       slot.value = compute(ctx);
       slot.at = now;

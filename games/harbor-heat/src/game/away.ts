@@ -80,7 +80,7 @@ export function noteSavedAt(ctx: GameContext, wallMs: number): void {
  * After a save loads, catch the city up on the real time since it was written (capped). A second
  * load of the same save in one boot only catches up what passed since the first.
  */
-export function catchUpAway(ctx: GameContext, nowMs = Date.now()): AwaySummary | null {
+export function catchUpAway(ctx: GameContext, nowMs = ctx.wallClock()): AwaySummary | null {
   const anchor = anchors(ctx);
   if (anchor.savedMs === null) return null;
   const accrual = accrueSince(Math.max(anchor.savedMs, anchor.appliedMs), nowMs, { capMs: AWAY_CAP_MS });

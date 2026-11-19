@@ -24,7 +24,7 @@ describe("unique trees", () => {
 
   test("100 sugar maples of one age and different seeds have 100 different structures", () => {
     expect(new Set(trees.map(hashPlantStructure)).size).toBe(TREES);
-  });
+  }, 30_000); // grows and silhouettes 100 trees: 4-5 s alone, 8-9 s beside three other test lanes
 
   test("every pair differs in its 8-view silhouette or in where its limbs point", () => {
     let heightM = 0;

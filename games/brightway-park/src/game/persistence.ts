@@ -447,6 +447,6 @@ export async function archiveSave(ctx: GameContext): Promise<void> {
   if (!storageReady()) return;
   const record = records(ctx);
   const previous = await heldBytes(record);
-  if (previous !== null) await record.backend.write(`${SAVE_KEY}:backup-${Date.now()}`, previous);
+  if (previous !== null) await record.backend.write(`${SAVE_KEY}:backup-${ctx.wallClock()}`, previous);
   await record.save.deleteSlot(PARK_SLOT);
 }

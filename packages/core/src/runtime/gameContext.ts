@@ -531,6 +531,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   // --- Assemble public GameContext ---
   const ctx: GameContext = {
     rng,
+    wallClock: now,
     scene: {
       object: sceneObjects,
       entity: {

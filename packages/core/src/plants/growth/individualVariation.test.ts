@@ -25,7 +25,7 @@ describe("individual variation", () => {
     }
     const spread = Math.max(...widths) / Math.min(...widths);
     expect(spread, widths.map((w) => w.toFixed(1)).join(" ")).toBeGreaterThan(1.25);
-  });
+  }, 30_000); // grows a stand of trees seed by seed: 4-5 s alone, 8-9 s beside three other test lanes
 
   test("the same seed draws the same individual, and every trait stays inside its species' bounds", () => {
     for (const species of PLANT_LIBRARY) {

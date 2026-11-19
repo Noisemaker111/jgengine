@@ -31,7 +31,7 @@ export async function refreshParkSlot(ctx: GameContext): Promise<void> {
   const playtime = typeof save.playtime === "number" ? save.playtime : 0;
   parkSlots.write(PARK_SLOT, {
     name: save.parkName ?? "Brightway Park",
-    savedAt: document.savedAt > 0 ? document.savedAt : Date.now(),
+    savedAt: document.savedAt > 0 ? document.savedAt : ctx.wallClock(),
     meta: {
       day: num(save, "park.day"),
       guests: Math.round(num(save, "park.guests_today")),

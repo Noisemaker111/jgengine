@@ -1,4 +1,8 @@
 import { mtof, type MusicInstrument, type NoteEvent } from "@jgengine/core/audio/music";
+import { seededRng } from "../random/rng";
+
+// Noise and timbre jitter are sound, not simulation: a fixed stream keeps a render or a capture the same every run.
+const noise = seededRng("jg:music-voices");
 
 type Ctx = BaseAudioContext;
 
@@ -93,7 +97,7 @@ function flute(ctx: Ctx, when: number, freq: number, dur: number, vel: number, o
   const len = Math.floor(ctx.sampleRate * Math.min(dur, 0.4));
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < len; i += 1) data[i] = (Math.random() * 2 - 1) * 0.5;
+  for (let i = 0; i < len; i += 1) data[i] = (noise() * 2 - 1) * 0.5;
   breath.buffer = buf;
   const bp = ctx.createBiquadFilter();
   bp.type = "bandpass";
@@ -249,7 +253,7 @@ function noiseHit(ctx: Ctx, when: number, vel: number, out: GainNode, hp: number
   const n = Math.floor(ctx.sampleRate * len);
   const buf = ctx.createBuffer(1, n, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < n; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / n) ** curve;
+  for (let i = 0; i < n; i += 1) data[i] = (noise() * 2 - 1) * (1 - i / n) ** curve;
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const f = ctx.createBiquadFilter();
@@ -295,7 +299,7 @@ function cymSwell(ctx: Ctx, when: number, dur: number, vel: number, out: GainNod
   const n = Math.floor(ctx.sampleRate * (dur + 0.3));
   const buf = ctx.createBuffer(1, n, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < n; i += 1) data[i] = Math.random() * 2 - 1;
+  for (let i = 0; i < n; i += 1) data[i] = noise() * 2 - 1;
   const src = ctx.createBufferSource();
   src.buffer = buf;
   const hp = ctx.createBiquadFilter();

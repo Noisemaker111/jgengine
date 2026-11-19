@@ -67,7 +67,7 @@ export async function saveParkedRunHere(ctx: GameContext): Promise<boolean> {
   const save = foundrySaveOf(ctx);
   pitFrame.thumbnail = save.profile.pitFrame.thumbnail;
   await capturePitFrame();
-  pitFrame.savedAt = Date.now();
+  pitFrame.savedAt = ctx.wallClock();
   save.profile.pitFrame = { ...pitFrame };
   await save.write();
   await refreshFoundrySlots(save);

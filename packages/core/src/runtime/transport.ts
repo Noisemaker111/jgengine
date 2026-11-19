@@ -75,9 +75,7 @@ export type GameRuntimeTransport = {
 
 /** Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}). */
 export function createTransportSessionId(): string {
-  const cryptoApi = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
-  if (cryptoApi?.randomUUID) return cryptoApi.randomUUID();
-  return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return crypto.randomUUID();
 }
 
 export type FeedUnsubscribe = () => void;

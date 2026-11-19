@@ -12,6 +12,10 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { startFromMuzzle } from "@jgengine/core/hud/WorldHud.draw";
 import { hitMarkerKindOf, isLocalSource, type HitMarkerKind } from "@jgengine/core/combat/hitMarker";
+import { seededRng } from "../random/rng";
+
+// Particle scatter is look, not simulation: its own fixed stream, so it never draws from the world's `ctx.rng`.
+const scatter = seededRng("jg:shot-feedback");
 
 function drawTexture(draw: (g: CanvasRenderingContext2D, size: number) => void): THREE.Texture {
   const size = 64;
@@ -276,7 +280,7 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
       const near = camera.getWorldPosition(new THREE.Vector3()).distanceTo(start) < 1.2;
       slot.size = (near ? 0.07 : 0.45) * (props.reducedMotion ? 0.6 : 1);
       slot.sprite.scale.set(slot.size * 0.7, slot.size * 0.7, 1);
-      slot.material.rotation = Math.random() * Math.PI * 2;
+      slot.material.rotation = scatter() * Math.PI * 2;
       slot.material.opacity = props.reducedMotion ? 0.6 : 1;
       slot.sprite.visible = true;
       stats.flashes += 1;

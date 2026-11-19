@@ -1,6 +1,10 @@
 import { notesInWindow, themeLoopSeconds, type MusicTheme } from "@jgengine/core/audio/music";
 
 import { playMusicNote } from "./musicVoices.view";
+import { seededRng } from "../random/rng";
+
+// Noise and timbre jitter are sound, not simulation: a fixed stream keeps a render or a capture the same every run.
+const noise = seededRng("jg:music-reverb");
 
 const LOOKAHEAD = 0.6;
 const TICK_MS = 110;
@@ -60,7 +64,7 @@ export class MusicDirector {
     const ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch += 1) {
       const data = ir.getChannelData(ch);
-      for (let i = 0; i < len; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2.4;
+      for (let i = 0; i < len; i += 1) data[i] = (noise() * 2 - 1) * (1 - i / len) ** 2.4;
     }
     const reverb = ctx.createConvolver();
     reverb.buffer = ir;

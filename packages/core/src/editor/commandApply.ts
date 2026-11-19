@@ -187,6 +187,15 @@ function fragmentAsDocument(fragment: EditorFragmentContent): EditorDocument {
   };
 }
 
+/** The first `<prefab>_inst_<n>` no placed item uses: the same document always gets the same id, so a replayed edit lands the same. */
+function nextPrefabInstanceId(document: EditorSessionState["document"], prefabId: string): string {
+  const taken = new Set<unknown>();
+  for (const item of [...document.markers, ...document.volumes, ...document.paths]) taken.add(item.meta?.["prefabInstanceId"]);
+  let n = 1;
+  while (taken.has(`${prefabId}_inst_${n}`)) n += 1;
+  return `${prefabId}_inst_${n}`;
+}
+
 function tagWithInstance<T extends { meta?: Record<string, unknown> }>(
   item: T,
   prefabId: string,
@@ -678,9 +687,7 @@ const mutationHandlers: MutationHandlers = {
   insertPrefab: (state, command) => {
     const prefab = findEditorPrefab(state.document, command.prefabId);
     if (prefab === undefined) return state;
-    const instanceId =
-      command.instanceId ??
-      `${prefab.id}_inst_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_296_000).toString(36)}`;
+    const instanceId = command.instanceId ?? nextPrefabInstanceId(state.document, prefab.id);
     const tagged = fragmentAsDocument({
       ...(prefab.fragment.materialAssets === undefined ? {} : { materialAssets: prefab.fragment.materialAssets }),
       markers: prefab.fragment.markers.map((marker) => tagWithInstance(marker, prefab.id, instanceId)),

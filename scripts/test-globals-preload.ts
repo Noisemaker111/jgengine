@@ -1,3 +1,4 @@
+import "./test-date-preload";
 import { afterEach, beforeEach } from "bun:test";
 
 // Every test file in a `bun test` run shares one global object. A file that stubs `window` and then

@@ -601,6 +601,12 @@ export interface GameContext {
    * @capability game-context-rng per-world seeded randomness for replay, lockstep, and multi-world hosts
    */
   rng: () => number;
+  /**
+   * Epoch milliseconds from the clock this context was made with (`now`, the machine's by default):
+   * when a save was written, how long the player was away, which day's course is laid. Never call
+   * `Date.now()` in game code; a test or a replay passes its own clock.
+   */
+  wallClock: () => number;
   game: {
     territory?: Territory | undefined;
     commands: GameContextCommands;

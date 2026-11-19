@@ -6,6 +6,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { clamp01 } from "../math/scalar";
+import { seededRng } from "../random/rng";
+
+// Particle scatter is look, not simulation: its own fixed stream, so it never draws from the world's `ctx.rng`.
+const scatter = seededRng("jg:spell-vfx");
 
 interface Particle {
   offset: THREE.Vector3;
@@ -52,12 +56,12 @@ export function slashArcPoint(
 }
 
 function planarDir(): THREE.Vector3 {
-  const angle = Math.random() * Math.PI * 2;
+  const angle = scatter() * Math.PI * 2;
   return new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
 }
 
 function sphereDir(): THREE.Vector3 {
-  return new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+  return new THREE.Vector3(scatter() * 2 - 1, scatter() * 2 - 1, scatter() * 2 - 1)
     .normalize();
 }
 
@@ -66,21 +70,21 @@ function makeParticles(kind: VfxKind): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < count; i += 1) {
     if (kind === "nova") {
-      out.push({ offset: new THREE.Vector3(), dir: planarDir(), speed: 1, size: 0.5 + Math.random() * 0.4, delay: 0 });
+      out.push({ offset: new THREE.Vector3(), dir: planarDir(), speed: 1, size: 0.5 + scatter() * 0.4, delay: 0 });
     } else if (kind === "spark") {
       const dir = sphereDir();
       dir.y = Math.abs(dir.y) * 0.6 + 0.2;
-      out.push({ offset: new THREE.Vector3(), dir, speed: 2.4 + Math.random() * 1.8, size: 0.28 + Math.random() * 0.22, delay: 0 });
+      out.push({ offset: new THREE.Vector3(), dir, speed: 2.4 + scatter() * 1.8, size: 0.28 + scatter() * 0.22, delay: 0 });
     } else if (kind === "glow") {
       out.push({
-        offset: planarDir().multiplyScalar(0.35 + Math.random() * 0.5),
+        offset: planarDir().multiplyScalar(0.35 + scatter() * 0.5),
         dir: new THREE.Vector3(0, 1, 0),
-        speed: 0.5 + Math.random() * 0.6,
-        size: 0.55 + Math.random() * 0.5,
-        delay: Math.random() * 0.3,
+        speed: 0.5 + scatter() * 0.6,
+        size: 0.55 + scatter() * 0.5,
+        delay: scatter() * 0.3,
       });
     } else if (kind === "beam") {
-      out.push({ offset: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 0, size: 0.45 + Math.random() * 0.3, delay: 0 });
+      out.push({ offset: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 0, size: 0.45 + scatter() * 0.3, delay: 0 });
     } else if (kind === "arc") {
       out.push({ offset: new THREE.Vector3(), dir: new THREE.Vector3(), speed: 0, size: 0.34, delay: i / Math.max(1, count - 1) });
     } else {
@@ -88,7 +92,7 @@ function makeParticles(kind: VfxKind): Particle[] {
         offset: sphereDir().multiplyScalar(0.12),
         dir: new THREE.Vector3(),
         speed: 0,
-        size: 0.4 + Math.random() * 0.25,
+        size: 0.4 + scatter() * 0.25,
         delay: i * 0.05,
       });
     }

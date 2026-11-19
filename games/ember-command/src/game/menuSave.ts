@@ -71,7 +71,7 @@ export async function saveCampaignRecord(ctx: GameContext, name?: string): Promi
     gold,
     lumber,
     playtime: (previous?.playtime ?? 0) + Math.max(0, session.elapsed),
-    savedAt: Date.now(),
+    savedAt: ctx.wallClock(),
     thumbnail: thumbnail ?? previous?.thumbnail ?? null,
   };
   commandProfile.name = record.name;
