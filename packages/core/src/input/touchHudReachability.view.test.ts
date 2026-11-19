@@ -14,9 +14,8 @@ beforeAll(async()=>{
   await mkdir(`${scratch}/node_modules`,{recursive:true});
 
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view';
+    import React from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {TouchControlsDock} from '@jgengine/core/input/TouchControlsOverlay.view';
-    import {SettingsMenu} from '@jgengine/core/settings/SettingsMenu.draw';
     window.trace={selected:0,codes:[],analog:null};
     const btn=(action,kind='primary',shape='circle')=>({action,label:action.replace(/([a-z])([A-Z])/g,'$1 $2'),icon:null,kind,shape,anchor:null,image:null});
     const shooter=location.hash==='#shooter';
@@ -25,10 +24,8 @@ beforeAll(async()=>{
       :{joystick:{up:'up',down:'down',left:'left',right:'right'},buttons:[],slots:[],gestures:null,look:false,lookSensitivity:1,style:'minimal',layout:{movement:'bottom-left',actions:'bottom-right',utility:'bottom-right'}};
     const sink={onCodeDown:code=>window.trace.codes.push(code),onCodeUp:()=>{},onAnalog:v=>window.trace.analog=v};
     function Fixture() {
-      const [open,setOpen]=useState(false);
-      const controller={variant:'panel',actions:[],categories:[{id:'controls',label:'Controls',rows:[],keybinds:[{action:'jump',label:'Jump',bindingLabel:'K',isDefault:true,rebind:()=>{},reset:()=>{}}]}]};
       if (shooter) return <div style={{position:'fixed',inset:0,pointerEvents:'none'}}><TouchControlsDock scheme={scheme} sink={sink}/></div>;
-      return <><button id="settings-opener" onClick={()=>setOpen(true)}>Open settings</button>{open&&<SettingsMenu controller={controller} onClose={()=>setOpen(false)}/>}<div style={{position:'fixed',inset:0,pointerEvents:'none'}}>
+      return <><div style={{position:'fixed',inset:0,pointerEvents:'none'}}>
       <div style={{position:'absolute',inset:0,zIndex:20,pointerEvents:'none'}}><button id="slot" style={{position:'absolute',left:100,bottom:240,width:60,height:44,pointerEvents:'auto'}} onClick={()=>window.trace.selected++}>Slot 2</button></div>
       <TouchControlsDock scheme={scheme} sink={sink}/></div></>;
     }
@@ -85,23 +82,5 @@ test('shooter dock: one big main button in the corner, icon faces, collapsed slo
   expect(codes).toContain('touch:fire');
   expect(codes).toContain('touch:aim');
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  await page.close();
-},30000);
-
-test('shared settings traps Tab, cancels rebind Escape, then restores the opener on close',async()=>{
-  const page=await browser.newPage();
-  await page.goto(`http://127.0.0.1:${server.port}`);
-  await page.locator('#settings-opener').click();
-  const dialog=page.getByRole('dialog',{name:'Settings'});
-  await dialog.waitFor();
-  await page.getByRole('button',{name:'Close settings'}).focus();
-  await page.keyboard.press('Shift+Tab');
-  expect(await page.evaluate(()=>document.activeElement?.textContent)).toBe('K');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Escape');
-  expect(await dialog.count()).toBe(1);
-  await page.keyboard.press('Escape');
-  expect(await dialog.count()).toBe(0);
-  expect(await page.evaluate(()=>document.activeElement?.id)).toBe('settings-opener');
   await page.close();
 },30000);

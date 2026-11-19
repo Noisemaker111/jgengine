@@ -207,7 +207,7 @@ export function GameUI() {
         ))}
         <RuneField value={draft} placeholder="Say something" onChange={setDraft} onSubmit={() => {
           if (draft.trim() === "") return;
-          ctx.game.chat.send(ctx.player.userId, "global", draft);
+          ctx.game.chat?.send(ctx.player.userId, "global", draft);
           setDraft("");
         }} />
       </RuneView>
