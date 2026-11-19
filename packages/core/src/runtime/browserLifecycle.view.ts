@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "@jgengine/core/ui/jsx";
+import { onPage } from "./pageHandle";
 
 /** Browser events that can interrupt active play. The caller decides whether to pause. */
 export type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost";
@@ -15,10 +16,15 @@ export interface BrowserSuspensionOptions {
  * hidden page do not suspend play: a capture window loses focus and visibility whenever another
  * window on the machine comes forward, and a drive that boots paused proves nothing.
  */
-export const CAPTURE_HOLD_KEY = "__jgengineCaptureHold";
+declare module "./pageHandle" {
+  interface JgPage {
+    /** Set by a capture host (`window.__jg.captureHold = true`) so blur and hidden never pause play. */
+    captureHold?: boolean;
+  }
+}
 
 function captureHolds(): boolean {
-  return (globalThis as Record<string, unknown>)[CAPTURE_HOLD_KEY] === true;
+  return onPage("captureHold") === true;
 }
 
 /** Event sources for a browser window, an iframe, or a test. */
@@ -32,7 +38,7 @@ export interface BrowserSuspensionSources {
 
 /**
  * Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
- * Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
+ * Blur and hidden are ignored while a capture host holds play (`window.__jg.captureHold`).
  * @capability browser-suspension-observer observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources
  */
 export function observeBrowserSuspension(

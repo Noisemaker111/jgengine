@@ -38,7 +38,7 @@ export async function startPath(session: CdpSession, path: PerfPath): Promise<()
 
 /** Start the page's breakdown window over. False when the page has none (no dev telemetry). */
 export async function resetBreakdown(session: CdpSession): Promise<boolean> {
-  return (await session.evaluate<boolean>(`(() => { const b = globalThis.__jgFrameBreakdown; if (!b) return false; b.reset(); return true; })()`)) === true;
+  return (await session.evaluate<boolean>(`(() => { const b = globalThis.__jg?.frames; if (!b) return false; b.reset(); return true; })()`)) === true;
 }
 
 /**
@@ -46,7 +46,7 @@ export async function resetBreakdown(session: CdpSession): Promise<boolean> {
  * read from the function's own location through the debugger, since an anonymous frame callback has no name.
  */
 export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>, top = 15): Promise<FrameBreakdownSummary | null> {
-  const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
+  const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jg?.frames?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
   if (summary === null || summary === undefined) return null;
   const scripts = new Map<string, { url: string; map: string | null }>();
   const maps = new Map<string, SourceMap | null>();
@@ -87,7 +87,7 @@ export async function readBreakdown(session: CdpSession, privateMap?: (scriptId:
 }
 
 async function locateCallback(session: CdpSession, label: string, scripts: ReadonlyMap<string, { url: string; map: string | null }>, maps: Map<string, SourceMap | null>, privateMap?: (scriptId: string) => Promise<string | null>): Promise<{ label: string; mapped: boolean } | null> {
-  const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
+  const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jg?.frames?.callbacks()[${JSON.stringify(label)}]` });
   const objectId = remoteObjectId(found["result"]);
   if (objectId === undefined) return null;
   const props = await session.send("Runtime.getProperties", { objectId, ownProperties: false });
@@ -138,12 +138,12 @@ function repoPath(url: string): string {
 }
 
 /**
- * Read every hitch of the page's play session (`__jgFrameBreakdown.session()`), with each script the
+ * Read every hitch of the page's play session (`window.__jg.frames.session()`), with each script the
  * browser ran in a hitch rewritten from `function bundle.js:char` to its source line. Null when the
  * page has no breakdown.
  */
 export async function readHitchSession(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>): Promise<HitchSession | null> {
-  const read = await session.evaluate<HitchSession | null>(`globalThis.__jgFrameBreakdown?.session?.() ?? null`);
+  const read = await session.evaluate<HitchSession | null>(`globalThis.__jg?.frames?.session?.() ?? null`);
   if (read === null || read === undefined) return null;
   const scripts = new Map<string, { url: string; map: string | null }>();
   const byUrl = new Map<string, string>();

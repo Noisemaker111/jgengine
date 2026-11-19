@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../game.config";
 import { DAY_LENGTH } from "./catalog";
-import { session } from "./session";
+import { sessionOf } from "./session";
 import { BUILDABLES } from "./objects/catalog";
 import { MILESTONES } from "./milestones";
 import { park } from "./park";
@@ -49,11 +49,11 @@ describe("park saves and real command boundaries", () => {
   test("menu blocks shortcuts; build, refund, ticket and occupied cells survive reload", async () => {
     const first = await booted();
     first.ui.invoke("pickCarousel");
-    expect(session.selectedTool).toBeNull();
+    expect(sessionOf(first.ctx).selectedTool).toBeNull();
     first.ui.invoke("park.start");
     // The drop tower is a lab topic: the world refuses it as locked.
     first.ui.invoke("build.select", { id: "ride_dropzone" });
-    expect(session.selectedTool).toBeNull();
+    expect(sessionOf(first.ctx).selectedTool).toBeNull();
     first.ui.invoke("pickCarousel");
     const w = park.of(first.ctx);
     const cash = w.num("park.cash");
@@ -73,8 +73,8 @@ describe("park saves and real command boundaries", () => {
     const second = await booted();
     const v = park.of(second.ctx);
     expect(second.ctx.rng()).toBe(nextRandom);
-    expect(session.started).toBe(false);
-    expect(session.hasSave).toBe(true);
+    expect(sessionOf(second.ctx).started).toBe(false);
+    expect(sessionOf(second.ctx).hasSave).toBe(true);
     expect(v.num("park.ticket")).toBe(11);
     expect(v.instance(built.id)).toEqual(built);
     expect(v.canPlace("deco_tree", { cell: built.cell! })?.reason).toBe("taken");
@@ -136,7 +136,7 @@ describe("park saves and real command boundaries", () => {
     records.set(LEGACY_SAVE_KEY, JSON.stringify(old));
 
     const second = await booted();
-    expect(session.hasSave).toBe(true);
+    expect(sessionOf(first.ctx).hasSave).toBe(true);
     expect(park.of(second.ctx).num("park.ticket")).toBe(park.of(first.ctx).num("park.ticket"));
     expect(snapshotPark(second.ctx).world).toEqual((old as { world: unknown }).world);
     // The document's digest covers the whole park: the reopened park writes the state that was saved.
@@ -172,7 +172,7 @@ describe("park saves and real command boundaries", () => {
     const w = park.of(live.ctx);
     expect(w.num("park.day")).toBe(1);
     expect(w.instances().length).toBeGreaterThan(0);
-    expect(session.saveStatus).toContain("older build");
+    expect(sessionOf(live.ctx).saveStatus).toContain("older build");
     // The old document is kept until this park is saved, then archived as a backup.
     live.ui.invoke("park.start");
     await settle();
@@ -212,7 +212,7 @@ describe("park saves and real command boundaries", () => {
     expect(live.ctx.time.isPaused()).toBe(true);
     live.ui.invoke("pickCarousel");
     // The janitor was placed once, so placement ended; the refused pick did not start a new one.
-    expect(session.selectedTool).toBeNull();
+    expect(sessionOf(live.ctx).selectedTool).toBeNull();
   // Several simulated days of a full park: about 4 s locally, more on a CI runner.
   }, 30_000);
 });

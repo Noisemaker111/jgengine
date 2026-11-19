@@ -13,7 +13,7 @@ import { scenarioView } from "../parkReset";
 import { rideBoard } from "../rides";
 import { isShut } from "../rideRefits";
 import { scenarioDef } from "../scenarios";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { guestPopulation } from "../sim/guests";
 import { BLUE_RIBBON } from "../milestones";
 import { nextMilestone, nextStepText } from "./nextStep";
@@ -40,7 +40,7 @@ export function ParkStatus() {
   const world = () => park.of(ctx);
   const { gate, gateRefusal, rating, refurbishing, down, guests } = v;
   // What the crowd is thinking most, freshest first: complaints in the warning colour.
-  const said = useGameStore(() => session.thoughts.top.slice(0, phone ? 1 : 3).map((t) => ({ label: t.label, count: t.count, complaint: t.complaint })));
+  const said = useGameStore(() => sessionOf(ctx).thoughts.top.slice(0, phone ? 1 : 3).map((t) => ({ label: t.label, count: t.count, complaint: t.complaint })));
   const clock = () => { const c = ctx.time.calendar(); return `${String(c.hour).padStart(2, "0")}:${String(c.minute).padStart(2, "0")}`; };
   return <Card {...(phone ? {} : { width: 290 })} grow={phone ? 1 : 0} shrink padding={phone ? 10 : 14} gap={phone ? 5 : 8} label="Park status">
     <Tag text={bind(() => `${parkDateLabel(v.day)} · ${clock()} · ${!gate ? "Gate shut" : v.open ? "Gates open" : "After hours"}`.toUpperCase())} />
@@ -127,7 +127,7 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
 /** What {@link ParkBooks} draws, as plain values: the ledger re-renders when a shown figure changes, not on every tick. */
 function booksView(ctx: GameContext) {
   const w = park.of(ctx);
-  const m = parkMetrics(w), peak = w.num("park.peak"), next = nextMilestone(peak), rides = rideBoard();
+  const m = parkMetrics(w), peak = w.num("park.peak"), next = nextMilestone(peak), rides = rideBoard(ctx);
   const owed = w.num("park.loan_owed"), date = parkDate(w.num("park.day")), lastMonth = w.num("report.month");
   const hasReport = lastMonth >= 0;
   const signed = (line: BookLine, amount: number) => money(line.income ? amount : -amount);

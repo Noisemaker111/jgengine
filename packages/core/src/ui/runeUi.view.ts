@@ -68,7 +68,7 @@ export interface RuneUiOptions {
 
 interface JgUiModule {
   default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<{ memory: WebAssembly.Memory }>;
-  mount: (canvasId: string, optionsJson: string) => void;
+  mount: (canvasId: string, optionsJson: string, onFrame: (payload: string) => void) => void;
   set_spec: (json: string, revision: number) => void;
   scroll_native_into_view: (id: string) => void;
   focus_native: (id: string) => void;
@@ -90,8 +90,22 @@ interface BoundValue {
 
 const DEFAULT_CANVAS_ID = "jg-ui";
 
+/** Wasm instances a closed UI unmounted, ready for the next one; a UI opened while another is live loads its own. */
+const idleModules: JgUiModule[] = [];
+let loadedModules = 0;
+
+async function loadModule(baseUrl: string | undefined): Promise<{ mod: JgUiModule; memory: WebAssembly.Memory }> {
+  const idle = idleModules.pop();
+  if (idle !== undefined) return { mod: idle, memory: (await idle.default()).memory };
+  // Each URL is its own module record, so its own wasm memory and Rust state.
+  const url = loadedModules === 0 ? runeBundleUrl(baseUrl) : `${runeBundleUrl(baseUrl)}?instance=${loadedModules}`;
+  loadedModules += 1;
+  const mod = (await import(/* @vite-ignore */ url)) as JgUiModule;
+  return { mod, memory: (await mod.default()).memory };
+}
+
 /**
- * One mounted Rune UI layer. Create once per page; games describe their trees with
+ * One mounted Rune UI layer, with its own canvas and wasm instance, so a page can hold several and reopen one; games describe their trees with
  * {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
  */
 export class RuneUi {
@@ -136,7 +150,9 @@ export class RuneUi {
 
   /** Load the wasm bundle and mount it on a full-viewport canvas above the game. */
   static async create(options: RuneUiOptions = {}): Promise<RuneUi> {
-    const canvasId = options.canvasId ?? DEFAULT_CANVAS_ID;
+    const baseId = options.canvasId ?? DEFAULT_CANVAS_ID;
+    let canvasId = baseId;
+    for (let n = 2; document.getElementById(canvasId)?.dataset["runeLive"] === "1"; n += 1) canvasId = `${baseId}-${n}`;
     const zIndexCss = String(options.zIndex ?? 40);
     let canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
     if (canvas === null) {
@@ -145,16 +161,15 @@ export class RuneUi {
       canvas.style.cssText = `position:fixed;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;z-index:${zIndexCss}`;
       document.body.appendChild(canvas);
     }
-    const mod = (await import(/* @vite-ignore */ runeBundleUrl(options.baseUrl))) as JgUiModule;
-    const initialized = await mod.default();
-    const ui = new RuneUi(canvas, mod, zIndexCss, initialized.memory);
+    canvas.dataset["runeLive"] = "1";
+    const { mod, memory } = await loadModule(options.baseUrl);
+    const ui = new RuneUi(canvas, mod, zIndexCss, memory);
     ui.wirePassThrough();
-    window.__jgUiFrame = (payload: string) => ui.onFrame(payload);
     mod.mount(canvasId, JSON.stringify({
       fonts: options.fonts ?? [],
       sans: options.sans,
       mono: options.mono,
-    }));
+    }), (payload) => ui.onFrame(payload));
     ui.startValueLoop();
     return ui;
   }
@@ -255,13 +270,14 @@ export class RuneUi {
     this.destroyed = true;
     cancelAnimationFrame(this.raf);
     for (const cleanup of this.cleanups.splice(0)) cleanup();
-    delete window.__jgUiFrame;
-    delete (window as { __jgUiLastFrame?: string }).__jgUiLastFrame;
+    let reusable = true;
     try {
       this.api.unmount();
     } catch {
-      // The wasm may already be gone.
+      // The wasm may already be gone; never hand that instance to the next UI.
+      reusable = false;
     }
+    if (reusable) idleModules.push(this.api);
     this.canvas.remove();
   }
 
@@ -307,9 +323,6 @@ export class RuneUi {
 
   private onFrame(payload: string): void {
     if (this.destroyed) return;
-    // Frames are event-driven (wasm ships only on change); keep the last one
-    // readable for probes and debugging.
-    (window as { __jgUiLastFrame?: string }).__jgUiLastFrame = payload;
     let frame: RuneUiFrame;
     try {
       frame = JSON.parse(payload) as RuneUiFrame;
@@ -367,8 +380,3 @@ export class RuneUi {
   }
 }
 
-declare global {
-  interface Window {
-    __jgUiFrame?: (payload: string) => void;
-  }
-}

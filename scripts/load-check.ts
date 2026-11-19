@@ -200,7 +200,7 @@ export const PAGE_PROBE = `(() => {
     const covered = document.querySelector("[data-shell-code-loading]") !== null || document.querySelector("canvas") === null;
     // A game's full-screen menu stops the world drawing under it: its frames time nothing and the
     // canvas holds whatever was last drawn, so the window and the scene read wait for it to lift.
-    const hidden = window.__jgengineAgent?.handle({ method: "canvas_cover" })?.covered === true;
+    const hidden = window.__jg?.agent?.handle({ method: "canvas_cover" })?.covered === true;
     if (!covered && hidden && s.pressAt === null) {
       s.revealCovered = true;
       s.revealAt = null;

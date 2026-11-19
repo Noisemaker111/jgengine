@@ -12,13 +12,13 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { currentHint } from "../onboarding";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { BuildBar } from "./BuildBar";
 import { Inspector } from "./Inspector";
 import { ParkBooks, ParkGoal, ParkStatus } from "./ParkDashboard";
 import { ParkFlow, resultOpen } from "./ParkFlow";
 import { ResearchPanel } from "./ResearchPanel";
-import { ParkMenu, parkFocus } from "./menu/ParkMenu";
+import { ParkMenu, parkFocusOf } from "./menu/ParkMenu";
 import { ParkSettings } from "./menu/ParkSettings";
 import { BUILD_PANEL, PARK_PANELS, RESEARCH_PANEL } from "./panels";
 import { pointHint } from "./hintRing";
@@ -34,16 +34,16 @@ export function GameUI() {
   const { commands } = useGame();
   const clock = useGameClock();
   const settings = useSettings();
-  const started = useGameStore(() => session.started);
+  const started = useGameStore(() => sessionOf(ctx).started);
   const resultUp = useGameStore((c) => resultOpen(c));
   const [reducedMotion, setReducedMotion] = useState(savedMotion);
   // While the pause board or a result screen is up it owns the keys, so the palette hotkeys stand down.
-  const panelDefs = useMemo(() => parkFocus.panel === null ? PARK_PANELS : PARK_PANELS.map((def) => ({ ...def, initial: def.id === parkFocus.panel || def.id === BUILD_PANEL })), []);
+  const panelDefs = useMemo(() => parkFocusOf(ctx).panel === null ? PARK_PANELS : PARK_PANELS.map((def) => ({ ...def, initial: def.id === parkFocusOf(ctx).panel || def.id === BUILD_PANEL })), []);
   const panels = usePanels(panelDefs, { hotkeys: started && !clock.paused && !resultUp });
   const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
   const onReducedMotion = (next: boolean) => {
     setReducedMotion(next);
-    try { localStorage.setItem(MOTION_KEY, String(next)); } catch { /* Preferences remain usable for this session. */ }
+    try { localStorage.setItem(MOTION_KEY, String(next)); } catch { /* Preferences remain usable for this sessionOf(ctx). */ }
     commands.run("park.motion", { reduced: next });
   };
   return <RuneRoot context={ctx} theme={reducedMotion ? stillTheme : parkTheme}>
@@ -71,7 +71,7 @@ type Panels = ReturnType<typeof usePanels>;
 /** The live park: the status and goal cards, the hint, the clock, the side window, the palette and the touch camera. */
 function Hud({ panels, paused }: { panels: Panels; paused: boolean }) {
   const { width, height } = useRuneViewport(), phone = width < 600;
-  const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
+  const inspecting = useGameStore((ctx) => sessionOf(ctx).selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
   const books = panels.isOpen("books"), lab = panels.isOpen(RESEARCH_PANEL), side = inspecting || books || lab;
   const room = phone ? Math.round(height * 0.5) : height - 92 - (panels.isOpen(BUILD_PANEL) ? 262 : 16);
   const sideWindow = !side ? null : <WindowRoom value={room}>{inspecting ? <Inspector /> : books ? <ParkBooks onClose={() => panels.close("books")} /> : <ResearchPanel onClose={() => panels.close(RESEARCH_PANEL)} />}</WindowRoom>;
@@ -123,7 +123,7 @@ function ParkHint() {
   // The engine touches the store on every step change; the id is all that re-renders the card.
   const id = useGameStore((c) => currentHint(c)?.id ?? null);
   const step = id === null ? null : currentHint(ctx);
-  useEffect(() => { pointHint(step?.ui ?? []); return () => pointHint([]); }, [id]);
+  useEffect(() => { pointHint(ctx, step?.ui ?? []); return () => pointHint(ctx, []); }, [id]);
   if (step === null) return null;
   return <Card padding={12} gap={4} role="status" label={`Next step: ${step.id}`} border={{ width: 2, color: "#ff5a3c" }}>
     <Row justify="between"><Tag>NEXT STEP</Tag><Button tone="ghost" label="Hide the hints" minHeight={26} padding={[2, 8, 2, 8]} onPress={() => commands.run("onboarding.skip", {})}><Text size={12} weight={800}>Hide hints</Text></Button></Row>

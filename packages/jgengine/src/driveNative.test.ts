@@ -24,7 +24,7 @@ test.skipIf(installedCli === undefined)("installed portable CLI preserves truste
         document.querySelector('button').onclick=event=>{playing=true;events.push({kind:'start',trusted:event.isTrusted})};
         canvas.onpointerdown=event=>{if(playing&&event.clientX>=120&&event.clientX<320&&event.clientY>=100&&event.clientY<230)events.push({kind:'world',x:event.clientX,y:event.clientY,trusted:event.isTrusted})};
         document.onkeydown=event=>events.push({kind:'key',code:event.code,trusted:event.isTrusted});
-        window.__jgengineAgent={handle:async()=>({events,width:innerWidth,height:innerHeight,dpr:devicePixelRatio,playing})};
+        (window.__jg ??= {}).agent={handle:async()=>({events,width:innerWidth,height:innerHeight,dpr:devicePixelRatio,playing})};
         ${legacy ? "" : "requestAnimationFrame(()=>{document.documentElement.dataset.jgCapture='ready'})"}
       </script>`, { headers: { "Content-Type": "text/html" } });
     },

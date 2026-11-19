@@ -321,6 +321,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       state.elapsed = clock.elapsedTime;
       pacedElapsed = null;
     }
+    // Cleared before the draws run, so a draw that asks for the next frame keeps that request.
+    invalidated = false;
     // Before/after-render tasks are page-wide (a capture, the frame breakdown): one canvas runs them.
     const leads = isPrimaryFrameOwner(frameOwner);
     if (leads) flushBeforeRenderTasks();
@@ -332,7 +334,6 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     // post chain and split-screen viewports render through their own passes).
     if (!state.renderTakenOver) renderer.render(scene, camera);
     if (leads) flushAfterRenderTasks();
-    invalidated = false;
   }
 
   function frame(): void {
@@ -417,6 +418,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       cancelAnimationFrame(raf);
       for (const draw of draws.splice(0)) draw.dispose?.(state);
       renderer.dispose();
+      // The context is the page's to give back: browsers cap live ones, and a closed game must not hold one.
+      renderer.forceContextLoss();
     },
   };
 
@@ -439,6 +442,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   const unbindFrames = bindFrameOwner(frameOwner, source);
   const priorDispose = loop.dispose;
   loop.dispose = () => {
+    observer.disconnect();
+    window.removeEventListener("resize", resize);
     unbindFrames();
     priorDispose();
   };

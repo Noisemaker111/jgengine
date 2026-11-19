@@ -746,7 +746,7 @@ When a reusable contract is missing, report the upstream gap below. Engine contr
 - **F2+D — debug mode** (also \`?debug\`): engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source). Open/close mirrors to the \`?debug\` param — share the URL to reopen it, strip the param to close.
 - **F2+C — canvas mode**: drag/resize HUD panels; layout persists to the scene document's \`ui.panels\`.
 
-Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — the easiest way is \`bun run drive -- --rpc '{"method":"agent_status"}'\`, which boots the dev server and Chrome for you; a browser tool on the \`bun dev\` page works too. See the \`jgengine-editor\` skill.
+Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jg?.agent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — the easiest way is \`bun run drive -- --rpc '{"method":"agent_status"}'\`, which boots the dev server and Chrome for you; a browser tool on the \`bun dev\` page works too. See the \`jgengine-editor\` skill.
 
 ## Before you hand-roll UI or motion — check what's already shipped
 

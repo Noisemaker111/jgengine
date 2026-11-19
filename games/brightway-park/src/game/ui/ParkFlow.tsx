@@ -9,7 +9,7 @@ import { parkDateLabel } from "../books";
 import { park } from "../park";
 import { scenarioView } from "../parkReset";
 import { scenarioDef } from "../scenarios";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { guestPopulation } from "../sim/guests";
 import { parkFlags } from "./parkFlags";
 import { money } from "./ParkDashboard";
@@ -18,7 +18,7 @@ import { BAD, Button, CORAL, CREAM, DISPLAY, GOLD, GOOD, Heading, INK, Row, Tag,
 /** A result screen is up: the scenario ended, the park went bankrupt, or the blue ribbon landed. */
 export function resultOpen(ctx: GameContext): boolean {
   const flags = parkFlags(park.of(ctx));
-  return session.started && (flags.gameOver || flags.ribbon || scenarioView(ctx)?.result != null);
+  return sessionOf(ctx).started && (flags.gameOver || flags.ribbon || scenarioView(ctx)?.result != null);
 }
 
 const BANNER_MS = 3600;
@@ -31,9 +31,9 @@ export function ParkFlow() {
     const w = park.of(ctx), flags = parkFlags(w), scenario = scenarioView(ctx);
     const id = w.fact("scenario.id"), def = typeof id === "string" ? scenarioDef(id) : null;
     const open = w.fact("park.open") === true;
-    const screen = session.started && (flags.gameOver || flags.ribbon || scenario?.result != null);
+    const screen = sessionOf(ctx).started && (flags.gameOver || flags.ribbon || scenario?.result != null);
     return {
-      started: session.started, gameOver: flags.gameOver, ribbon: flags.ribbon, gate: w.fact("park.gate") === true, open, day: w.num("park.day"),
+      started: sessionOf(ctx).started, gameOver: flags.gameOver, ribbon: flags.ribbon, gate: w.fact("park.gate") === true, open, day: w.num("park.day"),
       result: scenario?.result ?? null, title: scenario?.title ?? null, reason: scenario?.reason ?? null, hasScenario: scenario !== null,
       reward: def?.mission.rewards?.economy?.["cash"] ?? 0,
       takings: open ? 0 : w.num("park.revenue_today"), yesterday: w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"),

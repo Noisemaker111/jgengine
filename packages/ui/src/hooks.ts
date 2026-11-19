@@ -109,7 +109,7 @@ export function useGameStore<T>(
     );
     if (hotRef.current !== null) throw hotRef.current;
     if (heatRef.current !== null && before !== undefined && value !== before) {
-      const pace = heatRef.current.changed(devFrameIndex(), ctx.sim.tick());
+      const pace = heatRef.current.changed(devFrameIndex(ctx), ctx.sim.tick());
       if (pace !== null) {
         hotRef.current = new PerFrameRenderError(nameRef.current, pace);
         throw hotRef.current;

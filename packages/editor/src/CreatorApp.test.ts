@@ -21,7 +21,7 @@ test("production menu mounts the actual editor and repeats save/play/return/reop
   await page.getByRole("textbox", { name: "Scene name" }).fill("Cloud course");
   await page.getByRole("button", { name: "Create scene", exact: true }).click();
   await page.getByRole("button", { name: "Save", exact: true }).waitFor({ timeout: 20000 });
-  expect(await page.evaluate(() => "__jgengineEditorHost" in window)).toBe(false);
+  expect(await page.evaluate(() => window.__jg?.editorHost !== undefined)).toBe(false);
   for (let iteration = 0; iteration < 2; iteration += 1) {
     await page.getByRole("treeitem").filter({ hasText: iteration === 0 ? "Start marker" : "Saved start 0" }).last().getByRole("button").first().click();
     await page.getByRole("textbox", { name: "Object name" }).fill(`Saved start ${iteration}`);
@@ -52,7 +52,7 @@ test("production menu mounts the actual editor and repeats save/play/return/reop
   await page.getByRole("button", { name: "Create or edit", exact: true }).click();
   await page.getByRole("button", { name: "Edit Cloud course", exact: true }).click();
   await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).waitFor();
-  expect(await page.evaluate(() => "__jgengineEditorHost" in window)).toBe(false);
+  expect(await page.evaluate(() => window.__jg?.editorHost !== undefined)).toBe(false);
   await page.locator("canvas").waitFor({ state: "visible" });
   await mkdir(evidence, { recursive: true });
   await page.screenshot({ path: `${evidence}/editor.png` });

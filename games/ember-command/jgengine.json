@@ -19,7 +19,7 @@
   "capabilities": {
     "probes": {
       "@jgengine/core/audio/audioProbe.view": [
-        "window:__jgengineAudio"
+        "window:audio"
       ],
       "@jgengine/core/mission/mission": [
         "ember-command campaign"

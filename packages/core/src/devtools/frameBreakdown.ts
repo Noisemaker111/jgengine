@@ -407,7 +407,7 @@ export interface FrameBreakdownSummary {
   hitches: Hitch[];
 }
 
-/** A running breakdown, as `installFrameBreakdown` returns it and `window.__jgFrameBreakdown` holds it. */
+/** A running breakdown, as `installFrameBreakdown` returns it and `window.__jg?.frames` holds it. */
 export interface FrameBreakdown {
   /** The window so far, or its last `last` frames. */
   summary(options?: { top?: number; last?: number }): FrameBreakdownSummary;
@@ -422,10 +422,10 @@ export interface FrameBreakdown {
   dispose(): void;
 }
 
-declare global {
-  interface Window {
+declare module "../runtime/pageHandle" {
+  interface JgPage {
     /** The installed frame breakdown, for the perf panel and `bun run perf` to read. */
-    __jgFrameBreakdown?: FrameBreakdown;
+    frames?: FrameBreakdown;
   }
 }
 

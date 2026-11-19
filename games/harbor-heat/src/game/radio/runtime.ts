@@ -10,6 +10,14 @@ import { streetPlayOf, raceStore } from "../streetPlay";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { bulletinForLog, bulletinForRace, bulletinForWanted } from "./bulletins";
 import { HARBOR_RADIO, RADIO_VOICES } from "./stations";
+import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
+
+declare module "@jgengine/core/runtime/pageHandle" {
+  interface JgPage {
+    /** This game's dev readout, as its proofs read it. */
+    harborRadio?: { read(): unknown; [control: string]: unknown };
+  }
+}
 
 /** The radio bus every station mixes through; the settings app shows it as "Radio volume". */
 export const RADIO_BUS = "radio";
@@ -179,10 +187,10 @@ export function registerRadio(ctx: GameContext): void {
   ctx.subscribe(() => {
     if (!live(ctx)) runtime.playback.pause();
   });
-  (globalThis as { __harborRadio?: unknown }).__harborRadio = {
+  publishForContext(ctx, "harborRadio", {
     read() {
       const radio = runtime.radio;
-      const audio = (globalThis as { __jgengineAudio?: { speech?: () => unknown; busLevel?: (bus: string) => number; measure?: () => unknown } }).__jgengineAudio;
+      const audio = globalThis.__jg?.audio;
       return {
         powered: radio.powered(),
         vehicle: streetPlayOf(ctx).drivingVehicleId(),
@@ -209,5 +217,5 @@ export function registerRadio(ctx: GameContext): void {
         .sort((a, b) => Math.hypot(a.position[0] - me.position[0], a.position[2] - me.position[2]) - Math.hypot(b.position[0] - me.position[0], b.position[2] - me.position[2]))[0];
       return car === undefined ? "no-car" : ctx.game.commands.run("vehicle.enter", { vehicle: car.id }).status;
     },
-  };
+  });
 }

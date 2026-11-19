@@ -1,6 +1,7 @@
 import { createEditorSession, type EditorCommand } from "./commands";
 import { cloneEditorDocument } from "./document";
 import type { EditorDocument, EditorVec3 } from "./types";
+import { onPage, publishOnPage } from "../runtime/pageHandle";
 
 /**
  * One versioned document mutation on the live-sync stream. `snapshot` replaces the whole
@@ -341,24 +342,26 @@ export function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSyn
   };
 }
 
-const GLOBAL_KEY = "__jgengineDocumentLiveSync";
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    liveSync?: DocumentLiveSync;
+  }
+}
 const INSTALL_LISTENERS = new Set<() => void>();
 
 /** Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling. */
 export function installDocumentLiveSync(sync: DocumentLiveSync): () => void {
-  const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: DocumentLiveSync };
-  root[GLOBAL_KEY] = sync;
+  const unpublish = publishOnPage("liveSync", sync);
   for (const listener of INSTALL_LISTENERS) listener();
   return () => {
-    if (root[GLOBAL_KEY] === sync) delete root[GLOBAL_KEY];
+    unpublish();
     for (const listener of INSTALL_LISTENERS) listener();
   };
 }
 
 /** Returns the globally installed live-sync bus, or null when none is mounted. */
 export function getDocumentLiveSync(): DocumentLiveSync | null {
-  const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: DocumentLiveSync };
-  return root[GLOBAL_KEY] ?? null;
+  return onPage("liveSync") ?? null;
 }
 
 /**

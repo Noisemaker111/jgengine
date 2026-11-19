@@ -459,8 +459,8 @@ async function measureGame(
   const telemetry = await shellValue(
     session,
     `(() => {
-      const report = typeof window.__JG !== "undefined" && typeof window.__JG.report === "function"
-        ? window.__JG.report()
+      const report = typeof window.__jg?.report_obj !== "undefined" && typeof window.__jg.report === "function"
+        ? window.__jg.report()
         : null;
       return report === null ? null : {
         game: typeof report.game === "string" ? report.game : null,

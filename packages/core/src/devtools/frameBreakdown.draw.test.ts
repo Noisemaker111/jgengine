@@ -168,7 +168,7 @@ test("disposing and reinstalling the recorder restores live callbacks", () => {
 
 test("a remount's late cleanup leaves the next recorder published", () => {
   const prior = Reflect.get(globalThis, "window");
-  const page: { location: { search: string }; __jgFrameBreakdown?: unknown } = { location: { search: "" } };
+  const page: { location: { search: string } } = { location: { search: "" } };
   Reflect.set(globalThis, "window", page);
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const first = installFrameBreakdown(renderer as never);
@@ -176,12 +176,12 @@ test("a remount's late cleanup leaves the next recorder published", () => {
   try {
     // React mounts the new canvas's recorder, then runs the old one's cleanup.
     first.dispose();
-    expect(page.__jgFrameBreakdown).toBe(second);
+    expect(globalThis.__jg?.frames).toBe(second);
   } finally {
     second.dispose();
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
   }
-  expect(page.__jgFrameBreakdown).toBeUndefined();
+  expect(page.__jg?.frames).toBeUndefined();
 });
 
 test("records real shared members and repeated render calls through the frame loop", () => {

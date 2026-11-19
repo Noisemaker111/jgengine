@@ -4,7 +4,7 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { game } from "../../game.config";
 import { content } from "../content";
 import { clearAgents } from "../agents";
-import { resetSession, session } from "../session";
+import { resetSession, sessionOf } from "../session";
 import { seedGuests } from "./guests";
 
 const USER = "user_a";
@@ -14,8 +14,8 @@ function contextWithSeed(seed: string): GameContext {
 }
 
 /** The generated fields - ids are a session counter, not randomness. */
-function shape() {
-  return [...session.guests.values()].map((guest) => ({
+function shape(ctx: GameContext) {
+  return [...sessionOf(ctx).guests.values()].map((guest) => ({
     money: Math.round(guest.money * 1000),
     litterTimer: Math.round(guest.litterTimer * 1000),
     needs: Object.fromEntries(
@@ -25,17 +25,12 @@ function shape() {
 }
 
 function seedInto(seed: string) {
-  resetSession();
-  clearAgents();
-  seedGuests(contextWithSeed(seed), 8);
-  return shape();
+  const ctx = contextWithSeed(seed);
+  seedGuests(ctx, 8);
+  return shape(ctx);
 }
 
 describe("guest generation is reproducible (#1581)", () => {
-  beforeEach(() => {
-    resetSession();
-    clearAgents();
-  });
 
   test("the same world seed generates the same guests", () => {
     expect(seedInto("park-seed-1")).toEqual(seedInto("park-seed-1"));

@@ -17,7 +17,7 @@ export default defineFlow(game, {
     await f.command("cheat", {"clock":1903});
     // close to the ground now
     await f.waitFor((p) => p.crateAltitude > 5 && p.crateAltitude < 30, { timeoutMs: 3000 });
-    await f.expect((p) => (p.crateLanded) === 0, "__jgProbe().crateLanded");
+    await f.expect((p) => (p.crateLanded) === 0, "__jg.probe().crateLanded");
     await f.wait(1500);
     // a white crate under its canopy coming down, its beam rising above it
     await f.shot("fernwild-drop-falling");
@@ -31,7 +31,7 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.atCrate === 1, { timeoutMs: 3000 });
     // a level 1 survivor tries it
     await f.command("openCrate", {});
-    await f.expect((p) => (p.atCrate) === 1, "__jgProbe().atCrate");
+    await f.expect((p) => (p.atCrate) === 1, "__jg.probe().atCrate");
     await f.wait(800);
     // the crate stays shut: White crate, requires level 3
     await f.shot("fernwild-drop-locked");

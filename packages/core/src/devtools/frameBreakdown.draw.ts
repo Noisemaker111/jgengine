@@ -25,6 +25,7 @@ import {
   type LayoutAttribute,
   type LongFrameTiming,
 } from "./frameBreakdown";
+import { publishOnPage } from "../runtime/pageHandle";
 
 /**
  * The live half of the frame breakdown: hooks one three.js renderer, its WebGL context and the engine
@@ -39,7 +40,7 @@ import {
  * - Counts: draws and triangles (per object and material too), shader links and the time spent on
  *   them, texture and buffer uploads, and the JS heap (a drop between frames is a collection).
  *
- * Dev only: it installs where the frame telemetry does, and `window.__jgFrameBreakdown` reads it.
+ * Dev only: it installs where the frame telemetry does, and `window.__jg?.frames` reads it.
  */
 
 /**
@@ -820,11 +821,11 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
         activePasses = null;
       }
       // A remount installs the next breakdown before this one's cleanup runs: leave that one published.
-      if (window.__jgFrameBreakdown === breakdown) delete window.__jgFrameBreakdown;
+      unpublish();
     },
   };
   active = breakdown;
-  window.__jgFrameBreakdown = breakdown;
+  const unpublish = publishOnPage("frames", breakdown);
   return breakdown;
 }
 

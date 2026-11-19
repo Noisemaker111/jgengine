@@ -13,10 +13,10 @@ export async function installPageRenderCounter(session: CdpSession): Promise<voi
 
 /** Start the count over; false when the page has no counter (React DevTools' own hook was there first). */
 /** The game's simulation tick through the agent bridge, or null on a page without one. */
-const SIM_TICK = `(globalThis.__jgengineAgent?.handle({ method: "scene_counts" })?.tick ?? null)`;
+const SIM_TICK = `(globalThis.__jg?.agent?.handle({ method: "scene_counts" })?.tick ?? null)`;
 
 export async function resetRenderCounter(session: CdpSession): Promise<boolean> {
-  return (await session.evaluate<boolean>(`(() => { const r = globalThis.__jgRenders; if (!r) return false; r.reset(); globalThis.__jgRenderTickFrom = ${SIM_TICK}; return true; })()`)) === true;
+  return (await session.evaluate<boolean>(`(() => { const r = globalThis.__jg?.renders; if (!r) return false; r.reset(); globalThis.__jgRenderTickFrom = ${SIM_TICK}; return true; })()`)) === true;
 }
 
 /** The counts plus the simulation ticks the run covered (null when the page has no agent bridge). */
@@ -26,7 +26,7 @@ export interface RunRenderCounts extends RenderCounts {
 
 export async function readRenderCounts(session: CdpSession): Promise<RunRenderCounts | null> {
   return (await session.evaluate<RunRenderCounts | null>(`(() => {
-    const counts = globalThis.__jgRenders?.read();
+    const counts = globalThis.__jg?.renders?.read();
     if (!counts) return null;
     const from = globalThis.__jgRenderTickFrom, now = ${SIM_TICK};
     return { ...counts, ticks: typeof from === "number" && typeof now === "number" ? now - from : null };

@@ -104,9 +104,9 @@ export function replayRecordingProblem(value: unknown): string | null {
   return null;
 }
 
-declare global {
-  interface Window {
+declare module "../runtime/pageHandle" {
+  interface JgPage {
     /** The last replay the shell saved with F2+R, for an agent or the console to read. */
-    __jgengineReplay?: ReplayRecording;
+    replay?: ReplayRecording;
   }
 }

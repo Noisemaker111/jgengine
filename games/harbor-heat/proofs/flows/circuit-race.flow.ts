@@ -11,7 +11,7 @@ export default defineFlow(game, {
     await f.wait(1200);
     await f.shot("circuit-start");
     // getting out of the car gives the race up, and the notice says why
-    await f.expectPage("(window.__jgengineAgent.handle({ method: 'run_command', name: 'exitVehicle', input: {} }), true)", "the racer steps out of the car mid-race");
+    await f.expectPage("(window.__jg?.agent.handle({ method: 'run_command', name: 'exitVehicle', input: {} }), true)", "the racer steps out of the car mid-race");
     await f.waitFor((p) => p.raceForfeit === 1 && p.rivalOnScene === 0, { timeoutMs: 5000, note: "leaving the car forfeits the race and the rival leaves the road" });
     await f.see(/left the car, so the race is forfeit/i, { timeoutMs: 4000 });
     await f.shot("circuit-forfeit");

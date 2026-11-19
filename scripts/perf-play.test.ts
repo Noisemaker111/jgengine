@@ -104,9 +104,9 @@ test("whole-frame draws include extension calls once, even when the extension or
 test("the draw counter counts the WebGPU context's draws, which no native prototype sees", () => {
   const ticks: (() => void)[] = [];
   const stats = { draws: 40 };
-  const scope: { __jgWebGpu?: { stats: typeof stats }; __jgPerfDraws?: { start(): void; stop(): number[] } } = {};
+  const scope: { __jg?: { webgpu?: { stats: typeof stats } }; __jgPerfDraws?: { start(): void; stop(): number[] } } = {};
   new Function("globalThis", "requestAnimationFrame", DRAW_FRAME_COUNTER_SCRIPT)(scope, (tick: () => void) => ticks.push(tick));
-  scope.__jgWebGpu = { stats };
+  (scope.__jg ??= {}).webgpu = { stats };
   ticks.shift()?.();
   scope.__jgPerfDraws?.start();
   stats.draws += 116;

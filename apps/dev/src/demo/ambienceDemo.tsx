@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGameContext } from "@jgengine/ui/provider";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { AudioProbe } from "@jgengine/core/audio/audioProbe.view";
+import "@jgengine/core/audio/audioProbe.view";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";
@@ -142,7 +142,7 @@ function probe(ctx: GameContext): Record<string, number> {
   void ctx;
   const audio = typeof window === "undefined"
     ? undefined
-    : (window as unknown as { __jgengineAudio?: AudioProbe }).__jgengineAudio;
+    : window.__jg?.audio;
   if (audio === undefined) return { audioReady: 0 };
   const level = audio.measure();
   const ambience = audio.ambience();

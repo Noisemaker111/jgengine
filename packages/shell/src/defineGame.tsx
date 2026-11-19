@@ -25,6 +25,7 @@ import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.dr
 import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import type { PlayableGame } from "./registry";
 import { AuthoredScene } from "@jgengine/core/scene/AuthoredScene.draw";
+import { disposeContext } from "@jgengine/core/runtime/contextDisposal";
 
 type EngineFields<TAssetRef extends ModelAssetRef> = Omit<
   GameDefinitionConfig<TAssetRef>,
@@ -192,7 +193,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
     ...engineFields,
     ...(editorLayers === undefined ? {} : { authoredDocument: editorLayers }),
     multiplayer: multiplayer ?? offline(),
-    loop: { ...loop, onDispose(ctx) { try { loop?.onDispose?.(ctx); } finally { ctx.environment.dispose(); } } },
+    loop: { ...loop, onDispose(ctx) { try { loop?.onDispose?.(ctx); } finally { ctx.environment.dispose(); disposeContext(ctx); } } },
   });
   // The world's sky shape and the scene document's sky fields layer under the look and mood; the
   // document's lamps join the rig the mood lights. Explicit game fields win over all of them.

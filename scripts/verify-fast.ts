@@ -200,8 +200,9 @@ const posix = (path: string): string => path.replaceAll("\\", "/");
 const relPosix = (root: string, path: string): string => posix(relative(root, path));
 
 function git(root: string, args: string[]): string {
-  const result = spawnSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-  if (result.status !== 0) throw new Error(`git ${args.join(" ")}: ${(result.stderr ?? "").trim()}`);
+  // A binary diff (a rebuilt wasm bundle) runs to tens of MB; the default 1 MB buffer cut it off with no error text.
+  const result = spawnSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 1024 * 1024 * 1024 });
+  if (result.status !== 0) throw new Error(`git ${args.join(" ")}: ${(result.stderr ?? "").trim() || String(result.error ?? `exit ${result.status}`)}`);
   return result.stdout ?? "";
 }
 
@@ -764,20 +765,32 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
-  if (boots.length > 0) {
-    const games = boots.map((settles) => settles.id.slice("boot:".length));
-    const provision = `provision ${games.join(" ")}`;
+  // Open, close and reopen each reached game in one page: a closed game must leave no listener, frame
+  // callback, page global or GL context behind (`games/scripts/reopen.ts`).
+  // The same files decide it as the boot: the game and everything it imports.
+  const reopens = plan.boots.map((game) => unit(`reopen:${game}`, plan.inputs[`boot:${game}`])).filter((settles) => !fresh(settles.id, settles.inputs));
+  const booted = (list: typeof boots, prefix: string) => list.map((settles) => settles.id.slice(prefix.length));
+  const linked = [...new Set([...booted(boots, "boot:"), ...booted(reopens, "reopen:")])];
+  if (linked.length > 0) {
+    const provision = `provision ${linked.join(" ")}`;
     // Link (or, once per machine, download) the packs first, so the boot reads real models.
-    steps.push({ name: provision, command: ["bun", "games/scripts/provision-assets.ts", ...games], cost: 2 });
-    // Beside the tests, not after them: the probe's deadline counts from when the page stops
-    // loading, so a busy machine makes it slower, never red.
-    steps.push({
-      name: `boot probe ${games.join(" ")}`,
-      command: ["bun", "games/scripts/capabilities-probe.ts", ...games],
-      needs: [provision],
-      cost: 40,
-      units: boots,
-    });
+    steps.push({ name: provision, command: ["bun", "games/scripts/provision-assets.ts", ...linked], cost: 2 });
+    if (boots.length > 0) {
+      const games = booted(boots, "boot:");
+      // Beside the tests, not after them: the probe's deadline counts from when the page stops
+      // loading, so a busy machine makes it slower, never red.
+      steps.push({
+        name: `boot probe ${games.join(" ")}`,
+        command: ["bun", "games/scripts/capabilities-probe.ts", ...games],
+        needs: [provision],
+        cost: 40,
+        units: boots,
+      });
+    }
+    if (reopens.length > 0) {
+      const games = booted(reopens, "reopen:");
+      steps.push({ name: `reopen ${games.join(" ")}`, command: ["bun", "games/scripts/reopen.ts", ...games], needs: [provision], cost: 40, units: reopens });
+    }
   }
   if (plan.webBuild) {
     const built = unit("web-build", [WHOLE_TREE]);

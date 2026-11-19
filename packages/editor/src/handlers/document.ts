@@ -319,7 +319,7 @@ export const documentHandlers: Pick<
     return { ok: true, result: { mode: request.mode } };
   },
   perf_report: (ctx) => {
-    const devtoolsGlobal = (globalThis as { __JG_DEVTOOLS?: { snapshot?: () => unknown } }).__JG_DEVTOOLS;
+    const devtoolsGlobal = (globalThis.__jg as { devtools?: { snapshot?: () => unknown } } | undefined)?.devtools;
     if (devtoolsGlobal?.snapshot === undefined) {
       return { ok: false, error: "engine devtools not mounted — open the browser editor (F2+D panel) first" };
     }

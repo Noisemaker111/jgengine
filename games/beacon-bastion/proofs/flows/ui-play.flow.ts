@@ -14,7 +14,7 @@ export default defineFlow(game, {
     const shot = (name: string) => f.shot(`${name}-${size}`);
     // Software Rune on a loaded host can take seconds to present a changed screen: let it land before a press or a shot.
     const settle = () => f.wait(7000);
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
     await f.see(/new defense/i, { timeoutMs: 40000 });
     await settle();
     await f.click("New Defense");

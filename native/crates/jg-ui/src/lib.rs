@@ -4,7 +4,7 @@
 //! per-frame values arrive through one shared typed-array buffer in wasm linear
 //! memory (`values_ptr`/`values_len`, written by JS once per frame, never one call
 //! per value), and events plus interactive hit regions go back to JS once per
-//! frame through a single import (`emit_frame`). Rune draws into a transparent
+//! frame through the callback `mount` was given (`emit_frame`). Rune draws into a transparent
 //! WebGPU canvas over the game's three.js canvas; JS uses the hit regions to let
 //! pointer input on empty UI space reach the game.
 
@@ -235,12 +235,19 @@ impl Compositor<Ui> for UiCompositor {
     }
 }
 
+// The mount's own frame callback: each game's UI loads its own wasm instance, so this is per game, not per page.
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen(inline_js = "
-export function emit_frame(payload) { window.__jgUiFrame && window.__jgUiFrame(payload); }
-")]
-extern "C" {
-    fn emit_frame(payload: &str);
+thread_local! {
+    static ON_FRAME: RefCell<Option<js_sys::Function>> = const { RefCell::new(None) };
+}
+
+#[cfg(target_arch = "wasm32")]
+fn emit_frame(payload: &str) {
+    ON_FRAME.with(|f| {
+        if let Some(f) = f.borrow().as_ref() {
+            let _ = f.call1(&wasm_bindgen::JsValue::NULL, &wasm_bindgen::JsValue::from_str(payload));
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -268,7 +275,8 @@ pub fn values_len() -> u32 {
 /// the page while the GPU starts.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn mount(canvas_id: &str, options_json: &str) {
+pub fn mount(canvas_id: &str, options_json: &str, on_frame: js_sys::Function) {
+    ON_FRAME.with(|f| *f.borrow_mut() = Some(on_frame));
     #[derive(serde::Deserialize, Default)]
     struct Opts {
         #[serde(default)]
@@ -432,6 +440,7 @@ pub fn values_changed() {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn unmount() {
+    ON_FRAME.with(|f| *f.borrow_mut() = None);
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
             handle.quit();

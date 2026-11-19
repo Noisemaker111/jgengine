@@ -15,6 +15,14 @@ import { PURSE_ACCOUNT, PURSE_CURRENCY, PURSE_FACT, purseReason, purseRef } from
 import { finishRun } from "./waves/legacy";
 import { BUILD_PLOTS } from "./world/path";
 import { session } from "./session";
+import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
+
+declare module "@jgengine/core/runtime/pageHandle" {
+  interface JgPage {
+    /** This game's dev readout, as its proofs read it. */
+    beacon?: { read(): unknown };
+  }
+}
 
 /**
  * The keep as one declaration: its purse and walls, the nine plots, every tower type with its build
@@ -269,7 +277,7 @@ export function exposeKeepReadout(ctx: GameContext, phase: () => string): void {
       return state;
     },
   });
-  (globalThis as { __beacon?: unknown }).__beacon = {
+  publishForContext(ctx, "beacon", {
     read() {
       const world = keep.of(ctx);
       return {
@@ -292,5 +300,5 @@ export function exposeKeepReadout(ctx: GameContext, phase: () => string): void {
         refused: [...refused],
       };
     },
-  };
+  });
 }

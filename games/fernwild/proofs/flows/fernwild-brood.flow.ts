@@ -38,7 +38,7 @@ export default defineFlow(game, {
     await f.command("cheat", {"clock":1830});
     // taken through to her lair
     await f.waitFor((p) => p.brood === 2 && p.inLair === 1, { timeoutMs: 5000 });
-    await f.expect((p) => (p.lairTames) === 2, "__jgProbe().lairTames");
+    await f.expect((p) => (p.lairTames) === 2, "__jg.probe().lairTames");
     // her first Araneo crawl out of the walls
     await f.waitFor((p) => p.araneo >= 4, { timeoutMs: 3000 });
     await f.wait(1200);

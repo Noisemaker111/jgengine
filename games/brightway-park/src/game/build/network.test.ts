@@ -5,7 +5,7 @@ import { game } from "../../game.config";
 import { DAY_LENGTH } from "../catalog";
 import { BUILDABLES } from "../objects/catalog";
 import { cellFor, park } from "../park";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { accessOf } from "./links";
 import { cellCentre, levelAt, LAND_COST } from "./terrain";
 import { clearUndo } from "./undo";
@@ -26,7 +26,6 @@ beforeEach(() => {
     setItem: (key: string, value: string) => records.set(key, value),
     removeItem: (key: string) => records.delete(key),
   } });
-  clearUndo();
 });
 afterEach(() => {
   if (originalStorage) Object.defineProperty(globalThis, "localStorage", originalStorage);
@@ -68,7 +67,7 @@ describe("paths, entrances and exits", () => {
     expect(w.num("park.rides_open")).toBe(open);
     expect(w.num("appeal.ride_carousel")).toBe(appeal);
     for (let t = 0; t < 30; t += 1) runner.step(1);
-    for (const guest of session.guests.values()) expect(guest.targetId).not.toBe(ride);
+    for (const guest of sessionOf(runner.ctx).guests.values()) expect(guest.targetId).not.toBe(ride);
 
     const cash = w.num("park.cash");
     runner.ui.invoke("build.connect", { id: ride });

@@ -1,3 +1,5 @@
+import { onPage, publishOnPage } from "../runtime/pageHandle";
+
 /** One write request the dev save endpoint accepts: a scene document or tunable deltas. */
 export type SaveEndpointRequest =
   | { kind: "editor-document"; gameId: string; json: string }
@@ -24,9 +26,12 @@ export interface SaveEndpointInfo {
   gameId: string;
 }
 
-const GLOBAL_KEY = "__jgengineSaveEndpoint";
 
-type SaveEndpointGlobal = typeof globalThis & { [GLOBAL_KEY]?: SaveEndpointInfo };
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    saveEndpoint?: SaveEndpointInfo;
+  }
+}
 
 /** The bundler-provided build flags the engine reads. @internal */
 export interface BuildEnv {
@@ -82,17 +87,12 @@ export function isProductionEnvironment(): boolean {
  */
 export function installSaveEndpoint(url: string, gameId: string): () => void {
   if (isProductionEnvironment()) return () => {};
-  const root = globalThis as SaveEndpointGlobal;
-  const info: SaveEndpointInfo = { url, gameId };
-  root[GLOBAL_KEY] = info;
-  return () => {
-    if (root[GLOBAL_KEY] === info) delete root[GLOBAL_KEY];
-  };
+  return publishOnPage("saveEndpoint", { url, gameId });
 }
 
 /** Returns the installed dev save endpoint, or null when saves cannot reach disk.
  * @internal
  */
 export function getSaveEndpoint(): SaveEndpointInfo | null {
-  return (globalThis as SaveEndpointGlobal)[GLOBAL_KEY] ?? null;
+  return onPage("saveEndpoint") ?? null;
 }

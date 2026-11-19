@@ -1,33 +1,37 @@
 import { useEffect } from "@jgengine/core/ui/jsx";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
+import { useGameContext } from "@jgengine/ui/provider";
 
 /**
  * The first scenario's ring: the hint names its controls in order (`currentHint(ctx).ui`), each
  * control registers its key while it is on screen, and the first one present is ringed. Buttons read
- * `hintRing.pointed` from a bound border, so pointing never re-renders the HUD.
+ * `hintRingOf(ctx).pointed` from a bound border, so pointing never re-renders the HUD.
  */
-export const hintRing: { pointed: string | null } = { pointed: null };
-const mounted = new Map<string, number>();
-let wanted: readonly string[] = [];
+export const hintRingOf = perContext(() => ({ pointed: null as string | null, mounted: new Map<string, number>(), wanted: [] as readonly string[] }));
 
-function recompute(): void {
-  hintRing.pointed = wanted.find((key) => (mounted.get(key) ?? 0) > 0) ?? null;
+function recompute(ctx: GameContext): void {
+  const ring = hintRingOf(ctx);
+  ring.pointed = ring.wanted.find((key) => (ring.mounted.get(key) ?? 0) > 0) ?? null;
 }
 
 /** The hint's controls, in the order the ring prefers them. */
-export function pointHint(keys: readonly string[]): void {
-  wanted = keys;
-  recompute();
+export function pointHint(ctx: GameContext, keys: readonly string[]): void {
+  hintRingOf(ctx).wanted = keys;
+  recompute(ctx);
 }
 
 /** Register a control under its hint key while it is mounted. */
 export function useHintTarget(key: string | undefined): void {
+  const ctx = useGameContext();
   useEffect(() => {
     if (key === undefined) return undefined;
+    const { mounted } = hintRingOf(ctx);
     mounted.set(key, (mounted.get(key) ?? 0) + 1);
-    recompute();
+    recompute(ctx);
     return () => {
       mounted.set(key, (mounted.get(key) ?? 1) - 1);
-      recompute();
+      recompute(ctx);
     };
   }, [key]);
 }

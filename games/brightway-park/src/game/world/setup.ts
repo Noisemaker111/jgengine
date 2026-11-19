@@ -4,7 +4,7 @@ import { registerBuildCommands } from "../build/commands";
 import { loadParkProfile, restorePark, savePark } from "../persistence";
 import { resetPark } from "../parkReset";
 import { armMidnight } from "../midnight";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { traceNative, tracePark } from "../evidence";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -57,5 +57,5 @@ export function setupWorld(ctx: GameContext): void {
       window.addEventListener("unhandledrejection",e=>traceNative("runtime-rejection",String(e.reason)),{signal:abort.signal});
     }
   }
-  session.saveStatus = session.saveStatus || "Saved on builds, ticket changes, pause and day close";
+  sessionOf(ctx).saveStatus = sessionOf(ctx).saveStatus || "Saved on builds, ticket changes, pause and day close";
 }

@@ -4,8 +4,8 @@
  * A declaration can be true on paper and false in play: a game imports the
  * mission module, declares it adopted, then never mounts the runtime. This
  * half reads the engine's own devtools counters on the running page
- * (`window.__jgengineAgent` -> `debug_snapshot.probes`) and each declared
- * `window.__jgengine*` readout (`window.__jgengineAudio`, `window.__jgengineRun`),
+ * (`window.__jg?.agent` -> `debug_snapshot.probes`) and each declared
+ * `window.__jgengine*` readout (`window.__jg?.audio`, `window.__jg?.run`),
  * so an adopted system that is merely imported fails here.
  *
  * The probe presses Play first (the game's `capture.play` commands through the agent bridge) and
@@ -211,11 +211,11 @@ const READ_PAGE = `(() => {
     requestAnimationFrame(count);
   }
   const mounted = document.documentElement.dataset.jgPhase !== undefined;
-  const agent = window.__jgengineAgent;
+  const agent = window.__jg?.agent;
   const windows = {};
-  // Every readout the engine mounts, not a list kept here: a new window.__jgengine* is read too.
-  for (const name of Object.keys(window).filter((key) => key.startsWith("__jgengine") && key !== "__jgengineAgent")) {
-    const probe = window[name];
+  // Every readout the engine mounts, not a list kept here: a new window.__jg field is read too.
+  for (const name of Object.keys(window.__jg ?? {})) {
+    const probe = window.__jg[name];
     if (probe === null || typeof probe !== "object" || (typeof probe.read !== "function" && typeof probe.measure !== "function")) continue;
     try {
       if (typeof probe.read === "function") {
@@ -295,7 +295,7 @@ async function startCommands(game: string): Promise<StartCommand[]> {
  */
 function startPlayExpression(commands: readonly StartCommand[]): string {
   return `(() => {
-  const agent = window.__jgengineAgent;
+  const agent = window.__jg?.agent;
   if (agent === undefined) return false;
   for (const command of ${JSON.stringify(commands)}) agent.handle({ method: "run_command", name: command.name, input: command.input ?? {} });
   window.__jgProbeFrames = 0;

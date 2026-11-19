@@ -582,6 +582,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "better-auth@1.4.9": "patches/better-auth@1.4.9.patch",
+  },
   "catalog": {
     "@convex-dev/better-auth": "^0.10.9",
     "@tailwindcss/vite": "^4.3.3",

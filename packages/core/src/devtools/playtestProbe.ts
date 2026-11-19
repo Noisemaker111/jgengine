@@ -1,9 +1,14 @@
+import { publishOnPage } from "../runtime/pageHandle";
+
 type Probe = () => Record<string, number>;
-type ProbeHost = { __jgProbe?: Probe };
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    probe?: Probe;
+  }
+}
 
 /** @internal Attach a live capture probe for one shell boot; cleanup retires retained readers. */
-export function attachPlaytestProbe(host: object, read: Probe): () => void {
-  const target = host as ProbeHost;
+export function attachPlaytestProbe(read: Probe): () => void {
   let active = true;
   const probe = () => {
     if (!active) return {};
@@ -14,9 +19,9 @@ export function attachPlaytestProbe(host: object, read: Probe): () => void {
       return {};
     }
   };
-  target.__jgProbe = probe;
+  const unpublish = publishOnPage("probe", probe);
   return () => {
     active = false;
-    if (target.__jgProbe === probe) delete target.__jgProbe;
+    unpublish();
   };
 }

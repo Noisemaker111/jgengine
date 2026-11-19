@@ -10,20 +10,20 @@ export default defineFlow(game, {
   browser: true,
   state: "title",
   async run(f) {
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame", timeoutMs: 40000 });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame", timeoutMs: 40000 });
     const phone = Number(await f.page("innerWidth")) < 600;
     const size = phone ? "phone" : "desktop";
     const shot = (name: string) => f.shot(`rune-native-${name}-${size}`);
     // Settled: no new native tree for 3 s and a frame drawn since it, so the picture and hit regions show the
     // latest tree. Live values (the clock) repaint through slots without a new tree, so the HUD can settle too.
-    const settle = () => f.waitForPage("(() => { const s = window.__jgNativeUi?.stats() ?? { specs: 0, frames: 0 }, t = performance.now(); if (window.__orbitSpecs !== s.specs) { window.__orbitSpecs = s.specs; window.__orbitAt = t; window.__orbitFrame = s.frames; return false; } return t - window.__orbitAt > 3000 && (s.frames > window.__orbitFrame || t - window.__orbitAt > 7000); })()", { timeoutMs: 30000, note: "the native UI tree settled and painted" });
+    const settle = () => f.waitForPage("(() => { const s = window.__jg?.nativeUi?.stats() ?? { specs: 0, frames: 0 }, t = performance.now(); if (window.__orbitSpecs !== s.specs) { window.__orbitSpecs = s.specs; window.__orbitAt = t; window.__orbitFrame = s.frames; return false; } return t - window.__orbitAt > 3000 && (s.frames > window.__orbitFrame || t - window.__orbitAt > 7000); })()", { timeoutMs: 30000, note: "the native UI tree settled and painted" });
     // Shown as text, or as a pressable control's name.
-    const shows = async (text: string) => Boolean(await f.page(`(window.__jgNativeUi?.text() ?? "").includes(${JSON.stringify(text)}) || window.__jgNativeUi?.point(${JSON.stringify(text)}) != null`));
+    const shows = async (text: string) => Boolean(await f.page(`(window.__jg?.nativeUi?.text() ?? "").includes(${JSON.stringify(text)}) || window.__jg?.nativeUi?.point(${JSON.stringify(text)}) != null`));
     // A real pointer press through Rune's hit test: hover, let the hover frame land, then click. When the
     // press should open something, a press the busy software renderer dropped is tried again (three times at most).
     const tap = async (label: string, arrive?: string) => {
       for (let attempt = 0; attempt < 3; attempt++) {
-        const at = await f.waitForPage(`window.__jgNativeUi?.point(${JSON.stringify(label)}) ?? false`, { note: `a laid-out "${label}" control` }) as { x: number; y: number };
+        const at = await f.waitForPage(`window.__jg?.nativeUi?.point(${JSON.stringify(label)}) ?? false`, { note: `a laid-out "${label}" control` }) as { x: number; y: number };
         await f.moveMouse(at.x, at.y);
         await settle();
         await f.clickAt(at.x, at.y);
@@ -64,7 +64,7 @@ export default defineFlow(game, {
     await see("Odd Ones|");
     await shot("new");
     await f.press("Enter");
-    await f.waitForPage("!(window.__jgNativeUi?.text() ?? 'Moving-in card').includes('Moving-in card')", { timeoutMs: 40000, note: "Enter on the moving-in card moved the household in" });
+    await f.waitForPage("!(window.__jg?.nativeUi?.text() ?? 'Moving-in card').includes('Moving-in card')", { timeoutMs: 40000, note: "Enter on the moving-in card moved the household in" });
     await f.waitFor((p) => p.members === 4, { timeoutMs: 40000 });
 
     // Once the habitat runs, software Rune on a loaded host stops presenting new frames (Deepward's own
@@ -72,15 +72,15 @@ export default defineFlow(game, {
     // pressed through the native tree's own press path and checked by what the tree then shows; the HUD
     // pictures come from boot captures and the headless native renders of the same components.
     const act = async (label: string, arrive?: string) => {
-      await f.page(`window.__jgNativeUi.press(${JSON.stringify(label)})`);
-      if (arrive !== undefined) await f.waitForPage(`(window.__jgNativeUi?.text() ?? "").includes(${JSON.stringify(arrive)}) || window.__jgNativeUi?.point(${JSON.stringify(arrive)}) != null`, { timeoutMs: 20000, note: `pressing "${label}" shows "${arrive}"` });
+      await f.page(`window.__jg?.nativeUi.press(${JSON.stringify(label)})`);
+      if (arrive !== undefined) await f.waitForPage(`(window.__jg?.nativeUi?.text() ?? "").includes(${JSON.stringify(arrive)}) || window.__jg?.nativeUi?.point(${JSON.stringify(arrive)}) != null`, { timeoutMs: 20000, note: `pressing "${label}" shows "${arrive}"` });
     };
     await f.see("Handbook");
     await act("Speed 2x");
     await act("Pause time", "Resume time");
     await act("Resume time", "Pause time");
     // The first being's magnet is labelled with its generated name.
-    const card = String(await f.page("(() => { const walk = (n) => n.props?.label?.endsWith(' card') ? n.props.label : (n.children ?? []).map(walk).find(Boolean); return walk(window.__jgNativeUi.tree()) ?? ''; })()"));
+    const card = String(await f.page("(() => { const walk = (n) => n.props?.label?.endsWith(' card') ? n.props.label : (n.children ?? []).map(walk).find(Boolean); return walk(window.__jg?.nativeUi.tree()) ?? ''; })()"));
     await act(card, "Post & mastery");
     await act("Close member care");
     await act("Furnish", "Make room for life");

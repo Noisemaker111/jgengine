@@ -14,6 +14,7 @@ import { bindFrameSource } from "./frameBoard.draw";
 
 interface FakeRenderer extends THREE.WebGLRenderer {
   renders: number;
+  contextsLost: number;
 }
 
 function fakeRenderer(): FakeRenderer {
@@ -32,6 +33,10 @@ function fakeRenderer(): FakeRenderer {
       renderer.renders += 1;
     },
     dispose() {},
+    contextsLost: 0,
+    forceContextLoss() {
+      renderer.contextsLost += 1;
+    },
   };
   return renderer as unknown as FakeRenderer;
 }
@@ -178,6 +183,7 @@ test("demand renders only after invalidate, and dispose stops everything", () =>
   } finally {
     loop.dispose();
     expect(disposed).toBe(1);
+    expect(renderer.contextsLost, "a closed game gives its GL context back").toBe(1);
   }
   pumpFrames();
   expect(renderer.renders).toBe(2);
@@ -197,4 +203,60 @@ test("a scoped child state is one object per parent and reads each frame's clock
   expect(child.elapsed).toBe(2.5);
   expect(child.camera).toBe(loop.camera);
   loop.dispose();
+});
+
+test("a draw that asks for the next frame from inside its frame gets it", () => {
+  const renderer = fakeRenderer();
+  const loop = createEngineLoop({ canvas: fakeCanvas(), renderer, frameloop: "demand" });
+  let asks = 2;
+  loop.add({
+    frame(state) {
+      if (asks > 0) {
+        asks -= 1;
+        state.invalidate();
+      }
+    },
+  });
+  try {
+    pumpFrames();
+    pumpFrames();
+    pumpFrames();
+    pumpFrames();
+    expect(renderer.renders, "the first frame plus one for each request made during a frame").toBe(3);
+  } finally {
+    loop.dispose();
+  }
+});
+
+test("dispose removes every resize listener, so a later resize never reaches the old renderer", () => {
+  const listeners = new Set<() => void>();
+  let observing = 0;
+  (globalThis as { window?: unknown }).window = {
+    addEventListener: (type: string, listener: () => void) => type === "resize" && listeners.add(listener),
+    removeEventListener: (type: string, listener: () => void) => type === "resize" && listeners.delete(listener),
+    devicePixelRatio: 1,
+  };
+  globalThis.ResizeObserver = class {
+    observe() {
+      observing += 1;
+    }
+    unobserve() {}
+    disconnect() {
+      observing -= 1;
+    }
+  } as unknown as typeof globalThis.ResizeObserver;
+  const renderer = fakeRenderer();
+  let resizes = 0;
+  renderer.setSize = () => {
+    resizes += 1;
+  };
+  const loop = createEngineLoop({ canvas: fakeCanvas(), renderer });
+  expect(listeners.size).toBe(1);
+  expect(observing).toBe(1);
+  loop.dispose();
+  expect(listeners.size).toBe(0);
+  expect(observing).toBe(0);
+  const before = resizes;
+  for (const listener of listeners) listener();
+  expect(resizes).toBe(before);
 });

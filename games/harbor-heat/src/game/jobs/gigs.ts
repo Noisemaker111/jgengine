@@ -21,6 +21,14 @@ import { groundCarId, streetPlayOf } from "../streetPlay";
 import { grantCred } from "../progression/cred";
 import { RACE_ROUTES } from "../world/districts";
 import { rivalsFor } from "../race/rivals";
+import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
+
+declare module "@jgengine/core/runtime/pageHandle" {
+  interface JgPage {
+    /** Harbor Heat's gig readout and dev staging, as its proofs drive them. */
+    harborGigs?: { read(): unknown; [control: string]: unknown };
+  }
+}
 
 /** The street-race stake, and what a place pays back as a multiple of it: first triples, second breaks even. */
 export const GIG_RACE_STAKE = 200;
@@ -468,14 +476,12 @@ export function registerGigs(ctx: GameContext): void {
   ctx.game.commands.define<{ mode?: "taxi" | "race" | "flowers" }>("gigs.stage", { apply(state, input) { stageGig(state, input?.mode ?? "taxi"); } });
   // Dev: move the car to `short` metres before the current target (or the hailing fare), pointed at it.
   ctx.game.commands.define<{ short?: number }>("gigs.warp", { apply(state, input) { warpToTarget(state, input?.short ?? 0); } });
-  if (typeof window !== "undefined") {
-    (window as unknown as { __harborGigs?: unknown }).__harborGigs = {
-      read: () => gigStore.read(ctx),
-      board: () => gigBoard(ctx).snapshot(),
-      stage: (mode: "taxi" | "race" | "flowers" = "taxi") => stageGig(ctx, mode),
-      run: (name: string, input?: unknown) => ctx.game.commands.run(name, input),
-    };
-  }
+  publishForContext(ctx, "harborGigs", {
+    read: () => gigStore.read(ctx),
+    board: () => gigBoard(ctx).snapshot(),
+    stage: (mode: "taxi" | "race" | "flowers" = "taxi") => stageGig(ctx, mode),
+    run: (name: string, input?: unknown) => ctx.game.commands.run(name, input),
+  });
 }
 
 /**

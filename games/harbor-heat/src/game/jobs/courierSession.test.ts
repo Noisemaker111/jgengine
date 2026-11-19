@@ -79,7 +79,7 @@ describe("Mainsail courier mission session", () => {
   test("the loop's own probe reports the live session", () => {
     const ctx = boot();
     ctx.game.commands.run("courier.accept", {});
-    const probe = (globalThis as { __jgengineRun?: { read(): { session: number; phase: string; kind: string | null; carried: number; closed: number; offered: string | null } } }).__jgengineRun;
+    const probe = (globalThis.__jg as { run?: { read(): { session: number; phase: string; kind: string | null; carried: number; closed: number; offered: string | null } } } | undefined)?.run;
     expect(probe).toBeDefined();
     expect(probe!.read()).toEqual({ session: 1, phase: "open", kind: "mission", carried: 0, closed: 0, offered: null });
     finishCourier(ctx, false, "test boundary");

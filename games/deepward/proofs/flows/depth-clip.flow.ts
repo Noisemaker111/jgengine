@@ -12,7 +12,7 @@ export default defineFlow(game, {
     await f.click("Print Plasma cutter");
     await f.click("Print Blood lure");
     await f.click("Back to Marrow");
-    await f.expect((p) => p.lures === 1 && p.gear === 1, "__jgProbe().lures === 1 && __jgProbe().gear === 1");
+    await f.expect((p) => p.lures === 1 && p.gear === 1, "__jg.probe().lures === 1 && __jg.probe().gear === 1");
     await f.command("deepward.dev.stand", {"x":0,"z":9.2});
     await f.press("KeyE");
     await f.waitFor((p) => p.inDive === 1, { timeoutMs: 15000 });

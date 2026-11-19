@@ -1,11 +1,12 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useState } from "@jgengine/core/ui/jsx";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 
-import { session } from "../../session";
+import { sessionOf } from "../../session";
 import { Button, GOLD, INK, PENCIL, Row, Tag, Text } from "../look";
 
 /**
@@ -13,6 +14,7 @@ import { Button, GOLD, INK, PENCIL, Row, Tag, Text } from "../look";
  * fair tickets. A slider drags or steps with left/right; a keybind arms and takes the next key.
  */
 export function ParkSettings({ reducedMotion, onReducedMotion }: { reducedMotion: boolean; onReducedMotion: (next: boolean) => void }) {
+  const saveStatus = useGameStore((c) => sessionOf(c).saveStatus);
   const settings = useSettings(), [chosen, setChosen] = useState<string | null>(null), [armed, setArmed] = useState<string | null>(null);
   const active = settings.categories.find((c) => c.id === chosen) ?? settings.categories[0];
   return <RuneView gap={10} {...(armed === null ? {} : { onKey: (code: string) => {
@@ -29,7 +31,7 @@ export function ParkSettings({ reducedMotion, onReducedMotion }: { reducedMotion
       <Button disabled={k.locked === true} minHeight={32} onPress={() => setArmed(k.action)}>{armed === k.action ? "Press a key · Esc cancels" : k.bindingLabel}</Button>
       <Button tone="ghost" minHeight={32} disabled={k.locked === true || k.isDefault} onPress={k.reset}>Reset</Button></Row>)}
     {settings.actions.map((a) => <Button key={a.id} onPress={a.run}>{a.label}</Button>)}
-    <Tag>{`${session.saveStatus}. Saves stay in this browser.`.toUpperCase()}</Tag>
+    <Tag>{`${saveStatus}. Saves stay in this browser.`.toUpperCase()}</Tag>
   </RuneView>;
 }
 

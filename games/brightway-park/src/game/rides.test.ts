@@ -5,7 +5,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "./content";
 import { agentOf } from "./agents";
-import { resetSession, session } from "./session";
+import { resetSession, sessionOf } from "./session";
 import { tickRidePark, tickGuests, seedGuests } from "./sim/guests";
 import { fixRide, joinRide, resetRides, rideBoard, rideDefinition, coasterCircuit, rideSystem, rideView, serviceRide, syncRidePark } from "./rides";
 import { cellFor, freshWorld, park, parkObject, placeFree } from "./park";
@@ -37,43 +37,39 @@ function open(): { ctx: Ctx; ride: string } {
 }
 
 describe("brightway-park rides on the shared ride sim", () => {
-  beforeEach(() => {
-    resetSession();
-    resetRides();
-  });
 
   test("a breakdown takes the ride offline, keeps its line, and the park's read says so", () => {
     const { ctx, ride } = open();
     // A deterministic rng of 0 breaks the ride on its first completed cycle.
     syncRidePark(ctx, () => 0);
-    for (let i = 0; i < 18; i += 1) joinRide(ride, `guest#${i}`);
+    for (let i = 0; i < 18; i += 1) joinRide(ctx, ride, `guest#${i}`);
 
     // Board, ride, unload: the carousel's own 21-second cycle.
     for (let i = 0; i < 300; i += 1) tickRidePark(ctx, 0.1);
 
-    const view = rideView(ride)!;
+    const view = rideView(ctx, ride)!;
     expect(view.phase).toBe("broken");
     expect(view.breakdowns).toBe(1);
     // Twelve boarded and are unloaded, six are still waiting, and nothing boards while it is down.
     expect(view.queue.size).toBe(6);
     expect(view.queue.wait.seconds).toBeGreaterThan(0);
-    expect(rideBoard()).toMatchObject({ rides: 1, online: 0, broken: 1, queued: 6 });
+    expect(rideBoard(ctx)).toMatchObject({ rides: 1, online: 0, broken: 1, queued: 6 });
   });
 
   test("the sim holds a broken ride down until the crew's order lands, then it takes its line", () => {
     const { ctx, ride } = open();
     syncRidePark(ctx, () => 0);
-    for (let i = 0; i < 16; i += 1) joinRide(ride, `guest#${i}`);
+    for (let i = 0; i < 16; i += 1) joinRide(ctx, ride, `guest#${i}`);
     for (let i = 0; i < 300; i += 1) tickRidePark(ctx, 0.1);
-    const broken = rideView(ride)!;
+    const broken = rideView(ctx, ride)!;
     expect(broken.phase).toBe("broken");
 
     // The world's crew does the repair, not the sim's own timer.
     tickRidePark(ctx, 600);
-    expect(rideView(ride)!.phase).toBe("broken");
-    fixRide(ride);
+    expect(rideView(ctx, ride)!.phase).toBe("broken");
+    fixRide(ctx, ride);
     tickRidePark(ctx, 0.1);
-    const repaired = rideView(ride)!;
+    const repaired = rideView(ctx, ride)!;
     expect(repaired.phase).not.toBe("broken");
     expect(repaired.breakdowns).toBe(1);
     // The head of the line boarded as soon as it was back up.
@@ -84,8 +80,8 @@ describe("brightway-park rides on the shared ride sim", () => {
     const { ctx, ride } = open();
     syncRidePark(ctx, () => 1);
     seedGuests(ctx, 1);
-    const guest = [...session.guests.values()][0]!;
-    const agent = agentOf(guest, ctx.rng);
+    const guest = [...sessionOf(ctx).guests.values()][0]!;
+    const agent = agentOf(ctx, guest, ctx.rng);
     agent.needs.refill("fun", -agent.needs.value("fun"));
     ctx.scene.entity.setPose(guest.id, { position: [0, 0, 56] });
     const cashBefore = park.of(ctx).num("park.cash");
@@ -95,7 +91,7 @@ describe("brightway-park rides on the shared ride sim", () => {
       tickGuests(ctx, 0.1, 14);
     }
 
-    const view = rideView(ride)!;
+    const view = rideView(ctx, ride)!;
     expect(view.cycles).toBeGreaterThan(0);
     expect(guest.visits).toBeGreaterThan(0);
     expect(park.of(ctx).num("park.cash")).toBeGreaterThan(cashBefore);
@@ -105,33 +101,33 @@ describe("brightway-park rides on the shared ride sim", () => {
     const { ctx, ride } = open();
     // An rng of 1 never breaks, so the ride just accumulates cycles.
     syncRidePark(ctx, () => 1);
-    for (let i = 0; i < 4; i += 1) joinRide(ride, `guest#${i}`);
+    for (let i = 0; i < 4; i += 1) joinRide(ctx, ride, `guest#${i}`);
     for (let i = 0; i < 200; i += 1) tickRidePark(ctx, 0.2);
-    const worn = rideView(ride)!;
+    const worn = rideView(ctx, ride)!;
     expect(worn.wear).toBeGreaterThan(0);
 
-    const service = serviceRide(ride)!;
+    const service = serviceRide(ctx, ride)!;
     expect(service.cost).toBeGreaterThan(0);
     expect(service.wear).toBe(worn.wear);
-    expect(rideView(ride)!.wear).toBe(0);
+    expect(rideView(ctx, ride)!.wear).toBe(0);
   });
 
   test("a build or a demolition re-syncs the sim and keeps surviving ride state", () => {    const { ctx, ride } = open();
     syncRidePark(ctx, () => 1);
-    for (let i = 0; i < 3; i += 1) joinRide(ride, `guest#${i}`);
+    for (let i = 0; i < 3; i += 1) joinRide(ctx, ride, `guest#${i}`);
     for (let i = 0; i < 30; i += 1) tickRidePark(ctx, 0.2);
-    const before = rideView(ride)!;
+    const before = rideView(ctx, ride)!;
 
     const ferris = put(ctx, "ride_carousel", 24, -24);
     syncRidePark(ctx, () => 1);
-    expect(rideSystem().stats().rides).toBe(2);
-    const after = rideView(ride)!;
+    expect(rideSystem(ctx).stats().rides).toBe(2);
+    const after = rideView(ctx, ride)!;
     expect(after.cycles).toBe(before.cycles);
     expect(after.wear).toBe(before.wear);
 
     park.of(ctx).remove(ferris);
     syncRidePark(ctx, () => 1);
-    expect(rideSystem().stats().rides).toBe(1);
+    expect(rideSystem(ctx).stats().rides).toBe(1);
   });
 
   test("the train runs the track's own lap and is back at the station when it ends", () => {
@@ -152,17 +148,17 @@ describe("brightway-park rides on the shared ride sim", () => {
     const definition = rideDefinition(parkObject(ctx, coaster)!, circuit);
     expect(definition.rideSeconds).toBe(Math.max(4, circuit.lapSeconds));
 
-    for (let i = 0; i < 4; i += 1) joinRide(coaster, `guest#${i}`);
+    for (let i = 0; i < 4; i += 1) joinRide(ctx, coaster, `guest#${i}`);
     const lap = Math.max(4, circuit.lapSeconds);
     const fractions: number[] = [];
     for (let i = 0; i < 400; i += 1) {
       tickRidePark(ctx, 0.2);
-      const view = rideView(coaster)!;
+      const view = rideView(ctx, coaster)!;
       if (view.phase === "riding") fractions.push(1 - view.phaseSeconds / lap);
     }
     // It leaves the station, gets most of the way round, and the last lap fraction wraps home.
     expect(fractions[0]!).toBeLessThan(0.2);
     expect(Math.max(...fractions)).toBeGreaterThan(0.85);
-    expect(rideView(coaster)!.cycles).toBeGreaterThan(0);
+    expect(rideView(ctx, coaster)!.cycles).toBeGreaterThan(0);
   });
 });

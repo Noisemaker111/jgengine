@@ -1,4 +1,5 @@
 import type { GameContext } from "../runtime/gameContext";
+import { perContext } from "../runtime/perContext";
 
 /**
  * A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single
@@ -25,25 +26,28 @@ export interface StoreHandle<T> {
 
 /**
  * Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)`
- * with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass
- * a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and
- * its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for
- * a UI selector, no allocation on a hot path). A value that carries functions (a closure-based run
- * store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps
- * it in place. Hold such objects with `perContext` when they need no store notifications.
+ * with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. The
+ * initial value belongs to each game context: a factory runs once per context, and a plain object or
+ * array is copied once per context, so mutating one game's unwritten slot never reaches another game.
+ * Within a context an unwritten slot keeps a stable identity across reads (no per-read churn for a UI
+ * selector, no allocation on a hot path). A value that carries functions (a closure-based run store,
+ * an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in
+ * place; pass it as a factory so each context builds its own. Hold such objects with `perContext` when
+ * they need no store notifications.
  *
  * @capability typed-store a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
  */
 export function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> {
-  let resolved: { readonly value: T } | null = null;
-  const initialValue = (): T => {
-    if (typeof initial !== "function") return initial;
-    if (resolved === null) resolved = { value: (initial as () => T)() };
-    return resolved.value;
-  };
+  const initialValue = perContext((): T => {
+    if (typeof initial === "function") return (initial as () => T)();
+    if (Array.isArray(initial) || (typeof initial === "object" && initial !== null && Object.getPrototypeOf(initial) === Object.prototype)) {
+      return structuredClone(initial);
+    }
+    return initial;
+  });
   const read = (ctx: GameContext): T => {
     const value = ctx.game.store.get(key);
-    return value === undefined ? initialValue() : (value as T);
+    return value === undefined ? initialValue(ctx) : (value as T);
   };
   return {
     key,

@@ -125,7 +125,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       const main = fileOf(render(variant), "src/main.tsx");
       expect(main).toContain('editor={() => import("@jgengine/editor")}');
       expect(main).not.toContain("installSaveEndpoint");
-      expect(main).not.toContain("__jgengineSummonEditor");
+      expect(main).not.toContain("summonEditor");
     });
 
     test(`${variant}: package.json has a dev script and is ESM`, () => {
@@ -204,9 +204,9 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(script).not.toContain("puppeteer");
       expect(script).toContain("Input.dispatchMouseEvent");
       expect(script).toContain("Input.dispatchKeyEvent");
-      expect(script).toContain("__jgengineAgent");
+      expect(script).toContain("__jg?.agent");
       // The playtest rung travels: probe sampling + softlock verdict.
-      expect(script).toContain("__jgProbe");
+      expect(script).toContain("__jg?.probe");
       expect(script).toContain("--playtest");
       expect(script).toContain("softlock");
     });

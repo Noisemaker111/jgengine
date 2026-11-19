@@ -18,7 +18,7 @@ export const DECLARATION_FILE = "jgengine.json";
 
 export interface CapabilityProbe {
   kind: "devtools" | "window";
-  /** The global to read for a `window` probe, such as `__jgengineAudio`. */
+  /** The `window.__jg` field to read for a `window` probe, such as `audio`. */
   global?: string;
 }
 
@@ -62,7 +62,7 @@ interface Installed {
 const CAPABILITY = /@capability\s+([A-Za-z][\w.-]*)\s*([^\r\n*]*)/g;
 const DECLARED_EXPORT =
   /export\s+(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\*?|const|let|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)/g;
-const WINDOW_GLOBAL = /window\.(__jgengine[A-Za-z0-9_]*)/g;
+const WINDOW_GLOBAL = /publishReadout\("([A-Za-z0-9_]+)"/g;
 const DEVTOOLS = /\bdevtoolsName\b/;
 
 /** Engine source files, without tests. */
@@ -420,11 +420,11 @@ export function probeGivesUp(
 }
 
 export function windowProbeVerdict(global: string, readout: unknown): string | null {
-  if (readout === undefined || readout === null) return `window.${global} is absent on the running page`;
-  if (typeof readout !== "object") return `window.${global} reports no counters`;
+  if (readout === undefined || readout === null) return `window.__jg.${global} is absent on the running page`;
+  if (typeof readout !== "object") return `window.__jg.${global} reports no counters`;
   const fields = readout as Record<string, unknown>;
-  if (fields.error !== undefined) return `window.${global} threw ${String(fields.error)}`;
+  if (fields.error !== undefined) return `window.__jg.${global} threw ${String(fields.error)}`;
   const counters = Object.entries(fields).filter(([, value]) => typeof value === "number" && Number.isFinite(value));
-  if (counters.length === 0) return `window.${global} exists but reports no live counters`;
+  if (counters.length === 0) return `window.__jg.${global} exists but reports no live counters`;
   return null;
 }

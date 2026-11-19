@@ -41,7 +41,7 @@ export function fixtureSettings(): { controller: SettingsController; volume: num
 /**
  * Mount the real GameUI over the real skirmish wiring in a headless native tree. `press`, `key` and
  * `adjust` call the same native handlers a pointer, a key or a pad step reaches; `text` reads the
- * visible native labels, as `window.__jgNativeUi.text()` does in the page.
+ * visible native labels, as `window.__jg?.nativeUi.text()` does in the page.
  */
 export async function mountEmberUi(state: NativeFixture, width = 1280, height = 720, settings = fixtureSettings().controller) {
   const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");

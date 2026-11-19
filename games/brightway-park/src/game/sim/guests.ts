@@ -1,3 +1,4 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RideTickSink } from "@jgengine/core/sim/rides";
 import { createVisitorPopulation, type VisitorPopulation } from "@jgengine/core/sim/population";
@@ -5,7 +6,7 @@ import { createVisitorPopulation, type VisitorPopulation } from "@jgengine/core/
 import { guestCap } from "../catalog";
 import type { BuildableDef, StaffRole } from "../objects/catalog";
 import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
-import { session, type GuestState } from "../session";
+import { sessionOf, type GuestState } from "../session";
 import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
   agentOf,
@@ -99,7 +100,7 @@ function distance2(ax: number, az: number, bx: number, bz: number): number {
 
 function makeGuest(ctx: GameContext, id: string, start: readonly [number, number, number]): GuestState {
   const kind = guestKindFor(id);
-  const agent = createGuestAgent(id, kind, ctx.rng);
+  const agent = createGuestAgent(ctx, id, kind, ctx.rng);
   const guest: GuestState = {
     id,
     kind,
@@ -112,7 +113,7 @@ function makeGuest(ctx: GameContext, id: string, start: readonly [number, number
     busy: 0,
     agent: agent.snapshot(),
   };
-  session.guests.set(id, guest);
+  sessionOf(ctx).guests.set(id, guest);
   ctx.scene.entity.spawn(kind, { id, position: start, role: "npc" });
   return guest;
 }
@@ -128,7 +129,7 @@ interface Crowd {
   appeal: number;
 }
 
-let crowd: Crowd | null = null;
+const crowdSlot = perContext((): { crowd: Crowd | null } => ({ crowd: null }));
 
 /**
  * The park's visitors, on the shared population: a guest counts on site and through today's gate
@@ -136,8 +137,9 @@ let crowd: Crowd | null = null;
  * A new session (`resetSession`) or another context starts a new crowd.
  */
 function crowdOf(ctx: GameContext): Crowd {
-  if (crowd !== null && crowd.ctx === ctx && crowd.guests === session.guests) return crowd;
-  const next = { ctx, guests: session.guests, appeal: 0 } as Crowd;
+  const slot = crowdSlot(ctx);
+  if (slot.crowd !== null && slot.crowd.guests === sessionOf(ctx).guests) return slot.crowd;
+  const next = { ctx, guests: sessionOf(ctx).guests, appeal: 0 } as Crowd;
   next.population = createVisitorPopulation({
     world: {
       admit(visitor) {
@@ -149,10 +151,10 @@ function crowdOf(ctx: GameContext): Crowd {
         return position;
       },
       release(visitor) {
-        const guest = session.guests.get(visitor.id);
+        const guest = sessionOf(ctx).guests.get(visitor.id);
         if (guest !== undefined) removeGuest(ctx, guest);
       },
-      has: (id) => session.guests.has(id),
+      has: (id) => sessionOf(ctx).guests.has(id),
     },
     policy: {
       capacity: () => guestCap(park.of(ctx).num("park.rating")),
@@ -164,7 +166,7 @@ function crowdOf(ctx: GameContext): Crowd {
     idPrefix: "guest#",
     arrivalBudget: ARRIVAL_BUDGET,
   });
-  crowd = next;
+  slot.crowd = next;
   return next;
 }
 
@@ -198,7 +200,7 @@ export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): 
  */
 export function restoreGuestFlow(ctx: GameContext, flow: { guestSeq: number; spawnAcc: number }): void {
   guestPopulation(ctx).restore({
-    visitors: [...session.guests.keys()].map((id) => ({ id, admittedAt: 0 })),
+    visitors: [...sessionOf(ctx).guests.keys()].map((id) => ({ id, admittedAt: 0 })),
     arrivalsToday: park.of(ctx).num("park.guests_today"),
     departuresToday: 0,
     peakToday: 0,
@@ -223,7 +225,7 @@ function dropTarget(guest: GuestState): void {
 /** A guest finishing at a stall: pay, take the stock, fill the need. Rides settle through the sim. */
 function finishInteraction(ctx: GameContext, guest: GuestState): void {
   const obj = parkObject(ctx, guest.targetId);
-  const agent = agentOf(guest, ctx.rng);
+  const agent = agentOf(ctx, guest, ctx.rng);
   if (obj !== undefined) {
     const stall = obj.def.stall;
     const w = park.of(ctx);
@@ -248,7 +250,7 @@ function finishInteraction(ctx: GameContext, guest: GuestState): void {
 }
 
 function shouldLeave(ctx: GameContext, guest: GuestState): boolean {
-  const agent = agentOf(guest, ctx.rng);
+  const agent = agentOf(ctx, guest, ctx.rng);
   return park.of(ctx).fact("park.open") !== true || guest.money < MIN_SPEND || agent.mood().score < 18 || guest.visits >= MAX_VISITS;
 }
 
@@ -267,11 +269,11 @@ function despawnGuest(ctx: GameContext, guest: GuestState): void {
 }
 
 function removeGuest(ctx: GameContext, guest: GuestState): void {
-  if (guest.targetId !== null) leaveRide(guest.targetId, guest.id);
-  guest.agent = agentOf(guest, ctx.rng).snapshot();
-  forgetAgent(guest.id);
+  if (guest.targetId !== null) leaveRide(ctx, guest.targetId, guest.id);
+  guest.agent = agentOf(ctx, guest, ctx.rng).snapshot();
+  forgetAgent(ctx, guest.id);
   if (ctx.scene.entity.selection.has(guest.id)) ctx.scene.entity.selection.remove(guest.id);
-  session.guests.delete(guest.id);
+  sessionOf(ctx).guests.delete(guest.id);
   ctx.scene.entity.despawn(guest.id);
   park.emit(ctx, { kind: "leave" });
 }
@@ -303,7 +305,7 @@ function queuePenalty(ctx: GameContext, guest: GuestState): number {
   if (obj.def.ride !== undefined) {
     // Standing in line is what wears a guest down; walking towards a ride is not a wait yet.
     if (guest.phase !== "queued") return 0;
-    const view = rideView(obj.id);
+    const view = rideView(ctx, obj.id);
     if (view === null) return 0;
     const seconds = view.queue.wait.seconds + (view.phase === "broken" ? 45 : 0);
     return -Math.min(14, seconds * 0.18);
@@ -319,7 +321,7 @@ function queuePenalty(ctx: GameContext, guest: GuestState): number {
 function makeRideSink(ctx: GameContext): RideTickSink {
   return {
     onBoard(rideId, guestId) {
-      const guest = session.guests.get(guestId);
+      const guest = sessionOf(ctx).guests.get(guestId);
       const obj = parkObject(ctx, rideId);
       if (guest === undefined || obj === undefined) return;
       const price = ridePrice(park.of(ctx), obj.kind);
@@ -333,15 +335,15 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       ctx.scene.entity.setPose(guestId, { position: [obj.x, 0, obj.z] });
     },
     onAlight(rideId, guestId) {
-      const guest = session.guests.get(guestId);
+      const guest = sessionOf(ctx).guests.get(guestId);
       const obj = parkObject(ctx, rideId);
       if (guest === undefined || obj === undefined) return;
-      const agent = agentOf(guest, ctx.rng);
-      agent.needs.refill("fun", rideFun(guest.kind, obj));
+      const agent = agentOf(ctx, guest, ctx.rng);
+      agent.needs.refill("fun", rideFun(ctx, guest.kind, obj));
       // A wild ride unsettles the stomach in proportion to its nausea rating.
-      const nausea = rideView(rideId)?.ratings.nausea ?? 0;
+      const nausea = rideView(ctx, rideId)?.ratings.nausea ?? 0;
       if (nausea > 0) agent.needs.refill("nausea", -nausea * 6);
-      const fun = rideFun(guest.kind, obj);
+      const fun = rideFun(ctx, guest.kind, obj);
       if (agent.needs.fraction("nausea") < 0.4) think(guest, "sick", `The ${obj.def.label} made me feel sick`, ctx.time.now());
       else if (fun >= 6) think(guest, "great_ride", `The ${obj.def.label} was great!`, ctx.time.now());
       guest.visits += 1;
@@ -371,12 +373,12 @@ export function tickRidePark(ctx: GameContext, dt: number): void {
 
 /** Walk where the agent chose; a guest gives up on a line it has no hope of reaching the front of. */
 function holdPlaceInLine(ctx: GameContext, guest: GuestState, obj: ParkObject, dt: number): void {
-  const view = rideView(obj.id);
+  const view = rideView(ctx, obj.id);
   if (view === null) {
     dropTarget(guest);
     return;
   }
-  const index = queuePosition(obj.id, guest.id);
+  const index = queuePosition(ctx, obj.id, guest.id);
   moveGuest(ctx, guest, queueSpot(ctx, obj, index), dt);
   if (ctx.time.now() < guest.targetUntil) return;
   guest.targetUntil = ctx.time.now() + QUEUE_CHECK_SECONDS;
@@ -385,9 +387,9 @@ function holdPlaceInLine(ctx: GameContext, guest: GuestState, obj: ParkObject, d
   const tolerance = guestTaste(guest.kind).queueTolerance * ((accessOf(ctx, obj.id)?.line.length ?? 0) > 0 ? LINE_TOLERANCE : 1);
   const hopeless = view.phase === "broken" ? waitFromHere > tolerance * 0.5 : waitFromHere > tolerance;
   if (!hopeless) return;
-  leaveRide(obj.id, guest.id);
+  leaveRide(ctx, obj.id, guest.id);
   dropTarget(guest);
-  agentOf(guest, ctx.rng).moodSources.setSource("queue", -14);
+  agentOf(ctx, guest, ctx.rng).moodSources.setSource("queue", -14);
   if (view.phase === "broken") think(guest, "broken", `The ${obj.def.label} has broken down`, ctx.time.now());
   else think(guest, "queue_long", `The queue for the ${obj.def.label} is too long`, ctx.time.now());
 }
@@ -395,16 +397,16 @@ function holdPlaceInLine(ctx: GameContext, guest: GuestState, obj: ParkObject, d
 function arriveAtRide(ctx: GameContext, guest: GuestState, obj: ParkObject): void {
   const w = park.of(ctx);
   const price = ridePrice(w, obj.kind);
-  const excitement = rideView(obj.id)?.ratings.excitement ?? 0;
+  const excitement = rideView(ctx, obj.id)?.ratings.excitement ?? 0;
   if (price > fairPrice(w, obj, excitement) || guest.money < price) {
     if (guest.money >= price) park.emit(ctx, { kind: "refused_price" });
-    agentOf(guest, ctx.rng).moodSources.setSource("price", -6);
+    agentOf(ctx, guest, ctx.rng).moodSources.setSource("price", -6);
     if (guest.money >= price) think(guest, "too_expensive", `I'm not paying $${price} for the ${obj.def.label}`, ctx.time.now());
     else think(guest, "no_money", `I can't afford the ${obj.def.label}`, ctx.time.now());
     dropTarget(guest);
     return;
   }
-  if (!joinRide(obj.id, guest.id)) {
+  if (!joinRide(ctx, obj.id, guest.id)) {
     dropTarget(guest);
     return;
   }
@@ -414,11 +416,11 @@ function arriveAtRide(ctx: GameContext, guest: GuestState, obj: ParkObject): voi
 }
 
 /** Who is heading for or standing at each structure this tick: the crowd the next guest prices in. */
-function countOccupants(): void {
-  session.occupants.clear();
-  for (const guest of session.guests.values()) {
+function countOccupants(ctx: GameContext): void {
+  sessionOf(ctx).occupants.clear();
+  for (const guest of sessionOf(ctx).guests.values()) {
     if (guest.targetId === null || guest.phase === "leaving") continue;
-    session.occupants.set(guest.targetId, (session.occupants.get(guest.targetId) ?? 0) + 1);
+    sessionOf(ctx).occupants.set(guest.targetId, (sessionOf(ctx).occupants.get(guest.targetId) ?? 0) + 1);
   }
 }
 
@@ -428,9 +430,9 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
   const litter = w.num("park.litter");
   const buzz = w.num("park.buzz") * BUZZ_WEIGHT;
   let vandalism = 0;
-  countOccupants();
-  for (const guest of session.guests.values()) {
-    const agent = agentOf(guest, ctx.rng);
+  countOccupants(ctx);
+  for (const guest of sessionOf(ctx).guests.values()) {
+    const agent = agentOf(ctx, guest, ctx.rng);
     agent.moodSources.setSource("litter", -litter * 0.02);
     agent.moodSources.setSource("buzz", buzz);
     const at = ctx.scene.entity.get(guest.id)?.position;
@@ -455,7 +457,7 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
     if (guest.phase === "queued" || guest.phase === "riding") {
       const obj = parkObject(ctx, guest.targetId);
       if (obj === undefined) {
-        if (guest.targetId !== null) leaveRide(guest.targetId, guest.id);
+        if (guest.targetId !== null) leaveRide(ctx, guest.targetId, guest.id);
         dropTarget(guest);
       } else if (guest.phase === "queued") {
         holdPlaceInLine(ctx, guest, obj, dt);
@@ -523,15 +525,15 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
 
   if (vandalism > 0) w.change({ "park.litter": vandalism });
   // The crowd's mood and its complaints are world facts: the rating, the HUD and the scenarios read them there.
-  session.thoughts = tallyThoughts(session.guests.values(), now);
-  w.set("park.complaints", session.thoughts.complaintShare);
-  if (session.guests.size > 0) w.set("park.mood", parkMood());
+  sessionOf(ctx).thoughts = tallyThoughts(sessionOf(ctx).guests.values(), now);
+  w.set("park.complaints", sessionOf(ctx).thoughts.complaintShare);
+  if (sessionOf(ctx).guests.size > 0) w.set("park.mood", parkMood(ctx));
 }
 
 /** Refresh the plain guest state from the live agents before a save is written. */
 export { syncAgentStates };
 
 /** Drop every live agent - a new park or a restore replaces them from their own snapshots. */
-export function resetGuestAgents(): void {
-  clearAgents();
+export function resetGuestAgents(ctx: GameContext): void {
+  clearAgents(ctx);
 }

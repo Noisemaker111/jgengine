@@ -21,6 +21,7 @@ import { installShadowCache } from "./shadowCache.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { publishOnPage } from "../runtime/pageHandle";
 
 /** three.js lights default to white; an unset light colour means this. */
 const LIGHT_DEFAULT_COLOR = "#ffffff";
@@ -169,6 +170,7 @@ export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile |
   let cull: ShadowCasterCull | null = null;
   let casterRadius = -1;
   let shadowCache: ReturnType<typeof installShadowCache> | null = null;
+  let unpublishShadowCache: (() => void) | null = null;
   let offCacheProbe: (() => void) | null = null;
   let offShadowProbe: (() => void) | null = null;
   // Counts the frames this draw sees, before the render: the shadow cache serves each light's map
@@ -205,7 +207,7 @@ export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile |
       const cache = installShadowCache(state.gl, state.rootScene ?? state.scene, undefined, () => frameCount);
       shadowCache = cache;
       if (typeof window !== "undefined") {
-        window.__jgShadowCache = cache.handle;
+        unpublishShadowCache = publishOnPage("shadowCache", cache.handle);
         // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
         if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
       }
@@ -252,10 +254,10 @@ export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile |
       cull = null;
       casterRadius = -1;
       if (shadowCache !== null) {
-        const handle = shadowCache.handle;
         shadowCache.dispose();
         shadowCache = null;
-        if (typeof window !== "undefined" && window.__jgShadowCache === handle) delete window.__jgShadowCache;
+        unpublishShadowCache?.();
+        unpublishShadowCache = null;
       }
       offCacheProbe?.();
       offCacheProbe = null;

@@ -34,6 +34,9 @@ import { registerAllSceneKinds } from "@jgengine/core/scene/allSceneKinds";
 import { EDITOR_RPC_HANDLERS, type HandlerContext } from "./handlers";
 import { warmNavBake } from "./handlers/navmesh";
 import { emitEditorConsole } from "./shell/consoleSink";
+import { onPage, publishOnPage } from "@jgengine/core/runtime/pageHandle";
+// The editorHost field of window.__jg is declared beside the agent bridge that reads it.
+import type {} from "@jgengine/core/devtools/agentBridge.draw";
 
 registerAllSceneKinds();
 
@@ -449,21 +452,15 @@ export interface EditorHostApi {
   handle(request: EditorBridgeRequest): EditorBridgeResponse;
 }
 
-const GLOBAL_KEY = "__jgengineEditorHost";
 
 /** Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn. */
 export function installEditorHost(api: EditorHostApi): () => void {
-  const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: EditorHostApi };
-  root[GLOBAL_KEY] = api;
-  return () => {
-    if (root[GLOBAL_KEY] === api) delete root[GLOBAL_KEY];
-  };
+  return publishOnPage("editorHost", api);
 }
 
 /** Retrieves the globally installed editor host, or null if none is mounted. @internal */
 export function getEditorHost(): EditorHostApi | null {
-  const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: EditorHostApi };
-  return root[GLOBAL_KEY] ?? null;
+  return (onPage("editorHost") as EditorHostApi | undefined) ?? null;
 }
 
 /** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. @internal */

@@ -5,7 +5,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "../content";
 import { agentOf, clearAgents, guestTargets, liveAgent } from "../agents";
-import { resetSession, session } from "../session";
+import { resetSession, sessionOf } from "../session";
 import { cellFor, freshWorld, park, placeFree } from "../park";
 import { tickStaff } from "../staff";
 import { joinRide, resetRides, syncRidePark } from "../rides";
@@ -34,24 +34,19 @@ function put(ctx: ReturnType<typeof context>, kind: string, x: number, z: number
   return id;
 }
 
-function onlyGuest() {
-  const guest = [...session.guests.values()][0]!;
+function onlyGuest(ctx: ReturnType<typeof context>) {
+  const guest = [...sessionOf(ctx).guests.values()][0]!;
   return guest;
 }
 
 function fillNeeds(ctx: ReturnType<typeof context>, values: Record<string, number>): void {
-  const agent = agentOf(onlyGuest(), ctx.rng);
+  const agent = agentOf(ctx, onlyGuest(ctx), ctx.rng);
   for (const [need, value] of Object.entries(values)) {
     agent.needs.refill(need, value - agent.needs.value(need));
   }
 }
 
 describe("brightway-park guest agents", () => {
-  beforeEach(() => {
-    resetSession();
-    resetRides();
-    clearAgents();
-  });
 
   test("a hungry guest picks the food stall its own need and mood point at", () => {
     const ctx = context();
@@ -61,14 +56,14 @@ describe("brightway-park guest agents", () => {
 
     tickGuests(ctx, 0.1, 0);
 
-    expect(onlyGuest().targetId).toBe(stall);
-    expect(liveAgent(onlyGuest().id)?.action().option).toBe("hunger");
+    expect(onlyGuest(ctx).targetId).toBe(stall);
+    expect(liveAgent(ctx, onlyGuest(ctx).id)?.action().option).toBe("hunger");
   });
 
   test("an empty stall and a broke guest are not offered the stall at all", () => {
     const ctx = context();
     seedGuests(ctx, 1);
-    const guest = onlyGuest();
+    const guest = onlyGuest(ctx);
     fillNeeds(ctx, { hunger: 5, thirst: 95, fun: 95, energy: 95 });
 
     const stall = put(ctx, "stall_food", 0, 8);
@@ -89,15 +84,15 @@ describe("brightway-park guest agents", () => {
     fillNeeds(ctx, { hunger: 90, thirst: 90, fun: 90, energy: 90 });
     const w = park.of(ctx);
     tickGuests(ctx, 0.1, 0);
-    const clean = liveAgent(onlyGuest().id)!.mood().score;
+    const clean = liveAgent(ctx, onlyGuest(ctx).id)!.mood().score;
 
     w.change({ "park.litter": 80 });
     tickGuests(ctx, 0.1, 0);
-    expect(liveAgent(onlyGuest().id)!.mood().score).toBeLessThan(clean);
+    expect(liveAgent(ctx, onlyGuest(ctx).id)!.mood().score).toBeLessThan(clean);
 
     w.change({ "park.litter": -80 });
     tickGuests(ctx, 0.1, 0);
-    expect(liveAgent(onlyGuest().id)!.mood().score).toBeGreaterThan(clean - 1);
+    expect(liveAgent(ctx, onlyGuest(ctx).id)!.mood().score).toBeGreaterThan(clean - 1);
   });
 
   test("eating fills the need and the mood follows it up", () => {
@@ -106,17 +101,17 @@ describe("brightway-park guest agents", () => {
     const cashBefore = park.of(ctx).num("park.cash");
     seedGuests(ctx, 1);
     fillNeeds(ctx, { hunger: 10, thirst: 90, fun: 80, energy: 90 });
-    ctx.scene.entity.setPose(onlyGuest().id, { position: [0, 0, 14] });
+    ctx.scene.entity.setPose(onlyGuest(ctx).id, { position: [0, 0, 14] });
 
     tickGuests(ctx, 0.1, 0);
-    const hungry = liveAgent(onlyGuest().id)!.mood().score;
+    const hungry = liveAgent(ctx, onlyGuest(ctx).id)!.mood().score;
 
     for (let i = 0; i < 120; i += 1) tickGuests(ctx, 0.1, 0);
 
-    const agent = liveAgent(onlyGuest().id)!;
+    const agent = liveAgent(ctx, onlyGuest(ctx).id)!;
     expect(agent.needs.value("hunger")).toBeGreaterThan(60);
     expect(agent.mood().score).toBeGreaterThan(hungry);
-    expect(onlyGuest().visits).toBeGreaterThanOrEqual(1);
+    expect(onlyGuest(ctx).visits).toBeGreaterThanOrEqual(1);
     // The sale is the world's: the stall's stock went down and the money went into the till.
     expect(park.of(ctx).num(`${stall}.sold`)).toBeGreaterThanOrEqual(1);
     expect(park.of(ctx).num("park.cash")).toBeGreaterThan(cashBefore);
@@ -125,14 +120,14 @@ describe("brightway-park guest agents", () => {
   test("a longer line is priced as a worse choice than an empty one", () => {
     const ctx = context();
     seedGuests(ctx, 1);
-    const guest = onlyGuest();
+    const guest = onlyGuest(ctx);
     fillNeeds(ctx, { hunger: 95, thirst: 95, fun: 5, energy: 95 });
 
     const ride = put(ctx, "ride_carousel", 0, 20);
     syncRidePark(ctx);
     const empty = guestTargets(ctx, guest, 0, [0, 0, 0]).find((target) => target.target === ride)!;
     // Five real guests join the shared line; the cost a sixth guest sees comes from that line.
-    for (let i = 0; i < 5; i += 1) joinRide(ride, `ghost#${i}`);
+    for (let i = 0; i < 5; i += 1) joinRide(ctx, ride, `ghost#${i}`);
     const busy = guestTargets(ctx, guest, 0, [0, 0, 0]).find((target) => target.target === ride)!;
 
     expect(busy.cost!).toBeGreaterThan(empty.cost!);
@@ -144,8 +139,8 @@ describe("brightway-park guest agents", () => {
     ctx.time.hydrate({ ...ctx.time.snapshot(), now: 60, paused: true });
 
     tickStaff(ctx, 0.1);
-    expect(session.staff.size).toBe(1);
-    const staff = [...session.staff.values()][0]!;
+    expect(sessionOf(ctx).staff.size).toBe(1);
+    const staff = [...sessionOf(ctx).staff.values()][0]!;
     const start = ctx.scene.entity.get(staff.id)!.position;
 
     for (let i = 0; i < 40; i += 1) tickStaff(ctx, 0.1);
@@ -170,28 +165,28 @@ describe("brightway-park guest agents", () => {
   test("guests say what is wrong, and the park counts the complaints", () => {
     const ctx = context();
     seedGuests(ctx, 4);
-    const [a, b, c] = [...session.guests.values()];
+    const [a, b, c] = [...sessionOf(ctx).guests.values()];
     think(a!, "too_expensive", "I'm not paying $9 for the Burger Stall", 10);
     think(b!, "queue_long", "The queue for the Carousel is too long", 10);
     think(c!, "great_ride", "The Carousel was great!", 10);
     // The same thought is not repeated within a few seconds.
     think(a!, "too_expensive", "again", 12);
     expect(a!.thoughts!.length).toBe(1);
-    const tally = tallyThoughts(session.guests.values(), 12);
+    const tally = tallyThoughts(sessionOf(ctx).guests.values(), 12);
     expect(tally.complaintShare).toBeCloseTo(0.5, 5);
     expect(tally.top.map((entry) => entry.id).sort()).toEqual(["great_ride", "queue_long", "too_expensive"]);
     // Old thoughts stop counting.
-    expect(tallyThoughts(session.guests.values(), 200).complaintShare).toBe(0);
+    expect(tallyThoughts(sessionOf(ctx).guests.values(), 200).complaintShare).toBe(0);
   });
 
   test("demolishing the post sends its janitor home", () => {
     const ctx = context();
     const post = put(ctx, "staff_janitor", 12, -12);
     tickStaff(ctx, 0.1);
-    const id = [...session.staff.values()][0]!.id;
+    const id = [...sessionOf(ctx).staff.values()][0]!.id;
     park.of(ctx).remove(post);
     tickStaff(ctx, 0.1);
-    expect(session.staff.size).toBe(0);
+    expect(sessionOf(ctx).staff.size).toBe(0);
     expect(ctx.scene.entity.get(id)).toBeNull();
   });
 });

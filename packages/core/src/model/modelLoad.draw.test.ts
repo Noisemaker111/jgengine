@@ -308,7 +308,7 @@ describe("missing models are named", () => {
     }
     off();
     expect(modelLoadFallbacks().map((entry) => entry.name)).toEqual(["pack/Crate"]);
-    expect((globalThis as { __jgengineMissingModels?: unknown }).__jgengineMissingModels).toEqual(modelLoadFallbacks());
+    expect((globalThis.__jg as { missingModels?: unknown } | undefined)?.missingModels).toEqual(modelLoadFallbacks());
     expect((gltf as unknown as GLTF).userData.jgengineMissingModel).toBe("pack/Crate");
     expect(told).toBe(1);
   });

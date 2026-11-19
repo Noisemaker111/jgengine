@@ -21,11 +21,8 @@ import { advanceSimulation, type SimAdvanceResult } from "../sim/simStepper";
 import { teleportPlayer } from "../movement/teleport";
 import { playGateReasons } from "../game/controlGate";
 
-/**
- * The input a capture command named by a bare string runs with: a neutral look, so a command that
- * reads an aim or heading gets one. Shared by the dev runner's capture mode and `capture_run`.
- */
-export const CAPTURE_COMMAND_INPUT = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } } as const;
+import { captureCommand } from "../game/captureCommand";
+import { onPage, publishOnPage } from "../runtime/pageHandle";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
@@ -141,11 +138,11 @@ async function saveScene(editorHost: EditorHost): Promise<AgentBridgeResponse> {
   }
 }
 
-declare global {
-  interface Window {
-    __jgengineAgent?: { handle(request: AgentBridgeRequest): unknown };
-    __jgengineEditorHost?: EditorHost;
-    __jgengineSummonEditor?: () => void;
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    agent?: { handle(request: AgentBridgeRequest): unknown };
+    editorHost?: EditorHost;
+    summonEditor?: () => void;
   }
 }
 
@@ -172,7 +169,7 @@ function canvasPanels() {
 }
 
 function writeUiPanelDocument(id: string, panel: EditorUiPanelLayout): boolean {
-  const host = window.__jgengineEditorHost;
+  const host = onPage("editorHost");
   if (host === undefined) return false;
   host.handle({
     method: "dispatch",
@@ -200,7 +197,7 @@ function panelLayoutSnapshot(
  * @internal
  * Headless control plane spanning the F2 chord family: debug mode (F2+D),
  * canvas mode (F2+C), and editor mode (F2+E). Installed on every
- * GamePlayerShell mount as `window.__jgengineAgent`; unknown verbs delegate
+ * GamePlayerShell mount as `window.__jg.agent`; unknown verbs delegate
  * to the editor host when one is live, so a single RPC surface covers all
  * three modes for `bun run drive --rpc`.
  */
@@ -229,8 +226,8 @@ export function installAgentBridge(options: {
             debug: { available: devtoolsEnabled, open: isDevtoolsOpen(), chord: "F2+D" },
             canvas: { available: listActiveHudLayouts().length > 0, chord: "F2+C" },
             editor: {
-              available: window.__jgengineEditorHost !== undefined || window.__jgengineSummonEditor !== undefined,
-              live: window.__jgengineEditorHost !== undefined,
+              available: onPage("editorHost") !== undefined || onPage("summonEditor") !== undefined,
+              live: onPage("editorHost") !== undefined,
               chord: "F2+E",
             },
           },
@@ -335,8 +332,7 @@ export function installAgentBridge(options: {
         const skipUnregistered = request["skipUnregistered"] === true;
         const ran: { name: string; status: string; reason?: string }[] = [];
         for (const entry of entries) {
-          const name = typeof entry === "string" ? entry : entry.name;
-          const input = typeof entry === "string" ? CAPTURE_COMMAND_INPUT : (entry.input ?? CAPTURE_COMMAND_INPUT);
+          const { name, input } = captureCommand(entry);
           if (!ctx.game.commands.has(name)) {
             if (skipUnregistered) {
               ran.push({ name, status: "unregistered" });
@@ -491,22 +487,23 @@ export function installAgentBridge(options: {
         return { ok: true };
       }
       case "editor_summon": {
-        if (window.__jgengineEditorHost !== undefined) return { ok: true, live: true };
-        if (window.__jgengineSummonEditor === undefined) {
+        if (onPage("editorHost") !== undefined) return { ok: true, live: true };
+        const summon = onPage("summonEditor");
+        if (summon === undefined) {
           return { ok: false, error: "no editor summoner on this page — open with ?mode=editor" };
         }
-        window.__jgengineSummonEditor();
-        return waitForEditorHost(() => window.__jgengineEditorHost !== undefined).then((live) =>
+        summon();
+        return waitForEditorHost(() => onPage("editorHost") !== undefined).then((live) =>
           live ? { ok: true, live: true } : { ok: false, error: "editor did not mount within 15s" },
         );
       }
       case "save_scene": {
-        const editorHost = window.__jgengineEditorHost;
+        const editorHost = onPage("editorHost");
         if (editorHost === undefined) return { ok: false, error: "no live editor — editor_summon or mode=editor first" };
         return saveScene(editorHost);
       }
       default: {
-        const editorHost = window.__jgengineEditorHost;
+        const editorHost = onPage("editorHost");
         if (editorHost !== undefined) return editorHost.handle(request) as AgentBridgeResponse;
         return {
           ok: false,
@@ -516,10 +513,10 @@ export function installAgentBridge(options: {
     }
   };
 
-  window.__jgengineAgent = { handle };
+  const unpublish = publishOnPage("agent", { handle });
   return () => {
     coverRelease?.();
     coverRelease = null;
-    if (window.__jgengineAgent?.handle === handle) delete window.__jgengineAgent;
+    unpublish();
   };
 }

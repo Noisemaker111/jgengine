@@ -2153,12 +2153,12 @@ export interface MissingModel {
 }
 
 /**
- * Every model the page could not load and drew as a placeholder box (`__jgengineMissingModels`,
+ * Every model the page could not load and drew as a placeholder box (`window.__jg.missingModels`,
  * published by the shell's model loader). A capture that rendered one is not evidence of the game.
  */
 export async function readMissingModels(session: CdpSession): Promise<MissingModel[]> {
   const raw = await session.evaluate<MissingModel[] | null>(`(() => {
-    const list = globalThis.__jgengineMissingModels;
+    const list = globalThis.__jg?.missingModels;
     return Array.isArray(list) ? list.map((entry) => ({ name: String(entry.name), url: String(entry.url), message: String(entry.message) })) : [];
   })()`);
   return raw ?? [];
@@ -2307,9 +2307,9 @@ const readinessInstalled = new WeakSet<CdpSession>();
 /**
  * Runs at document start in every capture page: tells the engine's browser-suspension observer that a
  * capture host holds play, so a focus or visibility change on this shared machine never auto-pauses
- * the game mid-drive. Must name `CAPTURE_HOLD_KEY` from `@jgengine/ui`'s `browserLifecycle`.
+ * the game mid-drive. Sets the `captureHold` field `browserLifecycle` reads on `window.__jg`.
  */
-export const CAPTURE_HOLD_SOURCE = "globalThis.__jgengineCaptureHold = true;";
+export const CAPTURE_HOLD_SOURCE = "(globalThis.__jg ??= {}).captureHold = true;";
 
 const playHeld = new WeakSet<CdpSession>();
 

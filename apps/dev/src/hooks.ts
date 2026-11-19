@@ -5,6 +5,7 @@ import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/
 import { deferUnhandledPresentationError } from "@jgengine/shell/presentationRecovery";
 
 import { formatLoadError } from "./appShared";
+import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
 
 const EDITOR_MODE_PARAM = "mode";
 const EDITOR_MODE_VALUE = "editor";
@@ -41,7 +42,7 @@ function setEditorOpen(open: boolean): void {
 }
 
 /**
- * URL-backed editor summon: opens the editor via `window.__jgengineSummonEditor()` or the F2+E
+ * URL-backed editor summon: opens the editor via `window.__jg.summonEditor()` or the F2+E
  * chord (in play mode) and via `?mode=editor` at load. The URL is the single source of truth —
  * toggling writes the flag through the shared {@link writeUrlParam} seam so the address bar is the
  * honest record — share it to reopen, strip it to drop back to the game. `exitEditor` closes the
@@ -53,7 +54,7 @@ export function useEditorSummon(mode: string): EditorSummon {
   useEffect(() => {
     if (editorOpen || mode !== "play") return;
     const summon = () => setEditorOpen(true);
-    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
+    const unpublish = publishOnPage("summonEditor", summon);
     let f2Held = false;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F2") {
@@ -78,8 +79,7 @@ export function useEditorSummon(mode: string): EditorSummon {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
-      const host = window as { __jgengineSummonEditor?: () => void };
-      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
+      unpublish();
     };
   }, [editorOpen, mode]);
 

@@ -146,7 +146,7 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
 async function startCaptureScene(session: CdpSession): Promise<string> {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     const reply = await session.evaluate<{ ok: boolean; error?: string; ran?: { name: string; status: string; reason?: string }[] } | null>(
-      `window.__jgengineAgent?.handle?.({ method: "capture_run", skipUnregistered: true }) ?? null`,
+      `window.__jg?.agent?.handle?.({ method: "capture_run", skipUnregistered: true }) ?? null`,
     ).catch(() => null);
     if (reply?.ok === true) {
       const rejected = (reply.ran ?? []).filter((entry) => entry.status === "rejected");
@@ -205,7 +205,7 @@ export interface DesktopRecord {
   breakdown: FrameBreakdownSummary | null;
   /** The backend the run asked for and the one that drew (WebGPU falls back to WebGL where it is missing). */
   backend: { asked: RendererBackend; drawing: RendererBackend; warnings: string[] };
-  /** The shadow cache's counters over the measured window (`window.__jgShadowCache`); null when the page has none. */
+  /** The shadow cache's counters over the measured window (`window.__jg?.shadowCache`); null when the page has none. */
   shadowCache: ShadowCacheStats | null;
 }
 
@@ -301,9 +301,9 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     const release = await startPath(session, "walk");
     await Bun.sleep(2_000);
     if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
-    await session.evaluate<void>("window.__jgShadowCache?.resetStats()");
+    await session.evaluate<void>("window.__jg?.shadowCache?.resetStats()");
     const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(args.seconds * 1000), { awaitPromise: true })) ?? [];
-    const shadowCache = (await session.evaluate<ShadowCacheStats | null>("window.__jgShadowCache?.stats() ?? null")) ?? null;
+    const shadowCache = (await session.evaluate<ShadowCacheStats | null>("window.__jg?.shadowCache?.stats() ?? null")) ?? null;
     // Frame callbacks name their source through the private maps the build wrote beside the app.
     const { privateMap } = await privateMapReader(session, args.maps);
     const breakdown = await readBreakdown(session, privateMap);
@@ -638,7 +638,7 @@ async function main(argv: string[]): Promise<void> {
       const { build, privateMap } = await privateMapReader(session, resolve(argv[4] ?? ""));
       const breakdown = await readBreakdown(session, privateMap);
       if (breakdown === null) throw new Error("desktop frame report unavailable; diagnostic telemetry has not started");
-      const report = await session.evaluate<unknown>("globalThis.__JG?.report?.() ?? null");
+      const report = await session.evaluate<unknown>("globalThis.__jg?.report?.() ?? null");
       return { breakdown, report, build };
     })(), 30_000);
     const out = resolve(argv[2]);

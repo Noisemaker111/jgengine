@@ -16,10 +16,10 @@ export default defineFlow(game, {
     // Software Rune draws a few frames a second here, so wait for the title's controls to be pressable again.
     const backToTitle = async () => {
       await f.click("Back");
-      await f.waitForPage("window.__jgNativeUi?.point('Credits') != null && window.__jgNativeUi?.point('Back') == null", { timeoutMs: 20000, note: "Back returns to the title" });
+      await f.waitForPage("window.__jg?.nativeUi?.point('Credits') != null && window.__jg?.nativeUi?.point('Back') == null", { timeoutMs: 20000, note: "Back returns to the title" });
       await settle();
     };
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 60000, note: "native Rune submitted a frame" });
     await f.see(/new defense/i, { timeoutMs: 40000 });
     await settle();
     await shot("title");

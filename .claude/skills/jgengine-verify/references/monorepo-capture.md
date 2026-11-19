@@ -33,7 +33,7 @@ Use `drive --device mobile --size full` for ordered gameplay at shoot's shared p
 
 Drive forwards page warnings and errors, including the native renderer and asset diagnostics, throughout navigation and interaction. Both commands clear every planned screenshot and sidecar before connecting, so an unavailable server or an earlier failed interaction leaves no stale image at a requested output path.
 
-The external page must declare `data-jg-capture="ready"` after an honest frame, as required by [SKILL.md](../SKILL.md). Neither a sized canvas nor an agent bridge substitutes for readiness. Published native hosts that do not expose `__jgProbe` return null from `--probe`; use their `debug_snapshot` RPC for diagnostics and deterministic gameplay assertions for progress rather than treating render metrics as player movement.
+The external page must declare `data-jg-capture="ready"` after an honest frame, as required by [SKILL.md](../SKILL.md). Neither a sized canvas nor an agent bridge substitutes for readiness. Published native hosts that do not expose `__jg.probe` return null from `--probe`; use their `debug_snapshot` RPC for diagnostics and deterministic gameplay assertions for progress rather than treating render metrics as player movement.
 
 Drive authored UI forms with ordered `--fill "Scene name=Courtyard"` and palette placement with `--double-click "Rock"`; both monorepo and portable drives use the target guards described in [the verification skill](../SKILL.md).
 

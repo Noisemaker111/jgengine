@@ -40,12 +40,12 @@ describe("a park day: continuous, carries nothing, offers nothing", () => {
   });
 
   test("the probe reports the live day without changing it", () => {
-    const scope = globalThis as typeof globalThis & { __jgengineRun?: { read(): SessionReadout } };
+    const scope = globalThis as { __jg?: { run?: { read(): SessionReadout } } };
     const park = parkDay();
     park.start();
     const stop = installSessionProbe(park);
     try {
-      expect(scope.__jgengineRun?.read()).toEqual({
+      expect(scope.__jg?.run?.read()).toEqual({
         session: 1,
         phase: "open",
         kind: "day",
@@ -56,7 +56,7 @@ describe("a park day: continuous, carries nothing, offers nothing", () => {
     } finally {
       stop();
     }
-    expect(scope.__jgengineRun).toBeUndefined();
+    expect(scope.__jg?.run).toBeUndefined();
   });
 });
 

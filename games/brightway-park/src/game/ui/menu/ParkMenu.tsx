@@ -13,7 +13,8 @@ import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";
 import { savePark, scenariosWon } from "../../persistence";
 import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
-import { session } from "../../session";
+import { perContext } from "@jgengine/core/runtime/perContext";
+import { sessionOf } from "../../session";
 import { park } from "../../park";
 import { parkFlags } from "../parkFlags";
 import { resultOpen } from "../ParkFlow";
@@ -21,7 +22,7 @@ import { Button, CORAL, CREAM, DISPLAY, GOLD, Heading, INK, PENCIL, Row, Tag, Te
 import { ParkSettings } from "./ParkSettings";
 
 /** Capture-only focus request: a shot declares which menu pane (`id`) and which HUD window (`panel`) it wants open. */
-export const parkFocus: { id: string | null; panel: string | null } = { id: null, panel: null };
+export const parkFocusOf = perContext((): { id: string | null; panel: string | null } => ({ id: null, panel: null }));
 
 export interface ParkMenuProps {
   reducedMotion: boolean;
@@ -72,7 +73,7 @@ function Verb({ label, hint, disabled, onPress, primary }: { label: string; hint
 
 /** Brightway Park's front end: the park behind, the gate board in front. A pause board while the park is held. */
 export function ParkMenu(props: ParkMenuProps) {
-  const v = useGameStore((c) => { const flags = parkFlags(park.of(c)); return { paused: c.time.isPaused(), result: resultOpen(c), ended: flags.gameOver || flags.ribbon, started: session.started, status: session.saveStatus }; });
+  const v = useGameStore((c) => { const flags = parkFlags(park.of(c)); return { paused: c.time.isPaused(), result: resultOpen(c), ended: flags.gameOver || flags.ribbon, started: sessionOf(c).started, status: sessionOf(c).saveStatus }; });
   if (v.started) return v.paused && !v.result ? <PauseBoard {...props} /> : null;
   return v.ended ? null : <TitleBoard {...props} />;
 }
@@ -84,7 +85,7 @@ function TitleBoard(props: ParkMenuProps) {
   const slots = useSaveSlots(parkSlots);
   const recent = slots.find((slot) => !slot.empty) ?? null;
   useEffect(() => { void refreshParkSlot(ctx); }, []);
-  const flow = usePanes("main", parkFocus.id, ["new", "saves", "settings", "credits"]);
+  const flow = usePanes("main", parkFocusOf(ctx).id, ["new", "saves", "settings", "credits"]);
   const back = flow.pop;
   const scenario = (id: string) => { commands.run("park.scenario", { id }); commands.run("park.start", {}); };
   const savedDay = recent === null ? null : String(recent.meta["day"] ?? day ?? 1);
@@ -176,7 +177,7 @@ function PauseBoard(props: ParkMenuProps) {
   const ctx = useGameContext();
   const day = useGameStore((c) => park.of(c).num("park.day"));
   const [notice, setNotice] = useState<string | null>(null);
-  const flow = usePanes("main", parkFocus.id, ["settings", "help"]);
+  const flow = usePanes("main", parkFocusOf(ctx).id, ["settings", "help"]);
   const resume = () => commands.run("pauseToggle", {});
   const back = () => { if (flow.depth > 1) flow.pop(); else resume(); };
   const footer = `Brightway Park · day ${day ?? 1}`;
@@ -184,7 +185,7 @@ function PauseBoard(props: ParkMenuProps) {
   return entry.kind === "main"
     ? <Board eyebrow="The midway can wait" tagline="Your visitors and finances are paused." footer={footer} onBack={resume}>
       <Verb label="Resume the park" primary onPress={resume} />
-      <Verb label="Save the park" hint={notice ?? session.saveStatus} onPress={() => void captureParkThumb().then(() => savePark(ctx)).then(() => refreshParkSlot(ctx)).then(() => setNotice("The park is on the board."))} />
+      <Verb label="Save the park" hint={notice ?? sessionOf(ctx).saveStatus} onPress={() => void captureParkThumb().then(() => savePark(ctx)).then(() => refreshParkSlot(ctx)).then(() => setNotice("The park is on the board."))} />
       <Verb label="Park settings" hint="Motion, sound, controls" onPress={() => flow.push("settings")} />
       <Verb label="How to play" onPress={() => flow.push("help")} />
     </Board>

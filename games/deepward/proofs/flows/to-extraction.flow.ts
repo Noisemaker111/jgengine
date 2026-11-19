@@ -4,7 +4,7 @@ import { game } from "../../src/game.config";
 export default defineFlow(game, {
   browser: true,
   async run(f) {
-    await f.expectPage("__jgProbe().inDive === 0 && /rail departure/i.test(document.body.innerText)", "arrival: the diver is standing at Marrow's departure rail, not the title card");
+    await f.expectPage("__jg.probe().inDive === 0 && /rail departure/i.test(document.body.innerText)", "arrival: the diver is standing at Marrow's departure rail, not the title card");
     // walk down the workshop to the Garage anchor
     await f.hold("KeyW", { until: (p) => p.z < 9.5, timeoutMs: 10000 });
     // take the rail: the world swaps to Bellwether and the air tank starts

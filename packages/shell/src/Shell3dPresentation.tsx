@@ -138,6 +138,7 @@ import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
@@ -331,7 +332,7 @@ export function Shell3dPresentation({
   const recorder = useMemo(() => createReplayRecorder({ game: playable.game.name }), [ctx, playable]);
   const saveReplay = () => {
     const replay = recorder.snapshot();
-    window.__jgengineReplay = replay;
+    publishOnPage("replay", replay);
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(replay)], { type: "application/json" }));
     link.download = `${playable.game.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-replay.json`;

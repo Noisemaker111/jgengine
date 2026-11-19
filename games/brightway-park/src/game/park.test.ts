@@ -125,7 +125,7 @@ describe("Brightway Park as one declaration", () => {
     expect(w.fact(`${ride}.broken`)).toBe(true);
     expect(w.num("park.breakdowns")).toBe(1);
     expect(w.num("park.buzz")).toBe(buzz - 15);
-    expect(rideView(ride)?.phase).toBe("broken");
+    expect(rideView(runner.ctx, ride)?.phase).toBe("broken");
     const down = parkMetrics(w);
     expect(down.ridesOpen).toBe(up.ridesOpen - 1);
     expect(down.totalAppeal).toBeCloseTo(up.totalAppeal - carousel.appeal);
@@ -145,7 +145,7 @@ describe("Brightway Park as one declaration", () => {
     step(runner, carousel.ride!.breakdown.repairSeconds + 1);
     expect(w.orders("crew").find((entry) => entry.target === ride)).toBeUndefined();
     expect(w.fact(`${ride}.broken`)).toBe(false);
-    expect(rideView(ride)?.phase).not.toBe("broken");
+    expect(rideView(runner.ctx, ride)?.phase).not.toBe("broken");
     expect(parkMetrics(w).ridesOpen).toBe(up.ridesOpen);
     expect(runner.ctx.game.notices.list().some((notice) => notice.text.includes("running again"))).toBe(true);
 

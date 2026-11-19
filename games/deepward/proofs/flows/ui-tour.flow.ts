@@ -10,15 +10,15 @@ import { game } from "../../src/game.config";
  */
 type F = BrowserFlow<ProbeReadings>;
 type Point = { x: number; y: number };
-const text = "window.__jgNativeUi.text()";
+const text = "window.__jg?.nativeUi.text()";
 const shows = (words: string): string => `${text}.includes(${JSON.stringify(words)})`;
 const focused = "(document.getElementById('jg-ui')?.getAttribute('aria-label') ?? '')";
 const point = async (f: F, label: string): Promise<Point> =>
-  (await f.waitForPage(`window.__jgNativeUi.point(${JSON.stringify(label)}) ?? false`, { timeoutMs: 15000, note: `a laid-out "${label}"` })) as Point;
+  (await f.waitForPage(`window.__jg?.nativeUi.point(${JSON.stringify(label)}) ?? false`, { timeoutMs: 15000, note: `a laid-out "${label}"` })) as Point;
 /** The packed cache item's grid box `[x, y, w, h]` in cells, read from the native tree. */
 const cacheItem = (name: string): string => `(() => {
   const walk = (n) => [n, ...n.children.flatMap(walk)];
-  const n = walk(window.__jgNativeUi.tree()).find((n) => n.props.label === ${JSON.stringify(`Select ${name}`)});
+  const n = walk(window.__jg?.nativeUi.tree()).find((n) => n.props.label === ${JSON.stringify(`Select ${name}`)});
   return n ? [n.props.pin[0] / 64, n.props.pin[1] / 64, (n.props.width + 4) / 64, (n.props.height + 4) / 64] : null;
 })()`;
 
@@ -55,7 +55,7 @@ export default defineFlow(game, {
     const shot = async (name: string): Promise<void> => {
       let last = -1;
       for (let tries = 0; tries < 20; tries += 1) {
-        const frames = Number(await f.page("window.__jgNativeUi.stats().frames"));
+        const frames = Number(await f.page("window.__jg?.nativeUi.stats().frames"));
         if (frames === last) break;
         last = frames;
         await f.wait(250);
@@ -63,7 +63,7 @@ export default defineFlow(game, {
       await f.shot(name);
     };
 
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
     await f.see("New dive");
     await shot("native-title");
 
@@ -71,9 +71,9 @@ export default defineFlow(game, {
     await press("Settings");
     await f.see("Master volume");
     await f.wait(2000);
-    const frames = await f.page("window.__jgNativeUi.stats().frames");
+    const frames = await f.page("window.__jg?.nativeUi.stats().frames");
     await f.wait(1000);
-    await f.expectPage("window.__jgNativeUi.stats().frames", "static settings submits no frames", frames);
+    await f.expectPage("window.__jg?.nativeUi.stats().frames", "static settings submits no frames", frames);
     await shot("native-settings");
     const slider = await point(f, "Master volume");
     await f.drag({ x: slider.x + 100, y: slider.y }, slider, { pointer });
@@ -161,7 +161,7 @@ export default defineFlow(game, {
     // Packing never pauses the dive; slow it so the tank and the Fitter wait for the checks. Slowed
     // after the key: the game samples a tap once per tick.
     await f.timeScale(0.01);
-    const name = String(await f.page(`(() => { const walk = (n) => [n, ...n.children.flatMap(walk)]; return walk(window.__jgNativeUi.tree()).find((n) => String(n.props.label ?? "").startsWith("Select "))?.props.label.slice(7) ?? ""; })()`));
+    const name = String(await f.page(`(() => { const walk = (n) => [n, ...n.children.flatMap(walk)]; return walk(window.__jg?.nativeUi.tree()).find((n) => String(n.props.label ?? "").startsWith("Select "))?.props.label.slice(7) ?? ""; })()`));
     await press(`Select ${name}`);
     await f.waitForPage(shows("Rotate"), { timeoutMs: 5000, note: `pressing ${name} selected it` });
     await shot("native-cache");
@@ -180,7 +180,7 @@ export default defineFlow(game, {
     // Drag the item onto the free cell farthest from it; the drop repacks it there.
     const free = (await f.page(`(() => {
       const walk = (n) => [n, ...n.children.flatMap(walk)];
-      const nodes = walk(window.__jgNativeUi.tree()), boxes = nodes.filter((n) => String(n.props.label ?? "").startsWith("Select ")).map((n) => [n.props.pin[0] / 64, n.props.pin[1] / 64, (n.props.width + 4) / 64, (n.props.height + 4) / 64]);
+      const nodes = walk(window.__jg?.nativeUi.tree()), boxes = nodes.filter((n) => String(n.props.label ?? "").startsWith("Select ")).map((n) => [n.props.pin[0] / 64, n.props.pin[1] / 64, (n.props.width + 4) / 64, (n.props.height + 4) / 64]);
       const me = ${cacheItem(name)};
       const taken = (x, y) => boxes.some((b) => b !== null && !(b[0] === me[0] && b[1] === me[1]) && x >= b[0] && x < b[0] + b[2] && y >= b[1] && y < b[1] + b[3]);
       for (let y = 2; y >= 0; y -= 1) for (let x = 3; x >= 0; x -= 1) {

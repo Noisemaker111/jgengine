@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createElement } from "@jgengine/core/ui/jsx";
 import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
-import { CAPTURE_HOLD_KEY, observeBrowserSuspension, useBrowserSuspension, type BrowserSuspensionReason, type BrowserSuspensionSources } from "./browserLifecycle.view";
+import { observeBrowserSuspension, useBrowserSuspension, type BrowserSuspensionReason, type BrowserSuspensionSources } from "./browserLifecycle.view";
 
 function browser(initiallyLocked = false, initiallyHidden = false) {
   const win = new EventTarget();
@@ -48,8 +48,7 @@ describe("browser suspension", () => {
   });
 
   test("a capture host's hold keeps blur and a hidden page from pausing a drive; lock loss still reports", () => {
-    const scope = globalThis as Record<string, unknown>;
-    scope[CAPTURE_HOLD_KEY] = true;
+    (globalThis.__jg ??= {}).captureHold = true;
     try {
       const source = browser(true);
       const reasons: BrowserSuspensionReason[] = [];
@@ -61,7 +60,7 @@ describe("browser suspension", () => {
       expect(reasons).toEqual(["pointer-lock-lost"]);
       detach();
     } finally {
-      delete scope[CAPTURE_HOLD_KEY];
+      Reflect.deleteProperty(globalThis, "__jg");
     }
   });
 

@@ -40,11 +40,10 @@ export function createCameraTelemetry(): CameraTelemetry {
   };
 }
 
-const globalKey = "__jgengineEditorCameraTelemetry";
+let shared: CameraTelemetry | null = null;
 
-/** Shared telemetry singleton — probe and widget may mount in different UI trees. */
+/** Shared telemetry — probe and widget may mount in different UI trees. */
 export function getCameraTelemetry(): CameraTelemetry {
-  const root = globalThis as typeof globalThis & { [globalKey]?: CameraTelemetry };
-  root[globalKey] ??= createCameraTelemetry();
-  return root[globalKey];
+  shared ??= createCameraTelemetry();
+  return shared;
 }

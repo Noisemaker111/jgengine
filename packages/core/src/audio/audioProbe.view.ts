@@ -1,5 +1,6 @@
 import type { SpeechStats } from "./speech.view";
 import type { AudioAmbienceState, AudioEngine, AudioLevel, AudioOcclusionStats, AudioSpatialStats } from "./audioEngine.view";
+import { publishReadout } from "../runtime/pageHandle";
 
 /** The read-only handle a capture script or devtools uses to prove the mix is producing sound. */
 export interface AudioProbe {
@@ -19,14 +20,14 @@ export interface AudioProbe {
   speech(): SpeechStats;
 }
 
-declare global {
-  interface Window {
-    __jgengineAudio?: AudioProbe;
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    audio?: AudioProbe;
   }
 }
 
 /**
- * Publish the audio engine's own level, ambience and occlusion readouts on `window.__jgengineAudio`,
+ * Publish the audio engine's own level, ambience and occlusion readouts on `window.__jg.audio`,
  * so a headless capture can state measured values instead of guessing from a screenshot. Reads only;
  * it never plays or changes a bus.
  *
@@ -43,8 +44,5 @@ export function installAudioProbe(engine: AudioEngine): () => void {
     spatial: () => engine.spatialStats(),
     speech: () => engine.speechStats(),
   };
-  window.__jgengineAudio = probe;
-  return () => {
-    if (window.__jgengineAudio === probe) delete window.__jgengineAudio;
-  };
+  return publishReadout("audio", probe);
 }

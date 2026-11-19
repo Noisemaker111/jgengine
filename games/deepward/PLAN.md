@@ -100,7 +100,7 @@ Use branch `agent/rune-native-ui`, PR #3117, rebased onto beta after #3108 merge
 Do not bring back CSS, a DOM host or finished widgets.
 
 Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. The flow
-captures title/settings/HUD and checks that `window.__jgNativeUi.stats().frames`
+captures title/settings/HUD and checks that `window.__jg.nativeUi.stats().frames`
 stops after settings settles. Exercise a real setting, category and key rebind;
 start/continue, pause/resume, save/load, credits, stash, cache move/rotate/drag/drop,
 fabrication, reprint and save-failure boundaries. Check mouse, keyboard, pad and

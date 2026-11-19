@@ -1,8 +1,9 @@
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 
 import { BUILDABLES } from "../objects/catalog";
 import { setLevel } from "./terrain";
-import { session } from "../session";
+import { sessionOf } from "../session";
 
 /**
  * The builder's undo: the last few things the player did to the lot, newest last. Undoing a build
@@ -16,23 +17,23 @@ export type UndoStep =
 
 const LIMIT = 30;
 // The run's own undo list lives on the session, so a new park starts with none.
-const steps = (): UndoStep[] => session.undo;
+const steps = (ctx: GameContext): UndoStep[] => sessionOf(ctx).undo;
 
-export function recordStep(step: UndoStep): void {
-  steps().push(step);
-  if (steps().length > LIMIT) steps().shift();
+export function recordStep(ctx: GameContext, step: UndoStep): void {
+  steps(ctx).push(step);
+  if (steps(ctx).length > LIMIT) steps(ctx).shift();
 }
 
-export function clearUndo(): void {
-  steps().length = 0;
+export function clearUndo(ctx: GameContext): void {
+  steps(ctx).length = 0;
 }
 
-export function canUndoBuild(): boolean {
-  return steps().length > 0;
+export function canUndoBuild(ctx: GameContext): boolean {
+  return steps(ctx).length > 0;
 }
 
-export function lastStep(): UndoStep | null {
-  return steps().at(-1) ?? null;
+export function lastStep(ctx: GameContext): UndoStep | null {
+  return steps(ctx).at(-1) ?? null;
 }
 
 /**
@@ -41,11 +42,12 @@ export function lastStep(): UndoStep | null {
  * for the notice, or null when there was nothing to undo or it could no longer be undone.
  */
 export function undoStep(
+  ctx: GameContext,
   w: WorldModel,
   place: (kind: string, cell: [number, number], rot: number) => string | null,
   remove: (id: string) => boolean,
 ): string | null {
-  const step = steps().pop();
+  const step = steps(ctx).pop();
   if (step === undefined) return null;
   if (step.type === "place") {
     const before = w.num("park.cash");

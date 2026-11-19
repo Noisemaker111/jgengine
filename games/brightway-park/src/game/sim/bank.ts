@@ -1,3 +1,4 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import { createLoanBook, type LoanBook, type LoanTerms } from "@jgengine/core/economy/loanBook";
 import { createTransactionLedger, type TransactionLedger } from "@jgengine/core/economy/transactionLedger";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -5,7 +6,7 @@ import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 
 import { MONTH_DAYS } from "../books";
 import { LOAN, park } from "../park";
-import { session } from "../session";
+import { sessionOf } from "../session";
 
 /**
  * The park's bank loan, on the shared loan book: a revolving line the park opens owing `LOAN.start`
@@ -40,14 +41,13 @@ function lineTerms(): LoanTerms {
 }
 
 interface Bank {
-  ctx: GameContext;
   /** The session generation the bank belongs to: `resetSession` makes a new guest map. */
   generation: object;
   ledger: TransactionLedger;
   book: LoanBook;
 }
 
-let bank: Bank | null = null;
+const bankSlot = perContext((): { bank: Bank | null } => ({ bank: null }));
 
 /** Months the park has closed by the start of `day`. */
 export function monthsClosed(day: number): number {
@@ -60,7 +60,8 @@ export function monthsClosed(day: number): number {
  * charges.
  */
 function bankOf(ctx: GameContext, closed: number): Bank {
-  if (bank !== null && bank.ctx === ctx && bank.generation === session.guests) return bank;
+  const slot = bankSlot(ctx);
+  if (slot.bank !== null && slot.bank.generation === sessionOf(ctx).guests) return slot.bank;
   const w = park.of(ctx);
   const ledger = createTransactionLedger();
   ledger.openAccount(ACCOUNT, CURRENCY);
@@ -78,8 +79,8 @@ function bankOf(ctx: GameContext, closed: number): Bank {
       outstanding: Math.round(w.num("park.loan_owed")),
     }],
   });
-  bank = { ctx, generation: session.guests, ledger, book };
-  return bank;
+  slot.bank = { generation: sessionOf(ctx).guests, ledger, book };
+  return slot.bank;
 }
 
 function publish(w: WorldModel, book: LoanBook): void {

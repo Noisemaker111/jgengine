@@ -16,6 +16,14 @@ import { streetPlayOf, raceStore } from "./streetPlay";
 import { CRED_BY_JOB, grantCred } from "./progression/cred";
 import { convoyRunners } from "./runState";
 import { CICADA_STAGE_POS, KINGPIN_POS } from "./world/districts";
+import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
+
+declare module "@jgengine/core/runtime/pageHandle" {
+  interface JgPage {
+    /** This game's dev readout, as its proofs read it. */
+    harborCity?: { read(): unknown };
+  }
+}
 
 /** The whole world model's state: one store, so the world snapshot saves it and the host replicates it. */
 export const worldStore = defineStore<WorldModelState | undefined>("harbor.world", undefined);
@@ -219,7 +227,7 @@ function registerCityDev(ctx: GameContext): void {
       if (item !== null) state.scene.worldItem.pickup(item, state.player.userId);
     },
   });
-  (globalThis as { __harborCity?: unknown }).__harborCity = {
+  publishForContext(ctx, "harborCity", {
     read() {
       const world = cityOf(ctx);
       const live = world.missionView();
@@ -247,7 +255,7 @@ function registerCityDev(ctx: GameContext): void {
         crews: ctx.scene.entity.list().filter((entity) => entity.id.startsWith("crew_") || entity.id.startsWith("raider_") || entity.id.startsWith("clash_")).map((entity) => entity.id),
       };
     },
-  };
+  });
 }
 
 /** A new career opens on the first story beat, so the opening is play, not a menu. */

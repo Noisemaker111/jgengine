@@ -1,3 +1,4 @@
+import { CAPTURE_COMMAND_INPUT } from "../game/captureCommand";
 import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -8,7 +9,7 @@ import { withRendererBackendOverride } from "@jgengine/core/settings/rendererBac
 import { setPlayControlsActive, suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { advanceSimulation, registerSimStepper } from "@jgengine/core/sim/simStepper";
 
-import { applySetting, applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, simAdvanceReport, waitForEditorHost } from "./agentBridge.draw";
+import { applySetting, applyTimeScale, installAgentBridge, playerPoseReport, simAdvanceReport, waitForEditorHost } from "./agentBridge.draw";
 
 /** Put `window` back exactly: absent stays absent, never an own key holding undefined (#3194). */
 function restoreWindow(previous: PropertyDescriptor | undefined): void {
@@ -64,7 +65,7 @@ describe("canvas_cover", () => {
         isDevtoolsOpen: () => false,
         setDevtoolsOpen: () => {},
       });
-      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; covered?: boolean }): unknown } }).__jgengineAgent;
+      const agent = (globalThis.__jg as { agent?: { handle(request: { method: string; covered?: boolean }): unknown } } | undefined)!.agent!;
       expect(agent.handle({ method: "canvas_cover", covered: true })).toEqual({ ok: true, covered: true, holders: 1 });
       expect(canvasCover.covered()).toBe(true);
       expect(agent.handle({ method: "canvas_cover", covered: true }), "a repeated on is one hold").toEqual({ ok: true, covered: true, holders: 1 });
@@ -108,7 +109,7 @@ describe("capture_run", () => {
         setDevtoolsOpen: () => {},
         getContext: () => live,
       });
-      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; state?: string; skipUnregistered?: boolean }): unknown } }).__jgengineAgent;
+      const agent = (globalThis.__jg as { agent?: { handle(request: { method: string; state?: string; skipUnregistered?: boolean }): unknown } } | undefined)!.agent!;
       expect(agent.handle({ method: "capture_run" })).toEqual({ ok: false, error: "no game context yet" });
       live = ctx;
       expect(agent.handle({ method: "capture_run" })).toEqual({ ok: true, ran: [{ name: "park.scenario", status: "ok" }, { name: "park.start", status: "ok" }] });

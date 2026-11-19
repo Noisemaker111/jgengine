@@ -782,7 +782,7 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   let gpuContext = null;
   let gpuDraws = 0;
   const tick = () => {
-    const live = globalThis.__jgWebGpu;
+    const live = globalThis.__jg?.webgpu;
     if (live !== gpuContext) { gpuContext = live ?? null; gpuDraws = gpuContext?.stats?.draws ?? 0; }
     const drawsNow = gpuContext?.stats?.draws ?? 0;
     if (state.counting) state.frames.push(state.pending + drawsNow - gpuDraws);
@@ -915,7 +915,7 @@ interface SceneNodeCount {
 
 /**
  * Count live three.js scene-graph nodes. The page's own sampler counts them from the
- * live scene (`window.__JG.report().render`), which is the same number and does not
+ * live scene (`window.__jg.report().render`), which is the same number and does not
  * depend on resource-timing entries surviving; when the sampler is off (an A/B run),
  * fall back to the dev runner's three module, imported by its served URL so
  * `queryObjects` hands back every live instance.
@@ -923,7 +923,7 @@ interface SceneNodeCount {
 export async function measureSceneNodes(session: CdpSession): Promise<SceneNodeCount> {
   try {
     const fromPage = await session.evaluate<{ nodes: number | null; scenes: number; source: SceneNodeSource }>(`(() => {
-      const render = window.__JG?.report?.()?.render;
+      const render = window.__jg?.report?.()?.render;
       if (render === undefined || typeof render.nodes !== "number") return null;
       return { nodes: render.nodes, scenes: render.scenes ?? 1, source: render.nodesSource ?? "scene-graph" };
     })()`);
@@ -1072,7 +1072,7 @@ export interface BackendReading {
  * Page expression for a {@link BackendReading}. WebGPU errors come first so the first-20 cut never
  * hides one behind ordinary warnings.
  */
-export const BACKEND_READING_SCRIPT = `(() => { const g = globalThis.__jgWebGpu; if (!g) return { drawing: "webgl", warnings: [] }; const keys = [...g.warnings.keys()]; return { drawing: "webgpu", warnings: [...keys.filter((k) => k.startsWith("WebGPU:")), ...keys.filter((k) => !k.startsWith("WebGPU:"))].slice(0, 20) }; })()`;
+export const BACKEND_READING_SCRIPT = `(() => { const g = globalThis.__jg?.webgpu; if (!g) return { drawing: "webgl", warnings: [] }; const keys = [...g.warnings.keys()]; return { drawing: "webgpu", warnings: [...keys.filter((k) => k.startsWith("WebGPU:")), ...keys.filter((k) => !k.startsWith("WebGPU:"))].slice(0, 20) }; })()`;
 
 /**
  * The warnings that are WebGPU errors (the device's uncaptured errors, `WebGPU: ...`). One means a
@@ -1097,7 +1097,7 @@ async function readBackend(session: CdpSession): Promise<BackendReading> {
 
 async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null; focus: string | null }> {
   try {
-    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string; focus: string | null }>(`(() => { const pose = window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }; const active = document.activeElement; return { ...pose, focus: active?.tagName ?? null }; })()`);
+    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string; focus: string | null }>(`(() => { const pose = window.__jg?.agent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }; const active = document.activeElement; return { ...pose, focus: active?.tagName ?? null }; })()`);
     if (result?.ok === true && Array.isArray(result.position) && result.position.length === 3 && result.position.every(Number.isFinite)) return { position: result.position, error: null, focus: result.focus };
     return { position: null, error: result?.error ?? "player position unavailable", focus: result?.focus ?? null };
   } catch (error) { return { position: null, error: error instanceof Error ? error.message : String(error), focus: null }; }
@@ -1264,17 +1264,17 @@ export function gameSessionDeadlineMs(warmupMs: number, windowSeconds: number): 
  * page has no breakdown or the window resolved no GPU timer.
  */
 export async function measureGpuWork(session: CdpSession, top: number, seconds = GPU_WORK_SECONDS): Promise<FrameBreakdownSummary | null> {
-  const switched = await session.evaluate<boolean>(`(() => { const b = globalThis.__jgFrameBreakdown; if (!b || typeof b.gpuTiming !== "function") return false; b.gpuTiming("draws"); return true; })()`);
+  const switched = await session.evaluate<boolean>(`(() => { const b = globalThis.__jg?.frames; if (!b || typeof b.gpuTiming !== "function") return false; b.gpuTiming("draws"); return true; })()`);
   if (switched !== true) return null;
   try {
     // A frame or two runs before the switch reaches it, and its timers resolve a few frames late.
     await session.evaluate(`new Promise((r) => setTimeout(r, 300))`, { awaitPromise: true });
     await resetBreakdown(session);
     await session.evaluate(`new Promise((r) => setTimeout(r, ${Math.round(seconds * 1000)}))`, { awaitPromise: true });
-    const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
+    const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jg?.frames?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
     return summary === null || summary === undefined || summary.gpu === null ? null : summary;
   } finally {
-    await session.evaluate(`globalThis.__jgFrameBreakdown?.gpuTiming?.("span")`);
+    await session.evaluate(`globalThis.__jg?.frames?.gpuTiming?.("span")`);
   }
 }
 
@@ -1410,7 +1410,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   const reportedTier = await readReportedQuality(session);
   if (quality !== undefined) assertQualityApplied(quality, reportedTier);
   if (settings.length > 0) await confirmSettings(session, settings);
-  await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
+  await session.evaluate(`window.__jg?.agent?.handle?.({ method: "debug_perf_reset" })`);
 
   const gpu = (await readGpu(session)) ?? "unknown";
   if (/swiftshader|llvmpipe|software/i.test(gpu)) {
@@ -1426,8 +1426,8 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
   const hasBreakdown = await resetBreakdown(session);
-  await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
-  await session.evaluate(`window.__jgShadowCache?.resetStats?.()`);
+  await session.evaluate(`window.__jg?.agent?.handle?.({ method: "debug_perf_reset" })`);
+  await session.evaluate(`window.__jg?.shadowCache?.resetStats?.()`);
 
   // Frame timings are sampled without the profiler running, so the fps and
   // percentiles are the loop the player gets; the profile window is separate.
@@ -1452,7 +1452,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     systems?: Record<string, SystemProbeReading>;
     logSummary?: ReportLogs;
     longFrames?: unknown[];
-  }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
+  }>(`window.__jg?.agent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
   const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
   markStep(`perf ${game}: count scene nodes`);
   const sceneNodes = await measureSceneNodes(session);

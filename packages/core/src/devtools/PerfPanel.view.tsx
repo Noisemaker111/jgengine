@@ -128,9 +128,9 @@ function LongFrameList({ events }: { events: readonly LongFrameEvent[] }) {
   );
 }
 
-/** The last 600 frames of the live breakdown (`window.__jgFrameBreakdown`), when the dev telemetry installed it. */
+/** The last 600 frames of the live breakdown (`window.__jg.frames`), when the dev telemetry installed it. */
 function readBreakdown(): FrameBreakdownSummary | null {
-  const live = typeof window === "undefined" ? undefined : window.__jgFrameBreakdown;
+  const live = typeof window === "undefined" ? undefined : window.__jg?.frames;
   return live === undefined ? null : live.summary({ top: 6, last: 600 });
 }
 

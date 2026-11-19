@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../../game.config";
@@ -10,7 +11,7 @@ import { closeDay } from "./economy";
 import { guestPopulation } from "./guests";
 import { applySave, decodeSave, snapshotPark } from "../persistence";
 import { resetPark } from "../parkReset";
-import { session } from "../session";
+import { sessionOf } from "../session";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
@@ -65,11 +66,11 @@ describe("park run trace", () => {
       while (runner.ctx.time.now() < end) {
         runner.step(1);
         let line = FACTS.map((key) => w.num(key).toFixed(4)).join(",");
-        for (const guest of session.guests.values()) line += `|${guest.id}:${guest.phase}`;
+        for (const guest of sessionOf(runner.ctx).guests.values()) line += `|${guest.id}:${guest.phase}`;
         digest = hash(line, digest);
-        peak = Math.max(peak, session.guests.size);
+        peak = Math.max(peak, sessionOf(runner.ctx).guests.size);
         // The world's counts are the population's: the guests whose bodies the park made.
-        expect(population.onSite()).toBe(session.guests.size);
+        expect(population.onSite()).toBe(sessionOf(runner.ctx).guests.size);
         expect(w.num("park.guests")).toBe(population.onSite());
         expect(w.num("park.guests_today")).toBe(population.arrivalsToday());
       }
@@ -86,7 +87,7 @@ describe("park run trace", () => {
       "report.interest": 440, "report.loan": 1000, "month.loan": 0, "month.gate": 48,
     });
     expect(peak).toBe(53);
-    expect(session.guests.size).toBe(10);
+    expect(sessionOf(runner.ctx).guests.size).toBe(10);
     expect(digest).toBe(407696641);
   }, 300_000);
 
@@ -94,20 +95,20 @@ describe("park run trace", () => {
     const runner = createHeadlessRunner({ game, maxStepSeconds: 1, seed: "brightway-crowd-save" });
     runner.ui.invoke("park.start");
     stagePark(runner.ctx, "full");
-    const crowdLine = (): string => [...session.guests.values()].map((guest) => `${guest.id}:${guest.phase}`).join("|");
+    const crowdLine = (ctx: GameContext): string => [...sessionOf(ctx).guests.values()].map((guest) => `${guest.id}:${guest.phase}`).join("|");
     for (let t = 0; t < 40; t += 1) runner.step(1);
     const saved = JSON.stringify(snapshotPark(runner.ctx));
     const before = guestPopulation(runner.ctx).snapshot();
     const live: string[] = [];
     for (let t = 0; t < 40; t += 1) {
       runner.step(1);
-      live.push(crowdLine());
+      live.push(crowdLine(runner.ctx));
     }
 
     const reloaded = createHeadlessRunner({ game, maxStepSeconds: 1, seed: "brightway-crowd-save" });
     resetPark(reloaded.ctx, { layout: "blank" });
     applySave(reloaded.ctx, decodeSave(saved)!);
-    session.started = true;
+    sessionOf(reloaded.ctx).started = true;
     reloaded.ctx.time.play();
     const population = guestPopulation(reloaded.ctx);
     const after = population.snapshot();
@@ -118,7 +119,7 @@ describe("park run trace", () => {
     const replay: string[] = [];
     for (let t = 0; t < 40; t += 1) {
       reloaded.step(1);
-      replay.push(crowdLine());
+      replay.push(crowdLine(reloaded.ctx));
     }
     expect(replay).toEqual(live);
   }, 120_000);

@@ -20,7 +20,7 @@ export default defineFlow(game, {
     await f.shot("fernwild-breed-mating");
     // about a minute later she lays a fertilized egg
     await f.waitFor((p) => p.eggs >= 1, { timeoutMs: 75000 });
-    await f.expect((p) => p.eggTemperature < 20, "__jgProbe().eggTemperature < 20");
+    await f.expect((p) => p.eggTemperature < 20, "__jg.probe().eggTemperature < 20");
     // a campfire to the hotbar
     await f.command("cheat", {"give":{"campfire":1},"toHotbar":["campfire"]});
     // campfire in hand
@@ -34,7 +34,7 @@ export default defineFlow(game, {
     await f.command("cheat", {"breedingSpeed":1000});
     // it hatches
     await f.waitFor((p) => p.babies >= 1, { timeoutMs: 30000 });
-    await f.expect((p) => p.babySize < 40, "__jgProbe().babySize < 40");
+    await f.expect((p) => p.babySize < 40, "__jg.probe().babySize < 40");
     await f.wait(1000);
     // a baby raptor a quarter of its parents' size
     await f.shot("fernwild-breed-hatched");

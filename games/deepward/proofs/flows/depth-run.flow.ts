@@ -37,7 +37,7 @@ export default defineFlow(game, {
     // depart: two lures on the belt
     await f.press("KeyE");
     await f.waitFor((p) => p.inDive === 1, { timeoutMs: 15000 });
-    await f.expect((p) => p.beltLure === 2 && p.stratum === 1, "__jgProbe().beltLure === 2 && __jgProbe().stratum === 1");
+    await f.expect((p) => p.beltLure === 2 && p.stratum === 1, "__jg.probe().beltLure === 2 && __jg.probe().stratum === 1");
     // receiving's descent lift
     await f.command("deepward.dev.stand", {"x":-1.2,"z":-41.6});
     await f.wait(600);
@@ -112,7 +112,7 @@ export default defineFlow(game, {
     await f.press("KeyE");
     await f.see(/Marrow's fabricator/, { timeoutMs: 8000 });
     await f.click("Build Growbed");
-    await f.expect((p) => p.modules === 4, "__jgProbe().modules === 4");
+    await f.expect((p) => p.modules === 4, "__jg.probe().modules === 4");
     await f.wait(600);
     await f.shot("run-11-growbed");
     await f.click("Back to Marrow");
