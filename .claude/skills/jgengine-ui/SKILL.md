@@ -123,7 +123,7 @@ Headless PNG check uses the real game component and production Rune builder:
 ```
 bun games/deepward/proofs/runeUiFixture.tsx title /tmp/ui.json 1280 720
 cd native
-cargo run -p jg-ui --example native-png -- /tmp/ui.json /tmp/ui.png 1280 720 crates/jg-hud/assets/sharetechmono_ShareTechMono-Regular.ttf crates/jg-hud/assets/rajdhani_Rajdhani-SemiBold.ttf
+cargo run -p jg-ui --example native-png -- /tmp/ui.json /tmp/ui.png 1280 720 crates/jg-ui/examples/fonts/sharetechmono_ShareTechMono-Regular.ttf crates/jg-ui/examples/fonts/rajdhani_Rajdhani-SemiBold.ttf
 ```
 
 Repeat at `390 844`, inspect the PNGs, and cover the HUD, a menu and settings.

@@ -5,7 +5,7 @@
  * submission: uniforms land in one buffer per frame, pipelines and bind groups are cached, and
  * Chrome's GPU process encodes a few WebGPU commands per draw instead of WebGL's dozens.
  *
- * Conventions (shared with `native/crates/jg-render`): every pass is drawn with clip-space y
+ * Conventions: every pass is drawn with clip-space y
  * flipped, so render targets keep GL's memory layout (row 0 is GL's bottom row) and textures are
  * sampled with GL's coordinates unchanged; the default framebuffer is an offscreen texture copied
  * flipped onto the canvas when the frame is presented.

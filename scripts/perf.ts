@@ -1,4 +1,4 @@
-// `bun run perf <game> | perf <gate|fps-gap|shadow-audit|post-audit|network|server|timing|flight|boat|fracture|live|native>`: every performance measurement.
+// `bun run perf <game> | perf <gate|fps-gap|shadow-audit|post-audit|network|server|timing|flight|boat|fracture|live>`: every performance measurement.
 import { stayOutOfTheWay } from "./machine-priority";
 import { runVerb, type VerbTable } from "./subcommands";
 
@@ -10,7 +10,7 @@ import { runVerb, type VerbTable } from "./subcommands";
  *   guard does not count the wait.
  * - This process and everything it spawns run at below-normal priority, so Jon's game and editor
  *   come first. The Chrome a mode measures is the exception, by mode:
- *   - normal priority for `play`, `gate`, `fps-gap`, `native` (the web row) and `desktop` (the app):
+ *   - normal priority for `play`, `gate`, `fps-gap` and `desktop` (the app):
  *     their product is a frame time, and one taken below normal also measures whatever outranks it;
  *   - inherited below-normal for `shadow-audit` (texels, not time), `network` (bytes), `live`
  *     (reads a page Jon has open at its own priority), `timing`, `server`, `crowd`, `flight`,
@@ -37,7 +37,6 @@ export const PERF: VerbTable = {
     crowd: { script: "scripts/perf-crowd.ts", guardSeconds: 300, detail: "[--counts 1000,10000,100000]: time one crowd tick through createEntityStore + createSpatialIndex beside the same step over flat typed arrays" },
     fracture: { script: "scripts/fracture-compare.ts", guardSeconds: 120, detail: "break a granite block with fractureRock, StructureGraph.toDebris and toDebrisBodies; print pieces, t10 and energy into motion beside the JKMRC law" },
     live: { script: "scripts/debug-report.ts", guardSeconds: 60, detail: "<game>: read the report a game open in a browser is producing and gate it" },
-    native: { script: "scripts/perf-native.ts", guardSeconds: 1800, detail: "<game> [--rows A,B,C,D] [--desktop <app.exe>] [--reuse]: the 360 fps experiment, the same frames on the current engine, the Rust native renderer with TS or Rust rules, and wasm+WebGPU; prints the table (native/README.md)" },
     // --all builds and measures every game in turn, about 5 minutes a game; a single --launch takes 2-3.
     desktop: { script: "scripts/perf-desktop.ts", guardSeconds: 5400, detail: "<debug-port> --out <file>: read a diagnostic desktop app's existing frame report; --launch <app.exe> [--uncapped] [--maps dir] [--flow game/name [--returning] [--trace]]: launch one at the gate's conditions and print the fps it reaches, or play a flow and list its hitches (--returning measures a second session with the first one's shader caches; --trace names what each process ran in each hitch); --all [--uncapped] [--games a,b] [--skip-build] [--reuse] [--markdown]: build every game's production desktop app, measure each in turn and print the 360 fps table (a report, not a gate)" },
   },
