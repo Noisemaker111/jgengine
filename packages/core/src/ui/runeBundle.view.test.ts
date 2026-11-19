@@ -135,6 +135,7 @@ test("without WebGPU the Rune bundle still draws, through WebGL2", async () => {
 });
 
 test("two Rune instances draw side by side, and one closes and reopens", async () => {
+  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(false) });
   const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -146,7 +147,7 @@ test("two Rune instances draw side by side, and one closes and reopens", async (
   await page.evaluate(() => (window as unknown as { __reopen(): void }).__reopen());
   await page.waitForFunction(() => ((window as unknown as { __frames: { a: number } }).__frames.a) > 0);
   const after = await page.evaluate(frames);
-  await page.close();
+  await browser.close();
   expect(errors).toEqual([]);
   expect(before!.a).toBeGreaterThan(0);
   expect(before!.b).toBeGreaterThan(0);

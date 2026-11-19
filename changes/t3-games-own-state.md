@@ -1,6 +1,6 @@
 closing a game and opening it again in the same page works; it used to stop with "Rune supports one native surface per page"
 
-Engine seam: packages/core/src/audio/audioProbe.view.ts, packages/core/src/devtools/DevtoolsOverlay.draw.tsx, packages/core/src/devtools/DevtoolsRuntime.draw.tsx, packages/core/src/devtools/FrameTelemetry.draw.tsx, packages/core/src/devtools/PerfPanel.view.tsx, packages/core/src/devtools/agentBridge.draw.ts, packages/core/src/devtools/frameBreakdown.draw.ts, packages/core/src/devtools/frameBreakdown.ts and 36 more
+Engine seam: packages/core/src/audio/audioProbe.view.ts, packages/core/src/devtools/DevtoolsOverlay.draw.tsx, packages/core/src/devtools/DevtoolsRuntime.draw.tsx, packages/core/src/devtools/FrameTelemetry.draw.tsx, packages/core/src/devtools/PerfPanel.view.tsx, packages/core/src/devtools/agentBridge.draw.ts, packages/core/src/devtools/frameBreakdown.draw.ts, packages/core/src/devtools/frameBreakdown.ts and 35 more
 
 ### Migrate
 
