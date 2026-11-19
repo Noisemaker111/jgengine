@@ -59,22 +59,30 @@ export interface SaveSlotSource {
   peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
 }
 
-/** The result of a refresh: what the menu should show now. */
-export interface SaveSlotsRefresh {
-  /** Written slots in the order the save store indexes them. */
-  saved: string[];
-  /** Slot metadata for every written slot. */
-  filled: SaveSlotMeta[];
-  /** Written slots the index could not hold (id not in it and the index is full). */
-  skipped: string[];
-  /** Written slots whose document is damaged or could not be read — a menu shows them as such, not as empty. */
-  unreadable: string[];
-}
+/**
+ * The result of a refresh: what the menu should show now, or `failed` when the slot list itself
+ * could not be read (storage blocked, a backend refused) and the index was left as it was.
+ */
+export type SaveSlotsRefresh =
+  | {
+      readonly kind: "refreshed";
+      /** Written slots in the order the save store indexes them. */
+      saved: string[];
+      /** Slot metadata for every written slot. */
+      filled: SaveSlotMeta[];
+      /** Written slots the index could not hold (id not in it and the index is full). */
+      skipped: string[];
+      /** Written slots whose document is damaged or could not be read — a menu shows them as such, not as empty. */
+      unreadable: string[];
+    }
+  | { readonly kind: "failed"; readonly error: unknown };
 
 /**
  * Read every written slot's document and write the display metadata into a `SaveSlots` index — the
  * glue between B5.3's save document and a save-select menu. Slots the index already knows that have
- * no document are cleared, so a deleted save stops showing a stale Continue.
+ * no document are cleared, so a deleted save stops showing a stale Continue. Never rejects: menus
+ * refresh from effects and button handlers, so an unreadable list is a `failed` result, and the
+ * index keeps what it showed rather than clearing saves it could not see.
  *
  * @capability save-slot-index refresh a save-select index from the game's save documents
  */
@@ -83,7 +91,12 @@ export async function refreshSaveSlots(
   model: SaveSlots,
   options: SaveSlotMetaOptions = {},
 ): Promise<SaveSlotsRefresh> {
-  const saved = await source.slots();
+  let saved: string[];
+  try {
+    saved = await source.slots();
+  } catch (error) {
+    return { kind: "failed", error };
+  }
   const filled: SaveSlotMeta[] = [];
   const skipped: string[] = [];
   const unreadable: string[] = [];
@@ -106,7 +119,7 @@ export async function refreshSaveSlots(
   for (const existing of model.list()) {
     if (!existing.empty && !filled.some((meta) => meta.id === existing.id)) model.clear(existing.id);
   }
-  return { saved, filled, skipped, unreadable };
+  return { kind: "refreshed", saved, filled, skipped, unreadable };
 }
 
 /**

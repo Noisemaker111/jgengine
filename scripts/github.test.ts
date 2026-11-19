@@ -96,4 +96,14 @@ describe("the GitHub client", () => {
     const again = api.github.deleteBranch("agent/x");
     expect(again.ok).toBe(false);
   });
+
+  test("mergePull squash-merges the named head sha", () => {
+    const api = fakeGitHub({ repo: "me/game", pulls: [{ number: 9, head: "agent/x", sha: "s9" }] });
+    expect(api.github.mergePull(9, "s9")).toEqual({ ok: true, value: { sha: "merge-9" } });
+    expect(api.calls.at(-1)).toMatchObject({
+      method: "PUT",
+      path: "repos/me/game/pulls/9/merge",
+      fields: { merge_method: "squash", sha: "s9" },
+    });
+  });
 });

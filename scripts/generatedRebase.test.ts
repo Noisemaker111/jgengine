@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
@@ -22,7 +22,8 @@ function repo(): { dir: string; git: (args: string[]) => Run } {
   const dir = mkdtempSync(join(tmpdir(), "gen-rebase-"));
   dirs.push(dir);
   const git = (args: string[]): Run => {
-    const ran = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args], { cwd: dir, encoding: "utf8" });
+    const env = args.includes("core.editor=true") ? { ...process.env, GIT_EDITOR: "true" } : process.env;
+    const ran = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args], { cwd: dir, encoding: "utf8", env });
     return { status: ran.status ?? 1, stdout: ran.stdout ?? "", stderr: ran.stderr ?? "" };
   };
   git(["init", "-q", "-b", "beta"]);
@@ -42,7 +43,7 @@ function commit(dir: string, git: (args: string[]) => Run, text: string, message
 function lanes(betaText: string, laneText: string): { dir: string; git: (args: string[]) => Run } {
   const made = repo();
   const { dir, git } = made;
-  spawnSync("mkdir", ["-p", join(dir, "games/demo")]);
+  mkdirSync(join(dir, "games/demo"), { recursive: true });
   commit(dir, git, readme("10 / 20", "A game.", "End."), "base");
   git(["branch", "lane"]);
   commit(dir, git, betaText, "beta rescored");
