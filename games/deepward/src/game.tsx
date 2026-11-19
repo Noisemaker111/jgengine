@@ -541,7 +541,6 @@ export const game = defineGame({
   loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tickControls },
   GameUI,
   hudTheme: false,
-  uiRenderer: "rune",
   camera: {
     perspective: "first",
     rigs: {

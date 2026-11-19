@@ -1193,16 +1193,6 @@ export function useDeferredValue<T>(value: T): T {
   return cell.shown as T;
 }
 
-export function useTransition(): [boolean, (run: () => void) => void] {
-  return [false, startTransition];
-}
-
-export function startTransition(run: () => void): void {
-  run();
-}
-
-export function useDebugValue(): void {}
-
 /** Reads a context, or waits on a promise under the nearest `Suspense`. */
 export function use<T>(source: ContextType<T> | PromiseLike<T>): T {
   if (isThenable(source)) {
@@ -1263,4 +1253,3 @@ export class Component<P = object, S = object> {
   }
 }
 
-export const PureComponent = Component;

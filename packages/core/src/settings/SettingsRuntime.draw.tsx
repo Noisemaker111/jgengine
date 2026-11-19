@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 

@@ -4519,16 +4519,6 @@
       "intent": "title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus"
     },
     {
-      "id": "game-flow-ui",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/menu/gameFlowMenus.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words"
-    },
-    {
       "id": "game-font-stacks",
       "packages": [
         "@jgengine/core"
@@ -8106,16 +8096,6 @@
       "intent": "declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one"
     },
     {
-      "id": "onboarding-banner",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/onboarding/onboarding.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "announces each finished onboarding step and the next one on the objective banner"
-    },
-    {
       "id": "onboarding-callout",
       "packages": [
         "@jgengine/core"
@@ -8134,16 +8114,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "one onboarding step as a card with N of M, Next and Skip, theme-reskinnable"
-    },
-    {
-      "id": "onboarding-hud",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/onboarding/onboarding.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "onboarding steps in the quest tracker with Next and Skip"
     },
     {
       "id": "onboarding-lock",
@@ -10310,16 +10280,6 @@
       "intent": "data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore"
     },
     {
-      "id": "server-session",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/session/useServerSession.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "join a multiplayer host with status, retry, and teardown"
-    },
-    {
       "id": "session-loop",
       "packages": [
         "@jgengine/core"
@@ -11065,16 +11025,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a player steps up onto low ledges and lands ON a jumped-onto asset's top face instead of clipping inside it."
-    },
-    {
-      "id": "start-new-game",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/menu/gameFlowMenus.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "start a fresh run from a menu or result screen; reloads the page when a run already played"
     },
     {
       "id": "start-screen",

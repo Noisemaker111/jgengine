@@ -205,7 +205,6 @@ export const game = defineGame({
   },
   assets,
   hudTheme: false,
-  uiRenderer: "rune",
   world,
   time,
   content,

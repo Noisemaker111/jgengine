@@ -549,14 +549,12 @@ export function GamePlayerShell({
         <ShellHudPresentation
           {...shared}
           serverIdRef={serverIdRef}
-          uiScale={graphics.uiScale}
           onPointerResumeAudio={() => audioEngine.resume()}
           settingsStore={settingsStore}
           bindingOverrides={bindingOverrides}
           rebindAction={rebindAction}
           resetActionBinding={resetActionBinding}
           audioEngine={audioEngine}
-          poster={poster}
         />
         {poster ? null : <BootDirector ctx={ctx} />}
       </PresentationRecovery>

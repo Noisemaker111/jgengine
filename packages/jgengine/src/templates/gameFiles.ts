@@ -1,7 +1,8 @@
 import { findLibraryModelByName } from "@jgengine/assets/catalogs/modelLibrary";
 
 import { escapeHtml } from "../escapeHtml";
-import { starterGameUiTsx, starterLoopTs } from "./starterGame";
+import { starterLoopTs } from "./starterGame";
+import { editorHud, editorHudImports, plainHud, runeFlowGameUiTsx, starterHud, starterHudImports } from "./runeGameUi";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -12,7 +13,7 @@ const indexHtml = (name: string) => `<!doctype html>
     <title>${escapeHtml(name)}</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" style="position:fixed;inset:0"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
@@ -442,7 +443,7 @@ export interface GameConfigOptions {
   editor: boolean;
   /** The starter loop (caches, energy, ranks, beacon) on the starter scene. */
   loop: boolean;
-  /** The title, pause and checkpoints of the game-flow system, drawn by a GameFlowUI GameUI. */
+  /** The title, pause and checkpoints of the game-flow system, drawn by the game's Rune GameUI. */
   flow: boolean;
 }
 
@@ -456,7 +457,6 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
       ? ['import { assets } from "./game/assets";', 'import { entityModels, objectModels } from "./game/models";']
       : []),
     'import { probe } from "./game/probe";',
-    'import { kit } from "./game/ui/kit";',
     'import { GameUI } from "./game/ui/GameUI";',
     options.loop ? 'import { cachePrompts, onNewPlayer, sprintAllowed, systems } from "./loop";' : 'import { onNewPlayer, systems } from "./loop";',
     ...(options.world ? ['import { world } from "./world";'] : []),
@@ -470,8 +470,6 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
     "    // The light: day | bright | golden | dusk | overcast | night, or { preset, sun, skyColor, fog, saturation } to move a few tokens.",
     '    mood: "day",',
     "  },",
-    "  // Menus, panes and HUD parts draw in this kit (src/game/ui/kit.ts).",
-    "  uiKit: kit,",
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
@@ -636,81 +634,25 @@ export function onNewPlayer(ctx: GameContext): void {
 
 const loopTs = (editor: boolean, loop = false) => (loop ? starterLoopTs : editor ? editorLoopTs : plainLoopTs);
 
-const gameUiTsx = (id: string, name: string, editor: boolean, loop = false) => {
-  if (loop) return starterGameUiTsx(id, name);
-  const header = `// ${name}: the title, pause menu and HUD. The menus are the engine's GameFlowUI drawn in this
-// game's kit (./kit.ts); the HUD composes the shipped blocks (HudSlots, KitVitals, Hotbar, Coins,
-// InventoryGrid, Window shells; see jgengine-ui). Panel placement is editable live in canvas mode
-// (F2+C) and can persist to the scene document's ui.panels.`;
-  const menu = `const MENU: GameFlowMenuContent = {
-  name: ${JSON.stringify(name)},
-  controls: [
-    ["WASD", "walk"],
-    ["Space", "jump"],
-    ["E", "interact"],
-    ["Esc", "pause"],
-  ],
-  credits,
-};`;
-  if (!editor) {
-    return `import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/ui";
+const STARTER_CONTROLS = [
+  ["WASD", "walk"],
+  ["Space", "jump"],
+  ["E", "gather a cache"],
+  ["Shift", "sprint, once you rank up"],
+  ["Esc", "pause"],
+] as const;
 
-import { credits } from "../credits";
+const WALK_CONTROLS = [
+  ["WASD", "walk"],
+  ["Space", "jump"],
+  ["E", "interact"],
+  ["Esc", "pause"],
+] as const;
 
-${header}
-
-${menu}
-
-function Hud() {
-  const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
-  return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
-}
-
-/** @internal */
-export function GameUI() {
-  return <GameFlowUI menu={MENU} hud={<Hud />} />;
-}
-`;
-  }
-  return `import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
-import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/ui";
-
-import { outcome } from "../../loop";
-import { credits } from "../credits";
-
-${header}
-
-${menu}
-
-function Hud() {
-  const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
-  // The built-in trigger actions (announce/win/advance) write here.
-  const status = useSyncExternalStore(outcome.subscribe, outcome.get, outcome.get);
-  const tone = status.won
-    ? "bg-emerald-600/90 text-white"
-    : status.tone === "warn"
-      ? "bg-amber-600/90 text-white"
-      : "bg-slate-800/85 text-slate-100";
-  return (
-    <>
-      <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />
-      {status.message !== null ? (
-        <div className={"pointer-events-none absolute left-1/2 top-6 z-30 -translate-x-1/2 rounded-lg px-4 py-2 text-center font-sans text-sm font-semibold shadow-lg " + tone}>
-          {status.message}
-        </div>
-      ) : null}
-    </>
-  );
-}
-
-/** @internal */
-export function GameUI() {
-  return <GameFlowUI menu={MENU} hud={<Hud />} />;
-}
-`;
-};
+const gameUiTsx = (name: string, editor: boolean, loop = false) =>
+  loop
+    ? runeFlowGameUiTsx({ name, pitch: "Gather three caches and light the beacon.", controls: STARTER_CONTROLS, hudImports: starterHudImports, hud: starterHud })
+    : runeFlowGameUiTsx({ name, controls: WALK_CONTROLS, ...(editor ? { hudImports: editorHudImports, hud: editorHud } : { hud: plainHud }) });
 
 const engineBriefingMd = (variant: TemplateVariant) => `# JGengine — engine briefing
 
@@ -810,7 +752,7 @@ const jgengineAgentsMd = (variant: TemplateVariant) =>
 This game is built on **JGengine**, a TypeScript game framework. This file is engine-owned and rewritten by \`jgengine sync\`; do not edit it.
 
 - Rules: the monorepo's root \`AGENTS.md\` and this game's \`PLAN.md\`.
-- UI is JSX on the engine's own runtime, not React. Every game draws through Rune (\`uiRenderer: "rune"\`).
+- UI is JSX on the engine's own runtime, not React. Every game draws through Rune.
 - 3D is plain three.js on the engine's frame loop.
 - Find a shipped capability before building one: \`bun run find <words>\`.
 - World content lives in \`src/editor.scene.json\`, authored through the editor (F2+E), not in code.

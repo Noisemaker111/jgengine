@@ -151,7 +151,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
     capture,
     hudTheme,
     uiKit,
-    uiRenderer,
     health,
     ...engineFields
   } = config;
@@ -286,7 +285,6 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
     capture,
     hudTheme,
     uiKit,
-    uiRenderer,
     health,
   };
 }

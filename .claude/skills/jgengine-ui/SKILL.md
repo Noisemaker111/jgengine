@@ -7,8 +7,7 @@ description: Build game-owned Rune UI from native layout, live bindings, interac
 
 ## Rune UI, no CSS
 
-Game UI draws through Rune. Set `uiRenderer: "rune"` in `defineGame` and use the
-engine JSX runtime. No React, Solid, game CSS, class names, style strings or DOM
+Game UI draws through Rune. Use the engine JSX runtime. No React, Solid, game CSS, class names, style strings or DOM
 elements. Start a TSX file with `/** @jsxImportSource @jgengine/core/ui/jsx */`.
 The engine supplies primitives, not finished screens, HUDs, bars or inventories.
 Games own their composition, words, visual identity and game-specific panels.
@@ -112,7 +111,7 @@ export function GameUI({ ctx, theme, health, bag }: {
 ## Adoption and proof
 
 Delete the game's old UI folder and CSS after preserving its commands and data
-adapters. Set `uiRenderer: "rune"`, mount `RuneRoot` with its theme, compose screens
+adapters. Mount `RuneRoot` with its theme, compose screens
 from the primitives, and rebuild game-only panels. Deepward's UI is a real adopter;
 its settings controls compose the existing `useSettings` controller. Save/load
 continues using the game's existing persistence model. Fonts register with

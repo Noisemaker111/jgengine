@@ -2,10 +2,7 @@
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { GameProvider } from "@jgengine/ui/provider";
-import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
-import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 
 import type { PlayableGame } from "./registry";
 import { contextModels } from "@jgengine/core/model/resolveModel";
@@ -55,7 +52,6 @@ export function GameUiPreview({
   scenario?: UiPreviewScenario | undefined;
 }) {
   const [ctx, setCtx] = useState<GameContext | null>(null);
-  const accessibility = useAccessibilitySettings();
 
   useEffect(() => {
     const models = contextModels(playable);
@@ -88,11 +84,7 @@ export function GameUiPreview({
       style={{ background: "linear-gradient(180deg, #2a3d33 0%, #1a2320 55%, #141b18 100%)" }}
     >
       <GameProvider context={ctx}>
-        <HudViewportProvider platforms={playable.controls?.platforms} config={playable.controls?.hudFit}>
-          <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
-            <GameUI />
-          </HudThemeRoot>
-        </HudViewportProvider>
+        <GameUI />
       </GameProvider>
     </div>
   );

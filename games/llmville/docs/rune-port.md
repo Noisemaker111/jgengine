@@ -3,7 +3,7 @@
 The port is complete. Every LLMville screen, the in-world HUD, the tablet and all its apps, the rack
 menu and the world labels draw on the engine's Rune-native primitives (`RuneRoot`, `RuneView`,
 `RuneLabel`, `RuneAction`, `RuneFor`, `RuneGlyph`, `RuneField`, `RuneWorldAnchor`, `RuneTransient`),
-following the adoption recipe in PR #3117. `uiRenderer` is `"rune"`. There is no page UI left:
+following the adoption recipe in PR #3117. There is no page UI left:
 `style.css`, the page kit (`src/kit/`), Tailwind and `UiKitRoot` are gone, and
 `grep -rnE 'className=|style=\{' games/llmville/src --include=*.tsx` finds only `BuildProp`'s
 3D shape `style` prop.

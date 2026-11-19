@@ -7,7 +7,7 @@ import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view
 test("failed join blocks children and renders a retry action", () => {
   const html = JSON.stringify(JoinGate({ status: "failed", failureReason: "full", retry: () => {}, children: "gameplay" }));
   expect(html).not.toContain("gameplay");
-  expect(html).toContain('"role":"alert"');
+  expect(html).toContain("Unable to join");
   expect(html).toContain("Retry");
   expect(html).toContain("full");
 });

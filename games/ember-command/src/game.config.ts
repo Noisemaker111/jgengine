@@ -65,7 +65,6 @@ export const game = defineGame({
   GameUI,
   // The war table draws on one native Rune surface: its own typed theme, no shell HUD theme or DOM kit.
   hudTheme: false,
-  uiRenderer: "rune",
   controls: {
     // The command board, the formation tabs and the army call already carry every bound action as a
   // pressable token, so the derived touch buttons would only repeat them over the field.

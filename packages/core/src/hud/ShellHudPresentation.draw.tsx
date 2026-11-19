@@ -23,7 +23,6 @@ import { AudioSettingsBridge } from "@jgengine/core/settings/appliedSettings.dra
 import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
 import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
-import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { TouchPlaySurface } from "@jgengine/core/input/TouchControlsOverlay.view";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
@@ -54,7 +53,6 @@ export function ShellHudPresentation({
   orientationGate,
   orientationGateEl,
   coarsePointer,
-  uiScale,
   diagnostics,
   devtoolsEnabled,
   devtoolsOpen,
@@ -68,7 +66,6 @@ export function ShellHudPresentation({
   rebindAction,
   resetActionBinding,
   audioEngine,
-  poster,
 }: {
   playable: PlayableGame;
   ctx: GameContext;
@@ -86,7 +83,6 @@ export function ShellHudPresentation({
   orientationGate: boolean;
   orientationGateEl: ReactNode;
   coarsePointer: boolean;
-  uiScale: number;
   diagnostics: RuntimeDiagnostic[];
   devtoolsEnabled: boolean;
   devtoolsOpen: boolean;
@@ -100,7 +96,6 @@ export function ShellHudPresentation({
   rebindAction: (action: string, code: string) => void;
   resetActionBinding: (action: string) => void;
   audioEngine: AudioEngine;
-  poster: boolean;
 }) {
   const GameUI = playable.GameUI;
   useEffect(() => {
@@ -193,9 +188,7 @@ export function ShellHudPresentation({
             ) : null}
             <ShellGameUiChrome
               ctx={ctx}
-              playable={playable}
               GameUI={GameUI}
-              uiScale={uiScale}
               orientationGate={orientationGate}
               onRuntimeError={reportRuntimeError}
               audioEngine={audioEngine}
@@ -209,7 +202,6 @@ export function ShellHudPresentation({
               devtoolsEnabled={devtoolsEnabled}
               devtoolsOpen={devtoolsOpen}
             />
-            {poster ? null : <SettingsChrome />}
           </GameViewportProvider>
         </div>
       </SettingsRuntime>

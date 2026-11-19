@@ -8,7 +8,7 @@ A game must visually own its viewport **and its entire interface**. Presentation
 
 The engine ships both headless data/layout/accessibility seams *and* good drop-in building blocks — inventory grids, toggleable windows, character sheets, bars, action bars. `@jgengine/ui` offers all of them. Composing and reskinning those building blocks into this game's arrangement is using the engine correctly. What's incomplete is shipping a whole *unarranged, unskinned generic face* — a page that looks like a dashboard or another game's untouched default stack, with no art direction, terminology, or placement of its own.
 
-Rune primitives (`@jgengine/core/ui/rune/primitives.view`) on the engine's JSX runtime (`@jgengine/core/ui/jsx`, never React) with `uiRenderer: "rune"` are the implementation tools. Website visual grammar is not the default. Engine default chrome is not the default either.
+Rune primitives (`@jgengine/core/ui/rune/primitives.view`) on the engine's JSX runtime (`@jgengine/core/ui/jsx`, never React) are the implementation tools. Website visual grammar is not the default. Engine default chrome is not the default either.
 
 ## 1. Start with a concise UI art direction
 

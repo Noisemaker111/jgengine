@@ -1,3 +1,4 @@
+import { runeChatGameUiTsx } from "./runeGameUi";
 import type { TemplateFile, TemplateOptions } from "./types";
 
 /** Add a connected shared-world composition to the standard editor-backed game scaffold. */
@@ -130,11 +131,7 @@ if (!url) {
   root.render(<ConvexProvider client={client}><GameHost playable={game} multiplayer={multiplayer}${editorProp} /></ConvexProvider>);
 }
 ` },
-    { path: "src/game/ui/GameUI.tsx", contents: `import { ChatPanel } from "@jgengine/core/chat/chat.view";
-export function GameUI() {
-  return <div className="pointer-events-auto absolute bottom-4 left-4 w-80 rounded-lg bg-slate-950/90 p-3 text-white"><ChatPanel initialChannel="global" defaultExpanded={false} ownMessageClassName="text-cyan-300" logClassName="max-h-48 overflow-auto" /></div>;
-}
-` },
+    { path: "src/game/ui/GameUI.tsx", contents: runeChatGameUiTsx },
     { path: "README.md", contents: `# Shared world setup
 
 bun dev runs the world offline on this machine. To share it, run bun run dev:backend, select a Convex project, copy its URL to VITE_CONVEX_URL in .env.local, and run bun dev again.
@@ -144,7 +141,7 @@ The runtime declares shared topology, scoped claim/accrue commands, fractional c
 
 Before content, write the first-hour balance sheet and prove the first tutorial verb works from spawn. The demo starts with 100 cash and income of 0.005 per second; replace those game-owned values deliberately. Keep costs visible at the placement cursor and display rejected commands.
 
-The standard CSS scans engine UI and shell packages, including ChatPanel and JoinGate. Verify their rendered styling after changing Tailwind sources. Production budgets need a crowd test of command and presence read sets.
+Production budgets need a crowd test of command and presence read sets.
 ` },
   ];
   const paths = new Set(additions.map(file => file.path));

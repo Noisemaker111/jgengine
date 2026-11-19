@@ -43,7 +43,6 @@ export const game = defineGame({
     ambientLife: { fauna: ambientFauna },
   },
   hudTheme: false,
-  uiRenderer: "rune",
   chrome: {
     // Household journal lines are full sentences; give them time to read above the habitat tools.
     notices: { placement: "bottom", ttlMs: 8000 },

@@ -20,6 +20,7 @@ import { setCaptureStatus } from "./captureReady";
 import { engineCopySources, servedGame, servedModule } from "./servedGame";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
+import { demosWithDomChrome } from "./demoChrome";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },
   first: { rig: "first" },
@@ -236,7 +237,7 @@ export const editorLayerRegistry: Partial<
   ]),
 );
 
-export const gameRegistry: GameRegistry = {
+export const gameRegistry: GameRegistry = demosWithDomChrome({
   "hosted-authority": () => new URLSearchParams(window.location.search).get("presentation") === "recovery"
     ? import("./demo/presentationRecoveryDemo").then((module) => module.presentationRecoveryDemoGame)
     : import("./demo/hostedAuthorityDemo").then((module) => module.hostedAuthorityDemoGame),
@@ -329,7 +330,7 @@ export const gameRegistry: GameRegistry = {
   "social-hub": () =>
     import("./demo/socialHubDemo").then((module) => module.socialHubGame),
   ...gameEntries,
-};
+});
 
 export const uiScenarioRegistry: Partial<Record<string, () => Promise<UiPreviewScenario | undefined>>> =
   Object.fromEntries(

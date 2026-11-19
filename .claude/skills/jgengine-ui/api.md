@@ -553,13 +553,6 @@
 
 - `CreditsScreen` (function): function CreditsScreen({ document, className, style, renderEntry, }: { document: CreditsDocument; className?: string; style?: CSSProperties; renderEntry?: (entry: CreditsEntry, index: number) => ReactNode; }): ReactNode — Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through the `--jg-*` HudTheme tokens, so it inherits the game's look from the surrounding theme block; pass `renderEntry` to art-direct the line itself. Links render only when an entry carries `href`, and always open in a new tab with `noreferrer`.
 
-## @jgengine/core/menu/gameFlowMenus.view
-
-- `GameFlowMenuContent` (interface): interface GameFlowMenuContent — What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits.
-- `GameFlowUI` (function): function GameFlowUI({ menu, hud }: GameFlowUIProps): ReactNode — A game's whole UI over `createGameFlowSystem`: the title over the standing world, the HUD while playing, and the pause menu over it. The game supplies its HUD and its menu words; the look comes from the UI kit and `menu.accent`.
-- `GameFlowUIProps` (interface): interface GameFlowUIProps — Props for {@link GameFlowUI}.
-- `startNewGame` (function): function startNewGame(ctx: GameContext): Promise<void> — New game in a browser page: a second run reloads the page so nothing from the first carries over.
-
 ## @jgengine/core/menu/gameMenu.view
 
 - `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
@@ -926,18 +919,6 @@
 
 - `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
-
-## @jgengine/core/settings/QuickControls.draw
-
-- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): JSX.Element | null — ⚠ undocumented
-
-## @jgengine/core/settings/SettingsChrome.draw
-
-- `SettingsChrome` (function): function SettingsChrome(): JSX.Element | null — ⚠ undocumented
-
-## @jgengine/core/settings/SettingsMenu.draw
-
-- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/core/settings/SettingsRuntime.draw
 
@@ -1450,7 +1431,7 @@
 - `FC` (type): type FC<P = object> = FunctionComponent<P> — ⚠ undocumented
 - `ForwardedRef` (type): type ForwardedRef<T> = Ref<T> — ⚠ undocumented
 - `Fragment` (const): const Fragment: FunctionComponent<{ children?: UiNode; }> — ⚠ undocumented
-- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `forwardRef`: Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
+- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `lazy`: A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `FunctionalComponent` (type): type FunctionalComponent<P = object> = FC<P> — ⚠ undocumented
 - `JSXElementConstructor` (type): type JSXElementConstructor<P> = FunctionComponent<P> | ComponentClass<P> — ⚠ undocumented
 - `Key` (type): type Key = string | number | bigint — ⚠ undocumented
@@ -1460,7 +1441,6 @@
 - `NamedExoticComponent` (type): type NamedExoticComponent<P = object> = FunctionComponent<P> — ⚠ undocumented · used by `Clock` (@jgengine/shell/gameKit): A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h.
 - `Profiler` (const): const Profiler: FunctionComponent<{ id?: string | undefined; onRender?: unknown; children?: UiNode; }> — ⚠ undocumented
 - `PropsWithChildren` (type): type PropsWithChildren<P = object> = P & { children?: UiNode } — ⚠ undocumented
-- `PureComponent` (const): const PureComponent: typeof Component — ⚠ undocumented
 - `ReactElement` (type): type ReactElement<P = Record<string, unknown>> = UiElement<P> — ⚠ undocumented · used by `PerfOverlay` (@jgengine/core/devtools/perfOverlay.draw): The F3 performance overlay every game gets: an FPS graph of the last frames, draws, triangles, scene nodes, linked programs and the costlies…
 - `ReactNode` (type): type ReactNode = UiNode — ⚠ undocumented · used by `Coins` (@jgengine/shell/gameKit): A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
 - `Reducer` (type): type Reducer<S, A> = (state: S, action: A) => S — ⚠ undocumented
@@ -1471,22 +1451,17 @@
 - `StrictMode` (const): const StrictMode: FunctionComponent<{ children?: UiNode; }> — ⚠ undocumented
 - `Suspense` (const): const Suspense: FunctionComponent<{ fallback?: UiNode; children?: UiNode; name?: string | undefined; }> — ⚠ undocumented
 - `act` (function): function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T>["then"] } — Test helper: run `fn` (sync or async) and settle every mounted root before resolving.
-- `cloneElement` (function): function cloneElement<P>(element: UiElement<P>, config?: object | null, ...children: UiNode[]): UiElement<P> — ⚠ undocumented
 - `createContext` (function): function createContext<T>(defaultValue: T): ContextType<T> — A context: `<Ctx value>` (or `<Ctx.Provider value>`) provides, `useContext(Ctx)` reads.
 - `createElement` (function): function createElement(type: AnyType, config?: object | null, ...children: UiNode[]): UiElement — The classic entry: `createElement(type, props, ...children)`.
 - `createPortal` (function): function createPortal(children: UiNode, container: unknown, key?: Key | null): UiElement — ⚠ undocumented
-- `createRef` (function): function createRef<T>(): { current: T | null } — ⚠ undocumented
 - `default` (const): const api: { Children: { toArray(children: unknown): (string | UiElement<Props>)[]; count(children: unknown): number; map<T>(children: unknown, fn: (child: string | UiElement<Props>, index: number) => T): T[]; forEach(children: unknown, fn: (child: string | UiElement<Props>, index: number) => void):… — ⚠ undocumented
 - `flushSync` (function): function flushSync<T>(fn?: () => T): T | undefined — Run `fn`, then apply every state change it made before returning.
-- `forwardRef` (function): function forwardRef<T, P = object>(render: (props: P, ref: ((instance: T | null) => void) | { current: T | null } | null) => UiNode): FunctionComponent<P & { ref?: ((instance: T | null) => void) | { current: T | null } | null | undefined }> — Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
 - `isValidElement` (function): function isValidElement<P = Props>(value: unknown): value is UiElement<P> — ⚠ undocumented
 - `lazy` (function): function lazy<T extends FunctionComponent<any> | ComponentClass<any>>(load: () => Promise<{ default: T }>): T — A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `memo` (function): function memo<P>(inner: FunctionComponent<P> | ComponentClass<P>, equal?: (previous: Readonly<P>, next: Readonly<P>) => boolean): FunctionComponent<P> — Skips a component's render when its props are shallowly equal to the last ones (or `equal` says so).
-- `startTransition` (function): function startTransition(run: () => void): void — ⚠ undocumented
 - `use` (function): function use<T>(source: ContextType<T> | PromiseLike<T>): T — Reads a context, or waits on a promise under the nearest `Suspense`.
 - `useCallback` (function): function useCallback<T extends Function>(callback: T, deps: readonly unknown[]): T — ⚠ undocumented
 - `useContext` (function): function useContext<T>(context: ContextType<T>): T — ⚠ undocumented
-- `useDebugValue` (function): function useDebugValue(): void — ⚠ undocumented
 - `useDeferredValue` (function): function useDeferredValue<T>(value: T): T — `value`, trailing while what depends on it renders in the background a slice at a time: the component first renders again with the value it had, then the root builds the new tree between frames and shows it whole.
 - `useEffect` (function): function useEffect(create: () => void | (() => void), deps?: readonly unknown[]): void — ⚠ undocumented
 - `useId` (function): function useId(): string — ⚠ undocumented
@@ -1498,7 +1473,6 @@
 - `useRef` (function): function useRef<T>(initial: T): { current: T } — ⚠ undocumented
 - `useState` (function): function useState<S>(initial: S | (() => S)): [S, (next: S | ((prev: S) => S)) => void] — ⚠ undocumented
 - `useSyncExternalStore` (function): function useSyncExternalStore<T>(subscribe: (onChange: () => void) => () => void, getSnapshot: () => T, _getServerSnapshot?: () => T): T — ⚠ undocumented
-- `useTransition` (function): function useTransition(): [boolean, (run: () => void) => void] — ⚠ undocumented
 - `version` (const): const version: "jgengine-ui" — ⚠ undocumented
 
 ## @jgengine/core/ui/jsx
@@ -1520,7 +1494,7 @@
 - `FC` (type): type FC<P = object> = FunctionComponent<P> — ⚠ undocumented
 - `ForwardedRef` (type): type ForwardedRef<T> = Ref<T> — ⚠ undocumented
 - `Fragment` (const): const Fragment: FunctionComponent<{ children?: UiNode; }> — ⚠ undocumented
-- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `forwardRef`: Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
+- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `lazy`: A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `FunctionalComponent` (type): type FunctionalComponent<P = object> = FC<P> — ⚠ undocumented
 - `JSXElementConstructor` (type): type JSXElementConstructor<P> = FunctionComponent<P> | ComponentClass<P> — ⚠ undocumented
 - `Key` (type): type Key = string | number | bigint — ⚠ undocumented
@@ -1530,7 +1504,6 @@
 - `NamedExoticComponent` (type): type NamedExoticComponent<P = object> = FunctionComponent<P> — ⚠ undocumented · used by `Clock` (@jgengine/shell/gameKit): A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h.
 - `Profiler` (const): const Profiler: FunctionComponent<{ id?: string | undefined; onRender?: unknown; children?: UiNode; }> — ⚠ undocumented
 - `PropsWithChildren` (type): type PropsWithChildren<P = object> = P & { children?: UiNode } — ⚠ undocumented
-- `PureComponent` (const): const PureComponent: typeof Component — ⚠ undocumented
 - `ReactElement` (type): type ReactElement<P = Record<string, unknown>> = UiElement<P> — ⚠ undocumented · used by `PerfOverlay` (@jgengine/core/devtools/perfOverlay.draw): The F3 performance overlay every game gets: an FPS graph of the last frames, draws, triangles, scene nodes, linked programs and the costlies…
 - `ReactNode` (type): type ReactNode = UiNode — ⚠ undocumented · used by `Coins` (@jgengine/shell/gameKit): A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
 - `Reducer` (type): type Reducer<S, A> = (state: S, action: A) => S — ⚠ undocumented
@@ -1541,22 +1514,17 @@
 - `StrictMode` (const): const StrictMode: FunctionComponent<{ children?: UiNode; }> — ⚠ undocumented
 - `Suspense` (const): const Suspense: FunctionComponent<{ fallback?: UiNode; children?: UiNode; name?: string | undefined; }> — ⚠ undocumented
 - `act` (function): function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T>["then"] } — Test helper: run `fn` (sync or async) and settle every mounted root before resolving.
-- `cloneElement` (function): function cloneElement<P>(element: UiElement<P>, config?: object | null, ...children: UiNode[]): UiElement<P> — ⚠ undocumented
 - `createContext` (function): function createContext<T>(defaultValue: T): ContextType<T> — A context: `<Ctx value>` (or `<Ctx.Provider value>`) provides, `useContext(Ctx)` reads.
 - `createElement` (function): function createElement(type: AnyType, config?: object | null, ...children: UiNode[]): UiElement — The classic entry: `createElement(type, props, ...children)`.
 - `createPortal` (function): function createPortal(children: UiNode, container: unknown, key?: Key | null): UiElement — ⚠ undocumented
-- `createRef` (function): function createRef<T>(): { current: T | null } — ⚠ undocumented
 - `default` (const): const api: { Children: { toArray(children: unknown): (string | UiElement<Props>)[]; count(children: unknown): number; map<T>(children: unknown, fn: (child: string | UiElement<Props>, index: number) => T): T[]; forEach(children: unknown, fn: (child: string | UiElement<Props>, index: number) => void):… — ⚠ undocumented
 - `flushSync` (function): function flushSync<T>(fn?: () => T): T | undefined — Run `fn`, then apply every state change it made before returning.
-- `forwardRef` (function): function forwardRef<T, P = object>(render: (props: P, ref: ((instance: T | null) => void) | { current: T | null } | null) => UiNode): FunctionComponent<P & { ref?: ((instance: T | null) => void) | { current: T | null } | null | undefined }> — Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
 - `isValidElement` (function): function isValidElement<P = Props>(value: unknown): value is UiElement<P> — ⚠ undocumented
 - `lazy` (function): function lazy<T extends FunctionComponent<any> | ComponentClass<any>>(load: () => Promise<{ default: T }>): T — A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `memo` (function): function memo<P>(inner: FunctionComponent<P> | ComponentClass<P>, equal?: (previous: Readonly<P>, next: Readonly<P>) => boolean): FunctionComponent<P> — Skips a component's render when its props are shallowly equal to the last ones (or `equal` says so).
-- `startTransition` (function): function startTransition(run: () => void): void — ⚠ undocumented
 - `use` (function): function use<T>(source: ContextType<T> | PromiseLike<T>): T — Reads a context, or waits on a promise under the nearest `Suspense`.
 - `useCallback` (function): function useCallback<T extends Function>(callback: T, deps: readonly unknown[]): T — ⚠ undocumented
 - `useContext` (function): function useContext<T>(context: ContextType<T>): T — ⚠ undocumented
-- `useDebugValue` (function): function useDebugValue(): void — ⚠ undocumented
 - `useDeferredValue` (function): function useDeferredValue<T>(value: T): T — `value`, trailing while what depends on it renders in the background a slice at a time: the component first renders again with the value it had, then the root builds the new tree between frames and shows it whole.
 - `useEffect` (function): function useEffect(create: () => void | (() => void), deps?: readonly unknown[]): void — ⚠ undocumented
 - `useId` (function): function useId(): string — ⚠ undocumented
@@ -1568,7 +1536,6 @@
 - `useRef` (function): function useRef<T>(initial: T): { current: T } — ⚠ undocumented
 - `useState` (function): function useState<S>(initial: S | (() => S)): [S, (next: S | ((prev: S) => S)) => void] — ⚠ undocumented
 - `useSyncExternalStore` (function): function useSyncExternalStore<T>(subscribe: (onChange: () => void) => () => void, getSnapshot: () => T, _getServerSnapshot?: () => T): T — ⚠ undocumented
-- `useTransition` (function): function useTransition(): [boolean, (run: () => void) => void] — ⚠ undocumented
 - `version` (const): const version: "jgengine-ui" — ⚠ undocumented
 
 ## @jgengine/core/ui/jsx/client.view
@@ -1661,7 +1628,7 @@
 - `ELEMENT` (const): const ELEMENT: typeof ELEMENT — The engine's UI element: what JSX compiles to. An element is a plain record of a type (a host tag, a component function or one of the built-in marker types), its props and its key. Nothing here knows about a renderer.
 - `ElementType` (type): type ElementType<P = any> = string | FunctionComponent<P> | ComponentClass<P> — A component type as code names it: a tag, a function component or a class.
 - `Fragment` (const): const Fragment: FunctionComponent<{ children?: UiNode; }> — ⚠ undocumented
-- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `forwardRef`: Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
+- `FunctionComponent` (interface): interface FunctionComponent<P = object> { (props: P): UiNode; displayName?: string | undefined } — ⚠ undocumented · used by `lazy`: A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `Key` (type): type Key = string | number | bigint — ⚠ undocumented
 - `LAZY` (const): const LAZY: typeof LAZY — ⚠ undocumented
 - `LazyType` (interface): interface LazyType { readonly $$kind: typeof LAZY; load: () => Promise<{default: AnyType}>; status: "idle" | "pending" | "ready" | "failed"; promise: Promise<void> | null; resolved: AnyType | null; error: unknown } — ⚠ undocumented
@@ -1676,14 +1643,11 @@
 - `Suspense` (const): const Suspense: FunctionComponent<{ fallback?: UiNode; children?: UiNode; name?: string | undefined; }> — ⚠ undocumented
 - `UiElement` (interface): interface UiElement<P = Props> { readonly $$typeof: typeof ELEMENT; readonly type: AnyType; readonly props: P; readonly key: string | null } — ⚠ undocumented · used by `createElement`: The classic entry: `createElement(type, props, ...children)`.
 - `UiNode` (type): type UiNode = UiElement | string | number | bigint | boolean | null | undefined | Iterable<UiNode> — Anything a component may return or take as children.
-- `cloneElement` (function): function cloneElement<P>(element: UiElement<P>, config?: object | null, ...children: UiNode[]): UiElement<P> — ⚠ undocumented
 - `createContextRecord` (function): function createContextRecord<T>(defaultValue: T): ContextType<T> — ⚠ undocumented
 - `createElement` (function): function createElement(type: AnyType, config?: object | null, ...children: UiNode[]): UiElement — The classic entry: `createElement(type, props, ...children)`.
 - `createElementRecord` (function): function createElementRecord(type: AnyType, props: Props, key: unknown): UiElement — ⚠ undocumented
 - `createPortal` (function): function createPortal(children: UiNode, container: unknown, key?: Key | null): UiElement — ⚠ undocumented
-- `createRef` (function): function createRef<T>(): { current: T | null } — ⚠ undocumented
 - `flattenChildren` (function): function flattenChildren(children: unknown, out: (UiElement | string)[] = []): (UiElement | string)[] — Flattens children into the elements and text a parent actually holds; empties are dropped.
-- `forwardRef` (function): function forwardRef<T, P = object>(render: (props: P, ref: ((instance: T | null) => void) | { current: T | null } | null) => UiNode): FunctionComponent<P & { ref?: ((instance: T | null) => void) | { current: T | null } | null | undefined }> — Refs are props: `forwardRef` only hands `props.ref` over as the second argument.
 - `isValidElement` (function): function isValidElement<P = Props>(value: unknown): value is UiElement<P> — ⚠ undocumented
 - `jsx` (function): function jsx(type: AnyType, props: Props, key?: unknown): UiElement — The automatic JSX runtime entry (`jsx`, `jsxs`, `jsxDEV`).
 - `lazy` (function): function lazy<T extends FunctionComponent<any> | ComponentClass<any>>(load: () => Promise<{ default: T }>): T — A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
@@ -1724,15 +1688,12 @@
 - `Component` (class): class Component<P = object, S = object> — Base class for the few class components (error boundaries).
 - `Fiber` (class): class Fiber<N = unknown> — ⚠ undocumented
 - `Host` (interface): interface Host<N> — What a renderer implements. `N` is its node type.
-- `PureComponent` (const): const PureComponent: typeof Component — ⚠ undocumented
 - `Root` (class): class Root<N = unknown> — One mounted tree and its scheduler.
 - `act` (function): function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T>["then"] } — Test helper: run `fn` (sync or async) and settle every mounted root before resolving.
 - `flushSync` (function): function flushSync<T>(fn?: () => T): T | undefined — Run `fn`, then apply every state change it made before returning.
-- `startTransition` (function): function startTransition(run: () => void): void — ⚠ undocumented
 - `use` (function): function use<T>(source: ContextType<T> | PromiseLike<T>): T — Reads a context, or waits on a promise under the nearest `Suspense`.
 - `useCallback` (function): function useCallback<T extends Function>(callback: T, deps: readonly unknown[]): T — ⚠ undocumented
 - `useContext` (function): function useContext<T>(context: ContextType<T>): T — ⚠ undocumented
-- `useDebugValue` (function): function useDebugValue(): void — ⚠ undocumented
 - `useDeferredValue` (function): function useDeferredValue<T>(value: T): T — `value`, trailing while what depends on it renders in the background a slice at a time: the component first renders again with the value it had, then the root builds the new tree between frames and shows it whole.
 - `useEffect` (function): function useEffect(create: () => void | (() => void), deps?: readonly unknown[]): void — ⚠ undocumented
 - `useId` (function): function useId(): string — ⚠ undocumented
@@ -1744,7 +1705,6 @@
 - `useRef` (function): function useRef<T>(initial: T): { current: T } — ⚠ undocumented
 - `useState` (function): function useState<S>(initial: S | (() => S)): [S, (next: S | ((prev: S) => S)) => void] — ⚠ undocumented
 - `useSyncExternalStore` (function): function useSyncExternalStore<T>(subscribe: (onChange: () => void) => () => void, getSnapshot: () => T, _getServerSnapshot?: () => T): T — ⚠ undocumented
-- `useTransition` (function): function useTransition(): [boolean, (run: () => void) => void] — ⚠ undocumented
 
 ## @jgengine/core/ui/jsx/types
 
@@ -1997,7 +1957,7 @@
 
 ## @jgengine/core/ui/rotateDevice.view
 
-- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: string; /** Orientation the game needs; the phone is drawn hel… — Full-screen, non-dismissible gate shown when a game needs an orientation the device isn't in. It is drawn on Rune and takes every pointer and key, so nothing reaches the game beneath.
 
 ## @jgengine/core/ui/rune/activation
 
@@ -2079,6 +2039,10 @@
 - `RuneView` (function): function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps): JSX.Element — Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent.
 - `RuneViewProps` (interface): interface RuneViewProps extends RuneElementProps { layout?: "stack" | "row" | "grid"; anchor?: RuneAnchor; safe?: boolean; inset?: number; variant?: string; responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & {layout?: "stack" | "row" | "grid"}>> } — ⚠ undocumented · used by `RuneView`: Native layout, paint and responsive overrides.
 - `RuneWorldAnchor` (function): function RuneWorldAnchor({ entity, position, offset, children, ...props }: Parameters<RuneProjection>[0] & RuneViewProps): JSX.Element — A projected entity or point. Only the requested target is read; no world-wide scan.
+
+## @jgengine/core/ui/rune/shellScreens.view
+
+- `shellScreenTheme` (const): const shellScreenTheme: { colors: { scrim: string; panel: string; edge: string; text: string; dim: string; accent: string; ink: string; }; text: { body: { size: number; color: string; }; title: { size: number; weight: number; color: string; }; button: { size: number; weight: number; color: string; }… — The engine's own screens — joining a world, a view that failed, a lost display, turning the device — drawn on Rune like every game screen. One quiet look, so they read as the engine speaking, not a game.
 
 ## @jgengine/core/ui/runePassThrough
 
@@ -2563,7 +2527,7 @@
 - `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
 - `ObjectiveBannerHost` (const): const ObjectiveBannerHost: NamedExoticComponent<ObjectiveBannerHostProps> — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
 - `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
-- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme — ⚠ undocumented · used by `OnboardingBanner` (@jgengine/core/onboarding/onboarding.view): The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`.
+- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme — ⚠ undocumented
 - `OnboardingCallout` (function): function OnboardingCallout({ resolveAnchor, showBackdrop = true, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: OnboardingCalloutProps): ReactNode — The onboarding's UI callout, for steps about the interface rather than the world: a step with an `anchor` (a CSS selector) gets a card beside that element with a spotlight around it, and a step that finishes on Next with no anchor gets a centred card. Next and Skip run `onboarding.next` and `onboarding.skip`, so progress saves with the game. Other steps show nothing here.
 - `OnboardingCalloutCard` (function): function OnboardingCalloutCard({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: OnboardingCalloutCardProps): ReactNode — One onboarding step as a card: "N of M", the step's text and detail, Next (Got it on the last step) when the step finishes on Next, and Skip when the onboarding is skippable. Presentation only; {@link OnboardingCallout} positions it and wires it to the running onboarding.
 - `OnboardingCalloutCardProps` (interface): interface OnboardingCalloutCardProps — Props for {@link OnboardingCalloutCard}.
@@ -2606,7 +2570,7 @@
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> { getState(): TState; subscribe(listener: (state: TState) => void): () => void } — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): JSX.Element — ⚠ undocumented
-- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: string; /** Orientation the game needs; the phone is drawn hel… — Full-screen, non-dismissible gate shown when a game needs an orientation the device isn't in. It is drawn on Rune and takes every pointer and key, so nothing reaches the game beneath.
 - `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
 - `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.

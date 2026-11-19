@@ -171,9 +171,8 @@ const gameFlowCommands: readonly ((ctx: GameContext) => void)[] = [
 /**
  * Title, play, pause and checkpoints as one system. Boot stops the clock behind the title and
  * defines the game-flow commands, each described where this file lists it, so a menu, a capture or
- * a proof runs the same verbs (the `start` command skips the title).
- * Pair it with `GameFlowUI` from
- * `@jgengine/core/menu/gameFlowMenus.view`.
+ * a proof runs the same verbs (the `start` command skips the title). The game draws its own title and
+ * pause screens on Rune over these verbs (a new game's template does).
  *
  * @capability game-flow title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
  */

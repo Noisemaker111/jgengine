@@ -118,21 +118,6 @@ export function isValidElement<P = Props>(value: unknown): value is UiElement<P>
   return typeof value === "object" && value !== null && (value as { $$typeof?: unknown }).$$typeof === ELEMENT;
 }
 
-export function cloneElement<P>(element: UiElement<P>, config?: object | null, ...children: UiNode[]): UiElement<P> {
-  const props: Props = { ...(element.props as Props) };
-  let key: unknown = element.key;
-  if (config !== null && config !== undefined) {
-    const source = config as Props;
-    for (const name in source) {
-      if (name === "key") key = source[name];
-      else props[name] = source[name];
-    }
-  }
-  if (children.length === 1) props["children"] = children[0];
-  else if (children.length > 1) props["children"] = children;
-  return createElementRecord(element.type, props, key) as UiElement<P>;
-}
-
 /** Flattens children into the elements and text a parent actually holds; empties are dropped. */
 export function flattenChildren(children: unknown, out: (UiElement | string)[] = []): (UiElement | string)[] {
   if (children === null || children === undefined || typeof children === "boolean") return out;
@@ -190,11 +175,6 @@ export function lazy<T extends FunctionComponent<any> | ComponentClass<any>>(loa
   return type as unknown as T; // type-escape: a lazy marker stands where its component is used
 }
 
-/** Refs are props: `forwardRef` only hands `props.ref` over as the second argument. */
-export function forwardRef<T, P = object>(render: (props: P, ref: ((instance: T | null) => void) | { current: T | null } | null) => UiNode): FunctionComponent<P & { ref?: ((instance: T | null) => void) | { current: T | null } | null | undefined }> {
-  return (props) => render(props, props.ref ?? null);
-}
-
 export function createContextRecord<T>(defaultValue: T): ContextType<T> {
   const context = { $$kind: PROVIDER, defaultValue } as unknown as { -readonly [K in keyof ContextType<T>]: ContextType<T>[K] }; // type-escape: the marker is given a component's type
   context.Provider = context as unknown as ContextType<T>; // type-escape: the marker is its own Provider
@@ -210,6 +190,3 @@ export function createPortal(children: UiNode, container: unknown, key?: Key | n
   return createElementRecord(PORTAL, { children, container }, key ?? null);
 }
 
-export function createRef<T>(): { current: T | null } {
-  return { current: null };
-}

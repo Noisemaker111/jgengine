@@ -1,24 +1,30 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
+import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
+import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { TouchControlsConfig } from "@jgengine/core/input/touchScheme";
+import { useGameContext } from "@jgengine/ui/provider";
 
-// Say where each panel goes and how much it matters. On a small screen the
-// engine stacks them so nothing overlaps, folds the least important into a
-// tap-to-open chip, then scales the HUD down. "critical" panels never fold.
+const theme = {
+  colors: { panel: "#10202ae6" },
+  text: { body: { size: 14, color: "#e6f4f1" } },
+  variants: { panel: { padding: 12, gap: 6, fill: "#10202ae6", radius: 10 } },
+  motion: { duration: 160, distance: 8, bounce: 0 },
+} satisfies RuneTheme;
+
+// Anchor each panel to the screen and inside the safe area. `responsive` restyles a panel per screen
+// size: on a phone the quest log shrinks and the hotbar narrows, so nothing covers the thumbs.
 export function GameUI() {
-  const layout = useHudLayout({ storageKey: "tide-runner" });
+  const ctx = useGameContext();
   return (
-    <HudCanvas layout={layout}>
-      <HudPanel id="health" anchor="top-left" priority="critical">
-        <progress value={72} max={100} />
-      </HudPanel>
-      <HudPanel id="quests" anchor="top-right" priority="tertiary">
-        <p>Reach the lighthouse</p>
-      </HudPanel>
-      <HudPanel id="hotbar" anchor="bottom" priority="critical">
-        <div>1 2 3 4</div>
-      </HudPanel>
-    </HudCanvas>
+    <RuneRoot context={ctx} theme={theme}>
+      <RuneView anchor="top-left" safe inset={12} variant="panel"><RuneLabel value="Health 72 / 100" /></RuneView>
+      <RuneView anchor="top-right" safe inset={12} variant="panel" width={260} responsive={{ phone: { width: 160, size: 12 } }}>
+        <RuneLabel value="Reach the lighthouse" />
+      </RuneView>
+      <RuneView anchor="bottom" safe inset={12} variant="panel" width={360} responsive={{ phone: { width: 220 } }}>
+        <RuneLabel value="1  2  3  4" />
+      </RuneView>
+    </RuneRoot>
   );
 }
 

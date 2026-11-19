@@ -50,7 +50,6 @@ export const game = defineGame({
   lifecycle,
   // The pit wall is drawn natively by Rune: plates, the pit sheet, the dash and the notices are the game's own.
   GameUI,
-  uiRenderer: "rune",
   hudTheme: false,
   // Auto quality holds 60 fps; the reporter and telemetry sink stay unset until the host wires them.
   health: { autoQuality: { targetFrameMs: 1000 / 60 } },

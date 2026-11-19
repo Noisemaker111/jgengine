@@ -1,10 +1,11 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { Component, createContext, useContext, useEffect, useId, useLayoutEffect, useState, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
+import { Component, createContext, useContext, useEffect, useLayoutEffect, useState, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 
-import { ErrorReportActions, errorReportContext } from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { errorReportContext } from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { ShellScreen } from "@jgengine/core/ui/rune/shellScreens.view";
 
 const handledPresentationErrors = new WeakSet<object>();
 const codeLoadFailures = new WeakSet<object>();
@@ -126,24 +127,18 @@ export function createPlaySurfaceFocusOwnership<Owner>() {
 
 function RecoveryFailure({ ctx, error, retry }: { ctx: GameContext; error: unknown; retry: () => void }) {
   useLayoutEffect(() => suspendPlayControls(ctx), [ctx]);
-  const descriptionId = useId();
   const message = error instanceof Error ? error.message : String(error);
   const reload = presentationRecoveryAction(error) === "reload";
   const report = ["JGengine presentation error", message, error instanceof Error ? error.stack : null, errorReportContext()]
     .filter((line): line is string => line !== null && line !== undefined).join("\n");
   return (
-    <div style={{ display: "grid", width: "100%", height: "100%", placeItems: "center", padding: 24, background: "#08151d", color: "#e9f6ee", fontFamily: "system-ui" }} data-presentation-recovery="failed">
-      <section role="alert" aria-describedby={descriptionId} style={{ width: "100%", maxWidth: 480, padding: 28, border: "1px solid #35616b", borderRadius: 16, background: "#102735", boxShadow: "0 20px 60px #0006" }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 650 }}>The game view couldn’t load</h2>
-        <p id={descriptionId} style={{ margin: "12px 0 20px", color: "#c3d9dd", lineHeight: 1.5 }}>{reload ? "Reload the game to reconnect and load its view. If the problem continues, the technical details can help the game’s author investigate." : "Retry to load the view again. If the problem continues, the technical details can help the game’s author investigate."}</p>
-        <button type="button" autoFocus style={{ border: "1px solid #8ce0c2", borderRadius: 8, background: "#8ce0c2", color: "#082b22", padding: "10px 18px", font: "inherit", fontWeight: 650, cursor: "pointer" }} onClick={retry}>{reload ? "Reload game" : "Retry display"}</button>
-        <details style={{ marginTop: 24, borderTop: "1px solid #35616b", paddingTop: 16 }}>
-          <summary style={{ cursor: "pointer", color: "#b7d3da" }}>Technical details</summary>
-          <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 160, overflow: "auto", fontSize: 12, color: "#c3d9dd" }}>{message}</pre>
-          <ErrorReportActions report={report} issueTitle={`Presentation: ${message}`} />
-        </details>
-      </section>
-    </div>
+    <ShellScreen
+      title="The game view couldn’t load"
+      body={reload ? "Reload the game to reconnect and load its view. If the problem continues, the technical details can help the game’s author investigate." : "Retry to load the view again. If the problem continues, the technical details can help the game’s author investigate."}
+      detail={message}
+      primary={{ label: reload ? "Reload game" : "Retry display", run: retry }}
+      secondary={{ label: "Copy details", run: () => void navigator.clipboard?.writeText(report) }}
+    />
   );
 }
 
@@ -254,12 +249,10 @@ export function ContextLossScreen({ ctx, canvas }: { ctx: GameContext; canvas: H
   useLayoutEffect(() => (lost ? suspendPlayControls(ctx) : undefined), [ctx, lost]);
   if (!lost) return null;
   return (
-    <div data-context-lost="" style={{ position: "absolute", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: 24, background: "rgba(8, 21, 29, 0.92)", color: "#e9f6ee", fontFamily: "system-ui" }}>
-      <section role="alert" style={{ width: "100%", maxWidth: 440, padding: 24, border: "1px solid #35616b", borderRadius: 16, background: "#102735" }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 650 }}>The display was lost</h2>
-        <p style={{ margin: "10px 0 18px", color: "#c3d9dd", lineHeight: 1.5 }}>The graphics driver reset. The game is paused and will come back on its own; if it does not, reload. Your last checkpoint is kept.</p>
-        <button type="button" autoFocus style={{ border: "1px solid #8ce0c2", borderRadius: 8, background: "#8ce0c2", color: "#082b22", padding: "10px 18px", font: "inherit", fontWeight: 650, cursor: "pointer" }} onClick={() => location.reload()}>Reload game</button>
-      </section>
-    </div>
+    <ShellScreen
+      title="The display was lost"
+      body="The graphics driver reset. The game is paused and will come back on its own; if it does not, reload. Your last checkpoint is kept."
+      primary={{ label: "Reload game", run: () => location.reload() }}
+    />
   );
 }

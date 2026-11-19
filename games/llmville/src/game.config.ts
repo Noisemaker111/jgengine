@@ -38,7 +38,6 @@ export const game = defineGame({
   },
   GameUI: LlmvilleGameUI,
   hudTheme: false,
-  uiRenderer: "rune",
   scene: { WorldOverlay: LlmvilleWorld, RemotePlayers: LlmvilleRemotePlayers, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
   scenePlacement: false,
   camera: {
