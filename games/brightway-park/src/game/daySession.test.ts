@@ -36,7 +36,7 @@ describe("Brightway Park day session", () => {
   test("the probe reports the park day as a session with no carried quantity", () => {
     const ctx = boot();
     openParkDay(ctx);
-    const probe = (globalThis as { __jgengineRun?: { read(): { kind: string | null; phase: string; carried: number } } }).__jgengineRun;
+    const probe = (globalThis.__jg as { run?: { read(): { kind: string | null; phase: string; carried: number } } } | undefined)?.run;
     expect(probe?.read()).toMatchObject({ kind: "day", phase: "open", carried: 0 });
   });
 });

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { upgradeStepAction } from "@jgengine/core/worldModel/upgradePaths";
 
@@ -51,11 +52,11 @@ const act = (runner: ReturnType<typeof starterPark>["runner"], action: string, t
 };
 
 /** Set a ride's wear in the sim, as if it had run that many cycles since its last service. */
-function wearDown(id: string, runs: number): void {
-  const snapshot = rideSystem().snapshot();
+function wearDown(ctx: GameContext, id: string, runs: number): void {
+  const snapshot = rideSystem(ctx).snapshot();
   const entry = snapshot.rides.find((candidate) => candidate.definition.id === id)!;
   entry.wear = runs;
-  rideSystem().restore(snapshot);
+  rideSystem(ctx).restore(snapshot);
 }
 
 describe("ride refits", () => {
@@ -66,7 +67,7 @@ describe("ride refits", () => {
     expect(w.costOf(upgradeStepAction(kind, "premium", 1), id)["park.cash"]).toBe(-Math.round(def.cost * REFIT_SHARE));
     expect(act(runner, upgradeStepAction(kind, "premium", 1), id)).toBe("applied");
     expect(w.num("park.cash")).toBeCloseTo(cash - Math.round(def.cost * REFIT_SHARE), 0);
-    expect(rideView(id)!.capacity).toBe(Math.round(def.ride!.capacity * (1 + REFITS.premium.capacity)));
+    expect(rideView(runner.ctx, id)!.capacity).toBe(Math.round(def.ride!.capacity * (1 + REFITS.premium.capacity)));
     expect(w.num(`${id}.appeal`)).toBeCloseTo(appeal + REFITS.premium.appeal, 5);
     expect(w.num(`${id}.upkeep_delta`)).toBeCloseTo(def.upkeep * REFITS.premium.upkeep, 2);
     // The fork is closed: no second refit, either way.
@@ -99,7 +100,7 @@ describe("ride refits", () => {
 describe("closing a ride to refurbish it", () => {
   test("a shut ride takes no guests, costs a quarter of its upkeep, sheds its wear and reopens", () => {
     const { runner, w, id, kind, def } = starterPark();
-    wearDown(id, 10);
+    wearDown(runner.ctx, id, 10);
     const open = w.num("park.rides_open");
     expect(act(runner, shutAction(kind), id)).toBe("applied");
     expect(w.fact(`${id}.closed`)).toBe(true);
@@ -107,17 +108,17 @@ describe("closing a ride to refurbish it", () => {
     expect(w.num(`${id}.upkeep_delta`)).toBeCloseTo(def.upkeep * (SHUT_UPKEEP - 1), 2);
 
     step(runner, REFURB_SECONDS * 4);
-    expect(rideView(id)!.wear).toBeLessThanOrEqual(6);
-    expect(rideView(id)!.wear).toBeGreaterThanOrEqual(5);
+    expect(rideView(runner.ctx, id)!.wear).toBeLessThanOrEqual(6);
+    expect(rideView(runner.ctx, id)!.wear).toBeGreaterThanOrEqual(5);
 
     expect(act(runner, shutAction(kind), id)).toBe("rejected");
     expect(act(runner, reopenAction(kind), id)).toBe("applied");
     expect(w.fact(`${id}.closed`)).toBe(false);
     expect(w.num("park.rides_open")).toBe(open);
     expect(w.num(`${id}.upkeep_delta`)).toBe(0);
-    const wear = rideView(id)!.wear;
+    const wear = rideView(runner.ctx, id)!.wear;
     step(runner, REFURB_SECONDS * 2);
-    expect(rideView(id)!.wear).toBeGreaterThanOrEqual(wear);
+    expect(rideView(runner.ctx, id)!.wear).toBeGreaterThanOrEqual(wear);
   });
 
   test("a shut ride's upkeep line runs at a quarter", () => {

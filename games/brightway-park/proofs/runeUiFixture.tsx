@@ -15,9 +15,9 @@ import { savePark } from "../src/game/persistence";
 import { parkReady } from "../src/game/world/setup";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { FIRST_SCENARIO } from "../src/game/scenarios";
-import { resetSession, session } from "../src/game/session";
+import { sessionOf } from "../src/game/session";
 import { GameUI } from "../src/game/ui/GameUI";
-import { parkFocus } from "../src/game/ui/menu/ParkMenu";
+import { parkFocusOf } from "../src/game/ui/menu/ParkMenu";
 
 export const NATIVE_STATES = ["title", "new", "saves", "settings", "credits", "hud", "inspector", "guest", "books", "research", "paused", "pause-settings", "help", "won", "bankrupt", "ribbon"] as const;
 export type NativeFixture = (typeof NATIVE_STATES)[number];
@@ -33,22 +33,19 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
   } });
   try { return await renderFixture(state, width, height); }
   finally {
-    parkFocus.id = null; parkFocus.panel = null;
-    resetSession();
     if (originalStorage === undefined) Reflect.deleteProperty(globalThis, "localStorage");
     else Object.defineProperty(globalThis, "localStorage", originalStorage);
   }
 }
 
 async function renderFixture(state: NativeFixture, width: number, height: number) {
-  resetSession();
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   const ctx = runner.ctx, run = (name: string, input: Record<string, unknown> = {}) => runner.ui.invoke(name, input);
   const w = park.of(ctx);
-  parkFocus.id = state === "new" || state === "saves" || state === "settings" || state === "credits" ? state : state === "pause-settings" ? "settings" : state === "help" ? "help" : null;
-  parkFocus.panel = state === "books" ? "books" : state === "research" ? "research" : null;
+  parkFocusOf(ctx).id = state === "new" || state === "saves" || state === "settings" || state === "credits" ? state : state === "pause-settings" ? "settings" : state === "help" ? "help" : null;
+  parkFocusOf(ctx).panel = state === "books" ? "books" : state === "research" ? "research" : null;
   await parkReady(ctx);
-  if (state === "saves") { run("park.start"); await savePark(ctx); session.started = false; setGamePhase(ctx, "menu"); await refreshParkSlot(ctx); }
+  if (state === "saves") { run("park.start"); await savePark(ctx); sessionOf(ctx).started = false; setGamePhase(ctx, "menu"); await refreshParkSlot(ctx); }
   if (state === "hud" || state === "research") { run("park.scenario", { id: FIRST_SCENARIO }); run("park.start"); runner.step(0.4); }
   if (state === "paused" || state === "pause-settings" || state === "help" || state === "won" || state === "bankrupt" || state === "ribbon") run("park.start");
   if (state === "inspector" || state === "guest" || state === "books") {
@@ -57,8 +54,8 @@ async function renderFixture(state: NativeFixture, width: number, height: number
     resetPark(ctx, { layout: "starter", guests: 6 });
     run("park.start");
   }
-  if (state === "inspector") session.selectedObject = w.instances("ride")[0]?.id ?? null;
-  if (state === "guest") { const [guest] = session.guests.keys(); if (guest !== undefined) ctx.scene.entity.selection.replace([guest]); }
+  if (state === "inspector") sessionOf(ctx).selectedObject = w.instances("ride")[0]?.id ?? null;
+  if (state === "guest") { const [guest] = sessionOf(ctx).guests.keys(); if (guest !== undefined) ctx.scene.entity.selection.replace([guest]); }
   if (state === "paused" || state === "pause-settings" || state === "help") run("pauseToggle");
   if (state === "won") { run("park.scenario", { id: FIRST_SCENARIO }); w.set("scenario.result", "won"); }
   if (state === "bankrupt") w.set("park.game_over", true);

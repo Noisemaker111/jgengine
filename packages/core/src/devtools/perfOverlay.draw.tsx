@@ -56,7 +56,7 @@ export function perfOverlayProbeDraw(sample: PerfOverlaySample): EngineDraw {
   let owned: ReturnType<typeof installFrameBreakdown> | null = null;
   return {
     mount(state: EngineFrameState) {
-      if (typeof window === "undefined" || window.__jgFrameBreakdown !== undefined) return;
+      if (typeof window === "undefined" || window.__jg?.frames !== undefined) return;
       try {
         owned = installFrameBreakdown(state.gl);
       } catch {
@@ -78,13 +78,13 @@ export function perfOverlayProbeDraw(sample: PerfOverlaySample): EngineDraw {
       if (now - counted >= NODE_COUNT_MS) {
         counted = now;
         sample.nodes = countSceneNodes(state.scene).nodes;
-        const breakdown = typeof window === "undefined" ? undefined : window.__jgFrameBreakdown;
+        const breakdown = typeof window === "undefined" ? undefined : window.__jg?.frames;
         sample.systems = breakdown === undefined ? [] : breakdown.summary({ top: TOP_SYSTEMS, last: 60 }).cpu.slice(0, TOP_SYSTEMS);
       }
     },
     dispose() {
       // Telemetry may have replaced it since; only take down our own.
-      if (owned !== null && typeof window !== "undefined" && window.__jgFrameBreakdown === owned) owned.dispose();
+      if (owned !== null && typeof window !== "undefined" && window.__jg?.frames === owned) owned.dispose();
       owned = null;
     },
   };

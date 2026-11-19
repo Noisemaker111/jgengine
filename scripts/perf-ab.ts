@@ -491,7 +491,7 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   const problem = productionProblem({ build: args.build, slow: null, pcBusyPct, frame: frameScore([]), main: null, load: loaded });
   if (problem !== null) throw new Error(`the ${side} page was asked for as a production build but was not one: ${problem}`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
-  const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
+  const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jg?.agent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
   return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loaded, pcBusyPct };
@@ -525,14 +525,14 @@ async function resume(page: SidePage, path: PerfPath): Promise<void> {
   // its own is put back (a car that drives itself), so a game whose player stands pays no teleport.
   const home = page.home;
   if (home !== null && !page.homeFailed && (path === "walk" || awayFromHome(await playerAt(page), home) > HOME_TOLERANCE_M)) {
-    const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
+    const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jg?.agent?.handle?.(${homeRequest(home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
     if (moved?.ok !== true) throw new Error(`could not put the ${page.side} page's player back at the start of the walk: ${moved?.error ?? "no answer"}`);
     // The teleport's own camera turn swings round the camera's old target, so the view after it
     // pointed from where the last walk ended and alternate windows walked two routes (north-east at
     // 27 ms, south at 16 ms; harbor-heat, 2026-11-09). Turned again once the camera follows the new
     // spot, every window walks one route.
     await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
-    await page.session.evaluate(`window.__jgengineAgent?.handle?.(${JSON.stringify({ method: "camera_heading", yaw: home.yaw })})`);
+    await page.session.evaluate(`window.__jg?.agent?.handle?.(${JSON.stringify({ method: "camera_heading", yaw: home.yaw })})`);
     await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
     // drift-foundry's teleport answers ok and its car body puts the player back where it was; its
     // windows then follow the car down the track, each pair still at one spot on both pages.
@@ -557,7 +557,7 @@ export function awayFromHome(at: readonly number[] | null, home: Home): number {
 }
 
 async function playerAt(page: SidePage): Promise<number[] | null> {
-  const pose = await page.session.evaluate<{ ok: boolean; position?: number[] }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
+  const pose = await page.session.evaluate<{ ok: boolean; position?: number[] }>(`window.__jg?.agent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   return pose?.ok === true && Array.isArray(pose.position) ? pose.position.map((value) => Math.round(value * 10) / 10) : null;
 }
 

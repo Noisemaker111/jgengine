@@ -89,7 +89,7 @@ async function screenshot(session: CdpSession) {
 }
 
 async function bridge(session: CdpSession, request: Record<string, unknown>): Promise<{ ok: boolean; error?: string } & Record<string, unknown>> {
-  const reply = await session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${JSON.stringify(request)}) ?? { ok: false, error: "no agent bridge on the page" }`, { awaitPromise: true });
+  const reply = await session.evaluate<{ ok: boolean; error?: string }>(`window.__jg?.agent?.handle?.(${JSON.stringify(request)}) ?? { ok: false, error: "no agent bridge on the page" }`, { awaitPromise: true });
   return reply ?? { ok: false, error: "the agent bridge returned nothing" };
 }
 
@@ -124,8 +124,8 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
   const started = Date.now();
   // The old canvas leaves first; the new one is warm once its warmup cover is gone and it has drawn.
   const warmCheck = backend === "webgpu"
-    ? `!!globalThis.__jgWebGpu && !globalThis.__jgWebGpu.isContextLost() && document.querySelector("[data-shell-warmup]") === null && globalThis.__jgWebGpu.stats.frames > 2`
-    : `(!globalThis.__jgWebGpu || globalThis.__jgWebGpu.isContextLost()) && document.querySelector("canvas") !== null && document.querySelector("[data-shell-warmup]") === null`;
+    ? `!!globalThis.__jg?.webgpu && !globalThis.__jg?.webgpu.isContextLost() && document.querySelector("[data-shell-warmup]") === null && globalThis.__jg?.webgpu.stats.frames > 2`
+    : `(!globalThis.__jg?.webgpu || globalThis.__jg?.webgpu.isContextLost()) && document.querySelector("canvas") !== null && document.querySelector("[data-shell-warmup]") === null`;
   let warm = false;
   // The remount and its warmup cover take a moment to start; checking at once would see the old canvas.
   await sleep(2000);
@@ -166,7 +166,7 @@ async function compareGame(session: CdpSession, base: string, game: string, outD
   const webgpuExposure = await settleExposure(session, "webgpu");
   const webgpu = await screenshot(session);
   const webgpuFrames = await timed("webgpu");
-  const warnings = (await session.evaluate<string[]>(`[...(globalThis.__jgWebGpu?.warnings?.keys() ?? [])].map((w) => w.slice(0, 300))`)) ?? [];
+  const warnings = (await session.evaluate<string[]>(`[...(globalThis.__jg?.webgpu?.warnings?.keys() ?? [])].map((w) => w.slice(0, 300))`)) ?? [];
   markStep("switch back to webgl");
   await switchTo(session, "webgl");
   await bridge(session, { method: "time_scale", scale: 0 });

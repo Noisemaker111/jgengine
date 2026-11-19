@@ -22,8 +22,8 @@ import { installFrameBreakdown } from "./frameBreakdown.draw";
 /**
  * Draw-side form of {@link FrameTelemetry}: installs the in-page frame sampler for the live 3D
  * scene — it wraps this renderer's context for GPU-object counts, reads renderer and scene numbers
- * on demand, and publishes `window.__JG.report()`, plus the per-frame breakdown
- * (`window.__jgFrameBreakdown`: CPU per system, GPU per pass, draws, compiles, uploads, hitches).
+ * on demand, and publishes `window.__jg.report()`, plus the per-frame breakdown
+ * (`window.__jg.frames`: CPU per system, GPU per pass, draws, compiles, uploads, hitches).
  * It normally installs only when the dev server answers its report route; `?telemetry=local`
  * opts a shipped game into local-only reporting. Rebuilds when `game`/`quality` change, like the
  * old effect deps.
@@ -115,7 +115,7 @@ export function frameTelemetryDraw(getProps: () => { game: string; quality: Perf
 /**
  * Mounts the in-page frame sampler for the live 3D scene: it wraps this renderer's
  * context for GPU-object counts, reads renderer and scene numbers on demand, and
- * publishes `window.__JG.report()`, plus the per-frame breakdown (`window.__jgFrameBreakdown`: CPU
+ * publishes `window.__jg.report()`, plus the per-frame breakdown (`window.__jg.frames`: CPU
  * per system, GPU per pass, draws, compiles, uploads, hitches). It normally installs only when the
  * dev server answers its report route; `?telemetry=local` opts a shipped game into local-only reporting.
  * @internal

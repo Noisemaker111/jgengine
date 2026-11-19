@@ -10,9 +10,9 @@ export default defineFlow(game, {
     // A software-drawn native frame can trail the tree by seconds: a shot waits until the screen's
     // own control has a laid-out rect (the hit test reads the same rects), or a fresh frame lands.
     const settle = async (control?: string) => {
-      if (control !== undefined) { await f.waitForPage(`window.__jgNativeUi?.point(${JSON.stringify(control)}) != null`, { timeoutMs: 120000, note: `${control} is laid out` }); await f.wait(3000); return; }
-      const before = Number(await f.page("window.__jgNativeUi?.stats().frames ?? 0"));
-      try { await f.waitForPage(`(window.__jgNativeUi?.stats().frames ?? 0) > ${before}`, { timeoutMs: 20000 }); } catch { /* a settled page draws no frames */ }
+      if (control !== undefined) { await f.waitForPage(`window.__jg?.nativeUi?.point(${JSON.stringify(control)}) != null`, { timeoutMs: 120000, note: `${control} is laid out` }); await f.wait(3000); return; }
+      const before = Number(await f.page("window.__jg?.nativeUi?.stats().frames ?? 0"));
+      try { await f.waitForPage(`(window.__jg?.nativeUi?.stats().frames ?? 0) > ${before}`, { timeoutMs: 20000 }); } catch { /* a settled page draws no frames */ }
       await f.wait(1500);
     };
     const shot = async (name: string, control?: string) => { await settle(control); await f.shot(name); };

@@ -1,7 +1,7 @@
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { session } from "./session";
+import { sessionOf } from "./session";
 import { park } from "./park";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
@@ -149,7 +149,7 @@ const seaGains = new ContextMap<number>();
  * touches the audio loop when the wanted level changes.
  */
 export function syncAmbience(ctx: GameContext): void {
-  if (!session.started) return;
+  if (!sessionOf(ctx).started) return;
   const previous = seaGains.get(ctx);
   if (previous === undefined) ctx.game.audio.loop("sea", "sea");
   const w = park.of(ctx);

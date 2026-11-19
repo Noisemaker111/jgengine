@@ -9,7 +9,7 @@ import { Box3, BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, Grou
 import type { Texture } from "three";
 import motionJson from "../../../public/art/models/motion.json";
 import { objectModels } from "../models";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { cellCentres, cellFor, park, parkObject, parkObjects, patrolRadius, type ParkObject } from "../park";
 import { BUILDABLES } from "../objects/catalog";
 import { coasterCircuit, rideView } from "../rides";
@@ -85,10 +85,10 @@ function rideMotionDraw(spec: MotionSpec, objectId: string, live: () => { moving
 function RideMotion({ object }: { object: ParkObject }) {
   const spec = MOTION[object.kind]!;
   const clock = useGameStore(ctx => ctx.time);
-  const reduced = useGameStore(ctx => Boolean(ctx.game.store.get("park.reduced-motion")));
+  const reduced = useGameStore((c) => Boolean(c.game.store.get("park.reduced-motion")));
   const ctx = useGameContext();
   const live = useMemo(() => () => {
-    const view = rideView(object.id);
+    const view = rideView(ctx, object.id);
     // A broken or idle ride stands still; one running its cycle moves.
     const moving = !reduced && view !== null && view.phase !== "broken" && view.phase !== "idle";
     return { moving, now: moving ? clock.now() : 0 };
@@ -141,10 +141,11 @@ function coasterTrainDraw(objectId: string, path: Parameters<typeof pathFollowSe
 }
 
 function CoasterTrain({ object, circuit }: { object: ParkObject; circuit: ReturnType<typeof coasterCircuit> }) {
-  const reduced = useGameStore(ctx => Boolean(ctx.game.store.get("park.reduced-motion")));
+  const ctx = useGameContext();
+  const reduced = useGameStore((c) => Boolean(c.game.store.get("park.reduced-motion")));
   const path = useMemo(() => ({ waypoints: circuit.waypoints, speed: Math.max(1, circuit.averageSpeed), loop: true }), [circuit]);
   const live = useMemo(() => () => {
-    const view = rideView(object.id);
+    const view = rideView(ctx, object.id);
     return { riding: view?.phase === "riding", phaseSeconds: view?.phaseSeconds ?? 0, reduced };
   }, [object.id, reduced]);
   const closed = circuit.closed;
@@ -294,7 +295,7 @@ function ghostDraw(kind: string, at: [number, number], y: number, valid: boolean
   };
 }
 function Ghost({ kind, at, y, valid }: { kind: string; at: [number, number]; y: number; valid: boolean }) {
-  const rotation = useGameStore(() => session.rotation);
+  const rotation = useGameStore((c) => sessionOf(c).rotation);
   return <EngineDrawMount create={() => ghostDraw(kind, at, y, valid, rotation)} deps={[kind, at[0], at[1], y, valid, rotation]} />;
 }
 
@@ -415,7 +416,7 @@ function Blueprint() {
   const ctx = useGameContext();
   const [hover, setHover] = useState<[number, number] | null>(null);
   const [down, setDown] = useState<[number, number] | null>(null);
-  const selected = useGameStore(() => session.selectedTool);
+  const selected = useGameStore(() => sessionOf(ctx).selectedTool);
   const gl = host.frame.gl, camera = host.frame.camera;
   useEffect(() => {
     const ray = new Raycaster(), plane = new Plane(new Vector3(0, 1, 0), 0), hit = new Vector3();
@@ -433,7 +434,7 @@ function Blueprint() {
     const leave = () => setHover(null);
     // A left press with a tool in hand starts a drag: the click that ends it lays the line or the area.
     const press = (e: PointerEvent) => {
-      if (e.button !== 0 || session.selectedTool === null) return;
+      if (e.button !== 0 || sessionOf(ctx).selectedTool === null) return;
       const at = pick(e);
       if (at === null) return;
       setDown(at);
@@ -582,7 +583,7 @@ export function BrightwayParkWorldOverlay() {
 
 function OverlayBodies() {
   const ctx = useGameContext();
-  const selection = useGameStore(() => session.selectedObject);
+  const selection = useGameStore(() => sessionOf(ctx).selectedObject);
   const objects = useGameStore(c => parkObjects(c));
   const circuit = useMemo(() => coasterCircuit(ctx), [ctx, objects]);
   const obj = parkObject(ctx, selection);

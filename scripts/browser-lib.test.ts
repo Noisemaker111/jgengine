@@ -7,7 +7,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { deflateSync } from "node:zlib";
 
-import { CAPTURE_HOLD_KEY } from "../packages/core/src/runtime/browserLifecycle.view";
+import "../packages/core/src/runtime/browserLifecycle.view";
 import {
   chromeLaunchMode,
   type CdpSession,
@@ -282,12 +282,11 @@ describe("capture navigation failures", () => {
     expect(hold).toBeGreaterThanOrEqual(0);
     expect(hold).toBeLessThan(sent.findIndex((call) => call.method === "Page.navigate"));
     expect(sent.some((call) => call.method === "Emulation.setFocusEmulationEnabled" && call.params?.["enabled"] === true)).toBe(true);
-    const scope = globalThis as Record<string, unknown>;
     try {
       new Function(CAPTURE_HOLD_SOURCE)();
-      expect(scope[CAPTURE_HOLD_KEY]).toBe(true);
+      expect(globalThis.__jg?.captureHold).toBe(true);
     } finally {
-      delete scope[CAPTURE_HOLD_KEY];
+      Reflect.deleteProperty(globalThis, "__jg");
     }
   });
 

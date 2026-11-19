@@ -1,3 +1,5 @@
+import "../runtime/pageHandle";
+
 /**
  * Which components rendered, and how often: the evidence that a changing value re-renders only its
  * own leaf. The engine's UI runtime reports every component render and every commit to the counter
@@ -23,7 +25,7 @@ export interface RenderCounts {
   components: ComponentRenders[];
 }
 
-/** The installed counter, at `globalThis.__jgRenders`. */
+/** The installed counter, at `window.__jg.renders`. */
 export interface RenderCounter {
   reset(): void;
   read(): RenderCounts;
@@ -31,9 +33,17 @@ export interface RenderCounter {
   count(name: string): number;
 }
 
-declare global {
-  var __jgRenders: RenderCounter | undefined;
-  var __jgRenderSink: { render(type: unknown): void; commit(): void } | undefined;
+/** Where the UI runtime reports each render and commit. */
+export interface RenderSink {
+  render(type: unknown): void;
+  commit(): void;
+}
+
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    renders?: RenderCounter;
+    renderSink?: RenderSink;
+  }
 }
 
 /**
@@ -41,8 +51,9 @@ declare global {
  * component that bailed out is never called) and once per commit. Self-contained, so a harness can
  * ship its source to a page.
  */
-export function installRenderCounter(scope: { __jgRenders?: RenderCounter | undefined; __jgRenderSink?: { render(type: unknown): void; commit(): void } | undefined }): RenderCounter {
-  if (scope.__jgRenders !== undefined) return scope.__jgRenders;
+export function installRenderCounter(scope: { __jg?: { renders?: RenderCounter; renderSink?: RenderSink } | undefined }): RenderCounter {
+  const page = (scope.__jg ??= {});
+  if (page.renders !== undefined) return page.renders;
   const counts = new Map<string, number>();
   let commits = 0;
   let frames = 0;
@@ -64,7 +75,7 @@ export function installRenderCounter(scope: { __jgRenders?: RenderCounter | unde
     }
     return "Anonymous";
   };
-  scope.__jgRenderSink = {
+  page.renderSink = {
     render(type) {
       const name = nameOf(type);
       counts.set(name, (counts.get(name) ?? 0) + 1);
@@ -93,11 +104,11 @@ export function installRenderCounter(scope: { __jgRenders?: RenderCounter | unde
     },
     count: (name) => counts.get(name) ?? 0,
   };
-  scope.__jgRenders = counter;
+  page.renders = counter;
   return counter;
 }
 
 /** The counter the test preload or the page script installed, or null when there is none. */
 export function renderCounter(): RenderCounter | null {
-  return globalThis.__jgRenders ?? null;
+  return globalThis.__jg?.renders ?? null;
 }

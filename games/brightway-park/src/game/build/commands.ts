@@ -1,9 +1,10 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { BUILDABLES } from "../objects/catalog";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { placementAt } from "./placement";
 import { archiveSave, savePark } from "../persistence";
 import { tracePark } from "../evidence";
@@ -29,11 +30,12 @@ export const LINE_KINDS: ReadonlySet<string> = new Set(["path_walk", "path_queue
 
 export type PointerInput = Pick<PointerHit, "point" | "entity" | "object">;
 
-let revision = 0;
+const revisionOf = perContext(() => ({ count: 0 }));
 
 export function bump(ctx: GameContext): void {
-  revision += 1;
-  ctx.game.store.set("__rev", revision);
+  const revision = revisionOf(ctx);
+  revision.count += 1;
+  ctx.game.store.set("__rev", revision.count);
   tracePark(ctx, "command");
 }
 
@@ -69,7 +71,7 @@ function layLine(ctx: GameContext, kind: string, from: readonly [number, number]
     ctx.game.notices.push({ text: refusal ?? "Nothing could be laid there", tone: "deny" });
     return;
   }
-  recordStep({ type: "place", ids, cost });
+  recordStep(ctx, { type: "place", ids, cost });
   ctx.game.notices.push({ text: `${ids.length} × ${BUILDABLES[kind]!.label} laid · -$${cost}`, tone: "success" });
   ctx.game.audio.play("place");
   savePark(ctx);
@@ -92,7 +94,7 @@ function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readon
     return;
   }
   const cost = cells.length * LAND_COST;
-  recordStep({ type: "land", cells, cost });
+  recordStep(ctx, { type: "land", cells, cost });
   relinkPark(ctx);
   ctx.game.notices.push({ text: `${step > 0 ? "Raised" : "Lowered"} ${cells.length} cell${cells.length === 1 ? "" : "s"} · -$${cost}`, tone: "success" });
   ctx.game.audio.play("place");
@@ -108,9 +110,9 @@ export function landCheck(ctx: GameContext, tool: string, x: number, z: number):
 }
 
 function selectTool(ctx: GameContext, id: string): void {
-  if (!session.started || over(ctx) || !canBuild(ctx, id)) return;
+  if (!sessionOf(ctx).started || over(ctx) || !canBuild(ctx, id)) return;
   clearSelection(ctx);
-  session.selectedTool = session.selectedTool === id ? null : id;
+  sessionOf(ctx).selectedTool = sessionOf(ctx).selectedTool === id ? null : id;
   bump(ctx);
 }
 
@@ -126,12 +128,12 @@ const LAID_IN_RUNS: ReadonlySet<string> = new Set(["track", "path", "scenery"]);
 
 /** Build at the pointer: the park's track rule, then the world's own `brightway.place`. */
 function tryBuild(ctx: GameContext, input: PointerInput): void {
-  const kind = session.selectedTool;
+  const kind = sessionOf(ctx).selectedTool;
   if (kind === null || !canBuild(ctx, kind)) return;
   if (!Array.isArray(input.point) || input.point.length !== 3 || !input.point.every(Number.isFinite)) return;
   const [x, , z] = input.point;
-  const from = session.dragFrom;
-  session.dragFrom = null;
+  const from = sessionOf(ctx).dragFrom;
+  sessionOf(ctx).dragFrom = null;
   if (isLandTool(kind)) {
     shapeArea(ctx, kind, from ?? [x, z], [x, z]);
     return;
@@ -150,17 +152,17 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
   const before = new Set(w.instances().map((instance) => instance.id));
   if (ctx.game.commands.run("brightway.place", { kind, cell: check.cell }).status !== "applied") return;
   const placed = w.instances().find((instance) => !before.has(instance.id));
-  if (placed !== undefined && session.rotation !== 0) {
-    w.set(`${placed.id}.rot`, session.rotation);
-    ctx.scene.object.rotate(placed.id, (session.rotation * Math.PI) / 2);
+  if (placed !== undefined && sessionOf(ctx).rotation !== 0) {
+    w.set(`${placed.id}.rot`, sessionOf(ctx).rotation);
+    ctx.scene.object.rotate(placed.id, (sessionOf(ctx).rotation * Math.PI) / 2);
   }
   const def = BUILDABLES[kind]!;
   // A ride, stall or hire is placed once; track, paths and scenery are laid in runs and stay picked.
-  if (!LAID_IN_RUNS.has(def.category)) session.selectedTool = null;
-  if (placed !== undefined) recordStep({ type: "place", ids: [placed.id], cost: def.cost });
+  if (!LAID_IN_RUNS.has(def.category)) sessionOf(ctx).selectedTool = null;
+  if (placed !== undefined) recordStep(ctx, { type: "place", ids: [placed.id], cost: def.cost });
   const shut = placed === undefined ? null : accessReason(ctx, placed.id);
   // A new ride or shop that is still shut opens its window, where "Connect it" waits.
-  if (placed !== undefined && shut !== null && (def.ride !== undefined || def.stall !== undefined)) session.selectedObject = placed.id;
+  if (placed !== undefined && shut !== null && (def.ride !== undefined || def.stall !== undefined)) sessionOf(ctx).selectedObject = placed.id;
   ctx.game.notices.push({ text: `${def.label} built · -$${def.cost}${shut === null ? "" : ` · ${shut}`}`, tone: "success" });
   if (kind === "track_piece" || kind === "ride_coaster") announceCircuit(ctx);
   const at = placed?.position;
@@ -170,7 +172,7 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
 
 /** Drop both kinds of click selection: the park's inspected object and the engine's selected guest. */
 function clearSelection(ctx: GameContext): void {
-  session.selectedObject = null;
+  sessionOf(ctx).selectedObject = null;
   ctx.scene.entity.selection.clear();
 }
 
@@ -182,16 +184,16 @@ function clearSelection(ctx: GameContext): void {
  * can never leave the path beneath it selected.
  */
 function selectGuestOrObject(ctx: GameContext, input: PointerInput): void {
-  const guest = input.entity !== null && session.guests.has(input.entity) ? input.entity : null;
-  session.selectedObject = guest === null && input.object !== null && park.of(ctx).instance(input.object) !== null ? input.object : null;
+  const guest = input.entity !== null && sessionOf(ctx).guests.has(input.entity) ? input.entity : null;
+  sessionOf(ctx).selectedObject = guest === null && input.object !== null && park.of(ctx).instance(input.object) !== null ? input.object : null;
   ctx.scene.entity.selection.clear();
   if (guest !== null) ctx.scene.entity.selection.replace([guest]);
 }
 
 function pointerAction(ctx: GameContext, input: PointerInput): void {
   tracePark(ctx, "pointer", input);
-  if (!session.started || over(ctx)) return;
-  if (session.selectedTool !== null) {
+  if (!sessionOf(ctx).started || over(ctx)) return;
+  if (sessionOf(ctx).selectedTool !== null) {
     tryBuild(ctx, input);
     return;
   }
@@ -201,7 +203,7 @@ function pointerAction(ctx: GameContext, input: PointerInput): void {
 export function registerBuildCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ reduced: boolean }>("park.motion", { apply(state, input) { state.game.store.set("park.reduced-motion", input.reduced); } });
   ctx.game.commands.define("park.start", { apply(state) {
-    session.started = true;
+    sessionOf(state).started = true;
     openParkDay(state);
     if (over(state)) { setGamePhase(state, "ended"); state.time.pause(); }
     else if (ribbonUp(state)) { setGamePhase(state, "paused"); state.time.pause(); }
@@ -212,19 +214,19 @@ export function registerBuildCommands(ctx: GameContext): void {
   ctx.game.commands.define("park.save", { apply(state) { void savePark(state).then(() => bump(state)); bump(state); } });
   ctx.game.commands.define("park.new", { apply(state) {
     // Stop pagehide (or a save point) writing the old live park over the fresh slot.
-    const started = session.started;
-    session.started = false;
+    const started = sessionOf(state).started;
+    sessionOf(state).started = false;
     void archiveSave(state).then(
       () => { if (typeof window !== "undefined") window.location.reload(); },
-      () => { session.started = started; session.saveStatus = "Could not archive the old save. Free browser storage before starting a new park."; bump(state); },
+      () => { sessionOf(state).started = started; sessionOf(state).saveStatus = "Could not archive the old save. Free browser storage before starting a new park."; bump(state); },
     );
   } });
   ctx.game.commands.define("park.continue", { apply(state) {
-    if (!session.started || over(state)) return;
+    if (!sessionOf(state).started || over(state)) return;
     park.of(state).set("park.win_dismissed", true); state.time.play(); setGamePhase(state, "playing"); savePark(state); bump(state);
   } });
   ctx.game.commands.define<{ speed: number }>("park.speed", { apply(state, input) {
-    if (!session.started || over(state) || ribbonUp(state) || !state.time.snapshot().speeds.includes(input.speed)) return;
+    if (!sessionOf(state).started || over(state) || ribbonUp(state) || !state.time.snapshot().speeds.includes(input.speed)) return;
     state.time.setSpeed(input.speed); setGamePhase(state, "playing"); bump(state);
   } });
   ctx.game.commands.define<PointerInput>("park.pointer", {
@@ -242,7 +244,7 @@ export function registerBuildCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("build.clear", {
     apply(state) {
-      session.selectedTool = null;
+      sessionOf(state).selectedTool = null;
       clearSelection(state);
       bump(state);
     },
@@ -271,7 +273,7 @@ export function registerBuildCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("pauseToggle", {
     apply(state) {
-      if (!session.started || over(state) || ribbonUp(state)) return;
+      if (!sessionOf(state).started || over(state) || ribbonUp(state)) return;
       state.time.toggle();
       setGamePhase(state, state.time.isPaused() ? "paused" : "playing");
       syncAmbience(state);
@@ -281,15 +283,15 @@ export function registerBuildCommands(ctx: GameContext): void {
 
   // The overlay marks where a left-button press began; the click that ends it lays the line or area.
   ctx.game.commands.define<{ point: [number, number] | null }>("build.dragFrom", {
-    apply(_state, input) {
-      session.dragFrom = input.point === null || !input.point.every(Number.isFinite) ? null : [input.point[0], input.point[1]];
+    apply(state, input) {
+      sessionOf(state).dragFrom = input.point === null || !input.point.every(Number.isFinite) ? null : [input.point[0], input.point[1]];
     },
   });
 
   // The same line or area a drag lays, as one command (scripts and the drive tool use it).
   ctx.game.commands.define<{ kind: string; from: [number, number]; to: [number, number] }>("build.line", {
     apply(state, input) {
-      if (!session.started || over(state) || !canBuild(state, input.kind)) return;
+      if (!sessionOf(state).started || over(state) || !canBuild(state, input.kind)) return;
       if (isLandTool(input.kind)) shapeArea(state, input.kind, input.from, input.to);
       else if (LINE_KINDS.has(input.kind)) layLine(state, input.kind, input.from, input.to);
       bump(state);
@@ -298,9 +300,10 @@ export function registerBuildCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("build.undo", {
     apply(state) {
-      if (!session.started || over(state)) return;
+      if (!sessionOf(state).started || over(state)) return;
       const w = park.of(state);
       const line = undoStep(
+        state,
         w,
         (kind, cell, rot) => {
           const id = placeFree(w, kind, cell);
@@ -322,13 +325,13 @@ export function registerBuildCommands(ctx: GameContext): void {
   // Demolish through here so the builder's undo can put it back.
   ctx.game.commands.define<{ id?: string }>("build.demolish", {
     apply(state, input) {
-      const id = input.id ?? session.selectedObject;
+      const id = input.id ?? sessionOf(state).selectedObject;
       if (id === null) return;
       const w = park.of(state);
       const instance = w.instance(id);
       if (instance === null || instance.cell === null) return;
       const step = { type: "remove" as const, kind: instance.kind, cell: [instance.cell[0], instance.cell[1]] as [number, number], rot: w.num(`${id}.rot`), refund: refundOf(instance.kind) };
-      if (state.game.commands.run("brightway.remove", { id }).status === "applied") recordStep(step);
+      if (state.game.commands.run("brightway.remove", { id }).status === "applied") recordStep(state, step);
       bump(state);
     },
   });
@@ -336,8 +339,8 @@ export function registerBuildCommands(ctx: GameContext): void {
   // Lay the entrance, exit and paths a shut ride or shop needs, at the normal build prices.
   ctx.game.commands.define<{ id?: string }>("build.connect", {
     apply(state, input) {
-      if (!session.started || over(state)) return;
-      const id = input.id ?? session.selectedObject;
+      if (!sessionOf(state).started || over(state)) return;
+      const id = input.id ?? sessionOf(state).selectedObject;
       if (id === null) return;
       const w = park.of(state);
       const cost = connectCost(state, id);
@@ -348,7 +351,7 @@ export function registerBuildCommands(ctx: GameContext): void {
       const before = w.num("park.cash");
       const ids = connectPark(state, { only: id });
       const shut = accessReason(state, id);
-      if (ids.length > 0) recordStep({ type: "place", ids, cost: before - w.num("park.cash") });
+      if (ids.length > 0) recordStep(state, { type: "place", ids, cost: before - w.num("park.cash") });
       state.game.notices.push(shut === null
         ? { text: `Connected · ${ids.length} pieces laid · -$${Math.round(before - w.num("park.cash"))}`, tone: "success" }
         : { text: `Couldn't connect it: ${shut}`, tone: "deny" });
@@ -361,14 +364,14 @@ export function registerBuildCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("rotateTool", {
     apply(state) {
-      session.rotation = (session.rotation + 1) % 4;
+      sessionOf(state).rotation = (sessionOf(state).rotation + 1) % 4;
       bump(state);
     },
   });
 
   ctx.game.commands.define("clearTool", {
     apply(state) {
-      session.selectedTool = null;
+      sessionOf(state).selectedTool = null;
       clearSelection(state);
       bump(state);
     },

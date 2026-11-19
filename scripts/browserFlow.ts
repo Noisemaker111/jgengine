@@ -33,7 +33,7 @@ export interface BrowserFlowDriver {
   type(text: string): Promise<void>;
   /** Evaluate a page expression (awaited when it is a promise). */
   evaluate(expression: string): Promise<unknown>;
-  /** Call `window.__jgengineAgent.handle(request)`. */
+  /** Call `window.__jg?.agent.handle(request)`. */
   bridge(request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer>;
   /** The game's `capture.probe` readings, or `null` when the page exposes none. */
   readProbe(): Promise<ProbeReadings | null>;
@@ -92,7 +92,7 @@ function sameValue(actual: unknown, expected: unknown): boolean {
 export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowStepper, reports: { label: string; probe: unknown }[]): BrowserFlow<ProbeReadings> {
   const probe = async (): Promise<ProbeReadings> => {
     const readings = await driver.readProbe();
-    if (readings === null) throw new Error("the page exposes no capture.probe (window.__jgProbe); add one to the game to wait on game state");
+    if (readings === null) throw new Error("the page exposes no capture.probe (window.__jg?.probe); add one to the game to wait on game state");
     return readings;
   };
   const waitUntil = async <T>(read: () => Promise<T>, passes: (value: T) => boolean, timeoutMs: number, what: string): Promise<T> => {
@@ -185,11 +185,11 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
       stepper.run(`see ${String(text)}`, async () => {
         const matches = (body: unknown) => typeof body === "string" && (typeof text === "string" ? body.includes(text) : text.test(body));
         try {
-          await waitUntil(() => driver.evaluate("window.__jgNativeUi?.text() ?? document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
+          await waitUntil(() => driver.evaluate("window.__jg?.nativeUi?.text() ?? document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           // The last value is the whole page text; the closest lines say more than the dump.
-          throw new Error(`${message.replace(/ \(last value [\s\S]*\)$/, "")}${seeHint(text, await driver.evaluate("window.__jgNativeUi?.text() ?? document.body.innerText"))}`);
+          throw new Error(`${message.replace(/ \(last value [\s\S]*\)$/, "")}${seeHint(text, await driver.evaluate("window.__jg?.nativeUi?.text() ?? document.body.innerText"))}`);
         }
       }),
     page: (expression) => stepper.run(`page ${expression}`, () => page(expression)),

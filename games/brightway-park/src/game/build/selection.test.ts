@@ -3,7 +3,7 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { closeTopPanel, createPanelState, isOpen, panelByHotkey, togglePanel } from "@jgengine/core/ui/panelModel";
 
 import { game } from "../../game.config";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { park } from "../park";
 import { DAY_LENGTH } from "../catalog";
 import { seedGuests } from "../sim/guests";
@@ -45,11 +45,11 @@ describe("placement mode", () => {
     live.ui.invoke("build.select", { id: "path_walk" });
     live.ui.invoke("park.pointer", { point: [-40, 0, -40], object: null, entity: null });
     expect(park.of(live.ctx).instances().at(-1)!.kind).toBe("path_walk");
-    expect(session.selectedTool).toBe("path_walk");
+    expect(sessionOf(live.ctx).selectedTool).toBe("path_walk");
     live.ui.invoke("build.select", { id: "staff_janitor" });
     live.ui.invoke("park.pointer", { point: [-36, 0, -28], object: null, entity: null });
     expect(park.of(live.ctx).instances().at(-1)!.kind).toBe("staff_janitor");
-    expect(session.selectedTool).toBeNull();
+    expect(sessionOf(live.ctx).selectedTool).toBeNull();
   });
 });
 
@@ -66,19 +66,19 @@ describe("click selection", () => {
     // Clicking the path selects the path.
     const [x, z] = path.position!;
     live.ui.invoke("park.pointer", { point: [x, 0, z], object: path.id, entity: null });
-    expect(session.selectedObject).toBe(path.id);
+    expect(sessionOf(live.ctx).selectedObject).toBe(path.id);
     expect(live.ctx.scene.entity.selection.size()).toBe(0);
 
     // A guest stands on that path: the engine reports it as `entity`, so the guest wins.
     seedGuests(live.ctx, 1);
-    const guest = [...session.guests.keys()][0]!;
+    const guest = [...sessionOf(live.ctx).guests.keys()][0]!;
     live.ui.invoke("park.pointer", { point: [x, 0, z], object: path.id, entity: guest });
-    expect(session.selectedObject).toBeNull();
+    expect(sessionOf(live.ctx).selectedObject).toBeNull();
     expect(live.ctx.scene.entity.selection.list()).toEqual([guest]);
 
     // Clicking open ground clears both.
     live.ui.invoke("park.pointer", { point: [30, 0, 30], object: null, entity: null });
-    expect(session.selectedObject).toBeNull();
+    expect(sessionOf(live.ctx).selectedObject).toBeNull();
     expect(live.ctx.scene.entity.selection.size()).toBe(0);
   });
 
@@ -86,13 +86,13 @@ describe("click selection", () => {
     const live = runner();
     live.ui.invoke("park.start");
     seedGuests(live.ctx, 1);
-    const guest = [...session.guests.keys()][0]!;
+    const guest = [...sessionOf(live.ctx).guests.keys()][0]!;
     live.ui.invoke("park.pointer", { point: [0, 0, 0], object: null, entity: guest });
     expect(live.ctx.scene.entity.selection.has(guest)).toBe(true);
     // Night closes the gates sends guests home; the selection must not outlive them.
     live.ctx.time.hydrate({ ...live.ctx.time.snapshot(), now: DAY_LENGTH * 0.95, paused: false });
-    for (let frame = 0; frame < 200 && session.guests.has(guest); frame++) live.step(1);
-    expect(session.guests.has(guest)).toBe(false);
+    for (let frame = 0; frame < 200 && sessionOf(live.ctx).guests.has(guest); frame++) live.step(1);
+    expect(sessionOf(live.ctx).guests.has(guest)).toBe(false);
     expect(live.ctx.scene.entity.selection.has(guest)).toBe(false);
   });
 });

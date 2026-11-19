@@ -181,7 +181,7 @@ const authClient = {
   convex: { token: async () => ({ data: { token: null } }) },
 };
 mock.module("../auth/authClient", () => ({ authClient }));
-mock.module("../auth/convexClient", () => ({ convexClient: {}, initialConvexToken: null }));
+mock.module("../auth/convexClient", () => ({ createConvexClient: () => ({ close: async () => {} }), initialConvexToken: null }));
 mock.module("../webEnv", () => ({ env: { VITE_CONVEX_URL: "http://convex.test", VITE_CONVEX_SITE_URL: "http://convex.site.test" } }));
 // The world route's 3D session chunk is never loaded headless; the harness draws the world's UI itself.
 mock.module("../runtime/gameRoutePreload", () => ({ loadGameSessionModule: async () => ({}), preloadGameRoute: () => undefined }));

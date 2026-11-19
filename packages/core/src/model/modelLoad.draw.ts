@@ -16,6 +16,13 @@ import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { mergeModelSubMeshes, mergeSkinnedModelParts } from "./modelMeshMerge.draw";
 import { applyModelSurface } from "./modelSurface.draw";
 import { sharedModelImages } from "./sharedModelImages.draw";
+import { publishOnPage } from "../runtime/pageHandle";
+
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    missingModels?: readonly MissingModelRecord[];
+  }
+}
 
 /** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
 const MODEL_URL_RE = /\.(glb|gltf)(\?|#|$)/i;
@@ -236,7 +243,7 @@ const fallbackListeners = new Set<() => void>();
 
 function publishMissingModels(): void {
   // `shoot` and `drive` read this off the page and fail a run that rendered a placeholder.
-  (globalThis as { __jgengineMissingModels?: readonly MissingModelRecord[] }).__jgengineMissingModels = servedFallbacks;
+  publishOnPage("missingModels", servedFallbacks);
   for (const listener of fallbackListeners) listener();
 }
 

@@ -1,6 +1,7 @@
 // @skill jgengine-gameplay
 import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
+import { publishReadout } from "../runtime/pageHandle";
 
 /** Where a session stands: not opened yet, in progress, or closed at its boundary. */
 export type SessionPhase = "idle" | "open" | "closed";
@@ -308,19 +309,20 @@ export function createSessionLoop<T = never, I = void, R = void>(
   return loop;
 }
 
-const SESSION_PROBE_KEY = "__jgengineRun";
-
-type SessionProbeGlobal = typeof globalThis & { [SESSION_PROBE_KEY]?: SessionProbe };
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    run?: SessionProbe;
+  }
+}
 
 /**
- * Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state
+ * Publish the loop's own readout on `window.__jg.run`, so a capture or devtools probe can state
  * which session is live, its phase, what it carries and the option it offers. Reads only; it never
  * starts, closes or changes a session. Returns the uninstaller.
  *
  * @capability session-loop open and close a game session, settle the quantity it carried and optionally draw the next session's authored option
  */
 export function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => void {
-  const scope = globalThis as SessionProbeGlobal;
   const probe: SessionProbe = {
     read() {
       const state = loop.snapshot();
@@ -334,8 +336,5 @@ export function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => 
       };
     },
   };
-  scope[SESSION_PROBE_KEY] = probe;
-  return () => {
-    if (scope[SESSION_PROBE_KEY] === probe) delete scope[SESSION_PROBE_KEY];
-  };
+  return publishReadout("run", probe);
 }

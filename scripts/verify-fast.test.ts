@@ -663,7 +663,7 @@ describe("commands", () => {
       boots: ["harbor-heat"],
       inputs: { "test:packages/core/src/a.test.ts": ["packages/core/src/a.ts"], "test:packages/core/src/b.test.ts": [] },
     };
-    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "load:harbor-heat"]);
+    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "reopen:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
     expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
@@ -999,13 +999,15 @@ describe("local boots", () => {
     expect(bootsFor(["bun.lock"], new Set(["bun.lock"]))).toEqual([REPRESENTATIVE_GAME]);
   });
 
-  test("a boot links the packs from the shared store first, then probes the running page", () => {
+  test("a boot links the packs from the shared store first, then probes the running page and reopens the game", () => {
     const steps = fastSteps({ ...emptyPlan, boots: ["scrap-signal"] });
     expect(steps.map((step) => step.command.join(" "))).toEqual([
       "bun games/scripts/provision-assets.ts scrap-signal",
       "bun games/scripts/capabilities-probe.ts scrap-signal",
+      "bun games/scripts/reopen.ts scrap-signal",
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
+    expect(steps[2]?.needs).toEqual(["provision scrap-signal"]);
     // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
     const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
     expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
@@ -1013,7 +1015,7 @@ describe("local boots", () => {
 
   test("a boot that already passed with the same inputs is skipped, provision and all", () => {
     const plan = { ...emptyPlan, boots: ["scrap-signal"], inputs: { "boot:scrap-signal": ["games/scrap-signal/src/main.tsx"] } };
-    expect(fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" })).toEqual([]);
+    expect(fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" || id === "reopen:scrap-signal" })).toEqual([]);
   });
 });
 

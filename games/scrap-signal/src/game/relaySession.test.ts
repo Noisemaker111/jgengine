@@ -66,6 +66,6 @@ test("a lost contract settles its wave and the probe reports the closed session"
   expect(loop.phase()).toBe("closed");
   expect(loop.snapshot().closed).toBe(1);
   expect(relayStore.read(ctx).phase).toBe("lost");
-  const probe = (globalThis as { __jgengineRun?: { read(): { session: number; phase: string; kind: string | null; closed: number } } }).__jgengineRun;
+  const probe = (globalThis.__jg as { run?: { read(): { session: number; phase: string; kind: string | null; closed: number } } } | undefined)?.run;
   expect(probe?.read()).toMatchObject({ session: 1, phase: "closed", kind: "wave", closed: 1 });
 });

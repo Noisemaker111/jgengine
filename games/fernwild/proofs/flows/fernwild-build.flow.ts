@@ -18,7 +18,7 @@ export default defineFlow(game, {
     await f.command("craft", {"recipeId":"thatch_door"});
     // craft the hut: 80 thatch, 22 wood, 56 fiber at ARK's prices
     await f.command("craft", {"recipeId":"thatch_ceiling"});
-    await f.expect((p) => (p.crafting) === 7, "__jgProbe().crafting");
+    await f.expect((p) => (p.crafting) === 7, "__jg.probe().crafting");
     // the crafting queue runs down
     await f.waitFor((p) => p.crafting === 0, { timeoutMs: 40000 });
     // the pieces onto the hotbar, keys 1 to 5
@@ -54,7 +54,7 @@ export default defineFlow(game, {
     await f.hold(["Space", "KeyW"], { until: (p) => p.pastDoor > 0.3, ms: 380, timeoutMs: 4000 });
     await f.report("on-the-floor");
     await f.wait(400);
-    await f.expect((p) => (p.ghost) === 1, "__jgProbe().ghost");
+    await f.expect((p) => (p.ghost) === 1, "__jg.probe().ghost");
     // the back wall
     await f.hold("mouse0", { until: (p) => p.structures === 5, ms: 80, timeoutMs: 3000 });
     // the ceiling snaps onto the wall tops

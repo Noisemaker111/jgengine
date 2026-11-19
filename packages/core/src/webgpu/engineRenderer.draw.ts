@@ -16,6 +16,13 @@ import { guardInstanceCounts } from "../instancing/instanceCountGuard.draw";
 import type { RendererBackend } from "../settings/rendererBackend";
 import { loadGlslTranslator } from "./glslToWgsl.draw";
 import { createWebGpuGl, requestWebGpuDevice, type WebGpuDevice, type WebGpuGl } from "./webgpuGl.draw";
+import { publishOnPage } from "../runtime/pageHandle";
+
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    webgpu?: WebGpuGl;
+  }
+}
 
 const backends = new WeakMap<WebGLRenderer, { backend: RendererBackend; webgpu: WebGpuGl | null }>();
 
@@ -79,7 +86,7 @@ export async function prepareEngineRenderer(backend: RendererBackend): Promise<E
           backends.set(renderer, { backend: "webgpu", webgpu: gl });
           guardInstanceCounts(renderer);
           // Perf verbs and probes read its counters here.
-          (globalThis as { __jgWebGpu?: WebGpuGl }).__jgWebGpu = gl;
+          publishOnPage("webgpu", gl);
           return renderer;
         }
         gpu.device.destroy();

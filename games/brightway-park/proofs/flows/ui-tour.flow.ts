@@ -5,7 +5,7 @@ import { game } from "../../src/game.config";
 const settle = (f: { wait(ms: number): Promise<void> }) => f.wait(4000);
 
 /** The native page's text, for checks that read what the player sees. */
-const text = "window.__jgNativeUi.text()";
+const text = "window.__jg?.nativeUi.text()";
 const shows = (words: string): string => `${text}.includes(${JSON.stringify(words)})`;
 
 /**
@@ -17,7 +17,7 @@ export default defineFlow(game, {
   browser: true,
   state: "title",
   async run(f) {
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
     await f.see("Open the park");
     await settle(f); await f.shot("title");
     await f.click("Settings");
@@ -82,7 +82,7 @@ export default defineFlow(game, {
     await f.see("Load this park");
     await settle(f); await f.shot("saves");
     await f.click("Load this park");
-    await f.waitForPage("window.__jgNativeUi.point('Pause park') !== null", { timeoutMs: 15000, note: "loading the save returns to the park" });
+    await f.waitForPage("window.__jg?.nativeUi.point('Pause park') !== null", { timeoutMs: 15000, note: "loading the save returns to the park" });
     await settle(f); await f.shot("loaded");
     await f.click("Pause park");
     await f.click("Park settings");

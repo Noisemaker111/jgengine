@@ -591,6 +591,12 @@
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
 - `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker, returning the live entries newest-first with `fade` applied. It re-renders only when an entry arrives or ages out (checked each frame while `animate`); the fade itself is drawn per frame by {@link KillFeed} without a render.
 
+## @jgengine/core/game/captureCommand
+
+- `CAPTURE_COMMAND_INPUT` (const): const CAPTURE_COMMAND_INPUT: { readonly yaw: 0; readonly pitch: 0; readonly aim: { readonly yaw: 0; readonly pitch: 0; }; } — The input a capture command named by a bare string runs with: a neutral look, so a command that reads an aim or heading gets one.
+- `CaptureCommandEntry` (type): type CaptureCommandEntry = string | { readonly name: string; readonly input?: unknown } — One entry of `capture.play` or `capture.states[name]`: a command name, or a name with the input it needs.
+- `captureCommand` (function): function captureCommand(entry: CaptureCommandEntry): { name: string; input: unknown } — The command name and input one capture entry runs with — what the dev runner's capture mode, the agent bridge's `capture_run` and a headless start all dispatch, so a game starts the same way in each.
+
 ## @jgengine/core/game/clipRoles
 
 - `ClipRole` (type): type ClipRole = | "idle" | "walk" | "run" | "strafe" | "backward" | "turn" | "attack" | "hit" | "death" | "jump" | "spawn" | "interact" | "cheer" — Semantic animation roles a GLB clip name can map to. Rigged packs name the same motion differently (`Idle` / `Walking_A` / `Armature|Run`); roles are the pack-agnostic vocabulary the engine defaults from.
@@ -2962,7 +2968,7 @@
 - `SessionSettlement` (interface): interface SessionSettlement<R = void, T = never> — What closing one session did, and what the next session opens with.
 - `SettlingSession` (interface): interface SettlingSession<I = void> — The session closing, handed to a game's own `settle`.
 - `createSessionLoop` (function): function createSessionLoop<T = never, I = void, R = void>(config: SessionLoopConfig<T, I, R> = {}): SessionLoop<T, I, R> — The shared shape of a game session, with the game's own rules supplied as config: a session opens, it may carry a quantity, its boundary closes it, and the game's `settle` callback decides what happens to what it carried. A park day, a night shift and a wave are the same base with a different `settle`, a different `kind` and, where nothing is at stake, `carries: false`.
-- `installSessionProbe` (function): function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => void — Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state which session is live, its phase, what it carries and the option it offers. Reads only; it never starts, closes or changes a session. Returns the uninstaller.
+- `installSessionProbe` (function): function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => void — Publish the loop's own readout on `window.__jg.run`, so a capture or devtools probe can state which session is live, its phase, what it carries and the option it offers. Reads only; it never starts, closes or changes a session. Returns the uninstaller.
 
 ## @jgengine/core/run/slicedWork
 
@@ -3273,7 +3279,7 @@
 ## @jgengine/core/store/defineStore
 
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
-- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a UI selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
+- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. The initial value belongs to each game context: a factory runs once per context, and a plain object or array is copied once per context, so mutating one game's unwritten slot never reaches another game. Within a context an unwritten slot keeps a stable identity across reads (no per-read churn for a UI selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place; pass it as a factory so each context builds its own. Hold such objects with `perContext` when they need no store notifications.
 
 ## @jgengine/core/suite/contentAudit
 

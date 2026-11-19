@@ -1,3 +1,4 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
   createRideSystem,
@@ -23,7 +24,7 @@ import { isShut, REFURB_SECONDS } from "./rideRefits";
  */
 
 /** `refurb`: park seconds toward the next run of wear a shut ride sheds. */
-const park: { system: RideSystem | null; key: string; refurb: number } = { system: null, key: "", refurb: 0 };
+const ridesOf = perContext((): { system: RideSystem | null; key: string; refurb: number } => ({ system: null, key: "", refurb: 0 }));
 
 /** A ride the sim never repairs on its own; the world's crew does. */
 const HELD_DOWN = 1e9;
@@ -125,41 +126,43 @@ function restoreInto(system: RideSystem, definitions: readonly RideDefinition[],
 export function syncRidePark(ctx: GameContext, rng: () => number = ctx.rng): void {
   const definitions = desiredDefinitions(ctx);
   const key = definitionKey(definitions);
-  if (key === park.key && park.system !== null) return;
-  const saved = park.system?.snapshot() ?? null;
-  park.system?.dispose();
+  if (key === ridesOf(ctx).key && ridesOf(ctx).system !== null) return;
+  const saved = ridesOf(ctx).system?.snapshot() ?? null;
+  ridesOf(ctx).system?.dispose();
   const next = createRideSystem({ rides: definitions, rng, devtoolsName: "park.rides", queueSeedServiceSeconds: 3 });
   if (saved !== null) restoreInto(next, definitions, saved);
-  park.system = next;
-  park.key = key;
+  ridesOf(ctx).system = next;
+  ridesOf(ctx).key = key;
 }
 
 /** The live sim, created empty when the park has no rides yet. */
-export function rideSystem(): RideSystem {
-  if (park.system === null) {
-    park.system = createRideSystem({ rides: [], rng: () => 0.5, devtoolsName: "park.rides", queueSeedServiceSeconds: 3 });
-    park.key = "";
+export function rideSystem(ctx: GameContext): RideSystem {
+  const rides = ridesOf(ctx);
+  if (rides.system === null) {
+    rides.system = createRideSystem({ rides: [], rng: () => 0.5, devtoolsName: "park.rides", queueSeedServiceSeconds: 3 });
+    rides.key = "";
   }
-  return park.system;
+  return rides.system;
 }
 
-export function resetRides(): void {
-  park.system?.dispose();
-  park.system = null;
-  park.key = "";
-  park.refurb = 0;
+export function resetRides(ctx: GameContext): void {
+  const rides = ridesOf(ctx);
+  rides.system?.dispose();
+  rides.system = null;
+  rides.key = "";
+  rides.refurb = 0;
 }
 
-export const rideView = (rideId: string): RideView | null => rideSystem().ride(rideId);
-export const joinRide = (rideId: string, guestId: string): boolean => rideSystem().join(rideId, guestId);
-export const leaveRide = (rideId: string, guestId: string): boolean => rideSystem().leave(rideId, guestId);
+export const rideView = (ctx: GameContext, rideId: string): RideView | null => rideSystem(ctx).ride(rideId);
+export const joinRide = (ctx: GameContext, rideId: string, guestId: string): boolean => rideSystem(ctx).join(rideId, guestId);
+export const leaveRide = (ctx: GameContext, rideId: string, guestId: string): boolean => rideSystem(ctx).leave(rideId, guestId);
 
 /** Clear a ride's wear; the world's `service_*` action already took the money. */
-export const serviceRide = (rideId: string): RideServiceResult | null => rideSystem().service(rideId);
+export const serviceRide = (ctx: GameContext, rideId: string): RideServiceResult | null => rideSystem(ctx).service(rideId);
 
 /** The crew's order landed: the ride comes back up and boards its waiting line on the next tick. */
-export function fixRide(rideId: string): void {
-  const system = rideSystem();
+export function fixRide(ctx: GameContext, rideId: string): void {
+  const system = rideSystem(ctx);
   const snapshot = system.snapshot();
   const entry = snapshot.rides.find((candidate) => candidate.definition.id === rideId);
   if (entry === undefined || entry.phase !== "broken") return;
@@ -171,9 +174,9 @@ export function fixRide(rideId: string): void {
 }
 
 /** Take `runs` of wear off each of these rides (a refurbishment's progress); a broken ride keeps its own. */
-export function easeWear(rideIds: readonly string[], runs: number): void {
+export function easeWear(ctx: GameContext, rideIds: readonly string[], runs: number): void {
   if (rideIds.length === 0 || runs <= 0) return;
-  const system = rideSystem();
+  const system = rideSystem(ctx);
   const snapshot = system.snapshot();
   let moved = false;
   for (const entry of snapshot.rides) {
@@ -185,8 +188,8 @@ export function easeWear(rideIds: readonly string[], runs: number): void {
 }
 
 /** Take a ride down now (the drive's and the tests' way to see a breakdown without waiting on the dice). */
-export function breakRide(rideId: string): boolean {
-  const system = rideSystem();
+export function breakRide(ctx: GameContext, rideId: string): boolean {
+  const system = rideSystem(ctx);
   const snapshot = system.snapshot();
   const entry = snapshot.rides.find((candidate) => candidate.definition.id === rideId);
   if (entry === undefined || entry.phase === "broken") return false;
@@ -198,17 +201,17 @@ export function breakRide(rideId: string): boolean {
 }
 
 /** This guest's 0-based place in a ride's line, or 0 when it is not waiting. */
-export function queuePosition(rideId: string, guestId: string): number {
-  const position = rideSystem().queue(rideId)?.positionOf(guestId) ?? -1;
+export function queuePosition(ctx: GameContext, rideId: string, guestId: string): number {
+  const position = rideSystem(ctx).queue(rideId)?.positionOf(guestId) ?? -1;
   return position < 0 ? 0 : position;
 }
 
-export const rideSnapshot = (): RideSystemSnapshot => rideSystem().snapshot();
+export const rideSnapshot = (ctx: GameContext): RideSystemSnapshot => rideSystem(ctx).snapshot();
 
 export function restoreRides(ctx: GameContext, snapshot: RideSystemSnapshot | null): void {
-  resetRides();
+  resetRides(ctx);
   syncRidePark(ctx);
-  if (snapshot !== null) restoreInto(rideSystem(), rideSystem().definitions(), snapshot);
+  if (snapshot !== null) restoreInto(rideSystem(ctx), rideSystem(ctx).definitions(), snapshot);
 }
 
 export interface RideBoard {
@@ -220,24 +223,24 @@ export interface RideBoard {
 }
 
 /** What the park's dashboard says about its rides' lines. */
-export function rideBoard(): RideBoard {
-  const stats = rideSystem().stats();
+export function rideBoard(ctx: GameContext): RideBoard {
+  const stats = rideSystem(ctx).stats();
   return { rides: stats.rides, online: stats.rides - stats.broken, broken: stats.broken, queued: stats.queued, riders: stats.riders };
 }
 
 /** Advance every ride's own cycle by `dt`; the sink hears every boarding, alighting and breakdown. */
 export function tickRides(ctx: GameContext, dt: number, sink: RideTickSink): void {
   syncRidePark(ctx);
-  rideSystem().tick(dt, sink);
+  rideSystem(ctx).tick(dt, sink);
   tickRefurbishment(ctx, dt);
 }
 
 /** Every {@link REFURB_SECONDS} of park time, each ride shut for refurbishment wears off one run. */
 function tickRefurbishment(ctx: GameContext, dt: number): void {
-  park.refurb += dt;
-  if (park.refurb < REFURB_SECONDS) return;
-  const runs = Math.floor(park.refurb / REFURB_SECONDS);
-  park.refurb -= runs * REFURB_SECONDS;
+  ridesOf(ctx).refurb += dt;
+  if (ridesOf(ctx).refurb < REFURB_SECONDS) return;
+  const runs = Math.floor(ridesOf(ctx).refurb / REFURB_SECONDS);
+  ridesOf(ctx).refurb -= runs * REFURB_SECONDS;
   const w = parkSpec.of(ctx);
-  easeWear(parkObjects(ctx).filter((obj) => obj.def.ride !== undefined && isShut(w, obj.id)).map((obj) => obj.id), runs);
+  easeWear(ctx, parkObjects(ctx).filter((obj) => obj.def.ride !== undefined && isShut(w, obj.id)).map((obj) => obj.id), runs);
 }

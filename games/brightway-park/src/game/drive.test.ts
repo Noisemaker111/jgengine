@@ -6,7 +6,7 @@ import { DAY_LENGTH } from "./catalog";
 import { cellFor, LOAN, park, RESEARCH_PACE } from "./park";
 import { accessOf } from "./build/links";
 import { rideView } from "./rides";
-import { session } from "./session";
+import { sessionOf } from "./session";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
@@ -36,7 +36,7 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   /** Pick a blueprint, then click the first free spot nearest the gate: what the player does with the mouse. */
   const clickBuild = (kind: string): string => {
     runner.ui.invoke("build.select", { id: kind });
-    expect(session.selectedTool).toBe(kind);
+    expect(sessionOf(runner.ctx).selectedTool).toBe(kind);
     for (let z = 40; z >= -50; z -= 4) for (let x = -20; x <= 50; x += 4) {
       if (w.canPlace(kind, { cell: cellFor(kind, x, z) }) !== null) continue;
       const before = new Set(w.instances().map((i) => i.id));
@@ -87,10 +87,10 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   // A morning with the gate open: guests trickle in, ride and say what they think before closing time.
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: (Math.floor(runner.ctx.time.now() / DAY_LENGTH) + 1.3) * DAY_LENGTH });
   for (let t = 0; t < 90; t += 0.5) runner.step(0.5);
-  expect(session.guests.size).toBeGreaterThan(0);
-  expect(rideView(carousel)!.cycles).toBeGreaterThan(0);
-  const thinking = [...session.guests.values()].filter((g) => (g.thoughts ?? []).length > 0);
+  expect(sessionOf(runner.ctx).guests.size).toBeGreaterThan(0);
+  expect(rideView(runner.ctx, carousel)!.cycles).toBeGreaterThan(0);
+  const thinking = [...sessionOf(runner.ctx).guests.values()].filter((g) => (g.thoughts ?? []).length > 0);
   expect(thinking.length).toBeGreaterThan(0);
   expect(thinking[0]!.thoughts![0]!.text.length).toBeGreaterThan(0);
-  expect(session.thoughts.top.length).toBeGreaterThan(0);
+  expect(sessionOf(runner.ctx).thoughts.top.length).toBeGreaterThan(0);
 }, 60_000);

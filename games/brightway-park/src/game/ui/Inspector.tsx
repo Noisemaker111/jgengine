@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths";
 
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { liveAgent } from "../agents";
 import { guestRidePreference, rideFit, rideThrill } from "../sim/rideExperience";
 import { coasterCircuit, rideView, trackPieces } from "../rides";
@@ -33,9 +33,9 @@ function GuestPanel({ id }: { id: string }) {
   const ctx = useGameContext();
   const { commands } = useGame();
   const v = useGameStore(() => {
-    const guest = session.guests.get(id);
+    const guest = sessionOf(ctx).guests.get(id);
     if (guest === undefined) return null;
-    const agent = liveAgent(id), mood = agent?.mood();
+    const agent = liveAgent(ctx, id), mood = agent?.mood();
     const need = (key: string) => `${100 - Math.round((agent?.needs.fraction(key) ?? 0) * 100)}%`;
     return {
       kind: guest.kind, mood: mood?.label ?? "", score: Math.round(mood?.score ?? 0), phase: guest.phase, target: guest.targetId,
@@ -60,9 +60,9 @@ function GuestPanel({ id }: { id: string }) {
 export function Inspector() {
   const { commands } = useGame();
   const ctx = useGameContext();
-  const selectedId = useGameStore(() => session.selectedObject);
+  const selectedId = useGameStore(() => sessionOf(ctx).selectedObject);
   // Guests are selected through the engine's shared entity selection, which the shell draws the ring from.
-  const selectedGuest = useGameStore((c) => { const [id] = c.scene.entity.selection.list(); return id !== undefined && session.guests.has(id) ? id : null; });
+  const selectedGuest = useGameStore((c) => { const [id] = c.scene.entity.selection.list(); return id !== undefined && sessionOf(ctx).guests.has(id) ? id : null; });
   const v = useGameStore((c) => (selectedGuest !== null ? null : inspectorView(c, selectedId)));
   if (selectedGuest !== null) return <GuestPanel id={selectedGuest} />;
   if (v === null) return null;
@@ -114,7 +114,7 @@ function inspectorView(ctx: GameContext, selectedId: string | null) {
   const def = obj.def;
   const circuit = coasterCircuit(ctx), tracks = trackPieces(ctx);
   // The ride sim's own live state: phase, line and wear.
-  const view = rideView(obj.id);
+  const view = rideView(ctx, obj.id);
   const phase = view?.phase, riders = view?.riders, queued = view?.queue.size, waitSeconds = view?.queue.wait.seconds, wear = view?.wear, breakdowns = view?.breakdowns, cycles = view?.cycles;
   const broken = w.fact(`${obj.id}.broken`) === true;
   const order = w.orders("crew").find((entry) => entry.target === obj.id) ?? null;

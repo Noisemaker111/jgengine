@@ -74,7 +74,7 @@ test("the probe reports the member's live shift session", () => {
   const ctx = boot();
   const id = householdStore.read(ctx).order[0]!;
   probeShift(ctx, id);
-  const probe = (globalThis as { __jgengineRun?: { read(): { kind: string | null; phase: string; session: number } } }).__jgengineRun;
+  const probe = (globalThis.__jg as { run?: { read(): { kind: string | null; phase: string; session: number } } } | undefined)?.run;
   expect(probe?.read()).toMatchObject({ kind: "shift", phase: "idle" });
   startYieldShift(ctx, id);
   advance(ctx, 4);
@@ -84,7 +84,7 @@ test("the probe reports the member's live shift session", () => {
 test("a closed shift stays on the probe while the next member's shift ticks, until that one closes", () => {
   const ctx = boot();
   const [first, second] = householdStore.read(ctx).order as [string, string];
-  const readout = () => (globalThis as { __jgengineRun?: { read(): { phase: string; closed: number } } }).__jgengineRun?.read();
+  const readout = () => (globalThis.__jg as { run?: { read(): { phase: string; closed: number } } } | undefined)?.run?.read();
   startYieldShift(ctx, first);
   advance(ctx, 22);
   expect(householdStore.read(ctx).members[first]!.completedShifts).toBe(1);

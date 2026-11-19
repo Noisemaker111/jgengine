@@ -38,6 +38,8 @@ export interface Host<N> {
   /** Put `node` under `parent` right before `before` (null: last). A node already there stays put. */
   place(parent: N, node: N, before: N | null): void;
   remove(parent: N, node: N): void;
+  /** `node`'s fiber is gone, whether or not `node` was the one taken off its parent: free what it holds. */
+  released?(node: N): void;
   /** Children of `parent` are final for this commit (runs after every place/remove under it). */
   childrenPlaced?(parent: N): void;
   /** One commit's host work is done. */
@@ -228,7 +230,7 @@ interface RenderSink {
   render(type: unknown): void;
   commit(): void;
 }
-const renderSink = (): RenderSink | undefined => (globalThis as { __jgRenderSink?: RenderSink }).__jgRenderSink;
+const renderSink = (): RenderSink | undefined => (globalThis as { __jg?: { renderSink?: RenderSink } }).__jg?.renderSink;
 
 /** One mounted tree and its scheduler. */
 export class Root<N = unknown> {
@@ -729,6 +731,7 @@ export class Root<N = unknown> {
       fiber.placed = [];
     }
     for (const child of fiber.children) this.teardown(child);
+    if (fiber.kind === "host" && fiber.node !== null) this.host.released?.(fiber.node);
     if (fiber.hooks !== null) {
       for (const cell of fiber.hooks) {
         if (cell.tag === "effect") {

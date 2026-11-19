@@ -232,7 +232,7 @@ export function DevtoolsOverlay({
       {tab === "tune" ? <TunePanel gameName={playable.game.name} /> : null}
       {tab === "col" ? <ColPanel /> : null}
       <div className="mt-2.5 border-t border-white/[0.06] pt-2 text-[9px] tracking-wide text-neutral-500">
-        F2+D toggles · Col = collision · agents: __JG_DEVTOOLS.snapshot() · .collisionDebug
+        F2+D toggles · Col = collision · agents: __jg.devtools.snapshot() · .collisionDebug
       </div>
     </div>
   );

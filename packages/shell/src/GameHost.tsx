@@ -10,6 +10,7 @@ import { multiplayerAdapterKind } from "@jgengine/core/runtime/adapter";
 import { GamePlayerShell } from "./GamePlayerShell";
 import { resolveShellMultiplayer, type ResolveShellMultiplayerArgs, type ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
+import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
 
 const warnedAdapterKinds = new Set<string>();
 
@@ -49,7 +50,7 @@ export interface GameHostProps {
   resolveMultiplayer?: (args: ResolveShellMultiplayerArgs) => ShellMultiplayer | null;
   /**
    * Editor loader — pass `() => import("@jgengine/editor")` and the host owns the whole summon:
-   * `?mode=editor`, the F2+E chord, `window.__jgengineSummonEditor`, the dev save endpoint, and the
+   * `?mode=editor`, the F2+E chord, `window.__jg.summonEditor`, the dev save endpoint, and the
    * lazy `EditorApp` mount (with the playable's `editorLayers`/`editorCatalogs`). The editor package
    * stays a lazy chunk the game bundles only when this prop is set.
    */
@@ -102,8 +103,7 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
   useEffect(() => {
     if (editor === undefined || editorOpen) return;
     const summon = () => setEditorOpen(true);
-    const host = window as { __jgengineSummonEditor?: () => void };
-    host.__jgengineSummonEditor = summon;
+    const unpublish = publishOnPage("summonEditor", summon);
     let f2Held = false;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F2") f2Held = true;
@@ -120,7 +120,7 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
+      unpublish();
     };
   }, [editor, editorOpen]);
 

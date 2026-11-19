@@ -1,3 +1,4 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import {
   createAgent,
   type Agent,
@@ -14,7 +15,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { guestRidePreference } from "./sim/rideExperience";
 import { rideView } from "./rides";
 import { park, parkObjects, ridePrice, stallPrice, stockOf, type ParkObject } from "./park";
-import { session, type GuestState, type StaffState } from "./session";
+import { sessionOf, type GuestState, type StaffState } from "./session";
 
 /**
  * The park's own content for the shared agent loop: what a visitor needs, what it can do, and the
@@ -79,25 +80,28 @@ export function guestTaste(kind: string): RideTaste {
   return { intensityComfort: preference.thrill, nauseaComfort: 6, queueTolerance: 70 };
 }
 
-const agents = new Map<string, Agent>();
+/** The live agents of one park, by guest or staff id. */
+const agentsOf = perContext(() => new Map<string, Agent>());
 
-export function clearAgents(): void {
+export function clearAgents(ctx: GameContext): void {
+  const agents = agentsOf(ctx);
   for (const agent of agents.values()) agent.dispose();
   agents.clear();
 }
 
-function trackAgent(agent: Agent): Agent {
-  agents.set(agent.id, agent);
+function trackAgent(ctx: GameContext, agent: Agent): Agent {
+  agentsOf(ctx).set(agent.id, agent);
   return agent;
 }
 
 /** A new guest agent; its needs start inside a park-guest range from the world's seeded stream. */
+/** A new guest agent, tracked by `ctx`'s park; pass `null` for a plain one made outside a running world. */
 export function createGuestAgent(
+  ctx: GameContext | null,
   id: string,
   kind: string,
   rng: () => number,
   randomized = true,
-  track = true,
 ): Agent {
   const agent = createAgent({
       id,
@@ -121,21 +125,21 @@ export function createGuestAgent(
       jitter: 0.06,
       rng,
     });
-  return track ? trackAgent(agent) : agent;
+  return ctx === null ? agent : trackAgent(ctx, agent);
 }
 
 /** The live agent for a guest, created from its saved state the first time it is asked for. */
-export function agentOf(guest: GuestState, rng: () => number): Agent {
-  const existing = agents.get(guest.id);
+export function agentOf(ctx: GameContext, guest: GuestState, rng: () => number): Agent {
+  const existing = agentsOf(ctx).get(guest.id);
   if (existing !== undefined) return existing;
-  const agent = createGuestAgent(guest.id, guest.kind, rng, false);
+  const agent = createGuestAgent(ctx, guest.id, guest.kind, rng, false);
   agent.restore(guest.agent);
   return agent;
 }
 
-export function forgetAgent(id: string): void {
-  agents.get(id)?.dispose();
-  agents.delete(id);
+export function forgetAgent(ctx: GameContext, id: string): void {
+  agentsOf(ctx).get(id)?.dispose();
+  agentsOf(ctx).delete(id);
 }
 
 const MIDWAY: AgentTarget = { option: "wander", target: "midway" };
@@ -166,7 +170,7 @@ export function guestTargets(
       targets.push({
         option: def.stall.need,
         target: obj.id,
-        cost: distance * WALK_COST + (session.occupants.get(obj.id) ?? 0) * QUEUE_COST + price * PRICE_COST,
+        cost: distance * WALK_COST + (sessionOf(ctx).occupants.get(obj.id) ?? 0) * QUEUE_COST + price * PRICE_COST,
         fallback: MIDWAY,
       });
       continue;
@@ -174,7 +178,7 @@ export function guestTargets(
     if (def.ride === undefined) continue;
     const price = ridePrice(w, obj.kind);
     if (guest.money < price) continue;
-    const view = rideView(obj.id);
+    const view = rideView(ctx, obj.id);
     if (view === null) continue;
     const appeal = rideAppeal(view.ratings, taste);
     // The line's own measured wait, plus a penalty for standing in front of a ride that is down.
@@ -194,26 +198,27 @@ export function guestTargets(
 }
 
 /** What a ride gives a guest in fun, from its live ratings and that guest's taste. */
-export function rideFun(kind: string, obj: ParkObject): number {
-  const view = rideView(obj.id);
+export function rideFun(ctx: GameContext, kind: string, obj: ParkObject): number {
+  const view = rideView(ctx, obj.id);
   if (view === null) return 0;
   return 12 * rideAppeal(view.ratings, guestTaste(kind)) - 4;
 }
 
 /** The live agent a HUD reads without creating one - `null` before the guest has been ticked. */
-export function liveAgent(id: string): Agent | null {
-  return agents.get(id) ?? null;
+export function liveAgent(ctx: GameContext, id: string): Agent | null {
+  return agentsOf(ctx).get(id) ?? null;
 }
 
 /** The park's mood aggregate: the mean of every guest's own mood, which is what the rating reads. */
-export function parkMood(): number {
-  if (session.guests.size === 0) return 55;
+export function parkMood(ctx: GameContext): number {
+  const agents = agentsOf(ctx);
+  if (sessionOf(ctx).guests.size === 0) return 55;
   let total = 0;
-  for (const guest of session.guests.values()) {
+  for (const guest of sessionOf(ctx).guests.values()) {
     const agent = agents.get(guest.id);
     total += agent === undefined ? 55 : agent.mood().score;
   }
-  return total / session.guests.size;
+  return total / sessionOf(ctx).guests.size;
 }
 
 /** Where a browsing guest walks to when it is not heading for an attraction. */
@@ -251,9 +256,10 @@ export function staffId(postId: string): string {
 }
 
 /** One janitor per post: the same agent factory, with a work beat instead of a need to chase. */
-export function createStaffAgent(post: ParkObject, rng: () => number): Agent {
+export function createStaffAgent(ctx: GameContext, post: ParkObject, rng: () => number): Agent {
   const beat = staffBeat(post).map((point) => point.place);
   return trackAgent(
+    ctx,
     createAgent({
       id: staffId(post.id),
       needs: [
@@ -287,10 +293,10 @@ export function createStaffAgent(post: ParkObject, rng: () => number): Agent {
   );
 }
 
-export function staffAgentOf(state: StaffState, post: ParkObject, rng: () => number): Agent {
-  const existing = agents.get(state.id);
+export function staffAgentOf(ctx: GameContext, state: StaffState, post: ParkObject, rng: () => number): Agent {
+  const existing = agentsOf(ctx).get(state.id);
   if (existing !== undefined) return existing;
-  const agent = createStaffAgent(post, rng);
+  const agent = createStaffAgent(ctx, post, rng);
   agent.restore(state.agent);
   return agent;
 }
@@ -304,7 +310,7 @@ export function guestAgentState(
   kind: string,
   values: Readonly<Record<string, number>>,
 ): AgentSnapshot {
-  const agent = createGuestAgent(id, kind, () => 0.5, false, false);
+  const agent = createGuestAgent(null, id, kind, () => 0.5, false);
   for (const [need, value] of Object.entries(values)) {
     if (agent.needs.indexOf(need) < 0) continue;
     agent.needs.refill(need, value - agent.needs.value(need));
@@ -315,12 +321,13 @@ export function guestAgentState(
 }
 
 /** Write every live agent back into the session's plain state - called on save and before despawn. */
-export function syncAgentStates(): void {
-  for (const guest of session.guests.values()) {
+export function syncAgentStates(ctx: GameContext): void {
+  const agents = agentsOf(ctx);
+  for (const guest of sessionOf(ctx).guests.values()) {
     const agent = agents.get(guest.id);
     if (agent !== undefined) guest.agent = agent.snapshot();
   }
-  for (const staff of session.staff.values()) {
+  for (const staff of sessionOf(ctx).staff.values()) {
     const agent = agents.get(staff.id);
     if (agent !== undefined) staff.agent = agent.snapshot();
   }

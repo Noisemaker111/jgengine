@@ -897,7 +897,7 @@
       "gameFacing": true,
       "probe": {
         "kind": "window",
-        "global": "__jgengineAudio"
+        "global": "audio"
       },
       "intent": "read the live master RMS/peak, bus gains, ambience zone mix and occlusion cost from a running page for capture and diagnostics"
     },
@@ -7671,11 +7671,8 @@
         "@jgengine/shell"
       ],
       "module": "@jgengine/shell/GameHost",
-      "gameFacing": true,
-      "probe": {
-        "kind": "window",
-        "global": "__jgengineSummonEditor"
-      },
+      "gameFacing": false,
+      "probe": null,
       "intent": "mount a defined game in the browser — `<GameHost playable={game} editor={() => import(\"@jgengine/editor\")} />`"
     },
     {
@@ -10331,7 +10328,7 @@
       "gameFacing": true,
       "probe": {
         "kind": "window",
-        "global": "__jgengineRun"
+        "global": "run"
       },
       "intent": "open and close a game session, settle the quantity it carried and optionally draw the next session's authored option"
     },

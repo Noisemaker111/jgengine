@@ -96,6 +96,20 @@ describe("per-context isolation (#1579)", () => {
     expect(run.read(guest)).toEqual({ score: 0, alive: true });
   });
 
+  test("an unwritten slot's initial belongs to one context, so mutating it never reaches another", () => {
+    const bag = defineStore<{ items: string[] }>("run.bag", () => ({ items: [] }));
+    const literal = defineStore<{ items: string[] }>("run.bag.literal", { items: [] });
+    const host = makeContext();
+    const guest = makeContext();
+    bag.update(host, (previous) => {
+      previous.items.push("sword");
+      return previous;
+    });
+    literal.read(host).items.push("shield");
+    expect(bag.read(guest).items).toEqual([]);
+    expect(literal.read(guest).items).toEqual([]);
+  });
+
   test("clearing one context leaves the other intact", () => {
     const run = defineStore<RunState>("run.cleared", { score: 0, alive: true });
     const host = makeContext();

@@ -6,7 +6,7 @@ export default defineFlow(game, {
   browser: true,
   state: "title",
   async run(f) {
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { note: "native Rune submitted a frame" });
     await f.see("TONIGHT ON THE COAST");
     await f.shot("title");
     await f.click("Hit the street");
@@ -18,21 +18,21 @@ export default defineFlow(game, {
     await f.press("Enter");
     await f.see("Jon");
     await f.shot("licence");
-    await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
+    await f.page("window.__jg?.nativeUi.text().includes('Back to the sign') ? window.__jg?.nativeUi.press('◀ Back to the sign') : null");
     await f.click("Missions & parcels");
     await f.see("Start here");
     await f.shot("bays");
-    await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
+    await f.page("window.__jg?.nativeUi.text().includes('Back to the sign') ? window.__jg?.nativeUi.press('◀ Back to the sign') : null");
     await f.click("Settings");
     await f.see("SOUND");
     await f.shot("title-settings");
     await f.click("Next page");
     await f.shot("title-settings-next");
-    await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
+    await f.page("window.__jg?.nativeUi.text().includes('Back to the sign') ? window.__jg?.nativeUi.press('◀ Back to the sign') : null");
     await f.click("Credits");
     await f.see("Who made the heat");
     await f.shot("credits");
-    await f.page("window.__jgNativeUi.text().includes('Back to the sign') ? window.__jgNativeUi.press('◀ Back to the sign') : null");
+    await f.page("window.__jg?.nativeUi.text().includes('Back to the sign') ? window.__jg?.nativeUi.press('◀ Back to the sign') : null");
     await f.click("Hit the street");
     await f.click("Take the run");
     await f.see("MAINSAIL page", { timeoutMs: 60_000 });
@@ -48,9 +48,9 @@ export default defineFlow(game, {
     await f.see("SOUND");
     // Paused, the burner's clock stops with the city, so its settings page is static.
     await f.wait(2000);
-    const frames = await f.page("window.__jgNativeUi.stats().frames");
+    const frames = await f.page("window.__jg?.nativeUi.stats().frames");
     await f.wait(1000);
-    await f.expectPage("window.__jgNativeUi.stats().frames", "static settings submits no frames", frames);
+    await f.expectPage("window.__jg?.nativeUi.stats().frames", "static settings submits no frames", frames);
     await f.shot("pause-settings");
     await f.click("Next page");
     await f.shot("pause-settings-next");

@@ -5,7 +5,7 @@ import type { WorldInstanceView, WorldJobEvent, WorldModel } from "@jgengine/cor
 import { BUILDABLES } from "./objects/catalog";
 import { park, rethemeRides, repairAction } from "./park";
 import { fixRide, leaveRide, serviceRide } from "./rides";
-import { session } from "./session";
+import { sessionOf } from "./session";
 import { syncAmbience } from "./audio";
 import { recordScenarioWin, savePark } from "./persistence";
 import { connectPark, relinkPark } from "./build/links";
@@ -55,10 +55,10 @@ export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   relinkPark(ctx);
   ctx.game.notices.push({ text: refund > 0 ? `Demolished — $${Math.round(refund).toLocaleString()} refunded` : "Demolished", tone: "info" });
   ctx.game.audio.play("sell");
-  if (session.selectedObject === id) session.selectedObject = null;
-  for (const guest of session.guests.values()) {
+  if (sessionOf(ctx).selectedObject === id) sessionOf(ctx).selectedObject = null;
+  for (const guest of sessionOf(ctx).guests.values()) {
     if (guest.targetId !== id) continue;
-    leaveRide(id, guest.id);
+    leaveRide(ctx, id, guest.id);
     guest.targetId = null;
     guest.target = null;
     guest.phase = "seeking";
@@ -89,8 +89,8 @@ export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): v
 export function landed(ctx: GameContext, action: string, target: string | null): void {
   const w = park.of(ctx);
   const decl = w.def.actions?.[action];
-  if (target !== null && action.startsWith("repair_")) fixRide(target);
-  if (target !== null && action.startsWith("service_")) serviceRide(target);
+  if (target !== null && action.startsWith("repair_")) fixRide(ctx, target);
+  if (target !== null && action.startsWith("service_")) serviceRide(ctx, target);
   // A refit, closure or reopening changes the ride's appeal, upkeep and whether guests may use it.
   const kind = target === null ? undefined : w.instance(target)?.kind;
   if (kind !== undefined && BUILDABLES[kind]?.ride !== undefined) {

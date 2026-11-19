@@ -1,3 +1,6 @@
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { onContextDispose } from "@jgengine/core/runtime/contextDisposal";
+import { perContext } from "@jgengine/core/runtime/perContext";
 export type SelectCache<TSnapshot, TSelected> = {
   ready: boolean;
   snapshot: TSnapshot;
@@ -110,18 +113,20 @@ export function createSelectionHeat(): { changed(frame: number, tick: number): H
   };
 }
 
-let devFrames = 0;
-let devFrameLoop = false;
+const devFrames = perContext((ctx) => {
+  const counter = { frames: 0 };
+  if (typeof requestAnimationFrame !== "function") return counter;
+  let raf = 0;
+  const count = () => {
+    counter.frames += 1;
+    raf = requestAnimationFrame(count);
+  };
+  raf = requestAnimationFrame(count);
+  onContextDispose(ctx, () => cancelAnimationFrame(raf));
+  return counter;
+});
 
-/** Rendered frames since the first store hook mounted, counted on the page's own animation frames (dev builds only). @internal */
-export function devFrameIndex(): number {
-  if (!devFrameLoop && typeof requestAnimationFrame === "function") {
-    devFrameLoop = true;
-    const count = () => {
-      devFrames += 1;
-      requestAnimationFrame(count);
-    };
-    requestAnimationFrame(count);
-  }
-  return devFrames;
+/** Rendered frames since `ctx`'s first store hook mounted, counted on the page's animation frames until the game closes (dev builds only). @internal */
+export function devFrameIndex(ctx: GameContext): number {
+  return devFrames(ctx).frames;
 }

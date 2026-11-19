@@ -478,7 +478,7 @@ export function GamePlayerShell({
       onContextReady?.(context);
       const probe = playable.capture?.probe;
       if (probe !== undefined && typeof window !== "undefined") {
-        detachProbe = attachPlaytestProbe(window, () => probe(context));
+        detachProbe = attachPlaytestProbe(() => probe(context));
       }
       setCtx(context);
     } catch (error) {

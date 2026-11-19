@@ -155,7 +155,7 @@ export async function rpc(session: CdpSession, json: string): Promise<void> {
   JSON.parse(json);
   const value = await session.evaluate<string>(
     `(async () => {
-      const host = globalThis.__jgengineAgent ?? globalThis.__jgengineEditorHost;
+      const host = globalThis.__jg?.agent ?? globalThis.__jg?.editorHost;
       if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge or editor host on this page" });
       return JSON.stringify(await host.handle(${json}));
     })()`,
@@ -168,7 +168,7 @@ export async function rpc(session: CdpSession, json: string): Promise<void> {
 export async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
   const raw = await session.evaluate<string>(
     `(async () => {
-      const host = globalThis.__jgengineAgent;
+      const host = globalThis.__jg?.agent;
       if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge on this page" });
       return JSON.stringify(await host.handle(${JSON.stringify(request)}));
     })()`,
@@ -183,7 +183,7 @@ export async function bridge(session: CdpSession, request: { method: string } & 
 /** The game's `capture.probe` numbers, or `null` when the page exposes none. */
 export async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
   const value = await session.evaluate<Record<string, number> | null>(`(() => {
-      const probe = globalThis.__jgProbe;
+      const probe = globalThis.__jg?.probe;
       if (typeof probe !== "function") return null;
       try {
         const value = probe();

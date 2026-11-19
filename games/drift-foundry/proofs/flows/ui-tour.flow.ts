@@ -10,15 +10,15 @@ export default defineFlow(game, {
     // A software-drawn native frame can trail the tree by seconds: a shot waits until the screen's
     // own control has a laid-out rect (the hit test reads the same rects), or a fresh frame lands.
     const settle = async (control?: string) => {
-      if (control !== undefined) { await f.waitForPage(`window.__jgNativeUi?.point(${JSON.stringify(control)}) != null`, { timeoutMs: 120000, note: `${control} is laid out` }); await f.wait(3000); return; }
-      const before = Number(await f.page("window.__jgNativeUi?.stats().frames ?? 0"));
-      try { await f.waitForPage(`(window.__jgNativeUi?.stats().frames ?? 0) > ${before}`, { timeoutMs: 20000 }); } catch { /* a settled page draws no frames */ }
+      if (control !== undefined) { await f.waitForPage(`window.__jg?.nativeUi?.point(${JSON.stringify(control)}) != null`, { timeoutMs: 120000, note: `${control} is laid out` }); await f.wait(3000); return; }
+      const before = Number(await f.page("window.__jg?.nativeUi?.stats().frames ?? 0"));
+      try { await f.waitForPage(`(window.__jg?.nativeUi?.stats().frames ?? 0) > ${before}`, { timeoutMs: 20000 }); } catch { /* a settled page draws no frames */ }
       await f.wait(1500);
     };
     const shot = async (name: string, control?: string) => { await settle(control); await f.shot(name); };
     // A phone opens each pane over the plates; its Back stamp returns to them.
     const back = async () => { if (phone) { await f.click("Back"); await settle("Yard calendar"); } };
-    await f.waitForPage("(window.__jgNativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 40000, note: "native Rune submitted a frame" });
+    await f.waitForPage("(window.__jg?.nativeUi?.stats().frames ?? 0) > 0", { timeoutMs: 40000, note: "native Rune submitted a frame" });
     await f.see("New run", { timeoutMs: 40000 });
     await shot("title", "New run");
     await f.click("Yard calendar"); await f.see("medal points", { timeoutMs: 90000 }); await shot("calendar", "Race Time Sheet"); await back();

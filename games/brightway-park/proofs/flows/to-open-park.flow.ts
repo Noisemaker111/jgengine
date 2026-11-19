@@ -8,11 +8,11 @@ import { lotScreen } from "./lotScreen";
  * and the first guests walk in, ride and pay.
  */
 /** A page check: the onboarding card shows this step. */
-const step = (id: string) => `globalThis.__brightway.read().hint === '${id}'`;
+const step = (id: string) => `globalThis.__jg?.brightway.read().hint === '${id}'`;
 /** A page check: the hint's ring is on one of these controls (`ui/hintRing.ts` keys). */
-const pointed = (...keys: string[]) => `${JSON.stringify(keys)}.includes(globalThis.__brightway.read().pointed)`;
+const pointed = (...keys: string[]) => `${JSON.stringify(keys)}.includes(globalThis.__jg?.brightway.read().pointed)`;
 /** The native page's visible text. */
-const shown = "window.__jgNativeUi.text()";
+const shown = "window.__jg?.nativeUi.text()";
 
 export default defineFlow(game, {
   browser: true,
@@ -21,9 +21,9 @@ export default defineFlow(game, {
     await f.see(/Brightway Beginnings/i, { timeoutMs: 5000, note: "arrival: a new game is the first scenario, its goal and deadline on the HUD" });
     await f.see(/by the end of May, Year 1/, { timeoutMs: 5000 });
     await f.expectPage(step("path"), "hint: the first step says to lay a path in from the gate");
-    await f.expectPage("globalThis.__brightway.read().pointed !== null", "hint: the control that does it is ringed");
+    await f.expectPage("globalThis.__jg?.brightway.read().pointed !== null", "hint: the control that does it is ringed");
     await f.expect((p) => p.guests === 0, "arrival: nobody is inside before the player builds and opens the gate");
-    await f.expectPage("window.__jgNativeUi.point('Open the gate') === null && window.__jgNativeUi.text().includes('Open the gate')", "arrival: the gate will not open with no ride running");
+    await f.expectPage("window.__jg?.nativeUi.point('Open the gate') === null && window.__jg?.nativeUi.text().includes('Open the gate')", "arrival: the gate will not open with no ride running");
 
     // The path tool, then four cells north from the gate plaza.
     await f.press("Digit6");
@@ -70,11 +70,11 @@ export default defineFlow(game, {
     // Put the ride window away, then open the park books.
     await f.press("KeyX");
     await f.press("KeyL");
-    await f.expectPage("(() => { const m = /Today.{0,2}s sales\\s*\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "economy: guests paid at the gate, the same ledger the books read");
-    await f.expectPage("(() => { const m = /Gate tickets\\s*\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "books: the month's report counts gate tickets on their own line");
+    await f.expectPage("(() => { const m = /Today.{0,2}s sales\\s*\\$([\\d,]+)/.exec(window.__jg?.nativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "economy: guests paid at the gate, the same ledger the books read");
+    await f.expectPage("(() => { const m = /Gate tickets\\s*\\$([\\d,]+)/.exec(window.__jg?.nativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "books: the month's report counts gate tickets on their own line");
     await f.click("Leaflets in town");
     await f.waitForPage(`${shown}.includes('Leaflets in town ·') && ${shown}.includes('left')`, { timeoutMs: 5000 });
-    await f.expectPage("(() => { const m = /Marketing\\s*−\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "marketing: a campaign is paid up front, shows on the books and counts down its days");
+    await f.expectPage("(() => { const m = /Marketing\\s*−\\$([\\d,]+)/.exec(window.__jg?.nativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "marketing: a campaign is paid up front, shows on the books and counts down its days");
     await f.shot("brightway-books");
   },
 });

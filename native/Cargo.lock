@@ -1271,6 +1271,7 @@ dependencies = [
 name = "jg-ui"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "rune",
  "rune-taffy",
  "serde",

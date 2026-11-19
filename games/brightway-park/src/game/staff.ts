@@ -1,3 +1,4 @@
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { createStaffAgent, forgetAgent, staffAgentOf, staffBeat, staffId } from "./agents";
@@ -5,7 +6,7 @@ import type { StaffRole } from "./objects/catalog";
 import { park, parkObject, parkObjects, patrolRadius, rideObjects, type ParkObject } from "./park";
 import { rideView } from "./rides";
 import { groundAt } from "./build/terrain";
-import { session, type StaffState } from "./session";
+import { sessionOf, type StaffState } from "./session";
 
 /**
  * Hired staff. Each hire is a post on the lot: the middle of that person's patrol area, whose
@@ -42,18 +43,18 @@ export function syncStaff(ctx: GameContext): void {
   const live = new Set(all.map((post) => post.id));
   for (const post of all) {
     const id = staffId(post.id);
-    if (session.staff.has(id)) continue;
-    const agent = createStaffAgent(post, ctx.rng);
+    if (sessionOf(ctx).staff.has(id)) continue;
+    const agent = createStaffAgent(ctx, post, ctx.rng);
     const state: StaffState = { id, postId: post.id, agent: agent.snapshot() };
-    session.staff.set(id, state);
+    sessionOf(ctx).staff.set(id, state);
     ctx.scene.entity.spawn(STAFF_BODY[post.def.staff!.role], { id, position: [post.x, 0, post.z], role: "npc" });
   }
-  for (const [id, state] of session.staff) {
+  for (const [id, state] of sessionOf(ctx).staff) {
     if (live.has(state.postId)) continue;
     if (ctx.scene.entity.selection.has(id)) ctx.scene.entity.selection.remove(id);
     ctx.scene.entity.despawn(id);
-    forgetAgent(id);
-    session.staff.delete(id);
+    forgetAgent(ctx, id);
+    sessionOf(ctx).staff.delete(id);
   }
 }
 
@@ -63,18 +64,19 @@ function beatPoint(post: ParkObject, radius: number, place: string | null): [num
   return point === undefined ? null : [point.x, 0, point.z];
 }
 
-const lastInspection = new Map<string, number>();
+const lastInspectionOf = perContext(() => new Map<string, number>());
 
 /** A mechanic at work: the most worn ride in its area gets serviced, if the till can pay. */
 function inspect(ctx: GameContext, state: StaffState, post: ParkObject, radius: number): void {
   const now = ctx.time.now();
+  const lastInspection = lastInspectionOf(ctx);
   if (now - (lastInspection.get(state.id) ?? -Infinity) < INSPECT_SECONDS) return;
   lastInspection.set(state.id, now);
   const w = park.of(ctx);
   let worst: { obj: ParkObject; wear: number } | null = null;
   for (const ride of rideObjects(ctx)) {
     if (Math.hypot(ride.x - post.x, ride.z - post.z) > radius + ride.def.footprint / 2) continue;
-    const view = rideView(ride.id);
+    const view = rideView(ctx, ride.id);
     if (view === null || view.phase === "broken" || view.wear < INSPECT_WEAR) continue;
     if (worst === null || view.wear > worst.wear) worst = { obj: ride, wear: view.wear };
   }
@@ -91,11 +93,11 @@ export function tickStaff(ctx: GameContext, dt: number): void {
   syncStaff(ctx);
   const now = ctx.time.now();
   const w = park.of(ctx);
-  for (const state of session.staff.values()) {
+  for (const state of sessionOf(ctx).staff.values()) {
     const post = parkObject(ctx, state.postId);
     if (post === undefined) continue;
     const radius = patrolRadius(w, post.id);
-    const agent = staffAgentOf(state, post, ctx.rng);
+    const agent = staffAgentOf(ctx, state, post, ctx.rng);
     const frame = agent.update({
       dt,
       now,
@@ -127,7 +129,7 @@ export function tickStaff(ctx: GameContext, dt: number): void {
 export function staffCover(ctx: GameContext, x: number, z: number): Set<StaffRole> {
   const roles = new Set<StaffRole>();
   const w = park.of(ctx);
-  for (const state of session.staff.values()) {
+  for (const state of sessionOf(ctx).staff.values()) {
     const post = parkObject(ctx, state.postId);
     if (post === undefined) continue;
     if (Math.hypot(x - post.x, z - post.z) <= patrolRadius(w, post.id)) roles.add(post.def.staff!.role);
@@ -140,11 +142,8 @@ export function restoreStaff(ctx: GameContext, states: readonly StaffState[]): v
   for (const state of states) {
     const post = parkObject(ctx, state.postId);
     if (post === undefined || post.def.staff === undefined) continue;
-    session.staff.set(state.id, state);
+    sessionOf(ctx).staff.set(state.id, state);
     ctx.scene.entity.spawn(STAFF_BODY[post.def.staff.role], { id: state.id, position: [post.x, 0, post.z], role: "npc" });
   }
 }
 
-export function resetStaffClock(): void {
-  lastInspection.clear();
-}

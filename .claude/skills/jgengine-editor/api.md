@@ -951,7 +951,7 @@
 
 - `CameraTelemetry` (interface): interface CameraTelemetry — Per-frame camera orientation channel between the in-canvas probe and the DOM orientation widget. Deliberately a mutable record, not UI state: the probe writes every frame and the widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
 - `createCameraTelemetry` (function): function createCameraTelemetry(): CameraTelemetry — Creates a telemetry record seeded at rest (identity basis).
-- `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry singleton — probe and widget may mount in different UI trees.
+- `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry — probe and widget may mount in different UI trees.
 
 ## @jgengine/editor/shell/clipPreview
 

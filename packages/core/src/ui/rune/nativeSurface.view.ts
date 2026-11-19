@@ -2,6 +2,7 @@ import { RuneUi, type RuneUiEvent } from "../runeUi.view";
 import { RuneNode, nativeEnabled, nativeLabel, nativeSpec, visibleNativeNodes, type RuneTreeSink } from "./nativeTree";
 import { menuIntentForKey, menuIntentForPadButton, menuIntentForPadAxis, menuNavMove, shouldRepeatMenuNav, type MenuIntent } from "../../menu/menuNav";
 import { RuneActivation, runeNextFocus } from "./activation";
+import { publishOnPage } from "../../runtime/pageHandle";
 
 const surfaces = new Map<RuneNode, NativeSurface>();
 const fontUrls = new Set<string>();
@@ -15,7 +16,6 @@ export function syncNativeSurface(root: RuneNode): void {
   if (!root.connected || root.tag !== "rune-surface") return;
   let surface = surfaces.get(root);
   if (surface === undefined) {
-    if ([...surfaces.keys()].some(node => node.connected)) throw new Error("Rune supports one native surface per page; compose overlays inside it");
     surface = new NativeSurface(root);
     surfaces.set(root, surface);
   }
@@ -85,7 +85,7 @@ class NativeSurface {
       this.cleanups.push(() => { ui.surfaceCanvas.removeEventListener("keydown", contain); ui.surfaceCanvas.removeEventListener("keyup", contain); });
       root.onFocus = node => {
         node.props.onFocus?.();
-        document.getElementById("jg-ui")?.setAttribute("aria-label", nativeLabel(node));
+        ui.surfaceCanvas.setAttribute("aria-label", nativeLabel(node));
         root.dirty = true;
         this.sync();
       };
@@ -152,8 +152,7 @@ class NativeSurface {
         node.props.onPress?.();
       },
     };
-    window.__jgNativeUi = debug;
-    this.cleanups.push(() => { if (window.__jgNativeUi === debug) delete window.__jgNativeUi; });
+    this.cleanups.push(publishOnPage("nativeUi", debug));
   }
 
   private readonly startTexts: () => void;
@@ -400,8 +399,8 @@ class NativeSurface {
   }
 }
 
-declare global {
-  interface Window {
-    __jgNativeUi?: { tree(): RuneNode; stats(): object; text(): string; point(label: string): { x: number; y: number } | null; press(label: string): void };
+declare module "../../runtime/pageHandle" {
+  interface JgPage {
+    nativeUi?: { tree(): RuneNode; stats(): object; text(): string; point(label: string): { x: number; y: number } | null; press(label: string): void };
   }
 }

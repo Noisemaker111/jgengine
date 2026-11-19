@@ -1,0 +1,19 @@
+diff --git a/dist/client/session-refresh.mjs b/dist/client/session-refresh.mjs
+index 76da84a64cac9b071173b810afffdd5a290c247b..c1d025fe5c19bcdc440f3f27691faea0282c0c9c 100644
+--- a/dist/client/session-refresh.mjs
++++ b/dist/client/session-refresh.mjs
+@@ -89,11 +89,11 @@ function createSessionRefreshManager(opts) {
+ 		setupBroadcast();
+ 		setupFocusRefetch();
+ 		setupOnlineRefetch();
+-		getGlobalBroadcastChannel().setup();
+-		getGlobalFocusManager().setup();
+-		getGlobalOnlineManager().setup();
++		state.teardown = [getGlobalBroadcastChannel().setup(), getGlobalFocusManager().setup(), getGlobalOnlineManager().setup()];
+ 	};
+ 	const cleanup = () => {
++		for (const teardown of state.teardown ?? []) teardown?.();
++		state.teardown = void 0;
+ 		if (state.pollInterval) {
+ 			clearInterval(state.pollInterval);
+ 			state.pollInterval = void 0;

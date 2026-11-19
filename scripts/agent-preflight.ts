@@ -100,6 +100,13 @@ function installProblems(): string[] {
         copyFileSync(join(root, rel), dest);
       }
       copyFileSync(join(root, "bun.lock"), join(workDir, "bun.lock"));
+      // A patched dependency resolves only with its patch file beside the manifest.
+      const patched = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { patchedDependencies?: Record<string, string> }).patchedDependencies ?? {};
+      for (const rel of Object.values(patched)) {
+        const dest = join(workDir, rel);
+        mkdirSync(dirname(dest), { recursive: true });
+        copyFileSync(join(root, rel), dest);
+      }
       const result = spawnSync("bun", ["install", "--frozen-lockfile", "--dry-run"], {
         cwd: workDir,
         encoding: "utf8",

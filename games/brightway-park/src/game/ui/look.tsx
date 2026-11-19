@@ -6,7 +6,9 @@ import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 import type { Live } from "@jgengine/core/ui/liveValue";
 
-import { hintRing, useHintTarget } from "./hintRing";
+import { useGameContext } from "@jgengine/ui/provider";
+
+import { hintRingOf, useHintTarget } from "./hintRing";
 
 /** Brightway's fair-day palette, recut from the park sign: cream ticket stock, teal sign plates, gold rims, coral awnings. */
 export const INK = "#21424a", PAPER = "#fff4da", CREAM = "#fff1cf", SAND = "#f2dfb2", TEAL = "#24535b", DEEP = "#1c3940";
@@ -50,10 +52,11 @@ export type Tone = "ticket" | "primary" | "ghost" | "danger";
  */
 export function Button({ tone = "ticket", pressed, hint, onPress, glyph, tooltip, children, ...props }: Omit<RuneViewProps, "tooltip"> & { tone?: Tone; pressed?: boolean; hint?: string; onPress?: () => void; glyph?: ReactNode; tooltip?: string | undefined }) {
   useHintTarget(hint);
+  const ring = hintRingOf(useGameContext());
   const variant = pressed === true ? "primary" : tone;
   const base = parkTheme.variants[variant] as { border?: { width: number; color: string } };
-  const ring = hint === undefined ? {} : { border: bind(() => hintRing.pointed === hint ? { width: 3, color: RING } : base.border ?? { width: 0, color: "#00000000" }) };
-  return <RuneAction variant={variant} {...ring} {...props} {...(tooltip === undefined ? {} : { tooltip })} {...(onPress === undefined ? {} : { run: onPress })}>
+  const border = hint === undefined ? {} : { border: bind(() => ring.pointed === hint ? { width: 3, color: RING } : base.border ?? { width: 0, color: "#00000000" }) };
+  return <RuneAction variant={variant} {...border} {...props} {...(tooltip === undefined ? {} : { tooltip })} {...(onPress === undefined ? {} : { run: onPress })}>
     {typeof children === "string" || typeof children === "number" ? <Text weight={800} align="center">{String(children)}</Text> : children}{glyph}
   </RuneAction>;
 }

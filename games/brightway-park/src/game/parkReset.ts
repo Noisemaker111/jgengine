@@ -8,7 +8,7 @@ import { cellFor, freshWorld, park, placeFree } from "./park";
 import { spawnAll } from "./parkScene";
 import { seedGuests, resetGuestAgents } from "./sim/guests";
 import { resetRides } from "./rides";
-import { resetSession, session } from "./session";
+import { resetSession, sessionOf } from "./session";
 import { scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
 import { syncAmbience } from "./audio";
 import { savePark, scenariosWon } from "./persistence";
@@ -80,12 +80,12 @@ export interface ResetOptions {
  */
 export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
   for (const instance of park.of(ctx).instances()) ctx.scene.object.remove(instance.id);
-  for (const guest of session.guests.values()) ctx.scene.entity.despawn(guest.id);
-  for (const staff of session.staff.values()) ctx.scene.entity.despawn(staff.id);
+  for (const guest of sessionOf(ctx).guests.values()) ctx.scene.entity.despawn(guest.id);
+  for (const staff of sessionOf(ctx).staff.values()) ctx.scene.entity.despawn(staff.id);
   ctx.scene.entity.selection.clear();
-  resetSession();
-  resetRides();
-  resetGuestAgents();
+  resetSession(ctx);
+  resetRides(ctx);
+  resetGuestAgents(ctx);
   const w = freshWorld(ctx, options.cash);
   // A fresh park's calendar starts again: 09:00 on 1 March, day one, the next midnight from there.
   ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_START });
@@ -111,7 +111,7 @@ export function beginScenario(ctx: GameContext, id: string): boolean {
   const w = park.of(ctx);
   w.set("scenario.id", id);
   if (w.startJob(id) === null) return false;
-  session.started = true;
+  sessionOf(ctx).started = true;
   setGamePhase(ctx, "playing");
   ctx.time.play();
   syncAmbience(ctx);
@@ -128,7 +128,7 @@ export function endScenario(ctx: GameContext): void {
   w.set("scenario.result", "");
   w.set("scenario.reason", "");
   w.change({ "park.scenario_visitors": -w.num("park.scenario_visitors"), "park.scenario_revenue": -w.num("park.scenario_revenue") });
-  session.started = true;
+  sessionOf(ctx).started = true;
   setGamePhase(ctx, "playing");
   ctx.time.play();
   syncAmbience(ctx);

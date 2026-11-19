@@ -130,7 +130,7 @@ Repeat at `390 844`, inspect the PNGs, and cover the HUD, a menu and settings.
 `RuneViewport` injects deterministic dimensions. These are UI-only captures,
 not whole-game screenshots. After Rust changes run `bun scripts/build-jg-ui-wasm.ts`.
 On PC, `drive deepward --flow ui-tour` checks real settings and confirms
-`window.__jgNativeUi.stats().frames` stops on a settled page. GPU/CPU timings
+`window.__jg.nativeUi.stats().frames` stops on a settled page. GPU/CPU timings
 come from the PC acceptance step, using the production perf harness.
 
 Next-game gaps: inject each camera's world projection and safe-area insets;

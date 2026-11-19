@@ -123,7 +123,7 @@ export interface ShadowCacheStats {
   };
 }
 
-/** The page handle perf and audit scripts drive (`window.__jgShadowCache`). @internal */
+/** The page handle perf and audit scripts drive (`window.__jg.shadowCache`). @internal */
 export interface ShadowCacheHandle {
   stats(): ShadowCacheStats;
   /** Off draws every caster every pass, as three does; turning it back on starts every light over. */
@@ -133,9 +133,9 @@ export interface ShadowCacheHandle {
   resetStats(): void;
 }
 
-declare global {
-  interface Window {
-    __jgShadowCache?: ShadowCacheHandle;
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    shadowCache?: ShadowCacheHandle;
   }
 }
 

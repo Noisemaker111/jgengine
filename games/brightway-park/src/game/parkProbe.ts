@@ -5,7 +5,7 @@ import { BUILDABLES, type BuildCategory } from "./objects/catalog";
 import { hintsTaught } from "./onboarding";
 import { park, researched } from "./park";
 import { SCENARIOS, scenarioLock } from "./scenarios";
-import { session } from "./session";
+import { sessionOf } from "./session";
 import { scenariosWon } from "./persistence";
 
 /** What the proofs read from a live park. */
@@ -74,7 +74,7 @@ export function parkProbe(ctx: GameContext): ParkProbe {
   const w = park.of(ctx);
   let queued = 0;
   let riding = 0;
-  for (const guest of session.guests.values()) {
+  for (const guest of sessionOf(ctx).guests.values()) {
     if (guest.phase === "queued") queued += 1;
     else if (guest.phase === "riding") riding += 1;
   }
@@ -88,7 +88,7 @@ export function parkProbe(ctx: GameContext): ParkProbe {
   let staffHired = 0;
   for (const def of Object.values(BUILDABLES)) if (def.category === "staff") staffHired += w.num(`n.${def.id}`);
   return {
-    guests: session.guests.size,
+    guests: sessionOf(ctx).guests.size,
     queued,
     riding,
     rating: w.num("park.rating"),

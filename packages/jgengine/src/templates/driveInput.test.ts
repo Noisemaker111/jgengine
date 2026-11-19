@@ -8,14 +8,14 @@ import { driveInputPointExpr, parseDriveFill } from "./driveInput";
 
 describe("drive form arguments", () => {
   test("native control clicks use Rune bounds without querying DOM or computed styles", () => {
-    const original = Object.getOwnPropertyDescriptor(globalThis, "__jgNativeUi");
-    Object.defineProperty(globalThis, "__jgNativeUi", { configurable: true, value: { point: (label: string) => label === "settings" ? { x: 25, y: 50 } : null } });
+    const original = Object.getOwnPropertyDescriptor(globalThis, "__jg");
+    Object.defineProperty(globalThis, "__jg", { configurable: true, value: { nativeUi: { point: (label: string) => label === "settings" ? { x: 25, y: 50 } : null } } });
     try {
       expect((0, eval)(driveInputPointExpr("Settings"))).toEqual({ x: 25, y: 50 });
       expect((0, eval)(driveInputPointExpr("Missing"))).toBeNull();
     } finally {
-      if (original === undefined) Reflect.deleteProperty(globalThis, "__jgNativeUi");
-      else Object.defineProperty(globalThis, "__jgNativeUi", original);
+      if (original === undefined) Reflect.deleteProperty(globalThis, "__jg");
+      else Object.defineProperty(globalThis, "__jg", original);
     }
   });
 

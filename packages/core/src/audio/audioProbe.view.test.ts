@@ -13,8 +13,8 @@ describe("installAudioProbe", () => {
     const spatial = { panned: 3, reverbSends: 2, occludedOneShots: 1, reverb: "room" as const, reverbZone: null };
     const engine = { spatialStats: () => spatial } as unknown as AudioEngine;
     const off = installAudioProbe(engine);
-    expect(window.__jgengineAudio?.spatial()).toEqual(spatial);
+    expect(globalThis.__jg?.audio?.spatial()).toEqual(spatial);
     off();
-    expect(window.__jgengineAudio).toBeUndefined();
+    expect(globalThis.__jg?.audio).toBeUndefined();
   });
 });

@@ -142,7 +142,6 @@
 
 - `AgentBridgeRequest` (type): type AgentBridgeRequest = { method: string } & Record<string, unknown> — One RPC call into the agent bridge: a verb name plus its verb-specific fields.
 - `AgentBridgeResponse` (type): type AgentBridgeResponse = | { ok: true; [key: string]: unknown } | { ok: false; error: string; [key: string]: unknown } — Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason.
-- `CAPTURE_COMMAND_INPUT` (const): const CAPTURE_COMMAND_INPUT: { readonly yaw: 0; readonly pitch: 0; readonly aim: { readonly yaw: 0; readonly pitch: 0; }; } — The input a capture command named by a bare string runs with: a neutral look, so a command that reads an aim or heading gets one. Shared by the dev runner's capture mode and `capture_run`.
 - `applyTimeScale` (function): function applyTimeScale(ctx: Pick<GameContext, "time">, scale: unknown): AgentBridgeResponse — ⚠ undocumented
 - `simAdvanceReport` (function): function simAdvanceReport(ctx: GameContext | null, result: SimAdvanceResult | null): AgentBridgeResponse — The `sim_advance` answer: ok only when every requested frame advanced. When play was gated the answer is not ok, names what holds it, and reports the frames that really advanced before the gate, so a drive cannot mistake a gated advance for elapsed game time.
 
@@ -197,7 +196,7 @@
 - `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
 - `FrameWindow` (interface): interface FrameWindow — Frame timings over the measured window, as the player sees them.
 - `GlReport` (interface): interface GlReport — GPU-object creation counts. `total` is since the page loaded, the named fields since warmup.
-- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__JG.report()`, the dev-server route, `bun run perf live`) both produce exactly this object, so a budget check and a diff read either one.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__jg.report()`, the dev-server route, `bun run perf live`) both produce exactly this object, so a budget check and a diff read either one.
 - `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
 - `LogBusCounts` (interface): interface LogBusCounts — Lifetime totals per level, plus how many lines the ring dropped.
 - `LogBusEntry` (interface): interface LogBusEntry — One captured line: when, how bad, which system said it, and what it said.
@@ -208,7 +207,7 @@
 - `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic { readonly id: string; readonly reason: string } — ⚠ undocumented
 - `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
 - `PerfQuality` (type): type PerfQuality = "full" | "draft" — Graphics tier the record was measured at.
-- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run perf live` print.
+- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__jg.report()` and `bun run perf live` print.
 - `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
 - `ProfileEntry` (interface): interface ProfileEntry — One sampled stack frame reduced to a readable key and its self time.
 - `ProfileReport` (interface): interface ProfileReport — CPU profile summary; only the CDP harness can produce one.
@@ -284,7 +283,7 @@
 ## @jgengine/core/devtools/frameBreakdown
 
 - `DrawCost` (interface): interface DrawCost — One object or material's share of the draws: totals while gathering, per-frame averages in a summary.
-- `FrameBreakdown` (interface): interface FrameBreakdown — A running breakdown, as `installFrameBreakdown` returns it and `window.__jgFrameBreakdown` holds it.
+- `FrameBreakdown` (interface): interface FrameBreakdown — A running breakdown, as `installFrameBreakdown` returns it and `window.__jg?.frames` holds it.
 - `FrameBreakdownRecord` (interface): interface FrameBreakdownRecord — One frame, as the hooks saw it. GPU times arrive a few frames late; `gpu` is null until they do.
 - `FrameBreakdownSummary` (interface): interface FrameBreakdownSummary — A window of frames, summarized for a person or a diff.
 - `GpuTiming` (type): type GpuTiming = "span" | "draws" — How the breakdown times the GPU. - `span`: one timer around each pass. Cheap, but it also counts the time the GPU sat idle waiting for the CPU to submit the pass's commands, so a pass the CPU submits slowly reads as GPU time. - `draws`: one timer around every draw and clear, summed into its pass. That is the work the GPU did; the timers themselves cost CPU, so frame times in such a window are not the player's.
@@ -352,18 +351,19 @@
 ## @jgengine/core/devtools/renderCounter
 
 - `ComponentRenders` (interface): interface ComponentRenders — Which components rendered, and how often: the evidence that a changing value re-renders only its own leaf. The engine's UI runtime reports every component render and every commit to the counter installed on the page (`bun run drive --renders`) or by the test preload, so a test can count renders of a real game HUD. It can be installed before or after the runtime loads.
-- `RenderCounter` (interface): interface RenderCounter — The installed counter, at `globalThis.__jgRenders`.
+- `RenderCounter` (interface): interface RenderCounter — The installed counter, at `window.__jg.renders`.
 - `RenderCounts` (interface): interface RenderCounts — Every commit and component render since the counter was installed or reset.
-- `installRenderCounter` (function): function installRenderCounter(scope: { __jgRenders?: RenderCounter | undefined; __jgRenderSink?: { render(type: unknown): void; commit(): void } | undefined }): RenderCounter — Install the counter on `scope`: the UI runtime calls its sink once per component render (a component that bailed out is never called) and once per commit. Self-contained, so a harness can ship its source to a page.
+- `RenderSink` (interface): interface RenderSink — Where the UI runtime reports each render and commit.
+- `installRenderCounter` (function): function installRenderCounter(scope: { __jg?: { renders?: RenderCounter; renderSink?: RenderSink } | undefined }): RenderCounter — Install the counter on `scope`: the UI runtime calls its sink once per component render (a component that bailed out is never called) and once per commit. Self-contained, so a harness can ship its source to a page.
 - `renderCounter` (function): function renderCounter(): RenderCounter | null — The counter the test preload or the page script installed, or null when there is none.
 
 ## @jgengine/core/devtools/report
 
 - `FrameWindow` (interface): interface FrameWindow — Frame timings over the measured window, as the player sees them.
 - `GlReport` (interface): interface GlReport — GPU-object creation counts. `total` is since the page loaded, the named fields since warmup.
-- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__JG.report()`, the dev-server route, `bun run perf live`) both produce exactly this object, so a budget check and a diff read either one.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — The one perf record shape. `bun run perf` (CDP, out of process) and the in-page telemetry report (`window.__jg.report()`, the dev-server route, `bun run perf live`) both produce exactly this object, so a budget check and a diff read either one.
 - `PerfQuality` (type): type PerfQuality = "full" | "draft" — Graphics tier the record was measured at.
-- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run perf live` print.
+- `PerfReport` (interface): interface PerfReport — One measured window of one game: the record `bun run perf`, `window.__jg.report()` and `bun run perf live` print.
 - `ProfileEntry` (interface): interface ProfileEntry — One sampled stack frame reduced to a readable key and its self time.
 - `ProfileReport` (interface): interface ProfileReport — CPU profile summary; only the CDP harness can produce one.
 - `RenderReport` (interface): interface RenderReport — Renderer-side counts for the measured window; `null` where the source could not read them.
@@ -494,8 +494,7 @@
 - `BrowserSuspensionOptions` (interface): interface BrowserSuspensionOptions — Select suspension events; all are observed by default. No callback runs on attachment.
 - `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
 - `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
-- `CAPTURE_HOLD_KEY` (const): const CAPTURE_HOLD_KEY: "__jgengineCaptureHold" — Global a capture or drive host sets to `true` at document start. While it holds, window blur and a hidden page do not suspend play: a capture window loses focus and visibility whenever another window on the machine comes forward, and a drive that boots paused proves nothing.
-- `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing. Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
+- `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing. Blur and hidden are ignored while a capture host holds play (`window.__jg.captureHold`).
 - `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
 
 ## @jgengine/core/runtime/cameraDirector
@@ -515,6 +514,12 @@
 - `ObjectSlotResult` (type): type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection } — Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side.
 - `ObjectSlotTransfer` (interface): interface ObjectSlotTransfer — Which player inventory a transfer moves between, and what it moves.
 - `SceneObjectSlots` (interface): interface SceneObjectSlots — Per-instance container contents for placed objects whose catalog entry declares `slotInventory` — the engine side of "install a GPU into a rack", "put an item in a chest". Contents live on `SceneObject.slots`, so they replicate and save with the object rather than needing a game-owned table keyed by `instanceId`, and every mutation is validated against the declared `accepts` and stack limits.
+
+## @jgengine/core/runtime/contextDisposal
+
+- `disposeContext` (function): function disposeContext(ctx: GameContext): void — Close `ctx`: every cleanup registered on it runs, newest first, once. The shell calls this when a game unmounts.
+- `onContextDispose` (function): function onContextDispose(ctx: GameContext, cleanup: () => void): void — Run `cleanup` when `ctx`'s game closes; at once if it already has.
+- `publishForContext` (function): function publishForContext<K extends keyof JgPage>(ctx: GameContext, key: K, value: NonNullable<JgPage[K]>): void — {@link publishOnPage} for as long as `ctx`'s game runs: a closed game takes its readout with it.
 
 ## @jgengine/core/runtime/contextIdentity
 
@@ -699,6 +704,13 @@
 
 - `fromRuntimeObjectRow` (function): function fromRuntimeObjectRow(row: RuntimeObjectRow): SceneObject — Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `toRuntimeObjectRow` (function): function toRuntimeObjectRow(object: SceneObject): RuntimeObjectRow — Convert a live placed object into its persisted row — the bridge between `ctx.scene.object` and `GameRuntimeSnapshot.server.objects`/`chunks[].objects`. Per-instance `state` is carried as `flags`. Presentation overrides (`visual`, `animation`) are catalog- and authoring-resolved and deliberately stay off the persisted row — put anything a command must own in `state`.
+
+## @jgengine/core/runtime/pageHandle
+
+- `JgPage` (interface): interface JgPage — Everything a running game publishes on the page for agents, captures and devtools, as one object: `window.__jg`. Each owner adds its own field to {@link JgPage} by declaration merging and publishes it with {@link publishOnPage}, which hands back the removal; when the last field goes, `__jg` goes too, so a closed game leaves the page as it found it.
+- `onPage` (function): function onPage<K extends keyof JgPage>(key: K): JgPage[K] | undefined — What the page holds at `window.__jg[key]`, if anything.
+- `publishOnPage` (function): function publishOnPage<K extends keyof JgPage>(key: K, value: NonNullable<JgPage[K]>): () => void — Put `value` at `window.__jg[key]`; the returned function removes it, unless something replaced it since.
+- `publishReadout` (function): function publishReadout<K extends keyof JgPage>(key: K, value: NonNullable<JgPage[K]>): () => void — {@link publishOnPage} for a live readout (`read()` or `measure()` returns counters): the capability probe samples every field published this way on a running game and fails one that reports nothing.
 
 ## @jgengine/core/runtime/perContext
 
@@ -889,7 +901,7 @@
 - `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings>(config: GameConfig<TAssetRef, TProbe>): PlayableGame<TProbe> — The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
 - `defineKeyedStore` (function): function defineKeyedStore<T>(keyFor: (id: string) => string, initial: T | (() => T)): KeyedStoreHandle<T> — Define a typed per-owner keyed family on the game store: game code expresses `read(ctx, userId)`/`write(ctx, userId, v)`/`update(...)` with the value type it means, and both the `` `prefix:${id}` `` key composition and the `unknown → T` cast live once, here, behind the boundary. Reach for this over N separate `defineStore` calls whenever the owning id varies at runtime (per-user class, per-instance auras) — `defineStore` stays the right call for a single fixed slot.
-- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a UI selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
+- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. The initial value belongs to each game context: a factory runs once per context, and a plain object or array is copied once per context, so mutating one game's unwritten slot never reaches another game. Within a context an unwritten slot keeps a stable identity across reads (no per-read churn for a UI selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place; pass it as a factory so each context builds its own. Hold such objects with `perContext` when they need no store notifications.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `environmentContentFromDocument` (function): function environmentContentFromDocument(doc: EditorDocument, options: EnvironmentContentOptions = {}): EnvironmentContent — Derives the coordinate/placement content of an `environment()` world from its scene document: terrain footprint (via {@link terrainBoundsFromDocument}), ground clearings under authored spawns/POIs (via `clearanceZonesFrom`), and the document's sculpt snapshot. This is the seam that lets a game author its world footprint and flatten regions in the editor instead of hardcoding them — the `world.ts` that consumes it carries only engine tuning.

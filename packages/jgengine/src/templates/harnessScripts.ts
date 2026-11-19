@@ -645,7 +645,7 @@ export const driveMjs = `#!/usr/bin/env node
  *   node scripts/drive.mjs --playtest --key KeyW:4000 --strict
  *
  * The dev server is started for you when it is not already up. RPC talks to
- * window.__jgengineAgent — agent_status, debug_snapshot, editor verbs — on the
+ * window.__jg?.agent — agent_status, debug_snapshot, editor verbs — on the
  * running page. --playtest samples the game's capture.probe metrics while your
  * --key/--click-at steps drive input and prints a JSON progress/softlock verdict.
  */
@@ -747,7 +747,7 @@ async function holdKey(session, code, holdMs) {
 
 async function rpc(session, json) {
   const value = await session.evaluate(
-    "(async function(){var host=globalThis.__jgengineAgent||globalThis.__jgengineEditorHost;" +
+    "(async function(){var host=globalThis.__jg?.agent||globalThis.__jg?.editorHost;" +
       "if(host===undefined)return JSON.stringify({ok:false,error:'no agent bridge or editor host on this page'});" +
       "return JSON.stringify(await host.handle(" + json + "));})()",
     { awaitPromise: true },
@@ -757,7 +757,7 @@ async function rpc(session, json) {
 
 async function readProbe(session) {
   const value = await session.evaluate(
-    "(function(){var probe=globalThis.__jgProbe;" +
+    "(function(){var probe=globalThis.__jg?.probe;" +
       "if(typeof probe!=='function')return null;" +
       "try{var v=probe();if(v===null||typeof v!=='object')return null;" +
       "var out={};for(var k in v){var n=v[k];if(typeof n==='number'&&isFinite(n))out[k]=n;}return out;}" +

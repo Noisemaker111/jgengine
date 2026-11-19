@@ -9,12 +9,20 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { collisionDebug } from "./collisionDebug";
 import { readStoredOverrides } from "./devtoolsOverrides.view";
 import { buildLeanReport, buildFullReport } from "./devtoolsReports.draw";
+import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
+
+declare module "@jgengine/core/runtime/pageHandle" {
+  interface JgPage {
+    /** The devtools runtime agents read (`window.__jg.devtools.snapshot()`). */
+    devtools?: { snapshot(): unknown; snapshotFull(): unknown; [part: string]: unknown };
+  }
+}
 
 /** Keeps saved overrides and diagnostic registration live while the visual panel is closed. @internal */
 export function DevtoolsRuntime({ ctx, playable }: { ctx: GameContext; playable: PlayableGame }) {
   useEffect(() => {
     devtools.logs.captureConsole();
-    (globalThis as { __JG_DEVTOOLS?: unknown }).__JG_DEVTOOLS = {
+    return publishOnPage("devtools", {
       snapshot: () => buildLeanReport(playable),
       snapshotFull: () => buildFullReport(playable),
       controls: devtools.controls,
@@ -22,7 +30,7 @@ export function DevtoolsRuntime({ ctx, playable }: { ctx: GameContext; playable:
       frame: devtools.frame,
       profile: devtools.profile,
       collisionDebug,
-    };
+    });
   }, [playable]);
 
   useEffect(() => {

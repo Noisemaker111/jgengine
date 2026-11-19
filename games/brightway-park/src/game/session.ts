@@ -1,3 +1,5 @@
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { AgentSnapshot } from "@jgengine/core/agents/agent";
 import type { Thought, ThoughtTally } from "./sim/thoughts";
 import type { UndoStep } from "./build/undo";
@@ -79,8 +81,10 @@ function freshSession(): Session {
   };
 }
 
-export const session: Session = freshSession();
+/** The park's live session for one game context: tools, selection, undo and the simulated crowd. */
+export const sessionOf = perContext((): Session => freshSession());
 
-export function resetSession(): void {
-  Object.assign(session, freshSession());
+/** Put a context's session back to a fresh park. */
+export function resetSession(ctx: GameContext): void {
+  Object.assign(sessionOf(ctx), freshSession());
 }

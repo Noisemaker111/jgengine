@@ -3,6 +3,14 @@ import { roundReport, toReportLogs, type GlReport, type PerfQuality, type PerfRe
 import type { FrameStats, RenderSample, SystemProbeReading } from "@jgengine/core/devtools/types";
 import { REPORT_ENDPOINT_PATH, servedByDevServer } from "@jgengine/core/devtools/reportEndpoint";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
+import { publishOnPage } from "../runtime/pageHandle";
+
+declare module "../runtime/pageHandle" {
+  interface JgPage {
+    /** The page's perf report, as `bun run perf` reads it. */
+    report?: () => PerfReport;
+  }
+}
 
 /**
  * In-page frame telemetry: the game reports on itself instead of needing a second
@@ -230,7 +238,7 @@ export function reportGameId(displayName: string): string {
  * Ask the dev server whether its report route exists. This is the sampler's only
  * production guard and it is behaviour, not a build flag: the route is mounted by the
  * dev Vite configs only, so a shipped game answers this one request and installs
- * nothing — no timers, no GL wrapping, no `window.__JG`. The website dev server serves
+ * nothing — no timers, no GL wrapping, no `window.__jg.report`. The website dev server serves
  * the /play runner as a production build, which is why a build-time `PROD` check would
  * wrongly disable the report there.
  *
@@ -292,7 +300,7 @@ export function resetFrameTelemetry(): void {
 }
 
 /**
- * Install the sampler for the page: publishes `window.__JG.report()` and pushes the
+ * Install the sampler for the page: publishes `window.__jg.report()` and pushes the
  * same record to the dev server's report route every second. Returns `null` when
  * `?telemetry=off` asks for the comparison run; callers gate installation on
  * {@link frameTelemetryMode}; a shipped game starts it only when local diagnostics are requested.
@@ -360,8 +368,7 @@ export function installFrameTelemetry(sources: FrameTelemetrySources): FrameSamp
       window.removeEventListener("error", onError);
       window.removeEventListener("unhandledrejection", onRejection);
       document.removeEventListener("webglcontextlost", onContextLost, true);
-      const host = window as { __JG?: { report?: () => PerfReport } };
-      if (host.__JG?.report === buildReport) delete host.__JG;
+      unpublishReport();
       if (installed === telemetry) installed = null;
     },
   };
@@ -422,7 +429,7 @@ export function installFrameTelemetry(sources: FrameTelemetrySources): FrameSamp
   window.addEventListener("unhandledrejection", onRejection);
   document.addEventListener("webglcontextlost", onContextLost, true);
 
-  (window as { __JG?: { report: () => PerfReport } }).__JG = { report: buildReport };
+  const unpublishReport = publishOnPage("report", buildReport);
   installed = telemetry;
   if (!shouldPush) clearInterval(timer);
   return telemetry;

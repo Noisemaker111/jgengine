@@ -2,7 +2,7 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
 /** The drawn reticle gap: the native top tick's bound offset, read from the Rune tree. */
-const RETICLE_GAP = "(() => { const find = (n) => n.props?.id === 'scrap-reticle-gap' ? n : (n.children ?? []).map(find).find(Boolean); const tick = find(window.__jgNativeUi.tree()); return tick === undefined ? -1 : Math.abs(tick.props.y.get()); })()";
+const RETICLE_GAP = "(() => { const find = (n) => n.props?.id === 'scrap-reticle-gap' ? n : (n.children ?? []).map(find).find(Boolean); const tick = find(window.__jg?.nativeUi.tree()); return tick === undefined ? -1 : Math.abs(tick.props.y.get()); })()";
 
 export default defineFlow(game, {
   state: "front-armed",

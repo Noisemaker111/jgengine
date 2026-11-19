@@ -52,9 +52,9 @@ beforeAll(async () => {
       </HudCanvas></GameViewportProvider>;
     }
     createRoot(document.getElementById('root')).render(<Fixture />);
-    const panelRenders = () => globalThis.__jgRenders.read().components.find((entry) => entry.name === 'HudPanel')?.renders ?? 0;
+    const panelRenders = () => globalThis.__jg?.renders.read().components.find((entry) => entry.name === 'HudPanel')?.renders ?? 0;
     window.fixture = {
-      reset() { globalThis.__jgRenders.reset(); },
+      reset() { globalThis.__jg?.renders.reset(); },
       grow(width) { flushSync(() => grow(width)); },
       read() { return { panels: panelRenders(), width: document.querySelector('[data-hud-panel="score"]').getBoundingClientRect().width }; },
     };

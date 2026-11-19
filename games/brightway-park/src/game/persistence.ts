@@ -17,7 +17,7 @@ import { LOT, park, sizeOf } from "./park";
 import { spawnAll } from "./parkScene";
 import { resetPark } from "./parkReset";
 import { restoreRides, rideSnapshot } from "./rides";
-import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffState } from "./session";
+import { GUEST_PHASES, sessionOf, type GuestPhase, type GuestState, type StaffState } from "./session";
 import { restoreStaff } from "./staff";
 import { guestFlowState, restoreGuestFlow } from "./sim/guests";
 import { parkProfile } from "./parkProfile";
@@ -227,15 +227,15 @@ export function readParkSave(s: unknown): ParkSave | null {
 }
 
 export function snapshotPark(ctx: GameContext): ParkSave {
-  syncAgentStates();
+  syncAgentStates(ctx);
   return {
     version: 4,
     world: park.of(ctx).snapshot(),
-    guests: [...session.guests.values()].map((g) => ({ state: { ...g }, position: [...(ctx.scene.entity.get(g.id)?.position ?? [0, 0, 58])] as [number, number, number] })),
-    staff: [...session.staff.values()].map((state) => ({ ...state })),
+    guests: [...sessionOf(ctx).guests.values()].map((g) => ({ state: { ...g }, position: [...(ctx.scene.entity.get(g.id)?.position ?? [0, 0, 58])] as [number, number, number] })),
+    staff: [...sessionOf(ctx).staff.values()].map((state) => ({ ...state })),
     clock: ctx.time.snapshot(),
     rng: rngStateOf(ctx.rng),
-    rides: rideSnapshot(),
+    rides: rideSnapshot(ctx),
     sim: guestFlowState(ctx),
     ...(parkProfile.name === null ? {} : { parkName: parkProfile.name }),
     ...(parkProfile.thumbnail === null ? {} : { thumbnail: parkProfile.thumbnail }),
@@ -371,7 +371,7 @@ const storageReady = (): boolean => defaultKeyValueStorage() !== null;
  * follows once the write settles. Bytes the boot read could not open are archived first.
  */
 export async function savePark(ctx: GameContext): Promise<void> {
-  if (!session.started || !storageReady()) return;
+  if (!sessionOf(ctx).started || !storageReady()) return;
   const record = records(ctx);
   try {
     if (record.unreadable) {
@@ -380,15 +380,15 @@ export async function savePark(ctx: GameContext): Promise<void> {
     }
     await record.save.save();
   } catch {
-    session.saveStatus = UNAVAILABLE;
+    sessionOf(ctx).saveStatus = UNAVAILABLE;
     return;
   }
   if (record.save.status() === "error") {
-    session.saveStatus = UNAVAILABLE;
+    sessionOf(ctx).saveStatus = UNAVAILABLE;
     return;
   }
-  session.hasSave = true;
-  session.saveStatus = savedLine(ctx, "Saved");
+  sessionOf(ctx).hasSave = true;
+  sessionOf(ctx).saveStatus = savedLine(ctx, "Saved");
 }
 
 /** Put a decoded save into a park that `resetPark(ctx, { layout: "blank" })` just emptied. */
@@ -397,9 +397,9 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
   parkProfile.thumbnail = s.thumbnail ?? null;
   park.of(ctx).restore(s.world);
   spawnAll(ctx);
-  session.hasSave = true;
+  sessionOf(ctx).hasSave = true;
   for (const { state, position } of s.guests) {
-    session.guests.set(state.id, state);
+    sessionOf(ctx).guests.set(state.id, state);
     ctx.scene.entity.spawn(state.kind, { id: state.id, position, role: "npc" });
   }
   restoreGuestFlow(ctx, s.sim);
@@ -407,7 +407,7 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
   restoreRides(ctx, s.rides);
   ctx.time.hydrate({ ...s.clock, paused: true });
   if (s.rng !== undefined && s.rng !== null) restoreRng(ctx.rng, s.rng);
-  session.saveStatus = savedLine(ctx, "Saved park");
+  sessionOf(ctx).saveStatus = savedLine(ctx, "Saved park");
 }
 
 /** The bytes the park slot holds, document first, else what an older build left; `null` for none. */
@@ -425,11 +425,11 @@ export async function restorePark(ctx: GameContext): Promise<boolean> {
   try {
     const read = await record.save.peek(PARK_SLOT);
     const document = read.kind === "loaded" ? read.value : null;
-    if (session.started) return false;
+    if (sessionOf(ctx).started) return false;
     if (document === null || readParkSave(document.systems["park"]) === null) {
       if ((await heldBytes(record)) === null) return false;
       record.unreadable = true;
-      session.saveStatus = "The saved park is from an older build or unreadable - starting a new park; the old save is kept as a backup";
+      sessionOf(ctx).saveStatus = "The saved park is from an older build or unreadable - starting a new park; the old save is kept as a backup";
       return false;
     }
     await record.save.load();

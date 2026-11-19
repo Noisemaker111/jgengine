@@ -7,7 +7,7 @@ import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 
 import { BUILDABLES, CATEGORY_LABEL, CATEGORY_ORDER, RIDE_GROUPS, RIDE_GROUP_LABEL, type BuildCategory, type BuildableDef, type RideGroup } from "../objects/catalog";
-import { session } from "../session";
+import { sessionOf } from "../session";
 import { placementHintStore } from "../build/placementHint";
 import { isLandTool, LAND_COST, LAND_TOOLS } from "../build/terrain";
 import { LINE_KINDS } from "../build/commands";
@@ -50,8 +50,8 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
     const w = park.of(c), cash = w.num("park.cash");
     return { landPoor: cash < LAND_COST, poor: Object.values(BUILDABLES).filter((d) => cash < d.cost).map((d) => d.id), locked: Object.values(BUILDABLES).filter((d) => w.canPlace(d.id)?.reason === "locked").map((d) => d.id) };
   });
-  const selected = useGameStore(() => session.selectedTool);
-  const undoable = useGameStore(() => canUndoBuild());
+  const selected = useGameStore(() => sessionOf(ctx).selectedTool);
+  const undoable = useGameStore((c) => canUndoBuild(c));
   const refusal = useStore(placementHintStore);
   useEffect(() => {
     if (isLandTool(selected)) { setCategory("land"); return; }

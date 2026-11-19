@@ -394,7 +394,7 @@ async function driveLocked(daemon: ShootDaemonState | null, timed: boolean): Pro
         await new Promise((r) => setTimeout(r, 500));
         await installFrameCounter(session);
         if (args.hitches && !(await resetBreakdown(session))) {
-          throw new Error("drive: --hitches found no frame breakdown on the page (window.__jgFrameBreakdown); the game renders no 3D scene, or local telemetry did not start");
+          throw new Error("drive: --hitches found no frame breakdown on the page (window.__jg?.frames); the game renders no 3D scene, or local telemetry did not start");
         }
         // The page clock at the hitch log's zero, for lining a CPU profile up with its hitches.
         const hitchZeroMs = (await session.evaluate<number>("performance.now()")) ?? 0;

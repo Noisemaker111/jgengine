@@ -17,7 +17,7 @@
   "capabilities": {
     "probes": {
       "@jgengine/core/audio/audioProbe.view": [
-        "window:__jgengineAudio"
+        "window:audio"
       ]
     }
   },

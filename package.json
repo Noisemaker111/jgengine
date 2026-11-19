@@ -79,5 +79,8 @@
     "ts-morph": "^28.0.0",
     "typescript": "^5.9.3"
   },
-  "packageManager": "bun@1.4.2"
+  "packageManager": "bun@1.4.2",
+  "patchedDependencies": {
+    "better-auth@1.4.9": "patches/better-auth@1.4.9.patch"
+  }
 }
