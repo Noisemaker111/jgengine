@@ -2,7 +2,6 @@ import { cliVersion } from "./pkg";
 import { sharedBuilderFiles } from "./templates/sharedBuilder";
 import {
   boardGameConfigTs,
-  boardGameUiTsx,
   boardLoopTs,
   boardRulesTest,
   boardRulesTs,
@@ -43,7 +42,6 @@ import {
   readmeMd,
   starterCreditsTs,
   starterFromZeroFlow,
-  starterKitTs,
   starterProbeTs,
   starterRulesTest,
   starterRulesTs,
@@ -52,6 +50,7 @@ import {
   type StarterGameOptions,
 } from "./templates/starterGame";
 import { withJsxSource } from "./templates/jsxSource";
+import { runeBoardGameUiTsx, runeThemeTs } from "./templates/runeGameUi";
 import type { EditorSceneDoc, TemplateFile, TemplateOptions } from "./templates/types";
 
 export { editorScaffold } from "./templates/editorWorkspace";
@@ -150,7 +149,6 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
           { path: "src/game.config.ts", contents: gameConfigTs(name, { world, editor, loop, flow }) },
           { path: "src/loop.ts", contents: loopTs(editor, loop) },
           { path: "src/game/probe.ts", contents: loop ? starterProbeTs : walkProbeTs },
-          { path: "src/game/ui/kit.ts", contents: starterKitTs },
           { path: "src/game/credits.ts", contents: starterCreditsTs },
           ...(loop
             ? [
@@ -174,7 +172,8 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/game/models.ts", contents: gameModelsTs(options.player) },
         ]
       : []),
-    { path: "src/game/ui/GameUI.tsx", contents: board ? boardGameUiTsx(name) : gameUiTsx(id, name, editor, loop) },
+    { path: "src/game/ui/theme.ts", contents: runeThemeTs },
+    { path: "src/game/ui/GameUI.tsx", contents: board ? runeBoardGameUiTsx(name) : gameUiTsx(name, editor, loop) },
   ];
   return withJsxSource(options.shape === "shared-world-builder" ? sharedBuilderFiles(files, options) : files);
 }

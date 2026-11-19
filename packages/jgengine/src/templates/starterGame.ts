@@ -371,22 +371,6 @@ export function probe(ctx: GameContext) {
 }
 `;
 
-/** `src/game/ui/kit.ts`: the game's own UI language, reshaped from a built-in kit. */
-export const starterKitTs = `import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view";
-
-// The look of every menu, pane and HUD part. Pick the base kit and fonts from src/art-direction.md;
-// the tokens below are this game's, not the kit's defaults.
-export const kit = customizeKit(parchmentKit, {
-  tokens: {
-    accent: "#d9822b",
-    accentInk: "#1d1306",
-    fontDisplay: '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif',
-    fontBody: '"Avenir Next", "Segoe UI", system-ui, sans-serif',
-  },
-});
-`;
-
 /** `src/game/credits.ts`: the credits document is the \`credits\` field of \`jgengine.json\`. */
 export const starterCreditsTs = `import type { CreditsDocument } from "@jgengine/core/menu/credits";
 
@@ -394,63 +378,6 @@ import project from "../../jgengine.json";
 
 /** Who made this game and what it uses. Edit the \`credits\` field of jgengine.json; menus read it from here. */
 export const credits: CreditsDocument = project.credits;
-`;
-
-/** `src/game/ui/GameUI.tsx`: the main menu, pause menu and play HUD, all engine parts in the game's kit. */
-export const starterGameUiTsx = (id: string, name: string) => `import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
-import { KitHint, KitVitals } from "@jgengine/core/hud/kitHud.view";
-import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { useGameStore } from "@jgengine/ui/hooks";
-
-import { run } from "../../loop";
-import { credits } from "../credits";
-import { ENERGY, GOAL_GATHERED, rankOf } from "../rules";
-
-// The title (New game, Continue, Controls, Settings, Credits), the pause menu and the HUD. The menus
-// are the engine's, drawn in this game's kit (./kit.ts); the words are this game's.
-const MENU: GameFlowMenuContent = {
-  name: ${JSON.stringify(name)},
-  tagline: "Milestone 1",
-  pitch: "Gather three caches and light the beacon.",
-  controls: [
-    ["WASD", "walk"],
-    ["Space", "jump"],
-    ["E", "gather a cache"],
-    ["Shift", "sprint, once you rank up"],
-    ["Esc", "pause"],
-  ],
-  briefing: ["Walk to a cache and press E.", "Two caches make you a Forager: Shift sprints.", "With three, walk to the beacon."],
-  credits,
-};
-
-function Hud() {
-  const energy = useGameStore((ctx) => Math.round(run.read(ctx).energy.pool.current));
-  const gathered = useGameStore((ctx) => run.read(ctx).gathered);
-  const rank = useGameStore((ctx) => rankOf(run.read(ctx)));
-  const message = useGameStore((ctx) => run.read(ctx).message);
-  const won = useGameStore((ctx) => run.read(ctx).won);
-  return (
-    <HudSlots
-      storageKey=${JSON.stringify(id)}
-      slots={{
-        topLeft: (
-          <KitVitals
-            eyebrow={rank}
-            title=${JSON.stringify(name)}
-            vitals={[{ label: "Energy", value: energy, max: ENERGY.max, lowAt: 0.2 }]}
-            objective={{ id: won ? "done" : "gather", label: "Goal", title: won ? "The beacon is lit" : "Light the beacon", goal: won ? undefined : "Caches " + Math.min(gathered, GOAL_GATHERED) + " / " + GOAL_GATHERED }}
-          />
-        ),
-        top: <KitHint text={message} tone={won ? "good" : "accent"} />,
-      }}
-    />
-  );
-}
-
-/** @internal */
-export function GameUI() {
-  return <GameFlowUI menu={MENU} hud={<Hud />} />;
-}
 `;
 
 /** `proofs/flows/from-zero.flow.ts`: a new game with no save, played through real keys to the goal. */
