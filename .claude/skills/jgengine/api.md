@@ -803,7 +803,7 @@
 ## @jgengine/core/runtime/transport
 
 - `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
-- `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
+- `GameBackend` (type): type GameBackend = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; } — ⚠ undocumented
 - `GameRuntimeFeedView` (type): type GameRuntimeFeedView = { action: string; entries: unknown[]; } — ⚠ undocumented
 - `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
@@ -811,7 +811,7 @@
 - `GameRuntimeTransport` (type): type GameRuntimeTransport = { /** * Join a server. `sessionId` names this client session (one tab, one mounted view) so the host keeps * the user a member while any of their sessions is still live. */ joinServer: (args: { gameId: string; serverId?: string | undefined; role?: MultiplayerRole; session… — ⚠ undocumented
 - `JoinServerOutcome` (type): type JoinServerOutcome = | (JoinServerResult & { ok: true }) | { ok: false; reason: "full" | "closed" | "unauthorized" } — Join failures are returned to the caller so the triggering surface can offer retry.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; resumeTicket?: ResumeTicket; } — ⚠ undocumented
-- `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
+- `LiveGameBackend` (type): type LiveGameBackend = GameBackend & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor?: (serverId: string) => ChatSync; } — ⚠ undocumented
 - `MultiplayerRole` (type): type MultiplayerRole = "player" | "spectator" — Connection role used for authoritative world access; spectators are read-only.
 - `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
 - `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/core/multiplayer/useShellMultiplayerSync.draw): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.

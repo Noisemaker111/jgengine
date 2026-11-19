@@ -2172,6 +2172,16 @@
       "intent": "keybind-derived control legend that hides on touch"
     },
     {
+      "id": "convex-chat",
+      "packages": [
+        "@jgengine/convex"
+      ],
+      "module": "@jgengine/convex/convexChatSync",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a game's own Convex chat functions as a ChatSync with live channel history and send"
+    },
+    {
       "id": "convex-load-server-snapshot",
       "packages": [
         "@jgengine/convex"

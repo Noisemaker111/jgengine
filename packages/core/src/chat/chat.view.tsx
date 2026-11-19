@@ -1,36 +1,10 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { StandaloneChatPanel, type StandaloneChatPanelProps } from "./standaloneChatPanel.view";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
+import { useEffect, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 import type { ChatMessage, ChatSendResult } from "@jgengine/core/chat/chat";
-import type { ChatSync, ChatTransport } from "@jgengine/core/chat/chatContract";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useChat } from "@jgengine/ui/hooks";
-
-/**
- * Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId))
- * into the hook-shaped ChatTransport contract. Create once per sync — outside
- * render or inside useMemo — so subscriptions survive re-renders.
- */
-export function chatTransportFromSync(sync: ChatSync): ChatTransport {
-  return {
-    useMessages(channelId) {
-      const [messages, setMessages] = useState<readonly ChatMessage[] | undefined>(undefined);
-      useEffect(() => {
-        if (channelId === "skip") return undefined;
-        setMessages(undefined);
-        return sync.subscribe(channelId, setMessages);
-      }, [channelId]);
-      return channelId === "skip" ? undefined : messages;
-    },
-    useActions() {
-      return useMemo(
-        () => ({ sendMessage: (args: { channelId: string; body: string }) => sync.send(args.channelId, args.body) }),
-        [],
-      );
-    },
-  };
-}
 
 export function ChatLog({
   channelId,

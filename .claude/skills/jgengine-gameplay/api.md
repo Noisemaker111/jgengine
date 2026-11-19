@@ -188,7 +188,6 @@
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string | undefined; inputClassName?: string | undefined; buttonClassName?: string | undefined; placeholder?: string | undefined; sendLabel?: Rea… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number | undefined; className?: string | undefined; messageClassName?: string | undefined; ownMessageClassName?: string | undefined; renderMessage?: ((message: ChatMe… — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): JSX.Element — Chat behavior over a game context or externally supplied server messages.
-- `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
 ## @jgengine/core/chat/chatBubbles.view
 
@@ -200,12 +199,10 @@
 
 ## @jgengine/core/chat/chatContract
 
-- `ChatActions` (interface): interface ChatActions { sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome> } — ⚠ undocumented
 - `ChatSendArgs` (interface): interface ChatSendArgs { channelId: string; body: string } — ⚠ undocumented
 - `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
-- `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host UI hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
-- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as UI hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
-- `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
+- `ChatSync` (interface): interface ChatSync — The seam for remote text chat, with no UI hooks so any runtime can hold it: subscribe delivers the channel's recent history now and on every change; send resolves with the host's verdict.
+- `createLocalChatSync` (function): function createLocalChatSync(options?: { userId?: string; historyLimit?: number; now?: () => number; }): ChatSync — Chat kept in this process: one ChatSync with a bounded history per channel, for offline play and tests.
 
 ## @jgengine/core/chat/chatFilter
 

@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createClientErrorFunctions` (function) · `import { createClientErrorFunctions } from "@jgengine/convex"`
 
+## convex-chat — a game's own Convex chat functions as a ChatSync with live channel history and send
+
+- `createConvexGameChatSync` (function) · `import { createConvexGameChatSync } from "@jgengine/convex"`
+
 ## convex-load-server-snapshot — read a hosted server's runtime snapshot inside a host-written Convex mutation
 
 - `loadServerSnapshot` (function) · `import { loadServerSnapshot } from "@jgengine/convex"`

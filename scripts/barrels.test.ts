@@ -34,7 +34,7 @@ const KEY_SYMBOL: Record<string, string> = {
   world: "createNavGrid",
   combat: "createAbilityKit",
   gameplay: "defineSystem",
-  multiplayer: "ChatTransport",
+  multiplayer: "ChatSync",
   ui: "formatDuration",
 };
 

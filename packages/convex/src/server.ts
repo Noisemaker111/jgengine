@@ -1645,10 +1645,7 @@ export type PresenceCheckpoint = {
 
 /**
  * The pose lane of a hosted server: the backend behind `PresenceSync`, which replicates where each
- * member of one `jgGameServers` server is standing. It is not the backend for `PresenceTransport` —
- * that contract (`ConvexPresenceFunctions` in `./convexPresenceTransport`) is a game-owned world's
- * own presence, keyed by the game's own ids, with its own notion of who counts as a resident. A game
- * on `createConvexPresenceTransport` supplies those functions itself; these do not substitute for them.
+ * member of one `jgGameServers` server is standing.
  * @internal
  */
 export function createPresenceFunctions(options?: {

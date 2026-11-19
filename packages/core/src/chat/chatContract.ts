@@ -10,42 +10,21 @@ export interface ChatSendOutcome {
   reason?: string;
 }
 
-export interface ChatActions {
-  sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome>;
-}
-
 /**
- * Backend seam for remote text chat, mirroring PresenceTransport: the use*
- * members are called as UI hooks by consumers, so a mounted transport must
- * never change identity — remount the subtree to switch backends. useMessages
- * returns undefined while the subscription is loading and the channel's recent
- * history once live.
- */
-export interface ChatTransport {
-  useMessages(channelId: string | "skip"): readonly ChatMessage[] | undefined;
-  useActions(): ChatActions;
-}
-
-/**
- * Callback seam for backends that cannot host UI hooks (e.g. the ws
- * client): subscribe delivers the channel's recent history on every change;
- * send resolves with the host's verdict. @jgengine/ui's chatTransportFromSync
- * lifts a ChatSync into a ChatTransport.
+ * The seam for remote text chat, with no UI hooks so any runtime can hold it: subscribe delivers the
+ * channel's recent history now and on every change; send resolves with the host's verdict.
  */
 export interface ChatSync {
   subscribe(channelId: string, onChange: (messages: readonly ChatMessage[]) => void): () => void;
   send(channelId: string, body: string): Promise<ChatSendOutcome>;
 }
 
-export function createLocalChatTransport(options?: {
+/** Chat kept in this process: one ChatSync with a bounded history per channel, for offline play and tests. */
+export function createLocalChatSync(options?: {
   userId?: string;
   historyLimit?: number;
   now?: () => number;
-}): {
-  transport: ChatTransport;
-  sync: ChatSync;
-  actions: ChatActions;
-} {
+}): ChatSync {
   const userId = options?.userId ?? "local";
   const historyLimit = options?.historyLimit ?? 100;
   const now = options?.now ?? Date.now;
@@ -93,14 +72,5 @@ export function createLocalChatTransport(options?: {
     },
   };
 
-  const actions: ChatActions = {
-    sendMessage: (args) => sync.send(args.channelId, args.body),
-  };
-
-  const transport: ChatTransport = {
-    useMessages: (channelId) => (channelId === "skip" ? undefined : snapshot(channelId)),
-    useActions: () => actions,
-  };
-
-  return { transport, sync, actions };
+  return sync;
 }
