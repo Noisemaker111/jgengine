@@ -1638,8 +1638,7 @@
   ],
   "@jgengine/convex": [
     ".",
-    "./convexChatTransport",
-    "./convexPresenceTransport",
+    "./convexChatSync",
     "./convexSaveBackend",
     "./createConvexBackend",
     "./createConvexGameTransport",

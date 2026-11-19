@@ -1,5 +1,4 @@
-export * from "./convexChatTransport";
-export * from "./convexPresenceTransport";
+export * from "./convexChatSync";
 export * from "./createConvexBackend";
 export * from "./convexSaveBackend";
 export * from "./createConvexGameTransport";

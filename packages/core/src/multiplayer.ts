@@ -1,4 +1,4 @@
-export { type ChatActions, type ChatSendOutcome, type ChatSync, type ChatTransport } from "./chat/chatContract";
+export { type ChatSendOutcome, type ChatSync } from "./chat/chatContract";
 export { type BoardSnapshot } from "./multiplayer/combatSnapshot";
 export { createFeedWriteGate, validateFeedWrite, type FeedWriteGate } from "./multiplayer/feedWriteGate";
 export { resolveGuestSession, sessionPlayer, type AuthSession, type PlayerIdentity } from "./multiplayer/identity";
@@ -12,13 +12,7 @@ export {
   type SessionVisibility,
 } from "./multiplayer/matchmaking";
 export { createPoseSyncGate, type PlayerPose, type PoseSyncTuning } from "./multiplayer/poseSyncGate";
-export {
-  type EnsurePresenceResult,
-  type PresenceActions,
-  type PresenceFeeds,
-  type PresenceSession,
-  type PresenceTransport,
-} from "./multiplayer/presenceContract";
+export { type EnsurePresenceResult } from "./multiplayer/presenceContract";
 export { type PoseSyncRules, type PresencePoseState } from "./multiplayer/presenceModel";
 export {
   createLocalVoiceTransport,

@@ -1,5 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
+import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
+import { useConvex } from "convex/react";
 import { RuneField, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
@@ -7,7 +8,7 @@ import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
 
-import { worldChatTransport } from "../worldChatTransport";
+import { worldChatSync } from "../worldChatSync";
 import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
 import { Button, C, ErrorText, FULL, Icon, Muted, Row, Text, useCompact } from "../../ui/kit";
@@ -17,7 +18,7 @@ const REACTIONS = ["Hello, neighbors!", "Nice lab!"] as const;
 /** The longest message a neighbor can send. */
 export const CHAT_MAX_LENGTH = 500;
 
-/** What the chat panel shows and does; the container wires it to the world chat transport. */
+/** What the chat panel shows and does; the container wires it to the world chat. */
 export interface WorldChatVm {
   messages: readonly ChatMessage[] | undefined;
   playerId: string;
@@ -79,9 +80,11 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
-  const live = worldChatTransport.useMessages(fixtureMessages ? "skip" : WORLD_CHAT_CHANNEL);
+  const client = useConvex();
+  const chat = useMemo(() => worldChatSync(client), [client]);
+  const [live, setLive] = useState<readonly ChatMessage[] | undefined>(undefined);
+  useEffect(() => (fixtureMessages ? undefined : chat.subscribe(WORLD_CHAT_CHANNEL, setLive)), [chat, fixtureMessages]);
   const messages = fixtureMessages ?? live;
-  const chat = worldChatTransport.useActions();
   const blocked = placing || tabletOpen || rackMenuOverlayRackId !== null;
   const visible = open && !blocked;
 
@@ -118,7 +121,7 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
     setSending(true);
     setError(null);
     try {
-      const result = await chat.sendMessage({ channelId: WORLD_CHAT_CHANNEL, body: body.trim() });
+      const result = await chat.send(WORLD_CHAT_CHANNEL, body.trim());
       if (!result.ok) {
         setError(result.reason ?? "Message could not be sent. Try again.");
         return;

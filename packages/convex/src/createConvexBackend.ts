@@ -11,44 +11,22 @@ import {
   defaultConvexGameApi,
   type ConvexGameApi,
 } from "./createConvexGameTransport";
-import {
-  createConvexPresenceTransport,
-  type ConvexPresenceFunctions,
-} from "./convexPresenceTransport";
 
 export type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads>;
 
-export type ConvexBackend<
-  TPresenceRow = unknown,
-  TPresenceLocation = unknown,
-  TGameId extends string = string,
-> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & {
+export type ConvexBackend = LiveGameBackend & {
   leaderboard: ConvexLeaderboardReads;
 };
 
-export type ConvexBackendOptions<
-  TRawPresenceRow extends { actorExternalId: string },
-  TPresenceRow,
-> = {
+export type ConvexBackendOptions = {
   client: ConvexReactClient;
   gameId: string;
   userId: string;
   api?: ConvexGameApi | undefined;
   poseTuning?: PoseSyncTuning | undefined;
-  presence?: {
-    functions: ConvexPresenceFunctions;
-    mapRow: (row: TRawPresenceRow) => TPresenceRow;
-  };
 };
 
-export function createConvexBackend<
-  TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string },
-  TPresenceRow = unknown,
-  TPresenceLocation = unknown,
-  TGameId extends string = string,
->(
-  options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>,
-): ConvexBackend<TPresenceRow, TPresenceLocation, TGameId> {
+export function createConvexBackend(options: ConvexBackendOptions): ConvexBackend {
   const api = options.api ?? defaultConvexGameApi();
   const config = { gameId: options.gameId, userId: options.userId };
   return {
@@ -58,15 +36,5 @@ export function createConvexBackend<
     presenceSync: createConvexPresenceSync(options.client, api, config, options.poseTuning),
     ...createConvexFeedWrites(options.client, api, config),
     chatSyncFor: (serverId) => createConvexChatSync(options.client, api, config, serverId),
-    ...(options.presence === undefined
-      ? {}
-      : {
-          presence: createConvexPresenceTransport<
-            TRawPresenceRow,
-            TPresenceRow,
-            TPresenceLocation,
-            TGameId
-          >(options.presence.functions, options.presence.mapRow),
-        }),
   };
 }

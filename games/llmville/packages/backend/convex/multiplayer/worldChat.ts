@@ -30,7 +30,7 @@ async function history(ctx: QueryCtx, channelId: string, limit: number | undefin
 
 const chatMessageValidator = v.object({ id: v.string(), channelId: v.string(), fromUserId: v.string(), fromLabel: v.optional(v.string()), body: v.string(), at: v.number() });
 
-/** The engine chat contract (`createConvexChatTransport`) over the shared world's channels, oldest first. */
+/** The shared world's channels, oldest first, as the engine's ChatSync reads them (`createConvexGameChatSync`). */
 export const messages = query({
   args: { channelId: v.string() },
   returns: v.array(chatMessageValidator),

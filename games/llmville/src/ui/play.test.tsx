@@ -154,9 +154,19 @@ let lab = new Lab();
 const nameOf = (reference: unknown) => getFunctionName(reference as FunctionReference<"query">);
 const useLabVersion = () => useSyncExternalStore(lab.subscribe, lab.read, lab.read);
 
+/** The client the hook-free engine seams (the world chat's ChatSync) call: a watched query re-reads the lab on every change. */
+const labClient = {
+  watchQuery: (reference: unknown, args: unknown) => ({
+    localQueryResult: () => lab.query(nameOf(reference), args),
+    onUpdate: (listener: Listener) => lab.subscribe(listener),
+    journal: () => undefined,
+  }),
+  mutation: async (reference: unknown, args: Record<string, unknown> = {}) => lab.mutate(nameOf(reference), args),
+};
+
 mock.module("convex/react", () => ({
   ConvexReactClient: class {},
-  useConvex: () => ({}),
+  useConvex: () => labClient,
   useConvexAuth: () => { useLabVersion(); return { isAuthenticated: lab.session !== null, isLoading: false }; },
   useQuery: (reference: unknown, args: unknown) => { useLabVersion(); return lab.query(nameOf(reference), args); },
   useMutation: (reference: unknown) => async (args: Record<string, unknown> = {}) => lab.mutate(nameOf(reference), args),

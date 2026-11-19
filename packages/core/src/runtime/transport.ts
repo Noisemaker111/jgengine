@@ -1,6 +1,5 @@
 import type { ChatSync } from "../chat/chatContract";
 import type { PlayerPose } from "../multiplayer/poseSyncGate";
-import type { PresenceTransport } from "../multiplayer/presenceContract";
 import type { WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
@@ -96,14 +95,9 @@ export type GameRuntimeFeeds = {
   requestServerBaseline?: (serverId: string) => void;
 };
 
-export type GameBackend<
-  TPresenceRow = unknown,
-  TPresenceLocation = unknown,
-  TGameId extends string = string,
-> = {
+export type GameBackend = {
   transport: GameRuntimeTransport;
   feeds?: GameRuntimeFeeds;
-  presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>;
 };
 
 export type PresencePoseRow = {
@@ -125,11 +119,7 @@ export type PresenceSync = {
   syncPose: (serverId: string, pose: PlayerPose) => void;
 };
 
-export type LiveGameBackend<
-  TPresenceRow = unknown,
-  TPresenceLocation = unknown,
-  TGameId extends string = string,
-> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & {
+export type LiveGameBackend = GameBackend & {
   presenceSync: PresenceSync;
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
   chatSyncFor?: (serverId: string) => ChatSync;
