@@ -128,13 +128,16 @@ export async function publishedState(registry: Registry, name: string, version: 
 }
 
 /**
- * The publish workflow's skip guard. Metadata without a tarball is a repair, not a skip: `npm view`
- * reported success for a version whose tarball returned 404, so a re-run skipped it forever (#2280).
+ * The publish workflow's skip guard. Metadata whose tarball is a confirmed 404 is a repair, not a skip:
+ * `npm view` reported success for a version whose tarball returned 404, so a re-run skipped it forever
+ * (#2280). A repair unpublishes, so any other answer throws: a 503 once read as "broken" would have
+ * removed a healthy version.
  */
 export function publishDecision(state: PublishedState): "skip" | "publish" | "repair" {
   if (!state.hasMetadata || !state.hasVersion) return "publish";
-  if (state.tarballStatus !== 200) return "repair";
-  return "skip";
+  if (state.tarballStatus === 200) return "skip";
+  if (state.tarballStatus === 404) return "repair";
+  throw new Error(`registry did not answer (tarball status ${state.tarballStatus ?? "none"}), run again`);
 }
 
 /**

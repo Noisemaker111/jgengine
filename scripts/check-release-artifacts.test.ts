@@ -152,7 +152,21 @@ describe("skip guard", () => {
     expect(publishDecision({ hasMetadata: true, hasVersion: true, tarballStatus: 200 })).toBe("skip");
     expect(publishDecision({ hasMetadata: true, hasVersion: false, tarballStatus: null })).toBe("publish");
     expect(publishDecision({ hasMetadata: false, hasVersion: false, tarballStatus: null })).toBe("publish");
-    expect(publishDecision({ hasMetadata: true, hasVersion: true, tarballStatus: null })).toBe("repair");
+  });
+
+  test("a registry that did not answer never becomes a repair", async () => {
+    for (const status of [500, 503]) {
+      const state = await publishedState(registryOf(metadataWith("@jgengine/core", "0.59.0"), status), "@jgengine/core", "0.59.0");
+      expect(() => publishDecision(state)).toThrow("registry did not answer");
+    }
+    expect(() => publishDecision({ hasMetadata: true, hasVersion: true, tarballStatus: null })).toThrow("registry did not answer");
+    const timedOut: Registry = {
+      metadata: async () => metadataWith("@jgengine/core", "0.59.0"),
+      tarball: async () => {
+        throw new DOMException("The operation timed out.", "TimeoutError");
+      },
+    };
+    await expect(publishedState(timedOut, "@jgengine/core", "0.59.0")).rejects.toThrow("timed out");
   });
 });
 

@@ -17,7 +17,6 @@
         "playwright-core": "^1.50.0",
         "ts-morph": "^28.0.0",
         "typescript": "^5.9.3",
-        "user-attachments": "^2.0.2",
       },
     },
     "apps/desktop": {
@@ -413,7 +412,7 @@
         "@gltf-transform/core": "4.2.1",
         "@gltf-transform/extensions": "4.2.1",
         "@gltf-transform/functions": "4.2.1",
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
         "fflate": "^0.8.2",
         "jpeg-js": "0.4.4",
         "meshoptimizer": "0.22.0",
@@ -431,7 +430,7 @@
       "name": "@jgengine/convex",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
       },
       "devDependencies": {
         "@types/react": "catalog:",
@@ -452,8 +451,8 @@
         "three-stdlib": "catalog:",
       },
       "peerDependencies": {
-        "@jgengine/shell": "^0.58.0",
-        "@jgengine/ui": "^0.58.0",
+        "@jgengine/shell": "^0.59.0",
+        "@jgengine/ui": "^0.59.0",
         "three": ">=0.187.0",
         "three-stdlib": "^2.0.0",
       },
@@ -468,11 +467,11 @@
       "name": "@jgengine/editor",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/assets": "^0.58.0",
-        "@jgengine/core": "^0.58.0",
-        "@jgengine/navbake": "^0.58.0",
-        "@jgengine/shell": "^0.58.0",
-        "@jgengine/ui": "^0.58.0",
+        "@jgengine/assets": "^0.59.0",
+        "@jgengine/core": "^0.59.0",
+        "@jgengine/navbake": "^0.59.0",
+        "@jgengine/shell": "^0.59.0",
+        "@jgengine/ui": "^0.59.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -494,7 +493,7 @@
         "jgengine": "dist/cli/index.js",
       },
       "dependencies": {
-        "@jgengine/assets": "^0.58.0",
+        "@jgengine/assets": "^0.59.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -504,7 +503,7 @@
       "name": "@jgengine/navbake",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
         "recast-navigation": "^0.34.0",
       },
     },
@@ -512,8 +511,8 @@
       "name": "@jgengine/node",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
-        "@jgengine/ws": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
+        "@jgengine/ws": "^0.59.0",
         "ws": "^8.18.0",
       },
       "devDependencies": {
@@ -529,16 +528,16 @@
       "version": "0.59.0",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
       },
     },
     "packages/shell": {
       "name": "@jgengine/shell",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
-        "@jgengine/ui": "^0.58.0",
-        "@jgengine/ws": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
+        "@jgengine/ui": "^0.59.0",
+        "@jgengine/ws": "^0.59.0",
       },
       "devDependencies": {
         "@types/three": "catalog:",
@@ -554,7 +553,7 @@
       "name": "@jgengine/sql",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -564,14 +563,14 @@
       "name": "@jgengine/ui",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
       },
     },
     "packages/ws": {
       "name": "@jgengine/ws",
       "version": "0.59.0",
       "dependencies": {
-        "@jgengine/core": "^0.58.0",
+        "@jgengine/core": "^0.59.0",
       },
     },
     "registry": {
@@ -1662,8 +1661,6 @@
     "update-browserslist-db": ["update-browserslist-db@1.2.3", "", { "dependencies": { "escalade": "^3.2.0", "picocolors": "^1.1.1" }, "peerDependencies": { "browserslist": ">= 4.21.0" }, "bin": { "update-browserslist-db": "cli.js" } }, "sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w=="],
 
     "use-sync-external-store": ["use-sync-external-store@1.6.0", "", { "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w=="],
-
-    "user-attachments": ["user-attachments@2.0.2", "", {}, "sha512-Bawga0sKk0oocI/C3PB5h7gUEvmo4bR03dvbrLixttbxT5uWndJ37kl7Uqyk6v14bQ/EnFY7mZToODmSWEOQ5g=="],
 
     "vary": ["vary@1.1.2", "", {}, "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg=="],
 

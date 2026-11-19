@@ -10,6 +10,20 @@ import { readGlbMetrics } from "./glbMetrics";
 import { indexSourceDir, reindex } from "./indexGen";
 import { sourceById } from "./sources";
 
+/** Whether this machine may create a file symlink at all: Windows without Developer Mode may not, and has none to scan. */
+const FILE_LINKS = ((): boolean => {
+  const dir = mkdtempSync(join(tmpdir(), "jgengine-file-link-"));
+  try {
+    writeFileSync(join(dir, "target"), "");
+    symlinkSync(join(dir, "target"), join(dir, "link"));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
+
 const png = new Uint8Array(
   Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS9sAAAAASUVORK5CYII=",
@@ -370,11 +384,6 @@ describe("budget enforcement and indexing", () => {
     expect(() => readGlbFileMetrics(file)).toThrow("local relative URI");
     writeFileSync(file, external("missing.png"));
     expect(createAssetBudgetReport(file).ok).toBe(false);
-    const outside = scratch();
-    writeFileSync(join(outside, "image.png"), png);
-    symlinkSync(join(outside, "image.png"), join(root, "linked.png"));
-    writeFileSync(file, external("linked.png"));
-    expect(() => readGlbFileMetrics(file)).toThrow("escapes resource root");
     mkdirSync(join(root, "nested"));
     writeFileSync(join(root, "image.png"), png);
     writeFileSync(join(root, "nested", "model.glb"), external("../image.png"));
@@ -382,7 +391,18 @@ describe("budget enforcement and indexing", () => {
     expect(createAssetBudgetReport(root).ok).toBe(true);
   });
 
-  test("symlinked GLBs are inspected and symlink directories cannot silently bypass a scan", () => {
+  test.skipIf(!FILE_LINKS)("a resource symlinked from outside the root is refused", () => {
+    const root = scratch();
+    const fixture = geometry();
+    const file = join(root, "model.glb");
+    const outside = scratch();
+    writeFileSync(join(outside, "image.png"), png);
+    symlinkSync(join(outside, "image.png"), join(root, "linked.png"));
+    writeFileSync(file, pack({ ...fixture.json, images: [{ uri: "linked.png" }] }, fixture.bin));
+    expect(() => readGlbFileMetrics(file)).toThrow("escapes resource root");
+  });
+
+  test.skipIf(!FILE_LINKS)("symlinked GLBs are inspected and symlink directories cannot silently bypass a scan", () => {
     const root = scratch();
     const fixture = geometry();
     const bytes = pack(fixture.json, fixture.bin);

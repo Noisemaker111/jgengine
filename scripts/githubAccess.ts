@@ -10,7 +10,7 @@ import { join } from "node:path";
 /** A way to reach GitHub other than gh, and why it is refused. */
 const GITHUB_ROUTES: readonly { rule: string; pattern: RegExp; why: string }[] = [
   { rule: "rest-host", pattern: /https?:\/\/(?:api|uploads)\.github\.com/, why: "calls GitHub's API host directly; use `gh api` (scripts/github.ts)" },
-  { rule: "sdk", pattern: /(?:from\s+|require\(\s*|import\(\s*)["'](?:@octokit\/[^"']+|octokit|user-attachments)["']/, why: "a GitHub SDK; use gh or `gh api`" },
+  { rule: "sdk", pattern: /(?:from\s+|require\(\s*|import\(\s*)["'](?:@octokit\/[^"']+|octokit)["']/, why: "a GitHub SDK; use gh or `gh api`" },
   { rule: "token", pattern: /env(?:\.|\[\s*["'])(?:GITHUB_TOKEN|GH_TOKEN)\b/, why: "reads a GitHub token itself; gh holds the credentials" },
 ];
 
@@ -33,11 +33,6 @@ const GITHUB_PRODUCT: readonly { prefix: string; rules: readonly string[]; why: 
   { prefix: "packages/github/", rules: ["rest-host", "sdk", "token"], why: "the GitHub integration games ship to their players" },
   { prefix: "packages/assets/", rules: ["rest-host", "token"], why: "@jgengine/assets pulls public packs from GitHub for the people who install it" },
   { prefix: "apps/web/src/api/github", rules: ["rest-host", "token"], why: "jgengine.com's GitHub panels, served to its visitors" },
-  {
-    prefix: "scripts/pr-video.ts",
-    rules: ["sdk"],
-    why: "attachment uploads live on github.com's browser upload endpoint, which neither gh nor the REST API can reach (cli/cli#13256)",
-  },
 ];
 
 const SELF = "scripts/githubAccess.ts";
