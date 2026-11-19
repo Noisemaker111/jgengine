@@ -1,24 +1,19 @@
-# Native Rust experiment (360 fps)
+# Native Rust
 
-Can a jgengine game run much faster as a native Rust program than it does in the current engine
-(TypeScript + three.js in WebView2), with the picture unchanged? This folder measures that on real
-frames from two games, Deepward and Harbor Heat.
+What ships from this folder is the engine's Rune UI layer and its WebGPU shader translator:
 
-Nothing here ships. It is an experiment, and its verdict is below and in issue #3041.
+- `crates/jg-ui` wraps the vendored Rune (`vendor/rune`, see [VENDORED.md](vendor/rune/VENDORED.md)) for the
+  browser. `bun scripts/build-jg-ui-wasm.ts` rebuilds `wasm/jg-ui/`, the bundle games load.
+- `crates/jg-shader` translates three.js GLSL to WGSL with naga; `crates/jg-shader-wasm` builds it into
+  the WebGPU backend's `glslToWgsl.wasm` (`bun scripts/build-glsl-translator.ts`).
 
-## How it measures
+## The native renderer experiment (360 fps)
 
-1. `bun run perf native export <game>` plays the game's perf walk in Chrome and records exactly what
-   three.js drew: every linked program, every draw with its GL state and uniform values, every
-   buffer and texture as it changed, the camera path, and three's own pixels at a few frames.
-2. **jg-shader** translates three's GLSL to WGSL (naga), keeping std140 layout and GL's sampling rules.
-3. **jg-render** replays the recording with wgpu. **jg-replay** compares the replay against
-   three's pixels at every recorded readback.
-4. **jg-native** runs that replay in one uncapped window (Vulkan, `Immediate` present) with:
-   - **jg-hud**: Deepward's HUD drawn with Rune;
-   - **jg-v8**: Deepward's real TypeScript tick, running in embedded V8;
-   - **jg-rules**: Deepward's tick ported to Rust.
-5. **jg-web** is the same replay built for wasm32 and drawn with WebGPU in Chrome.
+Could a jgengine game run much faster as a native Rust program than as TypeScript and three.js, with
+the picture unchanged? The experiment recorded what three.js drew in Deepward and Harbor Heat,
+replayed it with wgpu natively and as wasm with WebGPU in Chrome, and ported Deepward's rules to Rust
+and its HUD to Rune. Its verdict was to stay on TypeScript and three.js, so its crates were deleted
+(#3220, decision C). Their code is in git history before that change, and #3041 holds the full write-up.
 
 Rows, on one PC (RTX 3070), same scene, camera path and resolution (1920x1080), uncapped:
 
@@ -27,20 +22,12 @@ Rows, on one PC (RTX 3070), same scene, camera path and resolution (1920x1080), 
 | A | Current engine: the game's diagnostic desktop build (WebView2), `--uncapped` |
 | B | Rust native renderer + the real TS rules in V8 + Rune HUD |
 | C | Rust native renderer + Rust rules + Rune HUD |
-| D | wasm + WebGPU in headless Chrome on the uncapped clock (a normal tab is held to the display's refresh rate) |
+| D | wasm + WebGPU in headless Chrome on the uncapped clock |
 
 Harbor Heat has no native port of its rules or HUD. Its rows B and D are the renderer alone, and
 it has no row C.
 
-Reproduce (Windows, from the repo root; `cargo build --release` in `native/` first):
-
-```
-bun run jgengine desktop games/<game> --diagnostics      # the row A build
-bun run perf native export <game>                        # record the scene
-bun run perf native <game> --reuse --desktop <app.exe>   # rows A-D, image diff, table
-```
-
-## Results
+### Results
 
 Measured 2026-11-07 on this PC (RTX 3070, 1920x1080, uncapped, 8 s of each game's perf walk). Rows A,
 B and C ran twice, back to back, and row D once. All times are p50 or p99 milliseconds per frame.
@@ -84,7 +71,7 @@ Notes:
 - Row D plays the path once untimed first, as row A's warmup does, so Chrome's pipeline compiles
   (seconds each for Harbor Heat's largest shaders) happen before the clock starts.
 
-## Verdict
+### Verdict
 
 **Stay on TS/three.js for now; don't move the engine to native Rust.** The gate was: row B's frame
 p50 at most half of row A's, with a better p99 and a matching image, on both games. Harbor Heat
@@ -120,71 +107,6 @@ What would move both games toward 360 fps (2.8 ms) without changing the picture:
 3. **Keep native Rust as a later option** for when a game needs more than WebGPU gives. This experiment
    found no case where native beat WebGPU in the browser by enough to justify a second engine.
 
-## What differs from three, and why
-
-`jg-replay` compares the native frame with three's own pixels at every frame three read back
-(Deepward 14 frames, Harbor Heat 13). Every difference found is listed here with its cause.
-
-**Deepward: matches.** Frames from 236 on are within 3 levels of 255 everywhere (mean 0.17,
-PSNR 52.6 dB). The first five compared frames (30–167) differ more (PSNR 33–34 dB) for one reason:
-they sample two shadow maps (framebuffers 95 and 96) that the game last drew before the recording
-began. three still had that content; the replay starts those targets empty. `jg-replay` flags
-these frames and `perf native` reports them separately.
-
-**Harbor Heat: matches except for procedural noise.** Mean difference 2.1–3.2 levels, PSNR
-30–34 dB, with 8–15% of pixels more than 8 levels off. Draws, geometry, textures, lights and
-shadows match. What still differs is the game's procedural noise (sky clouds, wet patches,
-surface breakup). It hashes cell corners with `fract(sin(x) * 43758.5453)` and
-`fract(p * 0.1031)`, which scale a last-bit rounding difference by about 10^4–10^5. D3D (ANGLE)
-and Vulkan (NVIDIA) compile the same arithmetic with different rounding, so some noise cells take
-a different random value. The evidence:
-
-- The first version came out blocky. NVIDIA's compiler folded a corner's `+ vec2(1.0, 0.0)` into
-  the hash, so two cells sharing a corner hashed it differently. `jg-shader` now adds such corners
-  in integers, which gives the same value GL computes and can't be folded. That cut frame 120's
-  mean difference from 3.46 to 2.43 and frame 339's from 6.40 to 3.15.
-- Changing only how the remaining corner is computed (the same value, written another way) moves
-  the difference from 2.43 back to 3.06. The residual lives in that last-bit arithmetic, not in
-  anything the replay does.
-- The same replay in Chrome's WebGPU, which runs on D3D12 like three's WebGL runs on D3D11, comes
-  out closer: mean 0.14 levels and PSNR at least 37.7 dB on every compared frame, against 30.4 dB
-  natively on Vulkan. Same shaders, same draws, a different compiler.
-- The GPU work is the same either way (same shaders, same draws), so the timing comparison is
-  unaffected.
-
-**Replay rules that follow what three and Chrome really drew:**
-
-- BatchedMesh items are drawn one at a time. The export hides `WEBGL_multi_draw`, so three falls
-  back to one `drawElements` per item, which the recording captures. Without that, Harbor Heat's
-  palms were missing.
-- Two of Harbor Heat's instanced meshes (recording geometries 62 and 71) draw more instances than their instance buffers hold (17–28 against 16, and 45–60 against 44).
-  Chrome draws them anyway (robust buffer access), and the extra instances read zero matrices and
-  draw nothing. The replay draws the instances that fit. This is a bug in Harbor Heat, written up in
-  the verdict issue, #3041.
-- Chrome's WebGPU lets a draw bind 8 vertex buffers, and some of three's draws bind 9 or 10
-  (3 program and geometry pairs in Deepward, 35 in Harbor Heat). For those draws, the replay interleaves the
-  per-vertex attributes into one buffer, and the per-instance ones if needed. It rebuilds the
-  buffer whenever one of them changes. `jg-replay --web-limits` runs that path natively, and both
-  games' diffs match the default run frame for frame.
-- The timed rows play the recorded path in real time. When a row falls more than a recorded frame
-  behind, it applies the missed frames' uploads and uniforms without drawing them. Every timed row
-  draws faster than the recording's 60 fps, so this happens only after a stall. `jg-replay
-  --skip-between` checks it by drawing only the compared frames. Deepward comes out identical on
-  every clean frame. Harbor Heat does not, because some of its targets (framebuffers 263 and 264
-  among them) carry content from one frame into the next, so a skipped draw changes later frames.
-  The image numbers above come from drawing every frame in order.
-- Uniform values are replayed as three recorded them, so the native frame shows exactly the
-  scene three drew. Rows B and C still run the game rules every tick. For Deepward, the rules'
-  output drives the HUD, but the camera follows the recorded path so both sides draw the same frames.
-
-**How the timings differ in scope:**
-
-- Native GPU ms covers the whole frame: the scene, the Rune HUD, and the copy to the window.
-  three's GPU timer covers only WebGL's draws, not the DOM HUD or the compositor. The renderer-only
-  run below shows the gap.
-- Row A is a real WebView2 window with the game's DOM HUD. Rows B and C are a native window.
-  Both are uncapped (`Immediate` present native, `--uncapped` desktop).
-
 ## JSX UI host
 
 The games' JSX uses `@jgengine/core/ui/jsx`. The browser host in
@@ -198,23 +120,3 @@ captured frames to dedicated GPU image textures. It does not read pixels back to
 JavaScript or poll static canvases. A removed source stops its capture tracks and
 releases its native image. `bun run drive harbor-heat --flow canvas-order --param
 ui=rune` checks overlap, an initially static image, idle frames and remounting.
-
-## Native HUD experiment gaps
-
-The HUD experiment used Rune at `58eeef5f8974299aa5e471de0010123323e3127e`.
-Each gap below is worked around in `jg-hud`; the current CSS host's vendored
-patches are recorded in [VENDORED.md](vendor/rune/VENDORED.md):
-
-- Corner radii are circular only. The visor rim's CSS radius is elliptical (9vmin / 12vmin), so it
-  is drawn with the mean radius.
-- No `clip-path`. The frames' cut corners and the docket's torn edge are drawn as shapes.
-- No text shadow. The radio line's 1px shadow is a second text drawn offset below it.
-- `Renderer::draw_over` (load instead of clear) is crate-private. The HUD draws through
-  `draw_range` into the pass the frame already has open.
-
-## What the rules port leaves out
-
-`jg-rules` ports Deepward's movement, collision and route finding, the Fitter's senses and state
-machine, and the body meters and dive clock. It does not port fauna (`tickCreatures`), the weapon
-runtime, channels, or checkpoints and saves. Row B runs the whole real TS tick, so its rules time
-is the complete one.

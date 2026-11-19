@@ -14,7 +14,7 @@ Games run package source from the same commit, not npm releases.
   React hooks. Every game sets `uiRenderer: "rune"` and draws through Rune (Rust in `native/`, wasm).
   `@jgengine/ui` is the UI package; `@jgengine/react` is its deprecated old name.
 - 3D is plain three.js on the engine's frame loop (`packages/core/src/frame/`). WebGL is the default;
-  WebGPU is a preview (`?renderer=webgpu`). Native Rust rendering in `native/` is an experiment.
+  WebGPU is a preview (`?renderer=webgpu`).
 
 ## Commands (repo root)
 
