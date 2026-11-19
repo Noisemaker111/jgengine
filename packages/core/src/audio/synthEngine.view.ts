@@ -1,11 +1,15 @@
 import type { NoiseVoice, SynthPatch, ToneVoice } from "@jgengine/core/audio/synth";
+import { seededRng } from "../random/rng";
+
+// Noise and timbre jitter are sound, not simulation: a fixed stream keeps a render or a capture the same every run.
+const noise = seededRng("jg:synth");
 
 /** Build the shared 1-second mono white-noise buffer every noise voice samples from. */
 export function createNoiseBuffer(ctx: BaseAudioContext): AudioBuffer {
   const len = Math.floor(ctx.sampleRate);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < len; i += 1) data[i] = Math.random() * 2 - 1;
+  for (let i = 0; i < len; i += 1) data[i] = noise() * 2 - 1;
   return buf;
 }
 
@@ -54,7 +58,7 @@ function realizeNoise(
   const stop = trackVoice(src, nodes, ended);
   try {
     src.buffer = noiseBuf;
-    src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    src.playbackRate.value = 0.8 + noise() * 0.4;
     // Loop the shared 1-second buffer so a random offset cannot truncate a longer voice.
     src.loop = true;
     const filter = ctx.createBiquadFilter();
@@ -68,7 +72,7 @@ function realizeNoise(
     if (sustain > 0) g.gain.setValueAtTime(peak, t + sustain);
     g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(voice.duration * decay, sustain + 0.001));
     src.connect(filter).connect(g).connect(out);
-    src.start(t, Math.random() * 0.5, voice.duration);
+    src.start(t, noise() * 0.5, voice.duration);
     return stop;
   } catch (error) {
     stop();

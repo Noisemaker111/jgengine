@@ -98,7 +98,7 @@ export async function captureOrbitThumb(): Promise<string | null> {
 /** Write the live household into the slot it belongs to, then re-read the cards. */
 export async function saveOrbitSlot(ctx: GameContext): Promise<boolean> {
   await captureOrbitThumb();
-  orbitProfile.savedAt = Date.now();
+  orbitProfile.savedAt = ctx.wallClock();
   const slot = orbitSession.read(ctx).slot;
   const written = await orbitRecords(ctx).write(slot);
   await refreshOrbitSlots(ctx);

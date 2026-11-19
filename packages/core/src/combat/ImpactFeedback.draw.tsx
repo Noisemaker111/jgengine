@@ -16,6 +16,10 @@ import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 import { createImpactDecalPool, impactDecalKindFor, type ImpactDecalPool, type ImpactDecalsConfig } from "@jgengine/core/vfx/impactDecals";
 import { createImpactDecalLayer, type ImpactDecalLayer } from "@jgengine/core/vfx/ImpactDecals.draw";
+import { seededRng } from "../random/rng";
+
+// Particle scatter is look, not simulation: its own fixed stream, so it never draws from the world's `ctx.rng`.
+const scatter = seededRng("jg:impact-marks");
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
@@ -253,8 +257,8 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
       kind,
       point,
       normal,
-      size: profile.markSize * (0.8 + Math.random() * 0.4),
-      spin: Math.random() * Math.PI * 2,
+      size: profile.markSize * (0.8 + scatter() * 0.4),
+      spin: scatter() * Math.PI * 2,
       at: ctx.time.now(),
     }) !== null;
   };

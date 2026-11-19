@@ -147,5 +147,5 @@ describe("validation table", () => {
     expect(formatHumanValidation(rows)).toContain("Stride length");
     const passing = ["walkCost", "walkStride", "walkCadence", "walkDuty", "walkFirstPeak", "walkValley", "walkSecondPeak", "runPeak", "runContact", "runDuty", "runTouchdown", "sprintTop", "sprint30", "stop7", "test505", "curve1", "curve6", "jumpHeight", "jumpTakeoff", "jumpDepth", "jumpPush", "jumpAir"];
     for (const metric of passing) expect(rows.find((r) => r.metric === metric)?.pass).toBe(true);
-  });
+  }, 30_000); // every reference check runs its own fitted gait: 4-5 s alone, 8-9 s beside three other test lanes
 });

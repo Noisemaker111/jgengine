@@ -26,7 +26,7 @@ export const DEFAULT_FEED_ACTIONS = ["entity.died"];
 const DEFAULT_WS_URL = "ws://localhost:8080/ws";
 
 export function randomPlayerId(): string {
-  return `player-${Math.random().toString(36).slice(2, 10)}`;
+  return `player-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function lanUrl(adapter: Extract<MultiplayerAdapterConfig, { kind: "lan" }>): string {

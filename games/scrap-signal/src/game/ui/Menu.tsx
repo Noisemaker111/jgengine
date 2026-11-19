@@ -13,9 +13,9 @@ import { scrapProfile } from "../scrapProfile";
 import { SCRAP_SLOTS, refreshScrapSlots, scrapSlots } from "../scrapSlots";
 import { Button, C, ControlKeys, FULL, Heading, Label, Portrait, Row, SignalBars, Small, Stamp, Text, useCompact } from "./kit";
 
-function savedAgo(savedAt: number | undefined): string {
+function savedAgo(savedAt: number | undefined, now: number): string {
   if (savedAt === undefined) return "";
-  const minutes = Math.floor((Date.now() - savedAt) / 60_000);
+  const minutes = Math.floor((now - savedAt) / 60_000);
   if (minutes < 1) return "Saved just now";
   if (minutes < 60) return `Saved ${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -66,7 +66,7 @@ export function ScrapMenu() {
   const kept = slots.filter(slot => !slot.empty).sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0));
   const recent = kept[0] ?? null;
   const bay = slots.find(slot => slot.empty)?.id ?? kept[kept.length - 1]?.id ?? SCRAP_SLOTS[0].id;
-  const detail = recent === null ? "" : [SCRAP_SLOTS.find(s => s.id === recent.id)?.label, recent.meta["playtime"] === undefined ? undefined : `${String(recent.meta["playtime"])} played`, savedAgo(recent.savedAt)].filter(p => p !== undefined && p !== "").join(" · ");
+  const detail = recent === null ? "" : [SCRAP_SLOTS.find(s => s.id === recent.id)?.label, recent.meta["playtime"] === undefined ? undefined : `${String(recent.meta["playtime"])} played`, savedAgo(recent.savedAt, ctx.wallClock())].filter(p => p !== undefined && p !== "").join(" · ");
   const pick = (characterId: string) => {
     const name = callSign.trim();
     scrapProfile.name = name === "" ? null : name;

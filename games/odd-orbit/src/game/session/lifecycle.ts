@@ -48,7 +48,7 @@ export async function newestOrbitSave(ctx: GameContext): Promise<{ slot: string 
 export async function checkpointOrbit(ctx: GameContext): Promise<void> {
   const session = orbitSession.read(ctx);
   if (!session.canContinue || ctx.player.userId === "ui-preview") return;
-  orbitProfile.savedAt = Date.now();
+  orbitProfile.savedAt = ctx.wallClock();
   const written = orbitRecords(ctx).write(session.slot);
   orbitSession.write(ctx, { ...session, lastSavedAt: ctx.time.now() });
   const saved = await written;
