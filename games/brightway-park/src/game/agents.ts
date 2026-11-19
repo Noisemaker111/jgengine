@@ -144,6 +144,32 @@ export function forgetAgent(ctx: GameContext, id: string): void {
 
 const MIDWAY: AgentTarget = { option: "wander", target: "midway" };
 
+/** A ride or stall a guest could head for, as the world has it: open, its price, and for a stall whether any stock is left. */
+interface ParkOffer {
+  obj: ParkObject;
+  price: number;
+  stocked: boolean;
+}
+
+/** Each ride and stall's offer, worked out once per world revision instead of once per guest. */
+const offersFor = perContext(() => ({ revision: null as object | null, offers: [] as ParkOffer[] }));
+
+function parkOffers(ctx: GameContext): readonly ParkOffer[] {
+  const w = park.of(ctx);
+  const cache = offersFor(ctx);
+  const revision = w.revision();
+  if (cache.revision === revision) return cache.offers;
+  const offers: ParkOffer[] = [];
+  for (const obj of parkObjects(ctx)) {
+    if (w.fact(`${obj.id}.closed`) === true) continue;
+    if (obj.def.stall !== undefined) offers.push({ obj, price: stallPrice(w, obj.kind), stocked: stockOf(w, obj) > 0 });
+    else if (obj.def.ride !== undefined) offers.push({ obj, price: ridePrice(w, obj.kind), stocked: true });
+  }
+  cache.revision = revision;
+  cache.offers = offers;
+  return offers;
+}
+
 /**
  * The world as one guest sees it this tick: every stall whose need is still empty, every ride it can
  * afford, and the midway as an always-available fallback. Walk, the line the ride actually reports and
@@ -158,15 +184,12 @@ export function guestTargets(
   const targets: AgentTarget[] = [];
   const taste = guestTaste(guest.kind);
   const queueWeight = rideQueueCostWeight(taste);
-  const w = park.of(ctx);
-  for (const obj of parkObjects(ctx)) {
+  // Nobody heads for a ride or shop the paths don't reach (a closed one is not offered).
+  for (const { obj, price, stocked } of parkOffers(ctx)) {
     const def = obj.def;
-    // Nobody heads for a ride or shop the paths don't reach.
-    if (w.fact(`${obj.id}.closed`) === true) continue;
     const distance = Math.hypot(obj.x - at[0], obj.z - at[2]);
     if (def.stall !== undefined) {
-      const price = stallPrice(w, obj.kind);
-      if (stockOf(w, obj) <= 0 || guest.money < price) continue;
+      if (!stocked || guest.money < price) continue;
       targets.push({
         option: def.stall.need,
         target: obj.id,
@@ -175,8 +198,6 @@ export function guestTargets(
       });
       continue;
     }
-    if (def.ride === undefined) continue;
-    const price = ridePrice(w, obj.kind);
     if (guest.money < price) continue;
     const view = rideView(ctx, obj.id);
     if (view === null) continue;

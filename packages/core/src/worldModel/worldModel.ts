@@ -597,6 +597,12 @@ export interface WorldModel {
   fact(key: string): WorldFactValue | undefined;
   num(key: string): number;
   facts(): Readonly<Record<string, WorldFactValue>>;
+  /**
+   * The stored state's identity: the same object until a write, a save load or a host write replaces
+   * it. A reader that derives something from many facts keys it on this, so it works that out once per
+   * change instead of on every read.
+   */
+  revision(): object;
   /** Apply absolute `subject.fact` changes (numbers add, others set). */
   change(changes: WorldChanges, scale?: number): void;
   /** Apply changes all-or-nothing: refused (false) when any number would drop below its floor (`min`, else 0). */
@@ -1397,6 +1403,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     fact: (key) => factOf(key, state(), options.live?.()),
     num: (key) => numberOf(factOf(key, state(), options.live?.())),
     facts: () => allFacts(state()),
+    revision: () => state(),
     change(changes, scale = 1) {
       const current = state();
       const facts = { ...current.facts };
@@ -1413,6 +1420,8 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     },
     set(key, value) {
       const current = state();
+      // Setting a fact to what it already holds changes nothing: no copy of the table, no new revision.
+      if (Object.hasOwn(current.facts, key) && Object.is(current.facts[key], value)) return;
       write({ ...current, facts: { ...current.facts, [key]: value } });
     },
     test: (conditions) => test(conditions),
