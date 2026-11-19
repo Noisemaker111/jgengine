@@ -247,11 +247,22 @@ async fn try_backend(canvas: &web_sys::HtmlCanvasElement, backends: wgpu::Backen
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = backends;
     let instance = wgpu::Instance::new(descriptor);
-    let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone())).map_err(|e| e.to_string())?;
-    let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::LowPower, compatible_surface: Some(&surface),
+    // A canvas keeps the first context type it is asked for, so WebGPU must find an adapter before it
+    // takes the canvas: one that takes it and then finds none leaves WebGL2 "canvas already in use".
+    // WebGL2 needs its surface to find an adapter at all, so it takes the canvas first.
+    let target = || wgpu::SurfaceTarget::Canvas(canvas.clone());
+    let options = |surface| wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::LowPower, compatible_surface: surface,
         force_fallback_adapter: false, apply_limit_buckets: false,
-    }).await.map_err(|e| e.to_string())?;
+    };
+    let (surface, adapter) = if webgl {
+        let surface = instance.create_surface(target()).map_err(|e| e.to_string())?;
+        let adapter = instance.request_adapter(&options(Some(&surface))).await.map_err(|e| e.to_string())?;
+        (surface, adapter)
+    } else {
+        let adapter = instance.request_adapter(&options(None)).await.map_err(|e| e.to_string())?;
+        (instance.create_surface(target()).map_err(|e| e.to_string())?, adapter)
+    };
     let required_limits = if webgl {
         wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
     } else {

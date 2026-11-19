@@ -48,7 +48,7 @@ function park(options: { capacity?: number; rate?: number; stay?: number; refuse
   const crowd = createNearAgents({
     nav,
     needs: NEEDS,
-    crowd: { speed: 4, radius: 0.3, goalRadius: 0.5, replanMs: 100 },
+    crowd: { speed: 4, radius: 0.3, goalRadius: 0.5 },
   });
   const bodies: string[] = [];
   const at = options.place ?? GATE;

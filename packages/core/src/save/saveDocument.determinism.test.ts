@@ -199,7 +199,6 @@ function createSim(seed: string, backend: SaveBackend): Sim {
     speed: 4,
     radius: 0.4,
     goalRadius: 0.6,
-    replanMs: 1_000,
     replanBudget: 32,
   });
   navCrowd.add("walker-1", { position: [2, 0, 2], goal: [56, 0, 56] });
@@ -211,7 +210,7 @@ function createSim(seed: string, backend: SaveBackend): Sim {
     needs: NEEDS,
     options: [{ id: "eat", terms: [{ need: "hunger", curve: { kind: "linear", from: 0.1, to: 0.9 } }] }],
     candidates: () => [{ option: "eat", cost: 1 }],
-    crowd: { speed: 4, radius: 0.4, goalRadius: 0.6, replanMs: 1_000, replanBudget: 32 },
+    crowd: { speed: 4, radius: 0.4, goalRadius: 0.6, replanBudget: 32 },
   });
   const world = createOffScreenWorld({
     places: PLACES as Record<string, readonly [number, number, number]>,
