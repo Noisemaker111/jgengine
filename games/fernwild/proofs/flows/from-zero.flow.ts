@@ -340,8 +340,11 @@ async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void>
   throw new Error(`the hunt never finished: ${done.toString()}`);
 }
 
-export default defineFlow(game, {
-  async run(f) {
+/**
+ * The first loop: a new survivor punches a tree, makes a pick and a hatchet, eats, tames a dodo, builds a
+ * fire and cooks the first meat. Returns the way back to the campfire for the hour that follows.
+ */
+export async function firstLoop(f: Flow<Probe>): Promise<Bearing> {
     await f.waitFor((p) => p.health > 0, { timeoutMs: 60000 });
     await f.expect((p) => p.thatch === 0 && p.level === 1 && p.taught === 0 && p.itemsSeen === 0, "a new survivor: empty hands, level 1, nothing taught, nothing in the dossier");
     // the path points at the nearest tree: walk to it and punch it, enough thatch for a pick and a hatchet
@@ -427,7 +430,11 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.campfireDist >= 0, { timeoutMs: 2000, note: "the campfire burns again" });
     await f.command("craft", { recipeId: "cook_meat" });
     await f.waitFor((p) => p.cookedMeat >= 1, { timeoutMs: 40_000, note: "meat cooked on the campfire" });
+    return campfire;
+}
 
+/** After the first loop: the spear, the thatch hut, a Phiomia tamed, saddled and ridden, narcotics and the club. */
+export async function firstHour(f: Flow<Probe>, campfire: Bearing): Promise<void> {
     // the spear: fiber from bushes (bare hands), wood from trees (the hatchet), flint from a rock (the pick)
     await hand(f, bare);
     await gather(f, "bush", (p) => p.fiber >= 12);
@@ -565,5 +572,12 @@ export default defineFlow(game, {
     // and carried home to the campfire
     await walkTo(f, 3, campfire, 300_000);
     await f.wait(1000);
+}
+
+// A new game with no save, played to the end of its first loop: the cooked meat. Every game's from-zero
+// check runs this one; first-hour.flow.ts plays on from here.
+export default defineFlow(game, {
+  async run(f) {
+    await firstLoop(f);
   },
 });

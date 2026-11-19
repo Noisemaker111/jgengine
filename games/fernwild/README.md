@@ -146,10 +146,11 @@ model, the portal has no drag-weight limit, and the single-player boss damage cu
 
 Loop proof: fernwild-loop, fernwild-tame, fernwild-build
 
-`from-zero` plays a new game with keys and mouse only, no cheats, for about 19 minutes of game
-time: gathers, crafts the pick and hatchet, drinks, tames a dodo with fists and berries, spends a
-stat point, builds a campfire, hunts and cooks, crafts a spear, builds the thatch hut piece by piece,
-tames, saddles and rides a phiomia, reads a note, grinds narcotics and crafts a club.
+`from-zero` plays a new game with keys and mouse only, no cheats, to the end of its first loop:
+gathers, crafts the pick and hatchet, drinks, tames a dodo with fists and berries, spends a stat
+point, builds a campfire, hunts and cooks. `first-hour` plays on from there for about 19 minutes
+of game time: crafts a spear, builds the thatch hut piece by piece, tames, saddles and rides a
+phiomia, reads a note, grinds narcotics and crafts a club.
 
 `fernwild-build` proves building: craft a thatch foundation, doorframe, three walls, a door and a
 ceiling at ARK's prices, place them with snapping, walk inside, roof it, hang the door and open it.
