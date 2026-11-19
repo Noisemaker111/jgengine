@@ -16,7 +16,7 @@ function banked() {
 }
 function memory(home = banked()): StoragePort {
   const data = new Map<string, string>([[SAVE_KEY, JSON.stringify(home)]]);
-  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); } };
+  return { get length() { return data.size; }, key: index => [...data.keys()][index] ?? null, getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); } };
 }
 /** The record's run section is not part of these refit rules; a stub stands in for the live view. */
 const stub: RunHooks = { snapshot: () => null as never, restore: () => {} };

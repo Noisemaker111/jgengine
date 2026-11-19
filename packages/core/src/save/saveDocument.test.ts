@@ -168,7 +168,7 @@ describe("createGameSave — slots", () => {
 
     expect(await save.deleteSlot("keep")).toBe(true);
     expect(await save.slots()).toEqual(["default"]);
-    expect(await save.peek("keep")).toBeNull();
+    expect(await save.peek("keep")).toEqual({ kind: "empty" });
     expect(await save.deleteSlot("keep")).toBe(false);
 
     expect(await save.deleteSlot("default")).toBe(true);
@@ -176,7 +176,7 @@ describe("createGameSave — slots", () => {
 
     const reopened = createGameSave({ backend, game: "demo", systems: [counterSystem("score").system] });
     expect(await reopened.slots()).toEqual([]);
-    expect(await reopened.peek("default")).toBeNull();
+    expect(await reopened.peek("default")).toEqual({ kind: "empty" });
   });
 });
 
@@ -272,7 +272,7 @@ describe("createGameSave — migration", () => {
         return { ...old, version: 2, systems: { modern: { value: (old.systems["legacy"] as { score: number }).score } } };
       },
     });
-    const document = await save.load();
+    const document = (await save.load()).value;
     expect(document.version).toBe(2);
     expect(counter.read()).toBe(7);
   });
@@ -319,7 +319,8 @@ describe("createGameSave — legacy keys", () => {
     const recorder = recordingBackend({ "old-score:default": JSON.stringify({ score: 6 }), "old-profile": "{}" });
     const counter = counterSystem("modern");
     const save = createGameSave({ backend: recorder.backend, game: "demo", systems: [counter.system], legacy });
-    expect((await save.peek("default"))?.systems).toEqual({ modern: { value: 6 } });
+    const lifted = await save.peek("default");
+    expect(lifted.kind === "loaded" ? lifted.value.systems : null).toEqual({ modern: { value: 6 } });
     await save.load();
     expect(counter.read()).toBe(6);
     await save.save();
@@ -332,15 +333,16 @@ describe("createGameSave — legacy keys", () => {
     expect(fresh.read()).toBe(7);
   });
 
-  test("unreadable old bytes read as an empty slot and report through onError", async () => {
+  test("unreadable old bytes read as a damaged slot, stay where they are, and report through onError", async () => {
     const recorder = recordingBackend({ "old-profile": "{}" });
     const errors: unknown[] = [];
     const counter = counterSystem("modern");
     const save = createGameSave({ backend: recorder.backend, game: "demo", systems: [counter.system], legacy, onError: (error) => errors.push(error) });
-    expect(await save.peek("default")).toBeNull();
-    await save.load();
+    expect((await save.peek("default")).kind).toBe("corrupt");
+    expect((await save.load()).kind).toBe("corrupt");
     expect(counter.read()).toBe(0);
     expect(errors).toHaveLength(2);
+    expect(await recorder.backend.read("old-profile")).toBe("{}");
   });
 
   test("deleteSlot removes the old keys too, so the slot stays deleted", async () => {
@@ -352,7 +354,7 @@ describe("createGameSave — legacy keys", () => {
     expect(await save.deleteSlot("default")).toBe(true);
     expect(recorder.cells.has("old-score:default")).toBe(false);
     expect(counter.read()).toBe(0);
-    expect(await save.peek("default")).toBeNull();
+    expect(await save.peek("default")).toEqual({ kind: "empty" });
   });
 });
 
@@ -370,7 +372,7 @@ describe("upgradeSaveEnvelope", () => {
     const recorder = recordingBackend({ "game-save:demo:default": JSON.stringify({ systems: { modern: { value: 4 } }, time: 9 }) });
     const counter = counterSystem("modern");
     const save = createGameSave({ backend: recorder.backend, game: "demo", version: 2, systems: [counter.system] });
-    const document = await save.load();
+    const document = (await save.load()).value;
     expect(document.game).toBe("demo");
     expect(document.time).toBe(9);
     expect(counter.read()).toBe(4);
@@ -526,6 +528,7 @@ describe("opening a save from a menu", () => {
 
     live.level = 42;
     await save.switchSlot("slot-1");
-    expect((await save.peek("slot-1"))?.systems.run).toEqual({ level: 42 });
+    const rewritten = await save.peek("slot-1");
+    expect(rewritten.kind === "loaded" ? rewritten.value.systems["run"] : null).toEqual({ level: 42 });
   });
 });

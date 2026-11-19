@@ -6,6 +6,30 @@ import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { WorldChunkRecord } from "@jgengine/core/runtime/hostPersistence";
 import { createGameServerHost } from "./host";
 import { filePersistence } from "./persistence";
+import type { GameServerRecord, ServerPersistPlan } from "@jgengine/core/runtime/hostPersistence";
+import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
+
+/** One flush as the host writes it: the parts given, over `server`, everything else empty. */
+function planOf(server: GameServerRecord, parts: Partial<Omit<ServerPersistPlan, "server">>): ServerPersistPlan {
+  return {
+    server,
+    profiles: [],
+    chunks: [],
+    deletedChunks: [],
+    leaderboard: [],
+    changed: { serverState: true, sessionPlayers: true, revision: true, any: true },
+    ...parts,
+  };
+}
+
+function serverOf(serverId: string, gameId = "test-game"): GameServerRecord {
+  return {
+    serverId, gameId, status: "running", memberUserIds: [], slotsPerServer: 16,
+    save: { auto: "5s", scope: "player+chunks" }, serverState: createEmptyServerRow(), sessionPlayers: {},
+    revision: 1, tickAnchorMs: 0, createdAt: 0, updatedAt: 0,
+  };
+}
+
 
 const chunk: WorldChunkRecord = {
   serverId: "world-a", chunkKey: "0,0", updatedAt: 1,
@@ -17,7 +41,7 @@ test("file chunk reads preserve missing-directory behavior and reject an existin
   const persistence = filePersistence(directory);
   try {
     expect(await persistence.loadChunks(chunk.serverId)).toEqual([]);
-    await persistence.saveChunks(chunk.serverId, [chunk]);
+    await persistence.savePlan(planOf((await persistence.loadServer(chunk.serverId)) ?? serverOf(chunk.serverId), { chunks: [chunk] }));
     const path = join(directory, "chunks", chunk.serverId);
     const preserved = `${path}.preserved`;
     const original = await readFile(join(path, "0%2C0.json"), "utf8");
@@ -45,7 +69,7 @@ test("host admission fails before hydration on a file chunk read error, then ret
   try {
     await initial.joinServer({ userId: "alice", gameId });
     await initial.stop();
-    await persistence.saveChunks(chunk.serverId, [chunk]);
+    await persistence.savePlan(planOf((await persistence.loadServer(chunk.serverId)) ?? serverOf(chunk.serverId), { chunks: [chunk] }));
     const serverFile = join(directory, "servers", `${chunk.serverId}.json`);
     const savedServer = await readFile(serverFile, "utf8");
     const path = join(directory, "chunks", chunk.serverId);

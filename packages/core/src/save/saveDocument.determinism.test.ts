@@ -442,7 +442,7 @@ describe("B5.3 — save, reload and 1,000 ticks match a run that never saved", (
     await saved.save.save();
 
     const reloaded = createSim(SEED, backend);
-    const document = await reloaded.save.load();
+    const document = (await reloaded.save.load()).value;
     reloaded.resume(document.time);
     for (let i = 0; i < EXTRA_TICKS; i += 1) reloaded.tick();
 

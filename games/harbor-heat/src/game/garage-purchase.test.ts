@@ -30,14 +30,14 @@ test('a fresh-runtime reload preserves the old purchased car when another is bou
   ctx.game.economy.grant('p1','cash',1600); buy(ctx);
   const old=cars(ctx)[0]!;
   await ctx.game.save!.save();
-  const restored=boot(backend); expect(await restored.game.save!.load()).toBe(true);
+  const restored=boot(backend); expect((await restored.game.save!.load())?.kind).toBe("loaded");
   expect(restored.scene.entity.get(old.id)).toEqual(old);
   expect(()=>buy(restored)).not.toThrow();
   expect(cars(restored)).toHaveLength(2);
   expect(restored.scene.entity.get(old.id)).toEqual(old);
   expect(restored.game.economy.balance('p1','cash')).toBe(0);
   await restored.game.save!.save();
-  const next=boot(backend); expect(await next.game.save!.load()).toBe(true);
+  const next=boot(backend); expect((await next.game.save!.load())?.kind).toBe("loaded");
   expect(cars(next)).toEqual(cars(restored));
   expect(next.game.economy.balance('p1','cash')).toBe(0);
 });
@@ -46,7 +46,7 @@ test('legacy time-derived car identities coexist with new purchases after reload
   const backend=memorySaveBackend(); const ctx=boot(backend);
   ctx.scene.entity.spawn('car_compact',{id:'bought_0_car_compact',position:[20,0,20],role:'prop'});
   ctx.game.economy.grant('p1','cash',800); await ctx.game.save!.save();
-  const restored=boot(backend); expect(await restored.game.save!.load()).toBe(true);
+  const restored=boot(backend); expect((await restored.game.save!.load())?.kind).toBe("loaded");
   expect(()=>buy(restored)).not.toThrow();
   expect(cars(restored)).toHaveLength(2);
   expect(restored.scene.entity.get('bought_0_car_compact')?.position).toEqual([20,0,20]);

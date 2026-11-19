@@ -18,7 +18,9 @@ export const parkSlots = createSaveSlots({
 
 /** Read the saved park back into the card, so Continue and the slot grid show what is on disk. */
 export async function refreshParkSlot(ctx: GameContext): Promise<void> {
-  const document = await parkSave(ctx).peek(PARK_SLOT);
+  const read = await parkSave(ctx).peek(PARK_SLOT);
+  // A damaged park is reported by restorePark; the card shows an empty slot.
+  const document = read.kind === "loaded" ? read.value : null;
   const save = document === null ? null : readParkSave(document.systems["park"]);
   if (document === null || save === null) {
     parkSlots.clear(PARK_SLOT);

@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
-import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, togglePause, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { continueGame, continueHint, menuPane, readSaveSlotState, type SaveSlotState, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, togglePause, type MenuPane } from "@jgengine/core/game/gameFlow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { useHasSettings, useSettings } from "@jgengine/core/settings/settings.view";
@@ -140,12 +140,13 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
   const ctx = useGameContext();
   const settings = useSettings();
   const withSettings = useSettingsVerb(content);
-  const [saved, setSaved] = useState(false);
+  const [slotState, setSlotState] = useState<SaveSlotState>("empty");
+  const saved = slotState === "loaded";
   const { focus, highlight } = usePane(saved ? "continue" : "new");
   const setup = content.newGameSetup;
   const [settingUp, setSettingUp] = useState(() => setup !== undefined && setupAfterRestart());
   useEffect(() => {
-    void ctx.game.save?.hasSave().then(setSaved);
+    void readSaveSlotState(ctx).then(setSlotState);
   }, [ctx]);
   const startNew = (): void => {
     if (setup === undefined) {
@@ -173,7 +174,7 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
       tagline={content.pitch}
       style={menuStyle(content)}
       items={[
-        { id: "continue", label: "Continue", disabled: !saved, hint: saved ? "Back where you left off" : "No save yet" },
+        { id: "continue", label: "Continue", disabled: !saved, hint: continueHint(slotState) },
         { id: "new", label: "New game", hint: "Start from nothing" },
         { id: "controls", label: "Controls" },
         ...(withSettings ? [{ id: "settings", label: "Settings", hint: "Graphics, sound, keys" }] : []),

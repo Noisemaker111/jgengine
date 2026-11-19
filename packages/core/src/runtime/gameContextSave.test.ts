@@ -107,6 +107,7 @@ describe("ctx.game.save", () => {
     const inner = memorySaveBackend();
     const backend: SaveBackend = {
       read: (key) => inner.read(key),
+      keys: (prefix) => inner.keys(prefix),
       write: async (key, value) => {
         writes.push({ key, value });
         await inner.write(key, value);
@@ -148,7 +149,7 @@ describe("ctx.game.save", () => {
     Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw error; } });
     try {
       const errors: unknown[] = [];
-      const ctx = createGameContext({ definition: offlineGame(true), content: {}, player: { userId: "p1", isNew: true }, save: { backend: localSaveBackend(undefined, { errorMode: "throw" }), mode: "manual", onError: (error) => errors.push(error) } });
+      const ctx = createGameContext({ definition: offlineGame(true), content: {}, player: { userId: "p1", isNew: true }, save: { backend: localSaveBackend(), mode: "manual", onError: (error) => errors.push(error) } });
       await ctx.game.save!.save();
       expect(ctx.game.save!.status()).toBe("error");
       expect(errors).toEqual([error]);
@@ -178,7 +179,7 @@ describe("ctx.game.save", () => {
     const backend = memorySaveBackend();
     await createRuntimeSave({ target: resumed, backend, mode: "manual" }).save();
     const fresh = create();
-    expect(await createRuntimeSave({ target: fresh, backend, mode: "manual" }).load()).toBe(true);
+    expect((await createRuntimeSave({ target: fresh, backend, mode: "manual" }).load()).kind).toBe("loaded");
     expect(fresh.game.economy.balance("p1", "gold")).toBe(42);
     fresh.restore(origin.snapshot());
     expect(fresh.game.economy.balance("p1", "gold")).toBe(42);
@@ -233,7 +234,7 @@ describe("ctx.game.save", () => {
       player: { userId: "p1", isNew: true },
       save: { backend, mode: "manual" },
     });
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
     expect(progress.read(reboot)).toEqual({ level: 7 });
     expect(reboot.scene.entity.get("p1")?.position).toEqual([1, 0, 2]);
   });
@@ -258,21 +259,19 @@ describe("ctx.game.save", () => {
     const menu = campaign("campaign-1");
     menu.game.economy.grant("p1", "gold", 5);
     const live = menu.state();
-    const second = await menu.game.save!.peek("campaign-2");
-    expect(second?.world).toEqual(two.state());
-    expect(second?.savedAt).toBe(1000);
-    expect((await menu.game.save!.peek("campaign-1"))?.world).toEqual(one.state());
+    expect(await menu.game.save!.peek("campaign-2")).toEqual({ kind: "loaded", value: two.state(), savedAt: 1000 });
+    expect(await menu.game.save!.peek("campaign-1")).toEqual({ kind: "loaded", savedAt: expect.any(Number), value: one.state() });
     expect(menu.state()).toEqual(live);
     expect(menu.game.save!.slot()).toBe("campaign-1");
 
     expect(await menu.game.save!.deleteSlot("campaign-2")).toBe(true);
     expect(await menu.game.save!.slots()).toEqual(["campaign-1"]);
-    expect(await menu.game.save!.peek("campaign-2")).toBeNull();
+    expect(await menu.game.save!.peek("campaign-2")).toEqual({ kind: "empty" });
     expect(await menu.game.save!.deleteSlot("campaign-1")).toBe(false);
 
     const probe = campaign("campaign-2");
-    expect(await probe.game.save!.load()).toBe(false);
-    expect(await probe.game.save!.switchSlot("campaign-1")).toBe(true);
+    expect((await probe.game.save!.load())?.kind).not.toBe("loaded");
+    expect((await probe.game.save!.switchSlot("campaign-1"))?.kind).toBe("loaded");
     expect(probe.game.economy.balance("p1", "gold")).toBe(40);
   });
 
@@ -371,7 +370,7 @@ describe("ctx.game.save", () => {
       save: { backend, mode: "manual" },
     });
     reboot.game.quest!.register(QUESTS);
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
 
     expect(reboot.game.economy.balance("p1", "gold")).toBe(42);
     expect(reboot.game.unlocks!.has("p1", "double_jump")).toBe(true);
@@ -457,7 +456,7 @@ describe("ctx.game.save", () => {
     });
     const rebootPile = reboot.game.cards!.pile("deck", PILE_CONFIG);
     const rebootLoop = reboot.game.turn!.loop("battle", LOOP_CONFIG);
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
 
     expect(reboot.time.now()).toBe(savedTime);
     expect(reboot.scene.entity.stats.get("p1", "hp")?.current).toBe(55);
@@ -493,7 +492,7 @@ describe("ctx.game.save", () => {
       player: { userId: "p1", isNew: true },
       save: { backend, mode: "manual" },
     });
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
     expect(reboot.scene.entity.get("p1")?.position).toEqual([4, 0, 5]);
     expect(reboot.game.cards).toBeUndefined();
     expect(reboot.game.turn).toBeUndefined();

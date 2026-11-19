@@ -4,7 +4,7 @@ import type { GameContext } from "../runtime/gameContext";
 import { continueGame, createGameFlowSystem, menuPane, newGame, openTitle, playGame, saveNow, showMenuPane, togglePause } from "./gameFlow";
 import { gamePhase } from "./gamePhase";
 
-function fakeCtx(saved = false) {
+function fakeCtx(saved = false, saveResult: { kind: "saved"; savedAt: number } | { kind: "failed"; error: unknown } = { kind: "saved", savedAt: 0 }) {
   const map = new Map<string, unknown>();
   const calls: string[] = [];
   const notices: string[] = [];
@@ -16,8 +16,8 @@ function fakeCtx(saved = false) {
       notices: { push: (n: { text: string }) => notices.push(n.text) },
       save: {
         clear: async () => calls.push("clear"),
-        load: async () => (calls.push("load"), saved),
-        save: async () => calls.push("save"),
+        load: async () => (calls.push("load"), { kind: saved ? "loaded" : "empty", value: {}, savedAt: 0 }),
+        save: async () => (calls.push("save"), saveResult),
         checkpoint: async () => calls.push("checkpoint"),
       },
     },
@@ -79,6 +79,12 @@ describe("gameFlow", () => {
     expect(gamePhase(present.ctx)).toBe("playing");
     await saveNow(present.ctx);
     expect(present.notices).toEqual(["Saved"]);
+  });
+
+  test("a save the backend refused posts Save failed, never Saved", async () => {
+    const refused = fakeCtx(true, { kind: "failed", error: new Error("quota") });
+    await saveNow(refused.ctx);
+    expect(refused.notices).toEqual(["Save failed"]);
   });
 
   test("the system checkpoints after the configured seconds of play", () => {

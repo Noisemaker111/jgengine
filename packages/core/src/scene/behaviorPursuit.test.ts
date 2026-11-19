@@ -163,7 +163,7 @@ test("cold whole-world save/reload and replication retain cooldown, home, gate, 
   const state = control.serialize("mob");
   await ctx.game.save!.checkpoint();
   const fresh = context(backend);
-  expect(await fresh.game.save!.load()).toBe(true);
+  expect((await fresh.game.save!.load())?.kind).toBe("loaded");
   const restored = behaviorControl(fresh);
   expect(restored.serialize("mob")).toEqual(state);
   expect(fresh.scene.entity.spawnPoseOf("mob")!.position).toEqual([2.5, 0, 0]);

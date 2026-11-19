@@ -1,4 +1,5 @@
 import type { GameSave, GameSaveDocument } from "./saveDocument";
+import type { PeekResult } from "./saveStore";
 import type { SaveSlotMeta, SaveSlots } from "./saveSlots";
 
 /**
@@ -55,7 +56,7 @@ export function saveSlotMeta(
 /** The source a slot list is refreshed from — a `GameSave`, or a narrower reader. */
 export interface SaveSlotSource {
   slots(): Promise<string[]>;
-  peek(slot: string): Promise<GameSaveDocument | null>;
+  peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
 }
 
 /** The result of a refresh: what the menu should show now. */
@@ -66,6 +67,8 @@ export interface SaveSlotsRefresh {
   filled: SaveSlotMeta[];
   /** Written slots the index could not hold (id not in it and the index is full). */
   skipped: string[];
+  /** Written slots whose document is damaged or could not be read — a menu shows them as such, not as empty. */
+  unreadable: string[];
 }
 
 /**
@@ -83,10 +86,15 @@ export async function refreshSaveSlots(
   const saved = await source.slots();
   const filled: SaveSlotMeta[] = [];
   const skipped: string[] = [];
+  const unreadable: string[] = [];
   for (const slot of saved) {
-    const document = await source.peek(slot);
-    if (document === null) continue;
-    const meta = saveSlotMeta(slot, document, options);
+    const read = await source.peek(slot);
+    if (read.kind === "empty") continue;
+    if (read.kind !== "loaded") {
+      unreadable.push(slot);
+      continue;
+    }
+    const meta = saveSlotMeta(slot, read.value, options);
     try {
       model.write(slot, { name: meta.name, meta: meta.meta, savedAt: meta.savedAt });
     } catch {
@@ -98,7 +106,7 @@ export async function refreshSaveSlots(
   for (const existing of model.list()) {
     if (!existing.empty && !filled.some((meta) => meta.id === existing.id)) model.clear(existing.id);
   }
-  return { saved, filled, skipped };
+  return { saved, filled, skipped, unreadable };
 }
 
 /**

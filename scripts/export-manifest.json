@@ -1179,6 +1179,7 @@
     "./runtime/worldReplication",
     "./runtime/worldSnapshot",
     "./save/hostedWorldStore",
+    "./save/saveBackendContract",
     "./save/saveConfig",
     "./save/saveDocument",
     "./save/saveSlotIndex",

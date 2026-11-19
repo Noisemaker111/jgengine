@@ -3,16 +3,22 @@ import {
   createSaveStore,
   localSaveBackend,
   memorySaveBackend,
-  remoteSaveBackend,
   type SaveBackend,
+  type SaveStorage,
   type SaveTimers,
 } from "./saveStore";
-import type { KeyValueStorage, KeyValueStorageFailure } from "../game/keyValueStore";
 
-function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage & { data: Record<string, string> } {
+// Failed writes, failed reads, damaged bytes, two stores and slot switches are the backend contract
+// (saveBackendContract.test.ts), run against every backend; this file covers the store's own rules.
+
+function memoryStorage(initial: Record<string, string> = {}): SaveStorage & { data: Record<string, string> } {
   const data = { ...initial };
   return {
     data,
+    get length() {
+      return Object.keys(data).length;
+    },
+    key: (index) => Object.keys(data)[index] ?? null,
     getItem: (key) => data[key] ?? null,
     setItem: (key, value) => {
       data[key] = value;
@@ -45,110 +51,9 @@ function manualTimers(): SaveTimers & { runAll: () => void; pending: () => numbe
   };
 }
 
+const valueOf = async <T>(load: Promise<{ kind: string; value: T }>): Promise<T> => (await load).value;
+
 describe("createSaveStore", () => {
-  test("local backend fallback observes each failed operation without rejecting", async () => {
-    const error = new Error("denied");
-    const failures: KeyValueStorageFailure[] = [];
-    const backend = localSaveBackend({ getItem() { throw error; }, setItem() { throw error; }, removeItem() { throw error; } }, { onError: (failure) => failures.push(failure) });
-    expect(await backend.read("slot")).toBeNull();
-    await backend.write("slot", "value");
-    await backend.remove("slot");
-    expect(failures).toEqual(["read", "write", "remove"].map((operation) => ({ operation, key: "slot", error })));
-  });
-
-  test("strict local backend rejects denied reads, writes and removals with the original error", async () => {
-    const error = new Error("denied");
-    const backend = localSaveBackend({ getItem() { throw error; }, setItem() { throw error; }, removeItem() { throw error; } }, { errorMode: "throw" });
-    await expect(backend.read("slot")).rejects.toBe(error);
-    await expect(backend.write("slot", "value")).rejects.toBe(error);
-    await expect(backend.remove("slot")).rejects.toBe(error);
-    await expect(localSaveBackend(null, { errorMode: "throw" }).write("slot", "value")).rejects.toThrow("Local storage is unavailable");
-  });
-
-  test("strict quota failure retains the last valid checkpoint and reports error instead of saved", async () => {
-    const storage = memoryStorage();
-    const errors: unknown[] = [];
-    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
-    store.set(7);
-    await store.save();
-    const checkpoint = storage.data["save:default"];
-    const error = new Error("quota exceeded");
-    storage.setItem = () => { throw error; };
-    store.set(9);
-    await store.save();
-    expect(store.status()).toBe("error");
-    expect(errors).toEqual([error]);
-    expect(storage.data["save:default"]).toBe(checkpoint);
-    expect(store.value()).toBe(9); // Live edits remain available to retry.
-    expect(await createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0 }).load()).toBe(7);
-  });
-
-  test("strict denied load and removal preserve current state and checkpoint", async () => {
-    const storage = memoryStorage();
-    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0 });
-    store.set(7);
-    await store.save();
-    const checkpoint = storage.data["save:default"];
-    const error = new Error("denied");
-    storage.getItem = () => { throw error; };
-    expect(await store.load()).toBe(7);
-    expect(store.status()).toBe("error");
-    storage.removeItem = () => { throw error; };
-    await store.clear();
-    expect(store.status()).toBe("error");
-    expect(store.value()).toBe(7);
-    expect(storage.data["save:default"]).toBe(checkpoint);
-  });
-
-  test("failed slot index publication reports partial success without claiming saved", async () => {
-    const storage = memoryStorage();
-    const write = storage.setItem;
-    const error = new Error("index quota");
-    storage.setItem = (key, value) => { if (key.endsWith(":__slots__")) throw error; write(key, value); };
-    const errors: unknown[] = [];
-    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
-    store.set(7);
-    await store.save();
-    expect(store.status()).toBe("error");
-    expect(errors).toEqual([error]);
-    expect(JSON.parse(storage.data["save:default"]!).value).toBe(7);
-    expect(storage.data["save:__slots__"]).toBeUndefined();
-    await store.load();
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    expect(store.status()).toBe("error");
-    expect(errors).toEqual([error, error]);
-  });
-
-  test("slot enumeration and save expose denied index reads", async () => {
-    const storage = memoryStorage();
-    const read = storage.getItem;
-    const error = new Error("index read denied");
-    storage.getItem = (key) => { if (key.endsWith(":__slots__")) throw error; return read(key); };
-    const errors: unknown[] = [];
-    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
-    expect(await store.slots()).toEqual([]);
-    expect(store.status()).toBe("error");
-    await store.save();
-    expect(store.status()).toBe("error");
-    expect(errors).toEqual([error, error]);
-  });
-
-  test("failed index removal reports partial success and preserves the live cell", async () => {
-    const storage = memoryStorage();
-    const errors: unknown[] = [];
-    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
-    store.set(7);
-    await store.save();
-    const error = new Error("index removal denied");
-    storage.setItem = () => { throw error; };
-    await store.clear();
-    expect(store.status()).toBe("error");
-    expect(store.value()).toBe(7);
-    expect(storage.data["save:default"]).toBeUndefined();
-    expect(storage.data["save:__slots__"]).toBe('["default"]');
-    expect(errors).toEqual([error]);
-  });
-
   test("starts from the initial value before loading", () => {
     const store = createSaveStore({ backend: memorySaveBackend(), initial: { level: 1 } });
     expect(store.value()).toEqual({ level: 1 });
@@ -157,14 +62,20 @@ describe("createSaveStore", () => {
 
   test("save then reload round-trips through the backend", async () => {
     const backend = memorySaveBackend();
-    const store = createSaveStore({ backend, initial: { level: 1 } });
+    const store = createSaveStore({ backend, initial: { level: 1 }, now: () => 5 });
     store.set({ level: 7 });
-    await store.save();
+    expect(await store.save()).toEqual({ kind: "saved", savedAt: 5 });
     expect(store.status()).toBe("saved");
 
     const reopened = createSaveStore({ backend, initial: { level: 1 } });
-    expect(await reopened.load()).toEqual({ level: 7 });
+    expect(await reopened.load()).toEqual({ kind: "loaded", value: { level: 7 }, savedAt: 5 });
     expect(reopened.value()).toEqual({ level: 7 });
+  });
+
+  test("an empty slot loads as empty with the initial value", async () => {
+    const store = createSaveStore({ backend: memorySaveBackend(), initial: { level: 1 } });
+    expect(await store.load()).toEqual({ kind: "empty", value: { level: 1 } });
+    expect(store.status()).toBe("idle");
   });
 
   test("patch read-modify-writes the value", () => {
@@ -174,7 +85,7 @@ describe("createSaveStore", () => {
     expect(store.value()).toEqual({ coins: 15 });
   });
 
-  test("localSaveBackend persists into the underlying KeyValueStorage", async () => {
+  test("localSaveBackend persists into the underlying storage", async () => {
     const storage = memoryStorage();
     const store = createSaveStore({ backend: localSaveBackend(storage), initial: 0, key: "credits" });
     store.set(42);
@@ -182,11 +93,49 @@ describe("createSaveStore", () => {
     expect(storage.data["credits:default"]).toContain("42");
   });
 
-  test("load falls back to initial on a corrupt payload", async () => {
+  test("a migration that throws marks the slot corrupt and keeps its bytes", async () => {
+    const storage = memoryStorage({ "save:default": JSON.stringify({ version: 1, savedAt: 1, value: { hp: 3 } }) });
+    const errors: unknown[] = [];
+    const store = createSaveStore({
+      backend: localSaveBackend(storage),
+      initial: { hp: 100 },
+      version: 2,
+      migrate: () => {
+        throw new Error("no path from v1");
+      },
+      onError: (error) => errors.push(error),
+    });
+    const result = await store.load();
+    expect(result.kind).toBe("corrupt");
+    expect(store.value()).toEqual({ hp: 100 });
+    expect(store.status()).toBe("error");
+    expect(errors).toHaveLength(1);
+    if (result.kind === "corrupt") expect(storage.data[result.keptAt]).toBe(storage.data["save:default"]!);
+  });
+
+  test("reading the same damage twice keeps one copy", async () => {
     const storage = memoryStorage({ "save:default": "not-json{" });
-    const store = createSaveStore({ backend: localSaveBackend(storage), initial: { hp: 100 } });
-    expect(await store.load()).toEqual({ hp: 100 });
-    expect(store.status()).toBe("idle");
+    const store = createSaveStore({ backend: localSaveBackend(storage), initial: 0 });
+    await store.peek();
+    await store.load();
+    expect(Object.keys(storage.data).filter((key) => key.startsWith("save~damaged:"))).toHaveLength(1);
+  });
+
+  test("the slot list an older build kept is removed and never shows as a slot", async () => {
+    const storage = memoryStorage({ "save:__slots__": '["default"]', "save:default": JSON.stringify({ version: 1, savedAt: 1, value: 2 }) });
+    const store = createSaveStore({ backend: localSaveBackend(storage), initial: 0 });
+    expect(await store.slots()).toEqual(["default"]);
+    expect(storage.data["save:__slots__"]).toBeUndefined();
+  });
+
+  test("slots list in natural order", async () => {
+    const backend = memorySaveBackend();
+    for (const slot of ["slot-10", "slot-2", "slot-1"]) {
+      const store = createSaveStore({ backend, initial: 0, slot });
+      store.set(1);
+      await store.save();
+    }
+    expect(await createSaveStore({ backend, initial: 0 }).slots()).toEqual(["slot-1", "slot-2", "slot-10"]);
   });
 
   test("autosave debounces edits and flushes on the timer", async () => {
@@ -200,8 +149,7 @@ describe("createSaveStore", () => {
     timers.runAll();
     await store.save();
 
-    const reopened = createSaveStore({ backend, initial: 0 });
-    expect(await reopened.load()).toBe(3);
+    expect(await valueOf(createSaveStore({ backend, initial: 0 }).load())).toBe(3);
   });
 
   test("autosave respects the maxWait ceiling under continuous edits", async () => {
@@ -221,8 +169,7 @@ describe("createSaveStore", () => {
     expect(timers.pending()).toBe(0);
     await store.save();
 
-    const reopened = createSaveStore({ backend, initial: 0, now: () => time });
-    expect(await reopened.load()).toBe(2);
+    expect(await valueOf(createSaveStore({ backend, initial: 0, now: () => time }).load())).toBe(2);
   });
 
   test("migrates an older versioned payload", async () => {
@@ -241,7 +188,7 @@ describe("createSaveStore", () => {
         return { hp: old.hp, mp: 0 };
       },
     });
-    expect(await v2.load()).toEqual({ hp: 5, mp: 0 });
+    expect(await valueOf(v2.load())).toEqual({ hp: 5, mp: 0 });
   });
 
   test("migrates a legacy non-envelope payload at version 0", async () => {
@@ -255,7 +202,7 @@ describe("createSaveStore", () => {
         return data as { score: number };
       },
     });
-    expect(await store.load()).toEqual({ score: 9 });
+    expect(await valueOf(store.load())).toEqual({ score: 9 });
   });
 
   test("clear deletes the slot and resets to initial", async () => {
@@ -263,11 +210,23 @@ describe("createSaveStore", () => {
     const store = createSaveStore({ backend, initial: { level: 1 } });
     store.set({ level: 9 });
     await store.save();
-    await store.clear();
+    expect(await store.clear()).toBe(true);
     expect(store.value()).toEqual({ level: 1 });
+    expect((await createSaveStore({ backend, initial: { level: 1 } }).load()).kind).toBe("empty");
+  });
 
-    const reopened = createSaveStore({ backend, initial: { level: 1 } });
-    expect(await reopened.load()).toEqual({ level: 1 });
+  test("a refused clear keeps the value and the stored save", async () => {
+    const storage = memoryStorage();
+    const store = createSaveStore({ backend: localSaveBackend(storage), initial: 0 });
+    store.set(7);
+    await store.save();
+    storage.removeItem = () => {
+      throw new Error("denied");
+    };
+    expect(await store.clear()).toBe(false);
+    expect(store.status()).toBe("error");
+    expect(store.value()).toBe(7);
+    expect(storage.data["save:default"]).toContain("7");
   });
 
   test("slots enumerates written slots and switchSlot isolates state", async () => {
@@ -279,24 +238,9 @@ describe("createSaveStore", () => {
     store.set(22);
     await store.save();
 
-    const list = await store.slots();
-    expect(list.sort()).toEqual(["b", "default"]);
+    expect(await store.slots()).toEqual(["b", "default"]);
     expect(store.value()).toBe(22);
-    expect(await store.switchSlot("default")).toBe(11);
-  });
-
-  test("surfaces backend write failure as error status", async () => {
-    const backend: SaveBackend = {
-      read: () => Promise.resolve(null),
-      write: () => Promise.reject(new Error("offline")),
-      remove: () => Promise.resolve(),
-    };
-    const errors: unknown[] = [];
-    const store = createSaveStore({ backend: remoteSaveBackend(backend), initial: 0, onError: (e) => errors.push(e) });
-    store.set(1);
-    await store.save();
-    expect(store.status()).toBe("error");
-    expect(errors).toHaveLength(1);
+    expect(await valueOf(store.switchSlot("default"))).toBe(11);
   });
 
   test("subscribe fires and revision advances on change", () => {
@@ -329,6 +273,7 @@ describe("createSaveStore", () => {
         return Promise.resolve();
       },
       remove: () => Promise.resolve(),
+      keys: () => Promise.resolve([]),
     };
     const store = createSaveStore({ backend, initial: 0 });
     store.set(1);
@@ -352,18 +297,18 @@ describe("createSaveStore — deleteSlot", () => {
     store.set({ level: 2 });
     await store.save();
 
-    expect((await store.slots()).sort()).toEqual(["default", "keep-2"]);
+    expect(await store.slots()).toEqual(["default", "keep-2"]);
 
     expect(await store.deleteSlot("default")).toBe(true);
     expect(await store.slots()).toEqual(["keep-2"]);
-    expect(await store.peek("default")).toBeNull();
+    expect(await store.peek("default")).toEqual({ kind: "empty" });
 
     expect(await store.deleteSlot("never-written")).toBe(false);
 
     const reopened = createSaveStore({ backend, initial: { level: 0 } });
     expect(await reopened.slots()).toEqual(["keep-2"]);
-    expect(await reopened.peek("default")).toBeNull();
-    expect(await reopened.switchSlot("keep-2")).toEqual({ level: 2 });
+    expect(await reopened.peek("default")).toEqual({ kind: "empty" });
+    expect(await valueOf(reopened.switchSlot("keep-2"))).toEqual({ level: 2 });
   });
 
   test("deleting the active slot resets the live value and a later load does not resurrect the id", async () => {
@@ -378,9 +323,8 @@ describe("createSaveStore — deleteSlot", () => {
 
     expect(await store.deleteSlot("default")).toBe(true);
     expect(store.value()).toEqual({ level: 0 });
-    expect(await store.load()).toEqual({ level: 0 });
+    expect(await store.load()).toEqual({ kind: "empty", value: { level: 0 } });
     expect(await store.slots()).toEqual(["spare"]);
-    expect(await store.peek("default")).toBeNull();
   });
 
   test("a pending autosave cannot write a deleted active slot back", async () => {
@@ -402,7 +346,7 @@ describe("createSaveStore — deleteSlot", () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
     const reopened = createSaveStore({ backend, initial: 0 });
-    expect(await reopened.peek("default")).toBeNull();
+    expect(await reopened.peek("default")).toEqual({ kind: "empty" });
     expect(await reopened.slots()).toEqual([]);
     expect(store.status()).toBe("idle");
   });

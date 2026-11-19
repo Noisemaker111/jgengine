@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
-import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
+import { continueGame, continueHint, menuPane, readSaveSlotState, type SaveSlotState, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, type MenuPane } from "@jgengine/core/game/gameFlow";
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { RuneAction, RuneLayers, RuneView } from "@jgengine/core/ui/rune/primitives.view";
@@ -206,9 +206,9 @@ export function TitleMenu(): ReactNode {
   const { width, height } = useRuneViewport();
   const phone = width < 600;
   const flow = useMenuFlow(setupAfterRestart() ? "creator" : titleRoute.first);
-  const [saved, setSaved] = useState(false);
+  const [slotState, setSlotState] = useState<SaveSlotState>("empty");
   useEffect(() => {
-    void ctx.game.save?.hasSave().then(setSaved);
+    void readSaveSlotState(ctx).then(setSlotState);
   }, [ctx]);
   const startNew = () => {
     if (runPlayed(ctx)) {
@@ -240,7 +240,7 @@ export function TitleMenu(): ReactNode {
                     <Text size={15} color={DIM} text="Gather, craft, learn engrams, build, and tame the island's dinosaurs." />
                   </RuneView>
                   <RuneView gap={6}>
-                    <Verb label="Continue" hint={saved ? "Back where you left off" : "No save yet"} disabled={!saved} run={() => void continueGame(ctx)} />
+                    <Verb label="Continue" hint={continueHint(slotState)} disabled={slotState !== "loaded"} run={() => void continueGame(ctx)} />
                     <Verb label="New game" hint="Start from nothing" run={startNew} />
                     <Verb label="Controls" run={() => flow.push("controls")} />
                     <Verb label="Settings" hint="Graphics, sound, keys" run={() => flow.push("settings")} />

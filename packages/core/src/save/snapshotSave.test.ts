@@ -61,34 +61,18 @@ describe("createRuntimeSave", () => {
     const errors: unknown[] = [];
     const save = createRuntimeSave({ target: host, backend, mode: "manual", onError: (error) => errors.push(error) });
     await save.save();
-    expect(await save.load()).toBe(true);
+    expect((await save.load()).kind).toBe("loaded");
     host.hydrate({ store: { level: 9 } });
     denied = true;
-    expect(await save.load()).toBe(false);
+    expect((await save.load()).kind).toBe("failed");
     expect(host.world).toEqual({ store: { level: 9 } });
-    expect(await save.hasSave()).toBe(false);
+    expect((await save.peek(save.slot())).kind).toBe("failed");
     expect(host.world).toEqual({ store: { level: 9 } });
-    expect(await save.switchSlot("other")).toBe(false);
+    expect((await save.switchSlot("other")).kind).toBe("failed");
+    expect(save.slot()).toBe("default");
     expect(host.world).toEqual({ store: { level: 9 } });
     expect(save.status()).toBe("error");
     expect(errors).toEqual([error, error, error]);
-  });
-
-  test.each(["read", "write"])("successful payload load restores even when its later index %s fails", async (operation) => {
-    const memory = memorySaveBackend();
-    await memory.write("runtime:default", JSON.stringify({ version: 1, savedAt: 0, value: { store: { level: 7 } } }));
-    const error = new Error("index denied");
-    const backend: SaveBackend = { ...memory, read: (key) => operation === "read" && key.endsWith(":__slots__") ? Promise.reject(error) : memory.read(key), write: (key, value) => operation === "write" && key.endsWith(":__slots__") ? Promise.reject(error) : memory.write(key, value) };
-    for (const method of ["load", "hasSave", "switchSlot"] as const) {
-      const target = fakeWorld({ store: { level: 1 } });
-      const errors: unknown[] = [];
-      const save = createRuntimeSave({ target, backend, mode: "manual", onError: (error) => errors.push(error) });
-      expect(await (method === "switchSlot" ? save.switchSlot("default") : save[method]())).toBe(true);
-      expect(target.world).toEqual({ store: { level: method === "hasSave" ? 1 : 7 } });
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      expect(save.status()).toBe("error");
-      expect(errors).toEqual([error]);
-    }
   });
 
   test("save captures the live world; load hydrates a fresh world", async () => {
@@ -99,14 +83,14 @@ describe("createRuntimeSave", () => {
 
     const fresh = fakeWorld();
     const restore = createRuntimeSave({ target: fresh, backend, mode: "manual" });
-    expect(await restore.load()).toBe(true);
+    expect((await restore.load())?.kind).toBe("loaded");
     expect(fresh.world).toEqual({ store: { level: 3 }, entities: [{ id: "p" }] });
   });
 
   test("load on an empty slot returns false and leaves the world alone", async () => {
     const fresh = fakeWorld({ store: { level: 1 } });
     const save = createRuntimeSave({ target: fresh, backend: memorySaveBackend(), mode: "manual" });
-    expect(await save.load()).toBe(false);
+    expect((await save.load())?.kind).not.toBe("loaded");
     expect(fresh.world).toEqual({ store: { level: 1 } });
   });
 
@@ -123,7 +107,7 @@ describe("createRuntimeSave", () => {
     await save.save();
 
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
-    expect(await reopened.load()).toBe(true);
+    expect((await reopened.load())?.kind).toBe("loaded");
   });
 
   test("a never-idle world still autosaves: continuous change does not starve the timer", async () => {
@@ -143,7 +127,7 @@ describe("createRuntimeSave", () => {
     await save.save();
 
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
-    expect(await reopened.load()).toBe(true);
+    expect((await reopened.load())?.kind).toBe("loaded");
   });
 
   test("manual mode never schedules an autosave on world change", () => {
@@ -160,7 +144,7 @@ describe("createRuntimeSave", () => {
     const save = createRuntimeSave({ target: host, backend, mode: "manual" });
     await save.checkpoint();
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
-    expect(await reopened.load()).toBe(true);
+    expect((await reopened.load())?.kind).toBe("loaded");
   });
 
   test("named slots isolate saves; hasSave reports occupancy", async () => {
@@ -168,10 +152,10 @@ describe("createRuntimeSave", () => {
     const host = fakeWorld({ store: { a: 1 } });
     const save = createRuntimeSave({ target: host, backend, mode: "manual" });
     await save.save();
-    expect(await save.hasSave()).toBe(true);
+    expect((await save!.peek(save!.slot())).kind).toBe("loaded");
 
     await save.switchSlot("slot-2");
-    expect(await save.hasSave()).toBe(false);
+    expect((await save!.peek(save!.slot())).kind).not.toBe("loaded");
     host.hydrate({ store: { a: 99 } });
     await save.save();
 
@@ -200,7 +184,7 @@ describe("createRuntimeSave", () => {
     await save.save();
     await save.clear();
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
-    expect(await reopened.load()).toBe(false);
+    expect((await reopened.load())?.kind).not.toBe("loaded");
   });
 
   test("clear cancels a pending autosave, so the slot stays empty until the world changes", async () => {
@@ -215,7 +199,7 @@ describe("createRuntimeSave", () => {
 
     await save.clear();
     expect(timers.pending()).toBe(0);
-    expect(await save.hasSave()).toBe(false);
+    expect((await save!.peek(save!.slot())).kind).not.toBe("loaded");
   });
 });
 
@@ -230,6 +214,7 @@ describe("createRuntimeSave - peek", () => {
         return memory.write(key, value);
       },
       remove: (key) => memory.remove(key),
+      keys: (prefix) => memory.keys(prefix),
     };
     let clock = 1000;
     const host = fakeWorld({ store: { level: 1 } });
@@ -249,9 +234,9 @@ describe("createRuntimeSave - peek", () => {
     const statusBefore = save.status();
     writes.length = 0;
 
-    expect(await save.peek("default")).toEqual({ world: { store: { level: 1 } }, savedAt: 1001 });
-    expect(await save.peek("second")).toEqual({ world: { store: { level: 2 } }, savedAt: 1002 });
-    expect(await save.peek("third")).toEqual({ world: { store: { level: 3 } }, savedAt: 1003 });
+    expect(await save.peek("default")).toEqual({ kind: "loaded", value: { store: { level: 1 } }, savedAt: 1001 });
+    expect(await save.peek("second")).toEqual({ kind: "loaded", value: { store: { level: 2 } }, savedAt: 1002 });
+    expect(await save.peek("third")).toEqual({ kind: "loaded", value: { store: { level: 3 } }, savedAt: 1003 });
 
     expect(writes).toEqual([]);
     expect(host.world).toBe(worldBefore);
@@ -305,12 +290,12 @@ describe("createRuntimeSave - peek", () => {
     });
 
     const peeked = await save.peek("old");
-    expect(peeked).toEqual({ world: { store: { commander: "Mara Vell" }, migrated: 4 }, savedAt: 42 });
+    expect(peeked).toEqual({ kind: "loaded", value: { store: { commander: "Mara Vell" }, migrated: 4 }, savedAt: 42 });
     expect(host.world).toEqual({ store: { level: 9 } });
     expect(save.slot()).toBe("default");
 
-    expect(await save.switchSlot("old")).toBe(true);
-    expect(host.world).toEqual(peeked!.world);
+    expect((await save.switchSlot("old"))?.kind).toBe("loaded");
+    expect(peeked.kind === "loaded" ? host.world : null).toEqual(peeked.kind === "loaded" ? peeked.value : undefined);
   });
 
   test("peek reads the stored slot, never the unsaved live world", async () => {
@@ -323,14 +308,14 @@ describe("createRuntimeSave - peek", () => {
     host.bump();
     expect(timers.pending()).toBe(1);
 
-    expect(await save.peek("default")).toEqual({ world: { store: { coins: 0 } }, savedAt: expect.any(Number) });
+    expect(await save.peek("default")).toEqual({ kind: "loaded", value: { store: { coins: 0 } }, savedAt: expect.any(Number) });
     expect(timers.pending()).toBe(1);
     expect(host.world).toEqual({ store: { coins: 70 } });
   });
 
   test("peek of an empty slot is null and does not create it", async () => {
     const save = createRuntimeSave({ target: fakeWorld({ store: { a: 1 } }), backend: memorySaveBackend(), mode: "manual" });
-    expect(await save.peek("nothing-here")).toBeNull();
+    expect(await save.peek("nothing-here")).toEqual({ kind: "empty" });
     expect(await save.slots()).toEqual([]);
   });
 });
@@ -347,14 +332,14 @@ describe("createRuntimeSave - deleteSlot", () => {
 
     expect(await save.deleteSlot("default")).toBe(true);
     expect(await save.slots()).toEqual(["keep-2"]);
-    expect(await save.peek("default")).toBeNull();
-    expect((await save.peek("keep-2"))?.world).toEqual({ store: { level: 2 } });
+    expect(await save.peek("default")).toEqual({ kind: "empty" });
+    expect(await save.peek("keep-2")).toEqual({ kind: "loaded", savedAt: expect.any(Number), value: { store: { level: 2 } } });
 
     expect(await save.deleteSlot("default")).toBe(false);
     expect(await save.deleteSlot("never-written")).toBe(false);
 
     expect(await save.deleteSlot("keep-2")).toBe(false);
-    expect(await save.hasSave()).toBe(true);
+    expect((await save!.peek(save!.slot())).kind).toBe("loaded");
     expect(host.world).toEqual({ store: { level: 2 } });
   });
 
@@ -377,13 +362,13 @@ describe("createRuntimeSave - deleteSlot", () => {
     await save.save();
 
     expect(await save.slots()).toEqual(["default"]);
-    expect(await save.peek("spare")).toBeNull();
+    expect(await save.peek("spare")).toEqual({ kind: "empty" });
 
     const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
     expect(await reopened.slots()).toEqual(["default"]);
-    expect(await reopened.peek("spare")).toBeNull();
-    expect((await reopened.peek("default"))?.world).toEqual({ store: { level: 8 } });
-    expect(await reopened.switchSlot("default")).toBe(true);
+    expect(await reopened.peek("spare")).toEqual({ kind: "empty" });
+    expect(await reopened.peek("default")).toEqual({ kind: "loaded", savedAt: expect.any(Number), value: { store: { level: 8 } } });
+    expect((await reopened.switchSlot("default"))?.kind).toBe("loaded");
     expect(reopened.status()).toBe("idle");
   });
 
@@ -404,8 +389,8 @@ describe("createRuntimeSave - deleteSlot", () => {
     timers.runAll();
     await save.save();
 
-    expect((await save.peek("default"))?.world).toEqual({ store: { level: 2 } });
-    expect(await save.peek("other")).toBeNull();
+    expect(await save.peek("default")).toEqual({ kind: "loaded", savedAt: expect.any(Number), value: { store: { level: 2 } } });
+    expect(await save.peek("other")).toEqual({ kind: "empty" });
   });
 });
 

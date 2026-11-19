@@ -41,14 +41,8 @@ function walkModels(root: string, dir: string = root): string[] {
  */
 export function buildEditorManifest(sceneDir: string, assetsDir: string): EditorManifest {
   const scenePath = join(sceneDir, EDITOR_SCENE_FILENAME);
-  let scene: unknown | null = null;
-  if (existsSync(scenePath)) {
-    try {
-      scene = JSON.parse(readFileSync(scenePath, "utf8"));
-    } catch {
-      scene = null;
-    }
-  }
+  // A damaged scene file throws rather than opening as an empty scene the next save would write over.
+  const scene: unknown | null = existsSync(scenePath) ? JSON.parse(readFileSync(scenePath, "utf8")) : null;
   const assets = walkModels(assetsDir).map((rel) => {
     const web = rel.split(sep).join("/");
     return { id: assetIdFromRel(web), url: ASSET_ROUTE + web, label: web };

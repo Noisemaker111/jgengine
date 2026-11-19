@@ -250,32 +250,11 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
       return row === undefined ? null : asJson<PlayerProfileRecord>(row["record"]);
     },
 
-    async saveProfile(record) {
-      await upsertProfile(pool, record);
-    },
-
     async loadChunks(serverId) {
       const result = await pool.query(`SELECT record FROM jg_world_chunks WHERE server_id = $1`, [
         serverId,
       ]);
       return result.rows.map((row) => asJson<WorldChunkRecord>(row["record"]));
-    },
-
-    async saveChunks(serverId, chunks) {
-      void serverId;
-      await transact(async (client) => {
-        for (const chunk of chunks) {
-          await upsertChunk(client, chunk);
-        }
-      });
-    },
-
-    async deleteChunks(serverId, chunkKeys) {
-      if (chunkKeys.length === 0) return;
-      await pool.query(`DELETE FROM jg_world_chunks WHERE server_id = $1 AND chunk_key = ANY($2::text[])`, [
-        serverId,
-        chunkKeys,
-      ]);
     },
 
     async loadFeed({ serverId, action }) {
@@ -311,12 +290,6 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
         entries = result.rows.map((row) => asJson<unknown>(row["entry"]));
       });
       return entries;
-    },
-
-    async applyLeaderboardIncrements(gameId, entries) {
-      await transact(async (client) => {
-        await applyIncrements(client, gameId, entries, now());
-      });
     },
 
     async getLeaderboardTop(args) {

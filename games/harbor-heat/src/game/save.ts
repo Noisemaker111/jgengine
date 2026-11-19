@@ -257,11 +257,11 @@ export function bindHarborSave(ctx: GameContext, save: GameSave): void {
  */
 export async function loadHarborSave(ctx: GameContext): Promise<boolean> {
   const save = harborSave(ctx);
-  const document = await save.peek(save.slot());
-  if (document === null) return adoptLegacyWanted(ctx);
-  if (document.systems["wanted"] === undefined) return adoptLegacyWanted(ctx);
-  await save.load();
-  noteSavedAt(ctx, document.savedAt);
+  const read = await save.peek(save.slot());
+  if (read.kind === "corrupt" || read.kind === "failed") return (await save.load()).kind === "loaded";
+  if (read.kind === "empty" || read.value.systems["wanted"] === undefined) return adoptLegacyWanted(ctx);
+  if ((await save.load()).kind !== "loaded") return false;
+  noteSavedAt(ctx, read.value.savedAt);
   catchUpAway(ctx);
   return true;
 }

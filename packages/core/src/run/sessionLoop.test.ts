@@ -263,7 +263,7 @@ describe("a live session stays durable through the persistence seam", () => {
     expect(disk.state?.carried).toBe(0);
   });
 
-  test("a storage that throws does not end the session", () => {
+  test("a storage that throws reaches the carry, and the session keeps what was carried", () => {
     const loop = createSessionLoop<Boon, DescentEnd, number>({
       kind: "descent",
       offers: BOONS,
@@ -273,9 +273,11 @@ describe("a live session stays durable through the persistence seam", () => {
         },
       },
     });
-    loop.start();
-    expect(loop.carry(40)).toBe(40);
-    expect(loop.settle("banked").result).toBeUndefined();
+    expect(() => loop.start()).toThrow("quota exceeded");
+    expect(() => loop.carry(40)).toThrow("quota exceeded");
+    expect(loop.snapshot().carried).toBe(40);
+    expect(() => loop.settle("banked")).toThrow("quota exceeded");
+    expect(loop.snapshot().closed).toBe(1);
   });
 });
 

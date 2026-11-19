@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { newDb } from "pg-mem";
 
-import type { GameServerRecord } from "@jgengine/core/runtime/hostPersistence";
+import type { GameServerRecord, ServerPersistPlan } from "@jgengine/core/runtime/hostPersistence";
 import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
 
 import { ensureSchema, sqlPersistence, type SqlPool } from "./sqlPersistence";
@@ -29,6 +29,19 @@ function makeServer(overrides: Partial<GameServerRecord> = {}): GameServerRecord
     createdAt: 0,
     updatedAt: 10,
     ...overrides,
+  };
+}
+
+/** One flush as the host writes it: the parts given, over `server`, everything else empty. */
+function planOf(server: GameServerRecord, parts: Partial<Omit<ServerPersistPlan, "server">>): ServerPersistPlan {
+  return {
+    server,
+    profiles: [],
+    chunks: [],
+    deletedChunks: [],
+    leaderboard: [],
+    changed: { serverState: true, sessionPlayers: true, revision: true, any: true },
+    ...parts,
   };
 }
 
@@ -61,13 +74,13 @@ test("profiles and chunks round-trip", async () => {
     revision: 3,
     updatedAt: 20,
   };
-  await persistence.saveProfile(profile);
+  await persistence.savePlan(planOf(makeServer(), { profiles: [profile] }));
   expect(await persistence.loadProfile({ userId: "alice", gameId: "demo" })).toEqual(profile);
-  await persistence.saveProfile({ ...profile, revision: 4 });
+  await persistence.savePlan(planOf(makeServer(), { profiles: [{ ...profile, revision: 4 }] }));
   expect((await persistence.loadProfile({ userId: "alice", gameId: "demo" }))?.revision).toBe(4);
 
   const chunk = { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 30 };
-  await persistence.saveChunks("srv-1", [chunk]);
+  await persistence.savePlan(planOf(makeServer({ serverId: "srv-1" }), { chunks: [chunk] }));
   expect(await persistence.loadChunks("srv-1")).toEqual([chunk]);
 });
 
@@ -97,13 +110,13 @@ test("concurrent feed appends both survive", async () => {
 
 test("leaderboard increments accumulate, order, and filter by server", async () => {
   const persistence = await makePersistence();
-  await persistence.applyLeaderboardIncrements("demo", [
+  await persistence.savePlan(planOf(makeServer({ gameId: "demo" }), { leaderboard: [
     { userId: "alice", stat: "kills", scope: "global", by: 3 },
     { userId: "bob", stat: "kills", scope: "global", by: 5 },
     { userId: "alice", stat: "kills", scope: "global", by: 4 },
     { userId: "alice", stat: "kills", scope: "server", serverId: "srv-1", by: 1 },
     { userId: "alice", stat: "gold", scope: "profile", by: 9 },
-  ]);
+  ] }));
 
   expect(await persistence.getLeaderboardTop({ gameId: "demo", stat: "kills", scope: "global" })).toEqual([
     { userId: "alice", value: 7 },
@@ -121,10 +134,10 @@ test("leaderboard increments accumulate, order, and filter by server", async () 
 test("resetScenario wipes run scope while account meta persists", async () => {
   const persistence = await makePersistence();
   await persistence.saveServer(makeServer());
-  await persistence.saveChunks("srv-1", [
+  await persistence.savePlan(planOf(makeServer({ serverId: "srv-1" }), { chunks: [
     { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 30 },
-  ]);
-  await persistence.saveProfile({
+  ] }));
+  await persistence.savePlan(planOf(makeServer(), { profiles: [{
     userId: "alice",
     gameId: "demo",
     playerState: {
@@ -136,7 +149,7 @@ test("resetScenario wipes run scope while account meta persists", async () => {
     },
     revision: 2,
     updatedAt: 20,
-  });
+  }] }));
 
   await persistence.resetScenario?.({
     gameId: "demo",
@@ -159,7 +172,7 @@ test("resetScenario wipes run scope while account meta persists", async () => {
 test("savePlan applies leaderboard, profiles, chunks, and server atomically", async () => {
   const persistence = await makePersistence();
   const server = makeServer();
-  await persistence.savePlan?.({
+  await persistence.savePlan({
     server,
     profiles: [
       {
@@ -185,12 +198,12 @@ test("savePlan applies leaderboard, profiles, chunks, and server atomically", as
 
 test("savePlan removes chunks named in deletedChunks", async () => {
   const persistence = await makePersistence();
-  await persistence.saveChunks("srv-1", [
+  await persistence.savePlan(planOf(makeServer({ serverId: "srv-1" }), { chunks: [
     { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 10 },
     { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 10 },
-  ]);
+  ] }));
 
-  await persistence.savePlan?.({
+  await persistence.savePlan({
     server: makeServer(),
     profiles: [],
     chunks: [],
@@ -203,9 +216,9 @@ test("savePlan removes chunks named in deletedChunks", async () => {
 
 test("getLeaderboardTop ignores non-finite limits", async () => {
   const persistence = await makePersistence();
-  await persistence.applyLeaderboardIncrements("demo", [
+  await persistence.savePlan(planOf(makeServer({ gameId: "demo" }), { leaderboard: [
     { userId: "alice", stat: "kills", scope: "global", by: 3 },
-  ]);
+  ] }));
   expect(
     await persistence.getLeaderboardTop({ gameId: "demo", stat: "kills", scope: "global", limit: Number.NaN }),
   ).toEqual([{ userId: "alice", value: 3 }]);
@@ -215,9 +228,9 @@ test("resetScenario clears feeds and leaderboard rows for the server", async () 
   const persistence = await makePersistence();
   await persistence.saveServer(makeServer());
   await persistence.appendFeed({ serverId: "srv-1", action: "kill", entry: { index: 1 } });
-  await persistence.applyLeaderboardIncrements("demo", [
+  await persistence.savePlan(planOf(makeServer({ gameId: "demo" }), { leaderboard: [
     { userId: "alice", stat: "kills", scope: "server", serverId: "srv-1", by: 4 },
-  ]);
+  ] }));
 
   await persistence.resetScenario?.({
     gameId: "demo",

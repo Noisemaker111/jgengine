@@ -59,11 +59,34 @@ export async function newGame(ctx: GameContext, restart?: () => void): Promise<v
   playGame(ctx);
 }
 
-/** Load the save and play it; resolves `false` (and stays put) when there is none. */
+/** What the active slot holds, for a title screen's Continue: `loaded` is the only one it can open. */
+export type SaveSlotState = "loaded" | "empty" | "corrupt" | "failed";
+
+/** Read the active slot without applying it. A game without a save reads as `empty`. */
+export async function readSaveSlotState(ctx: GameContext): Promise<SaveSlotState> {
+  const save = ctx.game.save;
+  if (save === undefined) return "empty";
+  return (await save.peek(save.slot())).kind;
+}
+
+/** The Continue hint for each {@link SaveSlotState}, so a damaged save is never shown as no save. */
+export function continueHint(state: SaveSlotState): string {
+  if (state === "loaded") return "Back where you left off";
+  if (state === "corrupt") return "Save damaged, a copy was kept";
+  if (state === "failed") return "Save could not be read";
+  return "No save yet";
+}
+
+/** Load the save and play it; resolves `false` (and stays put, with a notice when the save was damaged or unreadable) when there is nothing to play. */
 export async function continueGame(ctx: GameContext): Promise<boolean> {
-  const loaded = (await ctx.game.save?.load()) ?? false;
-  if (loaded) playGame(ctx);
-  return loaded;
+  const result = await ctx.game.save?.load();
+  if (result?.kind === "loaded") {
+    playGame(ctx);
+    return true;
+  }
+  if (result?.kind === "corrupt") ctx.game.notices.push({ text: "Your save was damaged, so a copy was kept and it could not be continued", tone: "deny" });
+  if (result?.kind === "failed") ctx.game.notices.push({ text: "Your save could not be read", tone: "deny" });
+  return false;
 }
 
 /** Pause from `"playing"`, resume from `"paused"`; any other phase is left alone. */
@@ -76,10 +99,11 @@ export function togglePause(ctx: GameContext): void {
   } else if (phase === "paused") playGame(ctx);
 }
 
-/** Save now and post a "Saved" notice. */
+/** Save now and post a "Saved" notice, or "Save failed" when the backend did not keep it. */
 export async function saveNow(ctx: GameContext, notice = "Saved"): Promise<void> {
-  await ctx.game.save?.save();
-  ctx.game.notices.push({ text: notice, tone: "success" });
+  const result = await ctx.game.save?.save();
+  if (result?.kind === "failed") ctx.game.notices.push({ text: "Save failed", tone: "deny" });
+  else ctx.game.notices.push({ text: notice, tone: "success" });
 }
 
 /** Options for {@link createGameFlowSystem}. */

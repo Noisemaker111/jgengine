@@ -53,8 +53,9 @@ function parseCameraLook(value: unknown): CameraLook | null {
   return { yaw: value.yaw, pitch: value.pitch };
 }
 
+/** Camera angles and menu state are this device's preferences, not progress: an unreadable document starts empty like a misshapen one. */
 function parseDocument(raw: string): LocalGameStateDocument {
-  const parsed: unknown = JSON.parse(raw);
+  const parsed = parseJson(raw);
   if (typeof parsed !== "object" || parsed === null || !("version" in parsed) || parsed.version !== 1) return EMPTY_DOCUMENT;
   if (!("worlds" in parsed) || typeof parsed.worlds !== "object" || parsed.worlds === null) return EMPTY_DOCUMENT;
   const worlds: Record<string, WorldLocalState> = {};

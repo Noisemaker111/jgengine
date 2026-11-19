@@ -84,19 +84,54 @@ function encodeSegment(key: string): string {
 
 const enc = encodeSegment;
 
+/** The renames and deletes one plan makes, written before any of them so a crash can finish them. */
+interface PlanJournal {
+  moves: { temp: string; final: string }[];
+  deletes: string[];
+}
+
+/**
+ * A {@link HostPersistence} over JSON files in `dir`. A flush is written as a plan: every file is
+ * staged next to its target, a journal naming the renames is written in one atomic rename, and only
+ * then are the files moved into place. A plan that fails before the journal changed nothing; one that
+ * fails after it is finished by the next call, so a retry never applies leaderboard points twice.
+ */
 export function filePersistence(dir: string, now: () => number = Date.now): HostPersistence {
   const serversDir = join(dir, "servers");
   const profilesDir = join(dir, "profiles");
   const chunksDir = join(dir, "chunks");
   const feedsDir = join(dir, "feeds");
   const leaderboardPath = join(dir, "leaderboard.json");
+  const journalPath = join(dir, "plan.journal.json");
+
+  /** Move every staged file into place and drop the journal. Safe to repeat: a missing temp was already moved. */
+  const finish = async (journal: PlanJournal): Promise<void> => {
+    for (const { temp, final } of journal.moves) {
+      try {
+        await rename(temp, final);
+      } catch (error) {
+        if (!isMissing(error)) throw error;
+      }
+    }
+    for (const path of journal.deletes) {
+      try {
+        await unlink(path);
+      } catch (error) {
+        if (!isMissing(error)) throw error;
+      }
+    }
+    await unlink(journalPath);
+  };
 
   let ready: Promise<void> | null = null;
-  const ensureDirs = () => {
+  const ensureDirs = async (): Promise<void> => {
     ready ??= Promise.all(
       [serversDir, profilesDir, chunksDir, feedsDir].map((path) => mkdir(path, { recursive: true })),
     ).then(() => undefined);
-    return ready;
+    await ready;
+    // A plan whose journal was written is committed; finish it before anything reads the files.
+    const pending = await readJson<PlanJournal>(journalPath);
+    if (pending !== null) await finish(pending);
   };
 
   const loadLeaderboard = async (): Promise<Map<string, StoredLeaderboardRow>> => {
@@ -108,6 +143,38 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
   const feedLocks = new Map<string, Promise<unknown>>();
 
   return {
+    async savePlan(plan) {
+      const run = leaderboardLock.then(async () => {
+        await ensureDirs();
+        const serverDir = join(chunksDir, enc(plan.server.serverId));
+        if (plan.chunks.length > 0) await mkdir(serverDir, { recursive: true });
+        const writes: { final: string; value: unknown }[] = [
+          ...plan.profiles.map((profile) => ({ final: join(profilesDir, `${enc(profile.gameId)}__${enc(profile.userId)}.json`), value: profile })),
+          ...plan.chunks.map((chunk) => ({ final: join(serverDir, `${enc(chunk.chunkKey)}.json`), value: chunk })),
+          { final: join(serversDir, `${enc(plan.server.serverId)}.json`), value: plan.server },
+        ];
+        if (plan.leaderboard.length > 0) {
+          const rows = await loadLeaderboard();
+          applyLeaderboardRows(rows, plan.server.gameId, plan.leaderboard, now());
+          writes.push({ final: leaderboardPath, value: [...rows.values()] });
+        }
+        const moves: PlanJournal["moves"] = [];
+        try {
+          for (const { final, value } of writes) moves.push({ temp: await stageJson(final, value), final });
+        } catch (error) {
+          await Promise.all(moves.map(({ temp }) => rm(temp, { force: true })));
+          throw error;
+        }
+        const journal: PlanJournal = { moves, deletes: plan.deletedChunks.map((chunkKey) => join(serverDir, `${enc(chunkKey)}.json`)) };
+        await writeJson(journalPath, journal);
+        // The journal is the commit: from here the plan has happened, and rejecting would make the
+        // host retry it and count its points twice. A move that fails now is finished by the next call,
+        // which rejects (and so does every read) until it can.
+        await finish(journal).catch(() => undefined);
+      });
+      leaderboardLock = run.catch(() => undefined);
+      await run;
+    },
     async loadServer(serverId) {
       await ensureDirs();
       return readJson<GameServerRecord>(join(serversDir, `${enc(serverId)}.json`));
@@ -131,10 +198,6 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
       await ensureDirs();
       return readJson<PlayerProfileRecord>(join(profilesDir, `${enc(gameId)}__${enc(userId)}.json`));
     },
-    async saveProfile(record) {
-      await ensureDirs();
-      await writeJson(join(profilesDir, `${enc(record.gameId)}__${enc(record.userId)}.json`), record);
-    },
     async loadChunks(serverId) {
       await ensureDirs();
       const serverDir = join(chunksDir, enc(serverId));
@@ -152,31 +215,6 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
         if (record !== null) records.push(record);
       }
       return records;
-    },
-    async saveChunks(serverId, records) {
-      await ensureDirs();
-      const serverDir = join(chunksDir, enc(serverId));
-      await mkdir(serverDir, { recursive: true });
-      const staged = await Promise.all(
-        records.map(async (record) => {
-          const final = join(serverDir, `${enc(record.chunkKey)}.json`);
-          return { temp: await stageJson(final, record), final };
-        }),
-      );
-      await Promise.all(staged.map(({ temp, final }) => rename(temp, final)));
-    },
-    async deleteChunks(serverId, chunkKeys) {
-      await ensureDirs();
-      const serverDir = join(chunksDir, enc(serverId));
-      await Promise.all(
-        chunkKeys.map(async (chunkKey) => {
-          try {
-            await unlink(join(serverDir, `${enc(chunkKey)}.json`));
-          } catch (error) {
-            if (!isMissing(error)) throw error;
-          }
-        }),
-      );
     },
     async loadFeed({ serverId, action }) {
       await ensureDirs();
@@ -198,16 +236,6 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
       } finally {
         if (feedLocks.get(path) === tracked) feedLocks.delete(path);
       }
-    },
-    async applyLeaderboardIncrements(gameId, entries) {
-      const run = leaderboardLock.then(async () => {
-        await ensureDirs();
-        const rows = await loadLeaderboard();
-        applyLeaderboardRows(rows, gameId, entries, now());
-        await writeJson(leaderboardPath, [...rows.values()]);
-      });
-      leaderboardLock = run.catch(() => undefined);
-      await run;
     },
     async getLeaderboardTop(args) {
       await ensureDirs();
